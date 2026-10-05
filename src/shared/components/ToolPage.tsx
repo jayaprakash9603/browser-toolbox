@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 
 import type { ToolDefinition } from '@/core/registry'
+import { BackButton } from '@/shared/components/BackButton'
 import { FavoriteButton } from '@/shared/components/FavoriteButton'
 import { Separator } from '@/shared/components/ui/separator'
 
@@ -15,6 +16,7 @@ export function ToolPage({ tool, children, actions }: ToolPageProps) {
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-start gap-2.5 px-4 pt-3 pb-2">
+        <BackButton to={`/categories/${tool.category}`} />
         <div className="mt-0.5 rounded-md border bg-muted p-1.5">
           <Icon className="size-4" />
         </div>

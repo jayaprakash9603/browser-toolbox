@@ -31,14 +31,14 @@ export function TextEditor({
       placeholder={placeholder}
       readOnly={readOnly}
       aria-label={ariaLabel}
-      style={{ minHeight: `${minRows * 1.5}rem` }}
+      style={{ height: `${minRows * 1.5 + 1.25}rem` }}
       onKeyDown={(event) => {
         if (onKeyCommand && (event.metaKey || event.ctrlKey) && event.key === 'Enter') {
           event.preventDefault()
           onKeyCommand('submit')
         }
       }}
-      className={cn('resize-y leading-relaxed', mono && 'font-mono', className)}
+      className={cn('resize-none overflow-y-auto leading-relaxed', mono && 'font-mono', className)}
     />
   )
 }

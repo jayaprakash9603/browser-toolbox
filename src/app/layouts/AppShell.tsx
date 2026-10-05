@@ -107,7 +107,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
           <NavItem to="/settings" icon={SettingsIcon} label="Settings" active={path === '/settings'} />
         </nav>
 
-        <main className="min-w-0 flex-1 overflow-hidden">
+        <main className="@container min-w-0 flex-1 overflow-hidden">
           <Suspense fallback={<PageLoading />}>{content}</Suspense>
         </main>
       </div>

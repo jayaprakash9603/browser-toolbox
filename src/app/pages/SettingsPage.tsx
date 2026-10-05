@@ -12,6 +12,7 @@ import {
   type ThemeMode,
 } from '@/features/settings/settingsService'
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog'
+import { BackButton } from '@/shared/components/BackButton'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Separator } from '@/shared/components/ui/separator'
@@ -34,6 +35,7 @@ export default function SettingsPage() {
 
   return (
     <div className="h-full overflow-y-auto p-4">
+      <div className="mb-3"><BackButton /></div>
       <h1 className="mb-1 text-sm font-semibold">Settings</h1>
       <p className="mb-4 text-xs text-muted-foreground">Preferences are stored locally in Chrome.</p>
 

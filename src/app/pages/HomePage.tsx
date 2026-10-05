@@ -4,6 +4,7 @@ import { InboxIcon, SearchIcon } from 'lucide-react'
 import { categoryRegistry, toolRegistry } from '@/core/registry'
 import { filterTools } from '@/features/search/filterTools'
 import { EmptyState } from '@/shared/components/EmptyState'
+import { BackButton } from '@/shared/components/BackButton'
 import { ToolCard } from '@/shared/components/ToolCard'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { useFavorites } from '@/shared/hooks/useFavorites'
@@ -38,6 +39,8 @@ export default function HomePage({ section }: HomePageProps) {
           <p className="text-xs text-muted-foreground">What do you want to do?</p>
         </div>
       )}
+
+      {section && <div className="mb-3"><BackButton /></div>}
 
       <SearchInput
         value={query}
@@ -104,7 +107,7 @@ export default function HomePage({ section }: HomePageProps) {
                 title={category.name}
                 link={{ to: `/categories/${category.id}`, label: 'View all' }}
               >
-                <ToolGrid tools={categoryTools.slice(0, 6)} />
+                <ToolGrid tools={categoryTools} />
               </Section>
             )
           })}
@@ -157,7 +160,7 @@ function Section({
 
 function ToolGrid({ tools }: { tools: ReturnType<typeof toolRegistry.getAll> }) {
   return (
-    <div className={cn('grid grid-cols-1 gap-2 @[360px]:grid-cols-2 @[520px]:grid-cols-3')}>
+    <div className={cn('grid grid-cols-1 gap-2 @[360px]:grid-cols-2 @[560px]:grid-cols-3')}>
       {tools.map((tool) => (
         <ToolCard key={tool.id} tool={tool} />
       ))}
