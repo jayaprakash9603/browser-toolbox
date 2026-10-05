@@ -65,6 +65,23 @@ describe('clipboardService', () => {
     expect(history[0].wordCount).toBe(2)
   })
 
+  it('ignores malformed clipboard history stored by older or corrupted data', async () => {
+    const validEntry = {
+      id: 'entry-1',
+      text: 'saved text',
+      createdAt: 1,
+      pinned: false,
+      charCount: 10,
+      wordCount: 2,
+    }
+    await set(STORAGE_KEYS.clipboardHistory, [validEntry, null, { id: 'missing-text' }])
+
+    expect(await getHistory()).toEqual([validEntry])
+
+    await set(STORAGE_KEYS.clipboardHistory, { stale: true })
+    expect(await getHistory()).toEqual([])
+  })
+
   it('respects the history size limit but keeps pinned entries', async () => {
     await updateSettings({ clipboardHistoryLimit: 10 })
     for (let i = 0; i < 15; i++) await addClipboardEntry(`entry ${i}`)

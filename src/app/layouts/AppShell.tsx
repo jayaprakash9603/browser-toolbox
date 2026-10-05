@@ -27,6 +27,11 @@ import { cn } from '@/shared/utils/cn'
 const HomePage = lazy(() => import('@/app/pages/HomePage'))
 const SettingsPage = lazy(() => import('@/app/pages/SettingsPage'))
 const CategoryPage = lazy(() => import('@/app/pages/CategoryPage'))
+const LEGACY_CLIPBOARD_ROUTES = new Set([
+  '/tools/clipboard/history',
+  '/tools/clipboard/pinned',
+  '/tools/clipboard/search',
+])
 
 export function AppShell({ children }: { children?: ReactNode }) {
   const { t } = useTranslation()
@@ -146,6 +151,7 @@ function renderRoute(path: string) {
   if (path === '/settings') return <SettingsPage />
   if (path === '/favorites') return <HomePage section="favorites" />
   if (path === '/recent') return <HomePage section="recent" />
+  if (LEGACY_CLIPBOARD_ROUTES.has(path)) return <ToolHost toolId="clipboard.manager" />
   const categoryMatch = path.match(/^\/categories\/([\w-]+)$/)
   if (categoryMatch) return <CategoryPage categoryId={categoryMatch[1]} />
   const tool = toolRegistry.getAll().find((t) => t.route === path)
@@ -156,6 +162,7 @@ function renderRoute(path: string) {
 function getLoadingVariant(path: string): AppLoadingSkeletonVariant {
   if (path === '/settings') return 'settings'
   if (path === '/favorites' || path === '/recent') return 'collection'
+  if (LEGACY_CLIPBOARD_ROUTES.has(path)) return 'tool'
   if (/^\/categories\/[\w-]+$/.test(path)) return 'category'
   if (toolRegistry.getAll().some((tool) => tool.route === path)) return 'tool'
   return 'home'

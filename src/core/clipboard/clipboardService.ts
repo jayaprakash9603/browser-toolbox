@@ -25,7 +25,22 @@ function makeEntry(text: string, pinned = false): ClipboardEntry {
 }
 
 export async function getHistory(): Promise<ClipboardEntry[]> {
-  return (await get<ClipboardEntry[]>(STORAGE_KEYS.clipboardHistory)) ?? []
+  const history = await get<unknown>(STORAGE_KEYS.clipboardHistory)
+  return Array.isArray(history) ? history.filter(isClipboardEntry) : []
+}
+
+function isClipboardEntry(value: unknown): value is ClipboardEntry {
+  if (typeof value !== 'object' || value === null) return false
+  const entry = value as Record<string, unknown>
+  return typeof entry.id === 'string'
+    && typeof entry.text === 'string'
+    && typeof entry.createdAt === 'number'
+    && Number.isFinite(entry.createdAt)
+    && typeof entry.pinned === 'boolean'
+    && typeof entry.charCount === 'number'
+    && Number.isFinite(entry.charCount)
+    && typeof entry.wordCount === 'number'
+    && Number.isFinite(entry.wordCount)
 }
 
 async function saveHistory(entries: ClipboardEntry[]) {
