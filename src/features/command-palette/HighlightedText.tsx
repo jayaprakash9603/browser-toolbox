@@ -28,7 +28,11 @@ export function HighlightedText({ text, query }: HighlightedTextProps) {
     <span className="inline min-w-0 truncate align-baseline leading-[inherit]">
       {parts.map((part, index) =>
         part.highlighted ? (
-          <span key={index} data-search-highlight className="font-semibold text-sky-500 dark:text-sky-400">
+          <span
+            key={index}
+            data-search-highlight
+            className="font-semibold text-primary"
+          >
             {part.text}
           </span>
         ) : (

@@ -8,6 +8,7 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { BackButton } from '@/shared/components/BackButton'
 import { ToolCard } from '@/shared/components/ToolCard'
 import { SearchInput } from '@/shared/components/SearchInput'
+import { AppLoadingSkeleton } from '@/shared/components/AppLoadingSkeleton'
 import { useFavorites } from '@/shared/hooks/useFavorites'
 import { useRecentTools } from '@/shared/hooks/useRecentTools'
 import { Link } from '@/app/router'
@@ -20,8 +21,8 @@ interface HomePageProps {
 export default function HomePage({ section }: HomePageProps) {
   const { t } = useTranslation()
   const [query, setQuery] = useState('')
-  const { favorites } = useFavorites()
-  const { recent } = useRecentTools()
+  const { favorites, isLoading: favoritesLoading } = useFavorites()
+  const { recent, isLoading: recentLoading } = useRecentTools()
 
   const tools = toolRegistry.getAll()
   const { favorites: favoriteTools, recent: recentTools, results } = useMemo(
@@ -35,6 +36,15 @@ export default function HomePage({ section }: HomePageProps) {
   const searching = query.trim().length > 0
   const enabledCategories = categoryRegistry.getEnabled()
   const comingSoon = categoryRegistry.getAll().filter((c) => !c.enabled)
+  const loading = section === 'favorites'
+    ? favoritesLoading
+    : section === 'recent'
+      ? recentLoading
+      : favoritesLoading || recentLoading
+
+  if (loading) {
+    return <AppLoadingSkeleton variant={section ? 'collection' : 'home'} label={t('nav.loading')} />
+  }
 
   return (
     <div className="h-full overflow-y-auto p-4">

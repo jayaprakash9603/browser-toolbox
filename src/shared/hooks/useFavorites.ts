@@ -4,6 +4,7 @@ import { getFavorites, toggleFavorite } from '@/features/favorites/favoritesServ
 
 export function useFavorites() {
   const [favorites, setFavorites] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   const refresh = useCallback(async () => {
     setFavorites(await getFavorites())
@@ -13,6 +14,8 @@ export function useFavorites() {
     let live = true
     void getFavorites().then((list) => {
       if (live) setFavorites(list)
+    }).finally(() => {
+      if (live) setIsLoading(false)
     })
     return () => {
       live = false
@@ -27,5 +30,5 @@ export function useFavorites() {
     [refresh],
   )
 
-  return { favorites, toggle, refresh }
+  return { favorites, toggle, refresh, isLoading }
 }

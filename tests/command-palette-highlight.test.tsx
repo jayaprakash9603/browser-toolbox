@@ -8,7 +8,18 @@ describe('command palette search highlighting', () => {
     const { container } = render(<HighlightedText text="Clipboard Manager" query="clip" />)
 
     expect(container.textContent).toBe('Clipboard Manager')
-    expect(container.querySelector('[data-search-highlight]')?.textContent).toBe('Clip')
+    const highlighted = container.querySelector('[data-search-highlight]')
+    expect(highlighted?.textContent).toBe('Clip')
+    expect(highlighted).toHaveClass('font-semibold', 'text-primary')
+    expect(highlighted).not.toHaveClass('bg-primary/10', 'px-0.5')
+  })
+
+  it('highlights an exact phrase as one text-only match across spaces', () => {
+    const { container } = render(<HighlightedText text="Clipboard Manager" query="clipboard manager" />)
+
+    const highlighted = container.querySelector('[data-search-highlight]')
+    expect(highlighted?.textContent).toBe('Clipboard Manager')
+    expect(container.querySelectorAll('[data-search-highlight]')).toHaveLength(1)
   })
 
   it('highlights the visible query prefix when the rest matches a hidden keyword', () => {

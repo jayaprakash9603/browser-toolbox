@@ -4,6 +4,7 @@ import { getRecentTools, type RecentTool } from '@/features/recent-tools/recentT
 
 export function useRecentTools() {
   const [recent, setRecent] = useState<RecentTool[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   const refresh = useCallback(async () => {
     setRecent(await getRecentTools())
@@ -13,11 +14,13 @@ export function useRecentTools() {
     let live = true
     void getRecentTools().then((list) => {
       if (live) setRecent(list)
+    }).finally(() => {
+      if (live) setIsLoading(false)
     })
     return () => {
       live = false
     }
   }, [])
 
-  return { recent, refresh }
+  return { recent, refresh, isLoading }
 }

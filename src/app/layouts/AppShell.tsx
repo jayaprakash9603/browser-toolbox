@@ -14,6 +14,10 @@ import { getToolComponent } from '@/app/toolComponents'
 import { categoryRegistry, toolRegistry } from '@/core/registry'
 import { trackRecentTool } from '@/features/recent-tools/recentToolsService'
 import { CommandPalette } from '@/features/command-palette/CommandPalette'
+import {
+  AppLoadingSkeleton,
+  type AppLoadingSkeletonVariant,
+} from '@/shared/components/AppLoadingSkeleton'
 import { Button } from '@/shared/components/ui/button'
 import { ThemeToggle } from '@/shared/components/ThemeToggle'
 import { Separator } from '@/shared/components/ui/separator'
@@ -23,15 +27,6 @@ import { cn } from '@/shared/utils/cn'
 const HomePage = lazy(() => import('@/app/pages/HomePage'))
 const SettingsPage = lazy(() => import('@/app/pages/SettingsPage'))
 const CategoryPage = lazy(() => import('@/app/pages/CategoryPage'))
-
-function PageLoading() {
-  const { t } = useTranslation()
-  return (
-    <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-      {t('nav.loading')}
-    </div>
-  )
-}
 
 export function AppShell({ children }: { children?: ReactNode }) {
   const { t } = useTranslation()
@@ -127,7 +122,16 @@ export function AppShell({ children }: { children?: ReactNode }) {
         </nav>
 
         <main className="@container min-w-0 flex-1 overflow-hidden">
-          <Suspense fallback={<PageLoading />}>{content}</Suspense>
+          <Suspense
+            fallback={
+              <AppLoadingSkeleton
+                variant={getLoadingVariant(path)}
+                label={t('nav.loading')}
+              />
+            }
+          >
+            {content}
+          </Suspense>
         </main>
       </div>
 
@@ -149,12 +153,21 @@ function renderRoute(path: string) {
   return <HomePage />
 }
 
+function getLoadingVariant(path: string): AppLoadingSkeletonVariant {
+  if (path === '/settings') return 'settings'
+  if (path === '/favorites' || path === '/recent') return 'collection'
+  if (/^\/categories\/[\w-]+$/.test(path)) return 'category'
+  if (toolRegistry.getAll().some((tool) => tool.route === path)) return 'tool'
+  return 'home'
+}
+
 function ToolHost({ toolId }: { toolId: string }) {
+  const { t } = useTranslation()
   const tool = toolRegistry.get(toolId)
   if (!tool) return <HomePage />
   const Component = getToolComponent(toolId, tool.loader)
   return (
-    <Suspense fallback={<PageLoading />}>
+    <Suspense fallback={<AppLoadingSkeleton variant="tool" label={t('nav.loading')} />}>
       {/* Lazy components are cached per toolId in getToolComponent, so identity
           is stable across renders even though creation happens on first visit. */}
       {/* eslint-disable-next-line react-hooks/static-components */}

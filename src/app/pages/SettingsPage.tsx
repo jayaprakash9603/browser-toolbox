@@ -14,6 +14,7 @@ import {
 } from '@/features/settings/settingsService'
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog'
 import { BackButton } from '@/shared/components/BackButton'
+import { AppLoadingSkeleton } from '@/shared/components/AppLoadingSkeleton'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Separator } from '@/shared/components/ui/separator'
@@ -29,7 +30,7 @@ export default function SettingsPage() {
     void initStorage().then(() => getSettings().then(setSettings))
   }, [])
 
-  if (!settings) return null
+  if (!settings) return <AppLoadingSkeleton variant="settings" label={t('nav.loading')} />
 
   const update = async (patch: Partial<Settings>) => {
     setSettings(await updateSettings(patch))
