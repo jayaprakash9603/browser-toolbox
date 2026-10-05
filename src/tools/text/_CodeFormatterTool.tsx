@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { toUserMessage } from '@/core/errors'
 import { ErrorState } from '@/shared/components/ErrorState'
@@ -12,7 +13,7 @@ interface CodeFormatterToolProps {
   format: (input: string) => string
   minify: (input: string) => string
   placeholder: string
-  errorMessage?: string
+  errorMessageKey?: string
 }
 
 export function CodeFormatterTool({
@@ -20,8 +21,9 @@ export function CodeFormatterTool({
   format,
   minify,
   placeholder,
-  errorMessage,
+  errorMessageKey,
 }: CodeFormatterToolProps) {
+  const { t } = useTranslation()
   const tool = useTransformTool(toolId)
   const [input, setInput] = useState('')
   const [output, setOutput] = useState('')
@@ -32,7 +34,7 @@ export function CodeFormatterTool({
       setOutput(fn(input))
       setError(null)
     } catch (err) {
-      setError(toUserMessage(err, errorMessage ?? 'Unable to format this content.'))
+      setError(toUserMessage(err, t(errorMessageKey ?? 'errors.formatContent')))
     }
   }
 
@@ -44,27 +46,27 @@ export function CodeFormatterTool({
             value={input}
             onChange={setInput}
             placeholder={placeholder}
-            ariaLabel="Source input"
+            ariaLabel={t('text.sourceInput')}
             onKeyCommand={() => run(format)}
           />
           <StatsBar value={input} />
         </div>
         <div className="flex gap-1.5">
           <Button size="sm" onClick={() => run(format)} disabled={!input.trim()}>
-            Beautify
+            {t('text.beautify')}
           </Button>
           <Button size="sm" variant="outline" onClick={() => run(minify)} disabled={!input.trim()}>
-            Minify
+            {t('text.minify')}
           </Button>
         </div>
         {error && <ErrorState message={error} />}
         {output && !error && (
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <span className="text-xs font-medium">Output</span>
+              <span className="text-xs font-medium">{t('text.output')}</span>
               <ToolActions value={output} onClear={() => setOutput('')} />
             </div>
-            <TextEditor value={output} readOnly ariaLabel="Formatted output" />
+            <TextEditor value={output} readOnly ariaLabel={t('text.formattedOutput')} />
           </div>
         )}
       </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
@@ -7,6 +8,7 @@ import { StatsBar, ToolActions, useTransformTool } from '../_shared'
 import { SORT_MODES, sortLines, type SortMode } from './logic'
 
 export default function SortLinesTool() {
+  const { t } = useTranslation()
   const tool = useTransformTool('text.sort-lines')
   const [input, setInput] = useState('')
   const [caseSensitive, setCaseSensitive] = useState(false)
@@ -22,14 +24,14 @@ export default function SortLinesTool() {
             value={input}
             onChange={setInput}
             placeholder={'banana\nApple\n10\n2'}
-            ariaLabel="Lines to sort"
+            ariaLabel={t('text.sortInput')}
           />
           <StatsBar value={input} />
         </div>
 
         <label className="flex w-fit items-center gap-2 text-xs">
-          <Switch checked={caseSensitive} onCheckedChange={setCaseSensitive} aria-label="Case sensitive" />
-          Case-sensitive
+          <Switch checked={caseSensitive} onCheckedChange={setCaseSensitive} aria-label={t('text.caseSensitiveLabel')} />
+          {t('text.caseSensitive')}
         </label>
 
         <div className="grid grid-cols-2 gap-1.5 @[380px]:grid-cols-3">
@@ -40,7 +42,9 @@ export default function SortLinesTool() {
               disabled={!input}
               className="h-7 cursor-pointer rounded-md border px-2 text-xs font-medium transition-colors hover:bg-accent disabled:opacity-50"
             >
-              {mode.label}
+              {t(`sort.${mode.id.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())}`, {
+                defaultValue: mode.label,
+              })}
             </button>
           ))}
         </div>
@@ -49,11 +53,13 @@ export default function SortLinesTool() {
           <div>
             <div className="mb-1 flex items-center justify-between">
               <span className="text-xs font-medium">
-                {SORT_MODES.find((m) => m.id === result.mode)?.label}
+                {t(`sort.${result.mode.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())}`, {
+                  defaultValue: SORT_MODES.find((mode) => mode.id === result.mode)?.label,
+                })}
               </span>
               <ToolActions value={result.output} onClear={() => setResult(null)} />
             </div>
-            <TextEditor value={result.output} readOnly ariaLabel="Sorted lines" />
+            <TextEditor value={result.output} readOnly ariaLabel={t('text.sorted')} />
           </div>
         )}
       </div>

@@ -8,7 +8,7 @@ export default function CssFormatterTool() {
       format={formatCss}
       minify={minifyCss}
       placeholder=".class{color:red}"
-      errorMessage="Unable to format this CSS."
+      errorMessageKey="errors.formatCss"
     />
   )
 }

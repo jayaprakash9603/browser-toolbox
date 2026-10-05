@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ClockIcon, InboxIcon, SearchIcon, StarIcon } from 'lucide-react'
 
 import { categoryRegistry, toolRegistry } from '@/core/registry'
@@ -17,14 +18,18 @@ interface HomePageProps {
 }
 
 export default function HomePage({ section }: HomePageProps) {
+  const { t } = useTranslation()
   const [query, setQuery] = useState('')
   const { favorites } = useFavorites()
   const { recent } = useRecentTools()
 
   const tools = toolRegistry.getAll()
   const { favorites: favoriteTools, recent: recentTools, results } = useMemo(
-    () => filterTools(tools, query, favorites, recent.map((r) => r.toolId)),
-    [tools, query, favorites, recent],
+    () => filterTools(tools, query, favorites, recent.map((r) => r.toolId), (tool) => [
+      t(`tools.${tool.id}.name`, { defaultValue: tool.name }),
+      t(`tools.${tool.id}.description`, { defaultValue: tool.description }),
+    ]),
+    [tools, query, favorites, recent, t],
   )
 
   const searching = query.trim().length > 0
@@ -35,8 +40,8 @@ export default function HomePage({ section }: HomePageProps) {
     <div className="h-full overflow-y-auto p-4">
       {!section && (
         <div className="mb-4">
-          <h1 className="text-base font-semibold">All-in-One Toolbox</h1>
-          <p className="text-xs text-muted-foreground">Small tools for everyday tasks.</p>
+          <h1 className="text-base font-semibold">{t('home.title')}</h1>
+          <p className="text-xs text-muted-foreground">{t('home.subtitle')}</p>
         </div>
       )}
 
@@ -45,15 +50,15 @@ export default function HomePage({ section }: HomePageProps) {
       <SearchInput
         value={query}
         onChange={setQuery}
-        placeholder="Search tools… (Ctrl+K)"
-        ariaLabel="Search tools"
+        placeholder={t('nav.searchToolsShortcut')}
+        ariaLabel={t('nav.searchTools')}
         className="mb-4"
       />
 
       {searching && (
-        <Section title={`Results (${results.length})`}>
+        <Section title={t('home.searchResults', { count: results.length })}>
           {results.length === 0 ? (
-            <EmptyState icon={SearchIcon} title="No tools match your search" />
+            <EmptyState icon={SearchIcon} title={t('home.noSearchResults')} />
           ) : (
             <ToolGrid tools={results} />
           )}
@@ -61,12 +66,12 @@ export default function HomePage({ section }: HomePageProps) {
       )}
 
       {!searching && section === 'favorites' && (
-        <Section title="Favorites">
+        <Section title={t('nav.favorites')}>
           {favoriteTools.length === 0 ? (
             <EmptyState
               icon={InboxIcon}
-              title="No favorites yet"
-              description="Star a tool to pin it here."
+              title={t('home.noFavorites')}
+              description={t('home.favoriteHint')}
             />
           ) : (
             <ToolGrid tools={favoriteTools} />
@@ -75,9 +80,9 @@ export default function HomePage({ section }: HomePageProps) {
       )}
 
       {!searching && section === 'recent' && (
-        <Section title="Recently used">
+        <Section title={t('home.recentlyUsed')}>
           {recentTools.length === 0 ? (
-            <EmptyState icon={InboxIcon} title="Nothing used yet" />
+            <EmptyState icon={InboxIcon} title={t('home.noRecent')} />
           ) : (
             <ToolGrid tools={recentTools} />
           )}
@@ -87,13 +92,13 @@ export default function HomePage({ section }: HomePageProps) {
       {!searching && !section && (
         <>
           {favoriteTools.length > 0 && (
-            <Section title="Favorites" icon={StarIcon} link={{ to: '/favorites', label: 'View all' }}>
+            <Section title={t('nav.favorites')} icon={StarIcon} link={{ to: '/favorites', label: t('common.viewAll') }}>
               <ToolGrid tools={favoriteTools.slice(0, 3)} />
             </Section>
           )}
 
           {recentTools.length > 0 && (
-            <Section title="Recently used" icon={ClockIcon} link={{ to: '/recent', label: 'View all' }}>
+            <Section title={t('home.recentlyUsed')} icon={ClockIcon} link={{ to: '/recent', label: t('common.viewAll') }}>
               <ToolGrid tools={recentTools.slice(0, 3)} />
             </Section>
           )}
@@ -104,10 +109,10 @@ export default function HomePage({ section }: HomePageProps) {
             return (
               <Section
                 key={category.id}
-                title={category.name}
-                description={category.description}
+                title={t(`categories.${category.id}.name`, { defaultValue: category.name })}
+                description={t(`categories.${category.id}.description`, { defaultValue: category.description })}
                 icon={category.icon}
-                link={{ to: `/categories/${category.id}`, label: 'View all' }}
+                link={{ to: `/categories/${category.id}`, label: t('common.viewAll') }}
               >
                 <ToolGrid tools={categoryTools.slice(0, 3)} />
               </Section>
@@ -115,14 +120,14 @@ export default function HomePage({ section }: HomePageProps) {
           })}
 
           {comingSoon.length > 0 && (
-            <Section title="Coming soon">
+            <Section title={t('home.comingSoon')}>
               <div className="flex flex-wrap gap-1.5">
                 {comingSoon.map((category) => (
                   <span
                     key={category.id}
                     className="rounded-md border border-dashed px-2 py-1 text-[11px] text-muted-foreground"
                   >
-                    {category.name}
+                    {t(`categories.${category.id}.name`, { defaultValue: category.name })}
                   </span>
                 ))}
               </div>

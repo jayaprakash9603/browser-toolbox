@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
@@ -9,6 +10,7 @@ import { ToolActions, useTransformTool } from '../_shared'
 import { generateLorem, type LoremMode } from './logic'
 
 export default function LoremIpsumTool() {
+  const { t } = useTranslation()
   const tool = useTransformTool('text.lorem-ipsum')
   const [mode, setMode] = useState<LoremMode>('paragraphs')
   const [count, setCount] = useState(3)
@@ -22,9 +24,9 @@ export default function LoremIpsumTool() {
         <div className="flex items-center gap-2">
           <Tabs value={mode} onValueChange={(value) => setMode(value as LoremMode)}>
             <TabsList>
-              <TabsTrigger value="paragraphs">Paragraphs</TabsTrigger>
-              <TabsTrigger value="sentences">Sentences</TabsTrigger>
-              <TabsTrigger value="words">Words</TabsTrigger>
+              <TabsTrigger value="paragraphs">{t('text.paragraphs')}</TabsTrigger>
+              <TabsTrigger value="sentences">{t('text.sentences')}</TabsTrigger>
+              <TabsTrigger value="words">{t('text.words')}</TabsTrigger>
             </TabsList>
           </Tabs>
           <Input
@@ -37,20 +39,20 @@ export default function LoremIpsumTool() {
               if (Number.isFinite(value)) setCount(Math.min(Math.max(1, value), max))
             }}
             className="w-20"
-            aria-label="Count"
+            aria-label={t('text.count')}
           />
           <Button size="sm" onClick={() => setOutput(generateLorem(mode, count))}>
-            Generate
+            {t('text.generate')}
           </Button>
         </div>
 
         {output && (
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <span className="text-xs font-medium">Generated text</span>
+              <span className="text-xs font-medium">{t('text.generatedText')}</span>
               <ToolActions value={output} onClear={() => setOutput('')} />
             </div>
-            <TextEditor value={output} readOnly mono={false} ariaLabel="Generated lorem ipsum" minRows={10} />
+            <TextEditor value={output} readOnly mono={false} ariaLabel={t('text.generatedText')} minRows={10} />
           </div>
         )}
       </div>

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { ClipboardPasteIcon, HistoryIcon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import { captureClipboard, readClipboardText } from '@/core/clipboard'
 import { EmptyState } from '@/shared/components/EmptyState'
@@ -10,6 +11,7 @@ import { useTransformTool } from '@/tools/text/_shared'
 import { ClearHistoryButton, HistoryItem } from '../_HistoryItem'
 
 export default function ClipboardHistoryTool() {
+  const { t } = useTranslation()
   const tool = useTransformTool('clipboard.history')
   const { entries, refresh } = useClipboardHistory()
 
@@ -44,13 +46,13 @@ export default function ClipboardHistoryTool() {
     >
       <div className="flex flex-col gap-2">
         <Button size="sm" variant="outline" onClick={() => void addNow()}>
-          <ClipboardPasteIcon /> Add current clipboard
+          <ClipboardPasteIcon /> {t('clipboard.addCurrent')}
         </Button>
         {entries.length === 0 ? (
           <EmptyState
             icon={HistoryIcon}
-            title="No clipboard entries yet"
-            description="Copy text or use the button above. Everything stays on this device."
+            title={t('clipboard.noEntries')}
+            description={t('clipboard.noEntriesDescription')}
           />
         ) : (
           entries.map((entry) => <HistoryItem key={entry.id} entry={entry} onChanged={refresh} />)

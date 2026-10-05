@@ -8,7 +8,7 @@ export default function JavaScriptFormatterTool() {
       format={formatJs}
       minify={minifyJs}
       placeholder="const x={a:1,b:2}"
-      errorMessage="Unable to format this JavaScript."
+      errorMessageKey="errors.formatJavaScript"
     />
   )
 }

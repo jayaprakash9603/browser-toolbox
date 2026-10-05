@@ -1,5 +1,6 @@
 import { MoonIcon, SunIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { updateSettings } from '@/features/settings/settingsService'
 import { Button } from '@/shared/components/ui/button'
@@ -15,7 +16,8 @@ export function ThemeToggle() {
     return () => observer.disconnect()
   }, [])
 
-  const label = `Switch to ${dark ? 'light' : 'dark'} mode`
+  const { t } = useTranslation()
+  const label = dark ? t('theme.switchToLight') : t('theme.switchToDark')
 
   return (
     <Tooltip>

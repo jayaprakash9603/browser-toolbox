@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { clearHistory } from '@/core/clipboard'
 import { clearAll as clearStorage, initStorage } from '@/core/storage'
@@ -20,6 +21,7 @@ import { Switch } from '@/shared/components/ui/switch'
 import { Tabs, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 
 export default function SettingsPage() {
+  const { t } = useTranslation()
   const [settings, setSettings] = useState<Settings | null>(null)
   const [confirm, setConfirm] = useState<'clipboard' | 'recent' | 'reset' | null>(null)
 
@@ -36,52 +38,51 @@ export default function SettingsPage() {
   return (
     <div className="h-full overflow-y-auto p-4">
       <div className="mb-3"><BackButton /></div>
-      <h1 className="mb-1 text-sm font-semibold">Settings</h1>
-      <p className="mb-4 text-xs text-muted-foreground">Preferences are stored locally in Chrome.</p>
+      <h1 className="mb-1 text-sm font-semibold">{t('settings.title')}</h1>
+      <p className="mb-4 text-xs text-muted-foreground">{t('settings.description')}</p>
 
-      <SettingRow label="Theme" description="Light, dark or follow system.">
+      <SettingRow label={t('settings.theme')} description={t('settings.themeDescription')}>
         <Tabs
           value={settings.theme}
           onValueChange={(value) => void update({ theme: value as ThemeMode })}
         >
           <TabsList>
-            <TabsTrigger value="light">Light</TabsTrigger>
-            <TabsTrigger value="dark">Dark</TabsTrigger>
-            <TabsTrigger value="system">System</TabsTrigger>
+            <TabsTrigger value="light">{t('settings.light')}</TabsTrigger>
+            <TabsTrigger value="dark">{t('settings.dark')}</TabsTrigger>
+            <TabsTrigger value="system">{t('settings.system')}</TabsTrigger>
           </TabsList>
         </Tabs>
       </SettingRow>
 
-      <SettingRow label="Density" description="Control spacing in the panel.">
+      <SettingRow label={t('settings.density')} description={t('settings.densityDescription')}>
         <Tabs
           value={settings.density}
           onValueChange={(value) => void update({ density: value as Density })}
         >
           <TabsList>
-            <TabsTrigger value="compact">Compact</TabsTrigger>
-            <TabsTrigger value="comfortable">Comfortable</TabsTrigger>
+            <TabsTrigger value="compact">{t('settings.compact')}</TabsTrigger>
+            <TabsTrigger value="comfortable">{t('settings.comfortable')}</TabsTrigger>
           </TabsList>
         </Tabs>
       </SettingRow>
 
       <Separator className="my-4" />
       <h2 className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-        Clipboard
+        {t('settings.clipboard')}
       </h2>
       <p className="mb-3 rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-[11px] text-amber-700 dark:text-amber-400">
-        Clipboard history can contain sensitive information. All data stays on this device and is
-        never sent anywhere.
+        {t('settings.clipboardPrivacy')}
       </p>
 
-      <SettingRow label="Clipboard history" description="Record text copied while the panel is open.">
+      <SettingRow label={t('settings.clipboardHistory')} description={t('settings.clipboardHistoryDescription')}>
         <Switch
           checked={settings.clipboardHistoryEnabled}
           onCheckedChange={(checked) => void update({ clipboardHistoryEnabled: checked })}
-          aria-label="Enable clipboard history"
+          aria-label={t('settings.enableClipboardHistory')}
         />
       </SettingRow>
 
-      <SettingRow label="History size" description="Maximum stored entries (pinned items are kept).">
+      <SettingRow label={t('settings.historySize')} description={t('settings.historySizeDescription')}>
         <Input
           type="number"
           min={10}
@@ -94,51 +95,51 @@ export default function SettingsPage() {
             }
           }}
           className="w-20"
-          aria-label="Clipboard history size"
+          aria-label={t('settings.clipboardHistorySize')}
         />
       </SettingRow>
 
       <Separator className="my-4" />
       <h2 className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-        Data
+        {t('settings.data')}
       </h2>
 
       <div className="flex flex-col gap-2">
         <Button variant="outline" size="sm" onClick={() => setConfirm('clipboard')}>
-          Clear clipboard history
+          {t('settings.clearClipboardHistory')}
         </Button>
         <Button variant="outline" size="sm" onClick={() => setConfirm('recent')}>
-          Clear recent tools
+          {t('settings.clearRecentTools')}
         </Button>
         <Button variant="destructive" size="sm" onClick={() => setConfirm('reset')}>
-          Reset all extension data
+          {t('settings.resetAll')}
         </Button>
       </div>
 
       <ConfirmDialog
         open={confirm === 'clipboard'}
         onOpenChange={(open) => !open && setConfirm(null)}
-        title="Clear clipboard history?"
-        description="This permanently deletes all stored clipboard entries, including pinned ones."
-        confirmLabel="Clear history"
+        title={t('settings.clearHistoryTitle')}
+        description={t('settings.clearHistoryDescription')}
+        confirmLabel={t('settings.clearHistoryConfirm')}
         destructive
         onConfirm={() => void clearHistory(true)}
       />
       <ConfirmDialog
         open={confirm === 'recent'}
         onOpenChange={(open) => !open && setConfirm(null)}
-        title="Clear recent tools?"
-        description="Your recently used tools list will be emptied."
-        confirmLabel="Clear"
+        title={t('settings.clearRecentTitle')}
+        description={t('settings.clearRecentDescription')}
+        confirmLabel={t('common.clear')}
         destructive
         onConfirm={() => void clearRecentTools()}
       />
       <ConfirmDialog
         open={confirm === 'reset'}
         onOpenChange={(open) => !open && setConfirm(null)}
-        title="Reset everything?"
-        description="Settings, favorites, recents and clipboard history will all be deleted."
-        confirmLabel="Reset"
+        title={t('settings.resetTitle')}
+        description={t('settings.resetDescription')}
+        confirmLabel={t('settings.resetConfirm')}
         destructive
         onConfirm={() => {
           void clearStorage()

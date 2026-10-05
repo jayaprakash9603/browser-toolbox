@@ -10,7 +10,7 @@ async function rebuildContextMenus() {
   await chrome.contextMenus.removeAll()
   chrome.contextMenus.create({
     id: 'toolbox.open',
-    title: 'Open Browser Toolbox',
+    title: chrome.i18n.getMessage('contextMenuOpen') || 'Open Browser Toolbox',
     contexts: ['all'],
   })
   getContextMenuActions().forEach((action) => {

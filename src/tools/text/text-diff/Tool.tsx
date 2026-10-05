@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ArrowLeftRightIcon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
@@ -9,6 +10,7 @@ import { useTransformTool } from '../_shared'
 import { compareText, type DiffResult } from './logic'
 
 export default function TextDiffTool() {
+  const { t } = useTranslation()
   const tool = useTransformTool('text.diff')
   const [inputA, setInputA] = useState('')
   const [inputB, setInputB] = useState('')
@@ -31,24 +33,24 @@ export default function TextDiffTool() {
       <div className="flex flex-col gap-3">
         <div className="grid grid-cols-1 gap-2 @[460px]:grid-cols-2">
           <div>
-            <p className="mb-1 text-xs font-medium">Input A</p>
-            <TextEditor value={inputA} onChange={setInputA} ariaLabel="Input A" minRows={5} />
+            <p className="mb-1 text-xs font-medium">{t('text.inputA')}</p>
+            <TextEditor value={inputA} onChange={setInputA} ariaLabel={t('text.inputA')} minRows={5} />
           </div>
           <div>
-            <p className="mb-1 text-xs font-medium">Input B</p>
-            <TextEditor value={inputB} onChange={setInputB} ariaLabel="Input B" minRows={5} />
+            <p className="mb-1 text-xs font-medium">{t('text.inputB')}</p>
+            <TextEditor value={inputB} onChange={setInputB} ariaLabel={t('text.inputB')} minRows={5} />
           </div>
         </div>
 
         <div className="flex gap-1.5">
           <Button size="sm" onClick={compare} disabled={!inputA && !inputB}>
-            Compare
+            {t('text.compare')}
           </Button>
           <Button size="sm" variant="outline" onClick={swap}>
-            <ArrowLeftRightIcon /> Swap
+            <ArrowLeftRightIcon /> {t('text.swap')}
           </Button>
           <Button size="sm" variant="ghost" onClick={clear}>
-            Clear
+            {t('common.clear')}
           </Button>
         </div>
 
@@ -57,11 +59,11 @@ export default function TextDiffTool() {
             <div className="mb-1.5 flex items-center gap-1.5">
               <Badge variant="secondary">+{result.added}</Badge>
               <Badge variant="secondary">-{result.removed}</Badge>
-              <Badge variant="outline">{result.unchanged} unchanged</Badge>
+              <Badge variant="outline">{t('text.unchanged', { count: result.unchanged })}</Badge>
             </div>
             <div
               className="max-h-72 overflow-y-auto rounded-md border font-mono text-[11px] leading-relaxed"
-              aria-label="Diff result"
+              aria-label={t('text.diffResult')}
             >
               {result.changes.map((change, index) => (
                 <pre

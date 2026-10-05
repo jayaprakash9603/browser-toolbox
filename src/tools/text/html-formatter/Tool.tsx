@@ -8,7 +8,7 @@ export default function HtmlFormatterTool() {
       format={formatHtml}
       minify={minifyHtml}
       placeholder="<!doctype html><html>…"
-      errorMessage="Unable to format this HTML."
+      errorMessageKey="errors.formatHtml"
     />
   )
 }

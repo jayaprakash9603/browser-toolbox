@@ -1,0 +1,17 @@
+{
+  "extName": {
+    "message": "Browser Toolbox"
+  },
+  "extDescription": {
+    "message": "All-in-one productivity toolbox: clipboard, text, developer, QA and web utilities in one side panel."
+  },
+  "actionTitle": {
+    "message": "Open Browser Toolbox"
+  },
+  "commandPaletteDescription": {
+    "message": "Open the toolbox command palette"
+  },
+  "contextMenuOpen": {
+    "message": "Open Browser Toolbox"
+  }
+}

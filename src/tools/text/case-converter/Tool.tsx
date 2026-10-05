@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
@@ -8,6 +9,7 @@ import { StatsBar, useTransformTool } from '../_shared'
 import { CASE_STYLES, convertCase, type CaseStyle } from './logic'
 
 export default function CaseConverterTool() {
+  const { t } = useTranslation()
   const tool = useTransformTool('text.case-converter')
   const [input, setInput] = useState('')
   const [result, setResult] = useState<{ style: CaseStyle; text: string } | null>(null)
@@ -22,7 +24,7 @@ export default function CaseConverterTool() {
             value={input}
             onChange={setInput}
             placeholder="hello world example"
-            ariaLabel="Text to convert"
+            ariaLabel={t('text.convertInput')}
             minRows={4}
           />
           <StatsBar value={input} />
@@ -36,7 +38,7 @@ export default function CaseConverterTool() {
               onClick={() => convert(style.id)}
               disabled={!input.trim()}
             >
-              {style.label}
+              {t(`case.${style.id}`, { defaultValue: style.label })}
             </Button>
           ))}
         </div>
@@ -44,11 +46,11 @@ export default function CaseConverterTool() {
           <div>
             <div className="mb-1 flex items-center justify-between">
               <span className="text-xs font-medium">
-                {CASE_STYLES.find((s) => s.id === result.style)?.label}
+                {t(`case.${result.style}`, { defaultValue: CASE_STYLES.find((style) => style.id === result.style)?.label })}
               </span>
               <CopyButton text={result.text} size="xs" />
             </div>
-            <TextEditor value={result.text} readOnly ariaLabel="Converted text" minRows={3} />
+            <TextEditor value={result.text} readOnly ariaLabel={t('text.converted')} minRows={3} />
           </div>
         )}
       </div>

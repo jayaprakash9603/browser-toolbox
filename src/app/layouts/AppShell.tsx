@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   CommandIcon,
   HomeIcon,
@@ -24,14 +25,16 @@ const SettingsPage = lazy(() => import('@/app/pages/SettingsPage'))
 const CategoryPage = lazy(() => import('@/app/pages/CategoryPage'))
 
 function PageLoading() {
+  const { t } = useTranslation()
   return (
     <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-      Loading…
+      {t('nav.loading')}
     </div>
   )
 }
 
 export function AppShell({ children }: { children?: ReactNode }) {
+  const { t } = useTranslation()
   const { path } = useRouter()
   const [paletteOpen, setPaletteOpen] = useState(false)
 
@@ -66,7 +69,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
           <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <CommandIcon className="size-3.5" />
           </div>
-          <span className="text-sm font-semibold">Toolbox</span>
+          <span className="text-sm font-semibold">{t('app.name')}</span>
         </Link>
         <div className="flex-1" />
         <Tooltip>
@@ -76,47 +79,51 @@ export function AppShell({ children }: { children?: ReactNode }) {
               size="sm"
               className="gap-2 text-muted-foreground"
               onClick={() => setPaletteOpen(true)}
-              aria-label="Open command palette"
+              aria-label={t('nav.openCommandPalette')}
             >
               <SearchIcon className="size-3.5" />
-              <span className="hidden text-xs @[420px]:inline">Search tools…</span>
+              <span className="hidden text-xs @[420px]:inline">{t('nav.searchTools')}</span>
               <kbd className="rounded border bg-muted px-1 text-[9px] font-medium">⌘K</kbd>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Command palette</TooltipContent>
+          <TooltipContent>{t('nav.commandPalette')}</TooltipContent>
         </Tooltip>
         <ThemeToggle />
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button asChild variant="ghost" size="icon" aria-label="Settings">
+            <Button asChild variant="ghost" size="icon" aria-label={t('nav.settings')}>
               <Link to="/settings"><SettingsIcon /></Link>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Settings</TooltipContent>
+          <TooltipContent>{t('nav.settings')}</TooltipContent>
         </Tooltip>
       </header>
 
       <div className="flex min-h-0 flex-1">
         <nav
-          aria-label="Categories"
+          aria-label={t('nav.categories')}
           className="hidden w-12 flex-col items-center gap-1 border-r py-2 @[420px]:flex"
         >
-          <NavItem to="/" icon={HomeIcon} label="Home" active={path === '/'} />
-          <NavItem to="/favorites" icon={StarIcon} label="Favorites" active={path === '/favorites'} />
-          <NavItem to="/recent" icon={ClockIcon} label="Recent" active={path === '/recent'} />
+          <NavItem to="/" icon={HomeIcon} label={t('nav.home')} active={path === '/'} />
+          <NavItem to="/favorites" icon={StarIcon} label={t('nav.favorites')} active={path === '/favorites'} />
+          <NavItem to="/recent" icon={ClockIcon} label={t('nav.recent')} active={path === '/recent'} />
           <Separator className="my-1 w-6" />
           {categories.map((category) => (
             <NavItem
               key={category.id}
               to={category.enabled ? `/categories/${category.id}` : '#'}
               icon={category.icon}
-              label={category.enabled ? category.name : `${category.name} (coming soon)`}
+              label={category.enabled
+                ? t(`categories.${category.id}.name`, { defaultValue: category.name })
+                : t('nav.comingSoon', {
+                    name: t(`categories.${category.id}.name`, { defaultValue: category.name }),
+                  })}
               active={path === `/categories/${category.id}`}
               disabled={!category.enabled}
             />
           ))}
           <div className="flex-1" />
-          <NavItem to="/settings" icon={SettingsIcon} label="Settings" active={path === '/settings'} />
+          <NavItem to="/settings" icon={SettingsIcon} label={t('nav.settings')} active={path === '/settings'} />
         </nav>
 
         <main className="@container min-w-0 flex-1 overflow-hidden">

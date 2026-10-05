@@ -1,4 +1,5 @@
 import { PinIcon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import { EmptyState } from '@/shared/components/EmptyState'
 import { ToolPage } from '@/shared/components/ToolPage'
@@ -7,6 +8,7 @@ import { useTransformTool } from '@/tools/text/_shared'
 import { HistoryItem } from '../_HistoryItem'
 
 export default function ClipboardPinnedTool() {
+  const { t } = useTranslation()
   const tool = useTransformTool('clipboard.pinned')
   const { entries, refresh } = useClipboardHistory()
   const pinned = entries.filter((entry) => entry.pinned)
@@ -16,8 +18,8 @@ export default function ClipboardPinnedTool() {
       {pinned.length === 0 ? (
         <EmptyState
           icon={PinIcon}
-          title="No pinned items"
-          description="Pin clipboard entries from Clipboard History to keep them here."
+          title={t('clipboard.noPinned')}
+          description={t('clipboard.noPinnedDescription')}
         />
       ) : (
         <div className="flex flex-col gap-2">

@@ -49,6 +49,12 @@ A tiny hash router (`#/tools/text/word-counter`) maps routes to tools via the re
 
 shadcn/ui CSS variables (`src/styles/globals.css`) with light/dark palettes; `ThemeApplicator` applies light/dark/system based on the settings service. No hardcoded colors in components.
 
+## Localization
+
+React UI strings live in `src/i18n/locales/<language>.ts` and are resolved with i18next. The English catalog is the current supported and fallback locale. Tool and category names use stable registry IDs as translation keys, so routes and storage IDs do not change with the selected language. Chrome-owned strings (extension name, action title, command description and context menu) live in `public/_locales/<language>/messages.json` and are referenced with Chrome `__MSG_...__` messages.
+
+When adding a locale, provide the same translation keys in a new React catalog, register it in `src/i18n/index.ts`, add a matching Chrome messages file, and add the locale to `supportedLngs`.
+
 ## Performance
 
 - Tools are lazy chunks; nothing tool-specific loads at startup.

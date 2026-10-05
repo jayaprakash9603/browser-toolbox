@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
@@ -9,6 +10,7 @@ import { StatsBar, ToolActions, useTransformTool } from '../_shared'
 import { countMatches, replaceText } from './logic'
 
 export default function FindReplaceTool() {
+  const { t } = useTranslation()
   const tool = useTransformTool('text.find-replace')
   const [input, setInput] = useState('')
   const [find, setFind] = useState('')
@@ -25,9 +27,9 @@ export default function FindReplaceTool() {
   }
 
   const optionDefs = [
-    { key: 'caseSensitive', label: 'Case-sensitive' },
-    { key: 'wholeWord', label: 'Whole word' },
-    { key: 'regex', label: 'Regex' },
+    { key: 'caseSensitive', labelKey: 'text.caseSensitive' },
+    { key: 'wholeWord', labelKey: 'text.wholeWord' },
+    { key: 'regex', labelKey: 'text.regex' },
   ] as const
 
   return (
@@ -40,8 +42,8 @@ export default function FindReplaceTool() {
               setInput(value)
               setApplied(null)
             }}
-            placeholder="Text to search in…"
-            ariaLabel="Text"
+            placeholder={t('text.textToSearch')}
+            ariaLabel={t('text.input')}
           />
           <StatsBar value={input} />
         </div>
@@ -53,37 +55,37 @@ export default function FindReplaceTool() {
               setFind(event.target.value)
               setApplied(null)
             }}
-            placeholder={options.regex ? 'Find (regex)…' : 'Find…'}
-            aria-label="Find"
+            placeholder={options.regex ? t('text.findRegex') : t('text.findPlaceholder')}
+            aria-label={t('text.find')}
           />
           <Input
             value={replace}
             onChange={(event) => setReplace(event.target.value)}
-            placeholder="Replace with…"
-            aria-label="Replace with"
+            placeholder={t('text.replaceWith')}
+            aria-label={t('text.replaceWithLabel')}
           />
         </div>
 
         <div className="flex flex-wrap gap-4">
-          {optionDefs.map(({ key, label }) => (
+          {optionDefs.map(({ key, labelKey }) => (
             <label key={key} className="flex items-center gap-2 text-xs">
               <Switch
                 checked={options[key]}
                 onCheckedChange={(checked) => setOptions((prev) => ({ ...prev, [key]: checked }))}
-                aria-label={label}
+                aria-label={t(labelKey)}
               />
-              {label}
+              {t(labelKey)}
             </label>
           ))}
         </div>
 
         <div className="flex items-center gap-2">
           <Button size="sm" onClick={apply} disabled={!find || matchCount === 0}>
-            Replace all
+            {t('text.replaceAll')}
           </Button>
           <span className="text-xs text-muted-foreground" aria-live="polite">
-            {find ? `${matchCount} match${matchCount === 1 ? '' : 'es'}` : 'Enter text to find'}
-            {applied !== null && ` · replaced ${applied}`}
+            {find ? t('text.matches', { count: matchCount }) : t('text.enterTextToFind')}
+            {applied !== null && ` · ${t('text.replaced', { count: applied })}`}
           </span>
         </div>
 

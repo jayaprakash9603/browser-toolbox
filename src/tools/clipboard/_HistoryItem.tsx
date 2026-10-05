@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ClipboardPasteIcon, PinIcon, PinOffIcon, Trash2Icon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import {
   clearHistory,
@@ -22,6 +23,7 @@ interface HistoryItemProps {
 }
 
 export function HistoryItem({ entry, onChanged }: HistoryItemProps) {
+  const { t } = useTranslation()
   const copy = async () => {
     await writeClipboardText(entry.text)
   }
@@ -32,23 +34,23 @@ export function HistoryItem({ entry, onChanged }: HistoryItemProps) {
       <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
         <span>{timeLabel(entry.createdAt)}</span>
         <span>·</span>
-        <span>{entry.charCount} chars</span>
+        <span>{t('common.chars', { count: entry.charCount })}</span>
         <span>·</span>
-        <span>{entry.wordCount} words</span>
+        <span>{t('common.words', { count: entry.wordCount })}</span>
         {entry.pinned && <PinIcon className="size-3 fill-amber-400 text-amber-400" />}
         <div className="flex-1" />
         <div className="flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-          <ItemButton label="Copy again" onClick={() => void copy()}>
+          <ItemButton label={t('common.copyAgain')} onClick={() => void copy()}>
             <ClipboardPasteIcon />
           </ItemButton>
           <ItemButton
-            label={entry.pinned ? 'Unpin' : 'Pin'}
+            label={entry.pinned ? t('common.unpin') : t('common.pin')}
             onClick={() => void pinEntry(entry.id, !entry.pinned).then(onChanged)}
           >
             {entry.pinned ? <PinOffIcon /> : <PinIcon />}
           </ItemButton>
           <ItemButton
-            label="Delete"
+            label={t('common.delete')}
             onClick={() => void deleteEntry(entry.id).then(onChanged)}
           >
             <Trash2Icon />
@@ -82,17 +84,18 @@ function ItemButton({
 
 export function ClearHistoryButton({ onChanged }: { onChanged: () => void }) {
   const [open, setOpen] = useState(false)
+  const { t } = useTranslation()
   return (
     <>
       <Button variant="ghost" size="xs" onClick={() => setOpen(true)}>
-        Clear all
+        {t('common.clearAll')}
       </Button>
       <ConfirmDialog
         open={open}
         onOpenChange={setOpen}
-        title="Clear clipboard history?"
-        description="Pinned items are kept. Delete them individually to remove them."
-        confirmLabel="Clear"
+        title={t('clipboard.clearTitle')}
+        description={t('clipboard.clearDescription')}
+        confirmLabel={t('common.clear')}
         destructive
         onConfirm={() => void clearHistory(false).then(onChanged)}
       />

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
@@ -8,6 +9,7 @@ import { StatsBar, ToolActions, useTransformTool } from '../_shared'
 import { removeDuplicateLines, type DedupeResult } from './logic'
 
 export default function DuplicateLineRemoverTool() {
+  const { t } = useTranslation()
   const tool = useTransformTool('text.duplicate-line-remover')
   const [input, setInput] = useState('')
   const [caseSensitive, setCaseSensitive] = useState(false)
@@ -24,7 +26,7 @@ export default function DuplicateLineRemoverTool() {
             value={input}
             onChange={setInput}
             placeholder={'apple\nbanana\napple\norange'}
-            ariaLabel="Input lines"
+            ariaLabel={t('text.linesInput')}
             onKeyCommand={run}
           />
           <StatsBar value={input} />
@@ -32,29 +34,29 @@ export default function DuplicateLineRemoverTool() {
 
         <div className="flex gap-4">
           <label className="flex items-center gap-2 text-xs">
-            <Switch checked={caseSensitive} onCheckedChange={setCaseSensitive} aria-label="Case sensitive" />
-            Case-sensitive
+            <Switch checked={caseSensitive} onCheckedChange={setCaseSensitive} aria-label={t('text.caseSensitiveLabel')} />
+            {t('text.caseSensitive')}
           </label>
           <label className="flex items-center gap-2 text-xs">
-            <Switch checked={trimFirst} onCheckedChange={setTrimFirst} aria-label="Trim before comparison" />
-            Trim before comparing
+            <Switch checked={trimFirst} onCheckedChange={setTrimFirst} aria-label={t('text.trimBeforeComparisonLabel')} />
+            {t('text.trimBeforeCompare')}
           </label>
         </div>
 
         <Button size="sm" onClick={run} disabled={!input}>
-          Remove duplicates
+          {t('text.removeDuplicates')}
         </Button>
 
         {result && (
           <div>
             <div className="mb-1 flex items-center justify-between">
               <span className="text-xs font-medium">
-                Output{' '}
-                <span className="text-muted-foreground">({result.removedCount} removed)</span>
+                {t('text.output')}{' '}
+                <span className="text-muted-foreground">{t('text.removedCount', { count: result.removedCount })}</span>
               </span>
               <ToolActions value={result.output} onClear={() => setResult(null)} />
             </div>
-            <TextEditor value={result.output} readOnly ariaLabel="Deduplicated lines" />
+            <TextEditor value={result.output} readOnly ariaLabel={t('text.deduplicated')} />
           </div>
         )}
       </div>

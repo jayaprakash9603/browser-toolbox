@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
@@ -11,14 +12,15 @@ import {
   type WhitespaceOptions,
 } from './logic'
 
-const OPTION_LABELS: { key: keyof WhitespaceOptions; label: string }[] = [
-  { key: 'trimLines', label: 'Trim every line' },
-  { key: 'collapseSpaces', label: 'Collapse multiple spaces' },
-  { key: 'normalizeLineBreaks', label: 'Normalize line breaks' },
-  { key: 'removeBlankLines', label: 'Remove blank lines' },
+const OPTION_LABELS: { key: keyof WhitespaceOptions; labelKey: string }[] = [
+  { key: 'trimLines', labelKey: 'text.trimEveryLine' },
+  { key: 'collapseSpaces', labelKey: 'text.collapseMultipleSpaces' },
+  { key: 'normalizeLineBreaks', labelKey: 'text.normalizeLineBreaks' },
+  { key: 'removeBlankLines', labelKey: 'text.removeBlankLines' },
 ]
 
 export default function WhitespaceCleanerTool() {
+  const { t } = useTranslation()
   const tool = useTransformTool('text.whitespace-cleaner')
   const [input, setInput] = useState('')
   const [output, setOutput] = useState('')
@@ -33,39 +35,39 @@ export default function WhitespaceCleanerTool() {
           <TextEditor
             value={input}
             onChange={setInput}
-            placeholder="Paste text with messy whitespace…"
-            ariaLabel="Input text"
+            placeholder={t('text.pasteMessyWhitespace')}
+            ariaLabel={t('text.input')}
             onKeyCommand={clean}
           />
           <StatsBar value={input} />
         </div>
 
         <div className="grid grid-cols-1 gap-2 @[380px]:grid-cols-2">
-          {OPTION_LABELS.map(({ key, label }) => (
+          {OPTION_LABELS.map(({ key, labelKey }) => (
             <label key={key} className="flex items-center justify-between gap-2 text-xs">
-              {label}
+              {t(labelKey)}
               <Switch
                 checked={options[key]}
                 onCheckedChange={(checked) =>
                   setOptions((prev) => ({ ...prev, [key]: checked }))
                 }
-                aria-label={label}
+                aria-label={t(labelKey)}
               />
             </label>
           ))}
         </div>
 
         <Button size="sm" onClick={clean} disabled={!input}>
-          Clean text
+          {t('text.clean')}
         </Button>
 
         {output !== '' && (
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <span className="text-xs font-medium">Output</span>
+              <span className="text-xs font-medium">{t('text.output')}</span>
               <ToolActions value={output} onClear={() => setOutput('')} />
             </div>
-            <TextEditor value={output} readOnly ariaLabel="Cleaned text" />
+            <TextEditor value={output} readOnly ariaLabel={t('text.cleaned')} />
           </div>
         )}
       </div>

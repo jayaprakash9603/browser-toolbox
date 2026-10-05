@@ -1,8 +1,10 @@
 import { ToolPage } from '@/shared/components/ToolPage'
+import { useTranslation } from 'react-i18next'
 import { TextEditor } from '@/shared/components/TextEditor'
 import { StatsBar, ToolActions, useInputOutput, useTransformTool } from '../_shared'
 
 export default function TextFormatterTool() {
+  const { t } = useTranslation()
   const tool = useTransformTool('text.formatter')
   const { input, setInput, output, setOutput } = useInputOutput()
 
@@ -15,38 +17,38 @@ export default function TextFormatterTool() {
           <TextEditor
             value={input}
             onChange={setInput}
-            placeholder="Paste or type text…"
-            ariaLabel="Input text"
+            placeholder={t('text.pasteOrType')}
+            ariaLabel={t('text.input')}
             onKeyCommand={() => run((v) => v.trim())}
           />
           <StatsBar value={input} />
         </div>
 
         <div className="flex flex-wrap gap-1.5">
-          <ActionButton onClick={() => run((v) => v.trim())}>Trim</ActionButton>
+          <ActionButton onClick={() => run((v) => v.trim())}>{t('text.trim')}</ActionButton>
           <ActionButton onClick={() => run((v) => v.replace(/\s{2,}/g, ' '))}>
-            Collapse spaces
+            {t('text.collapseSpaces')}
           </ActionButton>
           <ActionButton onClick={() => run((v) => v.replace(/\r\n?/g, '\n'))}>
-            Normalize breaks
+            {t('text.normalizeBreaks')}
           </ActionButton>
           <ActionButton
             onClick={() => run((v) => v.split('\n').filter((l) => l.trim()).join('\n'))}
           >
-            Remove blank lines
+            {t('text.removeBlankLines')}
           </ActionButton>
           <ActionButton onClick={() => run((v) => v.split('\n').map((l) => l.trim()).join('\n'))}>
-            Trim every line
+            {t('text.trimEveryLine')}
           </ActionButton>
         </div>
 
         {output && (
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <span className="text-xs font-medium">Output</span>
+              <span className="text-xs font-medium">{t('text.output')}</span>
               <ToolActions value={output} onClear={() => setOutput('')} />
             </div>
-            <TextEditor value={output} readOnly ariaLabel="Output text" />
+            <TextEditor value={output} readOnly ariaLabel={t('text.output')} />
           </div>
         )}
 

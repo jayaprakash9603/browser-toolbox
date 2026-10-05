@@ -2,17 +2,17 @@ import { defineManifest } from '@crxjs/vite-plugin'
 
 export default defineManifest({
   manifest_version: 3,
-  name: 'Browser Toolbox',
+  default_locale: 'en',
+  name: '__MSG_extName__',
   version: '0.1.0',
-  description:
-    'All-in-one productivity toolbox: clipboard, text, developer, QA and web utilities in one side panel.',
+  description: '__MSG_extDescription__',
   icons: {
     16: 'public/icons/icon16.png',
     48: 'public/icons/icon48.png',
     128: 'public/icons/icon128.png',
   },
   action: {
-    default_title: 'Open Browser Toolbox',
+    default_title: '__MSG_actionTitle__',
   },
   side_panel: {
     default_path: 'index.html',
@@ -26,7 +26,7 @@ export default defineManifest({
   commands: {
     'open-command-palette': {
       suggested_key: { default: 'Ctrl+Shift+Space', mac: 'Command+Shift+Space' },
-      description: 'Open the toolbox command palette',
+      description: '__MSG_commandPaletteDescription__',
     },
   },
 })

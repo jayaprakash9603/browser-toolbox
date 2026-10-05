@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { HistoryIcon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import { captureClipboard } from '@/core/clipboard'
 import { EmptyState } from '@/shared/components/EmptyState'
@@ -12,6 +13,7 @@ import { ClearHistoryButton, HistoryItem } from '../_HistoryItem'
 import { useEffect } from 'react'
 
 export default function ClipboardManagerTool() {
+  const { t } = useTranslation()
   const tool = useTransformTool('clipboard.manager')
   const { entries, refresh } = useClipboardHistory()
   const [query, setQuery] = useState('')
@@ -34,21 +36,21 @@ export default function ClipboardManagerTool() {
   return (
     <ToolPage tool={tool} actions={<ClearHistoryButton onChanged={refresh} />}>
       <div className="flex flex-col gap-2">
-        <SearchInput value={query} onChange={setQuery} placeholder="Search clipboard…" ariaLabel="Search clipboard" />
+        <SearchInput value={query} onChange={setQuery} placeholder={t('clipboard.search')} ariaLabel={t('clipboard.searchLabel')} />
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="text">Text</TabsTrigger>
-            <TabsTrigger value="pinned">Pinned</TabsTrigger>
+            <TabsTrigger value="all">{t('clipboard.all')}</TabsTrigger>
+            <TabsTrigger value="text">{t('clipboard.text')}</TabsTrigger>
+            <TabsTrigger value="pinned">{t('clipboard.pinned')}</TabsTrigger>
           </TabsList>
         </Tabs>
         {filtered.length === 0 ? (
           <EmptyState
             icon={HistoryIcon}
-            title={entries.length === 0 ? 'Clipboard is empty' : 'No matches'}
+            title={entries.length === 0 ? t('clipboard.empty') : t('common.noMatches')}
             description={
               entries.length === 0
-                ? 'Copied text appears here while the panel is open. Data never leaves this device.'
+                ? t('clipboard.emptyDescription')
                 : undefined
             }
           />

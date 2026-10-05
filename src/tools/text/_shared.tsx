@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { EraserIcon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import { toolRegistry } from '@/core/registry'
 import { addClipboardEntry } from '@/core/clipboard'
@@ -22,12 +23,13 @@ export function ToolActions({
   onClear: () => void
   extra?: React.ReactNode
 }) {
+  const { t } = useTranslation()
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {extra}
       <CopyButton text={value} size="xs" />
       <Button variant="ghost" size="xs" onClick={onClear} disabled={!value}>
-        <EraserIcon /> Clear
+        <EraserIcon /> {t('text.clear')}
       </Button>
       <Button
         variant="ghost"
@@ -35,7 +37,7 @@ export function ToolActions({
         disabled={!value.trim()}
         onClick={() => void addClipboardEntry(value)}
       >
-        Save to history
+        {t('text.saveHistory')}
       </Button>
     </div>
   )
@@ -43,9 +45,10 @@ export function ToolActions({
 
 export function StatsBar({ value }: { value: string }) {
   const stats = useTextStats(value)
+  const { t } = useTranslation()
   return (
     <p className="text-[10px] text-muted-foreground" aria-live="polite">
-      {stats.chars} chars · {stats.words} words · {stats.lines} lines
+      {t('common.chars', { count: stats.chars })} · {t('common.words', { count: stats.words })} · {t('common.lines', { count: stats.lines })}
     </p>
   )
 }

@@ -5,11 +5,12 @@ export function filterTools(
   query: string,
   favorites: string[],
   recentIds: string[],
+  localizedLabels: (tool: ToolDefinition) => string[] = (tool) => [tool.name, tool.description],
 ): { favorites: ToolDefinition[]; recent: ToolDefinition[]; results: ToolDefinition[] } {
   const q = query.trim().toLowerCase()
   const results = q
     ? tools.filter((tool) => {
-        const haystack = [tool.name, tool.description, tool.category, ...tool.keywords]
+        const haystack = [...localizedLabels(tool), tool.category, ...tool.keywords]
           .join(' ')
           .toLowerCase()
         return q.split(/\s+/).every((token) => haystack.includes(token))

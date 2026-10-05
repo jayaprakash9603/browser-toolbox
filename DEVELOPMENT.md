@@ -38,6 +38,15 @@ That's it — home, search, command palette, favorites, recents and routing pick
 1. Add the category to `src/core/registry/categories.ts` (set `enabled: true` when it ships).
 2. Create `src/modules/<category>/registry.ts` and register it in `src/modules/index.ts`.
 
+## Add a language
+
+1. Add a translation catalog at `src/i18n/locales/<language>.ts` with the same keys as `en.ts`.
+2. Register that catalog and language code in `src/i18n/index.ts`; keep English as the fallback.
+3. Add `public/_locales/<language>/messages.json` with the Chrome message names used by `manifest.config.ts` and the background service worker.
+4. Add the locale to `supportedLngs` and test translated labels and plural forms.
+
+Use `useTranslation()` for interface copy. Keep tool IDs, routes, storage values and logic independent of translated labels. User-provided text and code examples should remain untouched.
+
 ## Rules
 
 - Chrome APIs only inside `core/` or `chrome/` services — never in components.

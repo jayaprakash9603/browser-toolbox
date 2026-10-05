@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import type { ToolDefinition } from '@/core/registry'
 import { BackButton } from '@/shared/components/BackButton'
@@ -12,7 +13,10 @@ interface ToolPageProps {
 }
 
 export function ToolPage({ tool, children, actions }: ToolPageProps) {
+  const { t } = useTranslation()
   const Icon = tool.icon
+  const name = t(`tools.${tool.id}.name`, { defaultValue: tool.name })
+  const description = t(`tools.${tool.id}.description`, { defaultValue: tool.description })
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-start gap-2.5 px-4 pt-3 pb-2">
@@ -21,8 +25,8 @@ export function ToolPage({ tool, children, actions }: ToolPageProps) {
           <Icon className="size-4" />
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-sm font-semibold">{tool.name}</h1>
-          <p className="text-xs text-muted-foreground">{tool.description}</p>
+          <h1 className="truncate text-sm font-semibold">{name}</h1>
+          <p className="text-xs text-muted-foreground">{description}</p>
         </div>
         <div className="flex items-center gap-1">
           {actions}
