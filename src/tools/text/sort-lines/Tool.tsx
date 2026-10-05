@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
+import { Button } from '@/shared/components/ui/button'
 import { Switch } from '@/shared/components/ui/switch'
 import { StatsBar, ToolActions, useTransformTool } from '../_shared'
 import { SORT_MODES, sortLines, type SortMode } from './logic'
@@ -36,16 +37,19 @@ export default function SortLinesTool() {
 
         <div className="grid grid-cols-2 gap-1.5 @[380px]:grid-cols-3">
           {SORT_MODES.map((mode) => (
-            <button
+            <Button
               key={mode.id}
+              type="button"
+              size="sm"
+              variant={result?.mode === mode.id ? 'secondary' : 'outline'}
+              aria-pressed={result?.mode === mode.id}
               onClick={() => run(mode.id)}
               disabled={!input}
-              className="h-7 cursor-pointer rounded-md border px-2 text-xs font-medium transition-colors hover:bg-accent disabled:opacity-50"
             >
               {t(`sort.${mode.id.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())}`, {
                 defaultValue: mode.label,
               })}
-            </button>
+            </Button>
           ))}
         </div>
 

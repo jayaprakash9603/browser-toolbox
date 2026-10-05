@@ -1,6 +1,7 @@
 import { ToolPage } from '@/shared/components/ToolPage'
 import { useTranslation } from 'react-i18next'
 import { TextEditor } from '@/shared/components/TextEditor'
+import { Button } from '@/shared/components/ui/button'
 import { StatsBar, ToolActions, useInputOutput, useTransformTool } from '../_shared'
 
 export default function TextFormatterTool() {
@@ -25,21 +26,29 @@ export default function TextFormatterTool() {
         </div>
 
         <div className="flex flex-wrap gap-1.5">
-          <ActionButton onClick={() => run((v) => v.trim())}>{t('text.trim')}</ActionButton>
-          <ActionButton onClick={() => run((v) => v.replace(/\s{2,}/g, ' '))}>
+          <Button variant="outline" size="sm" onClick={() => run((v) => v.trim())}>
+            {t('text.trim')}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => run((v) => v.replace(/\s{2,}/g, ' '))}>
             {t('text.collapseSpaces')}
-          </ActionButton>
-          <ActionButton onClick={() => run((v) => v.replace(/\r\n?/g, '\n'))}>
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => run((v) => v.replace(/\r\n?/g, '\n'))}>
             {t('text.normalizeBreaks')}
-          </ActionButton>
-          <ActionButton
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => run((v) => v.split('\n').filter((l) => l.trim()).join('\n'))}
           >
             {t('text.removeBlankLines')}
-          </ActionButton>
-          <ActionButton onClick={() => run((v) => v.split('\n').map((l) => l.trim()).join('\n'))}>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => run((v) => v.split('\n').map((l) => l.trim()).join('\n'))}
+          >
             {t('text.trimEveryLine')}
-          </ActionButton>
+          </Button>
         </div>
 
         {output && (
@@ -55,16 +64,5 @@ export default function TextFormatterTool() {
         <ToolActions value={input} onClear={() => { setInput(''); setOutput('') }} />
       </div>
     </ToolPage>
-  )
-}
-
-function ActionButton({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="h-7 cursor-pointer rounded-md border px-2.5 text-xs font-medium transition-colors hover:bg-accent"
-    >
-      {children}
-    </button>
   )
 }
