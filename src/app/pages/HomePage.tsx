@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { InboxIcon, SearchIcon } from 'lucide-react'
+import { ClockIcon, InboxIcon, SearchIcon, StarIcon } from 'lucide-react'
 
 import { categoryRegistry, toolRegistry } from '@/core/registry'
 import { filterTools } from '@/features/search/filterTools'
@@ -36,7 +36,7 @@ export default function HomePage({ section }: HomePageProps) {
       {!section && (
         <div className="mb-4">
           <h1 className="text-base font-semibold">All-in-One Toolbox</h1>
-          <p className="text-xs text-muted-foreground">What do you want to do?</p>
+          <p className="text-xs text-muted-foreground">Small tools for everyday tasks.</p>
         </div>
       )}
 
@@ -87,14 +87,14 @@ export default function HomePage({ section }: HomePageProps) {
       {!searching && !section && (
         <>
           {favoriteTools.length > 0 && (
-            <Section title="Favorites" link={{ to: '/favorites', label: 'View all' }}>
-              <ToolGrid tools={favoriteTools.slice(0, 4)} />
+            <Section title="Favorites" icon={StarIcon} link={{ to: '/favorites', label: 'View all' }}>
+              <ToolGrid tools={favoriteTools.slice(0, 3)} />
             </Section>
           )}
 
           {recentTools.length > 0 && (
-            <Section title="Recently used" link={{ to: '/recent', label: 'View all' }}>
-              <ToolGrid tools={recentTools.slice(0, 4)} />
+            <Section title="Recently used" icon={ClockIcon} link={{ to: '/recent', label: 'View all' }}>
+              <ToolGrid tools={recentTools.slice(0, 3)} />
             </Section>
           )}
 
@@ -105,9 +105,11 @@ export default function HomePage({ section }: HomePageProps) {
               <Section
                 key={category.id}
                 title={category.name}
+                description={category.description}
+                icon={category.icon}
                 link={{ to: `/categories/${category.id}`, label: 'View all' }}
               >
-                <ToolGrid tools={categoryTools} />
+                <ToolGrid tools={categoryTools.slice(0, 3)} />
               </Section>
             )
           })}
@@ -134,19 +136,27 @@ export default function HomePage({ section }: HomePageProps) {
 
 function Section({
   title,
+  description,
+  icon: Icon,
   link,
   children,
 }: {
   title: string
+  description?: string
+  icon?: React.ComponentType<{ className?: string }>
   link?: { to: string; label: string }
   children: React.ReactNode
 }) {
   return (
     <section className="mb-5">
-      <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-          {title}
-        </h2>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          {Icon && <Icon className="size-4 shrink-0 text-primary" />}
+          <div className="min-w-0">
+            <h2 className="text-xs font-semibold">{title}</h2>
+            {description && <p className="truncate text-[10px] text-muted-foreground">{description}</p>}
+          </div>
+        </div>
         {link && (
           <Link to={link.to} className="text-[11px] text-muted-foreground hover:text-foreground">
             {link.label}

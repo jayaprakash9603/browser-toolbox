@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useMemo, useState, type ReactNode } from 're
 import {
   CommandIcon,
   HomeIcon,
+  SearchIcon,
   SettingsIcon,
   StarIcon,
   ClockIcon,
@@ -13,6 +14,7 @@ import { categoryRegistry, toolRegistry } from '@/core/registry'
 import { trackRecentTool } from '@/features/recent-tools/recentToolsService'
 import { CommandPalette } from '@/features/command-palette/CommandPalette'
 import { Button } from '@/shared/components/ui/button'
+import { ThemeToggle } from '@/shared/components/ThemeToggle'
 import { Separator } from '@/shared/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip'
 import { cn } from '@/shared/utils/cn'
@@ -76,11 +78,21 @@ export function AppShell({ children }: { children?: ReactNode }) {
               onClick={() => setPaletteOpen(true)}
               aria-label="Open command palette"
             >
-              <span className="text-xs">Search tools…</span>
+              <SearchIcon className="size-3.5" />
+              <span className="hidden text-xs @[420px]:inline">Search tools…</span>
               <kbd className="rounded border bg-muted px-1 text-[9px] font-medium">⌘K</kbd>
             </Button>
           </TooltipTrigger>
           <TooltipContent>Command palette</TooltipContent>
+        </Tooltip>
+        <ThemeToggle />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button asChild variant="ghost" size="icon" aria-label="Settings">
+              <Link to="/settings"><SettingsIcon /></Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Settings</TooltipContent>
         </Tooltip>
       </header>
 
