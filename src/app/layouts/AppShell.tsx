@@ -32,6 +32,12 @@ const LEGACY_CLIPBOARD_ROUTES = new Set([
   '/tools/clipboard/pinned',
   '/tools/clipboard/search',
 ])
+const LEGACY_FORMATTER_ROUTES = new Set([
+  '/tools/text/markdown-formatter',
+  '/tools/text/html-formatter',
+  '/tools/text/css-formatter',
+  '/tools/text/javascript-formatter',
+])
 
 export function AppShell({ children }: { children?: ReactNode }) {
   const { t } = useTranslation()
@@ -152,6 +158,7 @@ function renderRoute(path: string) {
   if (path === '/favorites') return <HomePage section="favorites" />
   if (path === '/recent') return <HomePage section="recent" />
   if (LEGACY_CLIPBOARD_ROUTES.has(path)) return <ToolHost toolId="clipboard.manager" />
+  if (LEGACY_FORMATTER_ROUTES.has(path)) return <ToolHost toolId="text.formatter" />
   const categoryMatch = path.match(/^\/categories\/([\w-]+)$/)
   if (categoryMatch) return <CategoryPage categoryId={categoryMatch[1]} />
   const tool = toolRegistry.getAll().find((t) => t.route === path)
@@ -163,6 +170,7 @@ function getLoadingVariant(path: string): AppLoadingSkeletonVariant {
   if (path === '/settings') return 'settings'
   if (path === '/favorites' || path === '/recent') return 'collection'
   if (LEGACY_CLIPBOARD_ROUTES.has(path)) return 'tool'
+  if (LEGACY_FORMATTER_ROUTES.has(path)) return 'tool'
   if (/^\/categories\/[\w-]+$/.test(path)) return 'category'
   if (toolRegistry.getAll().some((tool) => tool.route === path)) return 'tool'
   return 'home'

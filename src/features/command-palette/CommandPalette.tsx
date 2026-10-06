@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Command } from 'cmdk'
+import { BracesIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from '@/app/navigation'
 
 import { toolRegistry } from '@/core/registry'
 import { useFavorites } from '@/shared/hooks/useFavorites'
+import { TEXT_FORMAT_IDS, type TextFormatId } from '@/tools/text/text-formatter/formatters/types'
 import { HighlightedText } from './HighlightedText'
 
 interface CommandPaletteProps {
@@ -77,6 +79,22 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
               </Command.Group>
             )}
             <Command.Group
+              heading={t('palette.formatters')}
+              className="text-[10px] font-medium text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1"
+            >
+              {TEXT_FORMAT_IDS.map((format) => (
+                <FormatterCommandItem
+                  key={format}
+                  format={format}
+                  query={query}
+                  onSelect={(selectedFormat) => {
+                    const route = toolRegistry.get('text.formatter')?.route
+                    if (route) select(`${route}?format=${selectedFormat}`)
+                  }}
+                />
+              ))}
+            </Command.Group>
+            <Command.Group
               heading={t('palette.allTools')}
               className="text-[10px] font-medium text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1"
             >
@@ -114,6 +132,35 @@ function CommandItem({
       <Icon className="size-3.5 text-muted-foreground" />
       <span className="flex-1 truncate"><HighlightedText text={name} query={query} /></span>
       <span className="text-[10px] text-muted-foreground"><HighlightedText text={category} query={query} /></span>
+    </Command.Item>
+  )
+}
+
+function FormatterCommandItem({
+  format,
+  query,
+  onSelect,
+}: {
+  format: TextFormatId
+  query: string
+  onSelect: (format: TextFormatId) => void
+}) {
+  const { t } = useTranslation()
+  const label = t(`text.format.${format}`)
+  const name = t('text.formatter.optionName', { format: label })
+  const category = t('categories.text.name')
+
+  return (
+    <Command.Item
+      value={`${name} ${format} formatter ${category}`}
+      onSelect={() => onSelect(format)}
+      className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs outline-none data-[selected=true]:bg-accent"
+    >
+      <BracesIcon className="size-3.5 text-muted-foreground" />
+      <span className="flex-1 truncate"><HighlightedText text={name} query={query} /></span>
+      <span className="text-[10px] text-muted-foreground">
+        <HighlightedText text={category} query={query} />
+      </span>
     </Command.Item>
   )
 }

@@ -12,21 +12,25 @@ import { eventBus } from '@/core/events'
 
 interface RouterContextValue {
   path: string
+  search: string
   navigate: (to: string) => void
 }
 
-const RouterContext = createContext<RouterContextValue>({ path: '/', navigate: () => undefined })
+const RouterContext = createContext<RouterContextValue>({ path: '/', search: '', navigate: () => undefined })
 
-function readHash(): string {
+function readHash(): Pick<RouterContextValue, 'path' | 'search'> {
   const hash = window.location.hash.replace(/^#/, '')
-  return hash.startsWith('/') ? hash : '/'
+  const queryIndex = hash.indexOf('?')
+  const path = queryIndex === -1 ? hash : hash.slice(0, queryIndex)
+  const search = queryIndex === -1 ? '' : hash.slice(queryIndex)
+  return { path: path.startsWith('/') ? path : '/', search }
 }
 
 export function RouterProvider({ children }: { children: ReactNode }) {
-  const [path, setPath] = useState(readHash)
+  const [location, setLocation] = useState(readHash)
 
   useEffect(() => {
-    const onHashChange = () => setPath(readHash())
+    const onHashChange = () => setLocation(readHash())
     window.addEventListener('hashchange', onHashChange)
     const off = eventBus.on('OPEN_TOOL', ({ toolId }) => {
       import('@/core/registry').then(({ toolRegistry }) => {
@@ -44,7 +48,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
     window.location.hash = to
   }, [])
 
-  return <RouterContext.Provider value={{ path, navigate }}>{children}</RouterContext.Provider>
+  return <RouterContext.Provider value={{ ...location, navigate }}>{children}</RouterContext.Provider>
 }
 
 export function useRouter() {

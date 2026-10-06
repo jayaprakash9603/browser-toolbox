@@ -6,8 +6,8 @@ import { categoryRegistry, toolRegistry } from '@/core/registry'
 describe('tool registry', () => {
   registerModules()
 
-  it('registers all 15 phase-1 tools', () => {
-    expect(toolRegistry.getAll()).toHaveLength(15)
+  it('registers all 11 phase-1 tools', () => {
+    expect(toolRegistry.getAll()).toHaveLength(11)
   })
 
   it('rejects duplicate tool ids', () => {
@@ -22,12 +22,17 @@ describe('tool registry', () => {
   })
 
   it('search matches name, keywords and category', () => {
-    expect(toolRegistry.search('json')).toHaveLength(0)
+    expect(toolRegistry.search('json')).toEqual([
+      expect.objectContaining({ id: 'text.formatter' }),
+    ])
     expect(toolRegistry.search('word')).toContainEqual(
       expect.objectContaining({ id: 'text.word-counter' }),
     )
     expect(toolRegistry.search('clipboard')).toEqual([
       expect.objectContaining({ id: 'clipboard.manager' }),
+    ])
+    expect(toolRegistry.search('formatter')).toEqual([
+      expect.objectContaining({ id: 'text.formatter', name: 'Formatter' }),
     ])
     expect(toolRegistry.search('camel snake')).toContainEqual(
       expect.objectContaining({ id: 'text.case-converter' }),

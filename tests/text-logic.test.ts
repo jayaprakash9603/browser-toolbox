@@ -8,10 +8,7 @@ import { analyzeText, countLines, formatReadingTime } from '@/tools/text/word-co
 import { countMatches, replaceText } from '@/tools/text/find-replace/logic'
 import { compareText } from '@/tools/text/text-diff/logic'
 import { generateLorem } from '@/tools/text/lorem-ipsum/logic'
-import { formatMarkdown } from '@/tools/text/markdown-formatter/logic'
-import { formatHtml, minifyHtml } from '@/tools/text/html-formatter/logic'
-import { formatCss, minifyCss } from '@/tools/text/css-formatter/logic'
-import { formatJs, minifyJs } from '@/tools/text/javascript-formatter/logic'
+import { detectTextFormat, formatText, minifyText } from '@/tools/text/text-formatter/logic'
 
 describe('case converter', () => {
   it('splits words across separators and camel humps', () => {
@@ -148,46 +145,17 @@ describe('lorem ipsum', () => {
   })
 })
 
-describe('markdown formatter', () => {
-  it('normalizes headings and lists', () => {
-    const out = formatMarkdown('#Title\n* item\n\n\n\ntext')
-    expect(out).toContain('# Title')
-    expect(out).toContain('- item')
-    expect(out).not.toContain('\n\n\n')
+describe('unified formatter', () => {
+  it('detects and formats structured source', () => {
+    expect(detectTextFormat('{"name":"Ada"}')).toBe('json')
+    expect(formatText('<div><p>hi</p></div>', 'html')).toContain('<p>')
+    expect(formatText('.a{color:red}', 'css')).toContain('\n')
+    expect(formatText('const x={a:1}', 'javascript')).toContain('\n')
+    expect(minifyText('.a { color: red; }', 'css')).toBe('.a{color:red}')
   })
 
-  it('leaves code blocks untouched', () => {
-    const input = '```\n# not a heading\n```'
-    expect(formatMarkdown(input)).toContain('# not a heading')
-  })
-})
-
-describe('html formatter', () => {
-  it('beautifies nested markup', () => {
-    const out = formatHtml('<div><p>hi</p></div>')
-    expect(out).toContain('\n')
-    expect(out).toContain('<p>')
-  })
-
-  it('minifies markup', () => {
-    expect(minifyHtml('<div>\n  <p>hi</p>\n</div>')).toBe('<div><p>hi</p></div>')
-  })
-})
-
-describe('css formatter', () => {
-  it('beautifies and minifies', () => {
-    expect(formatCss('.a{color:red}')).toContain('\n')
-    expect(minifyCss('.a { color: red; }')).toBe('.a{color:red}')
-  })
-})
-
-describe('js formatter', () => {
-  it('beautifies source', () => {
-    expect(formatJs('const x={a:1}')).toContain('\n')
-  })
-
-  it('minifier strips comments and blank lines without touching code', () => {
-    const out = minifyJs('// note\nconst a = 1;\n\n\n/* block */\nconst b = 2;')
-    expect(out).toBe('const a = 1;\nconst b = 2;')
+  it('normalizes Markdown and preserves fenced code content', () => {
+    expect(formatText('#Title\n* item\n\n\n\ntext', 'markdown')).toContain('# Title')
+    expect(formatText('```\n# not a heading\n```', 'markdown')).toContain('# not a heading')
   })
 })
