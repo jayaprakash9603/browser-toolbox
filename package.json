@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "node scripts/copy-postman-sandbox.mjs && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
@@ -47,6 +47,12 @@
     "tailwind-merge": "^3.7.0",
     "tailwindcss": "^4.3.3",
     "yaml": "^2.9.1"
+  },
+  "overrides": {
+    "postman-lite": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^3.0.0",

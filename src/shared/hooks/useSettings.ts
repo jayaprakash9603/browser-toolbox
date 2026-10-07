@@ -15,8 +15,10 @@ export function useSettings() {
         void getSettings().then(setSettings)
       }
     }
-    chrome.storage.onChanged.addListener(listener)
-    return () => chrome.storage.onChanged.removeListener(listener)
+    const storage = chrome.storage
+    if (!storage?.onChanged) return
+    storage.onChanged.addListener(listener)
+    return () => storage.onChanged.removeListener(listener)
   }, [])
 
   return settings

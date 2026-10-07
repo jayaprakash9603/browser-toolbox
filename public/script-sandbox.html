@@ -1,0 +1,783 @@
+<!doctype html><meta charset="utf-8"><script>
+function isMaskedSecretPlaceholder(value) {
+  if (!value) return false;
+  if (value === "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" || value === "********") return true;
+  if (/^\*+$/.test(value)) return true;
+  if (/^•+$/.test(value)) return true;
+  return false;
+}
+function readHeaderValue(headers, headerOverrides, headerRemovals, name) {
+  const lower = name.toLowerCase();
+  if (headerRemovals.includes(lower)) return void 0;
+  if (lower in headerOverrides) return headerOverrides[lower];
+  const row = headers.find(
+    (item) => item.enabled && item.key.toLowerCase() === lower
+  );
+  return row?.value;
+}
+function upsertPostmanHeader(entry, headerOverrides, headerOverrideNames, headerRemovals) {
+  const lower = entry.key.toLowerCase();
+  headerOverrides[lower] = entry.value;
+  headerOverrideNames[lower] = entry.key;
+  const index = headerRemovals.indexOf(lower);
+  if (index >= 0) headerRemovals.splice(index, 1);
+}
+function createPostmanRequestHeadersApi(headers, headerOverrides, headerOverrideNames, headerRemovals) {
+  const readHeader = (name) => readHeaderValue(headers, headerOverrides, headerRemovals, name);
+  return {
+    get(name) {
+      return readHeader(name) ?? null;
+    },
+    add(entry) {
+      upsertPostmanHeader(entry, headerOverrides, headerOverrideNames, headerRemovals);
+    },
+    upsert(entry) {
+      upsertPostmanHeader(entry, headerOverrides, headerOverrideNames, headerRemovals);
+    },
+    remove(name) {
+      const lower = name.toLowerCase();
+      delete headerOverrides[lower];
+      if (!headerRemovals.includes(lower)) headerRemovals.push(lower);
+    },
+    has(name) {
+      return readHeader(name) !== void 0;
+    },
+    toObject() {
+      const result = {};
+      for (const row of headers) {
+        if (!row.enabled || !row.key.trim()) continue;
+        const lower = row.key.toLowerCase();
+        if (headerRemovals.includes(lower)) continue;
+        result[row.key] = headerOverrides[lower] ?? row.value;
+      }
+      for (const [key, value] of Object.entries(headerOverrides)) {
+        const existing = headers.find((row) => row.key.toLowerCase() === key);
+        if (!existing) result[headerOverrideNames[key] ?? key] = value;
+      }
+      return result;
+    }
+  };
+}
+function defaultRawLanguage(body) {
+  if (body?.type === "raw") return body.language;
+  return "text";
+}
+function parseRawLanguage(value) {
+  if (value === "json" || value === "text" || value === "xml" || value === "html") {
+    return value;
+  }
+  if (value === "javascript") return "javascript";
+  return void 0;
+}
+function inferRawLanguage(text, fallback) {
+  const trimmed = text.trim();
+  if (trimmed.startsWith("{") && trimmed.endsWith("}") || trimmed.startsWith("[") && trimmed.endsWith("]")) {
+    try {
+      JSON.parse(trimmed);
+      return "json";
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+}
+function createPostmanRequestBody(body) {
+  if (!body || body.type === "none") return { mode: "raw", raw: "" };
+  if (body.type === "raw") return { mode: "raw", raw: body.text };
+  if (body.type === "urlencoded") {
+    const raw = body.fields.filter((field) => field.enabled && field.key.trim()).map((field) => `${field.key}=${field.value}`).join("&");
+    return { mode: "urlencoded", raw, urlencoded: body.fields };
+  }
+  if (body.type === "formData") {
+    return { mode: "formdata", raw: "", formdata: body.fields };
+  }
+  if (body.type === "graphql") {
+    return {
+      mode: "graphql",
+      raw: JSON.stringify({ query: body.query, variables: body.variables }),
+      graphql: { query: body.query, variables: body.variables }
+    };
+  }
+  return { mode: "file", raw: body.fileName };
+}
+function createScriptBodyProxy(sourceBody, onOverride) {
+  let override;
+  const activeBody = () => override ?? sourceBody;
+  const snapshot = () => createPostmanRequestBody(activeBody());
+  const applyRaw = (raw, languageHint) => {
+    const language = languageHint ?? inferRawLanguage(raw, defaultRawLanguage(sourceBody));
+    override = { type: "raw", language, text: raw };
+    onOverride(override);
+  };
+  return {
+    get mode() {
+      return snapshot().mode;
+    },
+    get raw() {
+      return snapshot().raw ?? "";
+    },
+    set raw(value) {
+      applyRaw(value);
+    },
+    get urlencoded() {
+      const body = snapshot();
+      return body.urlencoded;
+    },
+    get formdata() {
+      const body = snapshot();
+      return body.formdata;
+    },
+    update(options) {
+      if (options.mode === "raw" || options.raw !== void 0) {
+        const raw = options.raw ?? snapshot().raw ?? "";
+        const hinted = parseRawLanguage(options.options?.raw?.language);
+        applyRaw(raw, hinted);
+        return;
+      }
+      if (options.mode === "urlencoded" && Array.isArray(options.urlencoded)) {
+        const fields = options.urlencoded.filter((row) => row?.key).map((row) => ({
+          id: crypto.randomUUID(),
+          key: row.key ?? "",
+          value: row.value ?? "",
+          enabled: row.enabled !== false
+        }));
+        override = { type: "urlencoded", fields };
+        onOverride(override);
+      }
+    }
+  };
+}
+function sandboxChannel() {
+  return "postman-lite-script";
+}
+function stringifySandboxValue(value) {
+  if (value == null) return "";
+  return typeof value === "string" ? value : String(value);
+}
+function createFrameStore(initial) {
+  const map = new Map(Object.entries(initial));
+  return {
+    get: (key) => map.get(key),
+    set: (key, value) => {
+      map.set(key, stringifySandboxValue(value));
+    },
+    unset: (key) => {
+      map.delete(key);
+    },
+    clear: () => map.clear(),
+    toObject: () => Object.fromEntries(map)
+  };
+}
+function replaceSandboxTemplate(template, resolve) {
+  return template.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (match, rawKey) => {
+    const value = resolve(String(rawKey).trim());
+    if (value === void 0) return match;
+    if (isMaskedSecretPlaceholder(value)) return "";
+    return value;
+  });
+}
+function createFrameVariableApi(store) {
+  const set = (key, value) => store.set(key, value);
+  const read = (key) => {
+    const value = store.get(key) ?? "";
+    return isMaskedSecretPlaceholder(value) ? "" : value;
+  };
+  return {
+    get: read,
+    set,
+    replace: set,
+    unset: (key) => store.unset(key),
+    remove: (key) => store.unset(key),
+    has: (key) => {
+      const value = store.get(key);
+      return value !== void 0 && !isMaskedSecretPlaceholder(value);
+    },
+    clear: () => store.clear(),
+    toObject: () => store.toObject(),
+    replaceIn: (template) => replaceSandboxTemplate(template, (key) => store.get(key))
+  };
+}
+function resolveFrameValue(stores, key) {
+  for (const store of stores) {
+    const value = store.get(key);
+    if (value !== void 0) return value;
+  }
+  return void 0;
+}
+function createFrameScopedApi(stores) {
+  const writable = stores[0];
+  const set = (key, value) => writable?.set(key, value);
+  const read = (key) => {
+    const value = resolveFrameValue(stores, key);
+    if (value === void 0) return "";
+    return isMaskedSecretPlaceholder(value) ? "" : value;
+  };
+  return {
+    get: read,
+    set,
+    replace: set,
+    unset: (key) => writable?.unset(key),
+    remove: (key) => writable?.unset(key),
+    has: (key) => {
+      const value = resolveFrameValue(stores, key);
+      return value !== void 0 && !isMaskedSecretPlaceholder(value);
+    },
+    clear: () => writable?.clear(),
+    toObject: () => {
+      const result = {};
+      for (const store of [...stores].reverse()) {
+        Object.assign(result, store.toObject());
+      }
+      return result;
+    },
+    replaceIn: (template) => replaceSandboxTemplate(template, (key) => resolveFrameValue(stores, key))
+  };
+}
+function failSandbox(message) {
+  throw new Error(message);
+}
+function sandboxValuesMatch(left, right) {
+  if (Object.is(left, right)) return true;
+  if (typeof left === "number" && typeof right === "string") {
+    return left === Number(right);
+  }
+  if (typeof left === "string" && typeof right === "number") {
+    return Number(left) === right;
+  }
+  return false;
+}
+function assertSandboxInclude(actual, expected) {
+  if (Array.isArray(actual)) {
+    if (actual.some((item) => sandboxValuesMatch(item, expected))) return;
+    failSandbox(`expected [${actual.join(", ")}] to include ${String(expected)}`);
+  }
+  if (typeof actual === "string") {
+    if (actual.includes(String(expected))) return;
+    failSandbox(`expected string to include ${String(expected)}`);
+  }
+  failSandbox(`expected value to include ${String(expected)}`);
+}
+function createSandboxExpect(actual) {
+  return {
+    to: {
+      eql(expected) {
+        const left = JSON.stringify(actual);
+        const right = JSON.stringify(expected);
+        if (left !== right) failSandbox(`expected ${right} but got ${left}`);
+      },
+      equal(expected) {
+        if (actual !== expected) {
+          failSandbox(`expected ${String(expected)} but got ${String(actual)}`);
+        }
+      },
+      include(expected) {
+        assertSandboxInclude(actual, expected);
+      },
+      be: {
+        a(typeName) {
+          const actualType = Array.isArray(actual) ? "array" : typeof actual;
+          if (actualType !== typeName) {
+            failSandbox(`expected ${typeName} but got ${actualType}`);
+          }
+        },
+        ok() {
+          if (!actual) failSandbox("expected truthy value");
+        },
+        within(min, max) {
+          const value = typeof actual === "number" ? actual : Number(actual);
+          if (Number.isFinite(value) && value >= min && value <= max) return;
+          failSandbox(`expected ${String(actual)} to be within ${min}..${max}`);
+        }
+      }
+    }
+  };
+}
+function createSandboxUrl(raw) {
+  const value = raw ?? "";
+  let parsed = null;
+  try {
+    parsed = new URL(value.includes("://") ? value : `https://${value}`);
+  } catch {
+    parsed = null;
+  }
+  return {
+    raw: value,
+    protocol: parsed?.protocol.replace(/:$/, "") ?? "",
+    host: parsed?.hostname ? parsed.hostname.split(".") : [],
+    hostname: parsed?.hostname ?? "",
+    path: parsed?.pathname ? parsed.pathname.split("/").filter(Boolean) : [],
+    port: parsed?.port ?? "",
+    query: parsed ? [...parsed.searchParams.entries()].map(([key, item]) => ({
+      key,
+      value: item
+    })) : [],
+    toString() {
+      return value;
+    },
+    valueOf() {
+      return value;
+    }
+  };
+}
+function createSandboxBody(body) {
+  if (!body || body.type === "none") return { mode: "raw", raw: "" };
+  if (body.type === "raw") return { mode: "raw", raw: body.text ?? "" };
+  if (body.type === "urlencoded") {
+    const raw = (body.fields ?? []).filter((field) => field.enabled && field.key.trim()).map((field) => `${field.key}=${field.value}`).join("&");
+    return { mode: "urlencoded", raw, urlencoded: body.fields };
+  }
+  if (body.type === "formData") {
+    return { mode: "formdata", raw: "", formdata: body.fields };
+  }
+  if (body.type === "graphql") {
+    return {
+      mode: "graphql",
+      raw: JSON.stringify({ query: body.query, variables: body.variables }),
+      graphql: { query: body.query, variables: body.variables }
+    };
+  }
+  return { mode: "file", raw: body.fileName };
+}
+function createSandboxHeadersApi(headers, headerOverrides, headerOverrideNames, headerRemovals) {
+  const api = createPostmanRequestHeadersApi(
+    headers,
+    headerOverrides,
+    headerOverrideNames,
+    headerRemovals
+  );
+  return {
+    ...api,
+    toObject() {
+      return sandboxHeadersObject(headers, headerOverrides, headerRemovals);
+    }
+  };
+}
+function upsertSandboxHeader(entry, headerOverrides, headerOverrideNames, headerRemovals) {
+  upsertPostmanHeader(entry, headerOverrides, headerOverrideNames, headerRemovals);
+}
+function sandboxHeadersObject(headers, headerOverrides, headerRemovals) {
+  const result = {};
+  for (const row of headers) {
+    if (!row.enabled || !row.key.trim()) continue;
+    const lower = row.key.toLowerCase();
+    if (headerRemovals.includes(lower)) continue;
+    result[row.key] = headerOverrides[lower] ?? row.value;
+  }
+  for (const [key, value] of Object.entries(headerOverrides)) {
+    if (!headers.some((row) => row.key.toLowerCase() === key)) {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+function createSandboxResponseApi(response) {
+  const headerMap = /* @__PURE__ */ new Map();
+  for (const [key, value] of response.headers) {
+    headerMap.set(key.toLowerCase(), value);
+  }
+  return {
+    code: response.status,
+    status: `${response.status} ${response.statusText}`.trim(),
+    responseTime: response.timeMs,
+    headers: {
+      get(name) {
+        return headerMap.get(name.toLowerCase()) ?? null;
+      }
+    },
+    json() {
+      return JSON.parse(response.bodyText);
+    },
+    text() {
+      return response.bodyText;
+    },
+    to: {
+      have: {
+        status(...codes) {
+          if (codes.includes(response.status)) return;
+          throw new Error(
+            `expected status ${codes.join(" or ")} but got ${response.status}`
+          );
+        }
+      },
+      be: {
+        ok() {
+          if (response.status < 200 || response.status >= 300) {
+            throw new Error(`expected 2xx but got ${response.status}`);
+          }
+        }
+      }
+    }
+  };
+}
+function normalizeSandboxSendOptions(options) {
+  if (typeof options === "string") {
+    return { url: options, method: "GET", headers: {} };
+  }
+  const opt = options ?? {};
+  return {
+    url: readSandboxUrl(opt.url),
+    method: typeof opt.method === "string" ? opt.method.toUpperCase() : "GET",
+    headers: readSandboxHeaders(opt.header ?? opt.headers),
+    body: readSandboxBody(opt.body)
+  };
+}
+function readSandboxUrl(rawUrl) {
+  if (typeof rawUrl === "string") return rawUrl;
+  if (rawUrl && typeof rawUrl === "object" && "raw" in rawUrl) {
+    const raw = rawUrl.raw;
+    if (typeof raw === "string") return raw;
+  }
+  return "";
+}
+function readSandboxHeaders(header) {
+  const headers = {};
+  if (Array.isArray(header)) {
+    for (const row of header) {
+      if (row?.key) headers[row.key] = row.value ?? "";
+    }
+    return headers;
+  }
+  if (header && typeof header === "object") {
+    for (const [key, value] of Object.entries(header)) {
+      headers[key] = String(value);
+    }
+  }
+  return headers;
+}
+function readSandboxBody(rawBody) {
+  if (typeof rawBody === "string") return rawBody;
+  if (!rawBody || typeof rawBody !== "object") return void 0;
+  const bodyObj = rawBody;
+  if (typeof bodyObj.raw === "string") return bodyObj.raw;
+  if (!Array.isArray(bodyObj.urlencoded)) return void 0;
+  const params = new URLSearchParams();
+  for (const row of bodyObj.urlencoded) {
+    if (row?.key) params.append(row.key, row.value ?? "");
+  }
+  return params.toString();
+}
+function createSandboxSendApi(res) {
+  const headerMap = /* @__PURE__ */ new Map();
+  for (const [key, value] of res.headers) {
+    headerMap.set(key.toLowerCase(), value);
+  }
+  return {
+    code: res.code,
+    status: res.status,
+    responseTime: res.timeMs,
+    headers: {
+      get(name) {
+        return headerMap.get(name.toLowerCase()) ?? null;
+      }
+    },
+    json() {
+      return JSON.parse(res.bodyText);
+    },
+    text() {
+      return res.bodyText;
+    }
+  };
+}
+function emptySandboxResult() {
+  return {
+    success: false,
+    logs: [],
+    tests: [],
+    headerOverrides: {},
+    headerOverrideNames: {},
+    headerRemovals: [],
+    environment: {},
+    globals: {},
+    collection: {},
+    local: {}
+  };
+}
+function createSandboxTestId() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `t-${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+}
+async function evalSandboxScript(script, pm, postman, logs, tests, sendRequest, canSendRequest = false) {
+  if (!script.trim()) return { success: true };
+  const pending = [];
+  const pmWithApi = {
+    ...pm,
+    sendRequest: createPmSendRequest(sendRequest, canSendRequest, pending),
+    test: (name, fn) => runSandboxTest(name, fn, tests, pending),
+    expect: createSandboxExpect
+  };
+  const consoleProxy = {
+    log: (...args) => pushSandboxLog(logs, "log", args),
+    info: (...args) => pushSandboxLog(logs, "info", args),
+    warn: (...args) => pushSandboxLog(logs, "warn", args),
+    error: (...args) => pushSandboxLog(logs, "error", args)
+  };
+  return runSandboxFunction(script, pmWithApi, postman, consoleProxy, pending);
+}
+function pushSandboxLog(logs, level, args) {
+  const message = args.map((arg) => {
+    if (typeof arg === "string") return arg;
+    try {
+      return JSON.stringify(arg);
+    } catch {
+      return String(arg);
+    }
+  }).join(" ");
+  logs.push({ level, message });
+}
+function runSandboxTest(name, fn, tests, pending) {
+  const result = {
+    id: createSandboxTestId(),
+    name,
+    passed: true
+  };
+  tests.push(result);
+  try {
+    const maybePromise = fn();
+    if (maybePromise && typeof maybePromise.then === "function") {
+      pending.push(
+        Promise.resolve(maybePromise).catch((error) => {
+          result.passed = false;
+          result.error = error instanceof Error ? error.message : String(error);
+        })
+      );
+    }
+  } catch (error) {
+    result.passed = false;
+    result.error = error instanceof Error ? error.message : String(error);
+  }
+}
+function createPmSendRequest(sendRequest, canSendRequest, pending) {
+  return (options, callback) => {
+    const promise = invokeSandboxSend(options, sendRequest, canSendRequest, callback);
+    pending.push(promise.catch(() => void 0));
+    return promise;
+  };
+}
+async function invokeSandboxSend(options, sendRequest, canSendRequest, callback) {
+  if (!canSendRequest || !sendRequest) {
+    const err = new Error("pm.sendRequest is not available in this context");
+    if (callback) {
+      callback(err);
+      return void 0;
+    }
+    throw err;
+  }
+  const res = await sendRequest(normalizeSandboxSendOptions(options));
+  if (res.error) {
+    const err = new Error(res.error);
+    if (callback) {
+      callback(err);
+      return void 0;
+    }
+    throw err;
+  }
+  const wrapper = createSandboxSendApi(res);
+  if (callback) callback(null, wrapper);
+  return wrapper;
+}
+async function runSandboxFunction(script, pm, postman, consoleProxy, pending) {
+  try {
+    const runner = new Function(
+      "pm",
+      "postman",
+      "console",
+      `"use strict";
+return (async () => {
+${script}
+})();`
+    );
+    await runner(pm, postman, consoleProxy);
+    while (pending.length) {
+      await Promise.all(pending.splice(0));
+    }
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+function createSandboxRequestProxy(request, headerOverrides, headerOverrideNames, headerRemovals) {
+  let urlOverride;
+  let methodOverride;
+  let bodyOverride;
+  return {
+    proxy: {
+      get url() {
+        return createSandboxUrl(urlOverride ?? request.url);
+      },
+      set url(value) {
+        urlOverride = String(value);
+      },
+      get method() {
+        return methodOverride ?? request.method;
+      },
+      set method(value) {
+        methodOverride = value.toUpperCase();
+      },
+      get body() {
+        return createScriptBodyProxy(request.body, (body) => {
+          bodyOverride = body;
+        });
+      },
+      headers: createSandboxHeadersApi(
+        request.headers,
+        headerOverrides,
+        headerOverrideNames,
+        headerRemovals
+      )
+    },
+    getOverrides() {
+      return { urlOverride, methodOverride, bodyOverride };
+    }
+  };
+}
+async function runSandboxVm(payload, sendRequest) {
+  const environment = createFrameStore(payload.environment);
+  const globals = createFrameStore(payload.globals);
+  const collection = createFrameStore(payload.collection);
+  const local = createFrameStore(payload.local);
+  const variableApis = {
+    environment: createFrameVariableApi(environment),
+    globals: createFrameVariableApi(globals),
+    collectionVariables: createFrameVariableApi(collection),
+    variables: createFrameScopedApi([local, environment, collection, globals])
+  };
+  const postman = {
+    setEnvironmentVariable: variableApis.environment.set,
+    getEnvironmentVariable: variableApis.environment.get,
+    clearEnvironmentVariable: variableApis.environment.unset,
+    setGlobalVariable: variableApis.globals.set,
+    getGlobalVariable: variableApis.globals.get,
+    clearGlobalVariable: variableApis.globals.unset
+  };
+  return finishSandboxVm(payload, variableApis, postman, {
+    environment,
+    globals,
+    collection,
+    local
+  }, sendRequest);
+}
+async function finishSandboxVm(payload, variableApis, postman, stores, sendRequest) {
+  const logs = [];
+  const tests = [];
+  const headerOverrides = {};
+  const headerOverrideNames = {};
+  const headerRemovals = [];
+  const requestState = payload.request ? createSandboxRequestProxy(
+    payload.request,
+    headerOverrides,
+    headerOverrideNames,
+    headerRemovals
+  ) : null;
+  const pm = {
+    ...variableApis,
+    request: payload.kind === "prerequest" ? requestState?.proxy : payload.request ? {
+      url: createSandboxUrl(payload.request.url),
+      method: payload.request.method,
+      body: createSandboxBody(payload.request.body),
+      headers: createSandboxHeadersApi(
+        payload.request.headers,
+        {},
+        {},
+        []
+      )
+    } : void 0,
+    response: payload.response ? createSandboxResponseApi(payload.response) : void 0
+  };
+  const outcome = await evalSandboxScript(
+    payload.script,
+    pm,
+    postman,
+    logs,
+    tests,
+    sendRequest,
+    payload.canSendRequest
+  );
+  const overrides = requestState?.getOverrides() ?? {
+    urlOverride: void 0,
+    methodOverride: void 0,
+    bodyOverride: void 0
+  };
+  return {
+    ...outcome,
+    logs,
+    tests,
+    headerOverrides,
+    headerOverrideNames,
+    headerRemovals,
+    urlOverride: overrides.urlOverride,
+    methodOverride: overrides.methodOverride,
+    bodyOverride: overrides.bodyOverride,
+    environment: stores.environment.toObject(),
+    globals: stores.globals.toObject(),
+    collection: stores.collection.toObject(),
+    local: stores.local.toObject()
+  };
+}
+function postSandboxToParent(message) {
+  parent.postMessage({ channel: sandboxChannel(), ...message }, "*");
+}
+function bootSandboxVm() {
+  const pendingSends = /* @__PURE__ */ new Map();
+  window.addEventListener("message", (event) => {
+    void handleSandboxMessage(event, pendingSends);
+  });
+  postSandboxToParent({ type: "ready" });
+}
+async function handleSandboxMessage(event, pendingSends) {
+  const data = event.data;
+  if (!data || data.channel !== sandboxChannel()) return;
+  if (data.type === "sendRequestResult") {
+    pendingSends.get(String(data.requestId))?.({
+      response: data.response,
+      error: data.error
+    });
+    return;
+  }
+  if (data.type !== "run") return;
+  await runSandboxMessage(data, pendingSends);
+}
+async function runSandboxMessage(data, pendingSends) {
+  const id = String(data.id);
+  const sendRequest = (options) => requestParentSend(id, options, pendingSends);
+  try {
+    const result = await runSandboxVm(
+      data.payload,
+      sendRequest
+    );
+    postSandboxToParent({ type: "done", id, result });
+  } catch (error) {
+    postSandboxToParent({
+      type: "done",
+      id,
+      result: {
+        ...emptySandboxResult(),
+        error: error instanceof Error ? error.message : String(error)
+      }
+    });
+  }
+}
+function requestParentSend(runId, options, pendingSends) {
+  const requestId = createSandboxTestId();
+  return new Promise((resolve, reject) => {
+    pendingSends.set(requestId, (data) => {
+      pendingSends.delete(requestId);
+      if (data.error) {
+        reject(new Error(data.error));
+        return;
+      }
+      if (!data.response) {
+        reject(new Error("pm.sendRequest returned no response"));
+        return;
+      }
+      resolve(data.response);
+    });
+    postSandboxToParent({ type: "sendRequest", id: runId, requestId, options });
+  });
+}
+bootSandboxVm();
+</script>
