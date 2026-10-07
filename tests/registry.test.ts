@@ -6,8 +6,8 @@ import { categoryRegistry, toolRegistry } from '@/core/registry'
 describe('tool registry', () => {
   registerModules()
 
-  it('registers all 52 tools across enabled categories', () => {
-    expect(toolRegistry.getAll()).toHaveLength(52)
+  it('registers all tools across enabled categories', () => {
+    expect(toolRegistry.getAll()).toHaveLength(53)
   })
 
   it('rejects duplicate tool ids', () => {
@@ -39,7 +39,7 @@ describe('tool registry', () => {
     ])
     expect(toolRegistry.search('formatter')).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: 'text.formatter', name: 'Formatter' }),
+        expect.objectContaining({ id: 'text.formatter', name: 'Code Formatter' }),
       ]),
     )
     expect(toolRegistry.search('camel snake')).toContainEqual(
@@ -56,7 +56,9 @@ describe('category registry', () => {
       'text',
       'developer',
       'qa',
+      'api',
       'web',
+      'data',
       'design',
       'security',
       'calculators',

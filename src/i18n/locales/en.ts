@@ -264,6 +264,10 @@ const en = {
   'categories.developer.description': 'JSON, JWT, regex and code utilities',
   'categories.qa.name': 'QA',
   'categories.qa.description': 'XPath, selectors, element inspection',
+  'categories.api.name': 'API & HTTP',
+  'categories.api.description': 'HTTP client, responses, history and API utilities',
+  'categories.data.name': 'Data Conversion',
+  'categories.data.description': 'Convert between JSON, CSV, XML, YAML and more',
   'categories.web.name': 'Web',
   'categories.web.description': 'Links, cookies, storage inspection',
   'categories.design.name': 'Design',
@@ -286,9 +290,9 @@ const en = {
   'tools.clipboard.pinned.description': 'Your pinned clipboard snippets, always at hand.',
   'tools.clipboard.search.name': 'Clipboard Search',
   'tools.clipboard.search.description': 'Search across your entire clipboard history.',
-  'tools.text.formatter.name': 'Formatter',
+  'tools.text.formatter.name': 'Code Formatter',
   'tools.text.formatter.description':
-    'Detect and format JSON, JavaScript, TypeScript, HTML, XML, CSS, Markdown and plain text.',
+    'Format and minify JavaScript, TypeScript, HTML, XML, CSS and Markdown (use JSON Toolkit for JSON).',
   'tools.text.case-converter.name': 'Case Converter',
   'tools.text.case-converter.description':
     'Convert between camelCase, snake_case, Title Case and more.',
@@ -396,9 +400,12 @@ const en = {
     'Generate names, emails, addresses and more as JSON or CSV.',
   'tools.qa.http-status.name': 'HTTP Status Codes',
   'tools.qa.http-status.description': 'Look up HTTP status codes with meaning and debugging hints.',
-  'tools.qa.api-request-builder.name': 'API Request Builder',
-  'tools.qa.api-request-builder.description':
-    'Send HTTP requests to a selected host and inspect the response.',
+  'tools.api.request-builder.name': 'API Request Builder',
+  'tools.api.request-builder.description':
+    'Send HTTP requests, inspect responses, browse history and diff bodies.',
+  'tools.data.universal-converter.name': 'Universal Converter',
+  'tools.data.universal-converter.description':
+    'Convert between JSON, CSV, XML, YAML, Markdown tables and TSV.',
   'tools.qa.bug-reporter.name': 'Bug Reporter',
   'tools.qa.bug-reporter.description': 'Capture page context and write a copyable bug report.',
   'qa.pickElement': 'Pick element on page',

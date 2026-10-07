@@ -1,9 +1,9 @@
 import { BracesIcon, CodeIcon, FileJsonIcon, HashIcon, RegexIcon, DatabaseIcon } from 'lucide-react'
 
-import type { ToolDefinition } from '@/core/registry'
+import { defineTool } from '@/core/registry'
 
-export const developerTools: ToolDefinition[] = [
-  {
+export const developerTools = [
+  defineTool({
     id: 'developer.json-toolkit',
     name: 'JSON Toolkit',
     description: 'Validate, format, minify, tree-view, path-query and convert JSON.',
@@ -33,10 +33,13 @@ export const developerTools: ToolDefinition[] = [
     ],
     route: '/tools/developer/json-toolkit',
     capabilities: ['SIDE_PANEL', 'CONTEXT_MENU', 'COMMAND'],
+    contextSurfaces: ['SELECTION'],
+    toolkitGroup: 'developer',
+    dependencies: ['json'],
     status: 'active',
     loader: () => import('@/tools/developer/json-toolkit/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'developer.xml-toolkit',
     name: 'XML Toolkit',
     description: 'Validate, format, minify XML and convert XML to JSON.',
@@ -46,10 +49,13 @@ export const developerTools: ToolDefinition[] = [
     aliases: ['xml formatter', 'xml validator', 'xml to json'],
     route: '/tools/developer/xml-toolkit',
     capabilities: ['SIDE_PANEL', 'CONTEXT_MENU'],
+    contextSurfaces: ['SELECTION'],
+    toolkitGroup: 'developer',
+    dependencies: ['xml'],
     status: 'active',
     loader: () => import('@/tools/developer/xml-toolkit/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'developer.yaml-toolkit',
     name: 'YAML Toolkit',
     description: 'Validate and format YAML, convert between YAML and JSON.',
@@ -59,10 +65,13 @@ export const developerTools: ToolDefinition[] = [
     aliases: ['yaml validator', 'yaml to json', 'json to yaml'],
     route: '/tools/developer/yaml-toolkit',
     capabilities: ['SIDE_PANEL', 'CONTEXT_MENU'],
+    contextSurfaces: ['SELECTION'],
+    toolkitGroup: 'developer',
+    dependencies: ['yaml'],
     status: 'active',
     loader: () => import('@/tools/developer/yaml-toolkit/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'developer.sql-toolkit',
     name: 'SQL Toolkit',
     description: 'Format and minify SQL across dialects.',
@@ -72,10 +81,13 @@ export const developerTools: ToolDefinition[] = [
     aliases: ['sql formatter', 'sql beautifier', 'sql minifier', 'query formatter'],
     route: '/tools/developer/sql-toolkit',
     capabilities: ['SIDE_PANEL', 'CONTEXT_MENU'],
+    contextSurfaces: ['SELECTION'],
+    toolkitGroup: 'developer',
+    dependencies: ['sql'],
     status: 'active',
     loader: () => import('@/tools/developer/sql-toolkit/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'developer.regex-toolkit',
     name: 'Regex Toolkit',
     description: 'Test, replace and explain regular expressions with a pattern library.',
@@ -85,10 +97,13 @@ export const developerTools: ToolDefinition[] = [
     aliases: ['regex tester', 'regular expression', 'regex101', 'regex replace', 'regex patterns'],
     route: '/tools/developer/regex-toolkit',
     capabilities: ['SIDE_PANEL', 'CONTEXT_MENU'],
+    contextSurfaces: ['SELECTION'],
+    toolkitGroup: 'developer',
+    dependencies: ['regex'],
     status: 'active',
     loader: () => import('@/tools/developer/regex-toolkit/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'developer.id-toolkit',
     name: 'UUID / ID Toolkit',
     description: 'Generate and validate UUIDs (v4/v7) and NanoID identifiers.',
@@ -98,13 +113,15 @@ export const developerTools: ToolDefinition[] = [
     aliases: ['uuid generator', 'guid generator', 'uuid v4', 'uuid v7', 'nanoid', 'random id'],
     route: '/tools/developer/id-toolkit',
     capabilities: ['SIDE_PANEL', 'COMMAND'],
+    toolkitGroup: 'generators',
+    dependencies: ['id'],
     status: 'active',
     loader: () => import('@/tools/developer/id-toolkit/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'developer.timestamp-toolkit',
     name: 'Timestamp Toolkit',
-    description: 'Convert Unix timestamps (s/ms) to dates and back, with relative time.',
+    description: 'Moved to Date & Time Toolkit — use the Timestamp tab there.',
     category: 'developer',
     icon: HashIcon,
     keywords: ['timestamp', 'unix', 'epoch', 'date', 'time', 'convert', 'milliseconds'],
@@ -117,8 +134,10 @@ export const developerTools: ToolDefinition[] = [
       'unix converter',
     ],
     route: '/tools/developer/timestamp-toolkit',
-    capabilities: ['SIDE_PANEL', 'CONTEXT_MENU'],
-    status: 'active',
-    loader: () => import('@/tools/developer/timestamp-toolkit/Tool'),
-  },
+    capabilities: ['SIDE_PANEL'],
+    toolkitGroup: 'datetime',
+    dependencies: ['date'],
+    status: 'disabled',
+    loader: () => import('@/tools/datetime/datetime-toolkit/Tool'),
+  }),
 ]
