@@ -5,14 +5,23 @@ import type { ToolDefinition } from '@/core/registry'
 import { BackButton } from '@/shared/components/BackButton'
 import { FavoriteButton } from '@/shared/components/FavoriteButton'
 import { Separator } from '@/shared/components/ui/separator'
+import { cn } from '@/shared/utils/cn'
 
 interface ToolPageProps {
   tool: ToolDefinition
   children: ReactNode
   actions?: ReactNode
+  backTo?: string
+  contentClassName?: string
 }
 
-export function ToolPage({ tool, children, actions }: ToolPageProps) {
+export function ToolPage({
+  tool,
+  children,
+  actions,
+  backTo = `/categories/${tool.category}`,
+  contentClassName,
+}: ToolPageProps) {
   const { t } = useTranslation()
   const Icon = tool.icon
   const name = t(`tools.${tool.id}.name`, { defaultValue: tool.name })
@@ -20,7 +29,7 @@ export function ToolPage({ tool, children, actions }: ToolPageProps) {
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-start gap-2.5 px-4 pt-3 pb-2">
-        <BackButton to={`/categories/${tool.category}`} />
+        <BackButton to={backTo} />
         <div className="mt-0.5 rounded-md border bg-muted p-1.5">
           <Icon className="size-4" />
         </div>
@@ -34,7 +43,7 @@ export function ToolPage({ tool, children, actions }: ToolPageProps) {
         </div>
       </header>
       <Separator />
-      <div className="flex-1 overflow-y-auto p-4">{children}</div>
+      <div className={cn('flex-1 overflow-y-auto p-4', contentClassName)}>{children}</div>
     </div>
   )
 }

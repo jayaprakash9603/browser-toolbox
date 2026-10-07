@@ -3,10 +3,11 @@ import { useTranslation } from 'react-i18next'
 
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
+import { TextPaneGrid } from '@/shared/components/TextPaneGrid'
 import { CopyButton } from '@/shared/components/CopyButton'
 import { Button } from '@/shared/components/ui/button'
 import { StatsBar, useTransformTool } from '../_shared'
-import { CASE_STYLES, convertCase, type CaseStyle } from './logic'
+import { CASE_STYLES, convertCase, type CaseStyle } from '@/core/engines/text'
 
 export default function CaseConverterTool() {
   const { t } = useTranslation()
@@ -17,18 +18,8 @@ export default function CaseConverterTool() {
   const convert = (style: CaseStyle) => setResult({ style, text: convertCase(input, style) })
 
   return (
-    <ToolPage tool={tool}>
-      <div className="flex flex-col gap-3">
-        <div>
-          <TextEditor
-            value={input}
-            onChange={setInput}
-            placeholder="hello world example"
-            ariaLabel={t('text.convertInput')}
-            minRows={4}
-          />
-          <StatsBar value={input} />
-        </div>
+    <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="grid grid-cols-3 gap-1.5 @[380px]:grid-cols-3">
           {CASE_STYLES.map((style) => (
             <Button
@@ -42,17 +33,29 @@ export default function CaseConverterTool() {
             </Button>
           ))}
         </div>
-        {result && (
-          <div>
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-xs font-medium">
-                {t(`case.${result.style}`, { defaultValue: CASE_STYLES.find((style) => style.id === result.style)?.label })}
-              </span>
-              <CopyButton text={result.text} size="xs" />
-            </div>
-            <TextEditor value={result.text} readOnly ariaLabel={t('text.converted')} minRows={3} />
+        <TextPaneGrid split={Boolean(result)}>
+          <div className="flex min-h-0 flex-col">
+            <TextEditor
+              value={input}
+              onChange={setInput}
+              placeholder="hello world example"
+              ariaLabel={t('text.convertInput')}
+              fill
+            />
+            <StatsBar value={input} />
           </div>
-        )}
+          {result && (
+            <div className="flex min-h-0 flex-col">
+              <div className="mb-1 flex shrink-0 items-center justify-between">
+                <span className="text-xs font-medium">
+                  {t(`case.${result.style}`, { defaultValue: CASE_STYLES.find((style) => style.id === result.style)?.label })}
+                </span>
+                <CopyButton text={result.text} size="xs" />
+              </div>
+              <TextEditor value={result.text} readOnly ariaLabel={t('text.converted')} fill />
+            </div>
+          )}
+        </TextPaneGrid>
       </div>
     </ToolPage>
   )

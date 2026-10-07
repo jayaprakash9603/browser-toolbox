@@ -8,6 +8,7 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { BackButton } from '@/shared/components/BackButton'
 import { ToolCard } from '@/shared/components/ToolCard'
 import { SearchInput } from '@/shared/components/SearchInput'
+import { SmartSuggestions } from '@/shared/components/SmartSuggestions'
 import { AppLoadingSkeleton } from '@/shared/components/AppLoadingSkeleton'
 import { useFavorites } from '@/shared/hooks/useFavorites'
 import { useRecentTools } from '@/shared/hooks/useRecentTools'
@@ -64,6 +65,8 @@ export default function HomePage({ section }: HomePageProps) {
         ariaLabel={t('nav.searchTools')}
         className="mb-4"
       />
+
+      {!searching && !section && <SmartSuggestions />}
 
       {searching && (
         <Section title={t('home.searchResults', { count: results.length })}>

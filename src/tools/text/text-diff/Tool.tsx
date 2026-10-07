@@ -4,10 +4,11 @@ import { useTranslation } from 'react-i18next'
 
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
+import { TextPaneGrid } from '@/shared/components/TextPaneGrid'
 import { Button } from '@/shared/components/ui/button'
 import { Badge } from '@/shared/components/ui/badge'
 import { useTransformTool } from '../_shared'
-import { compareText, type DiffResult } from './logic'
+import { compareText, type DiffResult } from '@/core/engines/diff'
 
 export default function TextDiffTool() {
   const { t } = useTranslation()
@@ -29,19 +30,8 @@ export default function TextDiffTool() {
   }
 
   return (
-    <ToolPage tool={tool}>
-      <div className="flex flex-col gap-3">
-        <div className="grid grid-cols-1 gap-2 @[460px]:grid-cols-2">
-          <div>
-            <p className="mb-1 text-xs font-medium">{t('text.inputA')}</p>
-            <TextEditor value={inputA} onChange={setInputA} ariaLabel={t('text.inputA')} minRows={5} />
-          </div>
-          <div>
-            <p className="mb-1 text-xs font-medium">{t('text.inputB')}</p>
-            <TextEditor value={inputB} onChange={setInputB} ariaLabel={t('text.inputB')} minRows={5} />
-          </div>
-        </div>
-
+    <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="flex gap-1.5">
           <Button size="sm" onClick={compare} disabled={!inputA && !inputB}>
             {t('text.compare')}
@@ -54,15 +44,26 @@ export default function TextDiffTool() {
           </Button>
         </div>
 
+        <TextPaneGrid>
+          <div className="flex min-h-0 flex-col">
+            <p className="mb-1 shrink-0 text-xs font-medium">{t('text.inputA')}</p>
+            <TextEditor value={inputA} onChange={setInputA} ariaLabel={t('text.inputA')} fill />
+          </div>
+          <div className="flex min-h-0 flex-col">
+            <p className="mb-1 shrink-0 text-xs font-medium">{t('text.inputB')}</p>
+            <TextEditor value={inputB} onChange={setInputB} ariaLabel={t('text.inputB')} fill />
+          </div>
+        </TextPaneGrid>
+
         {result && (
-          <div>
+          <div className="max-h-40 shrink-0 overflow-y-auto">
             <div className="mb-1.5 flex items-center gap-1.5">
               <Badge variant="secondary">+{result.added}</Badge>
               <Badge variant="secondary">-{result.removed}</Badge>
               <Badge variant="outline">{t('text.unchanged', { count: result.unchanged })}</Badge>
             </div>
             <div
-              className="max-h-72 overflow-y-auto rounded-md border font-mono text-[11px] leading-relaxed"
+              className="rounded-md border font-mono text-[11px] leading-relaxed"
               aria-label={t('text.diffResult')}
             >
               {result.changes.map((change, index) => (

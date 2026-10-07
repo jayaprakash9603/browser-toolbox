@@ -10,7 +10,7 @@ export function filterTools(
   const q = query.trim().toLowerCase()
   const results = q
     ? tools.filter((tool) => {
-        const haystack = [...localizedLabels(tool), tool.category, ...tool.keywords]
+        const haystack = [...localizedLabels(tool), tool.category, ...tool.keywords, ...(tool.aliases ?? [])]
           .join(' ')
           .toLowerCase()
         return q.split(/\s+/).every((token) => haystack.includes(token))

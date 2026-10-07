@@ -1,13 +1,26 @@
 import { describe, expect, it } from 'vitest'
 
-import { convertCase, splitWords } from '@/tools/text/case-converter/logic'
-import { cleanWhitespace, DEFAULT_WHITESPACE_OPTIONS } from '@/tools/text/whitespace-cleaner/logic'
-import { removeDuplicateLines } from '@/tools/text/duplicate-line-remover/logic'
-import { sortLines } from '@/tools/text/sort-lines/logic'
-import { analyzeText, countLines, formatReadingTime } from '@/tools/text/word-counter/logic'
-import { countMatches, replaceText } from '@/tools/text/find-replace/logic'
-import { compareText } from '@/tools/text/text-diff/logic'
-import { generateLorem } from '@/tools/text/lorem-ipsum/logic'
+import {
+  addLineNumbers,
+  analyzeText,
+  cleanWhitespace,
+  convertCase,
+  countLines,
+  countMatches,
+  DEFAULT_WHITESPACE_OPTIONS,
+  formatReadingTime,
+  generateDummyText,
+  generateLorem,
+  removeDuplicateLines,
+  removeEmptyLines,
+  removeLineNumbers,
+  replaceText,
+  reverseLines,
+  shuffleLines,
+  sortLines,
+  splitWords,
+} from '@/core/engines/text'
+import { compareText } from '@/core/engines/diff'
 import { detectTextFormat, formatText, minifyText } from '@/tools/text/text-formatter/logic'
 
 describe('case converter', () => {
@@ -102,6 +115,36 @@ describe('counters', () => {
     expect(formatReadingTime(45)).toBe('45s')
     expect(formatReadingTime(90)).toBe('1m 30s')
   })
+
+  it('computes average word and sentence length', () => {
+    const stats = analyzeText('one two three. four five six.')
+    expect(stats.avgWordLength).toBe(4)
+    expect(stats.avgSentenceLength).toBe(3)
+    expect(analyzeText('').avgWordLength).toBe(0)
+  })
+})
+
+describe('line operations', () => {
+  it('reverses line order', () => {
+    expect(reverseLines('a\nb\nc')).toBe('c\nb\na')
+  })
+
+  it('shuffles deterministically with an injected random source', () => {
+    const output = shuffleLines('a\nb\nc\nd', () => 0)
+    expect(output.split('\n').sort()).toEqual(['a', 'b', 'c', 'd'])
+    expect(output).not.toBe('a\nb\nc\nd')
+  })
+
+  it('adds and removes line numbers', () => {
+    const numbered = addLineNumbers('alpha\nbeta', { startAt: 3 })
+    expect(numbered).toBe('3. alpha\n4. beta')
+    expect(removeLineNumbers(numbered)).toBe('alpha\nbeta')
+    expect(removeLineNumbers('1) one\n2: two\nplain')).toBe('one\ntwo\nplain')
+  })
+
+  it('removes empty lines', () => {
+    expect(removeEmptyLines('a\n\n   \nb')).toBe('a\nb')
+  })
 })
 
 describe('find & replace', () => {
@@ -142,6 +185,13 @@ describe('lorem ipsum', () => {
     expect(generateLorem('words', 5).split(' ')).toHaveLength(5)
     expect(generateLorem('paragraphs', 2).split('\n\n')).toHaveLength(2)
     expect(generateLorem('sentences', 0)).toBe('')
+  })
+
+  it('generates random variants with the requested counts', () => {
+    expect(generateDummyText('words', 4, 'random').split(' ')).toHaveLength(4)
+    expect(generateDummyText('paragraphs', 3, 'random').split('\n\n')).toHaveLength(3)
+    expect(generateDummyText('sentences', 2, 'random')).toMatch(/\. /)
+    expect(generateDummyText('words', 0, 'random')).toBe('')
   })
 })
 

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
+import { TextPaneGrid } from '@/shared/components/TextPaneGrid'
 import { Switch } from '@/shared/components/ui/switch'
 import { Button } from '@/shared/components/ui/button'
 import { StatsBar, ToolActions, useTransformTool } from '../_shared'
@@ -10,7 +11,7 @@ import {
   cleanWhitespace,
   DEFAULT_WHITESPACE_OPTIONS,
   type WhitespaceOptions,
-} from './logic'
+} from '@/core/engines/text'
 
 const OPTION_LABELS: { key: keyof WhitespaceOptions; labelKey: string }[] = [
   { key: 'trimLines', labelKey: 'text.trimEveryLine' },
@@ -29,19 +30,8 @@ export default function WhitespaceCleanerTool() {
   const clean = () => setOutput(cleanWhitespace(input, options))
 
   return (
-    <ToolPage tool={tool}>
-      <div className="flex flex-col gap-3">
-        <div>
-          <TextEditor
-            value={input}
-            onChange={setInput}
-            placeholder={t('text.pasteMessyWhitespace')}
-            ariaLabel={t('text.input')}
-            onKeyCommand={clean}
-          />
-          <StatsBar value={input} />
-        </div>
-
+    <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="grid grid-cols-1 gap-2 @[380px]:grid-cols-2">
           {OPTION_LABELS.map(({ key, labelKey }) => (
             <label key={key} className="flex items-center justify-between gap-2 text-xs">
@@ -61,15 +51,28 @@ export default function WhitespaceCleanerTool() {
           {t('text.clean')}
         </Button>
 
-        {output !== '' && (
-          <div>
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-xs font-medium">{t('text.output')}</span>
-              <ToolActions value={output} onClear={() => setOutput('')} />
-            </div>
-            <TextEditor value={output} readOnly ariaLabel={t('text.cleaned')} />
+        <TextPaneGrid split={output !== ''}>
+          <div className="flex min-h-0 flex-col">
+            <TextEditor
+              value={input}
+              onChange={setInput}
+              placeholder={t('text.pasteMessyWhitespace')}
+              ariaLabel={t('text.input')}
+              onKeyCommand={clean}
+              fill
+            />
+            <StatsBar value={input} />
           </div>
-        )}
+          {output !== '' && (
+            <div className="flex min-h-0 flex-col">
+              <div className="mb-1 flex shrink-0 items-center justify-between">
+                <span className="text-xs font-medium">{t('text.output')}</span>
+                <ToolActions value={output} onClear={() => setOutput('')} />
+              </div>
+              <TextEditor value={output} readOnly ariaLabel={t('text.cleaned')} fill />
+            </div>
+          )}
+        </TextPaneGrid>
       </div>
     </ToolPage>
   )

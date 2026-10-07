@@ -26,7 +26,7 @@ export default function ClipboardManagerTool() {
   }, [entries, query])
 
   return (
-    <ToolPage tool={tool} actions={<ClearHistoryButton onChanged={refresh} />}>
+    <ToolPage tool={tool} backTo="/" actions={<ClearHistoryButton onChanged={refresh} />}>
       <div className="flex flex-col gap-2">
         <SearchInput value={query} onChange={setQuery} placeholder={t('clipboard.search')} ariaLabel={t('clipboard.searchLabel')} />
         {filtered.length === 0 ? (

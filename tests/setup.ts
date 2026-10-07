@@ -28,6 +28,21 @@ const chromeMock = {
       clear: vi.fn(async () => storageData.clear()),
       onChanged: makeEvent(),
     },
+    session: {
+      get: vi.fn(async (keys?: string | string[] | null) => {
+        if (keys == null) return Object.fromEntries(storageData)
+        const list = Array.isArray(keys) ? keys : [keys]
+        return Object.fromEntries(list.filter((k) => storageData.has(k)).map((k) => [k, storageData.get(k)]))
+      }),
+      set: vi.fn(async (items: Record<string, unknown>) => {
+        Object.entries(items).forEach(([k, v]) => storageData.set(k, v))
+      }),
+      remove: vi.fn(async (keys: string | string[]) => {
+        ;(Array.isArray(keys) ? keys : [keys]).forEach((k) => storageData.delete(k))
+      }),
+      clear: vi.fn(async () => storageData.clear()),
+      onChanged: makeEvent(),
+    },
     onChanged: makeEvent(),
   },
   runtime: {

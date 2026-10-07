@@ -27,17 +27,21 @@ import { cn } from '@/shared/utils/cn'
 const HomePage = lazy(() => import('@/app/pages/HomePage'))
 const SettingsPage = lazy(() => import('@/app/pages/SettingsPage'))
 const CategoryPage = lazy(() => import('@/app/pages/CategoryPage'))
-const LEGACY_CLIPBOARD_ROUTES = new Set([
-  '/tools/clipboard/history',
-  '/tools/clipboard/pinned',
-  '/tools/clipboard/search',
-])
-const LEGACY_FORMATTER_ROUTES = new Set([
-  '/tools/text/markdown-formatter',
-  '/tools/text/html-formatter',
-  '/tools/text/css-formatter',
-  '/tools/text/javascript-formatter',
-])
+const DevToolsPage = lazy(() => import('@/app/pages/DevToolsPage'))
+const LEGACY_TOOL_ROUTES: Record<string, string> = {
+  '/tools/clipboard/history': 'clipboard.manager',
+  '/tools/clipboard/pinned': 'clipboard.manager',
+  '/tools/clipboard/search': 'clipboard.manager',
+  '/tools/text/markdown-formatter': 'text.formatter',
+  '/tools/text/html-formatter': 'text.formatter',
+  '/tools/text/css-formatter': 'text.formatter',
+  '/tools/text/javascript-formatter': 'text.formatter',
+  '/tools/text/word-counter': 'text.analyzer',
+  '/tools/text/line-counter': 'text.analyzer',
+  '/tools/text/duplicate-line-remover': 'text.line-tools',
+  '/tools/text/sort-lines': 'text.line-tools',
+  '/tools/text/lorem-ipsum': 'text.dummy-data',
+}
 
 export function AppShell({ children }: { children?: ReactNode }) {
   const { t } = useTranslation()
@@ -157,8 +161,9 @@ function renderRoute(path: string) {
   if (path === '/settings') return <SettingsPage />
   if (path === '/favorites') return <HomePage section="favorites" />
   if (path === '/recent') return <HomePage section="recent" />
-  if (LEGACY_CLIPBOARD_ROUTES.has(path)) return <ToolHost toolId="clipboard.manager" />
-  if (LEGACY_FORMATTER_ROUTES.has(path)) return <ToolHost toolId="text.formatter" />
+  if (path === '/devtools') return <DevToolsPage />
+  const legacyToolId = LEGACY_TOOL_ROUTES[path]
+  if (legacyToolId) return <ToolHost toolId={legacyToolId} />
   const categoryMatch = path.match(/^\/categories\/([\w-]+)$/)
   if (categoryMatch) return <CategoryPage categoryId={categoryMatch[1]} />
   const tool = toolRegistry.getAll().find((t) => t.route === path)
@@ -169,8 +174,8 @@ function renderRoute(path: string) {
 function getLoadingVariant(path: string): AppLoadingSkeletonVariant {
   if (path === '/settings') return 'settings'
   if (path === '/favorites' || path === '/recent') return 'collection'
-  if (LEGACY_CLIPBOARD_ROUTES.has(path)) return 'tool'
-  if (LEGACY_FORMATTER_ROUTES.has(path)) return 'tool'
+  if (path === '/devtools') return 'category'
+  if (path in LEGACY_TOOL_ROUTES) return 'tool'
   if (/^\/categories\/[\w-]+$/.test(path)) return 'category'
   if (toolRegistry.getAll().some((tool) => tool.route === path)) return 'tool'
   return 'home'

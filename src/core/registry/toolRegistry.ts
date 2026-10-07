@@ -30,7 +30,7 @@ class ToolRegistry {
     const q = query.trim().toLowerCase()
     if (!q) return this.getAll()
     return this.getAll().filter((tool) => {
-      const haystack = [tool.name, tool.description, tool.category, ...tool.keywords]
+      const haystack = [tool.name, tool.description, tool.category, ...tool.keywords, ...(tool.aliases ?? [])]
         .join(' ')
         .toLowerCase()
       return q.split(/\s+/).every((token) => haystack.includes(token))

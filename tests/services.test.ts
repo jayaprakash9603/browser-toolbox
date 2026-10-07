@@ -36,9 +36,9 @@ describe('settingsService', () => {
 
 describe('favoritesService', () => {
   it('toggles favorites', async () => {
-    expect(await toggleFavorite('text.word-counter')).toBe(true)
-    expect(await getFavorites()).toEqual(['text.word-counter'])
-    expect(await toggleFavorite('text.word-counter')).toBe(false)
+    expect(await toggleFavorite('text.analyzer')).toBe(true)
+    expect(await getFavorites()).toEqual(['text.analyzer'])
+    expect(await toggleFavorite('text.analyzer')).toBe(false)
     expect(await getFavorites()).toEqual([])
   })
 })

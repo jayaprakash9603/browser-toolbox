@@ -22,11 +22,26 @@ export default defineManifest({
     type: 'module',
   },
   devtools_page: 'devtools.html',
-  permissions: ['sidePanel', 'storage', 'clipboardRead', 'clipboardWrite', 'contextMenus'],
+  content_scripts: [
+    {
+      js: ['src/chrome/content/index.ts'],
+      matches: ['<all_urls>'],
+      run_at: 'document_idle',
+    },
+  ],
+  permissions: ['sidePanel', 'storage', 'clipboardRead', 'clipboardWrite', 'contextMenus', 'activeTab', 'scripting', 'tabs'],
   commands: {
     'open-command-palette': {
       suggested_key: { default: 'Ctrl+Shift+Space', mac: 'Command+Shift+Space' },
       description: '__MSG_commandPaletteDescription__',
+    },
+    'pick-element': {
+      suggested_key: { default: 'Ctrl+Shift+E', mac: 'Command+Shift+E' },
+      description: '__MSG_commandPickElement__',
+    },
+    'capture-screenshot': {
+      suggested_key: { default: 'Ctrl+Shift+S', mac: 'Command+Shift+S' },
+      description: '__MSG_commandCaptureScreenshot__',
     },
   },
 })

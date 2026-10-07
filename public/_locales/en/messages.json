@@ -11,6 +11,12 @@
   "commandPaletteDescription": {
     "message": "Open the toolbox command palette"
   },
+  "commandPickElement": {
+    "message": "Pick an element on the current page"
+  },
+  "commandCaptureScreenshot": {
+    "message": "Capture a screenshot"
+  },
   "contextMenuOpen": {
     "message": "Open Browser Toolbox"
   }

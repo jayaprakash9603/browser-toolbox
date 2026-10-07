@@ -10,8 +10,10 @@ export const clipboardTools: ToolDefinition[] = [
     category: 'clipboard',
     icon: ClipboardPasteIcon,
     keywords: ['clipboard', 'manager', 'paste', 'copy', 'history', 'pinned', 'search'],
+    aliases: ['clipboard history', 'copy history', 'clipboard manager'],
     route: '/tools/clipboard/manager',
     capabilities: ['SIDE_PANEL', 'CLIPBOARD', 'STORAGE'],
+    status: 'active',
     loader: () => import('@/tools/clipboard/clipboard-manager/Tool'),
   },
 ]

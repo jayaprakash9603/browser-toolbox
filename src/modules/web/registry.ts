@@ -1,0 +1,58 @@
+import { InfoIcon, ImageIcon, Link2Icon, LinkIcon } from 'lucide-react'
+
+import type { ToolDefinition } from '@/core/registry'
+
+export const webTools: ToolDefinition[] = [
+  {
+    id: 'web.url-toolkit',
+    name: 'URL Toolkit',
+    description: 'Parse, encode, decode and clean URLs with a query-param editor.',
+    category: 'web',
+    icon: LinkIcon,
+    keywords: ['url', 'parse', 'encode', 'decode', 'query', 'params', 'clean', 'utm'],
+    aliases: ['url parser', 'url encoder', 'query string', 'url decoder', 'utm remover', 'clean url'],
+    route: '/tools/web/url-toolkit',
+    capabilities: ['SIDE_PANEL', 'CONTEXT_MENU', 'COMMAND'],
+    status: 'active',
+    loader: () => import('@/tools/web/url-toolkit/Tool'),
+  },
+  {
+    id: 'web.link-toolkit',
+    name: 'Link Toolkit',
+    description: 'Extract internal and external links from the current page.',
+    category: 'web',
+    icon: Link2Icon,
+    keywords: ['links', 'extract', 'internal', 'external', 'urls', 'page'],
+    aliases: ['extract links', 'page links', 'all links', 'link extractor'],
+    route: '/tools/web/link-toolkit',
+    capabilities: ['SIDE_PANEL', 'CONTENT_SCRIPT', 'PAGE_ACCESS'],
+    status: 'active',
+    loader: () => import('@/tools/web/link-toolkit/Tool'),
+  },
+  {
+    id: 'web.image-links',
+    name: 'Image Links',
+    description: 'Extract image URLs, dimensions and alt text from the page.',
+    category: 'web',
+    icon: ImageIcon,
+    keywords: ['images', 'extract', 'alt', 'dimensions', 'urls'],
+    aliases: ['extract images', 'page images', 'image urls', 'image alt'],
+    route: '/tools/web/image-links',
+    capabilities: ['SIDE_PANEL', 'CONTENT_SCRIPT', 'PAGE_ACCESS'],
+    status: 'active',
+    loader: () => import('@/tools/web/image-links/Tool'),
+  },
+  {
+    id: 'web.page-info',
+    name: 'Page Information',
+    description: 'Title, meta, canonical, Open Graph and Twitter card details for the page.',
+    category: 'web',
+    icon: InfoIcon,
+    keywords: ['page', 'info', 'meta', 'canonical', 'open graph', 'twitter', 'seo'],
+    aliases: ['page info', 'meta tags', 'open graph', 'og tags', 'page details'],
+    route: '/tools/web/page-info',
+    capabilities: ['SIDE_PANEL', 'CONTENT_SCRIPT', 'PAGE_ACCESS'],
+    status: 'active',
+    loader: () => import('@/tools/web/page-info/Tool'),
+  },
+]

@@ -7,6 +7,7 @@ interface TextEditorProps {
   placeholder?: string
   readOnly?: boolean
   minRows?: number
+  fill?: boolean
   mono?: boolean
   ariaLabel?: string
   className?: string
@@ -19,6 +20,7 @@ export function TextEditor({
   placeholder,
   readOnly,
   minRows = 6,
+  fill = false,
   mono = true,
   ariaLabel,
   className,
@@ -31,14 +33,14 @@ export function TextEditor({
       placeholder={placeholder}
       readOnly={readOnly}
       aria-label={ariaLabel}
-      style={{ height: `${minRows * 1.5 + 1.25}rem` }}
+      style={fill ? undefined : { height: `${minRows * 1.5 + 1.25}rem` }}
       onKeyDown={(event) => {
         if (onKeyCommand && (event.metaKey || event.ctrlKey) && event.key === 'Enter') {
           event.preventDefault()
           onKeyCommand('submit')
         }
       }}
-      className={cn('resize-none overflow-y-auto leading-relaxed', mono && 'font-mono', className)}
+      className={cn('resize-none overflow-y-auto leading-relaxed', fill && 'min-h-0 flex-1', mono && 'font-mono', className)}
     />
   )
 }
