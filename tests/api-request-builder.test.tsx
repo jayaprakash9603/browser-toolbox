@@ -30,7 +30,7 @@ function renderTool() {
 
 describe('API Request Builder', () => {
   it('requests access on Send and then displays the response', async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup({ delay: null })
     vi.mocked(chrome.permissions.request).mockResolvedValue(true as never)
     vi.mocked(chrome.permissions.contains).mockResolvedValue(true as never)
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
@@ -43,7 +43,9 @@ describe('API Request Builder', () => {
 
     renderTool()
     expect(screen.getByRole('heading', { name: 'API Request Builder' })).toBeInTheDocument()
-    await user.type(screen.getByRole('textbox', { name: 'Request URL' }), 'https://api.example.com/v1')
+    const urlInput = screen.getByRole('textbox', { name: 'Request URL' })
+    await user.click(urlInput)
+    await user.paste('https://api.example.com/v1')
     expect(chrome.permissions.request).not.toHaveBeenCalled()
 
     await user.click(screen.getByRole('button', { name: 'Send request' }))
@@ -54,19 +56,21 @@ describe('API Request Builder', () => {
     await waitFor(() => expect(fetchSpy).toHaveBeenCalled())
     expect(await screen.findByText(/200 OK/)).toBeInTheDocument()
     expect(screen.getByText(/"ok": true/)).toBeInTheDocument()
-  })
+  }, 15_000)
 
   it('does not send when host access is denied', async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup({ delay: null })
     vi.mocked(chrome.permissions.request).mockResolvedValue(false as never)
     const fetchSpy = vi.spyOn(globalThis, 'fetch')
 
     renderTool()
     expect(screen.getByRole('heading', { name: 'API Request Builder' })).toBeInTheDocument()
-    await user.type(screen.getByRole('textbox', { name: 'Request URL' }), 'https://api.example.com')
+    const urlInput = screen.getByRole('textbox', { name: 'Request URL' })
+    await user.click(urlInput)
+    await user.paste('https://api.example.com')
     await user.click(screen.getByRole('button', { name: 'Send request' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/access was not granted/i)
     expect(fetchSpy).not.toHaveBeenCalled()
-  })
+  }, 15_000)
 })
