@@ -1,158 +1,210 @@
-# Tools
+# Tools catalog & capability matrix
+
+Browser Toolbox ships **53 registry tools** (including one disabled legacy entry) as **consolidated toolkits**, not hundreds of separate icons. Search, favorites, the command palette (`Ctrl/Cmd+Shift+Space`), context menus, and clipboard insights surface the same capabilities.
+
+See [ROADMAP.md](./ROADMAP.md) for what is planned next.
+
+**Legend:** **Shipped** = available today · **Partial** = subset of the spec · **Deferred** = planned · **Out of scope** = intentionally not building (see roadmap)
+
+---
+
+## Spec coverage matrix
+
+| Spec area | Status | Registry / notes |
+| --------- | ------ | ---------------- |
+| **1. Clipboard & text** | **Shipped** | `clipboard.manager`; text toolkits (formatter, case, cleaner, analyzer, lines, find/replace, diff, dummy data). Smart paste detects JSON, JWT, URL, color, timestamp, XML, YAML, Base64 ([`detection` engine](src/core/engines/detection/index.ts)). |
+| **2. Developer (JSON, encoding, IDs, hash, JWT, regex)** | **Shipped** / **Partial** | JSON/XML/YAML/SQL/regex/ID toolkits; `data.universal-converter`. JSON **diff engine exists, no UI tab yet** (Phase 2). JWT decode only (not sign/verify). |
+| **3. URL & web utilities** | **Partial** | `web.url-toolkit`, links, images, page info. No DNS/WHOIS/SSL/redirect SaaS lookups (out of scope). |
+| **4. Color & design** | **Shipped** | Color convert/pick/palette, contrast, CSS generators; eyedropper + context menu pick. |
+| **5. Screenshots** | **Partial** | Visible tab capture + annotations. No full-page, element-only, or OCR yet (Phase 2). |
+| **6. QA / testing** | **Shipped** / **Partial** | Element inspector, selectors, XPath, test data, HTTP status reference, bug reporter. `api.request-builder` under **API** category (history + response diff). |
+| **7. Security utilities** | **Shipped** | Encoder, hash/HMAC, JWT decode, password/random generators — local Web Crypto where applicable. |
+| **8. Time tools** | **Shipped** | `datetime.toolkit` (diff, zones, cron) + `productivity.timer`. |
+| **9. Calculators** | **Partial** | Basic/scientific calc, unit converter, base converter — not full fraction/ratio/percentage suite. |
+| **10. File tools** | **Partial** | CSV/JSON/text viewers, image→PDF locally. |
+| **11. Image tools** | **Partial** | Resize, crop, convert, info, Base64 in `image.image-toolkit`. |
+| **12. QR** | **Shipped** | Generate + decode in `generators.qr-toolkit`. |
+| **13. Web page / SEO** | **Shipped** / **Partial** | `web.page-info`, `seo.toolkit`. No broken-link crawler yet (Phase 3). |
+| **14. Website inspector (Wappalyzer-style)** | **Deferred** | Phase 5 epic. |
+| **15. Element inspector / selectors** | **Shipped** | QA toolkits + shared picker/selector engine. |
+| **16–18. Responsive, rulers, measurement** | **Deferred** | Phase 5. |
+| **19. Productivity (tabs, bookmarks)** | **Partial** | Notes, timer, tab search/duplicates/URLs. No bookmark manager or tab groups yet. |
+| **20. Notes** | **Shipped** | Local markdown notes with search/pin. |
+| **21. AI utilities** | **Out of scope** | Optional future module; off by default. |
+| **22. Generators** | **Partial** | Test data, passwords, UUIDs, QR, lorem — not full fake-identity suite. |
+| **23. Data format converters** | **Shipped** | `data.universal-converter` + JSON toolkit converts. |
+| **24. SQL** | **Partial** | Format/minify; no SQL→JSON UI. |
+| **25. Translation / language** | **Out of scope** | Not a translation product. |
+| **26. Browser quick actions** | **Shipped** | Context menus + commands; see [PERMISSIONS.md](./PERMISSIONS.md). |
+| **Storage (local/session)** | **Partial** | `storage.inspector` — **localStorage + sessionStorage only** (cookies planned Phase 2). |
+
+---
+
+## Legacy routes
+
+Old URLs redirect in the app shell ([`AppShell.tsx`](src/app/layouts/AppShell.tsx)):
+
+| Legacy path | Resolves to |
+| ----------- | ----------- |
+| `/tools/clipboard/history`, `/pinned`, `/search` | `clipboard.manager` |
+| `/tools/text/word-counter`, `/line-counter` | `text.analyzer` |
+| `/tools/text/duplicate-line-remover`, `/sort-lines` | `text.line-tools` |
+| `/tools/text/lorem-ipsum` | `text.dummy-data` |
+| `/tools/text/markdown-formatter`, `/html-formatter`, `/css-formatter`, `/javascript-formatter` | `text.formatter` |
+| `/tools/qa/api-request-builder` | `api.request-builder` |
+| `/tools/developer/timestamp-toolkit` | `datetime.toolkit` |
+
+---
 
 ## Clipboard
 
-| Tool              | Route                      | Notes                                              |
-| ----------------- | -------------------------- | -------------------------------------------------- |
-| Clipboard Manager | `/tools/clipboard/manager` | Tabs (All/Text/Pinned), search, pin, delete, clear |
-| Clipboard History | `/tools/clipboard/history` | Auto-capture on panel focus + paste + explicit add |
-| Pinned Items      | `/tools/clipboard/pinned`  | Pinned snippets survive history trimming           |
-| Clipboard Search  | `/tools/clipboard/search`  | Full-text search over history                      |
+| Tool | Route | Capabilities |
+| ---- | ----- | ------------ |
+| Clipboard Manager | `/tools/clipboard/manager` | History (search), pin, delete, clear, tabs for all/text/pinned |
 
-Chrome cannot passively watch the clipboard from a side panel. Capture happens on: panel focus, paste events, and the explicit "Add current clipboard" button. All data is local; history can be disabled, size-limited and cleared from Settings.
+Capture is **not** passive: panel focus, paste, and “add from clipboard” in the panel. Configurable in Settings; data stays local.
+
+---
 
 ## Text
 
-| Tool           | Route                            | Highlights                                                                      |
-| -------------- | -------------------------------- | ------------------------------------------------------------------------------- |
-| Formatter      | `/tools/text/formatter`          | Auto-detect + format/minify: JSON, JS, TS, HTML, XML, CSS, Markdown, plain text |
-| Case Converter | `/tools/text/case-converter`     | lower/UPPER/Title/Sentence/camel/Pascal/snake/kebab/CONSTANT                    |
-| Text Cleaner   | `/tools/text/whitespace-cleaner` | Trim, collapse spaces, normalize breaks, strip blank lines                      |
-| Text Analyzer  | `/tools/text/analyzer`           | Words, chars (±spaces), lines, paragraphs, sentences, reading time, averages    |
-| Line Tools     | `/tools/text/line-tools`         | Dedupe, sort, reverse, shuffle, line numbering, remove empty lines              |
-| Find & Replace | `/tools/text/find-replace`       | Live match count, case/whole-word/regex, `$1` groups                            |
-| Text Diff      | `/tools/text/diff`               | Line diff via `diff` package, +/- badges                                        |
-| Dummy Data     | `/tools/text/dummy-data`         | Lorem ipsum or random paragraphs / sentences / words                            |
+| Tool | Route | Highlights |
+| ---- | ----- | ---------- |
+| Code Formatter | `/tools/text/formatter` | Format/minify JS, TS, HTML, XML, CSS, Markdown (use JSON Toolkit for JSON) |
+| Case Converter | `/tools/text/case-converter` | camel, snake, kebab, title, etc. |
+| Text Cleaner | `/tools/text/whitespace-cleaner` | Trim, collapse whitespace, normalize breaks |
+| Text Analyzer | `/tools/text/analyzer` | Words, chars, lines, reading time |
+| Line Tools | `/tools/text/line-tools` | Dedupe, sort, reverse, shuffle, numbering |
+| Find & Replace | `/tools/text/find-replace` | Regex, case, whole-word |
+| Text Diff | `/tools/text/diff` | Line diff |
+| Dummy Data | `/tools/text/dummy-data` | Lorem / random text |
 
-Legacy routes (`word-counter`, `line-counter`, `duplicate-line-remover`, `sort-lines`, `lorem-ipsum`, old formatter routes) redirect to the consolidated tools.
+---
 
 ## Developer
 
-| Tool              | Route                                | Highlights                                                                                                  |
-| ----------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| JSON Toolkit      | `/tools/developer/json-toolkit`      | Validate (line/col/fix), format, minify, tree view, JSON-path query, convert to CSV/XML/TypeScript/Markdown |
-| XML Toolkit       | `/tools/developer/xml-toolkit`       | Validate with position, format, minify, XML → JSON                                                          |
-| YAML Toolkit      | `/tools/developer/yaml-toolkit`      | Validate, format, YAML ↔ JSON                                                                               |
-| SQL Toolkit       | `/tools/developer/sql-toolkit`       | Format + minify across 10 dialects (sql-formatter)                                                          |
-| Regex Toolkit     | `/tools/developer/regex-toolkit`     | Test with match/groups, replace with `$1`, pattern library, backtracking risk warnings                      |
-| UUID / ID Toolkit | `/tools/developer/id-toolkit`        | UUID v4/v7, NanoID, bulk generate, validate                                                                 |
-| Timestamp Toolkit | `/tools/developer/timestamp-toolkit` | Unix s/ms ↔ date, current timestamp, relative time                                                          |
+| Tool | Route | Highlights |
+| ---- | ----- | ---------- |
+| JSON Toolkit | `/tools/developer/json-toolkit` | Validate, format, minify, tree, JSONPath, convert |
+| XML Toolkit | `/tools/developer/xml-toolkit` | Validate, format, minify, → JSON |
+| YAML Toolkit | `/tools/developer/yaml-toolkit` | Validate, format, ↔ JSON |
+| SQL Toolkit | `/tools/developer/sql-toolkit` | Format + minify (dialects) |
+| Regex Toolkit | `/tools/developer/regex-toolkit` | Test, replace, library |
+| UUID / ID Toolkit | `/tools/developer/id-toolkit` | UUID v4/v7, NanoID, validate |
+| Timestamp Toolkit (legacy) | `/tools/developer/timestamp-toolkit` | **Disabled** registry entry; use Date & Time Toolkit |
 
-All Developer tools reuse the shared engines in `src/core/engines/` (`json`, `xml`, `yaml`, `sql`, `regex`, `id`, `date`).
+Engines: `src/core/engines/` (`json`, `xml`, `yaml`, `sql`, `regex`, `id`, `date`, …).
+
+---
+
+## API & HTTP
+
+| Tool | Route | Highlights |
+| ---- | ----- | ---------- |
+| API Request Builder | `/tools/api/request-builder` | GET/POST/…, headers/body, optional host permission, response view, **history**, **response diff** |
+
+---
+
+## Data conversion
+
+| Tool | Route | Highlights |
+| ---- | ----- | ---------- |
+| Universal Converter | `/tools/data/universal-converter` | JSON, CSV, XML, YAML, Markdown tables, TSV |
+
+---
 
 ## QA
 
-| Tool                | Route                              | Highlights                                                                                  |
-| ------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------- |
-| Element Inspector   | `/tools/qa/element-inspector`      | Pick an element → tag, id, classes, attributes, text, dimensions, computed styles            |
-| Selector Generator  | `/tools/qa/selector-generator`     | CSS + XPath (id/class/attr/relative/absolute/text) with copy                                 |
-| XPath Tester        | `/tools/qa/xpath-tester`           | Evaluate XPath on the live page, match count + samples                                       |
-| Test Data Generator | `/tools/qa/test-data-generator`    | Names, emails, phones, addresses, UUIDs, dates, numbers → JSON/CSV                           |
-| HTTP Status Codes   | `/tools/qa/http-status`            | Searchable status-code lookup with debugging hints                                           |
-| API Request Builder | `/tools/qa/api-request-builder`    | User-initiated HTTP requests, optional per-host permission, bounded response and redactions |
-| Bug Reporter        | `/tools/qa/bug-reporter`           | Captures URL/title/viewport/UA + Expected/Actual/Steps → markdown                            |
+| Tool | Route | Highlights |
+| ---- | ----- | ---------- |
+| Element Inspector | `/tools/qa/element-inspector` | Pick element → DOM, styles, dimensions |
+| Selector Generator | `/tools/qa/selector-generator` | CSS + XPath |
+| XPath Tester | `/tools/qa/xpath-tester` | Live page XPath |
+| Test Data Generator | `/tools/qa/test-data-generator` | Names, emails, etc. → JSON/CSV |
+| HTTP Status Codes | `/tools/qa/http-status` | Reference lookup |
+| Bug Reporter | `/tools/qa/bug-reporter` | URL, viewport, steps → markdown |
 
-Element tools share the single element-picker + `selector` engine (no duplicate selection logic).
+---
 
 ## Web
 
-| Tool             | Route                     | Highlights                                                       |
-| ---------------- | ------------------------- | ---------------------------------------------------------------- |
-| URL Toolkit      | `/tools/web/url-toolkit`  | Parse, encode/decode, query-param editor, tracking-param cleaner |
-| Link Toolkit     | `/tools/web/link-toolkit` | Extract internal/external links, dupes, copy URLs                |
-| Image Links      | `/tools/web/image-links`  | Extract image URLs, dimensions, alt text                         |
-| Page Information | `/tools/web/page-info`    | Title, meta, canonical, Open Graph, Twitter cards                |
+| Tool | Route | Highlights |
+| ---- | ----- | ---------- |
+| URL Toolkit | `/tools/web/url-toolkit` | Parse, encode/decode, query editor, UTM-style cleaner |
+| Link Toolkit | `/tools/web/link-toolkit` | Internal/external links |
+| Image Links | `/tools/web/image-links` | Image URLs, alt text |
+| Page Information | `/tools/web/page-info` | Meta, canonical, OG, Twitter |
+
+---
 
 ## Security
 
-| Tool               | Route                                | Highlights                                                     |
-| ------------------ | ------------------------------------ | -------------------------------------------------------------- |
-| Encoder / Decoder  | `/tools/security/encoder-decoder`    | Base64, URL, HTML, Unicode, Hex (encode + decode)              |
-| Hash Toolkit       | `/tools/security/hash-toolkit`       | SHA-1/256/384/512 + MD5 (legacy) + HMAC via Web Crypto         |
-| JWT Toolkit        | `/tools/security/jwt-toolkit`        | Decode header/payload/claims, expiry status; decode ≠ verify   |
-| Password Generator | `/tools/security/password-generator` | Crypto-random, charset options, bulk, ambiguous-char exclusion |
-| Random Generator   | `/tools/security/random-generator`   | Numbers, strings, hex, UUID, NanoID (crypto)                   |
+| Tool | Route | Highlights |
+| ---- | ----- | ---------- |
+| Encoder / Decoder | `/tools/security/encoder-decoder` | Base64, URL, HTML, Unicode, Hex |
+| Hash Toolkit | `/tools/security/hash-toolkit` | SHA family, MD5 (legacy), HMAC |
+| JWT Toolkit | `/tools/security/jwt-toolkit` | Decode + expiry; **not** signature verification |
+| Password Generator | `/tools/security/password-generator` | Crypto-random |
+| Random Generator | `/tools/security/random-generator` | Numbers, strings, hex, UUID, NanoID |
+
+---
 
 ## Design
 
-| Tool              | Route                             | Highlights                                                       |
-| ----------------- | --------------------------------- | ---------------------------------------------------------------- |
-| Color Converter   | `/tools/design/color-converter`   | HEX ↔ RGB ↔ HSL ↔ HSV ↔ HWB ↔ CMYK                               |
-| Color Picker      | `/tools/design/color-picker`      | Screen eyedropper + swatch, copy HEX/RGB/HSL                     |
-| Palette Generator | `/tools/design/palette-generator` | Complementary/analogous/triadic/monochromatic/random, CSS export |
-| Contrast Checker  | `/tools/design/contrast-checker`  | WCAG AA/AAA, normal + large text, live preview                   |
-| CSS Generator     | `/tools/design/css-generator`     | Gradient, box-shadow, border-radius, glass effect                |
+| Tool | Route | Highlights |
+| ---- | ----- | ---------- |
+| Color Converter | `/tools/design/color-converter` | HEX/RGB/HSL/HSV/HWB/CMYK |
+| Color Picker | `/tools/design/color-picker` | Eyedropper + swatch |
+| Palette Generator | `/tools/design/palette-generator` | Harmonies + CSS export |
+| Contrast Checker | `/tools/design/contrast-checker` | WCAG AA/AAA |
+| CSS Generator | `/tools/design/css-generator` | Gradient, shadow, radius, glass |
+
+---
 
 ## Screenshots
 
-| Tool            | Route                        | Highlights                                                                                    |
-| --------------- | ---------------------------- | --------------------------------------------------------------------------------------------- |
-| Capture Toolkit | `/tools/screenshots/capture` | Visible-tab capture + annotation (rect/circle/arrow/highlight/blur/marker/text), download PNG |
+| Tool | Route | Highlights |
+| ---- | ----- | ---------- |
+| Capture Toolkit | `/tools/screenshots/capture` | **Visible tab** + annotations (shapes, blur, text, markers) |
 
-## Calculators
+---
 
-| Tool                  | Route                               | Highlights                                                 |
-| --------------------- | ----------------------------------- | ---------------------------------------------------------- |
-| Calculator            | `/tools/calculators/calculator`     | Arithmetic + scientific, safe tokenizer (no eval), history |
-| Unit Converter        | `/tools/calculators/unit-converter` | 13 categories (length, weight, temperature, data, speed…)  |
-| Number Base Converter | `/tools/calculators/base-converter` | Binary/octal/decimal/hex + bit view (BigInt)               |
+## Calculators · Date & time · Image · Files · Generators · SEO · Productivity · Browser · Storage · Accessibility
 
-## Date & Time
+| Category | Tool | Route |
+| -------- | ---- | ----- |
+| Calculators | Calculator, Unit Converter, Number Base Converter | `/tools/calculators/*` |
+| Date & time | Date & Time Toolkit | `/tools/datetime/toolkit` |
+| Image | Image Toolkit | `/tools/image/image-toolkit` |
+| Files | File Toolkit | `/tools/files/file-toolkit` |
+| Generators | QR Code Toolkit | `/tools/generators/qr-toolkit` |
+| SEO | SEO Toolkit | `/tools/seo/toolkit` |
+| Productivity | Notes, Timer, Tab Manager | `/tools/productivity/*` |
+| Browser | Browser Toolkit | `/tools/browser/toolkit` |
+| Storage | Storage Inspector | `/tools/storage/inspector` (local + session storage) |
+| Accessibility | Accessibility Quick Check | `/tools/accessibility/toolkit` |
 
-| Tool                | Route                     | Highlights                                                                     |
-| ------------------- | ------------------------- | ------------------------------------------------------------------------------ |
-| Date & Time Toolkit | `/tools/datetime/toolkit` | Date diff, working days, add days, timezone converter, cron parser + explainer |
+---
 
-## Image
+## Platform surfaces
 
-| Tool          | Route                        | Highlights                                                      |
-| ------------- | ---------------------------- | --------------------------------------------------------------- |
-| Image Toolkit | `/tools/image/image-toolkit` | Resize, crop, convert (PNG/JPEG/WebP), info, Base64 — all local |
+- **Side panel** — primary UI; search + categories + favorites + recents
+- **Command palette** — `Ctrl/Cmd+Shift+Space` (manifest commands)
+- **Context menus** — selection/page/link/image tool groups
+- **Smart paste** — home screen clipboard analysis → suggested tool
+- **DevTools** — page-aware tools with `DEVTOOLS` capability
 
-## Files
-
-| Tool         | Route                       | Highlights                                         |
-| ------------ | --------------------------- | -------------------------------------------------- |
-| File Toolkit | `/tools/files/file-toolkit` | CSV/JSON/text viewers + images → PDF (jspdf, lazy) |
-
-## Generators
-
-| Tool            | Route                          | Highlights                                                |
-| --------------- | ------------------------------ | --------------------------------------------------------- |
-| QR Code Toolkit | `/tools/generators/qr-toolkit` | Text/URL/Wi-Fi/email/phone/contact QR + decode from image |
-
-## SEO
-
-| Tool        | Route                | Highlights                                                      |
-| ----------- | -------------------- | --------------------------------------------------------------- |
-| SEO Toolkit | `/tools/seo/toolkit` | Score, meta/OG checks, heading hierarchy, link & image analysis |
-
-## Productivity
-
-| Tool        | Route                             | Highlights                               |
-| ----------- | --------------------------------- | ---------------------------------------- |
-| Notes       | `/tools/productivity/notes`       | Local markdown notes, search, pin        |
-| Timer       | `/tools/productivity/timer`       | Countdown, stopwatch, Pomodoro           |
-| Tab Manager | `/tools/productivity/tab-manager` | Search tabs, close duplicates, copy URLs |
-
-## Browser
-
-| Tool            | Route                    | Highlights                                         |
-| --------------- | ------------------------ | -------------------------------------------------- |
-| Browser Toolkit | `/tools/browser/toolkit` | Copy URL/title, reload, hard-reload, duplicate tab |
-
-## Storage
-
-| Tool              | Route                      | Highlights                                  |
-| ----------------- | -------------------------- | ------------------------------------------- |
-| Storage Inspector | `/tools/storage/inspector` | localStorage + sessionStorage, search, copy |
-
-## Accessibility
-
-| Tool                      | Route                          | Highlights                                                      |
-| ------------------------- | ------------------------------ | --------------------------------------------------------------- |
-| Accessibility Quick Check | `/tools/accessibility/toolkit` | Alt text, headings, link names, lang; links to Contrast Checker |
+---
 
 ## Engines
 
-Pure, unit-tested logic lives in `src/core/engines/` (`text`, `diff`, `json`, `encoding`, `url`, `color`, `date`, `hash`, `jwt`, `regex`, `unit`, `base`, `id`, `password`, `xml`, `yaml`, `sql`, `csv`, `qrcode`, `timezone`, `detection`, `selector`, `capture`, `image`, `calc`, `seo`, `testdata`). Tool UIs and all surfaces (context menu, commands, DevTools) call these engines — no duplicated logic.
+Pure logic lives in `src/core/engines/` (`text`, `diff`, `json`, `encoding`, `url`, `color`, `date`, `hash`, `jwt`, `regex`, `unit`, `base`, `id`, `password`, `xml`, `yaml`, `sql`, `csv`, `qrcode`, `timezone`, `detection`, `selector`, `capture`, `image`, `calc`, `seo`, `testdata`, `api`, `httpClient`). Tool UIs and Chrome surfaces call engines — no duplicated business logic.
+
+---
+
+## Explicitly out of scope
+
+- Third-party **DNS / WHOIS / SSL checker / redirect** services
+- **AI** rewrite/translate as a core feature (optional future module)
+- **“1000 tools”** parity with generic toolbox websites
+- **JWT signature verification** unless we add explicit key-handling UX later

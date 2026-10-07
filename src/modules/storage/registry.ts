@@ -1,9 +1,9 @@
 import { DatabaseIcon } from 'lucide-react'
 
-import type { ToolDefinition } from '@/core/registry'
+import { defineTool } from '@/core/registry'
 
-export const storageTools: ToolDefinition[] = [
-  {
+export const storageTools = [
+  defineTool({
     id: 'storage.inspector',
     name: 'Storage Inspector',
     description: 'Inspect localStorage and sessionStorage of the current page.',
@@ -15,5 +15,5 @@ export const storageTools: ToolDefinition[] = [
     capabilities: ['SIDE_PANEL', 'CONTENT_SCRIPT', 'PAGE_ACCESS', 'DEVTOOLS'],
     status: 'active',
     loader: () => import('@/tools/storage/storage-inspector/Tool'),
-  },
+  }),
 ]

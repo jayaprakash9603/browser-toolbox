@@ -1,8 +1,10 @@
 # Browser Toolbox
 
-An all-in-one Chrome extension (Manifest V3) that collects productivity, developer, QA and text utilities into a single **side panel** — one extension instead of dozens.
+**One Chrome extension. Everything you need.**
 
-**Phase 1 status:** foundation + Clipboard & Text tools are fully implemented. Developer, QA, Web, Design, Security, Calculator, Screenshot, File and Productivity categories are registered as *coming soon* placeholders.
+An all-in-one Manifest V3 extension that replaces dozens of tiny utilities with a single **side panel**: search any tool, favorite it, use keyboard shortcuts, and work locally without opening another website.
+
+**Core focus:** Developer + QA + web productivity — consolidated toolkits, not a popup with hundreds of icons.
 
 ## Quick start
 
@@ -17,18 +19,23 @@ bun run typecheck  # strict tsc
 
 Load the extension: `chrome://extensions` → enable *Developer mode* → *Load unpacked* → select `dist/`. Click the toolbar icon to open the side panel.
 
-## What's inside (Phase 1)
+## What ships today
 
-- **Clipboard** — Manager, History (search / pin / delete / clear, size limits, local-only), Pinned items, Clipboard Search
-- **Text** — Formatter, Case Converter, Whitespace Cleaner, Duplicate Line Remover, Sort Lines, Line Counter, Word Counter, Find & Replace (regex / whole-word / case options), Text Diff, Lorem Ipsum, Markdown / HTML / CSS / JavaScript formatters
+- **20 categories**, **53 registered tools** (mostly multi-feature toolkits)
+- **Clipboard & text** — manager, formatters, case/line tools, diff, lorem
+- **Developer & data** — JSON/XML/YAML/SQL, regex, IDs, universal converter
+- **API** — request builder with history and response diff (user-initiated HTTP)
+- **QA** — element inspector, selectors, XPath, test data, bug reporter
+- **Web, design, security, screenshots, calculators, datetime, image, files, QR, SEO, productivity, browser, storage, accessibility**
 
-Plus platform features: global search, command palette (`Ctrl/Cmd + K`), favorites, recent tools, light/dark/system theme, and settings.
+Platform: global search, command palette (`Ctrl/Cmd+Shift+Space`), favorites, recents, smart clipboard suggestions, context menus, light/dark/system theme, local settings.
 
 ## Documentation
 
+- [TOOLS.md](./TOOLS.md) — **shipped capabilities**, spec coverage matrix, legacy routes
+- [ROADMAP.md](./ROADMAP.md) — phased plan and explicit exclusions
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — platform design, registries, message flow
 - [DEVELOPMENT.md](./DEVELOPMENT.md) — how to add a new tool or module
-- [TOOLS.md](./TOOLS.md) — tool catalog
 - [PERMISSIONS.md](./PERMISSIONS.md) — why each Chrome permission exists
 
 ## Stack
