@@ -1,9 +1,9 @@
 import { ContrastIcon, PaintbrushIcon, PaletteIcon, PipetteIcon, WandIcon } from 'lucide-react'
 
-import type { ToolDefinition } from '@/core/registry'
+import { defineTool } from '@/core/registry'
 
-export const designTools: ToolDefinition[] = [
-  {
+export const designTools = [
+  defineTool({
     id: 'design.color-converter',
     name: 'Color Converter',
     description: 'Convert colors between HEX, RGB, HSL, HSV, HWB and CMYK.',
@@ -15,8 +15,8 @@ export const designTools: ToolDefinition[] = [
     capabilities: ['SIDE_PANEL', 'CONTEXT_MENU', 'COMMAND'],
     status: 'active',
     loader: () => import('@/tools/design/color-converter/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'design.color-picker',
     name: 'Color Picker',
     description: 'Pick a color from the screen or a swatch, copy as HEX/RGB/HSL.',
@@ -28,8 +28,8 @@ export const designTools: ToolDefinition[] = [
     capabilities: ['SIDE_PANEL', 'CONTEXT_MENU', 'COMMAND'],
     status: 'active',
     loader: () => import('@/tools/design/color-picker/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'design.palette-generator',
     name: 'Palette Generator',
     description: 'Generate complementary, analogous, triadic, monochromatic and random palettes.',
@@ -49,8 +49,8 @@ export const designTools: ToolDefinition[] = [
     capabilities: ['SIDE_PANEL'],
     status: 'active',
     loader: () => import('@/tools/design/palette-generator/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'design.contrast-checker',
     name: 'Contrast Checker',
     description: 'WCAG contrast ratio between foreground and background colors.',
@@ -62,8 +62,8 @@ export const designTools: ToolDefinition[] = [
     capabilities: ['SIDE_PANEL', 'CONTEXT_MENU'],
     status: 'active',
     loader: () => import('@/tools/design/contrast-checker/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'design.css-generator',
     name: 'CSS Generator',
     description: 'Generate gradients, box shadows, border radius and glass effects.',
@@ -81,5 +81,5 @@ export const designTools: ToolDefinition[] = [
     capabilities: ['SIDE_PANEL'],
     status: 'active',
     loader: () => import('@/tools/design/css-generator/Tool'),
-  },
+  }),
 ]

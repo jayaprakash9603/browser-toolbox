@@ -10,7 +10,7 @@ import { getToolName } from '@/i18n/toolLabels'
 import { Button } from '@/shared/components/ui/button'
 
 const DETECTION_ROUTES: Record<Detection['kind'], string | null> = {
-  json: 'text.formatter',
+  json: 'developer.json-toolkit',
   jwt: 'security.jwt-toolkit',
   url: 'web.url-toolkit',
   color: 'design.color-converter',

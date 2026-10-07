@@ -18,12 +18,12 @@ The extension requests the minimum set required for the implemented features. Ea
 
 - `cookies`, `bookmarks`, `sessions`, `alarms` — these will be added only when a feature needs them and after an explicit user action.
 - Required HTTP(S) host permissions — HTTP(S) access is declared as optional and is not granted by default.
-- Note: `manifest.config.ts` currently declares a static content script matching `<all_urls>`. It is injected by Chrome on matching pages; replacing it with user-triggered injection is still required before the extension can claim page access is strictly on-demand.
+- The content script bundle is listed in the manifest with a non-routable match pattern so Chrome does not auto-inject it on real pages; the background service worker injects it with `scripting.executeScript` when you use page tools or the element picker.
 - `clipboardRead` is never used to exfiltrate data: clipboard contents are processed locally and stored only on-device, with a disable switch, size limit and clear-all in Settings.
 
 ## Privacy
 
-- The API Request Builder sends requests directly to the user-selected host after an explicit action and optional Chrome permission prompt. Request history and credentials are not saved; JSON response fields with common credential names are redacted in the displayed body. No analytics, remote code, or remote fonts.
-- The static content script currently matches all URLs; page inspection is initiated by extension actions, but script injection itself is not yet on-demand.
+- The API Request Builder sends requests directly to the user-selected host after an explicit action and optional Chrome permission prompt. Recent responses are stored locally in `chrome.storage.local` (capped) for the History tab; credentials are not saved. JSON response fields with common credential names are redacted in the displayed body. No analytics, remote code, or remote fonts.
+- Page inspection runs only after you open a page tool or use a keyboard command; the content script is injected on demand for that tab.
 - Element-picker results and context-menu payloads stay in `chrome.storage.session` on this device and expire after 5 minutes.
 - Clipboard history may contain sensitive text — the Settings page warns about this and lets users disable or wipe it at any time.

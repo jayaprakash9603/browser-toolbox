@@ -1,9 +1,9 @@
 import { FolderOpenIcon } from 'lucide-react'
 
-import type { ToolDefinition } from '@/core/registry'
+import { defineTool } from '@/core/registry'
 
-export const filesTools: ToolDefinition[] = [
-  {
+export const filesTools = [
+  defineTool({
     id: 'files.file-toolkit',
     name: 'File Toolkit',
     description: 'View CSV/JSON/text files and combine images into a PDF — all locally.',
@@ -15,5 +15,5 @@ export const filesTools: ToolDefinition[] = [
     capabilities: ['SIDE_PANEL'],
     status: 'active',
     loader: () => import('@/tools/files/file-toolkit/Tool'),
-  },
+  }),
 ]

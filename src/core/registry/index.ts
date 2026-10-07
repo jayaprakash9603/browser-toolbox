@@ -1,3 +1,13 @@
 export { toolRegistry } from './toolRegistry'
 export { categoryRegistry } from './categoryRegistry'
-export type { ToolDefinition, CategoryDefinition, ToolCapability, ToolStatus } from './types'
+export { defineTool } from './defineTool'
+export { groupToolsByToolkit } from './groupTools'
+export { TOOLKIT_GROUP_IDS, TOOLKIT_GROUP_LABEL_KEYS } from './toolkitGroups'
+export type { ToolkitGroupId } from './toolkitGroups'
+export type {
+  ToolDefinition,
+  CategoryDefinition,
+  ToolCapability,
+  ToolStatus,
+  ContextSurface,
+} from './types'

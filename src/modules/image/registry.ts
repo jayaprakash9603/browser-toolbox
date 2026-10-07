@@ -1,9 +1,9 @@
 import { ImageIcon } from 'lucide-react'
 
-import type { ToolDefinition } from '@/core/registry'
+import { defineTool } from '@/core/registry'
 
-export const imageTools: ToolDefinition[] = [
-  {
+export const imageTools = [
+  defineTool({
     id: 'image.image-toolkit',
     name: 'Image Toolkit',
     description: 'Resize, crop, convert, inspect and encode images locally.',
@@ -20,7 +20,8 @@ export const imageTools: ToolDefinition[] = [
     ],
     route: '/tools/image/image-toolkit',
     capabilities: ['SIDE_PANEL'],
+    dependencies: ['image'],
     status: 'active',
     loader: () => import('@/tools/image/image-toolkit/Tool'),
-  },
+  }),
 ]

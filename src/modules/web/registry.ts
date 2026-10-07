@@ -1,9 +1,9 @@
 import { InfoIcon, ImageIcon, Link2Icon, LinkIcon } from 'lucide-react'
 
-import type { ToolDefinition } from '@/core/registry'
+import { defineTool } from '@/core/registry'
 
-export const webTools: ToolDefinition[] = [
-  {
+export const webTools = [
+  defineTool({
     id: 'web.url-toolkit',
     name: 'URL Toolkit',
     description: 'Parse, encode, decode and clean URLs with a query-param editor.',
@@ -20,10 +20,11 @@ export const webTools: ToolDefinition[] = [
     ],
     route: '/tools/web/url-toolkit',
     capabilities: ['SIDE_PANEL', 'CONTEXT_MENU', 'COMMAND'],
+    contextSurfaces: ['SELECTION', 'LINK'],
     status: 'active',
     loader: () => import('@/tools/web/url-toolkit/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'web.link-toolkit',
     name: 'Link Toolkit',
     description: 'Extract internal and external links from the current page.',
@@ -33,10 +34,11 @@ export const webTools: ToolDefinition[] = [
     aliases: ['extract links', 'page links', 'all links', 'link extractor'],
     route: '/tools/web/link-toolkit',
     capabilities: ['SIDE_PANEL', 'CONTENT_SCRIPT', 'PAGE_ACCESS'],
+    contextSurfaces: ['PAGE'],
     status: 'active',
     loader: () => import('@/tools/web/link-toolkit/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'web.image-links',
     name: 'Image Links',
     description: 'Extract image URLs, dimensions and alt text from the page.',
@@ -46,10 +48,11 @@ export const webTools: ToolDefinition[] = [
     aliases: ['extract images', 'page images', 'image urls', 'image alt'],
     route: '/tools/web/image-links',
     capabilities: ['SIDE_PANEL', 'CONTENT_SCRIPT', 'PAGE_ACCESS'],
+    contextSurfaces: ['PAGE', 'IMAGE'],
     status: 'active',
     loader: () => import('@/tools/web/image-links/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'web.page-info',
     name: 'Page Information',
     description: 'Title, meta, canonical, Open Graph and Twitter card details for the page.',
@@ -59,7 +62,8 @@ export const webTools: ToolDefinition[] = [
     aliases: ['page info', 'meta tags', 'open graph', 'og tags', 'page details'],
     route: '/tools/web/page-info',
     capabilities: ['SIDE_PANEL', 'CONTENT_SCRIPT', 'PAGE_ACCESS'],
+    contextSurfaces: ['PAGE'],
     status: 'active',
     loader: () => import('@/tools/web/page-info/Tool'),
-  },
+  }),
 ]

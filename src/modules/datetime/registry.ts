@@ -1,15 +1,26 @@
 import { CalendarClockIcon } from 'lucide-react'
 
-import type { ToolDefinition } from '@/core/registry'
+import { defineTool } from '@/core/registry'
 
-export const datetimeTools: ToolDefinition[] = [
-  {
+export const datetimeTools = [
+  defineTool({
     id: 'datetime.toolkit',
     name: 'Date & Time Toolkit',
-    description: 'Date calculator, timezone converter and cron parser.',
+    description: 'Unix timestamps, date calculator, timezone converter and cron parser.',
     category: 'datetime',
     icon: CalendarClockIcon,
-    keywords: ['date', 'time', 'timezone', 'cron', 'working days', 'difference', 'add days'],
+    keywords: [
+      'date',
+      'time',
+      'timezone',
+      'cron',
+      'working days',
+      'difference',
+      'add days',
+      'timestamp',
+      'unix',
+      'epoch',
+    ],
     aliases: [
       'date calculator',
       'timezone converter',
@@ -17,10 +28,15 @@ export const datetimeTools: ToolDefinition[] = [
       'cron expression',
       'date difference',
       'working days',
+      'unix timestamp',
+      'timestamp converter',
     ],
     route: '/tools/datetime/toolkit',
     capabilities: ['SIDE_PANEL', 'CONTEXT_MENU'],
+    contextSurfaces: ['SELECTION'],
+    toolkitGroup: 'datetime',
+    dependencies: ['date', 'timezone'],
     status: 'active',
     loader: () => import('@/tools/datetime/datetime-toolkit/Tool'),
-  },
+  }),
 ]

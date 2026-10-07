@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { categoryRegistry, toolRegistry } from '@/core/registry'
+import { categoryRegistry, groupToolsByToolkit, toolRegistry } from '@/core/registry'
 import { getToolSearchLabels } from '@/i18n/toolLabels'
 import { BackButton } from '@/shared/components/BackButton'
 import { ToolCard } from '@/shared/components/ToolCard'
@@ -20,6 +20,9 @@ export default function CategoryPage({ categoryId }: { categoryId: string }) {
       [...getToolSearchLabels(tool), ...tool.keywords].join(' ').toLowerCase().includes(search),
     )
   }, [query, tools])
+
+  const grouped = useMemo(() => groupToolsByToolkit(filteredTools), [filteredTools])
+  const showGrouped = grouped.length > 1
 
   if (!category) {
     return <EmptyState icon={InboxIcon} title={t('category.unknown')} />
@@ -59,8 +62,23 @@ export default function CategoryPage({ categoryId }: { categoryId: string }) {
         query ? (
           <EmptyState icon={InboxIcon} title={t('category.noMatches')} description={t('category.trySearchAgain')} />
         ) : (
-        <EmptyState icon={InboxIcon} title={t('category.noTools')} />
+          <EmptyState icon={InboxIcon} title={t('category.noTools')} />
         )
+      ) : showGrouped ? (
+        <div className="flex flex-col gap-4">
+          {grouped.map((section) => (
+            <section key={section.id}>
+              <h2 className="mb-2 text-xs font-semibold text-muted-foreground">
+                {t(section.labelKey, { defaultValue: section.id })}
+              </h2>
+              <div className="grid grid-cols-1 gap-2 @[360px]:grid-cols-2 @[560px]:grid-cols-3">
+                {section.tools.map((tool) => (
+                  <ToolCard key={tool.id} tool={tool} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-2 @[360px]:grid-cols-2 @[560px]:grid-cols-3">
           {filteredTools.map((tool) => (

@@ -4,7 +4,9 @@ import { clipboardTools } from './clipboard/registry'
 import { textTools } from './text/registry'
 import { developerTools } from './developer/registry'
 import { qaTools } from './qa/registry'
+import { apiTools } from './api/registry'
 import { webTools } from './web/registry'
+import { dataTools } from './data/registry'
 import { securityTools } from './security/registry'
 import { designTools } from './design/registry'
 import { screenshotsTools } from './screenshots/registry'
@@ -29,7 +31,9 @@ export function registerModules() {
   toolRegistry.registerAll(textTools)
   toolRegistry.registerAll(developerTools)
   toolRegistry.registerAll(qaTools)
+  toolRegistry.registerAll(apiTools)
   toolRegistry.registerAll(webTools)
+  toolRegistry.registerAll(dataTools)
   toolRegistry.registerAll(securityTools)
   toolRegistry.registerAll(designTools)
   toolRegistry.registerAll(screenshotsTools)

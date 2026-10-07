@@ -21,10 +21,16 @@ describe('tool registry', () => {
     routes.forEach((route) => expect(route).toMatch(/^\/tools\/[\w-]+\/[\w-]+$/))
   })
 
+  it('assigns toolkitGroup metadata to every tool', () => {
+    for (const tool of toolRegistry.getAll()) {
+      expect(tool.toolkitGroup).toBeTruthy()
+      expect(tool.toolkitGroupLabel).toBeTruthy()
+      expect(tool.version).toBe('1')
+    }
+  })
+
   it('search matches name, keywords and category', () => {
-    expect(toolRegistry.search('json')).toEqual(
-      expect.arrayContaining([expect.objectContaining({ id: 'text.formatter' })]),
-    )
+    expect(toolRegistry.search('json beautify')[0]?.id).toBe('developer.json-toolkit')
     expect(toolRegistry.search('json')).toEqual(
       expect.arrayContaining([expect.objectContaining({ id: 'developer.json-toolkit' })]),
     )

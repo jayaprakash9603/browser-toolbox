@@ -402,7 +402,9 @@ const en = {
   'tools.qa.http-status.description': 'Look up HTTP status codes with meaning and debugging hints.',
   'tools.api.request-builder.name': 'API Request Builder',
   'tools.api.request-builder.description':
-    'Send HTTP requests, inspect responses, browse history and diff bodies.',
+    'Full API client with collections, environments, scripts, and request history.',
+  'apiClient.storageHostHint':
+    'Collections and environments are stored in extension local storage for this profile.',
   'tools.data.universal-converter.name': 'Universal Converter',
   'tools.data.universal-converter.description':
     'Convert between JSON, CSV, XML, YAML, Markdown tables and TSV.',
@@ -652,10 +654,6 @@ const en = {
   'data.output': 'Output',
   'data.inputPlaceholder': 'Paste data to convert…',
   'data.convertFailed': 'Conversion failed.',
-  'categories.api.name': 'API & HTTP',
-  'categories.api.description': 'HTTP client, responses, history and API utilities',
-  'categories.data.name': 'Data Conversion',
-  'categories.data.description': 'Convert between JSON, CSV, XML, YAML and more',
   'toolkitGroups.clipboardText': 'Text & Clipboard',
   'toolkitGroups.developer': 'Developer',
   'toolkitGroups.qa': 'QA & Testing',

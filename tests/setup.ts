@@ -3,6 +3,36 @@ import { vi } from 'vitest'
 
 import '@/i18n'
 
+vi.mock('postman-lite', () => ({
+  default: () => null,
+  defaultTheme: {
+    light: {
+      background: '0 0% 100%',
+      foreground: '0 0% 0%',
+      primary: '0 0% 0%',
+      ring: '0 0% 0%',
+      link: '0 0% 0%',
+      accentSoft: '0 0% 95%',
+      accentBorder: '0 0% 85%',
+    },
+    dark: {
+      background: '0 0% 0%',
+      foreground: '0 0% 100%',
+      primary: '0 0% 100%',
+      ring: '0 0% 100%',
+      link: '0 0% 100%',
+      accentSoft: '0 0% 15%',
+      accentBorder: '0 0% 25%',
+    },
+  },
+  createDefaultI18n: () => ({}),
+  createExtensionAdapters: () => ({}),
+  registerExtensionHistoryListener: vi.fn(),
+  shadcnKit: {},
+}))
+
+vi.mock('postman-lite/style.css', () => ({}))
+
 function makeEvent() {
   return {
     addListener: (_fn: (...args: unknown[]) => void) => undefined,

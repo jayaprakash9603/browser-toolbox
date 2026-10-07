@@ -1,9 +1,9 @@
 import { ClipboardPasteIcon } from 'lucide-react'
 
-import type { ToolDefinition } from '@/core/registry'
+import { defineTool } from '@/core/registry'
 
-export const clipboardTools: ToolDefinition[] = [
-  {
+export const clipboardTools = [
+  defineTool({
     id: 'clipboard.manager',
     name: 'Clipboard Manager',
     description: 'View, pin and manage everything you copy.',
@@ -13,7 +13,9 @@ export const clipboardTools: ToolDefinition[] = [
     aliases: ['clipboard history', 'copy history', 'clipboard manager'],
     route: '/tools/clipboard/manager',
     capabilities: ['SIDE_PANEL', 'CLIPBOARD', 'STORAGE'],
+    toolkitGroup: 'clipboard-text',
+    dependencies: ['clipboard'],
     status: 'active',
     loader: () => import('@/tools/clipboard/clipboard-manager/Tool'),
-  },
+  }),
 ]

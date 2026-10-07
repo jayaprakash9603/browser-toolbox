@@ -1,9 +1,9 @@
 import { PanelsTopLeftIcon } from 'lucide-react'
 
-import type { ToolDefinition } from '@/core/registry'
+import { defineTool } from '@/core/registry'
 
-export const browserTools: ToolDefinition[] = [
-  {
+export const browserTools = [
+  defineTool({
     id: 'browser.toolkit',
     name: 'Browser Toolkit',
     description: 'Copy page URL/title, reload, hard-reload and duplicate the tab.',
@@ -15,5 +15,5 @@ export const browserTools: ToolDefinition[] = [
     capabilities: ['SIDE_PANEL', 'COMMAND'],
     status: 'active',
     loader: () => import('@/tools/browser/browser-toolkit/Tool'),
-  },
+  }),
 ]

@@ -29,8 +29,13 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
   if (!open) return null
 
-  const tools = toolRegistry.getAll()
+  const tools = toolRegistry
+    .getAll()
+    .filter((tool) => (tool.status ?? 'active') !== 'disabled')
   const favoriteTools = tools.filter((tool) => favorites.includes(tool.id))
+  const commandTools = query.trim()
+    ? toolRegistry.search(query.trim())
+    : tools.filter((tool) => tool.capabilities.includes('COMMAND'))
 
   const select = (route: string) => {
     setQuery('')
@@ -99,7 +104,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
               heading={t('palette.allTools')}
               className="text-[10px] font-medium text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1"
             >
-              {tools.map((tool) => (
+              {commandTools.map((tool) => (
                 <CommandItem key={tool.id} tool={tool} query={query} onSelect={select} />
               ))}
             </Command.Group>

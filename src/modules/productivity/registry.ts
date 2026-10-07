@@ -1,9 +1,9 @@
 import { NotebookPenIcon, TimerIcon, LayoutGridIcon } from 'lucide-react'
 
-import type { ToolDefinition } from '@/core/registry'
+import { defineTool } from '@/core/registry'
 
-export const productivityTools: ToolDefinition[] = [
-  {
+export const productivityTools = [
+  defineTool({
     id: 'productivity.notes',
     name: 'Notes',
     description: 'Local markdown notes with search and pinning.',
@@ -15,8 +15,8 @@ export const productivityTools: ToolDefinition[] = [
     capabilities: ['SIDE_PANEL', 'STORAGE'],
     status: 'active',
     loader: () => import('@/tools/productivity/notes/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'productivity.timer',
     name: 'Timer',
     description: 'Countdown, stopwatch and Pomodoro timer.',
@@ -28,8 +28,8 @@ export const productivityTools: ToolDefinition[] = [
     capabilities: ['SIDE_PANEL'],
     status: 'active',
     loader: () => import('@/tools/productivity/timer/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'productivity.tab-manager',
     name: 'Tab Manager',
     description: 'Search, close duplicates, and copy URLs of open tabs.',
@@ -41,5 +41,5 @@ export const productivityTools: ToolDefinition[] = [
     capabilities: ['SIDE_PANEL', 'COMMAND'],
     status: 'active',
     loader: () => import('@/tools/productivity/tab-manager/Tool'),
-  },
+  }),
 ]

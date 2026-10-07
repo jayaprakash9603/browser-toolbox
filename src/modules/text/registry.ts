@@ -9,21 +9,20 @@ import {
   WrapTextIcon,
 } from 'lucide-react'
 
-import type { ToolDefinition } from '@/core/registry'
+import { defineTool } from '@/core/registry'
 
-export const textTools: ToolDefinition[] = [
-  {
+export const textTools = [
+  defineTool({
     id: 'text.formatter',
-    name: 'Formatter',
+    name: 'Code Formatter',
     description:
-      'Detect and format JSON, JavaScript, TypeScript, HTML, XML, CSS, Markdown and plain text.',
+      'Format and minify JavaScript, TypeScript, HTML, XML, CSS and Markdown (use JSON Toolkit for JSON).',
     category: 'text',
     icon: AlignLeftIcon,
     keywords: [
       'format',
       'beautify',
       'minify',
-      'json',
       'javascript',
       'typescript',
       'html',
@@ -34,11 +33,14 @@ export const textTools: ToolDefinition[] = [
     ],
     aliases: ['prettier', 'beautifier', 'minifier', 'pretty print', 'code formatter'],
     route: '/tools/text/formatter',
-    capabilities: ['SIDE_PANEL'],
+    capabilities: ['SIDE_PANEL', 'CONTEXT_MENU'],
+    contextSurfaces: ['SELECTION'],
+    toolkitGroup: 'clipboard-text',
+    dependencies: ['text'],
     status: 'active',
     loader: () => import('@/tools/text/text-formatter/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'text.case-converter',
     name: 'Case Converter',
     description: 'Convert between camelCase, snake_case, Title Case and more.',
@@ -47,11 +49,14 @@ export const textTools: ToolDefinition[] = [
     keywords: ['case', 'camel', 'snake', 'kebab', 'pascal', 'upper', 'lower', 'title'],
     aliases: ['uppercase', 'lowercase', 'title case', 'sentence case', 'constant case', 'dot case'],
     route: '/tools/text/case-converter',
-    capabilities: ['SIDE_PANEL'],
+    capabilities: ['SIDE_PANEL', 'CONTEXT_MENU'],
+    contextSurfaces: ['SELECTION'],
+    toolkitGroup: 'clipboard-text',
+    dependencies: ['text'],
     status: 'active',
     loader: () => import('@/tools/text/case-converter/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'text.whitespace-cleaner',
     name: 'Text Cleaner',
     description: 'Trim, clean and normalize whitespace, spaces and line breaks.',
@@ -76,10 +81,12 @@ export const textTools: ToolDefinition[] = [
     ],
     route: '/tools/text/whitespace-cleaner',
     capabilities: ['SIDE_PANEL'],
+    toolkitGroup: 'clipboard-text',
+    dependencies: ['text'],
     status: 'active',
     loader: () => import('@/tools/text/whitespace-cleaner/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'text.analyzer',
     name: 'Text Analyzer',
     description: 'Words, characters, lines, sentences, reading time and readability metrics.',
@@ -107,11 +114,14 @@ export const textTools: ToolDefinition[] = [
       'wc',
     ],
     route: '/tools/text/analyzer',
-    capabilities: ['SIDE_PANEL'],
+    capabilities: ['SIDE_PANEL', 'CONTEXT_MENU'],
+    contextSurfaces: ['SELECTION'],
+    toolkitGroup: 'clipboard-text',
+    dependencies: ['text'],
     status: 'active',
     loader: () => import('@/tools/text/text-analyzer/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'text.line-tools',
     name: 'Line Tools',
     description: 'Deduplicate, sort, reverse, shuffle and number lines.',
@@ -140,10 +150,12 @@ export const textTools: ToolDefinition[] = [
     ],
     route: '/tools/text/line-tools',
     capabilities: ['SIDE_PANEL'],
+    toolkitGroup: 'clipboard-text',
+    dependencies: ['text'],
     status: 'active',
     loader: () => import('@/tools/text/line-tools/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'text.find-replace',
     name: 'Find & Replace',
     description: 'Find and replace with regex, case and whole-word options.',
@@ -153,10 +165,12 @@ export const textTools: ToolDefinition[] = [
     aliases: ['search and replace', 'substitute', 'sed'],
     route: '/tools/text/find-replace',
     capabilities: ['SIDE_PANEL'],
+    toolkitGroup: 'clipboard-text',
+    dependencies: ['text'],
     status: 'active',
     loader: () => import('@/tools/text/find-replace/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'text.diff',
     name: 'Text Diff',
     description: 'Compare two texts and highlight additions and removals.',
@@ -165,11 +179,14 @@ export const textTools: ToolDefinition[] = [
     keywords: ['diff', 'compare', 'changes', 'added', 'removed'],
     aliases: ['compare text', 'difference', 'text comparison'],
     route: '/tools/text/diff',
-    capabilities: ['SIDE_PANEL'],
+    capabilities: ['SIDE_PANEL', 'CONTEXT_MENU'],
+    contextSurfaces: ['SELECTION'],
+    toolkitGroup: 'clipboard-text',
+    dependencies: ['diff', 'text'],
     status: 'active',
     loader: () => import('@/tools/text/text-diff/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'text.dummy-data',
     name: 'Dummy Data',
     description: 'Generate lorem ipsum or random placeholder text.',
@@ -186,7 +203,9 @@ export const textTools: ToolDefinition[] = [
     ],
     route: '/tools/text/dummy-data',
     capabilities: ['SIDE_PANEL'],
+    toolkitGroup: 'generators',
+    dependencies: ['text'],
     status: 'active',
     loader: () => import('@/tools/text/dummy-data/Tool'),
-  },
+  }),
 ]

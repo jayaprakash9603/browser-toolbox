@@ -1,5 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 
+import type { ToolkitGroupId } from './toolkitGroups'
+
 export const TOOL_CAPABILITIES = [
   'SIDE_PANEL',
   'POPUP',
@@ -20,6 +22,17 @@ export const TOOL_STATUSES = ['active', 'beta', 'experimental', 'coming-soon', '
 
 export type ToolStatus = (typeof TOOL_STATUSES)[number]
 
+export const CONTEXT_SURFACES = [
+  'SELECTION',
+  'LINK',
+  'IMAGE',
+  'PAGE',
+  'ELEMENT',
+  'OVERLAY',
+] as const
+
+export type ContextSurface = (typeof CONTEXT_SURFACES)[number]
+
 export interface ToolDefinition {
   id: string
   name: string
@@ -30,6 +43,11 @@ export interface ToolDefinition {
   aliases?: string[]
   route: string
   capabilities: ToolCapability[]
+  contextSurfaces?: ContextSurface[]
+  toolkitGroup?: ToolkitGroupId
+  toolkitGroupLabel?: string
+  dependencies?: string[]
+  version?: string
   permissions?: string[]
   shortcut?: string
   status?: ToolStatus

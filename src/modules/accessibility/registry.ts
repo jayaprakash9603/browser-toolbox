@@ -1,9 +1,9 @@
 import { AccessibilityIcon } from 'lucide-react'
 
-import type { ToolDefinition } from '@/core/registry'
+import { defineTool } from '@/core/registry'
 
-export const accessibilityTools: ToolDefinition[] = [
-  {
+export const accessibilityTools = [
+  defineTool({
     id: 'accessibility.toolkit',
     name: 'Accessibility Quick Check',
     description: 'Quick page checks: alt text, headings, link names and language.',
@@ -15,5 +15,5 @@ export const accessibilityTools: ToolDefinition[] = [
     capabilities: ['SIDE_PANEL', 'CONTENT_SCRIPT', 'PAGE_ACCESS'],
     status: 'active',
     loader: () => import('@/tools/accessibility/accessibility-toolkit/Tool'),
-  },
+  }),
 ]

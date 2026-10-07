@@ -1,7 +1,17 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { addDays, diffDates, parseCron, workingDaysBetween } from '@/core/engines/date'
+import {
+  addDays,
+  dateToTimestamp,
+  diffDates,
+  nowTimestamp,
+  parseCron,
+  parseTimestamp,
+  relativeTime,
+  workingDaysBetween,
+} from '@/core/engines/date'
+import { RefreshCwIcon } from 'lucide-react'
 import { COMMON_TIMEZONES, convertToTimeZones } from '@/core/engines/timezone'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Input } from '@/shared/components/ui/input'
@@ -16,7 +26,7 @@ const CRON_EXAMPLE = '30 9 * * 1-5'
 export default function DateTimeToolkitTool() {
   const { t } = useTranslation()
   const tool = useDateTimeTool('datetime.toolkit')
-  const [tab, setTab] = useState<'calc' | 'zones' | 'cron'>('calc')
+  const [tab, setTab] = useState<'timestamp' | 'calc' | 'zones' | 'cron'>('timestamp')
 
   const [dateA, setDateA] = useState('')
   const [dateB, setDateB] = useState('')
@@ -47,10 +57,15 @@ export default function DateTimeToolkitTool() {
       <div className="flex flex-col gap-3">
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <TabsList>
+            <TabsTrigger value="timestamp">{t('dt.tabTimestamp')}</TabsTrigger>
             <TabsTrigger value="calc">{t('dt.tabCalc')}</TabsTrigger>
             <TabsTrigger value="zones">{t('dt.tabZones')}</TabsTrigger>
             <TabsTrigger value="cron">Cron</TabsTrigger>
           </TabsList>
+
+        <TabsContent value="timestamp" className="mt-0">
+          <TimestampPanel />
+        </TabsContent>
 
         <TabsContent value="calc" className="mt-0">
           <div className="flex flex-col gap-2">
@@ -168,6 +183,78 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between rounded border bg-muted/40 px-2 py-1">
       <span className="text-muted-foreground">{label}</span>
       <code className="font-mono">{value}</code>
+    </div>
+  )
+}
+
+function TimestampPanel() {
+  const { t } = useTranslation()
+  const [tsInput, setTsInput] = useState('')
+  const [dateInput, setDateInput] = useState('')
+  const parsed = tsInput.trim() ? parseTimestamp(tsInput) : null
+  const fromDate = dateInput.trim() ? new Date(dateInput) : null
+  const validDate = fromDate && !Number.isNaN(fromDate.getTime()) ? fromDate : null
+
+  return (
+    <Tabs defaultValue="toDate">
+      <TabsList>
+        <TabsTrigger value="toDate">{t('dev.tabToDate')}</TabsTrigger>
+        <TabsTrigger value="toTimestamp">{t('dev.tabToTimestamp')}</TabsTrigger>
+        <TabsTrigger value="now">{t('dev.tabNow')}</TabsTrigger>
+      </TabsList>
+      <TabsContent value="toDate" className="mt-2 space-y-2">
+        <Input
+          value={tsInput}
+          onChange={(e) => setTsInput(e.target.value)}
+          placeholder="1743256800"
+          aria-label={t('dev.timestampInput')}
+          className="font-mono"
+        />
+        {parsed && !parsed.ok && <JsonErrorView message={parsed.error} />}
+        {parsed?.ok && (
+          <div className="space-y-1">
+            <Row label={t('dev.iso')} value={parsed.value.date.toISOString()} />
+            <Row label={t('dev.local')} value={parsed.value.date.toLocaleString()} />
+            <Row label={t('dev.relative')} value={relativeTime(parsed.value.date)} />
+          </div>
+        )}
+      </TabsContent>
+      <TabsContent value="toTimestamp" className="mt-2 space-y-2">
+        <Input
+          type="datetime-local"
+          value={dateInput}
+          onChange={(e) => setDateInput(e.target.value)}
+          aria-label={t('dev.dateInput')}
+        />
+        {dateInput.trim() && !validDate && <JsonErrorView message={t('dev.invalidDate')} />}
+        {validDate && (
+          <div className="space-y-1">
+            <Row label={t('dev.unixSeconds')} value={String(dateToTimestamp(validDate, 'seconds'))} />
+            <Row
+              label={t('dev.unixMillis')}
+              value={String(dateToTimestamp(validDate, 'milliseconds'))}
+            />
+          </div>
+        )}
+      </TabsContent>
+      <TabsContent value="now" className="mt-2">
+        <NowTimestampPanel />
+      </TabsContent>
+    </Tabs>
+  )
+}
+
+function NowTimestampPanel() {
+  const { t } = useTranslation()
+  const [now, setNow] = useState(() => new Date())
+  return (
+    <div className="flex flex-col gap-2">
+      <Button size="sm" className="w-fit" onClick={() => setNow(new Date())}>
+        <RefreshCwIcon /> {t('dev.refreshNow')}
+      </Button>
+      <Row label={t('dev.unixSeconds')} value={String(nowTimestamp('seconds'))} />
+      <Row label={t('dev.unixMillis')} value={String(nowTimestamp('milliseconds'))} />
+      <Row label={t('dev.iso')} value={now.toISOString()} />
     </div>
   )
 }

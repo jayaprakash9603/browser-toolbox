@@ -38,6 +38,7 @@
     "jsqr": "^1.4.0",
     "lucide-react": "^1.52.0",
     "md5": "^2.3.0",
+    "postman-lite": "file:../postman-lite",
     "qrcode": "^1.5.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

@@ -31,6 +31,7 @@ export const MENU_GROUPS: { id: string; title: string; contexts: MenuSurface[] }
   { id: 'toolbox.group.text', title: 'Text Tools', contexts: ['selection', 'page'] },
   { id: 'toolbox.group.developer', title: 'Developer Tools', contexts: ['selection', 'page'] },
   { id: 'toolbox.group.qa', title: 'QA Tools', contexts: ['selection', 'page', 'image'] },
+  { id: 'toolbox.group.api', title: 'API Tools', contexts: ['selection', 'page'] },
   { id: 'toolbox.group.page', title: 'Page Tools', contexts: ['page', 'link', 'image'] },
   { id: 'toolbox.group.color', title: 'Color Tools', contexts: ['image', 'page'] },
 ]
@@ -41,6 +42,8 @@ const CATEGORY_GROUP: Record<string, string> = {
   developer: 'toolbox.group.developer',
   security: 'toolbox.group.developer',
   qa: 'toolbox.group.qa',
+  api: 'toolbox.group.api',
+  data: 'toolbox.group.developer',
   web: 'toolbox.group.page',
   design: 'toolbox.group.color',
 }

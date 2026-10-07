@@ -1,9 +1,9 @@
 import { BinaryIcon, CalculatorIcon, ArrowLeftRightIcon } from 'lucide-react'
 
-import type { ToolDefinition } from '@/core/registry'
+import { defineTool } from '@/core/registry'
 
-export const calculatorsTools: ToolDefinition[] = [
-  {
+export const calculatorsTools = [
+  defineTool({
     id: 'calculators.calculator',
     name: 'Calculator',
     description: 'Arithmetic and scientific calculator with history (no eval).',
@@ -13,10 +13,11 @@ export const calculatorsTools: ToolDefinition[] = [
     aliases: ['calculator', 'calc', 'math', 'scientific calculator', 'percentage'],
     route: '/tools/calculators/calculator',
     capabilities: ['SIDE_PANEL', 'COMMAND'],
+    dependencies: ['calc'],
     status: 'active',
     loader: () => import('@/tools/calculators/calculator/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'calculators.unit-converter',
     name: 'Unit Converter',
     description: 'Convert length, weight, temperature, data, speed and more.',
@@ -33,10 +34,11 @@ export const calculatorsTools: ToolDefinition[] = [
     ],
     route: '/tools/calculators/unit-converter',
     capabilities: ['SIDE_PANEL', 'COMMAND'],
+    dependencies: ['unit'],
     status: 'active',
     loader: () => import('@/tools/calculators/unit-converter/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'calculators.base-converter',
     name: 'Number Base Converter',
     description: 'Convert between binary, octal, decimal and hexadecimal with bit view.',
@@ -52,7 +54,8 @@ export const calculatorsTools: ToolDefinition[] = [
     ],
     route: '/tools/calculators/base-converter',
     capabilities: ['SIDE_PANEL', 'COMMAND'],
+    dependencies: ['base'],
     status: 'active',
     loader: () => import('@/tools/calculators/base-converter/Tool'),
-  },
+  }),
 ]

@@ -34,6 +34,8 @@ const LEGACY_TOOL_ROUTES: Record<string, string> = {
   '/tools/text/duplicate-line-remover': 'text.line-tools',
   '/tools/text/sort-lines': 'text.line-tools',
   '/tools/text/lorem-ipsum': 'text.dummy-data',
+  '/tools/qa/api-request-builder': 'api.request-builder',
+  '/tools/developer/timestamp-toolkit': 'datetime.toolkit',
 }
 
 export function AppShell({ children }: { children?: ReactNode }) {

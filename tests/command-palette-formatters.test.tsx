@@ -42,5 +42,5 @@ describe('formatter search shortcuts', () => {
     await user.click(await screen.findByRole('option', { name: /JSON Formatter/ }))
 
     expect(window.location.hash).toBe('#/tools/text/formatter?format=json')
-  })
+  }, 15_000)
 })

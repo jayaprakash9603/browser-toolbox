@@ -1,9 +1,9 @@
 import { BinaryIcon, HashIcon, KeyRoundIcon, DicesIcon, TicketIcon } from 'lucide-react'
 
-import type { ToolDefinition } from '@/core/registry'
+import { defineTool } from '@/core/registry'
 
-export const securityTools: ToolDefinition[] = [
-  {
+export const securityTools = [
+  defineTool({
     id: 'security.encoder-decoder',
     name: 'Encoder / Decoder',
     description: 'Base64, URL, HTML, Unicode and Hex encoding and decoding.',
@@ -13,10 +13,12 @@ export const securityTools: ToolDefinition[] = [
     aliases: ['base64 encode', 'base64 decode', 'url encode', 'html entities', 'hex encode'],
     route: '/tools/security/encoder-decoder',
     capabilities: ['SIDE_PANEL', 'CONTEXT_MENU', 'COMMAND'],
+    contextSurfaces: ['SELECTION'],
+    dependencies: ['encoding'],
     status: 'active',
     loader: () => import('@/tools/security/encoder-decoder/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'security.hash-toolkit',
     name: 'Hash Toolkit',
     description: 'SHA and MD5 hashing plus HMAC, all computed locally.',
@@ -26,10 +28,12 @@ export const securityTools: ToolDefinition[] = [
     aliases: ['sha256', 'sha-256', 'md5 hash', 'hmac', 'hash generator', 'checksum'],
     route: '/tools/security/hash-toolkit',
     capabilities: ['SIDE_PANEL', 'CONTEXT_MENU'],
+    contextSurfaces: ['SELECTION'],
+    dependencies: ['hash'],
     status: 'active',
     loader: () => import('@/tools/security/hash-toolkit/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'security.jwt-toolkit',
     name: 'JWT Toolkit',
     description: 'Decode and inspect JSON Web Tokens: header, payload, claims and expiry.',
@@ -39,10 +43,12 @@ export const securityTools: ToolDefinition[] = [
     aliases: ['jwt decoder', 'jwt decode', 'json web token', 'jwt inspector', 'jwt.io'],
     route: '/tools/security/jwt-toolkit',
     capabilities: ['SIDE_PANEL', 'CONTEXT_MENU', 'COMMAND'],
+    contextSurfaces: ['SELECTION'],
+    dependencies: ['jwt'],
     status: 'active',
     loader: () => import('@/tools/security/jwt-toolkit/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'security.password-generator',
     name: 'Password Generator',
     description: 'Generate cryptographically random passwords with charset options.',
@@ -52,10 +58,12 @@ export const securityTools: ToolDefinition[] = [
     aliases: ['password generator', 'secure password', 'random password', 'strong password'],
     route: '/tools/security/password-generator',
     capabilities: ['SIDE_PANEL', 'COMMAND'],
+    toolkitGroup: 'generators',
+    dependencies: ['password'],
     status: 'active',
     loader: () => import('@/tools/security/password-generator/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'security.random-generator',
     name: 'Random Generator',
     description: 'Cryptographically random numbers, strings, hex, UUIDs and NanoIDs.',
@@ -65,7 +73,8 @@ export const securityTools: ToolDefinition[] = [
     aliases: ['random number', 'random string', 'random token', 'random hex', 'secure random'],
     route: '/tools/security/random-generator',
     capabilities: ['SIDE_PANEL', 'COMMAND'],
+    toolkitGroup: 'generators',
     status: 'active',
     loader: () => import('@/tools/security/random-generator/Tool'),
-  },
+  }),
 ]

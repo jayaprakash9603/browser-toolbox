@@ -25,7 +25,7 @@ export default defineManifest({
   content_scripts: [
     {
       js: ['src/chrome/content/index.ts'],
-      matches: ['<all_urls>'],
+      matches: ['https://browser-toolbox.invalid/*'],
       run_at: 'document_idle',
     },
   ],

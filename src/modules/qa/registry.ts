@@ -3,15 +3,14 @@ import {
   CrosshairIcon,
   ListChecksIcon,
   MousePointerClickIcon,
-  NetworkIcon,
   ServerIcon,
   TestTube2Icon,
 } from 'lucide-react'
 
-import type { ToolDefinition } from '@/core/registry'
+import { defineTool } from '@/core/registry'
 
-export const qaTools: ToolDefinition[] = [
-  {
+export const qaTools = [
+  defineTool({
     id: 'qa.element-inspector',
     name: 'Element Inspector',
     description: 'Pick a page element and inspect its tag, attributes, styles and dimensions.',
@@ -28,10 +27,13 @@ export const qaTools: ToolDefinition[] = [
       'DEVTOOLS',
       'COMMAND',
     ],
+    contextSurfaces: ['PAGE', 'ELEMENT', 'OVERLAY'],
+    toolkitGroup: 'qa',
+    dependencies: ['selector'],
     status: 'active',
     loader: () => import('@/tools/qa/element-inspector/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'qa.selector-generator',
     name: 'Selector Generator',
     description: 'Generate CSS and XPath selectors for any page element.',
@@ -48,10 +50,13 @@ export const qaTools: ToolDefinition[] = [
       'DEVTOOLS',
       'COMMAND',
     ],
+    contextSurfaces: ['PAGE', 'ELEMENT', 'OVERLAY'],
+    toolkitGroup: 'qa',
+    dependencies: ['selector'],
     status: 'active',
     loader: () => import('@/tools/qa/selector-generator/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'qa.xpath-tester',
     name: 'XPath Tester',
     description: 'Evaluate an XPath on the current page and see matching elements.',
@@ -61,10 +66,13 @@ export const qaTools: ToolDefinition[] = [
     aliases: ['xpath tester', 'xpath evaluator', 'test xpath'],
     route: '/tools/qa/xpath-tester',
     capabilities: ['SIDE_PANEL', 'CONTENT_SCRIPT', 'PAGE_ACCESS'],
+    contextSurfaces: ['PAGE', 'ELEMENT'],
+    toolkitGroup: 'qa',
+    dependencies: ['selector'],
     status: 'active',
     loader: () => import('@/tools/qa/xpath-tester/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'qa.test-data-generator',
     name: 'Test Data Generator',
     description: 'Generate names, emails, addresses and more as JSON or CSV.',
@@ -74,10 +82,12 @@ export const qaTools: ToolDefinition[] = [
     aliases: ['faker', 'test data', 'fake data', 'mock data', 'sample data'],
     route: '/tools/qa/test-data-generator',
     capabilities: ['SIDE_PANEL', 'COMMAND'],
+    toolkitGroup: 'generators',
+    dependencies: ['testdata'],
     status: 'active',
     loader: () => import('@/tools/qa/test-data-generator/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'qa.http-status',
     name: 'HTTP Status Codes',
     description: 'Look up HTTP status codes with meaning and debugging hints.',
@@ -87,24 +97,11 @@ export const qaTools: ToolDefinition[] = [
     aliases: ['http status', 'status code', '404', 'http codes', 'http error'],
     route: '/tools/qa/http-status',
     capabilities: ['SIDE_PANEL'],
+    toolkitGroup: 'qa',
     status: 'active',
     loader: () => import('@/tools/qa/http-status/Tool'),
-  },
-  {
-    id: 'qa.api-request-builder',
-    name: 'API Request Builder',
-    description: 'Send HTTP requests to a selected host and inspect the response.',
-    category: 'qa',
-    icon: NetworkIcon,
-    keywords: ['api', 'http', 'request', 'rest', 'client', 'endpoint'],
-    aliases: ['api client', 'http client', 'rest client', 'request builder'],
-    route: '/tools/qa/api-request-builder',
-    capabilities: ['SIDE_PANEL'],
-    permissions: ['optional HTTP(S) host access'],
-    status: 'active',
-    loader: () => import('@/tools/qa/api-request-builder/Tool'),
-  },
-  {
+  }),
+  defineTool({
     id: 'qa.bug-reporter',
     name: 'Bug Reporter',
     description: 'Capture page context and write a copyable bug report.',
@@ -113,8 +110,11 @@ export const qaTools: ToolDefinition[] = [
     keywords: ['bug', 'report', 'defect', 'issue', 'expected', 'actual', 'steps'],
     aliases: ['bug report', 'file a bug', 'defect report', 'issue template'],
     route: '/tools/qa/bug-reporter',
-    capabilities: ['SIDE_PANEL', 'PAGE_ACCESS'],
+    capabilities: ['SIDE_PANEL', 'PAGE_ACCESS', 'SCREEN_CAPTURE'],
+    contextSurfaces: ['PAGE'],
+    toolkitGroup: 'qa',
+    dependencies: ['capture'],
     status: 'active',
     loader: () => import('@/tools/qa/bug-reporter/Tool'),
-  },
+  }),
 ]

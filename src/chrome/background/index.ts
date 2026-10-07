@@ -7,6 +7,7 @@ import { stashPayload } from '@/core/payloads'
 import { toolRegistry } from '@/core/registry'
 import { initStorage } from '@/core/storage'
 
+import { registerApiClientSendHandler } from './api-client-send'
 import { buildMenuItems } from '../context-menu/menuTree'
 
 const logger = createLogger('background')
@@ -130,4 +131,5 @@ chrome.commands.onCommand.addListener((command, tab) => {
   })()
 })
 
+registerApiClientSendHandler()
 startMessageRouter()
