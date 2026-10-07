@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest'
 
 import { decode, encode } from '@/core/engines/encoding'
-import { cleanUrl, decodeUrlComponent, encodeUrlComponent, getQueryParams, looksLikeUrl, parseUrl, setQueryParam, deleteQueryParam } from '@/core/engines/url'
+import {
+  cleanUrl,
+  decodeUrlComponent,
+  encodeUrlComponent,
+  getQueryParams,
+  looksLikeUrl,
+  parseUrl,
+  setQueryParam,
+  deleteQueryParam,
+} from '@/core/engines/url'
 
 describe('encoding engine', () => {
   it('round-trips base64 with unicode', () => {

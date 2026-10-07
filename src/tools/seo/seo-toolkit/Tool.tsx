@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CheckCircle2Icon, AlertTriangleIcon, XCircleIcon } from 'lucide-react'
 
-import { analyzeHeadings, analyzeImages, analyzeLinks, analyzeSeo, type SeoCheck } from '@/core/engines/seo'
+import {
+  analyzeHeadings,
+  analyzeImages,
+  analyzeLinks,
+  analyzeSeo,
+  type SeoCheck,
+} from '@/core/engines/seo'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Badge } from '@/shared/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
@@ -18,25 +24,48 @@ export default function SeoToolkitTool() {
 
   useEffect(() => {
     let live = true
-    void getPageInfo().then((value) => { if (live) setPage(value) }).finally(() => { if (live) setLoaded(true) })
-    return () => { live = false }
+    void getPageInfo()
+      .then((value) => {
+        if (live) setPage(value)
+      })
+      .finally(() => {
+        if (live) setLoaded(true)
+      })
+    return () => {
+      live = false
+    }
   }, [])
 
   const checks = page ? analyzeSeo(page) : []
   const headingIssues = page ? analyzeHeadings(page.headings) : []
   const linkStats = page ? analyzeLinks(page.links) : null
   const imageStats = page ? analyzeImages(page.images) : null
-  const score = checks.length ? Math.round((checks.filter((c) => c.ok).length / checks.length) * 100) : 0
+  const score = checks.length
+    ? Math.round((checks.filter((c) => c.ok).length / checks.length) * 100)
+    : 0
 
   return (
     <ToolPage tool={tool}>
-      {!loaded ? <p className="text-xs text-muted-foreground">{t('nav.loading')}</p> : !page ? (
-        <p className="rounded-md border border-dashed py-8 text-center text-xs text-muted-foreground">{t('seo.noPage')}</p>
+      {!loaded ? (
+        <p className="text-xs text-muted-foreground">{t('nav.loading')}</p>
+      ) : !page ? (
+        <p className="rounded-md border border-dashed py-8 text-center text-xs text-muted-foreground">
+          {t('seo.noPage')}
+        </p>
       ) : (
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between rounded-md border bg-muted/40 p-2.5">
             <span className="text-xs font-medium">{t('seo.score')}</span>
-            <Badge variant="outline" className={score >= 80 ? 'border-green-500/40 text-green-700 dark:text-green-400' : score >= 50 ? 'border-amber-500/40 text-amber-700 dark:text-amber-400' : 'border-red-500/40 text-red-700 dark:text-red-400'}>
+            <Badge
+              variant="outline"
+              className={
+                score >= 80
+                  ? 'border-green-500/40 text-green-700 dark:text-green-400'
+                  : score >= 50
+                    ? 'border-amber-500/40 text-amber-700 dark:text-amber-400'
+                    : 'border-red-500/40 text-red-700 dark:text-red-400'
+              }
+            >
               {score}/100
             </Badge>
           </div>
@@ -50,19 +79,33 @@ export default function SeoToolkitTool() {
             </TabsList>
 
             <TabsContent value="checks" className="mt-2 space-y-1">
-              {checks.map((check) => <CheckRow key={check.id} check={check} />)}
+              {checks.map((check) => (
+                <CheckRow key={check.id} check={check} />
+              ))}
             </TabsContent>
 
             <TabsContent value="headings" className="mt-2">
               {headingIssues.length === 0 ? (
-                <p className="rounded border border-green-500/40 bg-green-500/5 p-2 text-[11px] text-green-700 dark:text-green-400">{t('seo.headingsOk')}</p>
+                <p className="rounded border border-green-500/40 bg-green-500/5 p-2 text-[11px] text-green-700 dark:text-green-400">
+                  {t('seo.headingsOk')}
+                </p>
               ) : (
-                <div className="space-y-1">{headingIssues.map((issue, i) => <IssueRow key={i} severity={issue.severity} message={issue.message} />)}</div>
+                <div className="space-y-1">
+                  {headingIssues.map((issue, i) => (
+                    <IssueRow key={i} severity={issue.severity} message={issue.message} />
+                  ))}
+                </div>
               )}
               <div className="mt-2 space-y-0.5">
                 {page.headings.map((h, i) => (
-                  <div key={i} className="flex items-center gap-1.5 font-mono text-[10px]" style={{ paddingLeft: `${(h.level - 1) * 12}px` }}>
-                    <Badge variant="outline" className="text-[8px]">h{h.level}</Badge>
+                  <div
+                    key={i}
+                    className="flex items-center gap-1.5 font-mono text-[10px]"
+                    style={{ paddingLeft: `${(h.level - 1) * 12}px` }}
+                  >
+                    <Badge variant="outline" className="text-[8px]">
+                      h{h.level}
+                    </Badge>
                     <span className="truncate">{h.text || '(empty)'}</span>
                   </div>
                 ))}
@@ -85,9 +128,17 @@ export default function SeoToolkitTool() {
                 <div className="flex flex-col gap-2">
                   <div className="grid grid-cols-2 gap-1.5">
                     <Stat label={t('seo.totalImages')} value={imageStats.total} />
-                    <Stat label={t('seo.missingAlt')} value={imageStats.missingAlt} warn={imageStats.missingAlt > 0} />
+                    <Stat
+                      label={t('seo.missingAlt')}
+                      value={imageStats.missingAlt}
+                      warn={imageStats.missingAlt > 0}
+                    />
                   </div>
-                  {imageStats.missingAlt > 0 && <p className="text-[11px] text-amber-700 dark:text-amber-400">{t('seo.missingAltHint', { count: imageStats.missingAlt })}</p>}
+                  {imageStats.missingAlt > 0 && (
+                    <p className="text-[11px] text-amber-700 dark:text-amber-400">
+                      {t('seo.missingAltHint', { count: imageStats.missingAlt })}
+                    </p>
+                  )}
                 </div>
               )}
             </TabsContent>
@@ -96,8 +147,12 @@ export default function SeoToolkitTool() {
               <MetaRow label="Title" value={page.title} />
               <MetaRow label="Description" value={page.metaDescription} />
               <MetaRow label="Canonical" value={page.canonical} />
-              {Object.entries(page.openGraph).map(([k, v]) => <MetaRow key={k} label={k} value={v} />)}
-              {Object.entries(page.twitter).map(([k, v]) => <MetaRow key={k} label={k} value={v} />)}
+              {Object.entries(page.openGraph).map(([k, v]) => (
+                <MetaRow key={k} label={k} value={v} />
+              ))}
+              {Object.entries(page.twitter).map(([k, v]) => (
+                <MetaRow key={k} label={k} value={v} />
+              ))}
             </TabsContent>
           </Tabs>
         </div>
@@ -107,8 +162,18 @@ export default function SeoToolkitTool() {
 }
 
 function CheckRow({ check }: { check: SeoCheck }) {
-  const Icon = check.severity === 'ok' ? CheckCircle2Icon : check.severity === 'warning' ? AlertTriangleIcon : XCircleIcon
-  const cls = check.severity === 'ok' ? 'text-green-600 dark:text-green-400' : check.severity === 'warning' ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'
+  const Icon =
+    check.severity === 'ok'
+      ? CheckCircle2Icon
+      : check.severity === 'warning'
+        ? AlertTriangleIcon
+        : XCircleIcon
+  const cls =
+    check.severity === 'ok'
+      ? 'text-green-600 dark:text-green-400'
+      : check.severity === 'warning'
+        ? 'text-amber-600 dark:text-amber-400'
+        : 'text-red-600 dark:text-red-400'
   return (
     <div className="flex items-start gap-1.5 rounded border p-1.5">
       <Icon className={`mt-0.5 size-3.5 shrink-0 ${cls}`} />
@@ -121,7 +186,9 @@ function IssueRow({ severity, message }: { severity: 'error' | 'warning'; messag
   const Icon = severity === 'error' ? XCircleIcon : AlertTriangleIcon
   return (
     <div className="flex items-start gap-1.5 rounded border p-1.5">
-      <Icon className={`mt-0.5 size-3.5 shrink-0 ${severity === 'error' ? 'text-red-600' : 'text-amber-600'}`} />
+      <Icon
+        className={`mt-0.5 size-3.5 shrink-0 ${severity === 'error' ? 'text-red-600' : 'text-amber-600'}`}
+      />
       <p className="text-[11px]">{message}</p>
     </div>
   )

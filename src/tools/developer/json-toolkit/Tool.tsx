@@ -46,10 +46,14 @@ export default function JsonToolkitTool() {
   const converted = useMemo(() => {
     if (!valid) return null
     switch (convertTarget) {
-      case 'csv': return jsonToCsv(parsed.value)
-      case 'xml': return jsonToXml(parsed.value)
-      case 'ts': return { ok: true as const, value: jsonToTypeScript(parsed.value) }
-      case 'markdown': return jsonToMarkdownTable(parsed.value)
+      case 'csv':
+        return jsonToCsv(parsed.value)
+      case 'xml':
+        return jsonToXml(parsed.value)
+      case 'ts':
+        return { ok: true as const, value: jsonToTypeScript(parsed.value) }
+      case 'markdown':
+        return jsonToMarkdownTable(parsed.value)
     }
   }, [valid, parsed, convertTarget])
 
@@ -67,7 +71,6 @@ export default function JsonToolkitTool() {
             <TabsTrigger value="path">{t('dev.tabPath')}</TabsTrigger>
             <TabsTrigger value="convert">{t('dev.tabConvert')}</TabsTrigger>
           </TabsList>
-        </Tabs>
 
         <TextEditor
           value={input}
@@ -76,15 +79,31 @@ export default function JsonToolkitTool() {
           ariaLabel={t('dev.jsonInput')}
           minRows={6}
         />
-        {!valid && error && <JsonErrorView message={error.message} line={error.line} column={error.column} suggestion={error.suggestion} />}
+        {!valid && error && (
+          <JsonErrorView
+            message={error.message}
+            line={error.line}
+            column={error.column}
+            suggestion={error.suggestion}
+          />
+        )}
 
         <TabsContent value="format" className="mt-0">
           <div className="flex flex-col gap-2">
             <div className="flex gap-1.5">
-              <Button size="sm" disabled={!valid} onClick={() => formatted?.ok && setInput(formatted.value)}>
+              <Button
+                size="sm"
+                disabled={!valid}
+                onClick={() => formatted?.ok && setInput(formatted.value)}
+              >
                 {t('text.beautify')}
               </Button>
-              <Button size="sm" variant="outline" disabled={!valid} onClick={() => minified?.ok && setInput(minified.value)}>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!valid}
+                onClick={() => minified?.ok && setInput(minified.value)}
+              >
                 {t('text.minify')}
               </Button>
               <Button size="sm" variant="ghost" onClick={() => setInput(EXAMPLE)}>
@@ -101,22 +120,45 @@ export default function JsonToolkitTool() {
               {t('dev.jsonValidDetail')}
             </div>
           ) : (
-            error && <JsonErrorView message={error.message} line={error.line} column={error.column} suggestion={error.suggestion} />
+            error && (
+              <JsonErrorView
+                message={error.message}
+                line={error.line}
+                column={error.column}
+                suggestion={error.suggestion}
+              />
+            )
           )}
         </TabsContent>
 
         <TabsContent value="tree" className="mt-0">
-          {tree ? <TreeNode node={tree} depth={0} /> : <p className="text-xs text-muted-foreground">{t('dev.pasteValidJson')}</p>}
+          {tree ? (
+            <TreeNode node={tree} depth={0} />
+          ) : (
+            <p className="text-xs text-muted-foreground">{t('dev.pasteValidJson')}</p>
+          )}
         </TabsContent>
 
         <TabsContent value="path" className="mt-0">
           <div className="flex flex-col gap-2">
-            <Input value={pathQuery} onChange={(e) => setPathQuery(e.target.value)} placeholder="$.user.name" aria-label={t('dev.jsonPath')} className="font-mono" />
-            {pathResult && (
-              pathResult.ok
-                ? <pre className="max-h-48 overflow-auto rounded-md border bg-muted/40 p-2 font-mono text-[11px]">{JSON.stringify(pathResult.value, null, 2)}</pre>
-                : <JsonErrorView message={pathResult.error.message} suggestion={pathResult.error.suggestion} />
-            )}
+            <Input
+              value={pathQuery}
+              onChange={(e) => setPathQuery(e.target.value)}
+              placeholder="$.user.name"
+              aria-label={t('dev.jsonPath')}
+              className="font-mono"
+            />
+            {pathResult &&
+              (pathResult.ok ? (
+                <pre className="max-h-48 overflow-auto rounded-md border bg-muted/40 p-2 font-mono text-[11px]">
+                  {JSON.stringify(pathResult.value, null, 2)}
+                </pre>
+              ) : (
+                <JsonErrorView
+                  message={pathResult.error.message}
+                  suggestion={pathResult.error.suggestion}
+                />
+              ))}
           </div>
         </TabsContent>
 
@@ -124,18 +166,28 @@ export default function JsonToolkitTool() {
           <div className="flex flex-col gap-2">
             <div className="flex gap-1.5">
               {(['csv', 'xml', 'ts', 'markdown'] as const).map((target) => (
-                <Button key={target} size="sm" variant={convertTarget === target ? 'secondary' : 'outline'} onClick={() => setConvertTarget(target)}>
+                <Button
+                  key={target}
+                  size="sm"
+                  variant={convertTarget === target ? 'secondary' : 'outline'}
+                  onClick={() => setConvertTarget(target)}
+                >
                   {t(`dev.convert.${target}`)}
                 </Button>
               ))}
             </div>
-            {converted && (
-              converted.ok
-                ? <OutputPane value={converted.value} error={null} onClear={() => setInput('')} />
-                : <JsonErrorView message={converted.error.message} suggestion={converted.error.suggestion} />
-            )}
+            {converted &&
+              (converted.ok ? (
+                <OutputPane value={converted.value} error={null} onClear={() => setInput('')} />
+              ) : (
+                <JsonErrorView
+                  message={converted.error.message}
+                  suggestion={converted.error.suggestion}
+                />
+              ))}
           </div>
         </TabsContent>
+        </Tabs>
       </div>
     </ToolPage>
   )
@@ -147,19 +199,31 @@ function TreeNode({ node, depth }: { node: JsonTreeNode; depth: number }) {
   if (node.type === 'object' || node.type === 'array') {
     return (
       <div className="font-mono text-[11px]">
-        <button type="button" style={indent} onClick={() => setOpen(!open)} className="flex w-full items-center gap-1 rounded px-1 py-0.5 text-left hover:bg-accent">
+        <button
+          type="button"
+          style={indent}
+          onClick={() => setOpen(!open)}
+          className="flex w-full items-center gap-1 rounded px-1 py-0.5 text-left hover:bg-accent"
+        >
           <span className="text-muted-foreground">{open ? '▾' : '▸'}</span>
           <span className="text-primary">{node.key ?? 'root'}</span>
-          <span className="text-muted-foreground">{node.type === 'array' ? `[${node.size}]` : `{${node.size}}`}</span>
+          <span className="text-muted-foreground">
+            {node.type === 'array' ? `[${node.size}]` : `{${node.size}}`}
+          </span>
         </button>
-        {open && node.children?.map((child) => <TreeNode key={child.path} node={child} depth={depth + 1} />)}
+        {open &&
+          node.children?.map((child) => (
+            <TreeNode key={child.path} node={child} depth={depth + 1} />
+          ))}
       </div>
     )
   }
   return (
     <div style={indent} className="flex gap-1 font-mono text-[11px]">
       <span className="text-primary">{node.key}:</span>
-      <span className="text-muted-foreground">{node.type === 'string' ? `"${node.value}"` : node.value}</span>
+      <span className="text-muted-foreground">
+        {node.type === 'string' ? `"${node.value}"` : node.value}
+      </span>
     </div>
   )
 }

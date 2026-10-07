@@ -26,22 +26,25 @@ export default function HomePage({ section }: HomePageProps) {
   const { recent, isLoading: recentLoading } = useRecentTools()
 
   const tools = toolRegistry.getAll()
-  const { favorites: favoriteTools, recent: recentTools, results } = useMemo(
-    () => filterTools(tools, query, favorites, recent.map((r) => r.toolId), (tool) => [
-      t(`tools.${tool.id}.name`, { defaultValue: tool.name }),
-      t(`tools.${tool.id}.description`, { defaultValue: tool.description }),
-    ]),
-    [tools, query, favorites, recent, t],
+  const {
+    favorites: favoriteTools,
+    recent: recentTools,
+    results,
+  } = useMemo(
+    () =>
+      filterTools(tools, query, favorites, recent.map((r) => r.toolId)),
+    [tools, query, favorites, recent],
   )
 
   const searching = query.trim().length > 0
   const enabledCategories = categoryRegistry.getEnabled()
   const comingSoon = categoryRegistry.getAll().filter((c) => !c.enabled)
-  const loading = section === 'favorites'
-    ? favoritesLoading
-    : section === 'recent'
-      ? recentLoading
-      : favoritesLoading || recentLoading
+  const loading =
+    section === 'favorites'
+      ? favoritesLoading
+      : section === 'recent'
+        ? recentLoading
+        : favoritesLoading || recentLoading
 
   if (loading) {
     return <AppLoadingSkeleton variant={section ? 'collection' : 'home'} label={t('nav.loading')} />
@@ -56,7 +59,11 @@ export default function HomePage({ section }: HomePageProps) {
         </div>
       )}
 
-      {section && <div className="mb-3"><BackButton /></div>}
+      {section && (
+        <div className="mb-3">
+          <BackButton />
+        </div>
+      )}
 
       <SearchInput
         value={query}
@@ -105,13 +112,21 @@ export default function HomePage({ section }: HomePageProps) {
       {!searching && !section && (
         <>
           {favoriteTools.length > 0 && (
-            <Section title={t('nav.favorites')} icon={StarIcon} link={{ to: '/favorites', label: t('common.viewAll') }}>
+            <Section
+              title={t('nav.favorites')}
+              icon={StarIcon}
+              link={{ to: '/favorites', label: t('common.viewAll') }}
+            >
               <ToolGrid tools={favoriteTools.slice(0, 3)} />
             </Section>
           )}
 
           {recentTools.length > 0 && (
-            <Section title={t('home.recentlyUsed')} icon={ClockIcon} link={{ to: '/recent', label: t('common.viewAll') }}>
+            <Section
+              title={t('home.recentlyUsed')}
+              icon={ClockIcon}
+              link={{ to: '/recent', label: t('common.viewAll') }}
+            >
               <ToolGrid tools={recentTools.slice(0, 3)} />
             </Section>
           )}
@@ -123,7 +138,9 @@ export default function HomePage({ section }: HomePageProps) {
               <Section
                 key={category.id}
                 title={t(`categories.${category.id}.name`, { defaultValue: category.name })}
-                description={t(`categories.${category.id}.description`, { defaultValue: category.description })}
+                description={t(`categories.${category.id}.description`, {
+                  defaultValue: category.description,
+                })}
                 icon={category.icon}
                 link={{ to: `/categories/${category.id}`, label: t('common.viewAll') }}
               >
@@ -172,7 +189,9 @@ function Section({
           {Icon && <Icon className="size-4 shrink-0 text-primary" />}
           <div className="min-w-0">
             <h2 className="text-xs font-semibold">{title}</h2>
-            {description && <p className="truncate text-[10px] text-muted-foreground">{description}</p>}
+            {description && (
+              <p className="truncate text-[10px] text-muted-foreground">{description}</p>
+            )}
           </div>
         </div>
         {link && (

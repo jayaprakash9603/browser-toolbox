@@ -28,7 +28,7 @@ export function SearchInput({
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder ?? t('common.searchPlaceholder')}
         aria-label={ariaLabel ?? t('common.search')}
-        className="pl-8"
+        className="min-h-8 pl-8"
       />
     </div>
   )

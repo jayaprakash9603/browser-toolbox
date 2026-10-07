@@ -2,13 +2,24 @@ import { useEffect } from 'react'
 import i18n from 'i18next'
 import { initReactI18next, useTranslation } from 'react-i18next'
 
+import { getExtensionName } from '@/core/i18n/chromeMessages'
 import en from '@/i18n/locales/en'
+
+const extensionName = getExtensionName()
 
 void i18n.use(initReactI18next).init({
   lng: 'en',
   fallbackLng: 'en',
   supportedLngs: ['en'],
-  resources: { en: { translation: en } },
+  resources: {
+    en: {
+      translation: {
+        ...en,
+        'app.name': extensionName,
+        'document.title': extensionName,
+      },
+    },
+  },
   keySeparator: false,
   interpolation: { escapeValue: false },
 })

@@ -1,4 +1,9 @@
-import { describeElement, generateSelectors, type CapturedElement, type SelectorSet } from '@/core/engines/selector'
+import {
+  describeElement,
+  generateSelectors,
+  type CapturedElement,
+  type SelectorSet,
+} from '@/core/engines/selector'
 
 const OVERLAY_ID = 'toolbox-element-picker-overlay'
 const LABEL_ID = 'toolbox-element-picker-label'

@@ -81,7 +81,10 @@ export async function generateQrDataUrl(payload: string, size = 256): Promise<Qr
     })
     return { ok: true, value }
   } catch (cause) {
-    return { ok: false, error: cause instanceof Error ? cause.message : 'Could not generate the QR code.' }
+    return {
+      ok: false,
+      error: cause instanceof Error ? cause.message : 'Could not generate the QR code.',
+    }
   }
 }
 
@@ -91,7 +94,10 @@ export async function generateQrSvg(payload: string): Promise<QrResult<string>> 
     const qrcode = await import('qrcode')
     return { ok: true, value: await qrcode.toString(payload, { type: 'svg', margin: 2 }) }
   } catch (cause) {
-    return { ok: false, error: cause instanceof Error ? cause.message : 'Could not generate the QR code.' }
+    return {
+      ok: false,
+      error: cause instanceof Error ? cause.message : 'Could not generate the QR code.',
+    }
   }
 }
 
@@ -108,6 +114,9 @@ export async function decodeQrFromImage(image: QrImageData): Promise<QrResult<st
     if (!result) return { ok: false, error: 'No QR code found in this image.' }
     return { ok: true, value: result.data }
   } catch (cause) {
-    return { ok: false, error: cause instanceof Error ? cause.message : 'Could not decode the image.' }
+    return {
+      ok: false,
+      error: cause instanceof Error ? cause.message : 'Could not decode the image.',
+    }
   }
 }

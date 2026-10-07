@@ -9,8 +9,29 @@ import { CopyButton } from '@/shared/components/CopyButton'
 import { JsonErrorView } from '@/tools/developer/_shared'
 import { useCalcTool } from '../_shared'
 
-const KEYS = ['7','8','9','/','4','5','6','*','1','2','3','-','0','.','%','+','(',')','^','sqrt']
-const FN = ['sin','cos','tan','ln','log','abs','pi']
+const KEYS = [
+  '7',
+  '8',
+  '9',
+  '/',
+  '4',
+  '5',
+  '6',
+  '*',
+  '1',
+  '2',
+  '3',
+  '-',
+  '0',
+  '.',
+  '%',
+  '+',
+  '(',
+  ')',
+  '^',
+  'sqrt',
+]
+const FN = ['sin', 'cos', 'tan', 'ln', 'log', 'abs', 'pi']
 
 export default function CalculatorTool() {
   const { t } = useTranslation()
@@ -32,9 +53,20 @@ export default function CalculatorTool() {
     <ToolPage tool={tool}>
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-1">
-          <Input value={expr} onChange={(e) => setExpr(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} placeholder="2 + 3 * (4 - 1)" aria-label={t('calc.input')} className="flex-1 font-mono text-sm" />
-          <Button size="sm" onClick={submit} disabled={!result?.ok}>=</Button>
-          <Button size="sm" variant="ghost" onClick={() => setExpr('')}>C</Button>
+          <Input
+            value={expr}
+            onChange={(e) => setExpr(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && submit()}
+            placeholder="2 + 3 * (4 - 1)"
+            aria-label={t('calc.input')}
+            className="flex-1 font-mono text-sm"
+          />
+          <Button size="sm" onClick={submit} disabled={!result?.ok}>
+            =
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setExpr('')}>
+            C
+          </Button>
         </div>
         {result && !result.ok && <JsonErrorView message={result.error} />}
         {result?.ok && (
@@ -45,18 +77,39 @@ export default function CalculatorTool() {
         )}
         <div className="grid grid-cols-4 gap-1">
           {KEYS.map((key) => (
-            <Button key={key} variant="outline" size="sm" className="font-mono" onClick={() => press(key)}>{key}</Button>
+            <Button
+              key={key}
+              variant="outline"
+              size="sm"
+              className="font-mono"
+              onClick={() => press(key)}
+            >
+              {key}
+            </Button>
           ))}
         </div>
         <div className="flex flex-wrap gap-1">
           {FN.map((fn) => (
-            <Button key={fn} variant="ghost" size="xs" className="font-mono" onClick={() => press(fn)}>{fn}</Button>
+            <Button
+              key={fn}
+              variant="ghost"
+              size="xs"
+              className="font-mono"
+              onClick={() => press(fn)}
+            >
+              {fn}
+            </Button>
           ))}
         </div>
         {history.length > 0 && (
           <div className="max-h-40 space-y-0.5 overflow-y-auto border-t pt-2">
             {history.map((entry, index) => (
-              <button key={index} type="button" onClick={() => setExpr(entry.expr)} className="flex w-full justify-between rounded px-1.5 py-0.5 text-left font-mono text-[11px] hover:bg-accent">
+              <button
+                key={index}
+                type="button"
+                onClick={() => setExpr(entry.expr)}
+                className="flex w-full justify-between rounded px-1.5 py-0.5 text-left font-mono text-[11px] hover:bg-accent"
+              >
                 <span className="text-muted-foreground">{entry.expr}</span>
                 <span>= {entry.result}</span>
               </button>

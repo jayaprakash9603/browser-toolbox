@@ -1,5 +1,5 @@
 const en = {
-  'app.name': 'Toolbox',
+  'app.name': 'Browser Toolbox',
   'document.title': 'Browser Toolbox',
   'nav.loading': 'Loading…',
   'nav.home': 'Home',
@@ -73,7 +73,8 @@ const en = {
   'settings.compact': 'Compact',
   'settings.comfortable': 'Comfortable',
   'settings.clipboard': 'Clipboard',
-  'settings.clipboardPrivacy': 'Clipboard history can contain sensitive information. All data stays on this device and is never sent anywhere.',
+  'settings.clipboardPrivacy':
+    'Clipboard history can contain sensitive information. All data stays on this device and is never sent anywhere.',
   'settings.clipboardHistory': 'Clipboard history',
   'settings.clipboardHistoryDescription': 'Record text copied while the panel is open.',
   'settings.enableClipboardHistory': 'Enable clipboard history',
@@ -85,17 +86,20 @@ const en = {
   'settings.clearRecentTools': 'Clear recent tools',
   'settings.resetAll': 'Reset all extension data',
   'settings.clearHistoryTitle': 'Clear clipboard history?',
-  'settings.clearHistoryDescription': 'This permanently deletes all stored clipboard entries, including pinned ones.',
+  'settings.clearHistoryDescription':
+    'This permanently deletes all stored clipboard entries, including pinned ones.',
   'settings.clearHistoryConfirm': 'Clear history',
   'settings.clearRecentTitle': 'Clear recent tools?',
   'settings.clearRecentDescription': 'Your recently used tools list will be emptied.',
   'settings.resetTitle': 'Reset everything?',
-  'settings.resetDescription': 'Settings, favorites, recents and clipboard history will all be deleted.',
+  'settings.resetDescription':
+    'Settings, favorites, recents and clipboard history will all be deleted.',
   'settings.resetConfirm': 'Reset',
   'palette.noToolsFound': 'No tools found.',
   'devtools.title': 'Toolbox — DevTools',
   'devtools.subtitle': 'Page-aware tools, sharing the same engines as the side panel.',
-  'devtools.empty': 'No page-aware tools are enabled yet. QA and Web toolkits will appear here as they ship.',
+  'devtools.empty':
+    'No page-aware tools are enabled yet. QA and Web toolkits will appear here as they ship.',
   'devtools.hint': 'All other tools live in the side panel.',
   'smartPaste.cta': 'Analyze clipboard content…',
   'smartPaste.title': 'Clipboard insights',
@@ -122,12 +126,15 @@ const en = {
   'clipboard.text': 'Text',
   'clipboard.pinned': 'Pinned',
   'clipboard.empty': 'Clipboard is empty',
-  'clipboard.emptyDescription': 'Copied text appears here while the panel is open. Data never leaves this device.',
+  'clipboard.emptyDescription':
+    'Copied text appears here while the panel is open. Data never leaves this device.',
   'clipboard.noEntries': 'No clipboard entries yet',
-  'clipboard.noEntriesDescription': 'Copy text or use the button above. Everything stays on this device.',
+  'clipboard.noEntriesDescription':
+    'Copy text or use the button above. Everything stays on this device.',
   'clipboard.addCurrent': 'Add current clipboard',
   'clipboard.noPinned': 'No pinned items',
-  'clipboard.noPinnedDescription': 'Pin clipboard entries from Clipboard History to keep them here.',
+  'clipboard.noPinnedDescription':
+    'Pin clipboard entries from Clipboard History to keep them here.',
   'clipboard.searchTitle': 'Search your clipboard',
   'clipboard.clearTitle': 'Clear clipboard history?',
   'clipboard.clearDescription': 'Pinned items are kept. Delete them individually to remove them.',
@@ -280,35 +287,46 @@ const en = {
   'tools.clipboard.search.name': 'Clipboard Search',
   'tools.clipboard.search.description': 'Search across your entire clipboard history.',
   'tools.text.formatter.name': 'Formatter',
-  'tools.text.formatter.description': 'Detect and format JSON, JavaScript, TypeScript, HTML, XML, CSS, Markdown and plain text.',
+  'tools.text.formatter.description':
+    'Detect and format JSON, JavaScript, TypeScript, HTML, XML, CSS, Markdown and plain text.',
   'tools.text.case-converter.name': 'Case Converter',
-  'tools.text.case-converter.description': 'Convert between camelCase, snake_case, Title Case and more.',
+  'tools.text.case-converter.description':
+    'Convert between camelCase, snake_case, Title Case and more.',
   'tools.text.whitespace-cleaner.name': 'Text Cleaner',
-  'tools.text.whitespace-cleaner.description': 'Trim, clean and normalize whitespace, spaces and line breaks.',
+  'tools.text.whitespace-cleaner.description':
+    'Trim, clean and normalize whitespace, spaces and line breaks.',
   'tools.text.analyzer.name': 'Text Analyzer',
-  'tools.text.analyzer.description': 'Words, characters, lines, sentences, reading time and readability metrics.',
+  'tools.text.analyzer.description':
+    'Words, characters, lines, sentences, reading time and readability metrics.',
   'tools.text.line-tools.name': 'Line Tools',
   'tools.text.line-tools.description': 'Deduplicate, sort, reverse, shuffle and number lines.',
   'tools.text.find-replace.name': 'Find & Replace',
-  'tools.text.find-replace.description': 'Find and replace with regex, case and whole-word options.',
+  'tools.text.find-replace.description':
+    'Find and replace with regex, case and whole-word options.',
   'tools.text.diff.name': 'Text Diff',
   'tools.text.diff.description': 'Compare two texts and highlight additions and removals.',
   'tools.text.dummy-data.name': 'Dummy Data',
   'tools.text.dummy-data.description': 'Generate lorem ipsum or random placeholder text.',
   'tools.developer.json-toolkit.name': 'JSON Toolkit',
-  'tools.developer.json-toolkit.description': 'Validate, format, minify, tree-view, path-query and convert JSON.',
+  'tools.developer.json-toolkit.description':
+    'Validate, format, minify, tree-view, path-query and convert JSON.',
   'tools.developer.xml-toolkit.name': 'XML Toolkit',
-  'tools.developer.xml-toolkit.description': 'Validate, format, minify XML and convert XML to JSON.',
+  'tools.developer.xml-toolkit.description':
+    'Validate, format, minify XML and convert XML to JSON.',
   'tools.developer.yaml-toolkit.name': 'YAML Toolkit',
-  'tools.developer.yaml-toolkit.description': 'Validate and format YAML, convert between YAML and JSON.',
+  'tools.developer.yaml-toolkit.description':
+    'Validate and format YAML, convert between YAML and JSON.',
   'tools.developer.sql-toolkit.name': 'SQL Toolkit',
   'tools.developer.sql-toolkit.description': 'Format and minify SQL across dialects.',
   'tools.developer.regex-toolkit.name': 'Regex Toolkit',
-  'tools.developer.regex-toolkit.description': 'Test, replace and explain regular expressions with a pattern library.',
+  'tools.developer.regex-toolkit.description':
+    'Test, replace and explain regular expressions with a pattern library.',
   'tools.developer.id-toolkit.name': 'UUID / ID Toolkit',
-  'tools.developer.id-toolkit.description': 'Generate and validate UUIDs (v4/v7) and NanoID identifiers.',
+  'tools.developer.id-toolkit.description':
+    'Generate and validate UUIDs (v4/v7) and NanoID identifiers.',
   'tools.developer.timestamp-toolkit.name': 'Timestamp Toolkit',
-  'tools.developer.timestamp-toolkit.description': 'Convert Unix timestamps (s/ms) to dates and back, with relative time.',
+  'tools.developer.timestamp-toolkit.description':
+    'Convert Unix timestamps (s/ms) to dates and back, with relative time.',
   'dev.tabFormat': 'Format',
   'dev.tabValidate': 'Validate',
   'dev.tabTree': 'Tree',
@@ -365,15 +383,22 @@ const en = {
   'dev.relative': 'Relative',
   'dev.refreshNow': 'Refresh now',
   'tools.qa.element-inspector.name': 'Element Inspector',
-  'tools.qa.element-inspector.description': 'Pick a page element and inspect its tag, attributes, styles and dimensions.',
+  'tools.qa.element-inspector.description':
+    'Pick a page element and inspect its tag, attributes, styles and dimensions.',
   'tools.qa.selector-generator.name': 'Selector Generator',
-  'tools.qa.selector-generator.description': 'Generate CSS and XPath selectors for any page element.',
+  'tools.qa.selector-generator.description':
+    'Generate CSS and XPath selectors for any page element.',
   'tools.qa.xpath-tester.name': 'XPath Tester',
-  'tools.qa.xpath-tester.description': 'Evaluate an XPath on the current page and see matching elements.',
+  'tools.qa.xpath-tester.description':
+    'Evaluate an XPath on the current page and see matching elements.',
   'tools.qa.test-data-generator.name': 'Test Data Generator',
-  'tools.qa.test-data-generator.description': 'Generate names, emails, addresses and more as JSON or CSV.',
+  'tools.qa.test-data-generator.description':
+    'Generate names, emails, addresses and more as JSON or CSV.',
   'tools.qa.http-status.name': 'HTTP Status Codes',
   'tools.qa.http-status.description': 'Look up HTTP status codes with meaning and debugging hints.',
+  'tools.qa.api-request-builder.name': 'API Request Builder',
+  'tools.qa.api-request-builder.description':
+    'Send HTTP requests to a selected host and inspect the response.',
   'tools.qa.bug-reporter.name': 'Bug Reporter',
   'tools.qa.bug-reporter.description': 'Capture page context and write a copyable bug report.',
   'qa.pickElement': 'Pick element on page',
@@ -391,6 +416,23 @@ const en = {
   'qa.noMatch': 'No matches found.',
   'qa.xpathError': 'Could not evaluate this XPath.',
   'qa.searchStatus': 'Search status codes…',
+  'qa.apiPrivacyNotice':
+    'Requests go directly to the selected host and may change its data. Chrome may ask for access; requests and credentials are not saved.',
+  'qa.apiPermissionDenied': 'Host access was not granted. No request was sent.',
+  'qa.apiRequestFailed': 'Request failed.',
+  'qa.apiMethod': 'HTTP method',
+  'qa.apiUrl': 'Request URL',
+  'qa.apiUrlPlaceholder': 'https://api.example.com/endpoint',
+  'qa.apiHeaders': 'Headers (JSON)',
+  'qa.apiBody': 'Request body',
+  'qa.apiBodyPlaceholder': 'Optional request body',
+  'qa.apiSend': 'Send request',
+  'qa.apiSending': 'Sending…',
+  'qa.apiResponse': 'Response',
+  'qa.apiDuration': '{{duration}} ms',
+  'qa.apiResponseHeaders': 'Response headers',
+  'qa.apiResponseBody': 'Response body',
+  'qa.apiEmptyBody': '(empty response)',
   'qa.expected': 'Expected result',
   'qa.actual': 'Actual result',
   'qa.steps': 'Steps to reproduce',
@@ -398,13 +440,16 @@ const en = {
   'qa.generateReport': 'Generate report',
   'qa.report': 'Bug report',
   'tools.web.url-toolkit.name': 'URL Toolkit',
-  'tools.web.url-toolkit.description': 'Parse, encode, decode and clean URLs with a query-param editor.',
+  'tools.web.url-toolkit.description':
+    'Parse, encode, decode and clean URLs with a query-param editor.',
   'tools.web.link-toolkit.name': 'Link Toolkit',
-  'tools.web.link-toolkit.description': 'Extract internal and external links from the current page.',
+  'tools.web.link-toolkit.description':
+    'Extract internal and external links from the current page.',
   'tools.web.image-links.name': 'Image Links',
   'tools.web.image-links.description': 'Extract image URLs, dimensions and alt text from the page.',
   'tools.web.page-info.name': 'Page Information',
-  'tools.web.page-info.description': 'Title, meta, canonical, Open Graph and Twitter card details for the page.',
+  'tools.web.page-info.description':
+    'Title, meta, canonical, Open Graph and Twitter card details for the page.',
   'web.tabParse': 'Parse',
   'web.tabEncode': 'Encode / Decode',
   'web.tabClean': 'Clean',
@@ -438,15 +483,19 @@ const en = {
   'web.links': 'Links',
   'web.images': 'Images',
   'tools.security.encoder-decoder.name': 'Encoder / Decoder',
-  'tools.security.encoder-decoder.description': 'Base64, URL, HTML, Unicode and Hex encoding and decoding.',
+  'tools.security.encoder-decoder.description':
+    'Base64, URL, HTML, Unicode and Hex encoding and decoding.',
   'tools.security.hash-toolkit.name': 'Hash Toolkit',
   'tools.security.hash-toolkit.description': 'SHA and MD5 hashing plus HMAC, all computed locally.',
   'tools.security.jwt-toolkit.name': 'JWT Toolkit',
-  'tools.security.jwt-toolkit.description': 'Decode and inspect JSON Web Tokens: header, payload, claims and expiry.',
+  'tools.security.jwt-toolkit.description':
+    'Decode and inspect JSON Web Tokens: header, payload, claims and expiry.',
   'tools.security.password-generator.name': 'Password Generator',
-  'tools.security.password-generator.description': 'Generate cryptographically random passwords with charset options.',
+  'tools.security.password-generator.description':
+    'Generate cryptographically random passwords with charset options.',
   'tools.security.random-generator.name': 'Random Generator',
-  'tools.security.random-generator.description': 'Cryptographically random numbers, strings, hex, UUIDs and NanoIDs.',
+  'tools.security.random-generator.description':
+    'Cryptographically random numbers, strings, hex, UUIDs and NanoIDs.',
   'security.encode': 'Encode',
   'security.decode': 'Decode',
   'security.swap': 'Swap input/output',
@@ -458,7 +507,8 @@ const en = {
   'security.legacy': 'legacy',
   'security.jwtPlaceholder': 'Paste a JWT…',
   'security.jwtInput': 'JWT input',
-  'security.decodeNotVerify': 'Decoding reads the token — it does NOT verify the signature. Treat contents as untrusted.',
+  'security.decodeNotVerify':
+    'Decoding reads the token — it does NOT verify the signature. Treat contents as untrusted.',
   'security.jwtStatus.valid': 'Valid (not expired)',
   'security.jwtStatus.expired': 'Expired',
   'security.jwtStatus.not-yet-valid': 'Not yet valid',
@@ -475,15 +525,20 @@ const en = {
   'security.rndString': 'String',
   'security.rndHex': 'Hex',
   'tools.design.color-converter.name': 'Color Converter',
-  'tools.design.color-converter.description': 'Convert colors between HEX, RGB, HSL, HSV, HWB and CMYK.',
+  'tools.design.color-converter.description':
+    'Convert colors between HEX, RGB, HSL, HSV, HWB and CMYK.',
   'tools.design.color-picker.name': 'Color Picker',
-  'tools.design.color-picker.description': 'Pick a color from the screen or a swatch, copy as HEX/RGB/HSL.',
+  'tools.design.color-picker.description':
+    'Pick a color from the screen or a swatch, copy as HEX/RGB/HSL.',
   'tools.design.palette-generator.name': 'Palette Generator',
-  'tools.design.palette-generator.description': 'Generate complementary, analogous, triadic, monochromatic and random palettes.',
+  'tools.design.palette-generator.description':
+    'Generate complementary, analogous, triadic, monochromatic and random palettes.',
   'tools.design.contrast-checker.name': 'Contrast Checker',
-  'tools.design.contrast-checker.description': 'WCAG contrast ratio between foreground and background colors.',
+  'tools.design.contrast-checker.description':
+    'WCAG contrast ratio between foreground and background colors.',
   'tools.design.css-generator.name': 'CSS Generator',
-  'tools.design.css-generator.description': 'Generate gradients, box shadows, border radius and glass effects.',
+  'tools.design.css-generator.description':
+    'Generate gradients, box shadows, border radius and glass effects.',
   'design.colorInput': 'Color (hex, rgb, hsl…)',
   'design.pickFromScreen': 'Pick from screen',
   'design.noEyedropper': 'Screen picking needs a Chromium browser. Use the swatch below.',
@@ -511,7 +566,8 @@ const en = {
   'design.color': 'Color',
   'design.radius': 'Radius',
   'tools.screenshots.capture.name': 'Capture Toolkit',
-  'tools.screenshots.capture.description': 'Capture the visible tab and annotate with shapes, text, highlight and blur.',
+  'tools.screenshots.capture.description':
+    'Capture the visible tab and annotate with shapes, text, highlight and blur.',
   'capture.captureVisible': 'Capture visible tab',
   'capture.capturing': 'Capturing…',
   'capture.empty': 'Capture the current tab to start annotating.',
@@ -530,17 +586,22 @@ const en = {
   'capture.tool.marker': 'Number marker',
   'capture.tool.text': 'Text',
   'tools.calculators.calculator.name': 'Calculator',
-  'tools.calculators.calculator.description': 'Arithmetic and scientific calculator with history (no eval).',
+  'tools.calculators.calculator.description':
+    'Arithmetic and scientific calculator with history (no eval).',
   'tools.calculators.unit-converter.name': 'Unit Converter',
-  'tools.calculators.unit-converter.description': 'Convert length, weight, temperature, data, speed and more.',
+  'tools.calculators.unit-converter.description':
+    'Convert length, weight, temperature, data, speed and more.',
   'tools.calculators.base-converter.name': 'Number Base Converter',
-  'tools.calculators.base-converter.description': 'Convert between binary, octal, decimal and hexadecimal with bit view.',
+  'tools.calculators.base-converter.description':
+    'Convert between binary, octal, decimal and hexadecimal with bit view.',
   'tools.datetime.toolkit.name': 'Date & Time Toolkit',
   'tools.datetime.toolkit.description': 'Date calculator, timezone converter and cron parser.',
   'tools.generators.qr-toolkit.name': 'QR Code Toolkit',
-  'tools.generators.qr-toolkit.description': 'Generate QR codes for text, URLs, Wi-Fi, email, phone and contacts; decode from images.',
+  'tools.generators.qr-toolkit.description':
+    'Generate QR codes for text, URLs, Wi-Fi, email, phone and contacts; decode from images.',
   'tools.image.image-toolkit.name': 'Image Toolkit',
-  'tools.image.image-toolkit.description': 'Resize, crop, convert, inspect and encode images locally.',
+  'tools.image.image-toolkit.description':
+    'Resize, crop, convert, inspect and encode images locally.',
   'categories.datetime.name': 'Date & Time',
   'categories.datetime.description': 'Timestamps, date math, timezones and cron',
   'categories.image.name': 'Image',
@@ -602,19 +663,24 @@ const en = {
   'image.convert': 'Convert',
   'image.info': 'Info',
   'tools.seo.toolkit.name': 'SEO Toolkit',
-  'tools.seo.toolkit.description': 'Analyze the current page: meta, headings, links, images and Open Graph.',
+  'tools.seo.toolkit.description':
+    'Analyze the current page: meta, headings, links, images and Open Graph.',
   'tools.productivity.notes.name': 'Notes',
   'tools.productivity.notes.description': 'Local markdown notes with search and pinning.',
   'tools.productivity.timer.name': 'Timer',
   'tools.productivity.timer.description': 'Countdown, stopwatch and Pomodoro timer.',
   'tools.productivity.tab-manager.name': 'Tab Manager',
-  'tools.productivity.tab-manager.description': 'Search, close duplicates, and copy URLs of open tabs.',
+  'tools.productivity.tab-manager.description':
+    'Search, close duplicates, and copy URLs of open tabs.',
   'tools.browser.toolkit.name': 'Browser Toolkit',
-  'tools.browser.toolkit.description': 'Copy page URL/title, reload, hard-reload and duplicate the tab.',
+  'tools.browser.toolkit.description':
+    'Copy page URL/title, reload, hard-reload and duplicate the tab.',
   'tools.storage.inspector.name': 'Storage Inspector',
-  'tools.storage.inspector.description': 'Inspect localStorage and sessionStorage of the current page.',
+  'tools.storage.inspector.description':
+    'Inspect localStorage and sessionStorage of the current page.',
   'tools.accessibility.toolkit.name': 'Accessibility Quick Check',
-  'tools.accessibility.toolkit.description': 'Quick page checks: alt text, headings, link names and language.',
+  'tools.accessibility.toolkit.description':
+    'Quick page checks: alt text, headings, link names and language.',
   'seo.score': 'SEO score',
   'seo.tabChecks': 'Checks',
   'seo.tabHeadings': 'Headings',
@@ -667,7 +733,8 @@ const en = {
   'a11y.openContrast': 'Contrast Checker',
   'a11y.disclaimer': 'Quick checks only — not a full accessibility audit.',
   'tools.files.file-toolkit.name': 'File Toolkit',
-  'tools.files.file-toolkit.description': 'View CSV/JSON/text files and combine images into a PDF — all locally.',
+  'tools.files.file-toolkit.description':
+    'View CSV/JSON/text files and combine images into a PDF — all locally.',
   'files.text': 'Text',
   'files.toPdf': 'Images → PDF',
   'files.open': 'Open a file…',

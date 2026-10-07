@@ -35,7 +35,10 @@ export default function TextAnalyzerTool() {
               <StatCard label={t('text.noSpaces')} value={stats.charactersNoSpaces} />
               <StatCard label={t('text.paragraphCount')} value={stats.paragraphs} />
               <StatCard label={t('text.sentenceCount')} value={stats.sentences} />
-              <StatCard label={t('text.readingTime')} value={formatReadingTime(stats.readingTimeSeconds, t)} />
+              <StatCard
+                label={t('text.readingTime')}
+                value={formatReadingTime(stats.readingTimeSeconds, t)}
+              />
               <StatCard label={t('text.avgWordLength')} value={stats.avgWordLength} />
               <StatCard label={t('text.avgSentenceLength')} value={stats.avgSentenceLength} />
             </div>

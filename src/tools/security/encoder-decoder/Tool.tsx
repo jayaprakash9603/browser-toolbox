@@ -38,21 +38,51 @@ export default function EncoderDecoderTool() {
       <div className="flex flex-col gap-3">
         <Tabs value={kind} onValueChange={(v) => setKind(v as EncodingKind)}>
           <TabsList className="flex-wrap">
-            {KINDS.map((k) => <TabsTrigger key={k.id} value={k.id}>{k.label}</TabsTrigger>)}
+            {KINDS.map((k) => (
+              <TabsTrigger key={k.id} value={k.id}>
+                {k.label}
+              </TabsTrigger>
+            ))}
           </TabsList>
         </Tabs>
         <div className="flex gap-1.5">
-          <Button size="sm" variant={direction === 'encode' ? 'secondary' : 'outline'} onClick={() => setDirection('encode')}>
+          <Button
+            size="sm"
+            variant={direction === 'encode' ? 'secondary' : 'outline'}
+            onClick={() => setDirection('encode')}
+          >
             {t('security.encode')}
           </Button>
-          <Button size="sm" variant={direction === 'decode' ? 'secondary' : 'outline'} onClick={() => setDirection('decode')}>
+          <Button
+            size="sm"
+            variant={direction === 'decode' ? 'secondary' : 'outline'}
+            onClick={() => setDirection('decode')}
+          >
             {t('security.decode')}
           </Button>
-          <Button size="icon-sm" variant="ghost" onClick={() => { if (output) { setInput(output); setDirection(direction === 'encode' ? 'decode' : 'encode') } }} disabled={!output} aria-label={t('security.swap')} title={t('security.swap')}>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            onClick={() => {
+              if (output) {
+                setInput(output)
+                setDirection(direction === 'encode' ? 'decode' : 'encode')
+              }
+            }}
+            disabled={!output}
+            aria-label={t('security.swap')}
+            title={t('security.swap')}
+          >
             <ArrowDownUpIcon />
           </Button>
         </div>
-        <TextEditor value={input} onChange={setInput} placeholder={t('security.inputPlaceholder')} ariaLabel={t('security.input')} minRows={5} />
+        <TextEditor
+          value={input}
+          onChange={setInput}
+          placeholder={t('security.inputPlaceholder')}
+          ariaLabel={t('security.input')}
+          minRows={5}
+        />
         {result && !result.ok && <JsonErrorView message={result.error} />}
         {output && (
           <div>
@@ -60,7 +90,9 @@ export default function EncoderDecoderTool() {
               <span className="text-xs font-medium">{t('text.output')}</span>
               <ToolActions value={output} onClear={() => setInput('')} />
             </div>
-            <pre className="max-h-64 overflow-auto rounded-md border bg-muted/40 p-2 font-mono text-[11px]">{output}</pre>
+            <pre className="max-h-64 overflow-auto rounded-md border bg-muted/40 p-2 font-mono text-[11px]">
+              {output}
+            </pre>
           </div>
         )}
       </div>

@@ -14,7 +14,9 @@ export interface UnitCategory {
 
 export const UNIT_CATEGORIES: UnitCategory[] = [
   {
-    id: 'length', name: 'Length', base: 'm',
+    id: 'length',
+    name: 'Length',
+    base: 'm',
     units: [
       { id: 'mm', name: 'Millimeter', toBase: 0.001 },
       { id: 'cm', name: 'Centimeter', toBase: 0.01 },
@@ -27,7 +29,9 @@ export const UNIT_CATEGORIES: UnitCategory[] = [
     ],
   },
   {
-    id: 'weight', name: 'Weight', base: 'kg',
+    id: 'weight',
+    name: 'Weight',
+    base: 'kg',
     units: [
       { id: 'mg', name: 'Milligram', toBase: 1e-6 },
       { id: 'g', name: 'Gram', toBase: 0.001 },
@@ -39,7 +43,9 @@ export const UNIT_CATEGORIES: UnitCategory[] = [
     ],
   },
   {
-    id: 'temperature', name: 'Temperature', base: '°C',
+    id: 'temperature',
+    name: 'Temperature',
+    base: '°C',
     units: [
       { id: 'c', name: 'Celsius', toBase: 1 },
       { id: 'f', name: 'Fahrenheit', toBase: 5 / 9, offset: -32 },
@@ -47,7 +53,9 @@ export const UNIT_CATEGORIES: UnitCategory[] = [
     ],
   },
   {
-    id: 'area', name: 'Area', base: 'm²',
+    id: 'area',
+    name: 'Area',
+    base: 'm²',
     units: [
       { id: 'mm2', name: 'Square millimeter', toBase: 1e-6 },
       { id: 'cm2', name: 'Square centimeter', toBase: 1e-4 },
@@ -60,7 +68,9 @@ export const UNIT_CATEGORIES: UnitCategory[] = [
     ],
   },
   {
-    id: 'volume', name: 'Volume', base: 'l',
+    id: 'volume',
+    name: 'Volume',
+    base: 'l',
     units: [
       { id: 'ml', name: 'Milliliter', toBase: 0.001 },
       { id: 'l', name: 'Liter', toBase: 1 },
@@ -74,7 +84,9 @@ export const UNIT_CATEGORIES: UnitCategory[] = [
     ],
   },
   {
-    id: 'speed', name: 'Speed', base: 'm/s',
+    id: 'speed',
+    name: 'Speed',
+    base: 'm/s',
     units: [
       { id: 'ms', name: 'Meter/second', toBase: 1 },
       { id: 'kmh', name: 'Kilometer/hour', toBase: 1 / 3.6 },
@@ -84,7 +96,9 @@ export const UNIT_CATEGORIES: UnitCategory[] = [
     ],
   },
   {
-    id: 'time', name: 'Time', base: 's',
+    id: 'time',
+    name: 'Time',
+    base: 's',
     units: [
       { id: 'ms', name: 'Millisecond', toBase: 0.001 },
       { id: 's', name: 'Second', toBase: 1 },
@@ -95,7 +109,9 @@ export const UNIT_CATEGORIES: UnitCategory[] = [
     ],
   },
   {
-    id: 'data', name: 'Data', base: 'B',
+    id: 'data',
+    name: 'Data',
+    base: 'B',
     units: [
       { id: 'b', name: 'Bit', toBase: 0.125 },
       { id: 'B', name: 'Byte', toBase: 1 },
@@ -110,7 +126,9 @@ export const UNIT_CATEGORIES: UnitCategory[] = [
     ],
   },
   {
-    id: 'pressure', name: 'Pressure', base: 'Pa',
+    id: 'pressure',
+    name: 'Pressure',
+    base: 'Pa',
     units: [
       { id: 'pa', name: 'Pascal', toBase: 1 },
       { id: 'kpa', name: 'Kilopascal', toBase: 1000 },
@@ -121,7 +139,9 @@ export const UNIT_CATEGORIES: UnitCategory[] = [
     ],
   },
   {
-    id: 'energy', name: 'Energy', base: 'J',
+    id: 'energy',
+    name: 'Energy',
+    base: 'J',
     units: [
       { id: 'j', name: 'Joule', toBase: 1 },
       { id: 'kj', name: 'Kilojoule', toBase: 1000 },
@@ -133,7 +153,9 @@ export const UNIT_CATEGORIES: UnitCategory[] = [
     ],
   },
   {
-    id: 'power', name: 'Power', base: 'W',
+    id: 'power',
+    name: 'Power',
+    base: 'W',
     units: [
       { id: 'w', name: 'Watt', toBase: 1 },
       { id: 'kw', name: 'Kilowatt', toBase: 1000 },
@@ -142,7 +164,9 @@ export const UNIT_CATEGORIES: UnitCategory[] = [
     ],
   },
   {
-    id: 'frequency', name: 'Frequency', base: 'Hz',
+    id: 'frequency',
+    name: 'Frequency',
+    base: 'Hz',
     units: [
       { id: 'hz', name: 'Hertz', toBase: 1 },
       { id: 'khz', name: 'Kilohertz', toBase: 1000 },
@@ -152,7 +176,9 @@ export const UNIT_CATEGORIES: UnitCategory[] = [
     ],
   },
   {
-    id: 'angle', name: 'Angle', base: '°',
+    id: 'angle',
+    name: 'Angle',
+    base: '°',
     units: [
       { id: 'deg', name: 'Degree', toBase: 1 },
       { id: 'rad', name: 'Radian', toBase: 180 / Math.PI },
@@ -168,7 +194,12 @@ export function getUnitCategory(categoryId: string): UnitCategory | undefined {
   return UNIT_CATEGORIES.find((category) => category.id === categoryId)
 }
 
-export function convertUnit(categoryId: string, value: number, fromId: string, toId: string): UnitResult {
+export function convertUnit(
+  categoryId: string,
+  value: number,
+  fromId: string,
+  toId: string,
+): UnitResult {
   if (!Number.isFinite(value)) return { ok: false, error: 'Value must be a number.' }
   const category = getUnitCategory(categoryId)
   if (!category) return { ok: false, error: `Unknown category "${categoryId}".` }

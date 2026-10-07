@@ -1,6 +1,7 @@
 export type CalcResult = { ok: true; value: number } | { ok: false; error: string }
 
-type Token = { type: 'num'; value: number } | { type: 'op'; value: string } | { type: 'fn'; value: string }
+type Token =
+  { type: 'num'; value: number } | { type: 'op'; value: string } | { type: 'fn'; value: string }
 
 const FUNCTIONS: Record<string, (x: number) => number> = {
   sqrt: Math.sqrt,
@@ -19,7 +20,12 @@ const FUNCTIONS: Record<string, (x: number) => number> = {
 function tokenize(input: string): Token[] | string {
   const tokens: Token[] = []
   let index = 0
-  const source = input.replace(/\s+/g, '').replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/π/g, 'pi')
+  const source = input
+    .replace(/\s+/g, '')
+    .replace(/×/g, '*')
+    .replace(/÷/g, '/')
+    .replace(/−/g, '-')
+    .replace(/π/g, 'pi')
   while (index < source.length) {
     const char = source[index]
     if (/[\d.]/.test(char)) {
@@ -56,7 +62,10 @@ export function evaluate(input: string): CalcResult {
 
   function parseExpr(): number {
     let value = parseTerm()
-    while (peek()?.type === 'op' && ((peek() as { value: string }).value === '+' || (peek() as { value: string }).value === '-')) {
+    while (
+      peek()?.type === 'op' &&
+      ((peek() as { value: string }).value === '+' || (peek() as { value: string }).value === '-')
+    ) {
       const op = (next() as { value: string }).value
       const rhs = parseTerm()
       value = op === '+' ? value + rhs : value - rhs
@@ -81,8 +90,14 @@ export function evaluate(input: string): CalcResult {
     return base
   }
   function parseUnary(): number {
-    if (peek()?.type === 'op' && (peek() as { value: string }).value === '-') { next(); return -parseUnary() }
-    if (peek()?.type === 'op' && (peek() as { value: string }).value === '+') { next(); return parseUnary() }
+    if (peek()?.type === 'op' && (peek() as { value: string }).value === '-') {
+      next()
+      return -parseUnary()
+    }
+    if (peek()?.type === 'op' && (peek() as { value: string }).value === '+') {
+      next()
+      return parseUnary()
+    }
     return parseAtom()
   }
   function parseAtom(): number {
@@ -96,7 +111,8 @@ export function evaluate(input: string): CalcResult {
     if (token.type === 'op' && token.value === '(') {
       const value = parseExpr()
       const closing = next()
-      if (!closing || closing.type !== 'op' || closing.value !== ')') throw new Error('Missing closing parenthesis')
+      if (!closing || closing.type !== 'op' || closing.value !== ')')
+        throw new Error('Missing closing parenthesis')
       return value
     }
     throw new Error('Unexpected token')

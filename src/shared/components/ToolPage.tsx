@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import type { ToolDefinition } from '@/core/registry'
 import { BackButton } from '@/shared/components/BackButton'
 import { FavoriteButton } from '@/shared/components/FavoriteButton'
 import { Separator } from '@/shared/components/ui/separator'
+import { useToolLabels } from '@/shared/hooks/useToolLabels'
 import { cn } from '@/shared/utils/cn'
 
 interface ToolPageProps {
@@ -22,20 +22,18 @@ export function ToolPage({
   backTo = `/categories/${tool.category}`,
   contentClassName,
 }: ToolPageProps) {
-  const { t } = useTranslation()
   const Icon = tool.icon
-  const name = t(`tools.${tool.id}.name`, { defaultValue: tool.name })
-  const description = t(`tools.${tool.id}.description`, { defaultValue: tool.description })
+  const { name, description } = useToolLabels(tool)
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-start gap-2.5 px-4 pt-3 pb-2">
-        <BackButton to={backTo} />
-        <div className="mt-0.5 rounded-md border bg-muted p-1.5">
-          <Icon className="size-4" />
+      <header className="flex items-start gap-3 px-4 pt-3 pb-2.5">
+        <BackButton to={backTo} className="mt-0.5 shrink-0" />
+        <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border bg-muted">
+          <Icon className="size-4 text-foreground/80" aria-hidden />
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-sm font-semibold">{name}</h1>
-          <p className="text-xs text-muted-foreground">{description}</p>
+          <h1 className="truncate text-sm font-semibold tracking-tight">{name}</h1>
+          <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">{description}</p>
         </div>
         <div className="flex items-center gap-1">
           {actions}

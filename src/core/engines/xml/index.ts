@@ -56,7 +56,11 @@ export function formatXml(source: string): XmlResult<string> {
   const lines: string[] = []
   for (const token of tokens) {
     const isClosing = token.startsWith('</')
-    const isSelfClosing = token.endsWith('/>') || token.startsWith('<?') || token.startsWith('<!') || /^<[^>]+>[^<]*<\/[^>]+>$/.test(token)
+    const isSelfClosing =
+      token.endsWith('/>') ||
+      token.startsWith('<?') ||
+      token.startsWith('<!') ||
+      /^<[^>]+>[^<]*<\/[^>]+>$/.test(token)
     if (isClosing) depth -= 1
     lines.push(`${INDENT.repeat(Math.max(0, depth))}${token}`)
     if (!isClosing && !isSelfClosing && token.startsWith('<')) depth += 1
@@ -91,7 +95,11 @@ export function escapeXml(source: string): string {
 
 export function buildXml(value: unknown, rootTag = 'root'): XmlResult<string> {
   try {
-    const builder = new XMLBuilder({ ignoreAttributes: false, attributeNamePrefix: '@_', format: true })
+    const builder = new XMLBuilder({
+      ignoreAttributes: false,
+      attributeNamePrefix: '@_',
+      format: true,
+    })
     return { ok: true, value: builder.build({ [rootTag]: value }) as string }
   } catch (cause) {
     return { ok: false, error: cause instanceof Error ? cause.message : 'Could not build XML.' }

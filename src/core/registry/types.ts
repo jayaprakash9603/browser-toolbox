@@ -16,13 +16,7 @@ export const TOOL_CAPABILITIES = [
 
 export type ToolCapability = (typeof TOOL_CAPABILITIES)[number]
 
-export const TOOL_STATUSES = [
-  'active',
-  'beta',
-  'experimental',
-  'coming-soon',
-  'disabled',
-] as const
+export const TOOL_STATUSES = ['active', 'beta', 'experimental', 'coming-soon', 'disabled'] as const
 
 export type ToolStatus = (typeof TOOL_STATUSES)[number]
 

@@ -31,12 +31,7 @@ export function removeDuplicateLines(
 }
 
 export type SortMode =
-  | 'alpha-asc'
-  | 'alpha-desc'
-  | 'numeric-asc'
-  | 'numeric-desc'
-  | 'length-asc'
-  | 'length-desc'
+  'alpha-asc' | 'alpha-desc' | 'numeric-asc' | 'numeric-desc' | 'length-asc' | 'length-desc'
 
 export const SORT_MODES: { id: SortMode; label: string }[] = [
   { id: 'alpha-asc', label: 'A → Z' },

@@ -13,7 +13,10 @@ function toBase64(input: string): string {
 function fromBase64(input: string): EncodingResult {
   const cleaned = input.replace(/\s+/g, '')
   if (!/^[A-Za-z0-9+/]*={0,2}$/.test(cleaned)) {
-    return { ok: false, error: 'Invalid Base64 — only A–Z, a–z, 0–9, +, / and padding are allowed.' }
+    return {
+      ok: false,
+      error: 'Invalid Base64 — only A–Z, a–z, 0–9, +, / and padding are allowed.',
+    }
   }
   try {
     const binary = atob(cleaned)

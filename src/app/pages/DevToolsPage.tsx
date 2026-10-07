@@ -25,10 +25,7 @@ export default function DevToolsPage() {
     [],
   )
 
-  const { results } = useMemo(
-    () => filterTools(tools, query, [], [], (tool) => [tool.name, tool.description]),
-    [tools, query],
-  )
+  const { results } = useMemo(() => filterTools(tools, query, [], []), [tools, query])
 
   const shown = query.trim() ? results : tools
 
@@ -40,7 +37,9 @@ export default function DevToolsPage() {
           {t('devtools.title', { defaultValue: 'Toolbox — DevTools' })}
         </h1>
         <p className="text-xs text-muted-foreground">
-          {t('devtools.subtitle', { defaultValue: 'Page-aware tools, sharing the same engines as the side panel.' })}
+          {t('devtools.subtitle', {
+            defaultValue: 'Page-aware tools, sharing the same engines as the side panel.',
+          })}
         </p>
       </div>
 
@@ -57,7 +56,8 @@ export default function DevToolsPage() {
           <GlobeIcon className="size-8" />
           <p className="text-sm">
             {t('devtools.empty', {
-              defaultValue: 'No page-aware tools are enabled yet. QA and Web toolkits will appear here as they ship.',
+              defaultValue:
+                'No page-aware tools are enabled yet. QA and Web toolkits will appear here as they ship.',
             })}
           </p>
           <p className="flex items-center gap-1 text-xs">

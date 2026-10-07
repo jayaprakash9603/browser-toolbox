@@ -31,13 +31,28 @@ export async function getImageInfo(file: File): Promise<ImageResult<ImageInfo>> 
   try {
     const dataUrl = await fileToDataUrl(file)
     const img = await loadImageFromDataUrl(dataUrl)
-    return { ok: true, value: { width: img.naturalWidth, height: img.naturalHeight, format: file.type || 'unknown', sizeBytes: file.size } }
+    return {
+      ok: true,
+      value: {
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+        format: file.type || 'unknown',
+        sizeBytes: file.size,
+      },
+    }
   } catch (cause) {
-    return { ok: false, error: cause instanceof Error ? cause.message : 'Could not read the image.' }
+    return {
+      ok: false,
+      error: cause instanceof Error ? cause.message : 'Could not read the image.',
+    }
   }
 }
 
-export async function resizeImage(img: HTMLImageElement, width: number, height: number): Promise<string> {
+export async function resizeImage(
+  img: HTMLImageElement,
+  width: number,
+  height: number,
+): Promise<string> {
   const canvas = document.createElement('canvas')
   canvas.width = Math.max(1, Math.round(width))
   canvas.height = Math.max(1, Math.round(height))
@@ -46,7 +61,13 @@ export async function resizeImage(img: HTMLImageElement, width: number, height: 
   return canvas.toDataURL('image/png')
 }
 
-export async function cropImage(img: HTMLImageElement, x: number, y: number, width: number, height: number): Promise<string> {
+export async function cropImage(
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+): Promise<string> {
   const canvas = document.createElement('canvas')
   canvas.width = Math.max(1, Math.round(width))
   canvas.height = Math.max(1, Math.round(height))
@@ -55,7 +76,11 @@ export async function cropImage(img: HTMLImageElement, x: number, y: number, wid
   return canvas.toDataURL('image/png')
 }
 
-export async function convertImage(img: HTMLImageElement, format: ImageFormat, quality = 0.92): Promise<string> {
+export async function convertImage(
+  img: HTMLImageElement,
+  format: ImageFormat,
+  quality = 0.92,
+): Promise<string> {
   const canvas = document.createElement('canvas')
   canvas.width = img.naturalWidth
   canvas.height = img.naturalHeight
@@ -74,7 +99,11 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / 1024 ** 2).toFixed(2)} MB`
 }
 
-export async function pickColorAt(img: HTMLImageElement, x: number, y: number): Promise<ImageResult<string>> {
+export async function pickColorAt(
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+): Promise<ImageResult<string>> {
   try {
     const canvas = document.createElement('canvas')
     canvas.width = img.naturalWidth

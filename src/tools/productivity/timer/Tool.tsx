@@ -53,9 +53,19 @@ export default function TimerTool() {
     return () => window.clearInterval(id)
   }, [counting, timing, pomoRunning, pomoMode])
 
-  const startCountdown = () => { endAt.current = Date.now() + minutes * 60000; setRemaining(minutes * 60000); setCounting(true) }
-  const startStopwatch = () => { startAt.current = Date.now() - elapsed; setTiming(true) }
-  const startPomo = () => { pomoEnd.current = Date.now() + pomoRemaining; setPomoRunning(true) }
+  const startCountdown = () => {
+    endAt.current = Date.now() + minutes * 60000
+    setRemaining(minutes * 60000)
+    setCounting(true)
+  }
+  const startStopwatch = () => {
+    startAt.current = Date.now() - elapsed
+    setTiming(true)
+  }
+  const startPomo = () => {
+    pomoEnd.current = Date.now() + pomoRemaining
+    setPomoRunning(true)
+  }
 
   return (
     <ToolPage tool={tool}>
@@ -68,31 +78,100 @@ export default function TimerTool() {
 
         <TabsContent value="countdown" className="mt-2 flex flex-col items-center gap-3">
           <div className="flex items-center gap-1.5">
-            <Input type="number" min={1} max={600} value={minutes} onChange={(e) => setMinutes(Math.max(1, Number(e.target.value) || 1))} className="w-20" aria-label={t('timer.minutes')} disabled={counting} />
+            <Input
+              type="number"
+              min={1}
+              max={600}
+              value={minutes}
+              onChange={(e) => setMinutes(Math.max(1, Number(e.target.value) || 1))}
+              className="w-20"
+              aria-label={t('timer.minutes')}
+              disabled={counting}
+            />
             <span className="text-xs text-muted-foreground">{t('timer.minutes')}</span>
           </div>
-          <p className="font-mono text-4xl font-semibold tabular-nums">{formatMs(remaining ?? minutes * 60000)}</p>
+          <p className="font-mono text-4xl font-semibold tabular-nums">
+            {formatMs(remaining ?? minutes * 60000)}
+          </p>
           <div className="flex gap-1.5">
-            {!counting ? <Button size="sm" onClick={startCountdown}><PlayIcon /> {t('timer.start')}</Button> : <Button size="sm" variant="outline" onClick={() => setCounting(false)}><PauseIcon /> {t('timer.pause')}</Button>}
-            <Button size="sm" variant="ghost" onClick={() => { setCounting(false); setRemaining(null) }}><RotateCcwIcon /> {t('timer.reset')}</Button>
+            {!counting ? (
+              <Button size="sm" onClick={startCountdown}>
+                <PlayIcon /> {t('timer.start')}
+              </Button>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => setCounting(false)}>
+                <PauseIcon /> {t('timer.pause')}
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setCounting(false)
+                setRemaining(null)
+              }}
+            >
+              <RotateCcwIcon /> {t('timer.reset')}
+            </Button>
           </div>
-          {remaining === 0 && <p className="text-xs font-medium text-green-600 dark:text-green-400">{t('timer.done')}</p>}
+          {remaining === 0 && (
+            <p className="text-xs font-medium text-green-600 dark:text-green-400">
+              {t('timer.done')}
+            </p>
+          )}
         </TabsContent>
 
         <TabsContent value="stopwatch" className="mt-2 flex flex-col items-center gap-3">
           <p className="font-mono text-4xl font-semibold tabular-nums">{formatMs(elapsed)}</p>
           <div className="flex gap-1.5">
-            {!timing ? <Button size="sm" onClick={startStopwatch}><PlayIcon /> {t('timer.start')}</Button> : <Button size="sm" variant="outline" onClick={() => setTiming(false)}><PauseIcon /> {t('timer.pause')}</Button>}
-            <Button size="sm" variant="ghost" onClick={() => { setTiming(false); setElapsed(0) }}><RotateCcwIcon /> {t('timer.reset')}</Button>
+            {!timing ? (
+              <Button size="sm" onClick={startStopwatch}>
+                <PlayIcon /> {t('timer.start')}
+              </Button>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => setTiming(false)}>
+                <PauseIcon /> {t('timer.pause')}
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setTiming(false)
+                setElapsed(0)
+              }}
+            >
+              <RotateCcwIcon /> {t('timer.reset')}
+            </Button>
           </div>
         </TabsContent>
 
         <TabsContent value="pomodoro" className="mt-2 flex flex-col items-center gap-3">
-          <p className="text-xs font-medium text-muted-foreground">{pomoMode === 'work' ? t('timer.pomoWork') : t('timer.pomoBreak')}</p>
+          <p className="text-xs font-medium text-muted-foreground">
+            {pomoMode === 'work' ? t('timer.pomoWork') : t('timer.pomoBreak')}
+          </p>
           <p className="font-mono text-4xl font-semibold tabular-nums">{formatMs(pomoRemaining)}</p>
           <div className="flex gap-1.5">
-            {!pomoRunning ? <Button size="sm" onClick={startPomo}><PlayIcon /> {t('timer.start')}</Button> : <Button size="sm" variant="outline" onClick={() => setPomoRunning(false)}><PauseIcon /> {t('timer.pause')}</Button>}
-            <Button size="sm" variant="ghost" onClick={() => { setPomoRunning(false); setPomoMode('work'); setPomoRemaining(25 * 60 * 1000) }}><RotateCcwIcon /> {t('timer.reset')}</Button>
+            {!pomoRunning ? (
+              <Button size="sm" onClick={startPomo}>
+                <PlayIcon /> {t('timer.start')}
+              </Button>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => setPomoRunning(false)}>
+                <PauseIcon /> {t('timer.pause')}
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setPomoRunning(false)
+                setPomoMode('work')
+                setPomoRemaining(25 * 60 * 1000)
+              }}
+            >
+              <RotateCcwIcon /> {t('timer.reset')}
+            </Button>
           </div>
         </TabsContent>
       </Tabs>

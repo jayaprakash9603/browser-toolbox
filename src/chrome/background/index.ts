@@ -1,4 +1,7 @@
+import '@/i18n'
+
 import { createLogger } from '@/core/logging'
+import { getChromeMessage } from '@/core/i18n/chromeMessages'
 import { startMessageRouter } from '@/core/messaging'
 import { stashPayload } from '@/core/payloads'
 import { toolRegistry } from '@/core/registry'
@@ -22,14 +25,17 @@ async function rebuildContextMenus() {
   await chrome.contextMenus.removeAll()
   chrome.contextMenus.create({
     id: 'toolbox.open',
-    title: chrome.i18n.getMessage('contextMenuOpen') || 'Open Browser Toolbox',
+    title: getChromeMessage('contextMenuOpen'),
     contexts: ['all'],
   })
   for (const item of buildMenuItems(toolRegistry.getAll())) {
     chrome.contextMenus.create({
       id: item.id,
       title: item.title,
-      contexts: item.contexts as [chrome.contextMenus.ContextType, ...chrome.contextMenus.ContextType[]],
+      contexts: item.contexts as [
+        chrome.contextMenus.ContextType,
+        ...chrome.contextMenus.ContextType[],
+      ],
       ...(item.parentId ? { parentId: item.parentId } : {}),
     })
   }

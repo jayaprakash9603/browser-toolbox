@@ -31,7 +31,8 @@ function buildCharset(options: PasswordOptions): string {
   if (options.lowercase) charset += SETS.lowercase
   if (options.numbers) charset += SETS.numbers
   if (options.symbols) charset += SETS.symbols
-  if (options.excludeAmbiguous) charset = [...charset].filter((char) => !AMBIGUOUS.has(char)).join('')
+  if (options.excludeAmbiguous)
+    charset = [...charset].filter((char) => !AMBIGUOUS.has(char)).join('')
   return charset
 }
 
@@ -64,7 +65,8 @@ export function randomInt(min: number, max: number): number {
 }
 
 export function randomString(length: number, alphabet?: string): string {
-  const chars = alphabet && alphabet.length > 1 ? alphabet : `${SETS.lowercase}${SETS.uppercase}${SETS.numbers}`
+  const chars =
+    alphabet && alphabet.length > 1 ? alphabet : `${SETS.lowercase}${SETS.uppercase}${SETS.numbers}`
   const size = Math.min(Math.max(1, Math.trunc(length)), 1024)
   let output = ''
   for (let index = 0; index < size; index += 1) output += chars[randomBelow(chars.length)]

@@ -21,7 +21,15 @@ describe('regex engine', () => {
   })
 
   it('builds flag strings', () => {
-    expect(flagsToString({ global: true, ignoreCase: true, multiline: false, dotAll: true, unicode: false })).toBe('gis')
+    expect(
+      flagsToString({
+        global: true,
+        ignoreCase: true,
+        multiline: false,
+        dotAll: true,
+        unicode: false,
+      }),
+    ).toBe('gis')
   })
 
   it('finds matches with groups and named groups', () => {

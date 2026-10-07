@@ -31,18 +31,29 @@ export default function ElementInspectorTool() {
   const load = async () => {
     const area = chrome.storage?.session ?? chrome.storage?.local
     if (!area) return null
-    const stored = (await area.get('toolbox.pickedElement')) as Record<string, PickedElement | undefined>
+    const stored = (await area.get('toolbox.pickedElement')) as Record<
+      string,
+      PickedElement | undefined
+    >
     return stored['toolbox.pickedElement'] ?? null
   }
 
   useEffect(() => {
     let live = true
-    void load().then((value) => { if (live && value) setPicked(value) })
+    void load().then((value) => {
+      if (live && value) setPicked(value)
+    })
     const listener = (_: unknown, area: string) => {
-      if (area === 'session' || area === 'local') void load().then((value) => { if (value) setPicked(value) })
+      if (area === 'session' || area === 'local')
+        void load().then((value) => {
+          if (value) setPicked(value)
+        })
     }
     chrome.storage?.onChanged?.addListener(listener)
-    return () => { live = false; chrome.storage?.onChanged?.removeListener(listener) }
+    return () => {
+      live = false
+      chrome.storage?.onChanged?.removeListener(listener)
+    }
   }, [])
 
   const startPicker = async () => {
@@ -75,7 +86,11 @@ export default function ElementInspectorTool() {
             <div className="flex items-center gap-1.5">
               <Badge variant="secondary">{`<${picked.element.tag}>`}</Badge>
               {picked.element.id && <Badge variant="outline">#{picked.element.id}</Badge>}
-              {picked.element.classes.map((cls) => <Badge key={cls} variant="outline">.{cls}</Badge>)}
+              {picked.element.classes.map((cls) => (
+                <Badge key={cls} variant="outline">
+                  .{cls}
+                </Badge>
+              ))}
             </div>
             <div className="grid grid-cols-4 gap-1.5 text-center">
               <Stat label="W" value={Math.round(picked.element.dimensions.width)} />
@@ -88,27 +103,41 @@ export default function ElementInspectorTool() {
                 <p className="text-xs">{picked.element.text.trim().slice(0, 200)}</p>
               </Section>
             )}
-            <Section title={t('qa.attributes')} copy={JSON.stringify(picked.element.attributes, null, 2)}>
+            <Section
+              title={t('qa.attributes')}
+              copy={JSON.stringify(picked.element.attributes, null, 2)}
+            >
               <div className="space-y-0.5 font-mono text-[11px]">
                 {Object.entries(picked.element.attributes).map(([name, value]) => (
-                  <div key={name}><span className="text-primary">{name}</span>=<span className="text-muted-foreground">"{value}"</span></div>
+                  <div key={name}>
+                    <span className="text-primary">{name}</span>=
+                    <span className="text-muted-foreground">"{value}"</span>
+                  </div>
                 ))}
               </div>
             </Section>
             <Section title={t('qa.selectors')} copy={picked.selectors.cssRelative ?? ''}>
               <div className="space-y-1">
-                {Object.entries(picked.selectors).filter(([, v]) => v).map(([kind, value]) => (
-                  <div key={kind} className="flex items-center justify-between gap-1">
-                    <code className="min-w-0 flex-1 truncate font-mono text-[10px]">{value}</code>
-                    <CopyButton text={value ?? ''} />
-                  </div>
-                ))}
+                {Object.entries(picked.selectors)
+                  .filter(([, v]) => v)
+                  .map(([kind, value]) => (
+                    <div key={kind} className="flex items-center justify-between gap-1">
+                      <code className="min-w-0 flex-1 truncate font-mono text-[10px]">{value}</code>
+                      <CopyButton text={value ?? ''} />
+                    </div>
+                  ))}
               </div>
             </Section>
-            <Section title={t('qa.computedStyles')} copy={JSON.stringify(picked.element.computedStyles, null, 2)}>
+            <Section
+              title={t('qa.computedStyles')}
+              copy={JSON.stringify(picked.element.computedStyles, null, 2)}
+            >
               <div className="space-y-0.5 font-mono text-[11px]">
                 {Object.entries(picked.element.computedStyles).map(([prop, value]) => (
-                  <div key={prop}><span className="text-primary">{prop}:</span> <span className="text-muted-foreground">{value}</span></div>
+                  <div key={prop}>
+                    <span className="text-primary">{prop}:</span>{' '}
+                    <span className="text-muted-foreground">{value}</span>
+                  </div>
                 ))}
               </div>
             </Section>
@@ -128,7 +157,15 @@ function Stat({ label, value }: { label: string; value: number }) {
   )
 }
 
-function Section({ title, copy, children }: { title: string; copy: string; children: React.ReactNode }) {
+function Section({
+  title,
+  copy,
+  children,
+}: {
+  title: string
+  copy: string
+  children: React.ReactNode
+}) {
   return (
     <div className="rounded-md border p-2">
       <div className="mb-1 flex items-center justify-between">

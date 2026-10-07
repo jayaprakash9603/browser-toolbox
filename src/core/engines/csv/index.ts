@@ -82,7 +82,11 @@ export function csvToRecords(source: string, options: CsvParseOptions = {}): Csv
   return { ok: true, value: { headers, records } }
 }
 
-export function csvToJson(source: string, options: CsvParseOptions = {}, indent: number | string = 2): CsvResult<string> {
+export function csvToJson(
+  source: string,
+  options: CsvParseOptions = {},
+  indent: number | string = 2,
+): CsvResult<string> {
   const table = csvToRecords(source, options)
   if (!table.ok) return table
   return { ok: true, value: JSON.stringify(table.value.records, null, indent) }
@@ -128,13 +132,21 @@ export function jsonToCsv(source: string, delimiter = ','): CsvResult<string> {
 export function csvToTsv(source: string): CsvResult<string> {
   const parsed = parseCsv(source)
   if (!parsed.ok) return parsed
-  return { ok: true, value: parsed.value.map((row) => row.map((cell) => escapeCell(cell, '\t')).join('\t')).join('\n') }
+  return {
+    ok: true,
+    value: parsed.value
+      .map((row) => row.map((cell) => escapeCell(cell, '\t')).join('\t'))
+      .join('\n'),
+  }
 }
 
 export function tsvToCsv(source: string): CsvResult<string> {
   const parsed = parseCsv(source, { delimiter: '\t' })
   if (!parsed.ok) return parsed
-  return { ok: true, value: parsed.value.map((row) => row.map((cell) => escapeCell(cell, ',')).join(',')).join('\n') }
+  return {
+    ok: true,
+    value: parsed.value.map((row) => row.map((cell) => escapeCell(cell, ',')).join(',')).join('\n'),
+  }
 }
 
 export function csvToMarkdown(source: string, options: CsvParseOptions = {}): CsvResult<string> {
@@ -145,7 +157,9 @@ export function csvToMarkdown(source: string, options: CsvParseOptions = {}): Cs
   const lines = [
     `| ${headers.map(escapeMd).join(' | ')} |`,
     `| ${headers.map(() => '---').join(' | ')} |`,
-    ...rows.map((row) => `| ${headers.map((_, index) => escapeMd(row[index] ?? '')).join(' | ')} |`),
+    ...rows.map(
+      (row) => `| ${headers.map((_, index) => escapeMd(row[index] ?? '')).join(' | ')} |`,
+    ),
   ]
   return { ok: true, value: lines.join('\n') }
 }

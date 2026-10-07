@@ -28,12 +28,22 @@ export default function XpathTesterTool() {
     setError(null)
     setResult(null)
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-    if (tab?.id == null) { setRunning(false); setError(t('qa.noActiveTab')); return }
+    if (tab?.id == null) {
+      setRunning(false)
+      setError(t('qa.noActiveTab'))
+      return
+    }
     try {
       const response = await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         func: (expression: string): MatchInfo => {
-          const snapshot = document.evaluate(expression, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null)
+          const snapshot = document.evaluate(
+            expression,
+            document,
+            null,
+            XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+            null,
+          )
           const samples: string[] = []
           for (let index = 0; index < Math.min(snapshot.snapshotLength, 5); index += 1) {
             const node = snapshot.snapshotItem(index)
@@ -60,7 +70,13 @@ export default function XpathTesterTool() {
     <ToolPage tool={tool}>
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-1.5">
-          <Input value={xpath} onChange={(e) => setXpath(e.target.value)} placeholder="//div[@id='main']" aria-label={t('qa.xpathInput')} className="flex-1 font-mono" />
+          <Input
+            value={xpath}
+            onChange={(e) => setXpath(e.target.value)}
+            placeholder="//div[@id='main']"
+            aria-label={t('qa.xpathInput')}
+            className="flex-1 font-mono"
+          />
           <Button size="sm" onClick={() => void run()} disabled={!xpath.trim() || running}>
             <PlayIcon /> {t('qa.test')}
           </Button>
@@ -68,11 +84,18 @@ export default function XpathTesterTool() {
         {error && <JsonErrorView message={error} />}
         {result && (
           <div className="flex flex-col gap-2">
-            <Badge variant="secondary" className="w-fit">{t('qa.matchCount', { count: result.count })}</Badge>
+            <Badge variant="secondary" className="w-fit">
+              {t('qa.matchCount', { count: result.count })}
+            </Badge>
             {result.samples.length > 0 && (
               <div className="space-y-1">
                 {result.samples.map((sample) => (
-                  <code key={sample} className="block rounded border bg-muted/40 px-2 py-1 font-mono text-[11px]">{sample}</code>
+                  <code
+                    key={sample}
+                    className="block rounded border bg-muted/40 px-2 py-1 font-mono text-[11px]"
+                  >
+                    {sample}
+                  </code>
                 ))}
               </div>
             )}

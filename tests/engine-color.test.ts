@@ -36,7 +36,10 @@ describe('color engine', () => {
     expect(parseColor('banana').ok).toBe(false)
   })
 
-  const roundTrips = (a: { r: number; g: number; b: number }, b: { r: number; g: number; b: number }) => {
+  const roundTrips = (
+    a: { r: number; g: number; b: number },
+    b: { r: number; g: number; b: number },
+  ) => {
     expect(Math.abs(a.r - b.r)).toBeLessThanOrEqual(1)
     expect(Math.abs(a.g - b.g)).toBeLessThanOrEqual(1)
     expect(Math.abs(a.b - b.b)).toBeLessThanOrEqual(1)
@@ -77,7 +80,13 @@ describe('color engine', () => {
   it('computes WCAG contrast ratios', () => {
     expect(contrastRatio({ r: 0, g: 0, b: 0 }, { r: 255, g: 255, b: 255 })).toBe(21)
     const result = checkContrast({ r: 0, g: 0, b: 0 }, { r: 255, g: 255, b: 255 })
-    expect(result).toEqual({ ratio: 21, aaNormal: true, aaLarge: true, aaaNormal: true, aaaLarge: true })
+    expect(result).toEqual({
+      ratio: 21,
+      aaNormal: true,
+      aaLarge: true,
+      aaaNormal: true,
+      aaaLarge: true,
+    })
   })
 
   it('fails low contrast pairs', () => {

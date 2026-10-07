@@ -25,11 +25,21 @@ export default function RandomGeneratorTool() {
 
   const generate = () => {
     switch (kind) {
-      case 'number': setOutput(String(randomInt(min, max))); break
-      case 'string': setOutput(randomString(length)); break
-      case 'hex': setOutput(randomHex(Math.ceil(length / 2))); break
-      case 'uuid': setOutput(generateUuidV4()); break
-      case 'nanoid': setOutput(generateNanoId(length)); break
+      case 'number':
+        setOutput(String(randomInt(min, max)))
+        break
+      case 'string':
+        setOutput(randomString(length))
+        break
+      case 'hex':
+        setOutput(randomHex(Math.ceil(length / 2)))
+        break
+      case 'uuid':
+        setOutput(generateUuidV4())
+        break
+      case 'nanoid':
+        setOutput(generateNanoId(length))
+        break
     }
   }
 
@@ -47,15 +57,38 @@ export default function RandomGeneratorTool() {
         </Tabs>
         {kind === 'number' && (
           <div className="flex items-center gap-2">
-            <Input type="number" value={min} onChange={(e) => setMin(Number(e.target.value) || 0)} className="w-24" aria-label="min" />
+            <Input
+              type="number"
+              value={min}
+              onChange={(e) => setMin(Number(e.target.value) || 0)}
+              className="w-24"
+              aria-label="min"
+            />
             <span className="text-xs text-muted-foreground">–</span>
-            <Input type="number" value={max} onChange={(e) => setMax(Number(e.target.value) || 0)} className="w-24" aria-label="max" />
+            <Input
+              type="number"
+              value={max}
+              onChange={(e) => setMax(Number(e.target.value) || 0)}
+              className="w-24"
+              aria-label="max"
+            />
           </div>
         )}
         {(kind === 'string' || kind === 'hex' || kind === 'nanoid') && (
           <label className="flex items-center gap-2 text-xs">
             {t('security.length')}
-            <Input type="number" min={1} max={512} value={length} onChange={(e) => { const v = Number(e.target.value); if (Number.isFinite(v)) setLength(Math.min(Math.max(1, v), 512)) }} className="w-20" aria-label={t('security.length')} />
+            <Input
+              type="number"
+              min={1}
+              max={512}
+              value={length}
+              onChange={(e) => {
+                const v = Number(e.target.value)
+                if (Number.isFinite(v)) setLength(Math.min(Math.max(1, v), 512))
+              }}
+              className="w-20"
+              aria-label={t('security.length')}
+            />
           </label>
         )}
         <Button size="sm" className="w-fit" onClick={generate}>

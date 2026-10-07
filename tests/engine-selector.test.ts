@@ -88,7 +88,9 @@ describe('selector engine — css', () => {
 describe('selector engine — xpath', () => {
   it('builds id, class, attribute and text xpaths', () => {
     expect(xpathById(button)).toBe('//*[@id="submit"]')
-    expect(xpathByClass(button)).toBe('//button[contains(concat(" ", normalize-space(@class), " "), " btn ")]')
+    expect(xpathByClass(button)).toBe(
+      '//button[contains(concat(" ", normalize-space(@class), " "), " btn ")]',
+    )
     expect(xpathByText(button)).toBe('//button[contains(normalize-space(.), "Save changes")]')
   })
 
@@ -118,7 +120,8 @@ describe('selector engine — xpath', () => {
 
 describe('selector engine — describeElement', () => {
   it('captures a real DOM element', () => {
-    document.body.innerHTML = '<main id="app"><form class="f"><button type="submit" data-testid="go">Go now</button></form></main>'
+    document.body.innerHTML =
+      '<main id="app"><form class="f"><button type="submit" data-testid="go">Go now</button></form></main>'
     const element = document.querySelector('button')!
     const captured = describeElement(element, window.getComputedStyle(element))
     expect(captured.tag).toBe('button')

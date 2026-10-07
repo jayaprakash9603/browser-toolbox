@@ -8,7 +8,9 @@ export const STORAGE_KEYS = {
   meta: 'meta',
 } as const
 
-export const APP_NAME = 'Browser Toolbox'
+import { getExtensionName } from '@/core/i18n/chromeMessages'
+
+export const APP_NAME = getExtensionName()
 
 export const MAX_RECENT_TOOLS = 8
 export const DEFAULT_CLIPBOARD_HISTORY_LIMIT = 100

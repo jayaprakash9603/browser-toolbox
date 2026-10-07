@@ -1,16 +1,47 @@
 import { describe, expect, it } from 'vitest'
 
 import { UNIT_CATEGORIES, convertUnit, getUnitCategory } from '@/core/engines/unit'
-import { BASE_LABELS, bitRepresentation, formatBaseValue, parseBaseValue } from '@/core/engines/base'
-import { generateIds, generateNanoId, generateUuidV4, generateUuidV7, isValidUuid, uuidVersion } from '@/core/engines/id'
-import { generatePassword, generatePasswords, randomHex, randomInt, randomString, DEFAULT_PASSWORD_OPTIONS } from '@/core/engines/password'
-import { convertToTimeZones, formatInTimeZone, formatOffset, isValidTimeZone, timeZoneOffsetMinutes } from '@/core/engines/timezone'
+import {
+  BASE_LABELS,
+  bitRepresentation,
+  formatBaseValue,
+  parseBaseValue,
+} from '@/core/engines/base'
+import {
+  generateIds,
+  generateNanoId,
+  generateUuidV4,
+  generateUuidV7,
+  isValidUuid,
+  uuidVersion,
+} from '@/core/engines/id'
+import {
+  generatePassword,
+  generatePasswords,
+  randomHex,
+  randomInt,
+  randomString,
+  DEFAULT_PASSWORD_OPTIONS,
+} from '@/core/engines/password'
+import {
+  convertToTimeZones,
+  formatInTimeZone,
+  formatOffset,
+  isValidTimeZone,
+  timeZoneOffsetMinutes,
+} from '@/core/engines/timezone'
 
 describe('unit engine', () => {
   it('covers all 13 categories with a base unit each', () => {
     expect(UNIT_CATEGORIES).toHaveLength(13)
     for (const category of UNIT_CATEGORIES) {
-      expect(category.units.some((unit) => unit.toBase === 1 && unit.id === category.base.toLowerCase().replace(/[^a-z]/g, '') || category.units.some((u) => u.toBase === 1))).toBe(true)
+      expect(
+        category.units.some(
+          (unit) =>
+            (unit.toBase === 1 && unit.id === category.base.toLowerCase().replace(/[^a-z]/g, '')) ||
+            category.units.some((u) => u.toBase === 1),
+        ),
+      ).toBe(true)
     }
   })
 
@@ -118,13 +149,25 @@ describe('password engine', () => {
   })
 
   it('excludes ambiguous characters when asked', () => {
-    const result = generatePassword({ ...DEFAULT_PASSWORD_OPTIONS, length: 200, excludeAmbiguous: true, symbols: false })
+    const result = generatePassword({
+      ...DEFAULT_PASSWORD_OPTIONS,
+      length: 200,
+      excludeAmbiguous: true,
+      symbols: false,
+    })
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.value).not.toMatch(/[Il1O0]/)
   })
 
   it('requires at least one charset', () => {
-    const result = generatePassword({ length: 10, uppercase: false, lowercase: false, numbers: false, symbols: false, excludeAmbiguous: false })
+    const result = generatePassword({
+      length: 10,
+      uppercase: false,
+      lowercase: false,
+      numbers: false,
+      symbols: false,
+      excludeAmbiguous: false,
+    })
     expect(result.ok).toBe(false)
   })
 

@@ -40,5 +40,4 @@ describe('tool page back navigation', () => {
 
     expect(screen.getByRole('link', { name: 'Back' })).toHaveAttribute('href', '#/categories/text')
   })
-
 })

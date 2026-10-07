@@ -30,24 +30,39 @@ export default function SelectorGeneratorTool() {
   const load = async (): Promise<SelectorSet | null> => {
     const area = chrome.storage?.session ?? chrome.storage?.local
     if (!area) return null
-    const stored = (await area.get('toolbox.pickedElement')) as Record<string, { selectors: SelectorSet } | undefined>
+    const stored = (await area.get('toolbox.pickedElement')) as Record<
+      string,
+      { selectors: SelectorSet } | undefined
+    >
     return stored['toolbox.pickedElement']?.selectors ?? null
   }
 
   useEffect(() => {
     let live = true
-    void load().then((value) => { if (live && value) setSelectors(value) })
+    void load().then((value) => {
+      if (live && value) setSelectors(value)
+    })
     const listener = (_: unknown, area: string) => {
-      if (area === 'session' || area === 'local') void load().then((value) => { if (value) setSelectors(value) })
+      if (area === 'session' || area === 'local')
+        void load().then((value) => {
+          if (value) setSelectors(value)
+        })
     }
     chrome.storage?.onChanged?.addListener(listener)
-    return () => { live = false; chrome.storage?.onChanged?.removeListener(listener) }
+    return () => {
+      live = false
+      chrome.storage?.onChanged?.removeListener(listener)
+    }
   }, [])
 
   const startPicker = async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
     if (tab?.id != null) {
-      try { await chrome.tabs.sendMessage(tab.id, { type: 'PICK_ELEMENT_START' }) } catch { /* not on this page */ }
+      try {
+        await chrome.tabs.sendMessage(tab.id, { type: 'PICK_ELEMENT_START' })
+      } catch {
+        /* not on this page */
+      }
     }
   }
 
@@ -58,13 +73,19 @@ export default function SelectorGeneratorTool() {
           <CrosshairIcon /> {t('qa.pickElement')}
         </Button>
         {!selectors ? (
-          <p className="rounded-md border border-dashed py-10 text-center text-xs text-muted-foreground">{t('qa.noElementSelectors')}</p>
+          <p className="rounded-md border border-dashed py-10 text-center text-xs text-muted-foreground">
+            {t('qa.noElementSelectors')}
+          </p>
         ) : (
           <div className="space-y-1">
             {SELECTOR_ROWS.filter(({ key }) => selectors[key]).map(({ key, label }) => (
               <div key={key} className="flex items-center gap-2 rounded-md border p-1.5">
-                <span className="w-28 shrink-0 text-[10px] font-medium text-muted-foreground">{label}</span>
-                <code className="min-w-0 flex-1 truncate font-mono text-[11px]">{selectors[key]}</code>
+                <span className="w-28 shrink-0 text-[10px] font-medium text-muted-foreground">
+                  {label}
+                </span>
+                <code className="min-w-0 flex-1 truncate font-mono text-[11px]">
+                  {selectors[key]}
+                </code>
                 <CopyButton text={selectors[key] ?? ''} />
               </div>
             ))}

@@ -25,7 +25,9 @@ function suggestFix(source: string, message: string, position?: number): string 
     return 'The input is incomplete.'
   }
   if (/property name|key must be|double quotes/i.test(message)) {
-    const trailing = position !== undefined && /,\s*[}\]]/.test(source.slice(Math.max(0, position - 3), position + 1))
+    const trailing =
+      position !== undefined &&
+      /,\s*[}\]]/.test(source.slice(Math.max(0, position - 3), position + 1))
     if (trailing) return 'Trailing comma — remove the comma before the closing bracket or brace.'
     return 'JSON requires double quotes around property names and strings.'
   }
@@ -34,14 +36,18 @@ function suggestFix(source: string, message: string, position?: number): string 
     if (/,\s*[}\]]/.test(source.slice(Math.max(0, position - 3), position + 1))) {
       return 'Trailing comma — remove the comma before the closing bracket or brace.'
     }
-    if (near.includes('}') || near.includes(']')) return 'Unexpected closing bracket — check for a missing value or extra bracket.'
+    if (near.includes('}') || near.includes(']'))
+      return 'Unexpected closing bracket — check for a missing value or extra bracket.'
   }
   return undefined
 }
 
 export function parseJson(source: string): JsonResult<unknown> {
   if (!source.trim()) {
-    return { ok: false, error: { message: 'Input is empty.', suggestion: 'Paste JSON text to get started.' } }
+    return {
+      ok: false,
+      error: { message: 'Input is empty.', suggestion: 'Paste JSON text to get started.' },
+    }
   }
   try {
     return { ok: true, value: JSON.parse(source) }
@@ -55,7 +61,9 @@ export function parseJson(source: string): JsonResult<unknown> {
       error.line = Number(lineColumn[1])
       error.column = Number(lineColumn[2])
       const lines = source.split('\n')
-      position = lines.slice(0, error.line - 1).reduce((sum, line) => sum + line.length + 1, 0) + (error.column - 1)
+      position =
+        lines.slice(0, error.line - 1).reduce((sum, line) => sum + line.length + 1, 0) +
+        (error.column - 1)
     } else if (positionMatch) {
       position = Number(positionMatch[1])
       Object.assign(error, locateByPosition(source, position))
@@ -108,6 +116,62 @@ function childPath(parentPath: string, key: string | number): string {
   return /^[A-Za-z_$][\w$]*$/.test(key) ? `${parentPath}.${key}` : `${parentPath}["${key}"]`
 }
 
+export type JsonDiffKind = 'added' | 'removed' | 'changed'
+
+export interface JsonDiffEntry {
+  path: string
+  kind: JsonDiffKind
+  before: unknown
+  after: unknown
+}
+
+export function diffJsonValues(before: unknown, after: unknown): JsonDiffEntry[] {
+  const differences: JsonDiffEntry[] = []
+  collectJsonDiff(before, after, '$', differences)
+  return differences
+}
+
+function collectJsonDiff(
+  before: unknown,
+  after: unknown,
+  path: string,
+  differences: JsonDiffEntry[],
+): void {
+  if (Object.is(before, after)) return
+  if (!isDiffContainer(before) || !isDiffContainer(after) || Array.isArray(before) !== Array.isArray(after)) {
+    differences.push({ path, kind: 'changed', before, after })
+    return
+  }
+
+  const beforeKeys = Array.isArray(before)
+    ? before.map((_, index) => String(index))
+    : Object.keys(before)
+  const afterKeys = Array.isArray(after)
+    ? after.map((_, index) => String(index))
+    : Object.keys(after)
+  const keys = [...new Set([...beforeKeys, ...afterKeys])]
+
+  for (const key of keys) {
+    const hasBefore = Object.hasOwn(before, key)
+    const hasAfter = Object.hasOwn(after, key)
+    const child = childPath(path, Array.isArray(before) ? Number(key) : key)
+    if (!hasBefore || !hasAfter) {
+      differences.push({
+        path: child,
+        kind: hasAfter ? 'added' : 'removed',
+        before: hasBefore ? before[key as keyof typeof before] : undefined,
+        after: hasAfter ? after[key as keyof typeof after] : undefined,
+      })
+      continue
+    }
+    collectJsonDiff(before[key as keyof typeof before], after[key as keyof typeof after], child, differences)
+  }
+}
+
+function isDiffContainer(value: unknown): value is Record<string, unknown> | unknown[] {
+  return typeof value === 'object' && value !== null
+}
+
 export function buildJsonTree(value: unknown, key: string | null = null, path = '$'): JsonTreeNode {
   const type = nodeType(value)
   if (type === 'object') {
@@ -117,7 +181,9 @@ export function buildJsonTree(value: unknown, key: string | null = null, path = 
       type,
       path,
       size: entries.length,
-      children: entries.map(([childKey, child]) => buildJsonTree(child, childKey, childPath(path, childKey))),
+      children: entries.map(([childKey, child]) =>
+        buildJsonTree(child, childKey, childPath(path, childKey)),
+      ),
     }
   }
   if (type === 'array') {
@@ -127,7 +193,9 @@ export function buildJsonTree(value: unknown, key: string | null = null, path = 
       type,
       path,
       size: items.length,
-      children: items.map((child, index) => buildJsonTree(child, String(index), childPath(path, index))),
+      children: items.map((child, index) =>
+        buildJsonTree(child, String(index), childPath(path, index)),
+      ),
     }
   }
   return { key, type, path, value: type === 'string' ? (value as string) : String(value) }
@@ -152,13 +220,26 @@ function tokenizePath(path: string): (string | number)[] | null {
 export function queryJsonPath(value: unknown, path: string): JsonResult<unknown> {
   const trimmed = path.trim()
   if (!trimmed || trimmed === '$') return { ok: true, value }
-  if (!trimmed.startsWith('$')) return { ok: false, error: { message: 'Path must start with $ (the root).' } }
+  if (!trimmed.startsWith('$'))
+    return { ok: false, error: { message: 'Path must start with $ (the root).' } }
   const tokens = tokenizePath(trimmed.slice(1))
-  if (!tokens) return { ok: false, error: { message: 'Invalid path syntax.', suggestion: 'Use forms like $.user.name or $.items[0].' } }
+  if (!tokens)
+    return {
+      ok: false,
+      error: {
+        message: 'Invalid path syntax.',
+        suggestion: 'Use forms like $.user.name or $.items[0].',
+      },
+    }
   let current: unknown = value
   for (const token of tokens) {
     if (current === null || typeof current !== 'object') {
-      return { ok: false, error: { message: `Cannot read "${String(token)}" — the parent value is not an object or array.` } }
+      return {
+        ok: false,
+        error: {
+          message: `Cannot read "${String(token)}" — the parent value is not an object or array.`,
+        },
+      }
     }
     if (typeof token === 'number' && !Array.isArray(current)) {
       return { ok: false, error: { message: `Index [${token}] used on a non-array value.` } }
@@ -199,7 +280,13 @@ function escapeCsvCell(value: JsonScalar | undefined): string {
 
 export function jsonToCsv(value: unknown): JsonResult<string> {
   if (!Array.isArray(value)) {
-    return { ok: false, error: { message: 'JSON → CSV requires a top-level array.', suggestion: 'Wrap objects in an array, e.g. [{"a":1},{"a":2}].' } }
+    return {
+      ok: false,
+      error: {
+        message: 'JSON → CSV requires a top-level array.',
+        suggestion: 'Wrap objects in an array, e.g. [{"a":1},{"a":2}].',
+      },
+    }
   }
   const rows = value.map((item) =>
     item !== null && typeof item === 'object' && !Array.isArray(item)
@@ -232,7 +319,9 @@ function valueToXml(tag: string, value: unknown, indent: string): string {
   if (Array.isArray(value)) {
     return value.map((item) => valueToXml('item', item, indent)).join('\n')
   }
-  const entries = Object.entries(value as Record<string, unknown>).filter(([key]) => XML_IDENTIFIER.test(key))
+  const entries = Object.entries(value as Record<string, unknown>).filter(([key]) =>
+    XML_IDENTIFIER.test(key),
+  )
   if (entries.length === 0) return `${indent}<${tag}/>`
   const inner = entries.map(([key, child]) => valueToXml(key, child, indent + '  ')).join('\n')
   return `${indent}<${tag}>\n${inner}\n${indent}</${tag}>`
@@ -242,7 +331,10 @@ export function jsonToXml(value: unknown, rootTag = 'root'): JsonResult<string> 
   if (!XML_IDENTIFIER.test(rootTag)) {
     return { ok: false, error: { message: `Invalid root tag "${rootTag}".` } }
   }
-  return { ok: true, value: `<?xml version="1.0" encoding="UTF-8"?>\n${valueToXml(rootTag, value, '')}` }
+  return {
+    ok: true,
+    value: `<?xml version="1.0" encoding="UTF-8"?>\n${valueToXml(rootTag, value, '')}`,
+  }
 }
 
 export interface TypeScriptOptions {
@@ -257,7 +349,9 @@ function tsTypeOf(value: unknown, name: string, declarations: Map<string, string
   if (value === null) return 'null'
   if (Array.isArray(value)) {
     if (value.length === 0) return 'unknown[]'
-    const itemTypes = [...new Set(value.map((item) => tsTypeOf(item, singularize(name), declarations)))]
+    const itemTypes = [
+      ...new Set(value.map((item) => tsTypeOf(item, singularize(name), declarations))),
+    ]
     const joined = itemTypes.join(' | ')
     return itemTypes.length === 1 ? `${joined}[]` : `(${joined})[]`
   }
@@ -283,7 +377,10 @@ function singularize(name: string): string {
   return name.endsWith('s') && name.length > 1 ? name.slice(0, -1) : `${name}Item`
 }
 
-export function jsonToTypeScript(value: unknown, { rootName = 'Root' }: TypeScriptOptions = {}): string {
+export function jsonToTypeScript(
+  value: unknown,
+  { rootName = 'Root' }: TypeScriptOptions = {},
+): string {
   const declarations = new Map<string, string>()
   const rootType = tsTypeOf(value, rootName, declarations)
   if (declarations.size === 0) return `export type ${toPascalCase(rootName)} = ${rootType};`
@@ -314,7 +411,8 @@ export function jsonToMarkdownTable(value: unknown): JsonResult<string> {
   const header = `| ${columns.map(markdownEscape).join(' | ')} |`
   const divider = `| ${columns.map(() => '---').join(' | ')} |`
   const body = rows.map(
-    (row) => `| ${columns.map((column) => markdownEscape(row[column] === undefined || row[column] === null ? '' : String(row[column]))).join(' | ')} |`,
+    (row) =>
+      `| ${columns.map((column) => markdownEscape(row[column] === undefined || row[column] === null ? '' : String(row[column]))).join(' | ')} |`,
   )
   return { ok: true, value: [header, divider, ...body].join('\n') }
 }

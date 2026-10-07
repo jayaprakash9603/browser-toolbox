@@ -45,7 +45,10 @@ export async function peekPayload(toolId: string): Promise<ToolPayload | null> {
   const area = storageArea()
   if (!area) return null
   try {
-    const stored = (await area.get(PAYLOAD_PREFIX + toolId)) as Record<string, ToolPayload | undefined>
+    const stored = (await area.get(PAYLOAD_PREFIX + toolId)) as Record<
+      string,
+      ToolPayload | undefined
+    >
     const payload = stored[PAYLOAD_PREFIX + toolId]
     if (!payload || Date.now() - payload.createdAt > PAYLOAD_TTL_MS) return null
     return payload
@@ -60,7 +63,11 @@ export async function clearStalePayloads(): Promise<void> {
   try {
     const stored = (await area.get(null)) as Record<string, unknown>
     const staleKeys = Object.entries(stored)
-      .filter(([key, value]) => key.startsWith(PAYLOAD_PREFIX) && Date.now() - ((value as ToolPayload).createdAt ?? 0) > PAYLOAD_TTL_MS)
+      .filter(
+        ([key, value]) =>
+          key.startsWith(PAYLOAD_PREFIX) &&
+          Date.now() - ((value as ToolPayload).createdAt ?? 0) > PAYLOAD_TTL_MS,
+      )
       .map(([key]) => key)
     if (staleKeys.length > 0) await area.remove(staleKeys)
   } catch {

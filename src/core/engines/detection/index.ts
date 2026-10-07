@@ -4,7 +4,8 @@ import { looksLikeUrl } from '../url'
 import { looksLikeTimestamp } from '../date'
 import { parseColor } from '../color'
 
-export type DetectionKind = 'json' | 'jwt' | 'url' | 'color' | 'timestamp' | 'xml' | 'yaml' | 'base64'
+export type DetectionKind =
+  'json' | 'jwt' | 'url' | 'color' | 'timestamp' | 'xml' | 'yaml' | 'base64'
 
 export interface Detection {
   kind: DetectionKind
@@ -23,7 +24,9 @@ function looksLikeYaml(input: string): boolean {
   if (!trimmed || trimmed.startsWith('{') || trimmed.startsWith('[')) return false
   const lines = trimmed.split('\n').filter((line) => line.trim())
   if (lines.length === 0) return false
-  const keyValueLines = lines.filter((line) => /^[\w.-]+:\s*\S*|^-\s+\S+/.test(line.trim()) || /^[\w.-]+:\s*$/.test(line.trim()))
+  const keyValueLines = lines.filter(
+    (line) => /^[\w.-]+:\s*\S*|^-\s+\S+/.test(line.trim()) || /^[\w.-]+:\s*$/.test(line.trim()),
+  )
   return keyValueLines.length >= Math.max(1, lines.length * 0.7) && !trimmed.includes('{')
 }
 
@@ -61,7 +64,11 @@ export function detectContent(input: string): Detection[] {
     detections.push({ kind: 'color', label: 'Looks like a color', confidence: 'high' })
   }
   if (looksLikeTimestamp(trimmed)) {
-    detections.push({ kind: 'timestamp', label: 'Looks like a Unix timestamp', confidence: 'medium' })
+    detections.push({
+      kind: 'timestamp',
+      label: 'Looks like a Unix timestamp',
+      confidence: 'medium',
+    })
   }
   if (detections.length === 0 && looksLikeXml(trimmed)) {
     detections.push({ kind: 'xml', label: 'Looks like XML', confidence: 'medium' })

@@ -46,9 +46,9 @@ export default function TextFormatterTool() {
 
   const run = (action: 'format' | 'minify') => {
     try {
-      setOutput(action === 'format'
-        ? formatText(input, activeFormat)
-        : minifyText(input, activeFormat))
+      setOutput(
+        action === 'format' ? formatText(input, activeFormat) : minifyText(input, activeFormat),
+      )
       setError(null)
     } catch (cause) {
       setOutput('')
@@ -63,7 +63,12 @@ export default function TextFormatterTool() {
           <Button size="sm" onClick={() => run('format')} disabled={!input.trim()}>
             {t('text.beautify')}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => run('minify')} disabled={!input.trim()}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => run('minify')}
+            disabled={!input.trim()}
+          >
             {t('text.minify')}
           </Button>
         </div>
@@ -71,32 +76,30 @@ export default function TextFormatterTool() {
         <TextPaneGrid split={Boolean(output && !error)}>
           <div className="flex min-h-0 flex-col">
             <div className="mb-1.5 flex shrink-0 items-center justify-between gap-2">
-            <span className="text-[11px] font-medium text-muted-foreground">
-              {t(formatSelection === 'auto' ? 'text.detectedFormat' : 'text.selectedFormat')}
-            </span>
-            <div className="flex items-center gap-1.5">
-              <Badge variant="outline" className={formatter.badgeClassName} aria-live="polite">
-                {t(formatter.labelKey)}
-              </Badge>
-              <Select
-                value={formatSelection}
-                onValueChange={(value) => setFormatSelection(value as TextFormatSelection)}
-              >
-                <SelectTrigger
-                  aria-label={t('text.formatSelection')}
-                  size="sm"
-                  className="w-28"
+              <span className="text-[11px] font-medium text-muted-foreground">
+                {t(formatSelection === 'auto' ? 'text.detectedFormat' : 'text.selectedFormat')}
+              </span>
+              <div className="flex items-center gap-1.5">
+                <Badge variant="outline" className={formatter.badgeClassName} aria-live="polite">
+                  {t(formatter.labelKey)}
+                </Badge>
+                <Select
+                  value={formatSelection}
+                  onValueChange={(value) => setFormatSelection(value as TextFormatSelection)}
                 >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent align="end">
-                  <SelectItem value="auto">{t('text.format.auto')}</SelectItem>
-                  {TEXT_FORMAT_IDS.map((format) => (
-                    <SelectItem key={format} value={format}>{t(`text.format.${format}`)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                  <SelectTrigger aria-label={t('text.formatSelection')} size="sm" className="w-28">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent align="end">
+                    <SelectItem value="auto">{t('text.format.auto')}</SelectItem>
+                    {TEXT_FORMAT_IDS.map((format) => (
+                      <SelectItem key={format} value={format}>
+                        {t(`text.format.${format}`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <TextEditor
               value={input}
@@ -107,13 +110,19 @@ export default function TextFormatterTool() {
               fill
             />
             <StatsBar value={input} />
-            <ToolActions value={input} onClear={() => { setInput(''); setOutput('') }} />
+            <ToolActions
+              value={input}
+              onClear={() => {
+                setInput('')
+                setOutput('')
+              }}
+            />
           </div>
           {output && !error && (
             <div className="flex min-h-0 flex-col">
               <div className="mb-1 flex shrink-0 items-center justify-between">
-              <span className="text-xs font-medium">{t('text.output')}</span>
-              <ToolActions value={output} onClear={() => setOutput('')} />
+                <span className="text-xs font-medium">{t('text.output')}</span>
+                <ToolActions value={output} onClear={() => setOutput('')} />
               </div>
               <TextEditor value={output} readOnly ariaLabel={t('text.output')} fill />
             </div>

@@ -38,9 +38,7 @@ export default function WhitespaceCleanerTool() {
               {t(labelKey)}
               <Switch
                 checked={options[key]}
-                onCheckedChange={(checked) =>
-                  setOptions((prev) => ({ ...prev, [key]: checked }))
-                }
+                onCheckedChange={(checked) => setOptions((prev) => ({ ...prev, [key]: checked }))}
                 aria-label={t(labelKey)}
               />
             </label>

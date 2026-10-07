@@ -12,7 +12,8 @@ export function parseTimestamp(input: string): DateResult<TimestampDetection> {
   const trimmed = input.trim()
   if (!/^-?\d+$/.test(trimmed)) return { ok: false, error: 'Timestamp must be a whole number.' }
   const value = Number(trimmed)
-  if (!Number.isSafeInteger(value)) return { ok: false, error: 'Number is too large to convert safely.' }
+  if (!Number.isSafeInteger(value))
+    return { ok: false, error: 'Number is too large to convert safely.' }
   const kind = Math.abs(value) >= 1e12 ? 'milliseconds' : 'seconds'
   const ms = kind === 'seconds' ? value * MS_PER_SECOND : value
   const date = new Date(ms)
@@ -42,7 +43,9 @@ const RELATIVE_STEPS: { limit: number; divisor: number; unit: Intl.RelativeTimeF
 export function relativeTime(from: Date, to: Date = new Date()): string {
   const diffSeconds = Math.round((from.getTime() - to.getTime()) / MS_PER_SECOND)
   const abs = Math.abs(diffSeconds)
-  const step = RELATIVE_STEPS.find((candidate) => abs < candidate.limit) ?? RELATIVE_STEPS[RELATIVE_STEPS.length - 1]
+  const step =
+    RELATIVE_STEPS.find((candidate) => abs < candidate.limit) ??
+    RELATIVE_STEPS[RELATIVE_STEPS.length - 1]
   const formatter = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
   return formatter.format(Math.trunc(diffSeconds / step.divisor), step.unit)
 }
@@ -116,8 +119,7 @@ export interface CronField {
 }
 
 export type CronResult =
-  | { ok: true; fields: CronField[]; description: string }
-  | { ok: false; error: string }
+  { ok: true; fields: CronField[]; description: string } | { ok: false; error: string }
 
 const CRON_FIELDS: { name: string; min: number; max: number }[] = [
   { name: 'minute', min: 0, max: 59 },
@@ -127,7 +129,20 @@ const CRON_FIELDS: { name: string; min: number; max: number }[] = [
   { name: 'day of week', min: 0, max: 7 },
 ]
 
-const MONTH_NAMES = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+const MONTH_NAMES = [
+  'jan',
+  'feb',
+  'mar',
+  'apr',
+  'may',
+  'jun',
+  'jul',
+  'aug',
+  'sep',
+  'oct',
+  'nov',
+  'dec',
+]
 const DAY_NAMES = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
 
 function normalizeCronToken(token: string, fieldName: string): string {
@@ -159,11 +174,13 @@ function parseCronField(raw: string, name: string, min: number, max: number): Cr
       end = max
     } else {
       const bounds = rangePart.split('-').map((token) => Number(normalizeCronToken(token, name)))
-      if (bounds.some((bound) => Number.isNaN(bound))) return `Invalid ${name} value "${rangePart}".`
+      if (bounds.some((bound) => Number.isNaN(bound)))
+        return `Invalid ${name} value "${rangePart}".`
       start = bounds[0]
       end = bounds.length === 2 ? bounds[1] : match[2] ? max : bounds[0]
     }
-    if (start < min || end > max || start > end) return `${name} value out of range (${min}–${max}).`
+    if (start < min || end > max || start > end)
+      return `${name} value out of range (${min}–${max}).`
     for (let value = start; value <= end; value += step) values.add(value)
   }
   return { name, raw, values: [...values].sort((a, b) => a - b), min, max }
@@ -175,7 +192,12 @@ function describeCronField(field: CronField): string {
     const first = field.values[0]
     const second = field.values[1]
     const last = field.values[field.values.length - 1]
-    if (field.values.every((value, index) => index === 0 || value === (field.values as number[])[index - 1] + (second - first))) {
+    if (
+      field.values.every(
+        (value, index) =>
+          index === 0 || value === (field.values as number[])[index - 1] + (second - first),
+      )
+    ) {
       return `every ${second - first} ${field.name}s from ${first} to ${last}`
     }
     return `${field.values.length} ${field.name} values`
@@ -186,7 +208,11 @@ function describeCronField(field: CronField): string {
 export function parseCron(expression: string): CronResult {
   const parts = expression.trim().split(/\s+/)
   if (parts.length !== 5) {
-    return { ok: false, error: 'A cron expression needs exactly 5 fields: minute hour day-of-month month day-of-week.' }
+    return {
+      ok: false,
+      error:
+        'A cron expression needs exactly 5 fields: minute hour day-of-month month day-of-week.',
+    }
   }
   const fields: CronField[] = []
   for (let index = 0; index < 5; index += 1) {
@@ -197,11 +223,17 @@ export function parseCron(expression: string): CronResult {
   }
   const [minute, hour, dom, month, dow] = fields
   const time =
-    minute.values !== 'any' && hour.values !== 'any' && minute.values.length === 1 && hour.values.length === 1
+    minute.values !== 'any' &&
+    hour.values !== 'any' &&
+    minute.values.length === 1 &&
+    hour.values.length === 1
       ? `At ${String(hour.values[0]).padStart(2, '0')}:${String(minute.values[0]).padStart(2, '0')}`
       : `Runs at ${describeCronField(minute)}, ${describeCronField(hour)}`
   const dayParts: string[] = []
-  if (dom.values !== 'any') dayParts.push(`on day-of-month ${dom.values.length <= 6 ? dom.values.join(', ') : describeCronField(dom)}`)
+  if (dom.values !== 'any')
+    dayParts.push(
+      `on day-of-month ${dom.values.length <= 6 ? dom.values.join(', ') : describeCronField(dom)}`,
+    )
   if (month.values !== 'any') dayParts.push(`in ${describeCronField(month)}`)
   if (dow.values !== 'any') {
     const normalized = dow.values.map((value) => value % 7)
@@ -209,7 +241,11 @@ export function parseCron(expression: string): CronResult {
     const names = unique.map((value) => DAY_NAMES[value])
     dayParts.push(`on ${names.length <= 6 ? names.join(', ') : describeCronField(dow)}`)
   }
-  return { ok: true, fields, description: dayParts.length ? `${time}, ${dayParts.join(', ')}.` : `${time}, every day.` }
+  return {
+    ok: true,
+    fields,
+    description: dayParts.length ? `${time}, ${dayParts.join(', ')}.` : `${time}, every day.`,
+  }
 }
 
 export function looksLikeTimestamp(input: string): boolean {

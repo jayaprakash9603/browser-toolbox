@@ -3,26 +3,39 @@ import { describe, expect, it } from 'vitest'
 import { HASH_ALGORITHMS, hash, hmac } from '@/core/engines/hash'
 import { decodeJwt, looksLikeJwt } from '@/core/engines/jwt'
 
-function makeJwt(payload: Record<string, unknown>, header: Record<string, unknown> = { alg: 'HS256', typ: 'JWT' }): string {
-  const encode = (value: unknown) => btoa(JSON.stringify(value)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+function makeJwt(
+  payload: Record<string, unknown>,
+  header: Record<string, unknown> = { alg: 'HS256', typ: 'JWT' },
+): string {
+  const encode = (value: unknown) =>
+    btoa(JSON.stringify(value)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
   return `${encode(header)}.${encode(payload)}.fakesignature`
 }
 
 describe('hash engine', () => {
   it('computes SHA-256', async () => {
     const result = await hash('SHA-256', 'hello')
-    expect(result).toEqual({ ok: true, value: '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824' })
+    expect(result).toEqual({
+      ok: true,
+      value: '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824',
+    })
   })
 
   it('computes MD5 and labels it legacy', async () => {
     const result = await hash('MD5', 'hello')
     expect(result).toEqual({ ok: true, value: '5d41402abc4b2a76b9719d911017c592' })
-    expect(HASH_ALGORITHMS.find((a) => a.id === 'MD5')).toMatchObject({ legacy: true, secure: false })
+    expect(HASH_ALGORITHMS.find((a) => a.id === 'MD5')).toMatchObject({
+      legacy: true,
+      secure: false,
+    })
   })
 
   it('computes HMAC-SHA-256', async () => {
     const result = await hmac('SHA-256', 'The quick brown fox jumps over the lazy dog', 'key')
-    expect(result).toEqual({ ok: true, value: 'f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8' })
+    expect(result).toEqual({
+      ok: true,
+      value: 'f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8',
+    })
   })
 
   it('requires a secret for HMAC', async () => {

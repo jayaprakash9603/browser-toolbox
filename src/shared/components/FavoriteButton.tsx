@@ -25,7 +25,7 @@ export function FavoriteButton({ toolId }: { toolId: string }) {
       <TooltipTrigger asChild>
         <Button
           variant="ghost"
-          size="icon-xs"
+          size="icon-sm"
           onClick={toggle}
           aria-label={fav ? t('common.removeFromFavorites') : t('common.addToFavorites')}
           aria-pressed={fav}

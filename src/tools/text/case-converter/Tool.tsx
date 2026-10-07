@@ -48,7 +48,9 @@ export default function CaseConverterTool() {
             <div className="flex min-h-0 flex-col">
               <div className="mb-1 flex shrink-0 items-center justify-between">
                 <span className="text-xs font-medium">
-                  {t(`case.${result.style}`, { defaultValue: CASE_STYLES.find((style) => style.id === result.style)?.label })}
+                  {t(`case.${result.style}`, {
+                    defaultValue: CASE_STYLES.find((style) => style.id === result.style)?.label,
+                  })}
                 </span>
                 <CopyButton text={result.text} size="xs" />
               </div>

@@ -32,19 +32,43 @@ export default function XmlToolkitTool() {
             <TabsTrigger value="validate">{t('dev.tabValidate')}</TabsTrigger>
             <TabsTrigger value="convert">{t('dev.tabConvertJson')}</TabsTrigger>
           </TabsList>
-        </Tabs>
 
-        <TextEditor value={input} onChange={setInput} placeholder={t('dev.xmlPlaceholder')} ariaLabel={t('dev.xmlInput')} minRows={6} />
+        <TextEditor
+          value={input}
+          onChange={setInput}
+          placeholder={t('dev.xmlPlaceholder')}
+          ariaLabel={t('dev.xmlInput')}
+          minRows={6}
+        />
         {validation && !validation.valid && validation.error && (
-          <JsonErrorView message={validation.error.message} line={validation.error.line} column={validation.error.column} />
+          <JsonErrorView
+            message={validation.error.message}
+            line={validation.error.line}
+            column={validation.error.column}
+          />
         )}
 
         <TabsContent value="format" className="mt-0">
           <div className="flex flex-col gap-2">
             <div className="flex gap-1.5">
-              <Button size="sm" disabled={!valid} onClick={() => formatted?.ok && setInput(formatted.value)}>{t('text.beautify')}</Button>
-              <Button size="sm" variant="outline" disabled={!valid} onClick={() => minified?.ok && setInput(minified.value)}>{t('text.minify')}</Button>
-              <Button size="sm" variant="ghost" onClick={() => setInput(EXAMPLE)}>{t('dev.tryExample')}</Button>
+              <Button
+                size="sm"
+                disabled={!valid}
+                onClick={() => formatted?.ok && setInput(formatted.value)}
+              >
+                {t('text.beautify')}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!valid}
+                onClick={() => minified?.ok && setInput(minified.value)}
+              >
+                {t('text.minify')}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setInput(EXAMPLE)}>
+                {t('dev.tryExample')}
+              </Button>
             </div>
             {valid && <Badge variant="outline">{t('dev.xmlValid')}</Badge>}
           </div>
@@ -52,19 +76,29 @@ export default function XmlToolkitTool() {
 
         <TabsContent value="validate" className="mt-0">
           {valid ? (
-            <div className="rounded-md border border-green-500/40 bg-green-500/5 p-3 text-xs text-green-700 dark:text-green-400">{t('dev.xmlValidDetail')}</div>
+            <div className="rounded-md border border-green-500/40 bg-green-500/5 p-3 text-xs text-green-700 dark:text-green-400">
+              {t('dev.xmlValidDetail')}
+            </div>
           ) : (
-            validation?.error && <JsonErrorView message={validation.error.message} line={validation.error.line} column={validation.error.column} />
+            validation?.error && (
+              <JsonErrorView
+                message={validation.error.message}
+                line={validation.error.line}
+                column={validation.error.column}
+              />
+            )
           )}
         </TabsContent>
 
         <TabsContent value="convert" className="mt-0">
-          {json && (
-            json.ok
-              ? <OutputPane value={json.value} error={null} onClear={() => setInput('')} />
-              : <JsonErrorView message={json.error} />
-          )}
+          {json &&
+            (json.ok ? (
+              <OutputPane value={json.value} error={null} onClear={() => setInput('')} />
+            ) : (
+              <JsonErrorView message={json.error} />
+            ))}
         </TabsContent>
+          </Tabs>
       </div>
     </ToolPage>
   )

@@ -1,4 +1,6 @@
+import { getExtensionName } from '@/core/i18n/chromeMessages'
 import type { ToolDefinition } from '@/core/registry'
+import { getToolName } from '@/i18n/toolLabels'
 
 export type MenuSurface = 'selection' | 'link' | 'image' | 'page'
 export type MenuContext = 'page' | 'frame' | 'selection' | 'link' | 'image'
@@ -55,7 +57,7 @@ export function buildMenuItems(tools: ToolDefinition[]): MenuItemSpec[] {
 
   push({
     id: 'toolbox.root',
-    title: 'Toolbox',
+    title: getExtensionName(),
     contexts: ['page', 'selection', 'link', 'image', 'frame'] as MenuContext[],
   })
 
@@ -71,13 +73,15 @@ export function buildMenuItems(tools: ToolDefinition[]): MenuItemSpec[] {
       const candidates = tools.filter(
         (tool) =>
           (tool.status ?? 'active') === 'active' &&
-          tool.capabilities.includes(SURFACE_CAPABILITY[surface] as ToolDefinition['capabilities'][number]) &&
+          tool.capabilities.includes(
+            SURFACE_CAPABILITY[surface] as ToolDefinition['capabilities'][number],
+          ) &&
           CATEGORY_GROUP[tool.category] === group.id,
       )
       for (const tool of candidates) {
         push({
           id: `toolbox.tool.${tool.id}.${surface}`,
-          title: tool.name,
+          title: getToolName(tool),
           contexts: SURFACE_CONTEXTS[surface],
           parentId: `${group.id}.${surface}`,
           toolId: tool.id,

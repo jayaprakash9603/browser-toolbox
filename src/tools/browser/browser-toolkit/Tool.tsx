@@ -15,18 +15,57 @@ export default function BrowserToolkitTool() {
   useEffect(() => {
     let live = true
     void chrome.tabs.query({ active: true, currentWindow: true }).then(([active]) => {
-      if (live && active) setTab({ url: active.url ?? '', title: active.title ?? '', id: active.id })
+      if (live && active)
+        setTab({ url: active.url ?? '', title: active.title ?? '', id: active.id })
     })
-    return () => { live = false }
+    return () => {
+      live = false
+    }
   }, [])
 
   const actions: { icon: React.ReactNode; label: string; run: () => void | Promise<void> }[] = [
-    { icon: <LinkIcon />, label: t('browser.copyUrl'), run: () => { if (tab) void navigator.clipboard.writeText(tab.url) } },
-    { icon: <CopyIcon />, label: t('browser.copyTitle'), run: () => { if (tab) void navigator.clipboard.writeText(tab.title) } },
-    { icon: <CopyIcon />, label: t('browser.copyTitleUrl'), run: () => { if (tab) void navigator.clipboard.writeText(`${tab.title}\n${tab.url}`) } },
-    { icon: <RefreshCwIcon />, label: t('browser.reload'), run: async () => { if (tab?.id != null) await chrome.tabs.reload(tab.id) } },
-    { icon: <RefreshCwIcon />, label: t('browser.hardReload'), run: async () => { if (tab?.id != null) await chrome.tabs.reload(tab.id, { bypassCache: true }) } },
-    { icon: <ExternalLinkIcon />, label: t('browser.duplicate'), run: async () => { if (tab?.id != null) await chrome.tabs.duplicate(tab.id) } },
+    {
+      icon: <LinkIcon />,
+      label: t('browser.copyUrl'),
+      run: () => {
+        if (tab) void navigator.clipboard.writeText(tab.url)
+      },
+    },
+    {
+      icon: <CopyIcon />,
+      label: t('browser.copyTitle'),
+      run: () => {
+        if (tab) void navigator.clipboard.writeText(tab.title)
+      },
+    },
+    {
+      icon: <CopyIcon />,
+      label: t('browser.copyTitleUrl'),
+      run: () => {
+        if (tab) void navigator.clipboard.writeText(`${tab.title}\n${tab.url}`)
+      },
+    },
+    {
+      icon: <RefreshCwIcon />,
+      label: t('browser.reload'),
+      run: async () => {
+        if (tab?.id != null) await chrome.tabs.reload(tab.id)
+      },
+    },
+    {
+      icon: <RefreshCwIcon />,
+      label: t('browser.hardReload'),
+      run: async () => {
+        if (tab?.id != null) await chrome.tabs.reload(tab.id, { bypassCache: true })
+      },
+    },
+    {
+      icon: <ExternalLinkIcon />,
+      label: t('browser.duplicate'),
+      run: async () => {
+        if (tab?.id != null) await chrome.tabs.duplicate(tab.id)
+      },
+    },
   ]
 
   return (
@@ -45,7 +84,14 @@ export default function BrowserToolkitTool() {
         )}
         <div className="grid grid-cols-2 gap-1.5">
           {actions.map((action) => (
-            <Button key={action.label} variant="outline" size="sm" className="justify-start gap-1.5 text-[11px]" onClick={() => void action.run()} disabled={!tab}>
+            <Button
+              key={action.label}
+              variant="outline"
+              size="sm"
+              className="justify-start gap-1.5 text-[11px]"
+              onClick={() => void action.run()}
+              disabled={!tab}
+            >
               {action.icon} {action.label}
             </Button>
           ))}

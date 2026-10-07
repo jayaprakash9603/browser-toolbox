@@ -33,46 +33,74 @@ export default function YamlToolkitTool() {
             <TabsTrigger value="convert">YAML → JSON</TabsTrigger>
             <TabsTrigger value="fromJson">JSON → YAML</TabsTrigger>
           </TabsList>
-        </Tabs>
 
         {tab !== 'fromJson' && (
           <>
-            <TextEditor value={input} onChange={setInput} placeholder={t('dev.yamlPlaceholder')} ariaLabel={t('dev.yamlInput')} minRows={6} />
-            {validation && !validation.valid && validation.error && <JsonErrorView message={validation.error} />}
+            <TextEditor
+              value={input}
+              onChange={setInput}
+              placeholder={t('dev.yamlPlaceholder')}
+              ariaLabel={t('dev.yamlInput')}
+              minRows={6}
+            />
+            {validation && !validation.valid && validation.error && (
+              <JsonErrorView message={validation.error} />
+            )}
           </>
         )}
 
         <TabsContent value="validate" className="mt-0">
           <div className="flex flex-col gap-2">
             <div className="flex gap-1.5">
-              <Button size="sm" disabled={!valid} onClick={() => formatted?.ok && setInput(formatted.value)}>{t('text.beautify')}</Button>
-              <Button size="sm" variant="ghost" onClick={() => setInput(EXAMPLE)}>{t('dev.tryExample')}</Button>
+              <Button
+                size="sm"
+                disabled={!valid}
+                onClick={() => formatted?.ok && setInput(formatted.value)}
+              >
+                {t('text.beautify')}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setInput(EXAMPLE)}>
+                {t('dev.tryExample')}
+              </Button>
             </div>
             {valid && (
-              <div className="rounded-md border border-green-500/40 bg-green-500/5 p-3 text-xs text-green-700 dark:text-green-400">{t('dev.yamlValid')}</div>
+              <div className="rounded-md border border-green-500/40 bg-green-500/5 p-3 text-xs text-green-700 dark:text-green-400">
+                {t('dev.yamlValid')}
+              </div>
             )}
-            {valid && parseYaml(input).ok && <Badge variant="outline">{t('dev.yamlValidBadge')}</Badge>}
+            {valid && parseYaml(input).ok && (
+              <Badge variant="outline">{t('dev.yamlValidBadge')}</Badge>
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="convert" className="mt-0">
-          {json && (
-            json.ok
-              ? <OutputPane value={json.value} error={null} onClear={() => setInput('')} />
-              : <JsonErrorView message={json.error} />
-          )}
+          {json &&
+            (json.ok ? (
+              <OutputPane value={json.value} error={null} onClear={() => setInput('')} />
+            ) : (
+              <JsonErrorView message={json.error} />
+            ))}
         </TabsContent>
 
         <TabsContent value="fromJson" className="mt-0">
           <div className="flex flex-col gap-2">
-            <TextEditor value={jsonInput} onChange={setJsonInput} placeholder={t('dev.jsonForYaml')} ariaLabel={t('dev.jsonForYaml')} minRows={6} />
-            {fromJson && (
-              fromJson.ok
-                ? <OutputPane value={fromJson.value} error={null} onClear={() => setJsonInput('')} />
-                : <JsonErrorView message={fromJson.error} />
-            )}
+            <TextEditor
+              value={jsonInput}
+              onChange={setJsonInput}
+              placeholder={t('dev.jsonForYaml')}
+              ariaLabel={t('dev.jsonForYaml')}
+              minRows={6}
+            />
+            {fromJson &&
+              (fromJson.ok ? (
+                <OutputPane value={fromJson.value} error={null} onClear={() => setJsonInput('')} />
+              ) : (
+                <JsonErrorView message={fromJson.error} />
+              ))}
           </div>
         </TabsContent>
+        </Tabs>
       </div>
     </ToolPage>
   )

@@ -6,8 +6,8 @@ import { categoryRegistry, toolRegistry } from '@/core/registry'
 describe('tool registry', () => {
   registerModules()
 
-  it('registers all 51 tools across enabled categories', () => {
-    expect(toolRegistry.getAll()).toHaveLength(51)
+  it('registers all 52 tools across enabled categories', () => {
+    expect(toolRegistry.getAll()).toHaveLength(52)
   })
 
   it('rejects duplicate tool ids', () => {
@@ -38,7 +38,9 @@ describe('tool registry', () => {
       expect.objectContaining({ id: 'clipboard.manager' }),
     ])
     expect(toolRegistry.search('formatter')).toEqual(
-      expect.arrayContaining([expect.objectContaining({ id: 'text.formatter', name: 'Formatter' })]),
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'text.formatter', name: 'Formatter' }),
+      ]),
     )
     expect(toolRegistry.search('camel snake')).toContainEqual(
       expect.objectContaining({ id: 'text.case-converter' }),
@@ -49,7 +51,26 @@ describe('tool registry', () => {
 describe('category registry', () => {
   it('has the main categories enabled and the rest coming soon', () => {
     const enabled = categoryRegistry.getEnabled().map((c) => c.id)
-    expect(enabled).toEqual(['clipboard', 'text', 'developer', 'qa', 'web', 'design', 'security', 'calculators', 'datetime', 'screenshots', 'image', 'files', 'generators', 'seo', 'productivity', 'browser', 'storage', 'accessibility'])
+    expect(enabled).toEqual([
+      'clipboard',
+      'text',
+      'developer',
+      'qa',
+      'web',
+      'design',
+      'security',
+      'calculators',
+      'datetime',
+      'screenshots',
+      'image',
+      'files',
+      'generators',
+      'seo',
+      'productivity',
+      'browser',
+      'storage',
+      'accessibility',
+    ])
     expect(categoryRegistry.getAll().length).toBeGreaterThanOrEqual(15)
   })
 

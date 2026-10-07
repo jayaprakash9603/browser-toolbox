@@ -71,7 +71,8 @@ export function parseColor(input: string): ColorResult<Rgb> {
     }
   }
 
-  const rgbMatch = /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*[\d.]+)?\s*\)$/.exec(text)
+  const rgbMatch =
+    /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*[\d.]+)?\s*\)$/.exec(text)
   if (rgbMatch) {
     const r = Number(rgbMatch[1])
     const g = Number(rgbMatch[2])
@@ -80,12 +81,16 @@ export function parseColor(input: string): ColorResult<Rgb> {
     return { ok: true, value: { r, g, b } }
   }
 
-  const hslMatch = /^hsla?\(\s*(-?\d{1,3})(?:deg)?\s*,\s*(\d{1,3})%\s*,\s*(\d{1,3})%(?:\s*,\s*[\d.]+)?\s*\)$/.exec(text)
+  const hslMatch =
+    /^hsla?\(\s*(-?\d{1,3})(?:deg)?\s*,\s*(\d{1,3})%\s*,\s*(\d{1,3})%(?:\s*,\s*[\d.]+)?\s*\)$/.exec(
+      text,
+    )
   if (hslMatch) {
     const h = Number(hslMatch[1])
     const s = Number(hslMatch[2])
     const l = Number(hslMatch[3])
-    if (s > 100 || l > 100) return { ok: false, error: 'HSL saturation and lightness must be 0–100%.' }
+    if (s > 100 || l > 100)
+      return { ok: false, error: 'HSL saturation and lightness must be 0–100%.' }
     return { ok: true, value: hslToRgb({ h, s, l }) }
   }
 
@@ -123,12 +128,17 @@ export function hslToRgb({ h, s, l }: Hsl): Rgb {
   const x = c * (1 - Math.abs((hp % 2) - 1))
   const segment = Math.min(Math.floor(hp), 5)
   const [rn, gn, bn]: [number, number, number] =
-    segment === 0 ? [c, x, 0]
-    : segment === 1 ? [x, c, 0]
-    : segment === 2 ? [0, c, x]
-    : segment === 3 ? [0, x, c]
-    : segment === 4 ? [x, 0, c]
-    : [c, 0, x]
+    segment === 0
+      ? [c, x, 0]
+      : segment === 1
+        ? [x, c, 0]
+        : segment === 2
+          ? [0, c, x]
+          : segment === 3
+            ? [0, x, c]
+            : segment === 4
+              ? [x, 0, c]
+              : [c, 0, x]
   const m = ln - c / 2
   return { r: round((rn + m) * 255), g: round((gn + m) * 255), b: round((bn + m) * 255) }
 }
@@ -161,12 +171,17 @@ export function hsvToRgb({ h, s, v }: Hsv): Rgb {
   const x = c * (1 - Math.abs((hp % 2) - 1))
   const segment = Math.min(Math.floor(hp), 5)
   const [rn, gn, bn]: [number, number, number] =
-    segment === 0 ? [c, x, 0]
-    : segment === 1 ? [x, c, 0]
-    : segment === 2 ? [0, c, x]
-    : segment === 3 ? [0, x, c]
-    : segment === 4 ? [x, 0, c]
-    : [c, 0, x]
+    segment === 0
+      ? [c, x, 0]
+      : segment === 1
+        ? [x, c, 0]
+        : segment === 2
+          ? [0, c, x]
+          : segment === 3
+            ? [0, x, c]
+            : segment === 4
+              ? [x, 0, c]
+              : [c, 0, x]
   const m = vn - c
   return { r: round((rn + m) * 255), g: round((gn + m) * 255), b: round((bn + m) * 255) }
 }
@@ -250,7 +265,11 @@ export function checkContrast(foreground: Rgb, background: Rgb): ContrastResult 
 
 export type PaletteMode = 'complementary' | 'analogous' | 'triadic' | 'monochromatic' | 'random'
 
-export function generatePalette(base: Rgb, mode: PaletteMode, random: () => number = Math.random): Rgb[] {
+export function generatePalette(
+  base: Rgb,
+  mode: PaletteMode,
+  random: () => number = Math.random,
+): Rgb[] {
   const hsl = rgbToHsl(base)
   const rotate = (degrees: number): Rgb => hslToRgb({ ...hsl, h: (hsl.h + degrees + 360) % 360 })
   switch (mode) {
@@ -264,7 +283,11 @@ export function generatePalette(base: Rgb, mode: PaletteMode, random: () => numb
       return [20, 40, 60, 80].map((l) => hslToRgb({ ...hsl, l }))
     case 'random':
       return Array.from({ length: 5 }, () =>
-        hslToRgb({ h: round(random() * 360), s: 45 + round(random() * 40), l: 35 + round(random() * 40) }),
+        hslToRgb({
+          h: round(random() * 360),
+          s: 45 + round(random() * 40),
+          l: 35 + round(random() * 40),
+        }),
       )
   }
 }

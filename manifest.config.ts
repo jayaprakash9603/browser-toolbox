@@ -29,7 +29,17 @@ export default defineManifest({
       run_at: 'document_idle',
     },
   ],
-  permissions: ['sidePanel', 'storage', 'clipboardRead', 'clipboardWrite', 'contextMenus', 'activeTab', 'scripting', 'tabs'],
+  permissions: [
+    'sidePanel',
+    'storage',
+    'clipboardRead',
+    'clipboardWrite',
+    'contextMenus',
+    'activeTab',
+    'scripting',
+    'tabs',
+  ],
+  optional_host_permissions: ['http://*/*', 'https://*/*'],
   commands: {
     'open-command-palette': {
       suggested_key: { default: 'Ctrl+Shift+Space', mac: 'Command+Shift+Space' },

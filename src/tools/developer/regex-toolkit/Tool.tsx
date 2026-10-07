@@ -2,7 +2,13 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AlertTriangleIcon } from 'lucide-react'
 
-import { COMMON_PATTERNS, DEFAULT_REGEX_FLAGS, replaceWithRegex, testRegex, type RegexFlags } from '@/core/engines/regex'
+import {
+  COMMON_PATTERNS,
+  DEFAULT_REGEX_FLAGS,
+  replaceWithRegex,
+  testRegex,
+  type RegexFlags,
+} from '@/core/engines/regex'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
 import { Badge } from '@/shared/components/ui/badge'
@@ -32,7 +38,8 @@ export default function RegexToolkitTool() {
     [pattern, input, flags],
   )
   const replaced = useMemo(
-    () => (pattern && tab === 'replace' ? replaceWithRegex(pattern, replacement, input, flags) : null),
+    () =>
+      pattern && tab === 'replace' ? replaceWithRegex(pattern, replacement, input, flags) : null,
     [pattern, replacement, input, flags, tab],
   )
 
@@ -47,24 +54,44 @@ export default function RegexToolkitTool() {
             <TabsTrigger value="replace">{t('dev.tabReplace')}</TabsTrigger>
             <TabsTrigger value="library">{t('dev.tabLibrary')}</TabsTrigger>
           </TabsList>
-        </Tabs>
 
         {tab !== 'library' && (
           <>
             <div className="flex items-center gap-1">
               <span className="text-muted-foreground">/</span>
-              <Input value={pattern} onChange={(e) => setPattern(e.target.value)} placeholder={t('dev.regexPattern')} aria-label={t('dev.regexPattern')} className="flex-1 font-mono" />
-              <span className="text-muted-foreground">/{flags.global ? 'g' : ''}{flags.ignoreCase ? 'i' : ''}{flags.multiline ? 'm' : ''}{flags.dotAll ? 's' : ''}</span>
+              <Input
+                value={pattern}
+                onChange={(e) => setPattern(e.target.value)}
+                placeholder={t('dev.regexPattern')}
+                aria-label={t('dev.regexPattern')}
+                className="flex-1 font-mono"
+              />
+              <span className="text-muted-foreground">
+                /{flags.global ? 'g' : ''}
+                {flags.ignoreCase ? 'i' : ''}
+                {flags.multiline ? 'm' : ''}
+                {flags.dotAll ? 's' : ''}
+              </span>
             </div>
             <div className="flex flex-wrap gap-3">
               {FLAG_LABELS.map(({ key, label, title }) => (
                 <label key={key} className="flex items-center gap-1.5 text-xs">
-                  <Switch checked={flags[key]} onCheckedChange={() => toggleFlag(key)} aria-label={title} />
+                  <Switch
+                    checked={flags[key]}
+                    onCheckedChange={() => toggleFlag(key)}
+                    aria-label={title}
+                  />
                   <span className="font-mono">{label}</span>
                 </label>
               ))}
             </div>
-            <TextEditor value={input} onChange={setInput} placeholder={t('dev.regexTestText')} ariaLabel={t('dev.regexTestText')} minRows={5} />
+            <TextEditor
+              value={input}
+              onChange={setInput}
+              placeholder={t('dev.regexTestText')}
+              ariaLabel={t('dev.regexTestText')}
+              minRows={5}
+            />
           </>
         )}
 
@@ -73,7 +100,10 @@ export default function RegexToolkitTool() {
           {result?.ok && (
             <div className="flex flex-col gap-2">
               {result.riskWarnings.map((warning) => (
-                <div key={warning} className="flex items-start gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-[11px] text-amber-700 dark:text-amber-400">
+                <div
+                  key={warning}
+                  className="flex items-start gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-[11px] text-amber-700 dark:text-amber-400"
+                >
                   <AlertTriangleIcon className="mt-0.5 size-3 shrink-0" />
                   {warning}
                 </div>
@@ -81,17 +111,24 @@ export default function RegexToolkitTool() {
               <div className="flex items-center gap-2 text-xs">
                 <Badge variant="secondary">{t('text.matches', { count: result.totalCount })}</Badge>
                 <span className="text-muted-foreground">{result.durationMs}ms</span>
-                {result.truncated && <span className="text-muted-foreground">({t('dev.truncated')})</span>}
+                {result.truncated && (
+                  <span className="text-muted-foreground">({t('dev.truncated')})</span>
+                )}
               </div>
               <div className="max-h-56 space-y-1 overflow-y-auto">
                 {result.matches.slice(0, 50).map((match, index) => (
-                  <div key={`${match.index}-${index}`} className="rounded border bg-muted/40 p-1.5 font-mono text-[11px]">
+                  <div
+                    key={`${match.index}-${index}`}
+                    className="rounded border bg-muted/40 p-1.5 font-mono text-[11px]"
+                  >
                     <span className="text-primary">{match.match || '(empty)'}</span>
                     <span className="ml-2 text-muted-foreground">@{match.index}</span>
                     {match.groups.length > 0 && (
                       <div className="mt-0.5 text-muted-foreground">
                         {match.groups.map((group, gi) => (
-                          <span key={gi} className="mr-2">${gi + 1}: {group ?? '—'}</span>
+                          <span key={gi} className="mr-2">
+                            ${gi + 1}: {group ?? '—'}
+                          </span>
                         ))}
                       </div>
                     )}
@@ -104,12 +141,22 @@ export default function RegexToolkitTool() {
 
         <TabsContent value="replace" className="mt-0">
           <div className="flex flex-col gap-2">
-            <Input value={replacement} onChange={(e) => setReplacement(e.target.value)} placeholder={t('dev.replaceWith')} aria-label={t('dev.replaceWith')} className="font-mono" />
+            <Input
+              value={replacement}
+              onChange={(e) => setReplacement(e.target.value)}
+              placeholder={t('dev.replaceWith')}
+              aria-label={t('dev.replaceWith')}
+              className="font-mono"
+            />
             {replaced && !replaced.ok && <JsonErrorView message={replaced.error} />}
             {replaced?.ok && (
               <>
-                <div className="text-xs text-muted-foreground">{t('text.replaced', { count: replaced.count })}</div>
-                <pre className="max-h-56 overflow-auto rounded-md border bg-muted/40 p-2 font-mono text-[11px]">{replaced.output}</pre>
+                <div className="text-xs text-muted-foreground">
+                  {t('text.replaced', { count: replaced.count })}
+                </div>
+                <pre className="max-h-56 overflow-auto rounded-md border bg-muted/40 p-2 font-mono text-[11px]">
+                  {replaced.output}
+                </pre>
               </>
             )}
           </div>
@@ -121,7 +168,10 @@ export default function RegexToolkitTool() {
               <button
                 key={entry.id}
                 type="button"
-                onClick={() => { setPattern(entry.pattern); setTab('test') }}
+                onClick={() => {
+                  setPattern(entry.pattern)
+                  setTab('test')
+                }}
                 className="flex w-full flex-col gap-0.5 rounded-md border p-2 text-left transition-colors hover:bg-accent"
               >
                 <span className="text-xs font-medium">{entry.label}</span>
@@ -131,6 +181,7 @@ export default function RegexToolkitTool() {
             ))}
           </div>
         </TabsContent>
+        </Tabs>
       </div>
     </ToolPage>
   )

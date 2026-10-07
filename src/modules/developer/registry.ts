@@ -1,11 +1,4 @@
-import {
-  BracesIcon,
-  CodeIcon,
-  FileJsonIcon,
-  HashIcon,
-  RegexIcon,
-  DatabaseIcon,
-} from 'lucide-react'
+import { BracesIcon, CodeIcon, FileJsonIcon, HashIcon, RegexIcon, DatabaseIcon } from 'lucide-react'
 
 import type { ToolDefinition } from '@/core/registry'
 
@@ -16,8 +9,28 @@ export const developerTools: ToolDefinition[] = [
     description: 'Validate, format, minify, tree-view, path-query and convert JSON.',
     category: 'developer',
     icon: BracesIcon,
-    keywords: ['json', 'validate', 'format', 'beautify', 'minify', 'tree', 'path', 'convert', 'csv', 'xml', 'typescript'],
-    aliases: ['json formatter', 'json validator', 'json beautifier', 'json minifier', 'json to csv', 'json to typescript', 'json path'],
+    keywords: [
+      'json',
+      'validate',
+      'format',
+      'beautify',
+      'minify',
+      'tree',
+      'path',
+      'convert',
+      'csv',
+      'xml',
+      'typescript',
+    ],
+    aliases: [
+      'json formatter',
+      'json validator',
+      'json beautifier',
+      'json minifier',
+      'json to csv',
+      'json to typescript',
+      'json path',
+    ],
     route: '/tools/developer/json-toolkit',
     capabilities: ['SIDE_PANEL', 'CONTEXT_MENU', 'COMMAND'],
     status: 'active',
@@ -95,7 +108,14 @@ export const developerTools: ToolDefinition[] = [
     category: 'developer',
     icon: HashIcon,
     keywords: ['timestamp', 'unix', 'epoch', 'date', 'time', 'convert', 'milliseconds'],
-    aliases: ['unix timestamp', 'epoch converter', 'unix time', 'timestamp to date', 'date to timestamp', 'unix converter'],
+    aliases: [
+      'unix timestamp',
+      'epoch converter',
+      'unix time',
+      'timestamp to date',
+      'date to timestamp',
+      'unix converter',
+    ],
     route: '/tools/developer/timestamp-toolkit',
     capabilities: ['SIDE_PANEL', 'CONTEXT_MENU'],
     status: 'active',

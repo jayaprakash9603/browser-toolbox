@@ -86,15 +86,13 @@ export interface TimezoneConversion {
 }
 
 export function convertToTimeZones(date: Date, timeZones: string[]): TimezoneConversion[] {
-  return timeZones
-    .filter(isValidTimeZone)
-    .map((timeZone) => {
-      const formatted = formatInTimeZone(date, timeZone)
-      const offset = timeZoneOffsetMinutes(date, timeZone)
-      return {
-        timeZone,
-        formatted: formatted.ok ? formatted.value : '—',
-        offset: offset.ok ? formatOffset(offset.value) : '—',
-      }
-    })
+  return timeZones.filter(isValidTimeZone).map((timeZone) => {
+    const formatted = formatInTimeZone(date, timeZone)
+    const offset = timeZoneOffsetMinutes(date, timeZone)
+    return {
+      timeZone,
+      formatted: formatted.ok ? formatted.value : '—',
+      offset: offset.ok ? formatOffset(offset.value) : '—',
+    }
+  })
 }

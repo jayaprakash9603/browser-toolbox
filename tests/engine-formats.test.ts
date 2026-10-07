@@ -3,8 +3,26 @@ import { describe, expect, it } from 'vitest'
 import { formatYaml, jsonToYaml, parseYaml, validateYaml, yamlToJson } from '@/core/engines/yaml'
 import { buildXml, formatXml, minifyXml, validateXml, xmlToJson } from '@/core/engines/xml'
 import { formatSql, minifySql, validateSql, SQL_DIALECTS } from '@/core/engines/sql'
-import { csvToJson, csvToMarkdown, csvToRecords, csvToTsv, detectDelimiter, jsonToCsv, parseCsv, tsvToCsv } from '@/core/engines/csv'
-import { buildContactPayload, buildEmailPayload, buildPhonePayload, buildWifiPayload, decodeQrFromImage, generateQrDataUrl, generateQrSvg, normalizeQrInput } from '@/core/engines/qrcode'
+import {
+  csvToJson,
+  csvToMarkdown,
+  csvToRecords,
+  csvToTsv,
+  detectDelimiter,
+  jsonToCsv,
+  parseCsv,
+  tsvToCsv,
+} from '@/core/engines/csv'
+import {
+  buildContactPayload,
+  buildEmailPayload,
+  buildPhonePayload,
+  buildWifiPayload,
+  decodeQrFromImage,
+  generateQrDataUrl,
+  generateQrSvg,
+  normalizeQrInput,
+} from '@/core/engines/qrcode'
 import { detectContent } from '@/core/engines/detection'
 
 describe('yaml engine', () => {
@@ -104,7 +122,10 @@ describe('csv engine', () => {
     const result = parseCsv('a,b\n"x,y","line1\nline2"')
     expect(result.ok).toBe(true)
     if (result.ok) {
-      expect(result.value).toEqual([['a', 'b'], ['x,y', 'line1\nline2']])
+      expect(result.value).toEqual([
+        ['a', 'b'],
+        ['x,y', 'line1\nline2'],
+      ])
     }
   })
 
@@ -155,14 +176,25 @@ describe('csv engine', () => {
 
 describe('qrcode engine', () => {
   it('builds wifi payloads with escaping', () => {
-    expect(buildWifiPayload({ ssid: 'My;Net', password: 'p:a\\ss', encryption: 'WPA' })).toBe('WIFI:T:WPA;S:My\\;Net;P:p\\:a\\\\ss;;')
-    expect(buildWifiPayload({ ssid: 'Open', password: '', encryption: 'nopass', hidden: true })).toBe('WIFI:T:nopass;S:Open;H:true;;')
+    expect(buildWifiPayload({ ssid: 'My;Net', password: 'p:a\\ss', encryption: 'WPA' })).toBe(
+      'WIFI:T:WPA;S:My\\;Net;P:p\\:a\\\\ss;;',
+    )
+    expect(
+      buildWifiPayload({ ssid: 'Open', password: '', encryption: 'nopass', hidden: true }),
+    ).toBe('WIFI:T:nopass;S:Open;H:true;;')
   })
 
   it('builds email, phone and contact payloads', () => {
-    expect(buildEmailPayload({ to: 'a@b.co', subject: 'Hi there' })).toBe('mailto:a@b.co?subject=Hi+there')
+    expect(buildEmailPayload({ to: 'a@b.co', subject: 'Hi there' })).toBe(
+      'mailto:a@b.co?subject=Hi+there',
+    )
     expect(buildPhonePayload('+1 (555) 123-4567')).toBe('tel:+15551234567')
-    const vcard = buildContactPayload({ firstName: 'Ada', lastName: 'L', phone: '+1555', email: 'a@b.co' })
+    const vcard = buildContactPayload({
+      firstName: 'Ada',
+      lastName: 'L',
+      phone: '+1555',
+      email: 'a@b.co',
+    })
     expect(vcard).toContain('BEGIN:VCARD')
     expect(vcard).toContain('FN:Ada L')
   })
@@ -182,7 +214,11 @@ describe('qrcode engine', () => {
   })
 
   it('reports when no qr code is present in an image', async () => {
-    const result = await decodeQrFromImage({ data: new Uint8ClampedArray(400), width: 20, height: 20 })
+    const result = await decodeQrFromImage({
+      data: new Uint8ClampedArray(400),
+      width: 20,
+      height: 20,
+    })
     expect(result.ok).toBe(false)
   })
 })
@@ -218,7 +254,9 @@ describe('detection engine', () => {
   })
 
   it('detects base64', () => {
-    expect(detectContent(btoa('Hello world, this is a test!')).map((d) => d.kind)).toContain('base64')
+    expect(detectContent(btoa('Hello world, this is a test!')).map((d) => d.kind)).toContain(
+      'base64',
+    )
   })
 
   it('returns nothing for plain prose or empty input', () => {

@@ -35,13 +35,21 @@ export default function TimestampToolkitTool() {
 
           <TabsContent value="toDate" className="mt-2">
             <div className="flex flex-col gap-2">
-              <Input value={tsInput} onChange={(e) => setTsInput(e.target.value)} placeholder="1743256800" aria-label={t('dev.timestampInput')} className="font-mono" />
+              <Input
+                value={tsInput}
+                onChange={(e) => setTsInput(e.target.value)}
+                placeholder="1743256800"
+                aria-label={t('dev.timestampInput')}
+                className="font-mono"
+              />
               {parsed && !parsed.ok && <JsonErrorView message={parsed.error} />}
               {parsed?.ok && (
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between rounded-md border bg-muted/40 p-2">
                     <span className="text-xs text-muted-foreground">{t('dev.detectedAs')}</span>
-                    <span className="text-xs font-medium">{parsed.value.kind === 'seconds' ? t('dev.unixSeconds') : t('dev.unixMillis')}</span>
+                    <span className="text-xs font-medium">
+                      {parsed.value.kind === 'seconds' ? t('dev.unixSeconds') : t('dev.unixMillis')}
+                    </span>
                   </div>
                   <ResultRow label={t('dev.iso')} value={parsed.value.date.toISOString()} />
                   <ResultRow label={t('dev.local')} value={parsed.value.date.toLocaleString()} />
@@ -54,12 +62,23 @@ export default function TimestampToolkitTool() {
 
           <TabsContent value="toTimestamp" className="mt-2">
             <div className="flex flex-col gap-2">
-              <Input type="datetime-local" value={dateInput} onChange={(e) => setDateInput(e.target.value)} aria-label={t('dev.dateInput')} />
+              <Input
+                type="datetime-local"
+                value={dateInput}
+                onChange={(e) => setDateInput(e.target.value)}
+                aria-label={t('dev.dateInput')}
+              />
               {dateInput.trim() && !fromDate && <JsonErrorView message={t('dev.invalidDate')} />}
               {fromDate && (
                 <div className="space-y-1.5">
-                  <ResultRow label={t('dev.unixSeconds')} value={String(dateToTimestamp(fromDate, 'seconds'))} />
-                  <ResultRow label={t('dev.unixMillis')} value={String(dateToTimestamp(fromDate, 'milliseconds'))} />
+                  <ResultRow
+                    label={t('dev.unixSeconds')}
+                    value={String(dateToTimestamp(fromDate, 'seconds'))}
+                  />
+                  <ResultRow
+                    label={t('dev.unixMillis')}
+                    value={String(dateToTimestamp(fromDate, 'milliseconds'))}
+                  />
                 </div>
               )}
             </div>

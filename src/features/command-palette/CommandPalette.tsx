@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from '@/app/navigation'
 
 import { toolRegistry } from '@/core/registry'
+import { getToolName } from '@/i18n/toolLabels'
 import { useFavorites } from '@/shared/hooks/useFavorites'
 import { TEXT_FORMAT_IDS, type TextFormatId } from '@/tools/text/text-formatter/formatters/types'
 import { HighlightedText } from './HighlightedText'
@@ -121,7 +122,7 @@ function CommandItem({
 }) {
   const { t } = useTranslation()
   const Icon = tool.icon
-  const name = t(`tools.${tool.id}.name`, { defaultValue: tool.name })
+  const name = getToolName(tool, t)
   const category = t(`categories.${tool.category}.name`, { defaultValue: tool.category })
   return (
     <Command.Item

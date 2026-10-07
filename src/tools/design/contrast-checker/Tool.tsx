@@ -16,21 +16,44 @@ export default function ContrastCheckerTool() {
 
   const fg = useMemo(() => parseColor(fgInput), [fgInput])
   const bg = useMemo(() => parseColor(bgInput), [bgInput])
-  const result = useMemo(() => (fg.ok && bg.ok ? checkContrast(fg.value, bg.value) : null), [fg, bg])
+  const result = useMemo(
+    () => (fg.ok && bg.ok ? checkContrast(fg.value, bg.value) : null),
+    [fg, bg],
+  )
 
   return (
     <ToolPage tool={tool}>
       <div className="flex flex-col gap-3">
-        {([['foreground', fgInput, setFgInput, fg], ['background', bgInput, setBgInput, bg]] as const).map(([label, value, set, parsed]) => (
+        {(
+          [
+            ['foreground', fgInput, setFgInput, fg],
+            ['background', bgInput, setBgInput, bg],
+          ] as const
+        ).map(([label, value, set, parsed]) => (
           <div key={label} className="flex items-center gap-2">
             {parsed.ok && <Swatch color={parsed.value} />}
-            <Input value={value} onChange={(e) => set(e.target.value)} placeholder={label === 'foreground' ? '#1e293b' : '#ffffff'} aria-label={t(`design.${label}`)} className="flex-1 font-mono" />
-            <input type="color" value={parsed.ok ? rgbToHex(parsed.value) : '#000000'} onChange={(e) => set(e.target.value)} className="size-9 cursor-pointer rounded border" aria-label={t(`design.${label}`)} />
+            <Input
+              value={value}
+              onChange={(e) => set(e.target.value)}
+              placeholder={label === 'foreground' ? '#1e293b' : '#ffffff'}
+              aria-label={t(`design.${label}`)}
+              className="flex-1 font-mono"
+            />
+            <input
+              type="color"
+              value={parsed.ok ? rgbToHex(parsed.value) : '#000000'}
+              onChange={(e) => set(e.target.value)}
+              className="size-9 cursor-pointer rounded border"
+              aria-label={t(`design.${label}`)}
+            />
           </div>
         ))}
         {result && (
           <>
-            <div className="rounded-md border p-3 text-center" style={{ backgroundColor: bgInput, color: fgInput }}>
+            <div
+              className="rounded-md border p-3 text-center"
+              style={{ backgroundColor: bgInput, color: fgInput }}
+            >
               <p className="text-sm font-medium">{t('design.previewText')}</p>
               <p className="text-lg font-bold">{t('design.previewLarge')}</p>
             </div>
@@ -56,8 +79,17 @@ export default function ContrastCheckerTool() {
 
 function Verdict({ label, pass }: { label: string; pass: boolean }) {
   return (
-    <div className={`rounded border p-2 text-center ${pass ? 'border-green-500/40 bg-green-500/5' : 'border-red-500/40 bg-red-500/5'}`}>
-      <Badge variant="outline" className={pass ? 'border-green-500/40 text-green-700 dark:text-green-400' : 'border-red-500/40 text-red-700 dark:text-red-400'}>
+    <div
+      className={`rounded border p-2 text-center ${pass ? 'border-green-500/40 bg-green-500/5' : 'border-red-500/40 bg-red-500/5'}`}
+    >
+      <Badge
+        variant="outline"
+        className={
+          pass
+            ? 'border-green-500/40 text-green-700 dark:text-green-400'
+            : 'border-red-500/40 text-red-700 dark:text-red-400'
+        }
+      >
         {pass ? 'PASS' : 'FAIL'}
       </Badge>
       <p className="mt-0.5 text-[10px] text-muted-foreground">{label}</p>

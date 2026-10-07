@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   buildJsonTree,
+  diffJsonValues,
   flattenObject,
   formatJson,
   jsonToCsv,
@@ -88,12 +89,34 @@ describe('json engine', () => {
     expect(queryJsonPath(value, '$.a[0]').ok).toBe(false)
   })
 
+  it('reports nested JSON additions, removals, and changes by path', () => {
+    expect(
+      diffJsonValues(
+        { profile: { name: 'Ada', enabled: true }, tags: ['dev', 'qa'] },
+        { profile: { name: 'Grace', enabled: true, role: 'admin' }, tags: ['dev'] },
+      ),
+    ).toEqual([
+      { path: '$.profile.name', kind: 'changed', before: 'Ada', after: 'Grace' },
+      { path: '$.profile.role', kind: 'added', before: undefined, after: 'admin' },
+      { path: '$.tags[1]', kind: 'removed', before: 'qa', after: undefined },
+    ])
+  })
+
+  it('reports a container type replacement at its path', () => {
+    expect(diffJsonValues({ value: [] }, { value: {} })).toEqual([
+      { path: '$.value', kind: 'changed', before: [], after: {} },
+    ])
+  })
+
   it('flattens nested objects and stringifies arrays', () => {
     expect(flattenObject({ a: { b: 1 }, list: [1, 2] })).toEqual({ 'a.b': 1, list: '[1,2]' })
   })
 
   it('converts JSON arrays to CSV with escaping', () => {
-    const result = jsonToCsv([{ a: 1, b: 'x,"y"' }, { a: 2, c: true }])
+    const result = jsonToCsv([
+      { a: 1, b: 'x,"y"' },
+      { a: 2, c: true },
+    ])
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.value.split('\n')[0]).toBe('a,b,c')
@@ -121,7 +144,10 @@ describe('json engine', () => {
   })
 
   it('converts JSON to TypeScript interfaces', () => {
-    const output = jsonToTypeScript({ user: { name: 'Ada', tags: ['a'] }, active: true }, { rootName: 'Person' })
+    const output = jsonToTypeScript(
+      { user: { name: 'Ada', tags: ['a'] }, active: true },
+      { rootName: 'Person' },
+    )
     expect(output).toContain('export interface Person')
     expect(output).toContain('name: string;')
     expect(output).toContain('active: boolean;')

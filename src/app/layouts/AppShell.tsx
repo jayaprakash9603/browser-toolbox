@@ -1,13 +1,6 @@
 import { Suspense, lazy, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  CommandIcon,
-  HomeIcon,
-  SearchIcon,
-  SettingsIcon,
-  StarIcon,
-  ClockIcon,
-} from 'lucide-react'
+import { CommandIcon, HomeIcon, SearchIcon, SettingsIcon, StarIcon, ClockIcon } from 'lucide-react'
 
 import { Link, useRouter } from '@/app/router'
 import { getToolComponent } from '@/app/toolComponents'
@@ -60,10 +53,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  const tool = useMemo(
-    () => toolRegistry.getAll().find((t) => t.route === path),
-    [path],
-  )
+  const tool = useMemo(() => toolRegistry.getAll().find((t) => t.route === path), [path])
 
   useEffect(() => {
     if (tool) void trackRecentTool(tool.id)
@@ -75,7 +65,10 @@ export function AppShell({ children }: { children?: ReactNode }) {
   return (
     <div className="flex h-full flex-col bg-background">
       <header className="flex items-center gap-2 border-b px-3 py-2">
-        <Link to="/" className="flex items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm">
+        <Link
+          to="/"
+          className="flex items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+        >
           <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <CommandIcon className="size-3.5" />
           </div>
@@ -102,7 +95,9 @@ export function AppShell({ children }: { children?: ReactNode }) {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button asChild variant="ghost" size="icon" aria-label={t('nav.settings')}>
-              <Link to="/settings"><SettingsIcon /></Link>
+              <Link to="/settings">
+                <SettingsIcon />
+              </Link>
             </Button>
           </TooltipTrigger>
           <TooltipContent>{t('nav.settings')}</TooltipContent>
@@ -115,34 +110,48 @@ export function AppShell({ children }: { children?: ReactNode }) {
           className="hidden w-12 flex-col items-center gap-1 border-r py-2 @[420px]:flex"
         >
           <NavItem to="/" icon={HomeIcon} label={t('nav.home')} active={path === '/'} />
-          <NavItem to="/favorites" icon={StarIcon} label={t('nav.favorites')} active={path === '/favorites'} />
-          <NavItem to="/recent" icon={ClockIcon} label={t('nav.recent')} active={path === '/recent'} />
+          <NavItem
+            to="/favorites"
+            icon={StarIcon}
+            label={t('nav.favorites')}
+            active={path === '/favorites'}
+          />
+          <NavItem
+            to="/recent"
+            icon={ClockIcon}
+            label={t('nav.recent')}
+            active={path === '/recent'}
+          />
           <Separator className="my-1 w-6" />
           {categories.map((category) => (
             <NavItem
               key={category.id}
               to={category.enabled ? `/categories/${category.id}` : '#'}
               icon={category.icon}
-              label={category.enabled
-                ? t(`categories.${category.id}.name`, { defaultValue: category.name })
-                : t('nav.comingSoon', {
-                    name: t(`categories.${category.id}.name`, { defaultValue: category.name }),
-                  })}
+              label={
+                category.enabled
+                  ? t(`categories.${category.id}.name`, { defaultValue: category.name })
+                  : t('nav.comingSoon', {
+                      name: t(`categories.${category.id}.name`, { defaultValue: category.name }),
+                    })
+              }
               active={path === `/categories/${category.id}`}
               disabled={!category.enabled}
             />
           ))}
           <div className="flex-1" />
-          <NavItem to="/settings" icon={SettingsIcon} label={t('nav.settings')} active={path === '/settings'} />
+          <NavItem
+            to="/settings"
+            icon={SettingsIcon}
+            label={t('nav.settings')}
+            active={path === '/settings'}
+          />
         </nav>
 
         <main className="@container min-w-0 flex-1 overflow-hidden">
           <Suspense
             fallback={
-              <AppLoadingSkeleton
-                variant={getLoadingVariant(path)}
-                label={t('nav.loading')}
-              />
+              <AppLoadingSkeleton variant={getLoadingVariant(path)} label={t('nav.loading')} />
             }
           >
             {content}
@@ -210,7 +219,9 @@ function NavItem({ to, icon: Icon, label, active, disabled }: NavItemProps) {
       className={cn(
         'flex size-8 items-center justify-center rounded-md transition-colors',
         active && 'bg-accent text-accent-foreground',
-        !active && !disabled && 'text-muted-foreground hover:bg-accent/60 hover:text-accent-foreground',
+        !active &&
+          !disabled &&
+          'text-muted-foreground hover:bg-accent/60 hover:text-accent-foreground',
         disabled && 'cursor-not-allowed opacity-30',
       )}
     >
@@ -224,7 +235,11 @@ function NavItem({ to, icon: Icon, label, active, disabled }: NavItemProps) {
         {disabled ? (
           <span aria-disabled="true">{inner}</span>
         ) : (
-          <Link to={to} aria-label={label} className="outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md">
+          <Link
+            to={to}
+            aria-label={label}
+            className="outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md"
+          >
             {inner}
           </Link>
         )}

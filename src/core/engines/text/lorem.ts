@@ -1,12 +1,66 @@
 const WORDS = [
-  'lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit',
-  'sed', 'do', 'eiusmod', 'tempor', 'incididunt', 'ut', 'labore', 'et', 'dolore',
-  'magna', 'aliqua', 'enim', 'ad', 'minim', 'veniam', 'quis', 'nostrud',
-  'exercitation', 'ullamco', 'laboris', 'nisi', 'aliquip', 'ex', 'ea', 'commodo',
-  'consequat', 'duis', 'aute', 'irure', 'in', 'reprehenderit', 'voluptate',
-  'velit', 'esse', 'cillum', 'fugiat', 'nulla', 'pariatur', 'excepteur', 'sint',
-  'occaecat', 'cupidatat', 'non', 'proident', 'sunt', 'culpa', 'qui', 'officia',
-  'deserunt', 'mollit', 'anim', 'id', 'est', 'laborum',
+  'lorem',
+  'ipsum',
+  'dolor',
+  'sit',
+  'amet',
+  'consectetur',
+  'adipiscing',
+  'elit',
+  'sed',
+  'do',
+  'eiusmod',
+  'tempor',
+  'incididunt',
+  'ut',
+  'labore',
+  'et',
+  'dolore',
+  'magna',
+  'aliqua',
+  'enim',
+  'ad',
+  'minim',
+  'veniam',
+  'quis',
+  'nostrud',
+  'exercitation',
+  'ullamco',
+  'laboris',
+  'nisi',
+  'aliquip',
+  'ex',
+  'ea',
+  'commodo',
+  'consequat',
+  'duis',
+  'aute',
+  'irure',
+  'in',
+  'reprehenderit',
+  'voluptate',
+  'velit',
+  'esse',
+  'cillum',
+  'fugiat',
+  'nulla',
+  'pariatur',
+  'excepteur',
+  'sint',
+  'occaecat',
+  'cupidatat',
+  'non',
+  'proident',
+  'sunt',
+  'culpa',
+  'qui',
+  'officia',
+  'deserunt',
+  'mollit',
+  'anim',
+  'id',
+  'est',
+  'laborum',
 ]
 
 function pick<T>(items: T[], index: number): T {
@@ -43,7 +97,9 @@ export function generateParagraphs(count: number): string {
 }
 
 export function generateRandomWords(count: number): string {
-  return Array.from({ length: Math.max(0, count) }, () => pick(WORDS, randomIndex(WORDS.length))).join(' ')
+  return Array.from({ length: Math.max(0, count) }, () =>
+    pick(WORDS, randomIndex(WORDS.length)),
+  ).join(' ')
 }
 
 export function generateRandomSentence(): string {
@@ -77,7 +133,11 @@ export function generateLorem(mode: LoremMode, count: number): string {
   }
 }
 
-export function generateDummyText(mode: LoremMode, count: number, variant: DummyTextVariant): string {
+export function generateDummyText(
+  mode: LoremMode,
+  count: number,
+  variant: DummyTextVariant,
+): string {
   if (variant === 'lorem') return generateLorem(mode, count)
   switch (mode) {
     case 'paragraphs':

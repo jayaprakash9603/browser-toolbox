@@ -10,13 +10,17 @@ export type CaptureOutcome = { ok: true; value: CaptureResult } | { ok: false; e
 
 export async function captureVisibleTab(windowId?: number): Promise<CaptureOutcome> {
   try {
-    const dataUrl = windowId === undefined
-      ? await chrome.tabs.captureVisibleTab({ format: 'png' })
-      : await chrome.tabs.captureVisibleTab(windowId, { format: 'png' })
+    const dataUrl =
+      windowId === undefined
+        ? await chrome.tabs.captureVisibleTab({ format: 'png' })
+        : await chrome.tabs.captureVisibleTab(windowId, { format: 'png' })
     const dimensions = await imageDimensions(dataUrl)
     return { ok: true, value: { dataUrl, ...dimensions } }
   } catch (cause) {
-    return { ok: false, error: cause instanceof Error ? cause.message : 'Could not capture the tab.' }
+    return {
+      ok: false,
+      error: cause instanceof Error ? cause.message : 'Could not capture the tab.',
+    }
   }
 }
 
@@ -36,7 +40,11 @@ export interface CropRegion {
   height: number
 }
 
-export async function cropCapture(dataUrl: string, region: CropRegion, devicePixelRatio = 1): Promise<CaptureOutcome> {
+export async function cropCapture(
+  dataUrl: string,
+  region: CropRegion,
+  devicePixelRatio = 1,
+): Promise<CaptureOutcome> {
   try {
     const img = await loadImage(dataUrl)
     const canvas = document.createElement('canvas')
@@ -55,7 +63,10 @@ export async function cropCapture(dataUrl: string, region: CropRegion, devicePix
       canvas.width,
       canvas.height,
     )
-    return { ok: true, value: { dataUrl: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height } }
+    return {
+      ok: true,
+      value: { dataUrl: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height },
+    }
   } catch (cause) {
     return { ok: false, error: cause instanceof Error ? cause.message : 'Crop failed.' }
   }
@@ -97,7 +108,15 @@ export function drawAnnotations(canvas: HTMLCanvasElement, annotations: Annotati
         break
       case 'circle':
         ctx.beginPath()
-        ctx.ellipse((x1 + x2) / 2, (y1 + y2) / 2, Math.abs(x2 - x1) / 2, Math.abs(y2 - y1) / 2, 0, 0, Math.PI * 2)
+        ctx.ellipse(
+          (x1 + x2) / 2,
+          (y1 + y2) / 2,
+          Math.abs(x2 - x1) / 2,
+          Math.abs(y2 - y1) / 2,
+          0,
+          0,
+          Math.PI * 2,
+        )
         ctx.stroke()
         break
       case 'arrow': {
@@ -106,9 +125,15 @@ export function drawAnnotations(canvas: HTMLCanvasElement, annotations: Annotati
         ctx.beginPath()
         ctx.moveTo(x1, y1)
         ctx.lineTo(x2, y2)
-        ctx.lineTo(x2 - headLength * Math.cos(angle - Math.PI / 6), y2 - headLength * Math.sin(angle - Math.PI / 6))
+        ctx.lineTo(
+          x2 - headLength * Math.cos(angle - Math.PI / 6),
+          y2 - headLength * Math.sin(angle - Math.PI / 6),
+        )
         ctx.moveTo(x2, y2)
-        ctx.lineTo(x2 - headLength * Math.cos(angle + Math.PI / 6), y2 - headLength * Math.sin(angle + Math.PI / 6))
+        ctx.lineTo(
+          x2 - headLength * Math.cos(angle + Math.PI / 6),
+          y2 - headLength * Math.sin(angle + Math.PI / 6),
+        )
         ctx.stroke()
         break
       }
@@ -143,7 +168,10 @@ export function drawAnnotations(canvas: HTMLCanvasElement, annotations: Annotati
   }
 }
 
-export async function renderAnnotated(dataUrl: string, annotations: Annotation[]): Promise<CaptureOutcome> {
+export async function renderAnnotated(
+  dataUrl: string,
+  annotations: Annotation[],
+): Promise<CaptureOutcome> {
   try {
     const img = await loadImage(dataUrl)
     const canvas = document.createElement('canvas')
@@ -153,9 +181,15 @@ export async function renderAnnotated(dataUrl: string, annotations: Annotation[]
     if (!ctx) return { ok: false, error: 'Canvas is unavailable.' }
     ctx.drawImage(img, 0, 0)
     drawAnnotations(canvas, annotations)
-    return { ok: true, value: { dataUrl: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height } }
+    return {
+      ok: true,
+      value: { dataUrl: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height },
+    }
   } catch (cause) {
-    return { ok: false, error: cause instanceof Error ? cause.message : 'Could not render annotations.' }
+    return {
+      ok: false,
+      error: cause instanceof Error ? cause.message : 'Could not render annotations.',
+    }
   }
 }
 

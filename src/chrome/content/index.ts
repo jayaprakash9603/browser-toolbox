@@ -39,7 +39,8 @@ function collectPageInfo(): PageInfo {
   const links = [...document.querySelectorAll<HTMLAnchorElement>('a[href]')].map((anchor) => ({
     href: anchor.href,
     text: (anchor.textContent ?? '').trim().slice(0, 120),
-    internal: anchor.href.startsWith(origin) || anchor.getAttribute('href')?.startsWith('/') === true,
+    internal:
+      anchor.href.startsWith(origin) || anchor.getAttribute('href')?.startsWith('/') === true,
   }))
 
   const images = [...document.querySelectorAll<HTMLImageElement>('img')].map((img) => ({
@@ -84,7 +85,10 @@ function collectStorage(): StorageSnapshot {
     }
     return out
   }
-  return { localStorage: read(() => window.localStorage), sessionStorage: read(() => window.sessionStorage) }
+  return {
+    localStorage: read(() => window.localStorage),
+    sessionStorage: read(() => window.sessionStorage),
+  }
 }
 
 chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {

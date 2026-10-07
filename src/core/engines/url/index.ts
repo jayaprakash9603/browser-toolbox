@@ -47,14 +47,29 @@ export function decodeUrlComponent(input: string): UrlResult<string> {
 }
 
 const TRACKING_PREFIXES = ['utm_']
-const TRACKING_PARAMS = ['fbclid', 'gclid', 'dclid', 'gbraid', 'wbraid', 'msclkid', 'mc_cid', 'mc_eid', 'igshid', 'spm', 'ref_src']
+const TRACKING_PARAMS = [
+  'fbclid',
+  'gclid',
+  'dclid',
+  'gbraid',
+  'wbraid',
+  'msclkid',
+  'mc_cid',
+  'mc_eid',
+  'igshid',
+  'spm',
+  'ref_src',
+]
 
 export function cleanUrl(url: URL): { url: URL; removed: string[] } {
   const next = new URL(url.toString())
   const removed: string[] = []
   for (const key of [...next.searchParams.keys()]) {
     const lower = key.toLowerCase()
-    if (TRACKING_PREFIXES.some((prefix) => lower.startsWith(prefix)) || TRACKING_PARAMS.includes(lower)) {
+    if (
+      TRACKING_PREFIXES.some((prefix) => lower.startsWith(prefix)) ||
+      TRACKING_PARAMS.includes(lower)
+    ) {
       next.searchParams.delete(key)
       removed.push(key)
     }

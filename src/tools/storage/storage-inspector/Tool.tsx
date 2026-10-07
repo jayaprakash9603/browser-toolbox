@@ -31,35 +31,79 @@ export default function StorageInspectorTool() {
 
   useEffect(() => {
     let live = true
-    void load().then((value) => { if (live) setSnapshot(value) }).finally(() => { if (live) setLoaded(true) })
-    return () => { live = false }
+    void load()
+      .then((value) => {
+        if (live) setSnapshot(value)
+      })
+      .finally(() => {
+        if (live) setLoaded(true)
+      })
+    return () => {
+      live = false
+    }
   }, [])
 
-  const refresh = () => { void load().then(setSnapshot) }
+  const refresh = () => {
+    void load().then(setSnapshot)
+  }
 
   const filter = (record: Record<string, string>) => {
     const q = query.trim().toLowerCase()
-    return Object.entries(record).filter(([key, value]) => !q || key.toLowerCase().includes(q) || value.toLowerCase().includes(q))
+    return Object.entries(record).filter(
+      ([key, value]) => !q || key.toLowerCase().includes(q) || value.toLowerCase().includes(q),
+    )
   }
 
   return (
     <ToolPage tool={tool}>
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-1.5">
-          <SearchInput value={query} onChange={setQuery} placeholder={t('common.searchPlaceholder')} ariaLabel={t('common.search')} className="flex-1" />
-          <Button size="icon-sm" variant="ghost" onClick={refresh} aria-label={t('common.tryAgain')}><RefreshCwIcon /></Button>
+          <SearchInput
+            value={query}
+            onChange={setQuery}
+            placeholder={t('common.searchPlaceholder')}
+            ariaLabel={t('common.search')}
+            className="flex-1"
+          />
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            onClick={refresh}
+            aria-label={t('common.tryAgain')}
+          >
+            <RefreshCwIcon />
+          </Button>
         </div>
-        {!loaded ? <p className="text-xs text-muted-foreground">{t('nav.loading')}</p> : !snapshot ? (
-          <p className="rounded-md border border-dashed py-8 text-center text-xs text-muted-foreground">{t('storage.noAccess')}</p>
+        {!loaded ? (
+          <p className="text-xs text-muted-foreground">{t('nav.loading')}</p>
+        ) : !snapshot ? (
+          <p className="rounded-md border border-dashed py-8 text-center text-xs text-muted-foreground">
+            {t('storage.noAccess')}
+          </p>
         ) : (
           <Tabs defaultValue="local">
             <TabsList>
-              <TabsTrigger value="local">localStorage <Badge variant="outline" className="ml-1 text-[8px]">{Object.keys(snapshot.localStorage).length}</Badge></TabsTrigger>
-              <TabsTrigger value="session">sessionStorage <Badge variant="outline" className="ml-1 text-[8px]">{Object.keys(snapshot.sessionStorage).length}</Badge></TabsTrigger>
+              <TabsTrigger value="local">
+                localStorage{' '}
+                <Badge variant="outline" className="ml-1 text-[8px]">
+                  {Object.keys(snapshot.localStorage).length}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger value="session">
+                sessionStorage{' '}
+                <Badge variant="outline" className="ml-1 text-[8px]">
+                  {Object.keys(snapshot.sessionStorage).length}
+                </Badge>
+              </TabsTrigger>
             </TabsList>
             {(['local', 'session'] as const).map((which) => (
               <TabsContent key={which} value={which} className="mt-2">
-                <StorageTable entries={filter(which === 'local' ? snapshot.localStorage : snapshot.sessionStorage)} emptyLabel={t('storage.empty')} />
+                <StorageTable
+                  entries={filter(
+                    which === 'local' ? snapshot.localStorage : snapshot.sessionStorage,
+                  )}
+                  emptyLabel={t('storage.empty')}
+                />
               </TabsContent>
             ))}
           </Tabs>
@@ -69,17 +113,28 @@ export default function StorageInspectorTool() {
   )
 }
 
-function StorageTable({ entries, emptyLabel }: { entries: [string, string][]; emptyLabel: string }) {
-  if (entries.length === 0) return <p className="py-6 text-center text-xs text-muted-foreground">{emptyLabel}</p>
+function StorageTable({
+  entries,
+  emptyLabel,
+}: {
+  entries: [string, string][]
+  emptyLabel: string
+}) {
+  if (entries.length === 0)
+    return <p className="py-6 text-center text-xs text-muted-foreground">{emptyLabel}</p>
   return (
     <div className="max-h-96 space-y-1 overflow-y-auto">
       {entries.map(([key, value]) => (
         <div key={key} className="rounded border p-1.5">
           <div className="flex items-center justify-between gap-1">
-            <code className="min-w-0 truncate font-mono text-[10px] font-medium text-primary">{key}</code>
+            <code className="min-w-0 truncate font-mono text-[10px] font-medium text-primary">
+              {key}
+            </code>
             <CopyButton text={value} />
           </div>
-          <code className="mt-0.5 block break-all font-mono text-[10px] text-muted-foreground">{value.length > 200 ? `${value.slice(0, 200)}…` : value}</code>
+          <code className="mt-0.5 block break-all font-mono text-[10px] text-muted-foreground">
+            {value.length > 200 ? `${value.slice(0, 200)}…` : value}
+          </code>
         </div>
       ))}
     </div>

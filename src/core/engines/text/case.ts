@@ -1,13 +1,5 @@
 export type CaseStyle =
-  | 'lower'
-  | 'upper'
-  | 'title'
-  | 'sentence'
-  | 'camel'
-  | 'pascal'
-  | 'snake'
-  | 'kebab'
-  | 'constant'
+  'lower' | 'upper' | 'title' | 'sentence' | 'camel' | 'pascal' | 'snake' | 'kebab' | 'constant'
 
 export const CASE_STYLES: { id: CaseStyle; label: string; example: string }[] = [
   { id: 'lower', label: 'lowercase', example: 'hello world' },
@@ -39,9 +31,7 @@ export function convertCase(input: string, style: CaseStyle): string {
     return input.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
   }
   if (style === 'sentence') {
-    return input
-      .toLowerCase()
-      .replace(/(^\s*\w|[.!?]\s+\w)/g, (match) => match.toUpperCase())
+    return input.toLowerCase().replace(/(^\s*\w|[.!?]\s+\w)/g, (match) => match.toUpperCase())
   }
 
   const words = splitWords(input)

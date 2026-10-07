@@ -45,7 +45,10 @@ export default function LineToolsTool() {
     switch (op) {
       case 'dedupe': {
         const dedupe = removeDuplicateLines(input, { caseSensitive, trimFirst })
-        setResult({ output: dedupe.output, summary: t('text.removedCount', { count: dedupe.removedCount }) })
+        setResult({
+          output: dedupe.output,
+          summary: t('text.removedCount', { count: dedupe.removedCount }),
+        })
         break
       }
       case 'sort':
@@ -59,7 +62,8 @@ export default function LineToolsTool() {
         break
       case 'numbering':
         setResult({
-          output: numberMode === 'add' ? addLineNumbers(input, { startAt }) : removeLineNumbers(input),
+          output:
+            numberMode === 'add' ? addLineNumbers(input, { startAt }) : removeLineNumbers(input),
         })
         break
       case 'empty':
@@ -89,13 +93,21 @@ export default function LineToolsTool() {
 
         {(op === 'dedupe' || op === 'sort') && (
           <label className="flex w-fit items-center gap-2 text-xs">
-            <Switch checked={caseSensitive} onCheckedChange={setCaseSensitive} aria-label={t('text.caseSensitiveLabel')} />
+            <Switch
+              checked={caseSensitive}
+              onCheckedChange={setCaseSensitive}
+              aria-label={t('text.caseSensitiveLabel')}
+            />
             {t('text.caseSensitive')}
           </label>
         )}
         {op === 'dedupe' && (
           <label className="flex w-fit items-center gap-2 text-xs">
-            <Switch checked={trimFirst} onCheckedChange={setTrimFirst} aria-label={t('text.trimBeforeComparisonLabel')} />
+            <Switch
+              checked={trimFirst}
+              onCheckedChange={setTrimFirst}
+              aria-label={t('text.trimBeforeComparisonLabel')}
+            />
             {t('text.trimBeforeCompare')}
           </label>
         )}
@@ -111,9 +123,12 @@ export default function LineToolsTool() {
                 onClick={() => runSort(mode.id)}
                 disabled={!input}
               >
-                {t(`sort.${mode.id.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())}`, {
-                  defaultValue: mode.label,
-                })}
+                {t(
+                  `sort.${mode.id.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())}`,
+                  {
+                    defaultValue: mode.label,
+                  },
+                )}
               </Button>
             ))}
           </div>
@@ -181,7 +196,9 @@ export default function LineToolsTool() {
               <div className="mb-1 flex shrink-0 items-center justify-between">
                 <span className="text-xs font-medium">
                   {t('text.output')}{' '}
-                  {result.summary && <span className="text-muted-foreground">{result.summary}</span>}
+                  {result.summary && (
+                    <span className="text-muted-foreground">{result.summary}</span>
+                  )}
                 </span>
                 <ToolActions value={result.output} onClear={() => setResult(null)} />
               </div>

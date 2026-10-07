@@ -30,7 +30,14 @@ export default function DateTimeToolkitTool() {
 
   const [zoneDate, setZoneDate] = useState(() => new Date().toISOString().slice(0, 16))
   const zoneBase = useMemo(() => (zoneDate ? new Date(zoneDate) : new Date()), [zoneDate])
-  const zones = useMemo(() => convertToTimeZones(zoneBase, COMMON_TIMEZONES.map((z) => z.id)), [zoneBase])
+  const zones = useMemo(
+    () =>
+      convertToTimeZones(
+        zoneBase,
+        COMMON_TIMEZONES.map((z) => z.id),
+      ),
+    [zoneBase],
+  )
 
   const [cronInput, setCronInput] = useState('')
   const cron = useMemo(() => (cronInput.trim() ? parseCron(cronInput) : null), [cronInput])
@@ -44,23 +51,51 @@ export default function DateTimeToolkitTool() {
             <TabsTrigger value="zones">{t('dt.tabZones')}</TabsTrigger>
             <TabsTrigger value="cron">Cron</TabsTrigger>
           </TabsList>
-        </Tabs>
 
         <TabsContent value="calc" className="mt-0">
           <div className="flex flex-col gap-2">
-            <label className="flex flex-col gap-1 text-[11px] font-medium">{t('dt.dateA')}<Input type="datetime-local" value={dateA} onChange={(e) => setDateA(e.target.value)} aria-label={t('dt.dateA')} /></label>
-            <label className="flex flex-col gap-1 text-[11px] font-medium">{t('dt.dateB')}<Input type="datetime-local" value={dateB} onChange={(e) => setDateB(e.target.value)} aria-label={t('dt.dateB')} /></label>
+            <label className="flex flex-col gap-1 text-[11px] font-medium">
+              {t('dt.dateA')}
+              <Input
+                type="datetime-local"
+                value={dateA}
+                onChange={(e) => setDateA(e.target.value)}
+                aria-label={t('dt.dateA')}
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-[11px] font-medium">
+              {t('dt.dateB')}
+              <Input
+                type="datetime-local"
+                value={dateB}
+                onChange={(e) => setDateB(e.target.value)}
+                aria-label={t('dt.dateB')}
+              />
+            </label>
             {diff && (
               <div className="space-y-1 text-[11px]">
-                <Row label={t('dt.diff')} value={`${diff.weeks}w ${diff.days}d ${diff.hours}h ${diff.minutes}m (${diff.totalDays} ${t('dt.days')})`} />
+                <Row
+                  label={t('dt.diff')}
+                  value={`${diff.weeks}w ${diff.days}d ${diff.hours}h ${diff.minutes}m (${diff.totalDays} ${t('dt.days')})`}
+                />
                 {workDays !== null && <Row label={t('dt.workingDays')} value={String(workDays)} />}
               </div>
             )}
             {a && (
               <div className="flex items-center gap-1.5 pt-1">
-                <Input type="number" value={addAmount} onChange={(e) => setAddAmount(Number(e.target.value) || 0)} className="w-20" aria-label={t('dt.addDays')} />
+                <Input
+                  type="number"
+                  value={addAmount}
+                  onChange={(e) => setAddAmount(Number(e.target.value) || 0)}
+                  className="w-20"
+                  aria-label={t('dt.addDays')}
+                />
                 <span className="text-[11px] text-muted-foreground">{t('dt.days')}</span>
-                {added && <code className="ml-auto font-mono text-[11px]">{added.toISOString().slice(0, 10)}</code>}
+                {added && (
+                  <code className="ml-auto font-mono text-[11px]">
+                    {added.toISOString().slice(0, 10)}
+                  </code>
+                )}
               </div>
             )}
           </div>
@@ -68,10 +103,18 @@ export default function DateTimeToolkitTool() {
 
         <TabsContent value="zones" className="mt-0">
           <div className="flex flex-col gap-2">
-            <Input type="datetime-local" value={zoneDate} onChange={(e) => setZoneDate(e.target.value)} aria-label={t('dt.zoneDate')} />
+            <Input
+              type="datetime-local"
+              value={zoneDate}
+              onChange={(e) => setZoneDate(e.target.value)}
+              aria-label={t('dt.zoneDate')}
+            />
             <div className="max-h-80 space-y-1 overflow-y-auto">
               {zones.map((zone) => (
-                <div key={zone.timeZone} className="flex items-center justify-between rounded border bg-muted/40 px-2 py-1">
+                <div
+                  key={zone.timeZone}
+                  className="flex items-center justify-between rounded border bg-muted/40 px-2 py-1"
+                >
                   <span className="text-[10px] text-muted-foreground">{zone.timeZone}</span>
                   <div className="text-right">
                     <code className="block font-mono text-[10px]">{zone.formatted}</code>
@@ -86,22 +129,35 @@ export default function DateTimeToolkitTool() {
         <TabsContent value="cron" className="mt-0">
           <div className="flex flex-col gap-2">
             <div className="flex gap-1.5">
-              <Input value={cronInput} onChange={(e) => setCronInput(e.target.value)} placeholder={CRON_EXAMPLE} aria-label={t('dt.cronInput')} className="flex-1 font-mono" />
-              <Button size="sm" variant="ghost" onClick={() => setCronInput(CRON_EXAMPLE)}>{t('dev.tryExample')}</Button>
+              <Input
+                value={cronInput}
+                onChange={(e) => setCronInput(e.target.value)}
+                placeholder={CRON_EXAMPLE}
+                aria-label={t('dt.cronInput')}
+                className="flex-1 font-mono"
+              />
+              <Button size="sm" variant="ghost" onClick={() => setCronInput(CRON_EXAMPLE)}>
+                {t('dev.tryExample')}
+              </Button>
             </div>
             {cron && !cron.ok && <JsonErrorView message={cron.error} />}
             {cron?.ok && (
               <div className="flex flex-col gap-2">
-                <div className="rounded-md border bg-muted/40 p-2 text-[11px]">{cron.description}</div>
+                <div className="rounded-md border bg-muted/40 p-2 text-[11px]">
+                  {cron.description}
+                </div>
                 <div className="flex flex-wrap gap-1">
                   {cron.fields.map((field) => (
-                    <Badge key={field.name} variant="outline" className="font-mono text-[9px]">{field.name}: {field.raw}</Badge>
+                    <Badge key={field.name} variant="outline" className="font-mono text-[9px]">
+                      {field.name}: {field.raw}
+                    </Badge>
                   ))}
                 </div>
               </div>
             )}
           </div>
         </TabsContent>
+        </Tabs>
       </div>
     </ToolPage>
   )

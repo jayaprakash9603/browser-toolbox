@@ -15,7 +15,12 @@ export const HASH_ALGORITHMS: HashAlgorithmInfo[] = [
   { id: 'SHA-256', legacy: false, secure: true },
   { id: 'SHA-384', legacy: false, secure: true },
   { id: 'SHA-512', legacy: false, secure: true },
-  { id: 'SHA-1', legacy: true, secure: false, note: 'Legacy — collision-prone, avoid for security.' },
+  {
+    id: 'SHA-1',
+    legacy: true,
+    secure: false,
+    note: 'Legacy — collision-prone, avoid for security.',
+  },
   { id: 'MD5', legacy: true, secure: false, note: 'Legacy — broken for security; checksums only.' },
 ]
 
@@ -46,7 +51,11 @@ export async function hash(algorithm: HashAlgorithm, input: string): Promise<Has
 
 export type HmacAlgorithm = Exclude<SecureHashAlgorithm, 'SHA-1'> | 'SHA-1'
 
-export async function hmac(algorithm: HmacAlgorithm, message: string, secret: string): Promise<HashResult> {
+export async function hmac(
+  algorithm: HmacAlgorithm,
+  message: string,
+  secret: string,
+): Promise<HashResult> {
   if (!secret) return { ok: false, error: 'Secret is required for HMAC.' }
   try {
     const subtle = requireCrypto().subtle

@@ -6,6 +6,7 @@ import { useRouter } from '@/app/router'
 import { readClipboardText } from '@/core/clipboard'
 import { detectContent, type Detection } from '@/core/engines/detection'
 import { toolRegistry } from '@/core/registry'
+import { getToolName } from '@/i18n/toolLabels'
 import { Button } from '@/shared/components/ui/button'
 
 const DETECTION_ROUTES: Record<Detection['kind'], string | null> = {
@@ -62,7 +63,12 @@ export function SmartSuggestions() {
           <SparklesIcon className="size-3.5 text-primary" />
           {t('smartPaste.title', { defaultValue: 'Clipboard insights' })}
         </span>
-        <Button variant="ghost" size="icon" className="size-5" onClick={() => setDismissed(true)} aria-label={t('dialogs.close')}>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => setDismissed(true)}
+          aria-label={t('dialogs.close')}
+        >
           <XIcon className="size-3" />
         </Button>
       </div>
@@ -83,7 +89,8 @@ export function SmartSuggestions() {
                 navigate(tool.route)
               }}
             >
-              {t(`smartPaste.${detection.kind}`, { defaultValue: detection.label })} → {t(`tools.${tool.id}.name`, { defaultValue: tool.name })}
+              {t(`smartPaste.${detection.kind}`, { defaultValue: detection.label })} →{' '}
+              {getToolName(tool, t)}
             </Button>
           )
         })}

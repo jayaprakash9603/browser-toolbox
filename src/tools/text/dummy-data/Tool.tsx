@@ -59,7 +59,13 @@ export default function DummyDataTool() {
               <span className="text-xs font-medium">{t('text.generatedText')}</span>
               <ToolActions value={output} onClear={() => setOutput('')} />
             </div>
-            <TextEditor value={output} readOnly mono={false} ariaLabel={t('text.generatedText')} minRows={10} />
+            <TextEditor
+              value={output}
+              readOnly
+              mono={false}
+              ariaLabel={t('text.generatedText')}
+              minRows={10}
+            />
           </div>
         )}
       </div>

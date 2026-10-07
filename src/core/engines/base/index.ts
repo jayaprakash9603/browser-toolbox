@@ -21,7 +21,10 @@ export function parseBaseValue(input: string, base: NumberBase): BaseResult {
   for (const char of stripped) {
     const digit = DIGITS.indexOf(char)
     if (digit === -1 || digit >= base) {
-      return { ok: false, error: `"${char}" is not a valid ${BASE_LABELS[base].toLowerCase()} digit.` }
+      return {
+        ok: false,
+        error: `"${char}" is not a valid ${BASE_LABELS[base].toLowerCase()} digit.`,
+      }
     }
   }
   try {

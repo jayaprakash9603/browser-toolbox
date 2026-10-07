@@ -1,4 +1,4 @@
-import { Component, type ReactNode } from 'react'
+import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { toUserMessage } from '@/core/errors'
@@ -19,9 +19,19 @@ export class ErrorBoundary extends Component<Props, State> {
     return { error }
   }
 
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('Tool render failed', {
+      error,
+      componentStack: info.componentStack,
+      route: window.location.hash,
+    })
+  }
+
   render() {
     if (this.state.error) {
-      return <ErrorFallback error={this.state.error} onRetry={() => this.setState({ error: null })} />
+      return (
+        <ErrorFallback error={this.state.error} onRetry={() => this.setState({ error: null })} />
+      )
     }
     return this.props.children
   }

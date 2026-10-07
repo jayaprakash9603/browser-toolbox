@@ -22,8 +22,16 @@ export default function ImageLinksTool() {
 
   useEffect(() => {
     let live = true
-    void getPageInfo().then((info) => { if (live && info) setImages(info.images) }).finally(() => { if (live) setLoaded(true) })
-    return () => { live = false }
+    void getPageInfo()
+      .then((info) => {
+        if (live && info) setImages(info.images)
+      })
+      .finally(() => {
+        if (live) setLoaded(true)
+      })
+    return () => {
+      live = false
+    }
   }, [])
 
   const urls = images.map((img) => img.src).filter(Boolean)
@@ -32,7 +40,9 @@ export default function ImageLinksTool() {
   return (
     <ToolPage tool={tool}>
       <div className="flex flex-col gap-3">
-        {!loaded ? <p className="text-xs text-muted-foreground">{t('nav.loading')}</p> : images.length === 0 ? (
+        {!loaded ? (
+          <p className="text-xs text-muted-foreground">{t('nav.loading')}</p>
+        ) : images.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-md border border-dashed py-8 text-center text-muted-foreground">
             <ImageIcon className="size-7" />
             <p className="text-xs">{t('web.noImages')}</p>
@@ -41,7 +51,11 @@ export default function ImageLinksTool() {
           <>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Badge variant="secondary">{images.length}</Badge>
-              {missingAlt > 0 && <span className="text-amber-600 dark:text-amber-400">{t('web.missingAlt', { count: missingAlt })}</span>}
+              {missingAlt > 0 && (
+                <span className="text-amber-600 dark:text-amber-400">
+                  {t('web.missingAlt', { count: missingAlt })}
+                </span>
+              )}
               <CopyButton text={urls.join('\n')} size="xs" label={t('web.copyUrls')} />
             </div>
             <div className="max-h-96 space-y-1.5 overflow-y-auto">

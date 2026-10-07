@@ -11,17 +11,46 @@ export function analyzeSeo(page: PageInfo): SeoCheck[] {
   const checks: SeoCheck[] = []
   const title = page.title.trim()
   checks.push({
-    id: 'title', ok: title.length > 0, severity: title.length === 0 ? 'error' : title.length > 60 ? 'warning' : 'ok',
-    message: title.length === 0 ? 'Missing <title>.' : title.length > 60 ? `Title is ${title.length} chars (aim ≤ 60).` : `Title present (${title.length} chars).`,
+    id: 'title',
+    ok: title.length > 0,
+    severity: title.length === 0 ? 'error' : title.length > 60 ? 'warning' : 'ok',
+    message:
+      title.length === 0
+        ? 'Missing <title>.'
+        : title.length > 60
+          ? `Title is ${title.length} chars (aim ≤ 60).`
+          : `Title present (${title.length} chars).`,
   })
   const desc = page.metaDescription?.trim() ?? ''
   checks.push({
-    id: 'description', ok: desc.length > 0, severity: desc.length === 0 ? 'error' : desc.length > 160 ? 'warning' : 'ok',
-    message: desc.length === 0 ? 'Missing meta description.' : desc.length > 160 ? `Description is ${desc.length} chars (aim ≤ 160).` : `Meta description present (${desc.length} chars).`,
+    id: 'description',
+    ok: desc.length > 0,
+    severity: desc.length === 0 ? 'error' : desc.length > 160 ? 'warning' : 'ok',
+    message:
+      desc.length === 0
+        ? 'Missing meta description.'
+        : desc.length > 160
+          ? `Description is ${desc.length} chars (aim ≤ 160).`
+          : `Meta description present (${desc.length} chars).`,
   })
-  checks.push({ id: 'canonical', ok: Boolean(page.canonical), severity: page.canonical ? 'ok' : 'warning', message: page.canonical ? 'Canonical URL set.' : 'No canonical link.' })
-  checks.push({ id: 'viewport', ok: Boolean(page.viewport), severity: page.viewport ? 'ok' : 'error', message: page.viewport ? 'Viewport meta set.' : 'Missing viewport meta (mobile rendering).' })
-  checks.push({ id: 'lang', ok: Boolean(page.language), severity: page.language ? 'ok' : 'warning', message: page.language ? `Language: ${page.language}.` : 'No lang attribute on <html>.' })
+  checks.push({
+    id: 'canonical',
+    ok: Boolean(page.canonical),
+    severity: page.canonical ? 'ok' : 'warning',
+    message: page.canonical ? 'Canonical URL set.' : 'No canonical link.',
+  })
+  checks.push({
+    id: 'viewport',
+    ok: Boolean(page.viewport),
+    severity: page.viewport ? 'ok' : 'error',
+    message: page.viewport ? 'Viewport meta set.' : 'Missing viewport meta (mobile rendering).',
+  })
+  checks.push({
+    id: 'lang',
+    ok: Boolean(page.language),
+    severity: page.language ? 'ok' : 'warning',
+    message: page.language ? `Language: ${page.language}.` : 'No lang attribute on <html>.',
+  })
   return checks
 }
 
@@ -34,14 +63,19 @@ export function analyzeHeadings(headings: PageInfo['headings']): HeadingIssue[] 
   const issues: HeadingIssue[] = []
   const h1Count = headings.filter((h) => h.level === 1).length
   if (h1Count === 0) issues.push({ severity: 'error', message: 'No <h1> on the page.' })
-  if (h1Count > 1) issues.push({ severity: 'warning', message: `${h1Count} <h1> elements — ideally exactly one.` })
+  if (h1Count > 1)
+    issues.push({ severity: 'warning', message: `${h1Count} <h1> elements — ideally exactly one.` })
   for (let index = 1; index < headings.length; index += 1) {
     if (headings[index].level > headings[index - 1].level + 1) {
-      issues.push({ severity: 'warning', message: `Heading level jumps from h${headings[index - 1].level} to h${headings[index].level} ("${headings[index].text.slice(0, 30)}…").` })
+      issues.push({
+        severity: 'warning',
+        message: `Heading level jumps from h${headings[index - 1].level} to h${headings[index].level} ("${headings[index].text.slice(0, 30)}…").`,
+      })
     }
   }
   for (const heading of headings) {
-    if (!heading.text.trim()) issues.push({ severity: 'warning', message: `Empty <h${heading.level}>.` })
+    if (!heading.text.trim())
+      issues.push({ severity: 'warning', message: `Empty <h${heading.level}>.` })
   }
   return issues
 }
@@ -80,6 +114,8 @@ export function analyzeImages(images: PageInfo['images']): ImageAnalysis {
   return {
     total: images.length,
     missingAlt: images.filter((i) => !i.alt || !i.alt.trim()).length,
-    oversized: images.filter((i) => i.width > 2000 || i.height > 2000).map((i) => ({ src: i.src, width: i.width, height: i.height })),
+    oversized: images
+      .filter((i) => i.width > 2000 || i.height > 2000)
+      .map((i) => ({ src: i.src, width: i.width, height: i.height })),
   }
 }

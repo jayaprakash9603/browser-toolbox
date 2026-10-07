@@ -29,34 +29,39 @@ export default function BugReporterTool() {
     void chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
       if (live && tab) setPage({ url: tab.url ?? '', title: tab.title ?? '' })
     })
-    return () => { live = false }
+    return () => {
+      live = false
+    }
   }, [])
 
   const build = () => {
     const now = new Date().toISOString()
-    const viewport = typeof window !== 'undefined' ? `${window.screen.width}×${window.screen.height}` : '—'
+    const viewport =
+      typeof window !== 'undefined' ? `${window.screen.width}×${window.screen.height}` : '—'
     const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '—'
-    setReport([
-      '## Bug Report',
-      '',
-      `**Page:** ${page?.title || '—'}`,
-      `**URL:** ${page?.url || '—'}`,
-      `**Reported:** ${now}`,
-      `**Viewport:** ${viewport}`,
-      `**User agent:** ${ua}`,
-      '',
-      '### Expected',
-      expected || '—',
-      '',
-      '### Actual',
-      actual || '—',
-      '',
-      '### Steps to reproduce',
-      steps || '—',
-      '',
-      '### Notes',
-      notes || '—',
-    ].join('\n'))
+    setReport(
+      [
+        '## Bug Report',
+        '',
+        `**Page:** ${page?.title || '—'}`,
+        `**URL:** ${page?.url || '—'}`,
+        `**Reported:** ${now}`,
+        `**Viewport:** ${viewport}`,
+        `**User agent:** ${ua}`,
+        '',
+        '### Expected',
+        expected || '—',
+        '',
+        '### Actual',
+        actual || '—',
+        '',
+        '### Steps to reproduce',
+        steps || '—',
+        '',
+        '### Notes',
+        notes || '—',
+      ].join('\n'),
+    )
   }
 
   return (
@@ -89,13 +94,25 @@ export default function BugReporterTool() {
   )
 }
 
-function Field({ label, value, onChange, area }: { label: string; value: string; onChange: (v: string) => void; area?: boolean }) {
+function Field({
+  label,
+  value,
+  onChange,
+  area,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  area?: boolean
+}) {
   return (
     <label className="flex flex-col gap-1">
       <span className="text-[11px] font-medium">{label}</span>
-      {area
-        ? <TextEditor value={value} onChange={onChange} minRows={3} mono={false} ariaLabel={label} />
-        : <Input value={value} onChange={(e) => onChange(e.target.value)} aria-label={label} />}
+      {area ? (
+        <TextEditor value={value} onChange={onChange} minRows={3} mono={false} ariaLabel={label} />
+      ) : (
+        <Input value={value} onChange={(e) => onChange(e.target.value)} aria-label={label} />
+      )}
     </label>
   )
 }

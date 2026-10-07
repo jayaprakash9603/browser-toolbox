@@ -59,7 +59,11 @@ describe('whitespace cleaner', () => {
   it('respects disabled options', () => {
     const input = '  spaced  '
     expect(
-      cleanWhitespace(input, { ...DEFAULT_WHITESPACE_OPTIONS, trimLines: false, collapseSpaces: false }),
+      cleanWhitespace(input, {
+        ...DEFAULT_WHITESPACE_OPTIONS,
+        trimLines: false,
+        collapseSpaces: false,
+      }),
     ).toBe(input)
   })
 })
@@ -149,11 +153,15 @@ describe('line operations', () => {
 
 describe('find & replace', () => {
   it('counts matches case-insensitively by default', () => {
-    expect(countMatches('Cat cat CAT', 'cat', { caseSensitive: false, wholeWord: false, regex: false })).toBe(3)
+    expect(
+      countMatches('Cat cat CAT', 'cat', { caseSensitive: false, wholeWord: false, regex: false }),
+    ).toBe(3)
   })
 
   it('whole word avoids partial matches', () => {
-    expect(countMatches('cat catalog', 'cat', { caseSensitive: false, wholeWord: true, regex: false })).toBe(1)
+    expect(
+      countMatches('cat catalog', 'cat', { caseSensitive: false, wholeWord: true, regex: false }),
+    ).toBe(1)
   })
 
   it('regex replace supports groups', () => {

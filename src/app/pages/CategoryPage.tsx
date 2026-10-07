@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { categoryRegistry, toolRegistry } from '@/core/registry'
+import { getToolSearchLabels } from '@/i18n/toolLabels'
 import { BackButton } from '@/shared/components/BackButton'
 import { ToolCard } from '@/shared/components/ToolCard'
 import { EmptyState } from '@/shared/components/EmptyState'
@@ -16,13 +17,9 @@ export default function CategoryPage({ categoryId }: { categoryId: string }) {
     const search = query.trim().toLowerCase()
     if (!search) return tools
     return tools.filter((tool) =>
-      [
-        t(`tools.${tool.id}.name`, { defaultValue: tool.name }),
-        t(`tools.${tool.id}.description`, { defaultValue: tool.description }),
-        ...tool.keywords,
-      ].join(' ').toLowerCase().includes(search),
+      [...getToolSearchLabels(tool), ...tool.keywords].join(' ').toLowerCase().includes(search),
     )
-  }, [query, tools, t])
+  }, [query, tools])
 
   if (!category) {
     return <EmptyState icon={InboxIcon} title={t('category.unknown')} />

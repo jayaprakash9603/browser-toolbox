@@ -22,16 +22,31 @@ export function formatSql(source: string, dialect: SqlDialect = 'sql'): SqlResul
   try {
     return { ok: true, value: format(source, { language: dialect, keywordCase: 'upper' }) }
   } catch (cause) {
-    return { ok: false, error: cause instanceof Error ? cause.message.split('\n')[0] : 'Could not format SQL.' }
+    return {
+      ok: false,
+      error: cause instanceof Error ? cause.message.split('\n')[0] : 'Could not format SQL.',
+    }
   }
 }
 
 export function minifySql(source: string): SqlResult {
   if (!source.trim()) return { ok: false, error: 'Input is empty.' }
   try {
-    return { ok: true, value: format(source, { language: 'sql', expressionWidth: Number.MAX_SAFE_INTEGER, keywordCase: 'preserve' }).replace(/\s+/g, ' ').trim() }
+    return {
+      ok: true,
+      value: format(source, {
+        language: 'sql',
+        expressionWidth: Number.MAX_SAFE_INTEGER,
+        keywordCase: 'preserve',
+      })
+        .replace(/\s+/g, ' ')
+        .trim(),
+    }
   } catch (cause) {
-    return { ok: false, error: cause instanceof Error ? cause.message.split('\n')[0] : 'Could not minify SQL.' }
+    return {
+      ok: false,
+      error: cause instanceof Error ? cause.message.split('\n')[0] : 'Could not minify SQL.',
+    }
   }
 }
 

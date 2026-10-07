@@ -24,9 +24,22 @@ function fakeTool(partial: Partial<ToolDefinition> & { id: string }): ToolDefini
 
 describe('context menu tree', () => {
   const tools = [
-    fakeTool({ id: 'text.analyzer', category: 'text', capabilities: ['SIDE_PANEL', 'CONTEXT_MENU'] }),
-    fakeTool({ id: 'developer.json-toolkit', category: 'developer', capabilities: ['SIDE_PANEL', 'CONTEXT_MENU'] }),
-    fakeTool({ id: 'developer.coming', category: 'developer', status: 'coming-soon', capabilities: ['CONTEXT_MENU'] }),
+    fakeTool({
+      id: 'text.analyzer',
+      category: 'text',
+      capabilities: ['SIDE_PANEL', 'CONTEXT_MENU'],
+    }),
+    fakeTool({
+      id: 'developer.json-toolkit',
+      category: 'developer',
+      capabilities: ['SIDE_PANEL', 'CONTEXT_MENU'],
+    }),
+    fakeTool({
+      id: 'developer.coming',
+      category: 'developer',
+      status: 'coming-soon',
+      capabilities: ['CONTEXT_MENU'],
+    }),
     fakeTool({ id: 'panel-only', category: 'developer', capabilities: ['SIDE_PANEL'] }),
   ]
 

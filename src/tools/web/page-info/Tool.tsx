@@ -15,14 +15,26 @@ export default function PageInfoTool() {
 
   useEffect(() => {
     let live = true
-    void getPageInfo().then((value) => { if (live && value) setInfo(value) }).finally(() => { if (live) setLoaded(true) })
-    return () => { live = false }
+    void getPageInfo()
+      .then((value) => {
+        if (live && value) setInfo(value)
+      })
+      .finally(() => {
+        if (live) setLoaded(true)
+      })
+    return () => {
+      live = false
+    }
   }, [])
 
   return (
     <ToolPage tool={tool}>
-      {!loaded ? <p className="text-xs text-muted-foreground">{t('nav.loading')}</p> : !info ? (
-        <p className="rounded-md border border-dashed py-8 text-center text-xs text-muted-foreground">{t('web.noPageInfo')}</p>
+      {!loaded ? (
+        <p className="text-xs text-muted-foreground">{t('nav.loading')}</p>
+      ) : !info ? (
+        <p className="rounded-md border border-dashed py-8 text-center text-xs text-muted-foreground">
+          {t('web.noPageInfo')}
+        </p>
       ) : (
         <div className="flex flex-col gap-2">
           <InfoRow label="Title" value={info.title} />
@@ -35,17 +47,27 @@ export default function PageInfoTool() {
             <InfoRow label="Viewport" value={info.viewport ? '✓' : '—'} />
           </div>
           <div className="grid grid-cols-2 gap-1.5">
-            <div className="rounded border p-2 text-center"><Badge variant="secondary">{info.links.length}</Badge><p className="text-[10px] text-muted-foreground">{t('web.links')}</p></div>
-            <div className="rounded border p-2 text-center"><Badge variant="secondary">{info.images.length}</Badge><p className="text-[10px] text-muted-foreground">{t('web.images')}</p></div>
+            <div className="rounded border p-2 text-center">
+              <Badge variant="secondary">{info.links.length}</Badge>
+              <p className="text-[10px] text-muted-foreground">{t('web.links')}</p>
+            </div>
+            <div className="rounded border p-2 text-center">
+              <Badge variant="secondary">{info.images.length}</Badge>
+              <p className="text-[10px] text-muted-foreground">{t('web.images')}</p>
+            </div>
           </div>
           {Object.keys(info.openGraph).length > 0 && (
             <Section title="Open Graph">
-              {Object.entries(info.openGraph).map(([key, value]) => <InfoRow key={key} label={key.replace('og:', '')} value={value} />)}
+              {Object.entries(info.openGraph).map(([key, value]) => (
+                <InfoRow key={key} label={key.replace('og:', '')} value={value} />
+              ))}
             </Section>
           )}
           {Object.keys(info.twitter).length > 0 && (
             <Section title="Twitter / X">
-              {Object.entries(info.twitter).map(([key, value]) => <InfoRow key={key} label={key.replace('twitter:', '')} value={value} />)}
+              {Object.entries(info.twitter).map(([key, value]) => (
+                <InfoRow key={key} label={key.replace('twitter:', '')} value={value} />
+              ))}
             </Section>
           )}
         </div>

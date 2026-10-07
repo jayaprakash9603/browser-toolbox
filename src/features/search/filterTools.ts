@@ -1,16 +1,22 @@
 import type { ToolDefinition } from '@/core/registry'
+import { getToolSearchLabels } from '@/i18n/toolLabels'
 
 export function filterTools(
   tools: ToolDefinition[],
   query: string,
   favorites: string[],
   recentIds: string[],
-  localizedLabels: (tool: ToolDefinition) => string[] = (tool) => [tool.name, tool.description],
+  localizedLabels: (tool: ToolDefinition) => string[] = getToolSearchLabels,
 ): { favorites: ToolDefinition[]; recent: ToolDefinition[]; results: ToolDefinition[] } {
   const q = query.trim().toLowerCase()
   const results = q
     ? tools.filter((tool) => {
-        const haystack = [...localizedLabels(tool), tool.category, ...tool.keywords, ...(tool.aliases ?? [])]
+        const haystack = [
+          ...localizedLabels(tool),
+          tool.category,
+          ...tool.keywords,
+          ...(tool.aliases ?? []),
+        ]
           .join(' ')
           .toLowerCase()
         return q.split(/\s+/).every((token) => haystack.includes(token))
@@ -27,4 +33,3 @@ export function filterTools(
 
   return { favorites: favoriteTools, recent: recentTools, results }
 }
-
