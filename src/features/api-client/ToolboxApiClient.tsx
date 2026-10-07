@@ -8,7 +8,11 @@ import ApiClient, {
 } from 'postman-lite'
 import 'postman-lite/style.css'
 
-import { buildApiClientTheme, TOOLBOX_THEME_ID } from '@/features/api-client/build-api-client-theme'
+import {
+  ApiClientHostLifecycle,
+  useToolboxApiClientAppearanceSync,
+} from '@/features/api-client/ApiClientHostLifecycle'
+import { buildApiClientTheme } from '@/features/api-client/build-api-client-theme'
 import type { ThemeMode } from '@/features/settings/settingsService'
 import { useSettings } from '@/shared/hooks/useSettings'
 
@@ -32,6 +36,17 @@ export function ToolboxApiClient() {
   )
 
   const theme = useMemo(() => buildApiClientTheme(themeMode), [themeMode])
+  const appearanceSync = useToolboxApiClientAppearanceSync(themeMode)
+
+  const settingsExtras = useMemo(
+    () => (
+      <>
+        <ApiClientHostLifecycle />
+        {HOST_APPEARANCE_NOTE}
+      </>
+    ),
+    [],
+  )
 
   useEffect(() => {
     registerExtensionHistoryListener()
@@ -45,14 +60,14 @@ export function ToolboxApiClient() {
       theme={theme}
       locale="en"
       storageNamespace="browser_toolbox_apiclient"
-      persistSidebarState
+      persistSidebarState={false}
       defaultSidebarOpen={false}
-      settingsExtras={HOST_APPEARANCE_NOTE}
+      settingsExtras={settingsExtras}
       workingDirectoryHostContent={
         <p className="text-xs text-muted-foreground">{t('apiClient.storageHostHint')}</p>
       }
       appearanceControlledByHost
-      appearanceSync={{ darkMode: themeMode, themeId: TOOLBOX_THEME_ID }}
+      appearanceSync={appearanceSync}
     />
   )
 }

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 
+import { TOOLBOX_RESTORE_THEME_EVENT } from '@/features/api-client/ApiClientHostLifecycle'
 import { useSettings } from '@/shared/hooks/useSettings'
 
 export function ThemeApplicator() {
@@ -26,8 +27,10 @@ export function ThemeApplicator() {
     apply()
     const media = window.matchMedia('(prefers-color-scheme: dark)')
     media.addEventListener('change', apply)
+    window.addEventListener(TOOLBOX_RESTORE_THEME_EVENT, apply)
     return () => {
       media.removeEventListener('change', apply)
+      window.removeEventListener(TOOLBOX_RESTORE_THEME_EVENT, apply)
       window.clearTimeout(transitionTimer)
     }
   }, [settings])
