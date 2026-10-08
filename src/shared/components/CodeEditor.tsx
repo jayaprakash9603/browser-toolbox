@@ -15,7 +15,7 @@ import {
 
 import {
   editorDarkTheme,
-  editorSyntaxHighlighting,
+  editorSyntaxForTheme,
   editorTheme,
   editorThemeClassAttribute,
 } from '@/shared/lib/code-editor/editor-theme'
@@ -69,6 +69,7 @@ export function CodeEditor({
     placeholder: new Compartment(),
     aria: new Compartment(),
     themeClass: new Compartment(),
+    syntax: new Compartment(),
   })
   const callbacks = useRef({ onChange, onSubmit, onCursorChange })
   useLayoutEffect(() => {
@@ -95,7 +96,7 @@ export function CodeEditor({
       search({ top: true }),
       editorTheme,
       editorDarkTheme,
-      ...editorSyntaxHighlighting,
+      c.syntax.of(editorSyntaxForTheme()),
       c.themeClass.of(editorThemeClassAttribute()),
       keymap.of([
         {
@@ -185,7 +186,13 @@ export function CodeEditor({
     const view = viewRef.current
     if (!view) return
     const syncTheme = () => {
-      view.dispatch({ effects: compartments.current.themeClass.reconfigure(editorThemeClassAttribute()) })
+      const c = compartments.current
+      view.dispatch({
+        effects: [
+          c.themeClass.reconfigure(editorThemeClassAttribute()),
+          c.syntax.reconfigure(editorSyntaxForTheme()),
+        ],
+      })
     }
     syncTheme()
     const observer = new MutationObserver(syncTheme)

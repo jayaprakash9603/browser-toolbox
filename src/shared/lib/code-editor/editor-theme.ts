@@ -110,10 +110,6 @@ const darkSyntax = HighlightStyle.define([
   { tag: tags.invalid, color: '#f87171' },
 ])
 
-export const editorSyntaxHighlighting = [
-  syntaxHighlighting(lightSyntax),
-  syntaxHighlighting(darkSyntax, { themeType: 'dark' }),
-]
-
-/** @deprecated Use editorSyntaxHighlighting */
-export const editorHighlighting = editorSyntaxHighlighting[0]
+export function editorSyntaxForTheme(dark = isEditorDarkMode()) {
+  return syntaxHighlighting(dark ? darkSyntax : lightSyntax)
+}
