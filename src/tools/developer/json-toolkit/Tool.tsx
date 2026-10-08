@@ -248,7 +248,7 @@ function TreeNode({ node, depth }: { node: JsonTreeNode; depth: number }) {
           className="flex w-full cursor-pointer items-center gap-1 rounded px-1 text-left outline-none transition-colors duration-150 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Chevron className="size-3.5 text-muted-foreground" aria-hidden />
-          <span className="text-(--syntax-key)">{node.key ?? 'root'}</span>
+          <span className="text-[color:var(--syntax-key)]">{node.key ?? 'root'}</span>
           <span className="text-muted-foreground">
             {node.type === 'array' ? `[${node.size}]` : `{${node.size}}`}
           </span>
@@ -262,8 +262,14 @@ function TreeNode({ node, depth }: { node: JsonTreeNode; depth: number }) {
   }
   return (
     <div style={{ paddingLeft: `${depth * 14 + 22}px` }} className="flex gap-1.5 font-mono text-xs leading-6">
-      <span className="text-(--syntax-key)">{node.key}:</span>
-      <span className={node.type === 'string' ? 'text-(--syntax-string)' : 'text-(--syntax-number)'}>
+      <span className="text-[color:var(--syntax-key)]">{node.key}:</span>
+      <span
+        className={
+          node.type === 'string'
+            ? 'text-[color:var(--syntax-string)]'
+            : 'text-[color:var(--syntax-number)]'
+        }
+      >
         {node.type === 'string' ? `"${node.value}"` : node.value}
       </span>
     </div>

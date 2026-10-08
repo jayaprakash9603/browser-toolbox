@@ -176,7 +176,9 @@ export default function RegexToolkitTool() {
                 className="h-auto w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left whitespace-normal active:scale-[0.99]"
               >
                 <span className="text-[13px] font-medium">{entry.label}</span>
-                <code className="font-mono text-xs break-all text-(--syntax-string)">{entry.pattern}</code>
+                <code className="break-all font-mono text-xs text-[color:var(--syntax-string)]">
+                  {entry.pattern}
+                </code>
                 <span className="text-xs font-normal text-muted-foreground">{entry.description}</span>
               </Button>
             ))}

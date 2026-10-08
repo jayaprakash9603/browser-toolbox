@@ -71,12 +71,15 @@
   --editor-gutter: #111111;
   --editor-active-line: oklch(0.68 0.2 35 / 7%);
   --editor-selection: oklch(0.68 0.2 35 / 26%);
-  --syntax-key: #6fd3a8;
-  --syntax-string: #f4a582;
-  --syntax-number: #8ab4f8;
-  --syntax-keyword: #c792ea;
-  --syntax-comment: #8b8b8b;
-  --syntax-tag: #f78c6c;
+  --syntax-key: #7ee787;
+  --syntax-string: #ffb4a2;
+  --syntax-number: #9ec5fe;
+  --syntax-keyword: #d2a8ff;
+  --syntax-comment: #9ca3af;
+  --syntax-tag: #ff9f8a;
+  --syntax-punctuation: #c4c9d4;
+  --editor-active-line: oklch(0.68 0.2 35 / 10%);
+  --editor-selection: oklch(0.68 0.2 35 / 34%);
 }
 
 @theme inline {

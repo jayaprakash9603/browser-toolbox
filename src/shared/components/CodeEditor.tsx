@@ -13,7 +13,12 @@ import {
   placeholder as placeholderExtension,
 } from '@codemirror/view'
 
-import { editorHighlighting, editorTheme } from '@/shared/lib/code-editor/editor-theme'
+import {
+  editorDarkTheme,
+  editorSyntaxHighlighting,
+  editorTheme,
+  editorThemeClassAttribute,
+} from '@/shared/lib/code-editor/editor-theme'
 import { loadLanguage, type EditorLanguage } from '@/shared/lib/code-editor/languages'
 import { cn } from '@/shared/utils/cn'
 
@@ -63,6 +68,7 @@ export function CodeEditor({
     wrap: new Compartment(),
     placeholder: new Compartment(),
     aria: new Compartment(),
+    themeClass: new Compartment(),
   })
   const callbacks = useRef({ onChange, onSubmit, onCursorChange })
   useLayoutEffect(() => {
@@ -88,7 +94,9 @@ export function CodeEditor({
       highlightSelectionMatches(),
       search({ top: true }),
       editorTheme,
-      editorHighlighting,
+      editorDarkTheme,
+      ...editorSyntaxHighlighting,
+      c.themeClass.of(editorThemeClassAttribute()),
       keymap.of([
         {
           key: 'Mod-Enter',
@@ -172,6 +180,18 @@ export function CodeEditor({
       ],
     })
   }, [readOnly, wrap, placeholder, ariaLabel])
+
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view) return
+    const syncTheme = () => {
+      view.dispatch({ effects: compartments.current.themeClass.reconfigure(editorThemeClassAttribute()) })
+    }
+    syncTheme()
+    const observer = new MutationObserver(syncTheme)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
+  }, [])
 
   return (
     <div
