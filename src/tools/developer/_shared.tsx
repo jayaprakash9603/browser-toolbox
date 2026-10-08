@@ -1,9 +1,11 @@
-import { AlertTriangleIcon, LightbulbIcon } from 'lucide-react'
+import { AlertTriangleIcon, EraserIcon, HistoryIcon, LightbulbIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { addClipboardEntry } from '@/core/clipboard'
 import { toolRegistry } from '@/core/registry'
+import { EditorPane, IconAction } from '@/shared/components/EditorPane'
 import { ErrorState } from '@/shared/components/ErrorState'
-import { ToolActions } from '@/tools/text/_shared'
+import type { EditorLanguage } from '@/shared/lib/code-editor/languages'
 
 export function useDevTool(toolId: string) {
   const tool = toolRegistry.get(toolId)
@@ -49,27 +51,44 @@ export function OutputPane({
   error,
   onClear,
   mono = true,
+  language,
+  label,
+  fill = false,
 }: {
   value: string
   error: string | null
   onClear: () => void
   mono?: boolean
+  language?: EditorLanguage
+  label?: string
+  fill?: boolean
 }) {
   const { t } = useTranslation()
+  if (error) return <ErrorState message={error} />
   return (
-    <div className="flex min-h-0 flex-col">
-      <div className="mb-1 flex shrink-0 items-center justify-between">
-        <span className="text-xs font-medium">{t('text.output')}</span>
-        <ToolActions value={value} onClear={onClear} />
-      </div>
-      {error ? <ErrorState message={error} /> : null}
-      {!error && value && (
-        <pre
-          className={`max-h-72 overflow-auto rounded-md border bg-muted/40 p-2 text-[11px] ${mono ? 'font-mono' : ''}`}
-        >
-          {value}
-        </pre>
-      )}
-    </div>
+    <EditorPane
+      value={value}
+      readOnly
+      label={label ?? t('text.output')}
+      language={mono ? (language ?? 'text') : 'text'}
+      wrap={!mono || !language}
+      ariaLabel={label ?? t('text.output')}
+      fill={fill}
+      minRows={10}
+      actions={
+        <div className="flex items-center gap-0.5 border-r pr-1">
+          <IconAction
+            label={t('text.saveHistory')}
+            disabled={!value.trim()}
+            onClick={() => void addClipboardEntry(value)}
+          >
+            <HistoryIcon />
+          </IconAction>
+          <IconAction label={t('editor.clearInput')} onClick={onClear}>
+            <EraserIcon />
+          </IconAction>
+        </div>
+      }
+    />
   )
 }

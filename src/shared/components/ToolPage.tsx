@@ -26,22 +26,24 @@ export function ToolPage({
   const { name, description } = useToolLabels(tool)
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-start gap-3 px-4 pt-3 pb-2.5">
+      <header className="sticky top-0 z-10 flex shrink-0 items-start gap-3 bg-background/85 px-4 pt-3 pb-2.5 backdrop-blur-md">
         <BackButton to={backTo} className="mt-0.5 shrink-0" />
-        <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border bg-muted">
-          <Icon className="size-4 text-foreground/80" aria-hidden />
+        <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10">
+          <Icon className="size-[18px] text-primary" aria-hidden />
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-sm font-semibold tracking-tight">{name}</h1>
-          <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">{description}</p>
+          <h1 className="truncate text-[15px] font-semibold tracking-tight">{name}</h1>
+          <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground" title={description}>
+            {description}
+          </p>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           {actions}
           <FavoriteButton toolId={tool.id} />
         </div>
       </header>
       <Separator />
-      <div className={cn('flex-1 overflow-y-auto p-4', contentClassName)}>{children}</div>
+      <div className={cn('flex-1 overflow-y-auto overscroll-contain p-4', contentClassName)}>{children}</div>
     </div>
   )
 }

@@ -34,13 +34,13 @@ export default function BaseConverterTool() {
           <div className="space-y-1">
             {BASES.map((b) => (
               <div key={b} className="flex items-center justify-between gap-2 rounded border bg-muted/40 px-2 py-1.5">
-                <span className="w-24 text-[10px] font-medium text-muted-foreground">{BASE_LABELS[b]}</span>
+                <span className="w-24 text-[11px] font-medium text-muted-foreground">{BASE_LABELS[b]}</span>
                 <code className="min-w-0 flex-1 break-all font-mono text-[11px]">{formatBaseValue(parsed.value, b, b === 2 || b === 16)}</code>
                 <CopyButton text={formatBaseValue(parsed.value, b)} />
               </div>
             ))}
             <div className="flex items-center justify-between gap-2 rounded border bg-muted/40 px-2 py-1.5">
-              <span className="w-24 text-[10px] font-medium text-muted-foreground">{t('calc.bits')}</span>
+              <span className="w-24 text-[11px] font-medium text-muted-foreground">{t('calc.bits')}</span>
               <code className="min-w-0 flex-1 break-all font-mono text-[11px]">{bitRepresentation(parsed.value)}</code>
               <CopyButton text={bitRepresentation(parsed.value)} />
             </div>

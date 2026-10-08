@@ -77,7 +77,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             {favoriteTools.length > 0 && (
               <Command.Group
                 heading={t('palette.favorites')}
-                className="text-[10px] font-medium text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1"
+                className="text-[11px] font-medium text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1"
               >
                 {favoriteTools.map((tool) => (
                   <CommandItem key={tool.id} tool={tool} query={query} onSelect={select} />
@@ -86,7 +86,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             )}
             <Command.Group
               heading={t('palette.formatters')}
-              className="text-[10px] font-medium text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1"
+              className="text-[11px] font-medium text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1"
             >
               {TEXT_FORMAT_IDS.map((format) => (
                 <FormatterCommandItem
@@ -102,7 +102,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             </Command.Group>
             <Command.Group
               heading={t('palette.allTools')}
-              className="text-[10px] font-medium text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1"
+              className="text-[11px] font-medium text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1"
             >
               {commandTools.map((tool) => (
                 <CommandItem key={tool.id} tool={tool} query={query} onSelect={select} />
@@ -137,7 +137,7 @@ function CommandItem({
     >
       <Icon className="size-3.5 text-muted-foreground" />
       <span className="flex-1 truncate"><HighlightedText text={name} query={query} /></span>
-      <span className="text-[10px] text-muted-foreground"><HighlightedText text={category} query={query} /></span>
+      <span className="text-[11px] text-muted-foreground"><HighlightedText text={category} query={query} /></span>
     </Command.Item>
   )
 }
@@ -164,7 +164,7 @@ function FormatterCommandItem({
     >
       <BracesIcon className="size-3.5 text-muted-foreground" />
       <span className="flex-1 truncate"><HighlightedText text={name} query={query} /></span>
-      <span className="text-[10px] text-muted-foreground">
+      <span className="text-[11px] text-muted-foreground">
         <HighlightedText text={category} query={query} />
       </span>
     </Command.Item>

@@ -256,7 +256,7 @@ export default function QrToolkitTool() {
           {error && <JsonErrorView message={error} />}
           {decoded && (
             <div className="rounded-md border bg-muted/40 p-2">
-              <p className="text-[10px] text-muted-foreground">{t('qr.decoded')}</p>
+              <p className="text-[11px] text-muted-foreground">{t('qr.decoded')}</p>
               <code className="break-all font-mono text-[11px]">{decoded}</code>
             </div>
           )}

@@ -12,6 +12,7 @@ import {
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
 import { Badge } from '@/shared/components/ui/badge'
+import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Switch } from '@/shared/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
@@ -154,7 +155,7 @@ export default function RegexToolkitTool() {
                 <div className="text-xs text-muted-foreground">
                   {t('text.replaced', { count: replaced.count })}
                 </div>
-                <pre className="max-h-56 overflow-auto rounded-md border bg-muted/40 p-2 font-mono text-[11px]">
+                <pre className="max-h-56 scrollbar-both rounded-lg border bg-muted/30 p-3 font-mono text-xs leading-relaxed">
                   {replaced.output}
                 </pre>
               </>
@@ -165,19 +166,19 @@ export default function RegexToolkitTool() {
         <TabsContent value="library" className="mt-0">
           <div className="space-y-1.5">
             {COMMON_PATTERNS.map((entry) => (
-              <button
+              <Button
                 key={entry.id}
-                type="button"
+                variant="outline"
                 onClick={() => {
                   setPattern(entry.pattern)
                   setTab('test')
                 }}
-                className="flex w-full flex-col gap-0.5 rounded-md border p-2 text-left transition-colors hover:bg-accent"
+                className="h-auto w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left whitespace-normal active:scale-[0.99]"
               >
-                <span className="text-xs font-medium">{entry.label}</span>
-                <code className="text-[10px] text-muted-foreground">{entry.pattern}</code>
-                <span className="text-[10px] text-muted-foreground">{entry.description}</span>
-              </button>
+                <span className="text-[13px] font-medium">{entry.label}</span>
+                <code className="font-mono text-xs break-all text-(--syntax-string)">{entry.pattern}</code>
+                <span className="text-xs font-normal text-muted-foreground">{entry.description}</span>
+              </Button>
             ))}
           </div>
         </TabsContent>

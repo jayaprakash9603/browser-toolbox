@@ -117,7 +117,7 @@ export default function CssGeneratorTool() {
             <span className="text-[11px] font-medium">CSS</span>
             <ToolActions value={css} onClear={() => undefined} />
           </div>
-          <pre className="overflow-auto rounded-md border bg-muted/40 p-2 font-mono text-[11px]">
+          <pre className="scrollbar-both rounded-lg border bg-muted/30 p-3 font-mono text-xs leading-relaxed">
             {css}
           </pre>
         </div>

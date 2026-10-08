@@ -16,6 +16,11 @@ export function registerApiClientSendHandler(): void {
     }
 
     const payload = (message as { payload: ApiClientSendPayload }).payload
+    if (!payload?.url) {
+      sendResponse({ ok: false, error: 'Missing request URL' } satisfies ApiClientResponse)
+      return true
+    }
+    if (!(payload.timeoutMs > 0)) payload.timeoutMs = 30_000
     void (async () => {
       try {
         const response = await executeHttpRequest(fetch, payload)

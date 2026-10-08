@@ -173,7 +173,7 @@ export default function CaptureTool() {
                 draggable={false}
               />
             </div>
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground">
               {t('capture.annotateHint', { count: annotations.length })}
             </p>
             <div className="flex gap-1.5">

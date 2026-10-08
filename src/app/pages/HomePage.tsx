@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ClockIcon, InboxIcon, SearchIcon, StarIcon } from 'lucide-react'
+import { ChevronRightIcon, ClockIcon, InboxIcon, SearchIcon, StarIcon } from 'lucide-react'
 
 import { categoryRegistry, toolRegistry } from '@/core/registry'
 import { filterTools } from '@/features/search/filterTools'
@@ -51,11 +51,11 @@ export default function HomePage({ section }: HomePageProps) {
   }
 
   return (
-    <div className="h-full overflow-y-auto p-4">
+    <div className="scrollbar-styled h-full px-4 pt-4 pb-6">
       {!section && (
         <div className="mb-4">
-          <h1 className="text-base font-semibold">{t('home.title')}</h1>
-          <p className="text-xs text-muted-foreground">{t('home.subtitle')}</p>
+          <h1 className="text-lg font-semibold tracking-tight">{t('home.title')}</h1>
+          <p className="text-[13px] text-muted-foreground">{t('home.subtitle')}</p>
         </div>
       )}
 
@@ -68,8 +68,9 @@ export default function HomePage({ section }: HomePageProps) {
       <SearchInput
         value={query}
         onChange={setQuery}
-        placeholder={t('nav.searchToolsShortcut')}
+        placeholder={t('nav.searchTools')}
         ariaLabel={t('nav.searchTools')}
+        shortcut="/"
         className="mb-4"
       />
 
@@ -116,6 +117,7 @@ export default function HomePage({ section }: HomePageProps) {
               title={t('nav.favorites')}
               icon={StarIcon}
               link={{ to: '/favorites', label: t('common.viewAll') }}
+              count={favoriteTools.length}
             >
               <ToolGrid tools={favoriteTools.slice(0, 3)} />
             </Section>
@@ -126,6 +128,7 @@ export default function HomePage({ section }: HomePageProps) {
               title={t('home.recentlyUsed')}
               icon={ClockIcon}
               link={{ to: '/recent', label: t('common.viewAll') }}
+              count={recentTools.length}
             >
               <ToolGrid tools={recentTools.slice(0, 3)} />
             </Section>
@@ -143,6 +146,7 @@ export default function HomePage({ section }: HomePageProps) {
                 })}
                 icon={category.icon}
                 link={{ to: `/categories/${category.id}`, label: t('common.viewAll') }}
+                count={categoryTools.length}
               >
                 <ToolGrid tools={categoryTools.slice(0, 3)} />
               </Section>
@@ -155,7 +159,7 @@ export default function HomePage({ section }: HomePageProps) {
                 {comingSoon.map((category) => (
                   <span
                     key={category.id}
-                    className="rounded-md border border-dashed px-2 py-1 text-[11px] text-muted-foreground"
+                    className="rounded-md border border-dashed px-2 py-1 text-xs text-muted-foreground"
                   >
                     {t(`categories.${category.id}.name`, { defaultValue: category.name })}
                   </span>
@@ -174,29 +178,46 @@ function Section({
   description,
   icon: Icon,
   link,
+  count,
   children,
 }: {
   title: string
   description?: string
   icon?: React.ComponentType<{ className?: string }>
   link?: { to: string; label: string }
+  count?: number
   children: React.ReactNode
 }) {
   return (
-    <section className="mb-5">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
-          {Icon && <Icon className="size-4 shrink-0 text-primary" />}
+    <section className="mb-6 last:mb-0">
+      <div className="mb-2.5 flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2.5">
+          {Icon && (
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <Icon className="size-4" />
+            </span>
+          )}
           <div className="min-w-0">
-            <h2 className="text-xs font-semibold">{title}</h2>
+            <h2 className="flex items-center gap-1.5 text-[13px] font-semibold">
+              {title}
+              {count !== undefined && (
+                <span className="rounded-full bg-muted px-1.5 text-[11px] leading-4 font-medium text-muted-foreground tabular-nums">
+                  {count}
+                </span>
+              )}
+            </h2>
             {description && (
-              <p className="truncate text-[10px] text-muted-foreground">{description}</p>
+              <p className="truncate text-xs text-muted-foreground">{description}</p>
             )}
           </div>
         </div>
         {link && (
-          <Link to={link.to} className="text-[11px] text-muted-foreground hover:text-foreground">
+          <Link
+            to={link.to}
+            className="flex shrink-0 items-center gap-0.5 rounded-md px-1.5 py-1 text-xs font-medium text-muted-foreground outline-none transition-colors duration-150 hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          >
             {link.label}
+            <ChevronRightIcon className="size-3.5" aria-hidden />
           </Link>
         )}
       </div>
@@ -207,7 +228,7 @@ function Section({
 
 function ToolGrid({ tools }: { tools: ReturnType<typeof toolRegistry.getAll> }) {
   return (
-    <div className={cn('grid grid-cols-1 gap-2 @[360px]:grid-cols-2 @[560px]:grid-cols-3')}>
+    <div className={cn('grid grid-cols-1 gap-2.5 @[360px]:grid-cols-2 @[560px]:grid-cols-3')}>
       {tools.map((tool) => (
         <ToolCard key={tool.id} tool={tool} />
       ))}

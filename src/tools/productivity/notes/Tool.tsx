@@ -82,22 +82,24 @@ export default function NotesTool() {
         <div className="flex min-h-0 flex-1 gap-2">
           <div className="w-28 shrink-0 space-y-1 overflow-y-auto">
             {!loaded ? (
-              <p className="text-[10px] text-muted-foreground">{t('nav.loading')}</p>
+              <p className="text-[11px] text-muted-foreground">{t('nav.loading')}</p>
             ) : filtered.length === 0 ? (
-              <p className="text-[10px] text-muted-foreground">{t('notes.empty')}</p>
+              <p className="text-[11px] text-muted-foreground">{t('notes.empty')}</p>
             ) : (
               filtered.map((note) => (
-                <button
+                <Button
                   key={note.id}
-                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  aria-current={note.id === activeId ? 'true' : undefined}
                   onClick={() => setActiveId(note.id)}
-                  className={`flex w-full items-center gap-1 rounded border px-1.5 py-1 text-left text-[11px] ${note.id === activeId ? 'border-primary bg-accent' : 'hover:bg-accent/60'}`}
+                  className={`w-full justify-start border font-normal active:scale-100 ${note.id === activeId ? 'border-primary/50 bg-primary/10 text-foreground' : 'border-transparent'}`}
                 >
-                  {note.pinned && <PinIcon className="size-2.5 shrink-0 text-primary" />}
-                  <span className="min-w-0 flex-1 truncate">
+                  {note.pinned && <PinIcon className="size-3 text-primary" />}
+                  <span className="min-w-0 flex-1 truncate text-left">
                     {note.title || t('notes.untitled')}
                   </span>
-                </button>
+                </Button>
               ))
             )}
           </div>

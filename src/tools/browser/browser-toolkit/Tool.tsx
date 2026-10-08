@@ -76,7 +76,7 @@ export default function BrowserToolkitTool() {
             <div className="flex items-start justify-between gap-1">
               <div className="min-w-0">
                 <p className="truncate text-[11px] font-medium">{tab.title || '—'}</p>
-                <p className="truncate font-mono text-[10px] text-muted-foreground">{tab.url}</p>
+                <p className="truncate font-mono text-[11px] text-muted-foreground">{tab.url}</p>
               </div>
               <CopyButton text={`${tab.title}\n${tab.url}`} />
             </div>

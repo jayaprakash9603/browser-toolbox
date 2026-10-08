@@ -19,7 +19,8 @@ import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Switch } from '@/shared/components/ui/switch'
 import { Tabs, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
-import { StatsBar, ToolActions, useTransformTool } from '../_shared'
+import { OutputPane } from '@/tools/developer/_shared'
+import { useTransformTool } from '../_shared'
 
 type LineOp = 'dedupe' | 'sort' | 'reverse' | 'shuffle' | 'numbering' | 'empty'
 
@@ -180,30 +181,23 @@ export default function LineToolsTool() {
         )}
 
         <TextPaneGrid split={Boolean(result)}>
-          <div className="flex min-h-0 flex-col">
-            <TextEditor
-              value={input}
-              onChange={setInput}
-              placeholder={'apple\nbanana\napple\norange'}
-              ariaLabel={t('text.linesInput')}
-              onKeyCommand={run}
+          <TextEditor
+            value={input}
+            onChange={setInput}
+            placeholder={'apple\nbanana\napple\norange'}
+            ariaLabel={t('text.linesInput')}
+            label={t('common.input')}
+            onKeyCommand={run}
+            fill
+          />
+          {result && (
+            <OutputPane
+              value={result.output}
+              error={null}
+              label={result.summary ? `${t('text.output')} · ${result.summary}` : t('text.output')}
+              onClear={() => setResult(null)}
               fill
             />
-            <StatsBar value={input} />
-          </div>
-          {result && (
-            <div className="flex min-h-0 flex-col">
-              <div className="mb-1 flex shrink-0 items-center justify-between">
-                <span className="text-xs font-medium">
-                  {t('text.output')}{' '}
-                  {result.summary && (
-                    <span className="text-muted-foreground">{result.summary}</span>
-                  )}
-                </span>
-                <ToolActions value={result.output} onClear={() => setResult(null)} />
-              </div>
-              <TextEditor value={result.output} readOnly ariaLabel={t('text.output')} fill />
-            </div>
           )}
         </TextPaneGrid>
       </div>

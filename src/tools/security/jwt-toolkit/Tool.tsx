@@ -6,6 +6,7 @@ import { decodeJwt } from '@/core/engines/jwt'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
 import { Badge } from '@/shared/components/ui/badge'
+import { Button } from '@/shared/components/ui/button'
 import { CopyButton } from '@/shared/components/CopyButton'
 import { JsonErrorView } from '@/tools/developer/_shared'
 import { useSecurityTool } from '../_shared'
@@ -38,13 +39,9 @@ export default function JwtToolkitTool() {
           minRows={4}
         />
         <div className="flex gap-1.5">
-          <button
-            type="button"
-            onClick={() => setInput(EXAMPLE)}
-            className="text-[11px] text-primary hover:underline"
-          >
+          <Button variant="link" size="xs" onClick={() => setInput(EXAMPLE)} className="px-0">
             {t('dev.tryExample')}
-          </button>
+          </Button>
         </div>
         {decoded && !decoded.ok && <JsonErrorView message={decoded.error} />}
         {decoded?.ok && (
@@ -96,7 +93,7 @@ function Segment({ title, value }: { title: string; value: Record<string, unknow
         <span className="text-[11px] font-medium">{title}</span>
         <CopyButton text={json} />
       </div>
-      <pre className="max-h-48 overflow-auto font-mono text-[10px] text-muted-foreground">
+      <pre className="scrollbar-both max-h-48 font-mono text-xs leading-relaxed text-muted-foreground">
         {json}
       </pre>
     </div>

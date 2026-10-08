@@ -92,7 +92,7 @@ function Verdict({ label, pass }: { label: string; pass: boolean }) {
       >
         {pass ? 'PASS' : 'FAIL'}
       </Badge>
-      <p className="mt-0.5 text-[10px] text-muted-foreground">{label}</p>
+      <p className="mt-0.5 text-[11px] text-muted-foreground">{label}</p>
     </div>
   )
 }

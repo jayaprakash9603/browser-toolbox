@@ -6,7 +6,8 @@ import { TextEditor } from '@/shared/components/TextEditor'
 import { TextPaneGrid } from '@/shared/components/TextPaneGrid'
 import { Switch } from '@/shared/components/ui/switch'
 import { Button } from '@/shared/components/ui/button'
-import { StatsBar, ToolActions, useTransformTool } from '../_shared'
+import { OutputPane } from '@/tools/developer/_shared'
+import { useTransformTool } from '../_shared'
 import {
   cleanWhitespace,
   DEFAULT_WHITESPACE_OPTIONS,
@@ -50,25 +51,17 @@ export default function WhitespaceCleanerTool() {
         </Button>
 
         <TextPaneGrid split={output !== ''}>
-          <div className="flex min-h-0 flex-col">
-            <TextEditor
-              value={input}
-              onChange={setInput}
-              placeholder={t('text.pasteMessyWhitespace')}
-              ariaLabel={t('text.input')}
-              onKeyCommand={clean}
-              fill
-            />
-            <StatsBar value={input} />
-          </div>
+          <TextEditor
+            value={input}
+            onChange={setInput}
+            placeholder={t('text.pasteMessyWhitespace')}
+            ariaLabel={t('text.input')}
+            label={t('common.input')}
+            onKeyCommand={clean}
+            fill
+          />
           {output !== '' && (
-            <div className="flex min-h-0 flex-col">
-              <div className="mb-1 flex shrink-0 items-center justify-between">
-                <span className="text-xs font-medium">{t('text.output')}</span>
-                <ToolActions value={output} onClear={() => setOutput('')} />
-              </div>
-              <TextEditor value={output} readOnly ariaLabel={t('text.cleaned')} fill />
-            </div>
+            <OutputPane value={output} error={null} label={t('text.cleaned')} onClear={() => setOutput('')} fill />
           )}
         </TextPaneGrid>
       </div>

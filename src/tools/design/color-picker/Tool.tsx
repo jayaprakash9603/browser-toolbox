@@ -78,7 +78,7 @@ export default function ColorPickerTool() {
                 key={label}
                 className="flex items-center justify-between gap-2 rounded border bg-muted/40 px-2 py-1.5"
               >
-                <span className="w-10 text-[10px] font-medium text-muted-foreground">{label}</span>
+                <span className="w-10 text-[11px] font-medium text-muted-foreground">{label}</span>
                 <code className="flex-1 font-mono text-[11px]">{v}</code>
                 <CopyButton text={v} />
               </div>

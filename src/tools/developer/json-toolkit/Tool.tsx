@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { ChevronDownIcon, ChevronRightIcon, SparklesIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -15,27 +16,40 @@ import {
 } from '@/core/engines/json'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
-import { Badge } from '@/shared/components/ui/badge'
+import { TextPaneGrid } from '@/shared/components/TextPaneGrid'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
+import { Segmented } from '@/shared/components/ui/segmented'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
+import type { EditorLanguage } from '@/shared/lib/code-editor/languages'
 import { JsonErrorView, OutputPane, useDevTool } from '../_shared'
 
 const EXAMPLE = '{\n  "name": "Ada",\n  "tags": ["dev", "qa"],\n  "active": true\n}'
 
 type JsonTab = 'format' | 'validate' | 'tree' | 'path' | 'convert'
+type ConvertTarget = 'csv' | 'xml' | 'ts' | 'markdown'
+type Indent = '2' | '4' | 'tab'
+
+const CONVERT_LANGUAGE: Record<ConvertTarget, EditorLanguage> = {
+  csv: 'text',
+  xml: 'xml',
+  ts: 'javascript',
+  markdown: 'text',
+}
 
 export default function JsonToolkitTool() {
   const { t } = useTranslation()
   const tool = useDevTool('developer.json-toolkit')
   const [tab, setTab] = useState<JsonTab>('format')
   const [input, setInput] = useState('')
+  const [indent, setIndent] = useState<Indent>('2')
   const [pathQuery, setPathQuery] = useState('$')
-  const [convertTarget, setConvertTarget] = useState<'csv' | 'xml' | 'ts' | 'markdown'>('csv')
+  const [convertTarget, setConvertTarget] = useState<ConvertTarget>('csv')
 
   const parsed = useMemo(() => parseJson(input), [input])
   const valid = parsed.ok
   const error = parsed.ok ? null : parsed.error
+  const hasInput = input.trim().length > 0
 
   const tree = useMemo(() => (valid ? buildJsonTree(parsed.value) : null), [valid, parsed])
   const pathResult = useMemo(
@@ -57,156 +71,184 @@ export default function JsonToolkitTool() {
     }
   }, [valid, parsed, convertTarget])
 
-  const formatted = useMemo(() => (valid ? formatJson(input) : null), [valid, input])
-  const minified = useMemo(() => (valid ? minifyJson(input) : null), [valid, input])
+  const beautify = () => {
+    const result = formatJson(input, indent === 'tab' ? '\t' : Number(indent))
+    if (result.ok) setInput(result.value)
+  }
+  const minify = () => {
+    const result = minifyJson(input)
+    if (result.ok) setInput(result.value)
+  }
+
+  const status = hasInput
+    ? valid
+      ? { tone: 'valid' as const, text: t('dev.jsonValid') }
+      : { tone: 'invalid' as const, text: t('editor.invalid') }
+    : null
+
+  const rightPane = renderRightPane()
+
+  function renderRightPane() {
+    if (!valid) return null
+    if (tab === 'tree' && tree) {
+      return (
+        <section className="scrollbar-both flex min-h-0 flex-col rounded-lg border bg-background p-2 shadow-xs">
+          <TreeNode node={tree} depth={0} />
+        </section>
+      )
+    }
+    if (tab === 'path' && pathResult) {
+      return pathResult.ok ? (
+        <OutputPane
+          value={JSON.stringify(pathResult.value, null, 2)}
+          error={null}
+          language="json"
+          label={t('dev.jsonPath')}
+          onClear={() => setPathQuery('$')}
+          fill
+        />
+      ) : (
+        <JsonErrorView message={pathResult.error.message} suggestion={pathResult.error.suggestion} />
+      )
+    }
+    if (tab === 'convert' && converted) {
+      return converted.ok ? (
+        <OutputPane
+          value={converted.value}
+          error={null}
+          language={CONVERT_LANGUAGE[convertTarget]}
+          label={t(`dev.convert.${convertTarget}`)}
+          onClear={() => setInput('')}
+          fill
+        />
+      ) : (
+        <JsonErrorView message={converted.error.message} suggestion={converted.error.suggestion} />
+      )
+    }
+    return null
+  }
 
   return (
     <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col overflow-hidden">
-      <div className="flex min-h-0 flex-1 flex-col gap-3">
-        <Tabs value={tab} onValueChange={(v) => setTab(v as JsonTab)}>
-          <TabsList className="flex-wrap">
+      <Tabs value={tab} onValueChange={(v) => setTab(v as JsonTab)} className="min-h-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <TabsList className="scrollbar-none max-w-full overflow-x-auto">
             <TabsTrigger value="format">{t('dev.tabFormat')}</TabsTrigger>
             <TabsTrigger value="validate">{t('dev.tabValidate')}</TabsTrigger>
             <TabsTrigger value="tree">{t('dev.tabTree')}</TabsTrigger>
             <TabsTrigger value="path">{t('dev.tabPath')}</TabsTrigger>
             <TabsTrigger value="convert">{t('dev.tabConvert')}</TabsTrigger>
           </TabsList>
+          <Button size="sm" variant="ghost" className="ml-auto" onClick={() => setInput(EXAMPLE)}>
+            <SparklesIcon /> {t('dev.tryExample')}
+          </Button>
+        </div>
 
-        <TextEditor
-          value={input}
-          onChange={setInput}
-          placeholder={t('dev.jsonPlaceholder')}
-          ariaLabel={t('dev.jsonInput')}
-          minRows={6}
-        />
-        {!valid && error && (
-          <JsonErrorView
-            message={error.message}
-            line={error.line}
-            column={error.column}
-            suggestion={error.suggestion}
-          />
-        )}
-
-        <TabsContent value="format" className="mt-0">
-          <div className="flex flex-col gap-2">
-            <div className="flex gap-1.5">
-              <Button
-                size="sm"
-                disabled={!valid}
-                onClick={() => formatted?.ok && setInput(formatted.value)}
-              >
-                {t('text.beautify')}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={!valid}
-                onClick={() => minified?.ok && setInput(minified.value)}
-              >
-                {t('text.minify')}
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setInput(EXAMPLE)}>
-                {t('dev.tryExample')}
-              </Button>
-            </div>
-            {valid && <Badge variant="outline">{t('dev.jsonValid')}</Badge>}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="validate" className="mt-0">
-          {valid ? (
-            <div className="rounded-md border border-green-500/40 bg-green-500/5 p-3 text-xs text-green-700 dark:text-green-400">
-              {t('dev.jsonValidDetail')}
-            </div>
-          ) : (
-            error && (
-              <JsonErrorView
-                message={error.message}
-                line={error.line}
-                column={error.column}
-                suggestion={error.suggestion}
-              />
-            )
-          )}
-        </TabsContent>
-
-        <TabsContent value="tree" className="mt-0">
-          {tree ? (
-            <TreeNode node={tree} depth={0} />
-          ) : (
-            <p className="text-xs text-muted-foreground">{t('dev.pasteValidJson')}</p>
-          )}
-        </TabsContent>
-
-        <TabsContent value="path" className="mt-0">
-          <div className="flex flex-col gap-2">
-            <Input
-              value={pathQuery}
-              onChange={(e) => setPathQuery(e.target.value)}
-              placeholder="$.user.name"
-              aria-label={t('dev.jsonPath')}
-              className="font-mono"
+        <TabsContent value="format" className="mt-0 flex-none">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" disabled={!valid} onClick={beautify}>
+              {t('text.beautify')}
+            </Button>
+            <Button size="sm" variant="outline" disabled={!valid} onClick={minify}>
+              {t('text.minify')}
+            </Button>
+            <span className="ml-1 text-xs text-muted-foreground">{t('editor.indent')}</span>
+            <Segmented
+              value={indent}
+              onValueChange={setIndent}
+              ariaLabel={t('editor.indent')}
+              size="sm"
+              options={[
+                { value: '2', label: '2' },
+                { value: '4', label: '4' },
+                { value: 'tab', label: 'Tab' },
+              ]}
             />
-            {pathResult &&
-              (pathResult.ok ? (
-                <pre className="max-h-48 overflow-auto rounded-md border bg-muted/40 p-2 font-mono text-[11px]">
-                  {JSON.stringify(pathResult.value, null, 2)}
-                </pre>
-              ) : (
-                <JsonErrorView
-                  message={pathResult.error.message}
-                  suggestion={pathResult.error.suggestion}
-                />
-              ))}
           </div>
         </TabsContent>
 
-        <TabsContent value="convert" className="mt-0">
-          <div className="flex flex-col gap-2">
-            <div className="flex gap-1.5">
-              {(['csv', 'xml', 'ts', 'markdown'] as const).map((target) => (
-                <Button
-                  key={target}
-                  size="sm"
-                  variant={convertTarget === target ? 'secondary' : 'outline'}
-                  onClick={() => setConvertTarget(target)}
-                >
-                  {t(`dev.convert.${target}`)}
-                </Button>
-              ))}
-            </div>
-            {converted &&
-              (converted.ok ? (
-                <OutputPane value={converted.value} error={null} onClear={() => setInput('')} />
-              ) : (
-                <JsonErrorView
-                  message={converted.error.message}
-                  suggestion={converted.error.suggestion}
-                />
-              ))}
-          </div>
+        <TabsContent value="validate" className="mt-0 flex-none">
+          {valid ? (
+            <p className="rounded-lg border border-emerald-500/40 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-400">
+              {t('dev.jsonValidDetail')}
+            </p>
+          ) : (
+            !hasInput && <p className="text-xs text-muted-foreground">{t('dev.pasteValidJson')}</p>
+          )}
         </TabsContent>
-        </Tabs>
-      </div>
+
+        <TabsContent value="tree" className="mt-0 flex-none">
+          {!valid && <p className="text-xs text-muted-foreground">{t('dev.pasteValidJson')}</p>}
+        </TabsContent>
+
+        <TabsContent value="path" className="mt-0 flex-none">
+          <Input
+            value={pathQuery}
+            onChange={(e) => setPathQuery(e.target.value)}
+            placeholder="$.user.name"
+            aria-label={t('dev.jsonPath')}
+            className="font-mono"
+          />
+        </TabsContent>
+
+        <TabsContent value="convert" className="mt-0 flex-none">
+          <Segmented
+            value={convertTarget}
+            onValueChange={setConvertTarget}
+            ariaLabel={t('dev.tabConvert')}
+            options={(['csv', 'xml', 'ts', 'markdown'] as const).map((target) => ({
+              value: target,
+              label: t(`dev.convert.${target}`),
+            }))}
+          />
+        </TabsContent>
+
+        <TextPaneGrid split={Boolean(rightPane)}>
+          <TextEditor
+            value={input}
+            onChange={setInput}
+            placeholder={t('dev.jsonPlaceholder')}
+            ariaLabel={t('dev.jsonInput')}
+            label={t('common.input')}
+            language="json"
+            status={status}
+            onKeyCommand={beautify}
+            fill
+          />
+          {rightPane}
+        </TextPaneGrid>
+
+        {hasInput && !valid && error && (
+          <div className="scrollbar-styled max-h-32 shrink-0">
+            <JsonErrorView
+              message={error.message}
+              line={error.line}
+              column={error.column}
+              suggestion={error.suggestion}
+            />
+          </div>
+        )}
+      </Tabs>
     </ToolPage>
   )
 }
 
 function TreeNode({ node, depth }: { node: JsonTreeNode; depth: number }) {
   const [open, setOpen] = useState(depth < 2)
-  const indent = { paddingLeft: `${depth * 12}px` }
+  const indent = { paddingLeft: `${depth * 14 + 4}px` }
   if (node.type === 'object' || node.type === 'array') {
+    const Chevron = open ? ChevronDownIcon : ChevronRightIcon
     return (
-      <div className="font-mono text-[11px]">
+      <div className="font-mono text-xs leading-6">
         <button
           type="button"
           style={indent}
+          aria-expanded={open}
           onClick={() => setOpen(!open)}
-          className="flex w-full items-center gap-1 rounded px-1 py-0.5 text-left hover:bg-accent"
+          className="flex w-full cursor-pointer items-center gap-1 rounded px-1 text-left outline-none transition-colors duration-150 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <span className="text-muted-foreground">{open ? '▾' : '▸'}</span>
-          <span className="text-primary">{node.key ?? 'root'}</span>
+          <Chevron className="size-3.5 text-muted-foreground" aria-hidden />
+          <span className="text-(--syntax-key)">{node.key ?? 'root'}</span>
           <span className="text-muted-foreground">
             {node.type === 'array' ? `[${node.size}]` : `{${node.size}}`}
           </span>
@@ -219,9 +261,9 @@ function TreeNode({ node, depth }: { node: JsonTreeNode; depth: number }) {
     )
   }
   return (
-    <div style={indent} className="flex gap-1 font-mono text-[11px]">
-      <span className="text-primary">{node.key}:</span>
-      <span className="text-muted-foreground">
+    <div style={{ paddingLeft: `${depth * 14 + 22}px` }} className="flex gap-1.5 font-mono text-xs leading-6">
+      <span className="text-(--syntax-key)">{node.key}:</span>
+      <span className={node.type === 'string' ? 'text-(--syntax-string)' : 'text-(--syntax-number)'}>
         {node.type === 'string' ? `"${node.value}"` : node.value}
       </span>
     </div>

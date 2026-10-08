@@ -130,10 +130,10 @@ export default function DateTimeToolkitTool() {
                   key={zone.timeZone}
                   className="flex items-center justify-between rounded border bg-muted/40 px-2 py-1"
                 >
-                  <span className="text-[10px] text-muted-foreground">{zone.timeZone}</span>
+                  <span className="text-[11px] text-muted-foreground">{zone.timeZone}</span>
                   <div className="text-right">
-                    <code className="block font-mono text-[10px]">{zone.formatted}</code>
-                    <span className="text-[9px] text-muted-foreground">{zone.offset}</span>
+                    <code className="block font-mono text-[11px]">{zone.formatted}</code>
+                    <span className="text-[11px] text-muted-foreground">{zone.offset}</span>
                   </div>
                 </div>
               ))}
@@ -163,7 +163,7 @@ export default function DateTimeToolkitTool() {
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {cron.fields.map((field) => (
-                    <Badge key={field.name} variant="outline" className="font-mono text-[9px]">
+                    <Badge key={field.name} variant="outline" className="font-mono text-[11px]">
                       {field.name}: {field.raw}
                     </Badge>
                   ))}

@@ -104,7 +104,7 @@ export default function AccessibilityToolkitTool() {
               </Link>
             </p>
           )}
-          <p className="text-[10px] text-muted-foreground">{t('a11y.disclaimer')}</p>
+          <p className="text-[11px] text-muted-foreground">{t('a11y.disclaimer')}</p>
         </div>
       )}
     </ToolPage>

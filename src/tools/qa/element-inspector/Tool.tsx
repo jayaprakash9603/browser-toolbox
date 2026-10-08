@@ -122,7 +122,7 @@ export default function ElementInspectorTool() {
                   .filter(([, v]) => v)
                   .map(([kind, value]) => (
                     <div key={kind} className="flex items-center justify-between gap-1">
-                      <code className="min-w-0 flex-1 truncate font-mono text-[10px]">{value}</code>
+                      <code className="min-w-0 flex-1 truncate font-mono text-[11px]">{value}</code>
                       <CopyButton text={value ?? ''} />
                     </div>
                   ))}
@@ -152,7 +152,7 @@ function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-md border p-1.5">
       <p className="text-xs font-semibold tabular-nums">{value}</p>
-      <p className="text-[9px] text-muted-foreground">{label}</p>
+      <p className="text-[11px] text-muted-foreground">{label}</p>
     </div>
   )
 }

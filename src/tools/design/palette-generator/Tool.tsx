@@ -77,7 +77,7 @@ export default function PaletteGeneratorTool() {
                     className="h-14 w-full rounded-md border border-black/10 dark:border-white/10"
                     style={{ backgroundColor: rgbToHex(color) }}
                   />
-                  <code className="font-mono text-[9px]">{rgbToHex(color)}</code>
+                  <code className="font-mono text-[11px]">{rgbToHex(color)}</code>
                   <CopyButton text={rgbToHex(color)} />
                 </div>
               ))}
@@ -87,7 +87,7 @@ export default function PaletteGeneratorTool() {
                 <span className="text-[11px] font-medium">{t('design.exportCss')}</span>
                 <ToolActions value={exportText} onClear={() => setInput(EXAMPLE)} />
               </div>
-              <pre className="max-h-32 overflow-auto rounded-md border bg-muted/40 p-2 font-mono text-[10px]">
+              <pre className="max-h-32 scrollbar-both rounded-lg border bg-muted/30 p-3 font-mono text-xs leading-relaxed">
                 {exportText}
               </pre>
             </div>

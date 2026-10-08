@@ -16,7 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/components/ui/select'
-import { StatsBar, ToolActions, useTransformTool } from '../_shared'
+import { OutputPane } from '@/tools/developer/_shared'
+import { useTransformTool } from '../_shared'
 import {
   detectTextFormat,
   formatText,
@@ -74,12 +75,22 @@ export default function TextFormatterTool() {
         </div>
 
         <TextPaneGrid split={Boolean(output && !error)}>
-          <div className="flex min-h-0 flex-col">
-            <div className="mb-1.5 flex shrink-0 items-center justify-between gap-2">
-              <span className="text-[11px] font-medium text-muted-foreground">
-                {t(formatSelection === 'auto' ? 'text.detectedFormat' : 'text.selectedFormat')}
-              </span>
-              <div className="flex items-center gap-1.5">
+          <TextEditor
+            value={input}
+            onChange={(value) => {
+              setInput(value)
+              if (!value) setOutput('')
+            }}
+            placeholder={t('text.pasteOrType')}
+            ariaLabel={t('text.input')}
+            label={t('common.input')}
+            onKeyCommand={() => run('format')}
+            fill
+            actions={
+              <div className="flex items-center gap-1.5 border-r pr-1.5">
+                <span className="sr-only">
+                  {t(formatSelection === 'auto' ? 'text.detectedFormat' : 'text.selectedFormat')}
+                </span>
                 <Badge variant="outline" className={formatter.badgeClassName} aria-live="polite">
                   {t(formatter.labelKey)}
                 </Badge>
@@ -87,7 +98,7 @@ export default function TextFormatterTool() {
                   value={formatSelection}
                   onValueChange={(value) => setFormatSelection(value as TextFormatSelection)}
                 >
-                  <SelectTrigger aria-label={t('text.formatSelection')} size="sm" className="w-28">
+                  <SelectTrigger aria-label={t('text.formatSelection')} size="sm" className="h-7 w-24">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent align="end">
@@ -100,32 +111,10 @@ export default function TextFormatterTool() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-            <TextEditor
-              value={input}
-              onChange={setInput}
-              placeholder={t('text.pasteOrType')}
-              ariaLabel={t('text.input')}
-              onKeyCommand={() => run('format')}
-              fill
-            />
-            <StatsBar value={input} />
-            <ToolActions
-              value={input}
-              onClear={() => {
-                setInput('')
-                setOutput('')
-              }}
-            />
-          </div>
+            }
+          />
           {output && !error && (
-            <div className="flex min-h-0 flex-col">
-              <div className="mb-1 flex shrink-0 items-center justify-between">
-                <span className="text-xs font-medium">{t('text.output')}</span>
-                <ToolActions value={output} onClear={() => setOutput('')} />
-              </div>
-              <TextEditor value={output} readOnly ariaLabel={t('text.output')} fill />
-            </div>
+            <OutputPane value={output} error={null} onClear={() => setOutput('')} fill />
           )}
         </TextPaneGrid>
         {error && <ErrorState message={error} />}

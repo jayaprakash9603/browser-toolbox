@@ -26,6 +26,20 @@
   --scroll-thumb-hover: oklch(0.58 0.22 35 / 75%);
   --selection-background: #f7b9a9;
   --selection-foreground: #3a140d;
+  --scroll-track: oklch(0.5 0 0 / 6%);
+  --scrollbar-size: 8px;
+  --editor-gutter: #fafafa;
+  --editor-active-line: oklch(0.58 0.22 35 / 5%);
+  --editor-selection: oklch(0.58 0.22 35 / 18%);
+  --syntax-key: #0b6e4f;
+  --syntax-string: #b4371f;
+  --syntax-number: #1d5fbf;
+  --syntax-keyword: #8a2be2;
+  --syntax-comment: #7c7c7c;
+  --syntax-tag: #a3360f;
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --radius: 0.5rem;
 }
 
@@ -53,6 +67,16 @@
   --scroll-thumb-hover: oklch(0.68 0.2 35 / 80%);
   --selection-background: #f18164;
   --selection-foreground: #21120d;
+  --scroll-track: oklch(1 0 0 / 5%);
+  --editor-gutter: #111111;
+  --editor-active-line: oklch(0.68 0.2 35 / 7%);
+  --editor-selection: oklch(0.68 0.2 35 / 26%);
+  --syntax-key: #6fd3a8;
+  --syntax-string: #f4a582;
+  --syntax-number: #8ab4f8;
+  --syntax-keyword: #c792ea;
+  --syntax-comment: #8b8b8b;
+  --syntax-tag: #f78c6c;
 }
 
 @theme inline {
@@ -77,7 +101,8 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --font-mono: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
+  --font-mono: ui-monospace, 'JetBrains Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 * {
@@ -87,11 +112,15 @@
 }
 
 *::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
 }
 
 *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-corner {
   background: transparent;
 }
 
@@ -100,11 +129,42 @@
   border-radius: 999px;
   background: var(--scroll-thumb);
   background-clip: padding-box;
+  transition: background-color 150ms ease;
 }
 
 *::-webkit-scrollbar-thumb:hover {
   background: var(--scroll-thumb-hover);
   background-clip: padding-box;
+}
+
+@utility scrollbar-styled {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+
+  &::-webkit-scrollbar-track {
+    border-radius: 999px;
+    background: var(--scroll-track);
+  }
+}
+
+@utility scrollbar-both {
+  overflow: auto;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+
+  &::-webkit-scrollbar-track {
+    border-radius: 999px;
+    background: var(--scroll-track);
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 html,
@@ -167,5 +227,14 @@ html.theme-transition *::after {
   html.theme-transition *::after,
   .theme-switch-icon {
     transition-duration: 0.01ms !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

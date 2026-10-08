@@ -90,7 +90,7 @@ export default function EncoderDecoderTool() {
               <span className="text-xs font-medium">{t('text.output')}</span>
               <ToolActions value={output} onClear={() => setInput('')} />
             </div>
-            <pre className="max-h-64 overflow-auto rounded-md border bg-muted/40 p-2 font-mono text-[11px]">
+            <pre className="max-h-64 scrollbar-both rounded-lg border bg-muted/30 p-3 font-mono text-xs leading-relaxed">
               {output}
             </pre>
           </div>

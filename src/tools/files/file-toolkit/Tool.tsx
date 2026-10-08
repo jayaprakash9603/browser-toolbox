@@ -115,7 +115,7 @@ export default function FileToolkitTool() {
           {csvTable && !csvTable.ok && <JsonErrorView message={csvTable.error} />}
           {csvTable?.ok && (
             <div className="max-h-80 overflow-auto rounded-md border">
-              <table className="w-full text-[10px]">
+              <table className="w-full text-[11px]">
                 <thead className="sticky top-0 bg-muted">
                   <tr>
                     {csvTable.value.headers.map((header) => (
@@ -138,7 +138,7 @@ export default function FileToolkitTool() {
                 </tbody>
               </table>
               {csvTable.value.records.length > 200 && (
-                <p className="p-1.5 text-center text-[9px] text-muted-foreground">
+                <p className="p-1.5 text-center text-[11px] text-muted-foreground">
                   {t('files.truncated', { count: 200 })}
                 </p>
               )}
@@ -156,7 +156,7 @@ export default function FileToolkitTool() {
             />
           )}
           {jsonPretty?.ok && (
-            <pre className="max-h-80 overflow-auto rounded-md border bg-muted/40 p-2 font-mono text-[10px]">
+            <pre className="max-h-80 scrollbar-both rounded-lg border bg-muted/30 p-3 font-mono text-xs leading-relaxed">
               {jsonPretty.value}
             </pre>
           )}

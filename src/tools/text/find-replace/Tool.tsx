@@ -6,7 +6,7 @@ import { TextEditor } from '@/shared/components/TextEditor'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Switch } from '@/shared/components/ui/switch'
-import { StatsBar, ToolActions, useTransformTool } from '../_shared'
+import { ToolActions, useTransformTool } from '../_shared'
 import { countMatches, replaceText } from '@/core/engines/text'
 
 export default function FindReplaceTool() {
@@ -45,7 +45,6 @@ export default function FindReplaceTool() {
             placeholder={t('text.textToSearch')}
             ariaLabel={t('text.input')}
           />
-          <StatsBar value={input} />
         </div>
 
         <div className="flex flex-col gap-1.5">

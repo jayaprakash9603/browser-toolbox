@@ -63,8 +63,8 @@ export default function ImageLinksTool() {
                 <div key={`${img.src}-${index}`} className="rounded-md border p-1.5">
                   <div className="flex items-start gap-1.5">
                     <div className="min-w-0 flex-1">
-                      <code className="block truncate font-mono text-[10px]">{img.src}</code>
-                      <p className="mt-0.5 text-[10px] text-muted-foreground">
+                      <code className="block truncate font-mono text-[11px]">{img.src}</code>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
                         {img.width}×{img.height} · {img.alt ? img.alt.slice(0, 60) : t('web.noAlt')}
                       </p>
                     </div>

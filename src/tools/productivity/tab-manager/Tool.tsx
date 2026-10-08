@@ -141,14 +141,14 @@ export default function TabManagerTool() {
               key={tab.id}
               className={`flex items-center gap-1.5 rounded border p-1.5 ${tab.active ? 'border-primary/50' : ''}`}
             >
-              <button
-                type="button"
+              <Button
+                variant="ghost"
                 onClick={() => void focusTab(tab.id)}
-                className="min-w-0 flex-1 text-left"
+                className="h-auto min-w-0 flex-1 flex-col items-stretch gap-0 px-1.5 py-1 text-left active:scale-100"
               >
-                <p className="truncate text-[11px] font-medium">{tab.title}</p>
-                <p className="truncate font-mono text-[9px] text-muted-foreground">{tab.url}</p>
-              </button>
+                <span className="truncate text-xs font-medium">{tab.title}</span>
+                <span className="truncate font-mono text-[11px] font-normal text-muted-foreground">{tab.url}</span>
+              </Button>
               <Button
                 size="icon-xs"
                 variant="ghost"

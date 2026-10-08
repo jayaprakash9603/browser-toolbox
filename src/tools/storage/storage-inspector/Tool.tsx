@@ -85,13 +85,13 @@ export default function StorageInspectorTool() {
             <TabsList>
               <TabsTrigger value="local">
                 localStorage{' '}
-                <Badge variant="outline" className="ml-1 text-[8px]">
+                <Badge variant="outline" className="ml-1 text-[11px]">
                   {Object.keys(snapshot.localStorage).length}
                 </Badge>
               </TabsTrigger>
               <TabsTrigger value="session">
                 sessionStorage{' '}
-                <Badge variant="outline" className="ml-1 text-[8px]">
+                <Badge variant="outline" className="ml-1 text-[11px]">
                   {Object.keys(snapshot.sessionStorage).length}
                 </Badge>
               </TabsTrigger>
@@ -127,12 +127,12 @@ function StorageTable({
       {entries.map(([key, value]) => (
         <div key={key} className="rounded border p-1.5">
           <div className="flex items-center justify-between gap-1">
-            <code className="min-w-0 truncate font-mono text-[10px] font-medium text-primary">
+            <code className="min-w-0 truncate font-mono text-[11px] font-medium text-primary">
               {key}
             </code>
             <CopyButton text={value} />
           </div>
-          <code className="mt-0.5 block break-all font-mono text-[10px] text-muted-foreground">
+          <code className="mt-0.5 block break-all font-mono text-[11px] text-muted-foreground">
             {value.length > 200 ? `${value.slice(0, 200)}…` : value}
           </code>
         </div>

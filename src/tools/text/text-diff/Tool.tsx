@@ -45,25 +45,19 @@ export default function TextDiffTool() {
         </div>
 
         <TextPaneGrid>
-          <div className="flex min-h-0 flex-col">
-            <p className="mb-1 shrink-0 text-xs font-medium">{t('text.inputA')}</p>
-            <TextEditor value={inputA} onChange={setInputA} ariaLabel={t('text.inputA')} fill />
-          </div>
-          <div className="flex min-h-0 flex-col">
-            <p className="mb-1 shrink-0 text-xs font-medium">{t('text.inputB')}</p>
-            <TextEditor value={inputB} onChange={setInputB} ariaLabel={t('text.inputB')} fill />
-          </div>
+          <TextEditor value={inputA} onChange={setInputA} ariaLabel={t('text.inputA')} label={t('text.inputA')} fill />
+          <TextEditor value={inputB} onChange={setInputB} ariaLabel={t('text.inputB')} label={t('text.inputB')} fill />
         </TextPaneGrid>
 
         {result && (
-          <div className="max-h-40 shrink-0 overflow-y-auto">
+          <div className="scrollbar-styled max-h-48 shrink-0">
             <div className="mb-1.5 flex items-center gap-1.5">
               <Badge variant="secondary">+{result.added}</Badge>
               <Badge variant="secondary">-{result.removed}</Badge>
               <Badge variant="outline">{t('text.unchanged', { count: result.unchanged })}</Badge>
             </div>
             <div
-              className="rounded-md border font-mono text-[11px] leading-relaxed"
+              className="overflow-hidden rounded-lg border font-mono text-xs leading-relaxed"
               aria-label={t('text.diffResult')}
             >
               {result.changes.map((change, index) => (

@@ -80,7 +80,7 @@ export default function SelectorGeneratorTool() {
           <div className="space-y-1">
             {SELECTOR_ROWS.filter(({ key }) => selectors[key]).map(({ key, label }) => (
               <div key={key} className="flex items-center gap-2 rounded-md border p-1.5">
-                <span className="w-28 shrink-0 text-[10px] font-medium text-muted-foreground">
+                <span className="w-28 shrink-0 text-[11px] font-medium text-muted-foreground">
                   {label}
                 </span>
                 <code className="min-w-0 flex-1 truncate font-mono text-[11px]">

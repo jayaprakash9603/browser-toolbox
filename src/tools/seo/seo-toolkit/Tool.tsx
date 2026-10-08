@@ -100,10 +100,10 @@ export default function SeoToolkitTool() {
                 {page.headings.map((h, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-1.5 font-mono text-[10px]"
+                    className="flex items-center gap-1.5 font-mono text-[11px]"
                     style={{ paddingLeft: `${(h.level - 1) * 12}px` }}
                   >
-                    <Badge variant="outline" className="text-[8px]">
+                    <Badge variant="outline" className="text-[11px]">
                       h{h.level}
                     </Badge>
                     <span className="truncate">{h.text || '(empty)'}</span>
@@ -198,7 +198,7 @@ function Stat({ label, value, warn }: { label: string; value: number; warn?: boo
   return (
     <div className={`rounded border p-2 text-center ${warn ? 'border-amber-500/40' : ''}`}>
       <p className="text-sm font-semibold tabular-nums">{value}</p>
-      <p className="text-[9px] text-muted-foreground">{label}</p>
+      <p className="text-[11px] text-muted-foreground">{label}</p>
     </div>
   )
 }
@@ -208,8 +208,8 @@ function MetaRow({ label, value }: { label: string; value?: string | null }) {
   return (
     <div className="flex items-start justify-between gap-1 rounded border bg-muted/40 px-2 py-1">
       <div className="min-w-0">
-        <p className="text-[9px] text-muted-foreground">{label}</p>
-        <p className="break-words text-[10px]">{value}</p>
+        <p className="text-[11px] text-muted-foreground">{label}</p>
+        <p className="break-words text-[11px]">{value}</p>
       </div>
       <CopyButton text={value} />
     </div>

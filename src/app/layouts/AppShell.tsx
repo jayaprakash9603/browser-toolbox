@@ -21,6 +21,9 @@ const HomePage = lazy(() => import('@/app/pages/HomePage'))
 const SettingsPage = lazy(() => import('@/app/pages/SettingsPage'))
 const CategoryPage = lazy(() => import('@/app/pages/CategoryPage'))
 const DevToolsPage = lazy(() => import('@/app/pages/DevToolsPage'))
+const PALETTE_SHORTCUT =
+  typeof navigator !== 'undefined' && /mac/i.test(navigator.platform) ? '⌘K' : 'Ctrl K'
+
 const LEGACY_TOOL_ROUTES: Record<string, string> = {
   '/tools/clipboard/history': 'clipboard.manager',
   '/tools/clipboard/pinned': 'clipboard.manager',
@@ -66,15 +69,15 @@ export function AppShell({ children }: { children?: ReactNode }) {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <header className="flex items-center gap-2 border-b px-3 py-2">
+      <header className="relative z-10 flex h-12 shrink-0 items-center gap-1.5 border-b bg-background/85 px-3 backdrop-blur-md">
         <Link
           to="/"
-          className="flex items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+          className="flex items-center gap-2 rounded-md pr-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <CommandIcon className="size-3.5" />
+          <div className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+            <CommandIcon className="size-4" />
           </div>
-          <span className="text-sm font-semibold">{t('app.name')}</span>
+          <span className="text-sm font-semibold tracking-tight">{t('app.name')}</span>
         </Link>
         <div className="flex-1" />
         <Tooltip>
@@ -82,13 +85,16 @@ export function AppShell({ children }: { children?: ReactNode }) {
             <Button
               variant="outline"
               size="sm"
-              className="gap-2 text-muted-foreground"
+              className="gap-2 font-normal text-muted-foreground"
               onClick={() => setPaletteOpen(true)}
               aria-label={t('nav.openCommandPalette')}
+              aria-keyshortcuts="Control+K Meta+K"
             >
-              <SearchIcon className="size-3.5" />
-              <span className="hidden text-xs @[420px]:inline">{t('nav.searchTools')}</span>
-              <kbd className="rounded border bg-muted px-1 text-[9px] font-medium">⌘K</kbd>
+              <SearchIcon />
+              <span className="hidden @[420px]:inline">{t('nav.searchTools')}</span>
+              <kbd className="rounded border bg-muted px-1.5 font-sans text-[11px] leading-5 font-medium">
+                {PALETTE_SHORTCUT}
+              </kbd>
             </Button>
           </TooltipTrigger>
           <TooltipContent>{t('nav.commandPalette')}</TooltipContent>
@@ -109,7 +115,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
       <div className="flex min-h-0 flex-1">
         <nav
           aria-label={t('nav.categories')}
-          className="hidden w-12 flex-col items-center gap-1 border-r py-2 @[420px]:flex"
+          className="scrollbar-none hidden w-14 shrink-0 flex-col items-center gap-1 overflow-y-auto border-r bg-muted/20 py-2 @[420px]:flex"
         >
           <NavItem to="/" icon={HomeIcon} label={t('nav.home')} active={path === '/'} />
           <NavItem
@@ -219,15 +225,16 @@ function NavItem({ to, icon: Icon, label, active, disabled }: NavItemProps) {
   const inner = (
     <div
       className={cn(
-        'flex size-8 items-center justify-center rounded-md transition-colors',
-        active && 'bg-accent text-accent-foreground',
+        'relative flex size-9 items-center justify-center rounded-lg transition-[color,background-color,transform] duration-150 ease-out',
+        active &&
+          'bg-primary/10 text-primary before:absolute before:top-2 before:-left-2.5 before:h-5 before:w-0.5 before:rounded-full before:bg-primary',
         !active &&
           !disabled &&
-          'text-muted-foreground hover:bg-accent/60 hover:text-accent-foreground',
+          'text-muted-foreground hover:bg-accent hover:text-accent-foreground active:scale-95',
         disabled && 'cursor-not-allowed opacity-30',
       )}
     >
-      <Icon className="size-4" />
+      <Icon className="size-[18px]" />
     </div>
   )
 
@@ -240,7 +247,8 @@ function NavItem({ to, icon: Icon, label, active, disabled }: NavItemProps) {
           <Link
             to={to}
             aria-label={label}
-            className="outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md"
+            aria-current={active ? 'page' : undefined}
+            className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {inner}
           </Link>

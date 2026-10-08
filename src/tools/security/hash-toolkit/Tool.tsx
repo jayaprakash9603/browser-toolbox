@@ -86,18 +86,18 @@ export default function HashToolkitTool() {
                 <div key={algorithm} className="rounded border bg-muted/40 p-1.5">
                   <div className="flex items-center justify-between gap-1">
                     <div className="flex items-center gap-1">
-                      <Badge variant="outline" className="font-mono text-[9px]">
+                      <Badge variant="outline" className="font-mono text-[11px]">
                         {algorithm}
                       </Badge>
                       {meta?.legacy && (
-                        <span className="flex items-center gap-0.5 text-[9px] text-amber-600 dark:text-amber-400">
+                        <span className="flex items-center gap-0.5 text-[11px] text-amber-600 dark:text-amber-400">
                           <AlertTriangleIcon className="size-2.5" /> {t('security.legacy')}
                         </span>
                       )}
                     </div>
                     <CopyButton text={value} />
                   </div>
-                  <code className="mt-0.5 block break-all font-mono text-[10px]">{value}</code>
+                  <code className="mt-0.5 block break-all font-mono text-[11px]">{value}</code>
                 </div>
               )
             })}

@@ -179,7 +179,7 @@ export default function ImageToolkitTool() {
                 {output.startsWith('data:image') ? (
                   <img src={output} alt={t('text.output')} className="max-h-64 rounded-md border" />
                 ) : (
-                  <pre className="max-h-40 overflow-auto rounded-md border bg-muted/40 p-2 font-mono text-[9px]">
+                  <pre className="max-h-40 scrollbar-both rounded-lg border bg-muted/30 p-3 font-mono text-xs leading-relaxed">
                     {output.slice(0, 2000)}
                     {output.length > 2000 ? '…' : ''}
                   </pre>

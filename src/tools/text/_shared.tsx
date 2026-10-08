@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next'
 import { toolRegistry } from '@/core/registry'
 import { addClipboardEntry } from '@/core/clipboard'
 import { CopyButton } from '@/shared/components/CopyButton'
-import { useTextStats } from '@/shared/hooks/useTextStats'
 import { Button } from '@/shared/components/ui/button'
 
 export function useTransformTool(toolId: string) {
@@ -40,16 +39,6 @@ export function ToolActions({
         {t('text.saveHistory')}
       </Button>
     </div>
-  )
-}
-
-export function StatsBar({ value }: { value: string }) {
-  const stats = useTextStats(value)
-  const { t } = useTranslation()
-  return (
-    <p className="text-[10px] text-muted-foreground" aria-live="polite">
-      {t('common.chars', { count: stats.chars })} · {t('common.words', { count: stats.words })} · {t('common.lines', { count: stats.lines })}
-    </p>
   )
 }
 

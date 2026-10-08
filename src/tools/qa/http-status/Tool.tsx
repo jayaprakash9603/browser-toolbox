@@ -50,7 +50,7 @@ export default function HttpStatusTool() {
                 <span className="text-xs font-medium">{entry.name}</span>
                 <Badge
                   variant="outline"
-                  className={`ml-auto text-[9px] ${CATEGORY_STYLE[entry.category] ?? ''}`}
+                  className={`ml-auto text-[11px] ${CATEGORY_STYLE[entry.category] ?? ''}`}
                 >
                   {entry.category}
                 </Badge>

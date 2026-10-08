@@ -102,17 +102,18 @@ export default function CalculatorTool() {
           ))}
         </div>
         {history.length > 0 && (
-          <div className="max-h-40 space-y-0.5 overflow-y-auto border-t pt-2">
+          <div className="scrollbar-styled max-h-40 space-y-0.5 border-t pt-2">
             {history.map((entry, index) => (
-              <button
+              <Button
                 key={index}
-                type="button"
+                variant="ghost"
+                size="xs"
                 onClick={() => setExpr(entry.expr)}
-                className="flex w-full justify-between rounded px-1.5 py-0.5 text-left font-mono text-[11px] hover:bg-accent"
+                className="w-full justify-between font-mono font-normal tabular-nums active:scale-100"
               >
-                <span className="text-muted-foreground">{entry.expr}</span>
+                <span className="truncate text-muted-foreground">{entry.expr}</span>
                 <span>= {entry.result}</span>
-              </button>
+              </Button>
             ))}
           </div>
         )}

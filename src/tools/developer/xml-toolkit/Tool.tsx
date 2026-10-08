@@ -1,105 +1,104 @@
 import { useMemo, useState } from 'react'
+import { SparklesIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { formatXml, minifyXml, validateXml, xmlToJson } from '@/core/engines/xml'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
-import { Badge } from '@/shared/components/ui/badge'
+import { TextPaneGrid } from '@/shared/components/TextPaneGrid'
 import { Button } from '@/shared/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { JsonErrorView, OutputPane, useDevTool } from '../_shared'
 
 const EXAMPLE = '<note>\n  <to>Ada</to>\n  <body>Hi</body>\n</note>'
 
+type XmlTab = 'format' | 'validate' | 'convert'
+
 export default function XmlToolkitTool() {
   const { t } = useTranslation()
   const tool = useDevTool('developer.xml-toolkit')
-  const [tab, setTab] = useState<'format' | 'validate' | 'convert'>('format')
+  const [tab, setTab] = useState<XmlTab>('format')
   const [input, setInput] = useState('')
 
   const validation = useMemo(() => (input.trim() ? validateXml(input) : null), [input])
   const valid = validation?.valid === true
-  const formatted = useMemo(() => (valid ? formatXml(input) : null), [valid, input])
-  const minified = useMemo(() => (valid ? minifyXml(input) : null), [valid, input])
   const json = useMemo(() => (valid ? xmlToJson(input) : null), [valid, input])
+
+  const apply = (transform: typeof formatXml) => {
+    const result = transform(input)
+    if (result.ok) setInput(result.value)
+  }
+
+  const status = validation
+    ? valid
+      ? { tone: 'valid' as const, text: t('dev.xmlValid') }
+      : { tone: 'invalid' as const, text: t('editor.invalid') }
+    : null
+
+  const output =
+    tab === 'convert' && json?.ok ? (
+      <OutputPane value={json.value} error={null} language="json" label="JSON" onClear={() => setInput('')} fill />
+    ) : null
 
   return (
     <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col overflow-hidden">
-      <div className="flex min-h-0 flex-1 flex-col gap-3">
-        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-          <TabsList>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as XmlTab)} className="min-h-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <TabsList className="scrollbar-none max-w-full overflow-x-auto">
             <TabsTrigger value="format">{t('dev.tabFormat')}</TabsTrigger>
             <TabsTrigger value="validate">{t('dev.tabValidate')}</TabsTrigger>
             <TabsTrigger value="convert">{t('dev.tabConvertJson')}</TabsTrigger>
           </TabsList>
+          <Button size="sm" variant="ghost" className="ml-auto" onClick={() => setInput(EXAMPLE)}>
+            <SparklesIcon /> {t('dev.tryExample')}
+          </Button>
+        </div>
 
-        <TextEditor
-          value={input}
-          onChange={setInput}
-          placeholder={t('dev.xmlPlaceholder')}
-          ariaLabel={t('dev.xmlInput')}
-          minRows={6}
-        />
-        {validation && !validation.valid && validation.error && (
-          <JsonErrorView
-            message={validation.error.message}
-            line={validation.error.line}
-            column={validation.error.column}
-          />
-        )}
-
-        <TabsContent value="format" className="mt-0">
-          <div className="flex flex-col gap-2">
-            <div className="flex gap-1.5">
-              <Button
-                size="sm"
-                disabled={!valid}
-                onClick={() => formatted?.ok && setInput(formatted.value)}
-              >
-                {t('text.beautify')}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={!valid}
-                onClick={() => minified?.ok && setInput(minified.value)}
-              >
-                {t('text.minify')}
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setInput(EXAMPLE)}>
-                {t('dev.tryExample')}
-              </Button>
-            </div>
-            {valid && <Badge variant="outline">{t('dev.xmlValid')}</Badge>}
+        <TabsContent value="format" className="mt-0 flex-none">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" disabled={!valid} onClick={() => apply(formatXml)}>
+              {t('text.beautify')}
+            </Button>
+            <Button size="sm" variant="outline" disabled={!valid} onClick={() => apply(minifyXml)}>
+              {t('text.minify')}
+            </Button>
           </div>
         </TabsContent>
-
-        <TabsContent value="validate" className="mt-0">
-          {valid ? (
-            <div className="rounded-md border border-green-500/40 bg-green-500/5 p-3 text-xs text-green-700 dark:text-green-400">
+        <TabsContent value="validate" className="mt-0 flex-none">
+          {valid && (
+            <p className="rounded-lg border border-emerald-500/40 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-400">
               {t('dev.xmlValidDetail')}
-            </div>
-          ) : (
-            validation?.error && (
-              <JsonErrorView
-                message={validation.error.message}
-                line={validation.error.line}
-                column={validation.error.column}
-              />
-            )
+            </p>
           )}
         </TabsContent>
+        <TabsContent value="convert" className="mt-0 hidden" />
 
-        <TabsContent value="convert" className="mt-0">
-          {json &&
-            (json.ok ? (
-              <OutputPane value={json.value} error={null} onClear={() => setInput('')} />
-            ) : (
-              <JsonErrorView message={json.error} />
-            ))}
-        </TabsContent>
-          </Tabs>
-      </div>
+        <TextPaneGrid split={Boolean(output)}>
+          <TextEditor
+            value={input}
+            onChange={setInput}
+            placeholder={t('dev.xmlPlaceholder')}
+            ariaLabel={t('dev.xmlInput')}
+            label="XML"
+            language="xml"
+            status={status}
+            onKeyCommand={() => apply(formatXml)}
+            fill
+          />
+          {output}
+        </TextPaneGrid>
+
+        {validation && !validation.valid && validation.error && (
+          <div className="scrollbar-styled max-h-32 shrink-0">
+            <JsonErrorView
+              message={validation.error.message}
+              line={validation.error.line}
+              column={validation.error.column}
+            />
+          </div>
+        )}
+        {tab === 'convert' && json && !json.ok && <JsonErrorView message={json.error} />}
+      </Tabs>
     </ToolPage>
   )
 }

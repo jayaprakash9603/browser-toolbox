@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { parseColor, rgbToHex, rgbToHsl, rgbToHsv, rgbToHwb, rgbToCmyk } from '@/core/engines/color'
 import { ToolPage } from '@/shared/components/ToolPage'
+import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { CopyButton } from '@/shared/components/CopyButton'
 import { JsonErrorView } from '@/tools/developer/_shared'
@@ -47,13 +48,9 @@ export default function ColorConverterTool() {
             className="flex-1 font-mono"
           />
         </div>
-        <button
-          type="button"
-          onClick={() => setInput(EXAMPLE)}
-          className="w-fit text-[11px] text-primary hover:underline"
-        >
+        <Button variant="link" size="xs" onClick={() => setInput(EXAMPLE)} className="w-fit px-0">
           {t('dev.tryExample')}
-        </button>
+        </Button>
         {parsed && !parsed.ok && <JsonErrorView message={parsed.error} />}
         {rows.length > 0 && (
           <div className="space-y-1">
@@ -62,7 +59,7 @@ export default function ColorConverterTool() {
                 key={row.label}
                 className="flex items-center justify-between gap-2 rounded border bg-muted/40 px-2 py-1.5"
               >
-                <span className="w-12 text-[10px] font-medium text-muted-foreground">
+                <span className="w-12 text-[11px] font-medium text-muted-foreground">
                   {row.label}
                 </span>
                 <code className="min-w-0 flex-1 font-mono text-[11px]">{row.value}</code>

@@ -92,7 +92,7 @@ export default function TestDataGeneratorTool() {
               </span>
               <ToolActions value={output} onClear={() => setRows([])} />
             </div>
-            <pre className="max-h-72 overflow-auto rounded-md border bg-muted/40 p-2 font-mono text-[11px]">
+            <pre className="max-h-72 scrollbar-both rounded-lg border bg-muted/30 p-3 font-mono text-xs leading-relaxed">
               {output}
             </pre>
           </div>

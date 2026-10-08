@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
+import { SparklesIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { formatSql, minifySql, SQL_DIALECTS, type SqlDialect } from '@/core/engines/sql'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
+import { TextPaneGrid } from '@/shared/components/TextPaneGrid'
 import { Button } from '@/shared/components/ui/button'
 import {
   Select,
@@ -25,67 +27,61 @@ export default function SqlToolkitTool() {
   const [input, setInput] = useState('')
   const [dialect, setDialect] = useState<SqlDialect>('sql')
 
-  const formatted = useMemo(
-    () => (input.trim() ? formatSql(input, dialect) : null),
-    [input, dialect],
-  )
-  const minified = useMemo(() => (input.trim() ? minifySql(input) : null), [input])
+  const result = useMemo(() => {
+    if (!input.trim()) return null
+    return tab === 'format' ? formatSql(input, dialect) : minifySql(input)
+  }, [input, dialect, tab])
 
   return (
     <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col overflow-hidden">
-      <div className="flex min-h-0 flex-1 flex-col gap-3">
-        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-          <div className="flex items-center gap-2">
-            <TabsList>
-              <TabsTrigger value="format">{t('dev.tabFormat')}</TabsTrigger>
-              <TabsTrigger value="minify">{t('text.minify')}</TabsTrigger>
-            </TabsList>
-            <Select value={dialect} onValueChange={(v) => setDialect(v as SqlDialect)}>
-              <SelectTrigger size="sm" className="w-40" aria-label={t('dev.sqlDialect')}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SQL_DIALECTS.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>
-                    {d.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-        <TextEditor
-          value={input}
-          onChange={setInput}
-          placeholder={t('dev.sqlPlaceholder')}
-          ariaLabel={t('dev.sqlInput')}
-          minRows={6}
-        />
-        <div>
-          <Button size="sm" variant="ghost" onClick={() => setInput(EXAMPLE)}>
-            {t('dev.tryExample')}
+      <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="min-h-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <TabsList>
+            <TabsTrigger value="format">{t('dev.tabFormat')}</TabsTrigger>
+            <TabsTrigger value="minify">{t('text.minify')}</TabsTrigger>
+          </TabsList>
+          <Select value={dialect} onValueChange={(v) => setDialect(v as SqlDialect)}>
+            <SelectTrigger size="sm" className="w-40" aria-label={t('dev.sqlDialect')}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SQL_DIALECTS.map((d) => (
+                <SelectItem key={d.id} value={d.id}>
+                  {d.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button size="sm" variant="ghost" className="ml-auto" onClick={() => setInput(EXAMPLE)}>
+            <SparklesIcon /> {t('dev.tryExample')}
           </Button>
         </div>
+        <TabsContent value="format" className="mt-0 hidden" />
+        <TabsContent value="minify" className="mt-0 hidden" />
 
-        <TabsContent value="format" className="mt-0">
-          {formatted &&
-            (formatted.ok ? (
-              <OutputPane value={formatted.value} error={null} onClear={() => setInput('')} />
-            ) : (
-              <JsonErrorView message={formatted.error} />
-            ))}
-        </TabsContent>
-
-        <TabsContent value="minify" className="mt-0">
-          {minified &&
-            (minified.ok ? (
-              <OutputPane value={minified.value} error={null} onClear={() => setInput('')} />
-            ) : (
-              <JsonErrorView message={minified.error} />
-            ))}
-        </TabsContent>
-          </Tabs>
-      </div>
+        <TextPaneGrid split={Boolean(result?.ok)}>
+          <TextEditor
+            value={input}
+            onChange={setInput}
+            placeholder={t('dev.sqlPlaceholder')}
+            ariaLabel={t('dev.sqlInput')}
+            label="SQL"
+            language="sql"
+            fill
+          />
+          {result?.ok && (
+            <OutputPane
+              value={result.value}
+              error={null}
+              language="sql"
+              label={tab === 'format' ? t('dev.tabFormat') : t('text.minify')}
+              onClear={() => setInput('')}
+              fill
+            />
+          )}
+        </TextPaneGrid>
+        {result && !result.ok && <JsonErrorView message={result.error} />}
+      </Tabs>
     </ToolPage>
   )
 }

@@ -86,9 +86,9 @@ export default function UrlToolkitTool() {
                         key={key}
                         className="flex items-center gap-1 rounded border bg-muted/40 px-1.5 py-1"
                       >
-                        <code className="text-[10px] font-medium text-primary">{key}</code>
+                        <code className="text-[11px] font-medium text-primary">{key}</code>
                         <span className="text-muted-foreground">=</span>
-                        <code className="min-w-0 flex-1 truncate font-mono text-[10px]">
+                        <code className="min-w-0 flex-1 truncate font-mono text-[11px]">
                           {value}
                         </code>
                         <Button
@@ -151,7 +151,7 @@ export default function UrlToolkitTool() {
               <>
                 <div className="flex items-center justify-between rounded border bg-muted/40 p-2">
                   <div>
-                    <p className="text-[10px] text-muted-foreground">{t('web.encoded')}</p>
+                    <p className="text-[11px] text-muted-foreground">{t('web.encoded')}</p>
                     <code className="font-mono text-[11px]">{encoded}</code>
                   </div>
                   <CopyButton text={encoded} />
@@ -159,7 +159,7 @@ export default function UrlToolkitTool() {
                 {decoded?.ok && decoded.value !== encodeInput && (
                   <div className="flex items-center justify-between rounded border bg-muted/40 p-2">
                     <div>
-                      <p className="text-[10px] text-muted-foreground">{t('web.decoded')}</p>
+                      <p className="text-[11px] text-muted-foreground">{t('web.decoded')}</p>
                       <code className="font-mono text-[11px]">{decoded.value}</code>
                     </div>
                     <CopyButton text={decoded.value} />
@@ -220,7 +220,7 @@ export default function UrlToolkitTool() {
 function Part({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded border bg-muted/40 p-1.5">
-      <p className="text-[9px] text-muted-foreground">{label}</p>
+      <p className="text-[11px] text-muted-foreground">{label}</p>
       <p className="truncate font-mono text-[11px]">{value}</p>
     </div>
   )

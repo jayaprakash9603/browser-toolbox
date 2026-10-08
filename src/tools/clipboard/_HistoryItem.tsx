@@ -33,7 +33,7 @@ export function HistoryItem({ entry, onChanged }: HistoryItemProps) {
       <ContextMenuPrimitive.Trigger asChild>
         <article className="group rounded-md border p-2.5 transition-colors hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <p className="mb-1.5 line-clamp-2 text-xs break-all whitespace-pre-wrap">{entry.text}</p>
-          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
             <span>{timeLabel(entry.createdAt)}</span>
             <span>·</span>
             <span>{t('common.chars', { count: entry.charCount })}</span>

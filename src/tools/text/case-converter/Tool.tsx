@@ -4,9 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
 import { TextPaneGrid } from '@/shared/components/TextPaneGrid'
-import { CopyButton } from '@/shared/components/CopyButton'
 import { Button } from '@/shared/components/ui/button'
-import { StatsBar, useTransformTool } from '../_shared'
+import { useTransformTool } from '../_shared'
 import { CASE_STYLES, convertCase, type CaseStyle } from '@/core/engines/text'
 
 export default function CaseConverterTool() {
@@ -34,28 +33,24 @@ export default function CaseConverterTool() {
           ))}
         </div>
         <TextPaneGrid split={Boolean(result)}>
-          <div className="flex min-h-0 flex-col">
+          <TextEditor
+            value={input}
+            onChange={setInput}
+            placeholder="hello world example"
+            ariaLabel={t('text.convertInput')}
+            label={t('common.input')}
+            fill
+          />
+          {result && (
             <TextEditor
-              value={input}
-              onChange={setInput}
-              placeholder="hello world example"
-              ariaLabel={t('text.convertInput')}
+              value={result.text}
+              readOnly
+              ariaLabel={t('text.converted')}
+              label={t(`case.${result.style}`, {
+                defaultValue: CASE_STYLES.find((style) => style.id === result.style)?.label,
+              })}
               fill
             />
-            <StatsBar value={input} />
-          </div>
-          {result && (
-            <div className="flex min-h-0 flex-col">
-              <div className="mb-1 flex shrink-0 items-center justify-between">
-                <span className="text-xs font-medium">
-                  {t(`case.${result.style}`, {
-                    defaultValue: CASE_STYLES.find((style) => style.id === result.style)?.label,
-                  })}
-                </span>
-                <CopyButton text={result.text} size="xs" />
-              </div>
-              <TextEditor value={result.text} readOnly ariaLabel={t('text.converted')} fill />
-            </div>
           )}
         </TextPaneGrid>
       </div>

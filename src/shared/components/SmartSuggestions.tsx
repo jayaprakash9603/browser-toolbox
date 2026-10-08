@@ -45,31 +45,37 @@ export function SmartSuggestions() {
 
   if (available.length === 0 || dismissed) {
     return (
-      <button
-        type="button"
-        onClick={() => void analyze()}
-        className="mb-4 flex w-full items-center gap-2 rounded-md border border-dashed px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
-      >
-        <ClipboardPasteIcon className="size-3.5 shrink-0" />
-        {t('smartPaste.cta', { defaultValue: 'Analyze clipboard content…' })}
-      </button>
+      <div className="mb-5 flex items-center gap-3 rounded-lg border border-dashed border-foreground/15 bg-card/60 px-3 py-2.5 transition-colors duration-150 hover:border-primary/40 hover:bg-card">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <ClipboardPasteIcon className="size-4" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[13px] font-medium">
+            {t('smartPaste.calloutTitle')}
+          </p>
+          <p className="truncate text-xs text-muted-foreground">{t('smartPaste.hint')}</p>
+        </div>
+        <Button size="sm" variant="secondary" onClick={() => void analyze()}>
+          <SparklesIcon /> {t('smartPaste.cta')}
+        </Button>
+      </div>
     )
   }
 
   return (
-    <div className="mb-4 rounded-md border bg-accent/30 p-3">
+    <div className="mb-5 rounded-lg border border-primary/25 bg-primary/5 p-3">
       <div className="mb-2 flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-xs font-medium">
-          <SparklesIcon className="size-3.5 text-primary" />
+        <span className="flex items-center gap-1.5 text-[13px] font-medium">
+          <SparklesIcon className="size-4 text-primary" aria-hidden />
           {t('smartPaste.title', { defaultValue: 'Clipboard insights' })}
         </span>
         <Button
           variant="ghost"
-          size="icon-sm"
+          size="icon-xs"
           onClick={() => setDismissed(true)}
           aria-label={t('dialogs.close')}
         >
-          <XIcon className="size-3" />
+          <XIcon />
         </Button>
       </div>
       <div className="flex flex-wrap gap-1.5">

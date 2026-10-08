@@ -49,11 +49,11 @@ export default function PageInfoTool() {
           <div className="grid grid-cols-2 gap-1.5">
             <div className="rounded border p-2 text-center">
               <Badge variant="secondary">{info.links.length}</Badge>
-              <p className="text-[10px] text-muted-foreground">{t('web.links')}</p>
+              <p className="text-[11px] text-muted-foreground">{t('web.links')}</p>
             </div>
             <div className="rounded border p-2 text-center">
               <Badge variant="secondary">{info.images.length}</Badge>
-              <p className="text-[10px] text-muted-foreground">{t('web.images')}</p>
+              <p className="text-[11px] text-muted-foreground">{t('web.images')}</p>
             </div>
           </div>
           {Object.keys(info.openGraph).length > 0 && (
@@ -80,7 +80,7 @@ function InfoRow({ label, value }: { label: string; value: string | null }) {
   return (
     <div className="flex items-start justify-between gap-2 rounded border bg-muted/40 p-1.5">
       <div className="min-w-0">
-        <p className="text-[9px] text-muted-foreground">{label}</p>
+        <p className="text-[11px] text-muted-foreground">{label}</p>
         <p className="break-words text-[11px]">{value ?? '—'}</p>
       </div>
       {value && <CopyButton text={value} />}

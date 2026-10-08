@@ -104,13 +104,13 @@ export default function LinkToolkitTool() {
                 >
                   <Badge
                     variant="outline"
-                    className={`shrink-0 text-[8px] ${link.internal ? '' : 'border-amber-500/40 text-amber-600 dark:text-amber-400'}`}
+                    className={`shrink-0 text-[11px] ${link.internal ? '' : 'border-amber-500/40 text-amber-600 dark:text-amber-400'}`}
                   >
                     {link.internal ? 'in' : 'ext'}
                   </Badge>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[11px]">{link.text || t('web.noText')}</p>
-                    <code className="block truncate font-mono text-[9px] text-muted-foreground">
+                    <code className="block truncate font-mono text-[11px] text-muted-foreground">
                       {link.href}
                     </code>
                   </div>

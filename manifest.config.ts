@@ -39,7 +39,7 @@ export default defineManifest({
     'scripting',
     'tabs',
   ],
-  optional_host_permissions: ['http://*/*', 'https://*/*'],
+  host_permissions: ['http://*/*', 'https://*/*'],
   commands: {
     'open-command-palette': {
       suggested_key: { default: 'Ctrl+Shift+Space', mac: 'Command+Shift+Space' },
