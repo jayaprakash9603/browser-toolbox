@@ -99,19 +99,16 @@ const lightSyntax = HighlightStyle.define([
   { tag: tags.invalid, color: '#dc2626' },
 ])
 
-const darkSyntax = HighlightStyle.define(
-  [
-    { tag: [tags.propertyName, tags.labelName, tags.definition(tags.propertyName)], color: '#7ee787' },
-    { tag: [tags.string, tags.special(tags.string)], color: '#ffb4a2' },
-    { tag: [tags.number, tags.bool, tags.null, tags.atom], color: '#9ec5fe' },
-    { tag: [tags.keyword, tags.operatorKeyword, tags.modifier], color: '#d2a8ff', fontWeight: '600' },
-    { tag: [tags.comment, tags.lineComment, tags.blockComment], color: '#9ca3af', fontStyle: 'italic' },
-    { tag: [tags.tagName, tags.typeName, tags.className], color: '#ff9f8a' },
-    { tag: [tags.punctuation, tags.bracket, tags.separator], color: '#c4c9d4' },
-    { tag: tags.invalid, color: '#f87171' },
-  ],
-  { themeType: 'dark' },
-)
+const darkSyntax = HighlightStyle.define([
+  { tag: [tags.propertyName, tags.labelName, tags.definition(tags.propertyName)], color: '#7ee787' },
+  { tag: [tags.string, tags.special(tags.string)], color: '#ffb4a2' },
+  { tag: [tags.number, tags.bool, tags.null, tags.atom], color: '#9ec5fe' },
+  { tag: [tags.keyword, tags.operatorKeyword, tags.modifier], color: '#d2a8ff', fontWeight: '600' },
+  { tag: [tags.comment, tags.lineComment, tags.blockComment], color: '#9ca3af', fontStyle: 'italic' },
+  { tag: [tags.tagName, tags.typeName, tags.className], color: '#ff9f8a' },
+  { tag: [tags.punctuation, tags.bracket, tags.separator], color: '#c4c9d4' },
+  { tag: tags.invalid, color: '#f87171' },
+])
 
 export const editorSyntaxHighlighting = [
   syntaxHighlighting(lightSyntax),
