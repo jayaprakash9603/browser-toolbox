@@ -3,6 +3,20 @@ import { vi } from 'vitest'
 
 import '@/i18n'
 
+class ResizeObserverMock {
+  observe() {
+    return undefined
+  }
+  unobserve() {
+    return undefined
+  }
+  disconnect() {
+    return undefined
+  }
+}
+
+vi.stubGlobal('ResizeObserver', ResizeObserverMock)
+
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation((query: string) => ({

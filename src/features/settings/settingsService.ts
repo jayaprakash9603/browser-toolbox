@@ -1,11 +1,13 @@
 import { STORAGE_KEYS } from '@/core/constants'
 import { get, set } from '@/core/storage'
+import { DEFAULT_PALETTE, isPaletteId, type PaletteId } from '@/shared/lib/theme/palettes'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 export type Density = 'compact' | 'comfortable'
 
 export interface Settings {
   theme: ThemeMode
+  palette: PaletteId
   density: Density
   clipboardHistoryEnabled: boolean
   clipboardHistoryLimit: number
@@ -14,6 +16,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
+  palette: DEFAULT_PALETTE,
   density: 'comfortable',
   clipboardHistoryEnabled: true,
   clipboardHistoryLimit: 100,
@@ -22,7 +25,9 @@ export const DEFAULT_SETTINGS: Settings = {
 
 export async function getSettings(): Promise<Settings> {
   const stored = await get<Partial<Settings>>(STORAGE_KEYS.settings)
-  return { ...DEFAULT_SETTINGS, ...stored }
+  const merged = { ...DEFAULT_SETTINGS, ...stored }
+  if (!isPaletteId(merged.palette)) merged.palette = DEFAULT_PALETTE
+  return merged
 }
 
 export async function updateSettings(patch: Partial<Settings>): Promise<Settings> {

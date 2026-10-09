@@ -14,12 +14,20 @@ import {
 } from '@/features/settings/settingsService'
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog'
 import { BackButton } from '@/shared/components/BackButton'
+import { PalettePicker } from '@/shared/components/settings/PalettePicker'
+import type { PaletteId } from '@/shared/lib/theme/palettes'
 import { AppLoadingSkeleton } from '@/shared/components/AppLoadingSkeleton'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Separator } from '@/shared/components/ui/separator'
 import { Switch } from '@/shared/components/ui/switch'
-import { Tabs, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/components/ui/select'
 
 export default function SettingsPage() {
   const { t } = useTranslation()
@@ -43,29 +51,44 @@ export default function SettingsPage() {
       <p className="mb-4 text-xs text-muted-foreground">{t('settings.description')}</p>
 
       <SettingRow label={t('settings.theme')} description={t('settings.themeDescription')}>
-        <Tabs
+        <Select
           value={settings.theme}
           onValueChange={(value) => void update({ theme: value as ThemeMode })}
         >
-          <TabsList>
-            <TabsTrigger value="light">{t('settings.light')}</TabsTrigger>
-            <TabsTrigger value="dark">{t('settings.dark')}</TabsTrigger>
-            <TabsTrigger value="system">{t('settings.system')}</TabsTrigger>
-          </TabsList>
-        </Tabs>
+          <SelectTrigger className="w-[9.5rem]" aria-label={t('settings.theme')}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="light">{t('settings.light')}</SelectItem>
+            <SelectItem value="dark">{t('settings.dark')}</SelectItem>
+            <SelectItem value="system">{t('settings.system')}</SelectItem>
+          </SelectContent>
+        </Select>
       </SettingRow>
 
       <SettingRow label={t('settings.density')} description={t('settings.densityDescription')}>
-        <Tabs
+        <Select
           value={settings.density}
           onValueChange={(value) => void update({ density: value as Density })}
         >
-          <TabsList>
-            <TabsTrigger value="compact">{t('settings.compact')}</TabsTrigger>
-            <TabsTrigger value="comfortable">{t('settings.comfortable')}</TabsTrigger>
-          </TabsList>
-        </Tabs>
+          <SelectTrigger className="w-[9.5rem]" aria-label={t('settings.density')}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="compact">{t('settings.compact')}</SelectItem>
+            <SelectItem value="comfortable">{t('settings.comfortable')}</SelectItem>
+          </SelectContent>
+        </Select>
       </SettingRow>
+
+      <div className="mb-4 @container">
+        <p className="mb-1 text-xs font-medium">{t('settings.palette')}</p>
+        <p className="mb-2 text-[11px] text-muted-foreground">{t('settings.paletteDescription')}</p>
+        <PalettePicker
+          value={settings.palette}
+          onChange={(palette) => void update({ palette: palette as PaletteId })}
+        />
+      </div>
 
       <Separator className="my-4" />
       <h2 className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">

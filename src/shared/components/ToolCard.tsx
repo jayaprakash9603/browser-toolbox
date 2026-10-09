@@ -13,7 +13,7 @@ export function ToolCard({ tool }: { tool: ToolDefinition }) {
       <Link
         to={tool.route}
         title={description}
-        className="flex h-full min-h-[5.25rem] flex-col gap-2 rounded-lg p-3 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+        className="flex h-full min-h-[var(--density-card-min-h)] flex-col gap-2 rounded-lg p-[var(--density-card-pad)] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
       >
         <div className="flex items-center gap-2.5 pr-8">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-muted transition-colors duration-150 group-hover:border-primary/30 group-hover:bg-primary/10">

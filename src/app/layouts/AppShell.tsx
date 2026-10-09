@@ -1,28 +1,27 @@
-import { Suspense, lazy, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CommandIcon, HomeIcon, SearchIcon, SettingsIcon, StarIcon, ClockIcon } from 'lucide-react'
+import { SearchIcon, SettingsIcon } from 'lucide-react'
 
 import { Link, useRouter } from '@/app/router'
 import { getToolComponent } from '@/app/toolComponents'
-import { categoryRegistry, toolRegistry } from '@/core/registry'
+import { toolRegistry } from '@/core/registry'
 import { trackRecentTool } from '@/features/recent-tools/recentToolsService'
 import { CommandPalette } from '@/features/command-palette/CommandPalette'
+import { requestFocusHomeSearch } from '@/features/search/searchFocus'
 import {
   AppLoadingSkeleton,
   type AppLoadingSkeletonVariant,
 } from '@/shared/components/AppLoadingSkeleton'
+import { BrandLogo } from '@/shared/components/BrandLogo'
 import { Button } from '@/shared/components/ui/button'
 import { ThemeToggle } from '@/shared/components/ThemeToggle'
-import { Separator } from '@/shared/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip'
-import { cn } from '@/shared/utils/cn'
-
+import { SEARCH_SHORTCUT_LABEL } from '@/shared/lib/keyboardShortcut'
 const HomePage = lazy(() => import('@/app/pages/HomePage'))
 const SettingsPage = lazy(() => import('@/app/pages/SettingsPage'))
 const CategoryPage = lazy(() => import('@/app/pages/CategoryPage'))
 const DevToolsPage = lazy(() => import('@/app/pages/DevToolsPage'))
-const PALETTE_SHORTCUT =
-  typeof navigator !== 'undefined' && /mac/i.test(navigator.platform) ? '⌘K' : 'Ctrl K'
 
 const LEGACY_TOOL_ROUTES: Record<string, string> = {
   '/tools/clipboard/history': 'clipboard.manager',
@@ -41,43 +40,53 @@ const LEGACY_TOOL_ROUTES: Record<string, string> = {
   '/tools/developer/timestamp-toolkit': 'datetime.toolkit',
 }
 
+function isHomePath(path: string) {
+  return path === '/' || path === ''
+}
+
 export function AppShell({ children }: { children?: ReactNode }) {
   const { t } = useTranslation()
   const { path } = useRouter()
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const mainRef = useRef<HTMLElement>(null)
+  const reduceMotion = useReducedMotion()
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault()
-        setPaletteOpen((open) => !open)
+        if (isHomePath(path)) requestFocusHomeSearch()
+        else setPaletteOpen((open) => !open)
       }
       if (event.key === 'Escape') setPaletteOpen(false)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [path])
 
-  const tool = useMemo(() => toolRegistry.getAll().find((t) => t.route === path), [path])
+  const tool = useMemo(() => toolRegistry.getAll().find((entry) => entry.route === path), [path])
 
   useEffect(() => {
     if (tool) void trackRecentTool(tool.id)
   }, [tool])
 
-  const categories = categoryRegistry.getAll()
+  useEffect(() => {
+    mainRef.current?.focus({ preventScroll: true })
+  }, [path])
+
   const content = renderRoute(path)
 
   return (
-    <div className="flex h-full flex-col bg-background">
-      <header className="relative z-10 flex h-12 shrink-0 items-center gap-1.5 border-b bg-background/85 px-3 backdrop-blur-md">
+    <div className="flex h-full flex-col overflow-x-clip bg-background">
+      <header
+        className="sticky top-0 z-30 flex h-[52px] shrink-0 items-center gap-2 border-b bg-background/85 px-3 backdrop-blur-md"
+      >
         <Link
           to="/"
-          className="flex items-center gap-2 rounded-md pr-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex min-w-0 items-center gap-2 rounded-md pr-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <div className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-            <CommandIcon className="size-4" />
-          </div>
-          <span className="text-sm font-semibold tracking-tight">{t('app.name')}</span>
+          <BrandLogo size={30} />
+          <span className="truncate text-sm font-semibold tracking-tight">{t('home.title')}</span>
         </Link>
         <div className="flex-1" />
         <Tooltip>
@@ -85,26 +94,30 @@ export function AppShell({ children }: { children?: ReactNode }) {
             <Button
               variant="outline"
               size="sm"
-              className="gap-2 font-normal text-muted-foreground"
-              onClick={() => setPaletteOpen(true)}
-              aria-label={t('nav.openCommandPalette')}
+              className="h-[var(--density-control-h)] gap-1.5 px-2 font-normal text-muted-foreground"
+              aria-label={isHomePath(path) ? t('nav.focusSearch') : t('nav.openCommandPalette')}
               aria-keyshortcuts="Control+K Meta+K"
+              onClick={() => {
+                if (isHomePath(path)) requestFocusHomeSearch()
+                else setPaletteOpen(true)
+              }}
             >
-              <SearchIcon />
-              <span className="hidden @[420px]:inline">{t('nav.searchTools')}</span>
-              <kbd className="rounded border bg-muted px-1.5 font-sans text-[11px] leading-5 font-medium">
-                {PALETTE_SHORTCUT}
+              <SearchIcon className="size-4" />
+              <kbd className="rounded border bg-muted px-1.5 font-sans text-[10px] leading-5 font-medium">
+                {SEARCH_SHORTCUT_LABEL}
               </kbd>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{t('nav.commandPalette')}</TooltipContent>
+          <TooltipContent>
+            {isHomePath(path) ? t('nav.focusSearch') : t('nav.commandPalette')}
+          </TooltipContent>
         </Tooltip>
         <ThemeToggle />
         <Tooltip>
           <TooltipTrigger asChild>
             <Button asChild variant="ghost" size="icon" aria-label={t('nav.settings')}>
               <Link to="/settings">
-                <SettingsIcon />
+                <SettingsIcon className="size-[18px]" />
               </Link>
             </Button>
           </TooltipTrigger>
@@ -112,60 +125,30 @@ export function AppShell({ children }: { children?: ReactNode }) {
         </Tooltip>
       </header>
 
-      <div className="flex min-h-0 flex-1">
-        <nav
-          aria-label={t('nav.categories')}
-          className="scrollbar-none hidden w-14 shrink-0 flex-col items-center gap-1 overflow-y-auto border-r bg-muted/20 py-2 @[420px]:flex"
-        >
-          <NavItem to="/" icon={HomeIcon} label={t('nav.home')} active={path === '/'} />
-          <NavItem
-            to="/favorites"
-            icon={StarIcon}
-            label={t('nav.favorites')}
-            active={path === '/favorites'}
-          />
-          <NavItem
-            to="/recent"
-            icon={ClockIcon}
-            label={t('nav.recent')}
-            active={path === '/recent'}
-          />
-          <Separator className="my-1 w-6" />
-          {categories.map((category) => (
-            <NavItem
-              key={category.id}
-              to={category.enabled ? `/categories/${category.id}` : '#'}
-              icon={category.icon}
-              label={
-                category.enabled
-                  ? t(`categories.${category.id}.name`, { defaultValue: category.name })
-                  : t('nav.comingSoon', {
-                      name: t(`categories.${category.id}.name`, { defaultValue: category.name }),
-                    })
-              }
-              active={path === `/categories/${category.id}`}
-              disabled={!category.enabled}
-            />
-          ))}
-          <div className="flex-1" />
-          <NavItem
-            to="/settings"
-            icon={SettingsIcon}
-            label={t('nav.settings')}
-            active={path === '/settings'}
-          />
-        </nav>
-
-        <main className="@container min-w-0 flex-1 overflow-hidden">
-          <Suspense
-            fallback={
-              <AppLoadingSkeleton variant={getLoadingVariant(path)} label={t('nav.loading')} />
-            }
+      <main
+        ref={mainRef}
+        tabIndex={-1}
+        className="@container min-h-0 min-w-0 flex-1 overflow-hidden outline-none"
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={path}
+            className="h-full"
+            initial={reduceMotion ? false : { opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
+            transition={{ duration: reduceMotion ? 0.15 : 0.28, ease: [0.2, 0.8, 0.2, 1] }}
           >
-            {content}
-          </Suspense>
-        </main>
-      </div>
+            <Suspense
+              fallback={
+                <AppLoadingSkeleton variant={getLoadingVariant(path)} label={t('nav.loading')} />
+              }
+            >
+              {content}
+            </Suspense>
+          </motion.div>
+        </AnimatePresence>
+      </main>
 
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
       {children}
@@ -183,7 +166,7 @@ function renderRoute(path: string) {
   if (legacyToolId) return <ToolHost toolId={legacyToolId} />
   const categoryMatch = path.match(/^\/categories\/([\w-]+)$/)
   if (categoryMatch) return <CategoryPage categoryId={categoryMatch[1]} />
-  const tool = toolRegistry.getAll().find((t) => t.route === path)
+  const tool = toolRegistry.getAll().find((entry) => entry.route === path)
   if (tool) return <ToolHost toolId={tool.id} />
   return <HomePage />
 }
@@ -205,56 +188,8 @@ function ToolHost({ toolId }: { toolId: string }) {
   const Component = getToolComponent(toolId, tool.loader)
   return (
     <Suspense fallback={<AppLoadingSkeleton variant="tool" label={t('nav.loading')} />}>
-      {/* Lazy components are cached per toolId in getToolComponent, so identity
-          is stable across renders even though creation happens on first visit. */}
       {/* eslint-disable-next-line react-hooks/static-components */}
       <Component />
     </Suspense>
-  )
-}
-
-interface NavItemProps {
-  to: string
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  active?: boolean
-  disabled?: boolean
-}
-
-function NavItem({ to, icon: Icon, label, active, disabled }: NavItemProps) {
-  const inner = (
-    <div
-      className={cn(
-        'relative flex size-9 items-center justify-center rounded-lg transition-[color,background-color,transform] duration-150 ease-out',
-        active &&
-          'bg-primary/10 text-primary before:absolute before:top-2 before:-left-2.5 before:h-5 before:w-0.5 before:rounded-full before:bg-primary',
-        !active &&
-          !disabled &&
-          'text-muted-foreground hover:bg-accent hover:text-accent-foreground active:scale-95',
-        disabled && 'cursor-not-allowed opacity-30',
-      )}
-    >
-      <Icon className="size-[18px]" />
-    </div>
-  )
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        {disabled ? (
-          <span aria-disabled="true">{inner}</span>
-        ) : (
-          <Link
-            to={to}
-            aria-label={label}
-            aria-current={active ? 'page' : undefined}
-            className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {inner}
-          </Link>
-        )}
-      </TooltipTrigger>
-      <TooltipContent side="right">{label}</TooltipContent>
-    </Tooltip>
   )
 }

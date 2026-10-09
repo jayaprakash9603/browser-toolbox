@@ -19,3 +19,8 @@ export async function trackRecentTool(toolId: string): Promise<void> {
 export async function clearRecentTools(): Promise<void> {
   await remove(STORAGE_KEYS.recentTools)
 }
+
+export async function removeRecentTool(toolId: string): Promise<void> {
+  const recent = (await getRecentTools()).filter((entry) => entry.toolId !== toolId)
+  await set(STORAGE_KEYS.recentTools, recent)
+}

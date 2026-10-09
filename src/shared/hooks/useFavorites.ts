@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import { getFavorites, toggleFavorite } from '@/features/favorites/favoritesService'
+import {
+  getFavorites,
+  reorderFavorites,
+  toggleFavorite,
+} from '@/features/favorites/favoritesService'
 
 export function useFavorites() {
   const [favorites, setFavorites] = useState<string[]>([])
@@ -30,5 +34,13 @@ export function useFavorites() {
     [refresh],
   )
 
-  return { favorites, toggle, refresh, isLoading }
+  const reorder = useCallback(
+    async (orderedIds: string[]) => {
+      await reorderFavorites(orderedIds)
+      await refresh()
+    },
+    [refresh],
+  )
+
+  return { favorites, toggle, reorder, refresh, isLoading }
 }

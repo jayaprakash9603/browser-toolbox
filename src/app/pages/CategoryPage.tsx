@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { categoryRegistry, groupToolsByToolkit, toolRegistry } from '@/core/registry'
 import { getToolSearchLabels } from '@/i18n/toolLabels'
 import { BackButton } from '@/shared/components/BackButton'
-import { ToolCard } from '@/shared/components/ToolCard'
+import { ToolCardGrid } from '@/shared/components/ToolCardGrid'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { InboxIcon } from 'lucide-react'
@@ -30,7 +30,7 @@ export default function CategoryPage({ categoryId }: { categoryId: string }) {
 
   const Icon = category.icon
   return (
-    <div className="h-full overflow-y-auto p-4">
+    <div className="@container h-full overflow-y-auto p-[var(--density-page-pad)]">
       <div className="mb-4 flex flex-wrap items-center gap-2.5">
         <BackButton />
         <div className="rounded-md border bg-muted p-1.5">
@@ -71,20 +71,12 @@ export default function CategoryPage({ categoryId }: { categoryId: string }) {
               <h2 className="mb-2 text-xs font-semibold text-muted-foreground">
                 {t(section.labelKey, { defaultValue: section.id })}
               </h2>
-              <div className="grid grid-cols-1 gap-2 @[360px]:grid-cols-2 @[560px]:grid-cols-3">
-                {section.tools.map((tool) => (
-                  <ToolCard key={tool.id} tool={tool} />
-                ))}
-              </div>
+              <ToolCardGrid tools={section.tools} />
             </section>
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-2 @[360px]:grid-cols-2 @[560px]:grid-cols-3">
-          {filteredTools.map((tool) => (
-            <ToolCard key={tool.id} tool={tool} />
-          ))}
-        </div>
+        <ToolCardGrid tools={filteredTools} />
       )}
     </div>
   )
