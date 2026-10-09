@@ -150,7 +150,7 @@ export function EditorPane({
       )}
     >
       {hasHeader && (
-        <header className="flex h-9 shrink-0 items-center gap-2 border-b bg-muted/40 pr-1.5 pl-3">
+        <header className="flex min-h-9 shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b bg-muted/40 py-1 pr-1.5 pl-3">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             {label !== undefined && <span className="truncate text-xs font-semibold">{label}</span>}
             {language !== 'text' && (
