@@ -158,7 +158,7 @@ describe('csv engine', () => {
     const result = jsonToCsv('[{"a":"x,y","b":1}]')
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.value).toBe('a,b\n"x,y",1')
-    expect(jsonToCsv('{"a":1}').ok).toBe(false)
+    expect(jsonToCsv('{"a":1}')).toEqual({ ok: true, value: 'a\n1' })
   })
 
   it('converts csv ↔ tsv', () => {

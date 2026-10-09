@@ -1,3 +1,5 @@
+import { rowsFromJson } from '@/core/engines/json'
+
 export type CsvResult<T> = { ok: true; value: T } | { ok: false; error: string }
 
 export interface CsvParseOptions {
@@ -115,15 +117,7 @@ export function jsonToCsv(source: string, delimiter = ','): CsvResult<string> {
   if (!source.trim()) return { ok: false, error: 'Input is empty.' }
   try {
     const value: unknown = JSON.parse(source)
-    if (!Array.isArray(value)) {
-      return { ok: false, error: 'JSON → CSV requires a top-level array of objects.' }
-    }
-    const records = value.map((item) =>
-      item !== null && typeof item === 'object' && !Array.isArray(item)
-        ? (item as Record<string, unknown>)
-        : { value: item },
-    )
-    return { ok: true, value: recordsToCsv(records, delimiter) }
+    return { ok: true, value: recordsToCsv(rowsFromJson(value), delimiter) }
   } catch (cause) {
     return { ok: false, error: cause instanceof Error ? cause.message : 'Invalid JSON.' }
   }

@@ -278,21 +278,31 @@ function escapeCsvCell(value: JsonScalar | undefined): string {
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
 }
 
-export function jsonToCsv(value: unknown): JsonResult<string> {
-  if (!Array.isArray(value)) {
-    return {
-      ok: false,
-      error: {
-        message: 'JSON → CSV requires a top-level array.',
-        suggestion: 'Wrap objects in an array, e.g. [{"a":1},{"a":2}].',
-      },
-    }
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+export function rowsFromJson(value: unknown): Record<string, JsonScalar>[] {
+  if (Array.isArray(value)) {
+    return value.map((item) => (isRecord(item) ? flattenObject(item) : { value: item as JsonScalar }))
   }
-  const rows = value.map((item) =>
-    item !== null && typeof item === 'object' && !Array.isArray(item)
-      ? flattenObject(item as Record<string, unknown>)
-      : { value: item as JsonScalar },
-  )
+  if (isRecord(value)) {
+    const entries = Object.entries(value)
+    const dictionary =
+      entries.length > 0 && entries.every(([, child]) => isRecord(child))
+    if (dictionary) {
+      return entries.map(([key, child]) => ({
+        key,
+        ...flattenObject(child as Record<string, unknown>),
+      }))
+    }
+    return [flattenObject(value)]
+  }
+  return [{ value: value as JsonScalar }]
+}
+
+export function jsonToCsv(value: unknown): JsonResult<string> {
+  const rows = rowsFromJson(value)
   const columns: string[] = []
   for (const row of rows) {
     for (const key of Object.keys(row)) if (!columns.includes(key)) columns.push(key)
@@ -395,14 +405,7 @@ function markdownEscape(text: string): string {
 }
 
 export function jsonToMarkdownTable(value: unknown): JsonResult<string> {
-  if (!Array.isArray(value)) {
-    return { ok: false, error: { message: 'JSON → Markdown table requires a top-level array.' } }
-  }
-  const rows = value.map((item) =>
-    item !== null && typeof item === 'object' && !Array.isArray(item)
-      ? flattenObject(item as Record<string, unknown>)
-      : { value: item as JsonScalar },
-  )
+  const rows = rowsFromJson(value)
   if (rows.length === 0) return { ok: true, value: '' }
   const columns: string[] = []
   for (const row of rows) {

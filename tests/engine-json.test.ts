@@ -124,8 +124,13 @@ describe('json engine', () => {
     }
   })
 
-  it('rejects non-array JSON for CSV', () => {
-    expect(jsonToCsv('{"a":1}').ok).toBe(false)
+  it('converts a JSON object to one CSV row', () => {
+    const result = jsonToCsv({ name: 'Ada', meta: { role: 'dev' }, tags: ['a'] })
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.value.split('\n')[0]).toBe('name,meta.role,tags')
+      expect(result.value).toContain('Ada,dev,"[""a""]"')
+    }
   })
 
   it('converts JSON to XML and back-compatible JSON', () => {
@@ -153,6 +158,15 @@ describe('json engine', () => {
     expect(output).toContain('active: boolean;')
     expect(output).toMatch(/tags: string\[\]/)
     expect(output).toContain('export interface User')
+  })
+
+  it('converts a JSON object to a markdown table', () => {
+    const result = jsonToMarkdownTable({ id: 'ord-1', active: true })
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.value).toContain('| id | active |')
+      expect(result.value).toContain('| ord-1 | true |')
+    }
   })
 
   it('converts JSON arrays to a markdown table', () => {
