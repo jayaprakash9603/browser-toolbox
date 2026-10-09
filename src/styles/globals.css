@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@source '../../node_modules/postman-lite/src';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -89,32 +90,32 @@ html[data-density='comfortable'] {
 
 .dark {
   color-scheme: dark;
-  --background: #0b1120;
+  --background: #0a0a0a;
   --foreground: #f8fafc;
-  --surface: #111827;
-  --card: #172033;
+  --surface: #1c2022;
+  --card: #1c2022;
   --card-foreground: #f8fafc;
-  --popover: #172033;
+  --popover: #1c2022;
   --popover-foreground: #f8fafc;
   --primary: #818cf8;
-  --primary-foreground: #0b1120;
+  --primary-foreground: #0a0a0a;
   --secondary-brand: #6366f1;
   --accent-brand: #a78bfa;
-  --secondary: #1e293b;
+  --secondary: #1c2022;
   --secondary-foreground: #f8fafc;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #243047;
+  --muted: #1c2022;
+  --muted-foreground: #a1a1aa;
+  --accent: #2a3133;
   --accent-foreground: #f8fafc;
-  --border: #243047;
-  --input: #334155;
+  --border: #2a3133;
+  --input: #1c2022;
   --ring: #818cf8;
   --scroll-thumb: color-mix(in srgb, var(--foreground) 22%, transparent);
   --scroll-thumb-hover: color-mix(in srgb, var(--primary) 65%, transparent);
-  --selection-background: color-mix(in srgb, var(--primary) 35%, #0b1120);
+  --selection-background: color-mix(in srgb, var(--primary) 35%, #0a0a0a);
   --selection-foreground: #f8fafc;
   --scroll-track: color-mix(in srgb, var(--foreground) 5%, transparent);
-  --editor-gutter: #111827;
+  --editor-gutter: #1c2022;
   --editor-active-line: color-mix(in srgb, var(--primary) 10%, transparent);
   --editor-selection: color-mix(in srgb, var(--primary) 34%, transparent);
   --syntax-key: #7ee787;
@@ -124,10 +125,22 @@ html[data-density='comfortable'] {
   --syntax-comment: #9ca3af;
   --syntax-tag: #ff9f8a;
   --syntax-punctuation: #c4c9d4;
-  --shadow-card: 0 1px 2px color-mix(in srgb, black 35%, transparent),
-    0 6px 16px color-mix(in srgb, black 25%, transparent);
-  --shadow-card-hover: 0 8px 20px color-mix(in srgb, black 40%, transparent),
-    0 16px 32px color-mix(in srgb, var(--primary) 15%, transparent);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 45%);
+  --shadow-card-hover: 0 8px 20px rgb(0 0 0 / 50%);
+}
+
+.dark,
+.dark[data-palette] {
+  --background: #0a0a0a;
+  --surface: #1c2022;
+  --card: #1c2022;
+  --popover: #1c2022;
+  --secondary: #1c2022;
+  --muted: #1c2022;
+  --input: #1c2022;
+  --editor-gutter: #1c2022;
+  --border: #2a3133;
+  --accent: #2a3133;
 }
 
 [data-palette='indigo'] {
