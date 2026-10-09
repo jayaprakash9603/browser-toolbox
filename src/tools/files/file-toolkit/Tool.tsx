@@ -1,152 +1,186 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FileUpIcon, ImagesIcon } from 'lucide-react'
+import { FileJsonIcon, FileSpreadsheetIcon, FileTextIcon, InfoIcon, type LucideIcon } from 'lucide-react'
 
-import { csvToRecords } from '@/core/engines/csv'
+import { parseCsv } from '@/core/engines/csv'
 import { formatJson } from '@/core/engines/json'
-import { fileToDataUrl, loadImageFromDataUrl } from '@/core/engines/image'
-import { downloadDataUrl } from '@/core/engines/capture'
 import { ToolPage } from '@/shared/components/ToolPage'
-import { Button } from '@/shared/components/ui/button'
 import { TextEditor } from '@/shared/components/TextEditor'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
+import type { EditorLanguage } from '@/shared/lib/code-editor/languages'
 import { JsonErrorView } from '@/tools/developer/_shared'
 import { useFileTool } from '../_shared'
+import { CsvTableView } from './CsvTableView'
+import { FileDropzone } from './FileDropzone'
+import { FileSummaryCard } from './FileSummaryCard'
+import { ImagesToPdfView } from './ImagesToPdfView'
+import {
+  acceptFor,
+  acceptLabel,
+  countLines,
+  delimiterLabel,
+  detectFileKind,
+  readLoadedFile,
+  splitFileName,
+  type FileTab,
+  type LoadedFile,
+  type TextFileKind,
+} from './fileKinds'
 
-type FileTab = 'csv' | 'json' | 'text' | 'pdf'
+const KIND_ICONS: Record<TextFileKind, LucideIcon> = {
+  csv: FileSpreadsheetIcon,
+  json: FileJsonIcon,
+  text: FileTextIcon,
+}
+
+const TEXT_LANGUAGES: Record<string, EditorLanguage> = {
+  XML: 'xml',
+  YAML: 'yaml',
+  YML: 'yaml',
+  SQL: 'sql',
+}
+
+function jsonShape(source: string): { keys?: number; items?: number } {
+  try {
+    const value: unknown = JSON.parse(source)
+    if (Array.isArray(value)) return { items: value.length }
+    if (value && typeof value === 'object') return { keys: Object.keys(value).length }
+  } catch {
+    /* invalid JSON is reported by the viewer */
+  }
+  return {}
+}
 
 export default function FileToolkitTool() {
   const { t } = useTranslation()
   const tool = useFileTool('files.file-toolkit')
   const [tab, setTab] = useState<FileTab>('csv')
-  const [fileName, setFileName] = useState('')
-  const [content, setContent] = useState('')
+  const [files, setFiles] = useState<Partial<Record<TextFileKind, LoadedFile>>>({})
   const [error, setError] = useState<string | null>(null)
-  const [pdfImages, setPdfImages] = useState<string[]>([])
-  const [busy, setBusy] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
 
-  const readTextFile = async (file: File | null) => {
+  const tabLabels: Record<FileTab, string> = {
+    csv: 'CSV',
+    json: 'JSON',
+    text: t('files.text'),
+    pdf: t('files.toPdf'),
+  }
+
+  const openFiles = async (incoming: File[], target: TextFileKind) => {
+    const file = incoming[0]
     if (!file) return
-    setFileName(file.name)
-    setError(null)
-    setContent(await file.text())
-  }
-
-  const addImages = async (files: FileList | null) => {
-    if (!files) return
-    const urls: string[] = []
-    for (const file of Array.from(files)) {
-      if (file.type.startsWith('image/')) urls.push(await fileToDataUrl(file))
+    const kind = detectFileKind(file)
+    if (!kind) {
+      setError(t('files.unsupported', { name: file.name }))
+      return
     }
-    setPdfImages((prev) => [...prev, ...urls])
-  }
-
-  const buildPdf = async () => {
-    if (pdfImages.length === 0) return
-    setBusy(true)
-    setError(null)
     try {
-      const { jsPDF } = await import('jspdf')
-      const doc = new jsPDF()
-      for (let index = 0; index < pdfImages.length; index += 1) {
-        const img = await loadImageFromDataUrl(pdfImages[index])
-        const pageWidth = doc.internal.pageSize.getWidth()
-        const pageHeight = doc.internal.pageSize.getHeight()
-        const ratio = Math.min(
-          (pageWidth - 20) / img.naturalWidth,
-          (pageHeight - 20) / img.naturalHeight,
-        )
-        const width = img.naturalWidth * ratio
-        const height = img.naturalHeight * ratio
-        if (index > 0) doc.addPage()
-        doc.addImage(
-          pdfImages[index],
-          'PNG',
-          (pageWidth - width) / 2,
-          (pageHeight - height) / 2,
-          width,
-          height,
-        )
+      const loaded = await readLoadedFile(file)
+      setFiles((prev) => ({ ...prev, [kind]: loaded }))
+      setError(null)
+      if (kind !== target) {
+        setTab(kind)
+        setNotice(t('files.switchedTab', { name: file.name, tab: tabLabels[kind] }))
+      } else {
+        setNotice(null)
       }
-      const blob = doc.output('datauristring')
-      downloadDataUrl(blob, `images-${Date.now()}.pdf`)
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not build the PDF.')
+    } catch {
+      setError(t('files.readError', { name: file.name }))
     }
-    setBusy(false)
   }
 
-  const csvTable = tab === 'csv' && content ? csvToRecords(content) : null
-  const jsonPretty = tab === 'json' && content ? formatJson(content) : null
+  const csvRows = useMemo(() => (files.csv ? parseCsv(files.csv.content) : null), [files.csv])
+  const jsonPretty = useMemo(() => (files.json ? formatJson(files.json.content) : null), [files.json])
+
+  const statsFor = (kind: TextFileKind, file: LoadedFile): string[] => {
+    if (kind === 'csv' && csvRows?.ok) {
+      const columns = csvRows.value.reduce((max, row) => Math.max(max, row.length), 0)
+      return [
+        t('files.rows', { count: Math.max(0, csvRows.value.length - 1) }),
+        t('files.columns', { count: columns }),
+        t('files.delimiter', { value: delimiterLabel(file.content) }),
+      ]
+    }
+    if (kind === 'json') {
+      const shape = jsonShape(file.content)
+      const stats = [t('files.lines', { count: countLines(jsonPretty?.ok ? jsonPretty.value : file.content) })]
+      if (shape.keys !== undefined) stats.push(t('files.keys', { count: shape.keys }))
+      if (shape.items !== undefined) stats.push(t('files.items', { count: shape.items }))
+      return stats
+    }
+    return [t('files.lines', { count: countLines(file.content) })]
+  }
+
+  const renderFileHeader = (kind: TextFileKind) => {
+    const file = files[kind]
+    if (!file) {
+      return (
+        <FileDropzone
+          accept={acceptFor(kind)}
+          acceptLabel={acceptLabel(kind)}
+          icon={KIND_ICONS[kind]}
+          title={t(`files.drop.${kind}`)}
+          onFiles={(incoming) => void openFiles(incoming, kind)}
+        />
+      )
+    }
+    return (
+      <FileSummaryCard
+        file={file}
+        icon={KIND_ICONS[kind]}
+        accept={acceptFor(kind)}
+        stats={statsFor(kind, file)}
+        onReplace={(incoming) => void openFiles(incoming, kind)}
+        onRemove={() => {
+          setFiles((prev) => ({ ...prev, [kind]: undefined }))
+          setNotice(null)
+        }}
+      />
+    )
+  }
+
+  const textLanguage = files.text
+    ? (TEXT_LANGUAGES[splitFileName(files.text.name).extension] ?? 'text')
+    : 'text'
 
   return (
     <ToolPage tool={tool}>
-      <div className="flex flex-col gap-3">
-        <Tabs
-          value={tab}
-          onValueChange={(v) => {
-            setTab(v as FileTab)
-            setError(null)
-          }}
-        >
-          <TabsList className="flex-wrap">
-            <TabsTrigger value="csv">CSV</TabsTrigger>
-            <TabsTrigger value="json">JSON</TabsTrigger>
-            <TabsTrigger value="text">{t('files.text')}</TabsTrigger>
-            <TabsTrigger value="pdf">{t('files.toPdf')}</TabsTrigger>
-          </TabsList>
+      <Tabs
+        value={tab}
+        onValueChange={(value) => {
+          setTab(value as FileTab)
+          setError(null)
+          setNotice(null)
+        }}
+        className="flex flex-col gap-3"
+      >
+        <TabsList className="flex-wrap">
+          {(Object.keys(tabLabels) as FileTab[]).map((key) => (
+            <TabsTrigger key={key} value={key}>
+              {tabLabels[key]}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-        {tab !== 'pdf' && (
-          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-5 text-xs text-muted-foreground hover:bg-accent/40">
-            <FileUpIcon className="size-4" />
-            {fileName || t('files.open')}
-            <input
-              type="file"
-              accept={tab === 'csv' ? '.csv,.tsv' : tab === 'json' ? '.json' : '.txt,.md,.log'}
-              className="hidden"
-              onChange={(e) => void readTextFile(e.target.files?.[0] ?? null)}
-              aria-label={t('files.open')}
-            />
-          </label>
+        {notice && (
+          <p
+            role="status"
+            className="flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-foreground"
+          >
+            <InfoIcon className="size-3.5 shrink-0 text-primary" aria-hidden />
+            {notice}
+          </p>
         )}
         {error && <JsonErrorView message={error} />}
 
-        <TabsContent value="csv" className="mt-0">
-          {csvTable && !csvTable.ok && <JsonErrorView message={csvTable.error} />}
-          {csvTable?.ok && (
-            <div className="max-h-80 overflow-auto rounded-md border">
-              <table className="w-full text-[11px]">
-                <thead className="sticky top-0 bg-muted">
-                  <tr>
-                    {csvTable.value.headers.map((header) => (
-                      <th key={header} className="border-b px-1.5 py-1 text-left font-medium">
-                        {header}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {csvTable.value.records.slice(0, 200).map((record, index) => (
-                    <tr key={index} className="border-b last:border-0">
-                      {csvTable.value.headers.map((header) => (
-                        <td key={header} className="px-1.5 py-1 font-mono">
-                          {record[header]}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {csvTable.value.records.length > 200 && (
-                <p className="p-1.5 text-center text-[11px] text-muted-foreground">
-                  {t('files.truncated', { count: 200 })}
-                </p>
-              )}
-            </div>
-          )}
+        <TabsContent value="csv" forceMount className="mt-0 flex flex-col gap-3 data-[state=inactive]:hidden">
+          {renderFileHeader('csv')}
+          {csvRows && !csvRows.ok && <JsonErrorView message={csvRows.error} />}
+          {csvRows?.ok && <CsvTableView key={files.csv ? `${files.csv.name}:${files.csv.size}:${files.csv.lastModified}` : undefined} rows={csvRows.value} />}
         </TabsContent>
 
-        <TabsContent value="json" className="mt-0">
+        <TabsContent value="json" forceMount className="mt-0 flex flex-col gap-3 data-[state=inactive]:hidden">
+          {renderFileHeader('json')}
           {jsonPretty && !jsonPretty.ok && (
             <JsonErrorView
               message={jsonPretty.error.message}
@@ -156,56 +190,33 @@ export default function FileToolkitTool() {
             />
           )}
           {jsonPretty?.ok && (
-            <pre className="max-h-80 scrollbar-both rounded-lg border bg-muted/30 p-3 font-mono text-xs leading-relaxed">
-              {jsonPretty.value}
-            </pre>
-          )}
-        </TabsContent>
-
-        <TabsContent value="text" className="mt-0">
-          {content && (
-            <TextEditor value={content} readOnly minRows={14} ariaLabel={t('files.content')} />
-          )}
-        </TabsContent>
-
-        <TabsContent value="pdf" className="mt-0 flex flex-col gap-2">
-          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-5 text-xs text-muted-foreground hover:bg-accent/40">
-            <ImagesIcon className="size-4" />
-            {t('files.addImages')}
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={(e) => void addImages(e.target.files)}
-              aria-label={t('files.addImages')}
+            <TextEditor
+              value={jsonPretty.value}
+              readOnly
+              language="json"
+              minRows={16}
+              ariaLabel={t('files.content')}
             />
-          </label>
-          {pdfImages.length > 0 && (
-            <>
-              <div className="flex flex-wrap gap-1.5">
-                {pdfImages.map((url, index) => (
-                  <img
-                    key={index}
-                    src={url}
-                    alt={`${index + 1}`}
-                    className="size-14 rounded border object-cover"
-                  />
-                ))}
-              </div>
-              <div className="flex gap-1.5">
-                <Button size="sm" onClick={() => void buildPdf()} disabled={busy}>
-                  {busy ? t('files.building') : t('files.buildPdf', { count: pdfImages.length })}
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => setPdfImages([])}>
-                  {t('common.clear')}
-                </Button>
-              </div>
-            </>
           )}
         </TabsContent>
-        </Tabs>
-      </div>
+
+        <TabsContent value="text" forceMount className="mt-0 flex flex-col gap-3 data-[state=inactive]:hidden">
+          {renderFileHeader('text')}
+          {files.text && (
+            <TextEditor
+              value={files.text.content}
+              readOnly
+              language={textLanguage}
+              minRows={16}
+              ariaLabel={t('files.content')}
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value="pdf" forceMount className="mt-0 data-[state=inactive]:hidden">
+          <ImagesToPdfView />
+        </TabsContent>
+      </Tabs>
     </ToolPage>
   )
 }
