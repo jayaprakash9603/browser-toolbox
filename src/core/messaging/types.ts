@@ -9,6 +9,7 @@ export type ExtensionMessage =
   | { type: 'PICK_ELEMENT_CANCEL' }
   | { type: 'GET_PAGE_INFO' }
   | { type: 'GET_STORAGE_SNAPSHOT' }
+  | { type: 'CAPTURE_VISIBLE'; windowId?: number }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
@@ -25,6 +26,7 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'PICK_ELEMENT_CANCEL',
   'GET_PAGE_INFO',
   'GET_STORAGE_SNAPSHOT',
+  'CAPTURE_VISIBLE',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {

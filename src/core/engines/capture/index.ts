@@ -8,19 +8,62 @@ export interface CaptureResult {
 
 export type CaptureOutcome = { ok: true; value: CaptureResult } | { ok: false; error: string }
 
+function captureError(cause: unknown): string {
+  const message = cause instanceof Error ? cause.message : 'Could not capture the tab.'
+  if (message.includes('all_urls') || message.includes('activeTab')) {
+    return 'This page cannot be captured. Open a normal website tab, then try again. Chrome pages, the Web Store, and this extension cannot be screenshotted.'
+  }
+  if (message.includes('Cannot access') || message.includes('chrome-extension')) {
+    return 'Open the page you want in a browser tab, then capture from the side panel.'
+  }
+  return message
+}
+
 export async function captureVisibleTab(windowId?: number): Promise<CaptureOutcome> {
+  if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
+    return { ok: false, error: 'Screenshot capture works in the installed Chrome extension.' }
+  }
   try {
-    const dataUrl =
-      windowId === undefined
-        ? await chrome.tabs.captureVisibleTab({ format: 'png' })
-        : await chrome.tabs.captureVisibleTab(windowId, { format: 'png' })
-    const dimensions = await imageDimensions(dataUrl)
-    return { ok: true, value: { dataUrl, ...dimensions } }
+    const response = (await chrome.runtime.sendMessage({
+      type: 'CAPTURE_VISIBLE',
+      windowId,
+    })) as { ok: true; data: { dataUrl: string } } | { ok: false; error: string } | undefined
+    if (!response) return { ok: false, error: 'The extension did not return a screenshot.' }
+    if (!response.ok) return { ok: false, error: captureError(new Error(response.error)) }
+    const dimensions = await imageDimensions(response.data.dataUrl)
+    return { ok: true, value: { dataUrl: response.data.dataUrl, ...dimensions } }
   } catch (cause) {
-    return {
-      ok: false,
-      error: cause instanceof Error ? cause.message : 'Could not capture the tab.',
-    }
+    return { ok: false, error: captureError(cause) }
+  }
+}
+
+const MAX_STITCH_HEIGHT = 16384
+
+export async function stitchCaptures(
+  slices: { dataUrl: string; scrollY: number }[],
+  totalCssHeight: number,
+  devicePixelRatio: number,
+): Promise<CaptureOutcome> {
+  if (slices.length === 0) return { ok: false, error: 'Nothing was captured.' }
+  try {
+    const images = await Promise.all(slices.map((slice) => loadImage(slice.dataUrl)))
+    const width = images[0].naturalWidth
+    const height = Math.min(Math.round(totalCssHeight * devicePixelRatio), MAX_STITCH_HEIGHT)
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return { ok: false, error: 'Canvas is unavailable.' }
+    slices.forEach((slice, index) => {
+      const destY = Math.round(slice.scrollY * devicePixelRatio)
+      if (destY >= height) return
+      const img = images[index]
+      const drawHeight = Math.min(img.naturalHeight, height - destY)
+      ctx.drawImage(img, 0, 0, img.naturalWidth, drawHeight, 0, destY, width, drawHeight)
+    })
+    return { ok: true, value: { dataUrl: canvas.toDataURL('image/png'), width, height } }
+  } catch (cause) {
+    return { ok: false, error: cause instanceof Error ? cause.message : 'Could not stitch the page.' }
   }
 }
 

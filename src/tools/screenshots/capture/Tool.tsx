@@ -1,14 +1,22 @@
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CameraIcon, DownloadIcon } from 'lucide-react'
+import { CameraIcon, DownloadIcon, FrameIcon, UnfoldVerticalIcon } from 'lucide-react'
 
 import {
   captureVisibleTab,
+  cropCapture,
   downloadDataUrl,
   renderAnnotated,
+  stitchCaptures,
   type Annotation,
   type AnnotationTool,
 } from '@/core/engines/capture'
+import {
+  fullPageOffsets,
+  readPageCaptureMetrics,
+  scrollPageTo,
+  selectPageArea,
+} from '@/core/engines/capture/pageActions'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -40,15 +48,101 @@ export default function CaptureTool() {
   const dragStart = useRef<{ x: number; y: number } | null>(null)
   const markerCount = useRef(0)
 
-  const capture = async () => {
+  const applyShot = (dataUrl: string) => {
+    setShot(dataUrl)
+    setAnnotations([])
+    markerCount.current = 0
+  }
+
+  const capture = async (mode: 'visible' | 'area' | 'full') => {
     setCapturing(true)
     setError(null)
-    const result = await captureVisibleTab()
-    if (result.ok) {
-      setShot(result.value.dataUrl)
-      setAnnotations([])
-    } else setError(result.error)
-    setCapturing(false)
+    try {
+      if (typeof chrome === 'undefined' || !chrome.tabs?.query) {
+        setError(t('capture.extensionOnly'))
+        return
+      }
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+      if (tab?.id == null || tab.windowId == null) {
+        setError(t('capture.noTab'))
+        return
+      }
+
+      if (mode === 'area') {
+        const [picked] = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: selectPageArea,
+        })
+        const area = picked?.result
+        if (!area) {
+          setError(t('capture.cancelled'))
+          return
+        }
+        const visible = await captureVisibleTab(tab.windowId)
+        if (!visible.ok) {
+          setError(visible.error)
+          return
+        }
+        const cropped = await cropCapture(visible.value.dataUrl, area, area.devicePixelRatio)
+        if (cropped.ok) applyShot(cropped.value.dataUrl)
+        else setError(cropped.error)
+        return
+      }
+
+      if (mode === 'full') {
+        const [metricsResult] = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: readPageCaptureMetrics,
+        })
+        const metrics = metricsResult?.result
+        if (!metrics) {
+          setError(t('capture.noTab'))
+          return
+        }
+        const offsets = fullPageOffsets(metrics.scrollHeight, metrics.viewportHeight)
+        const slices: { dataUrl: string; scrollY: number }[] = []
+        for (const offset of offsets) {
+          const [scrolled] = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: scrollPageTo,
+            args: [offset],
+          })
+          await new Promise((resolve) => setTimeout(resolve, 180))
+          const visible = await captureVisibleTab(tab.windowId)
+          if (!visible.ok) {
+            setError(visible.error)
+            return
+          }
+          slices.push({ dataUrl: visible.value.dataUrl, scrollY: scrolled?.result ?? offset })
+        }
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: scrollPageTo,
+          args: [metrics.scrollY],
+        })
+        if (slices.length === 1) {
+          applyShot(slices[0].dataUrl)
+          return
+        }
+        const stitched = await stitchCaptures(slices, metrics.scrollHeight, metrics.devicePixelRatio)
+        if (stitched.ok) applyShot(stitched.value.dataUrl)
+        else setError(stitched.error)
+        return
+      }
+
+      const result = await captureVisibleTab(tab.windowId)
+      if (result.ok) applyShot(result.value.dataUrl)
+      else setError(result.error)
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : t('capture.failed')
+      setError(
+        message.includes('Cannot access') || message.includes('extensions gallery')
+          ? t('capture.restricted')
+          : message,
+      )
+    } finally {
+      setCapturing(false)
+    }
   }
 
   const imagePoint = (event: React.MouseEvent): { x: number; y: number } => {
@@ -111,9 +205,17 @@ export default function CaptureTool() {
   return (
     <ToolPage tool={tool}>
       <div className="flex flex-col gap-3">
-        <Button size="sm" className="w-fit" onClick={() => void capture()} disabled={capturing}>
-          <CameraIcon /> {capturing ? t('capture.capturing') : t('capture.captureVisible')}
-        </Button>
+        <div className="flex flex-wrap gap-1.5">
+          <Button size="sm" onClick={() => void capture('visible')} disabled={capturing}>
+            <CameraIcon /> {capturing ? t('capture.capturing') : t('capture.captureVisible')}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => void capture('area')} disabled={capturing}>
+            <FrameIcon /> {t('capture.captureArea')}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => void capture('full')} disabled={capturing}>
+            <UnfoldVerticalIcon /> {t('capture.captureFull')}
+          </Button>
+        </div>
         {error && <JsonErrorView message={error} />}
         {!shot && !error && (
           <p className="rounded-md border border-dashed py-10 text-center text-xs text-muted-foreground">
