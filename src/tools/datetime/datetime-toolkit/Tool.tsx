@@ -14,6 +14,7 @@ import {
 import { RefreshCwIcon } from 'lucide-react'
 import { COMMON_TIMEZONES, convertToTimeZones } from '@/core/engines/timezone'
 import { ToolPage } from '@/shared/components/ToolPage'
+import { DateTimeField } from '@/shared/components/DateTimeField'
 import { Input } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
@@ -71,21 +72,11 @@ export default function DateTimeToolkitTool() {
           <div className="flex flex-col gap-2">
             <label className="flex flex-col gap-1 text-[11px] font-medium">
               {t('dt.dateA')}
-              <Input
-                type="datetime-local"
-                value={dateA}
-                onChange={(e) => setDateA(e.target.value)}
-                aria-label={t('dt.dateA')}
-              />
+              <DateTimeField value={dateA} onChange={setDateA} ariaLabel={t('dt.dateA')} />
             </label>
             <label className="flex flex-col gap-1 text-[11px] font-medium">
               {t('dt.dateB')}
-              <Input
-                type="datetime-local"
-                value={dateB}
-                onChange={(e) => setDateB(e.target.value)}
-                aria-label={t('dt.dateB')}
-              />
+              <DateTimeField value={dateB} onChange={setDateB} ariaLabel={t('dt.dateB')} />
             </label>
             {diff && (
               <div className="space-y-1 text-[11px]">
@@ -118,12 +109,7 @@ export default function DateTimeToolkitTool() {
 
         <TabsContent value="zones" className="mt-0">
           <div className="flex flex-col gap-2">
-            <Input
-              type="datetime-local"
-              value={zoneDate}
-              onChange={(e) => setZoneDate(e.target.value)}
-              aria-label={t('dt.zoneDate')}
-            />
+            <DateTimeField value={zoneDate} onChange={setZoneDate} ariaLabel={t('dt.zoneDate')} />
             <div className="max-h-80 space-y-1 overflow-y-auto">
               {zones.map((zone) => (
                 <div
@@ -220,12 +206,7 @@ function TimestampPanel() {
         )}
       </TabsContent>
       <TabsContent value="toTimestamp" className="mt-2 space-y-2">
-        <Input
-          type="datetime-local"
-          value={dateInput}
-          onChange={(e) => setDateInput(e.target.value)}
-          aria-label={t('dev.dateInput')}
-        />
+        <DateTimeField value={dateInput} onChange={setDateInput} ariaLabel={t('dev.dateInput')} />
         {dateInput.trim() && !validDate && <JsonErrorView message={t('dev.invalidDate')} />}
         {validDate && (
           <div className="space-y-1">

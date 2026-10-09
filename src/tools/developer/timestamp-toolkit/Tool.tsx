@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { RefreshCwIcon } from 'lucide-react'
 
 import { dateToTimestamp, nowTimestamp, parseTimestamp, relativeTime } from '@/core/engines/date'
+import { DateTimeField } from '@/shared/components/DateTimeField'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -62,12 +63,7 @@ export default function TimestampToolkitTool() {
 
           <TabsContent value="toTimestamp" className="mt-2">
             <div className="flex flex-col gap-2">
-              <Input
-                type="datetime-local"
-                value={dateInput}
-                onChange={(e) => setDateInput(e.target.value)}
-                aria-label={t('dev.dateInput')}
-              />
+              <DateTimeField value={dateInput} onChange={setDateInput} ariaLabel={t('dev.dateInput')} />
               {dateInput.trim() && !fromDate && <JsonErrorView message={t('dev.invalidDate')} />}
               {fromDate && (
                 <div className="space-y-1.5">
