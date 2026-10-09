@@ -15,6 +15,7 @@ import { RefreshCwIcon } from 'lucide-react'
 import { COMMON_TIMEZONES, convertToTimeZones } from '@/core/engines/timezone'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { DateTimeField } from '@/shared/components/DateTimeField'
+import { NumberField, parseNumberInRange } from '@/shared/components/NumberField'
 import { Input } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
@@ -31,13 +32,17 @@ export default function DateTimeToolkitTool() {
 
   const [dateA, setDateA] = useState('')
   const [dateB, setDateB] = useState('')
-  const [addAmount, setAddAmount] = useState(7)
+  const [addAmountText, setAddAmountText] = useState('7')
+  const addAmount = parseNumberInRange(addAmountText)
 
   const a = useMemo(() => (dateA ? new Date(dateA) : null), [dateA])
   const b = useMemo(() => (dateB ? new Date(dateB) : null), [dateB])
   const diff = useMemo(() => (a && b ? diffDates(a, b) : null), [a, b])
   const workDays = useMemo(() => (a && b ? workingDaysBetween(a, b) : null), [a, b])
-  const added = useMemo(() => (a ? addDays(a, addAmount) : null), [a, addAmount])
+  const added = useMemo(
+    () => (a && addAmount !== null ? addDays(a, addAmount) : null),
+    [a, addAmount],
+  )
 
   const [zoneDate, setZoneDate] = useState(() => new Date().toISOString().slice(0, 16))
   const zoneBase = useMemo(() => (zoneDate ? new Date(zoneDate) : new Date()), [zoneDate])
@@ -89,12 +94,12 @@ export default function DateTimeToolkitTool() {
             )}
             {a && (
               <div className="flex items-center gap-1.5 pt-1">
-                <Input
-                  type="number"
-                  value={addAmount}
-                  onChange={(e) => setAddAmount(Number(e.target.value) || 0)}
+                <NumberField
+                  value={addAmountText}
+                  onChange={setAddAmountText}
+                  allowNegative
                   className="w-20"
-                  aria-label={t('dt.addDays')}
+                  ariaLabel={t('dt.addDays')}
                 />
                 <span className="text-[11px] text-muted-foreground">{t('dt.days')}</span>
                 {added && (

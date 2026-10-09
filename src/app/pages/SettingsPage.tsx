@@ -18,7 +18,7 @@ import { PalettePicker } from '@/shared/components/settings/PalettePicker'
 import type { PaletteId } from '@/shared/lib/theme/palettes'
 import { AppLoadingSkeleton } from '@/shared/components/AppLoadingSkeleton'
 import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
+import { NumberField, parseNumberInRange } from '@/shared/components/NumberField'
 import { Separator } from '@/shared/components/ui/separator'
 import { Switch } from '@/shared/components/ui/switch'
 import {
@@ -107,19 +107,10 @@ export default function SettingsPage() {
       </SettingRow>
 
       <SettingRow label={t('settings.historySize')} description={t('settings.historySizeDescription')}>
-        <Input
-          type="number"
-          min={10}
-          max={1000}
-          value={settings.clipboardHistoryLimit}
-          onChange={(event) => {
-            const value = Number(event.target.value)
-            if (Number.isFinite(value) && value >= 10 && value <= 1000) {
-              void update({ clipboardHistoryLimit: value })
-            }
-          }}
-          className="w-20"
-          aria-label={t('settings.clipboardHistorySize')}
+        <HistorySizeField
+          saved={settings.clipboardHistoryLimit}
+          label={t('settings.clipboardHistorySize')}
+          onCommit={(value) => void update({ clipboardHistoryLimit: value })}
         />
       </SettingRow>
 
@@ -172,6 +163,37 @@ export default function SettingsPage() {
         }}
       />
     </div>
+  )
+}
+
+function HistorySizeField({
+  saved,
+  label,
+  onCommit,
+}: {
+  saved: number
+  label: string
+  onCommit: (value: number) => void
+}) {
+  const [text, setText] = useState(String(saved))
+  const [seen, setSeen] = useState(saved)
+  if (saved !== seen) {
+    setSeen(saved)
+    setText(String(saved))
+  }
+  return (
+    <NumberField
+      value={text}
+      min={10}
+      max={1000}
+      className="w-20"
+      ariaLabel={label}
+      onChange={(next) => {
+        setText(next)
+        const parsed = parseNumberInRange(next, 10, 1000)
+        if (parsed !== null) onCommit(parsed)
+      }}
+    />
   )
 }
 

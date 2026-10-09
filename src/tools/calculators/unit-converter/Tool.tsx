@@ -4,7 +4,7 @@ import { ArrowLeftRightIcon } from 'lucide-react'
 
 import { convertUnit, UNIT_CATEGORIES } from '@/core/engines/unit'
 import { ToolPage } from '@/shared/components/ToolPage'
-import { Input } from '@/shared/components/ui/input'
+import { NumberField } from '@/shared/components/NumberField'
 import { Button } from '@/shared/components/ui/button'
 import {
   Select,
@@ -56,12 +56,13 @@ export default function UnitConverterTool() {
           </SelectContent>
         </Select>
         <div className="flex items-center gap-1.5">
-          <Input
-            type="number"
+          <NumberField
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={setValue}
+            allowDecimal
+            allowNegative
             className="flex-1 font-mono"
-            aria-label={t('calc.value')}
+            ariaLabel={t('calc.value')}
           />
           <Select value={fromId} onValueChange={setFromId}>
             <SelectTrigger className="w-28" aria-label={t('calc.from')}>

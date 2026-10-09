@@ -6,7 +6,7 @@ import { randomHex, randomInt, randomString } from '@/core/engines/password'
 import { generateNanoId, generateUuidV4 } from '@/core/engines/id'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
+import { NumberField, parseNumberInRange } from '@/shared/components/NumberField'
 import { Tabs, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { CopyButton } from '@/shared/components/CopyButton'
 import { ToolActions } from '@/tools/text/_shared'
@@ -18,26 +18,33 @@ export default function RandomGeneratorTool() {
   const { t } = useTranslation()
   const tool = useSecurityTool('security.random-generator')
   const [kind, setKind] = useState<RandomKind>('string')
-  const [min, setMin] = useState(1)
-  const [max, setMax] = useState(100)
-  const [length, setLength] = useState(16)
+  const [minText, setMinText] = useState('1')
+  const [maxText, setMaxText] = useState('100')
+  const [lengthText, setLengthText] = useState('16')
+  const min = parseNumberInRange(minText, undefined, undefined)
+  const max = parseNumberInRange(maxText)
+  const length = parseNumberInRange(lengthText, 1, 512)
   const [output, setOutput] = useState('')
 
   const generate = () => {
     switch (kind) {
       case 'number':
+        if (min === null || max === null) return
         setOutput(String(randomInt(min, max)))
         break
       case 'string':
+        if (length === null) return
         setOutput(randomString(length))
         break
       case 'hex':
+        if (length === null) return
         setOutput(randomHex(Math.ceil(length / 2)))
         break
       case 'uuid':
         setOutput(generateUuidV4())
         break
       case 'nanoid':
+        if (length === null) return
         setOutput(generateNanoId(length))
         break
     }
@@ -57,41 +64,45 @@ export default function RandomGeneratorTool() {
         </Tabs>
         {kind === 'number' && (
           <div className="flex items-center gap-2">
-            <Input
-              type="number"
-              value={min}
-              onChange={(e) => setMin(Number(e.target.value) || 0)}
+            <NumberField
+              value={minText}
+              onChange={setMinText}
+              allowNegative
               className="w-24"
-              aria-label="min"
+              ariaLabel="min"
             />
             <span className="text-xs text-muted-foreground">–</span>
-            <Input
-              type="number"
-              value={max}
-              onChange={(e) => setMax(Number(e.target.value) || 0)}
+            <NumberField
+              value={maxText}
+              onChange={setMaxText}
+              allowNegative
               className="w-24"
-              aria-label="max"
+              ariaLabel="max"
             />
           </div>
         )}
         {(kind === 'string' || kind === 'hex' || kind === 'nanoid') && (
           <label className="flex items-center gap-2 text-xs">
             {t('security.length')}
-            <Input
-              type="number"
+            <NumberField
+              value={lengthText}
+              onChange={setLengthText}
               min={1}
               max={512}
-              value={length}
-              onChange={(e) => {
-                const v = Number(e.target.value)
-                if (Number.isFinite(v)) setLength(Math.min(Math.max(1, v), 512))
-              }}
               className="w-20"
-              aria-label={t('security.length')}
+              ariaLabel={t('security.length')}
             />
           </label>
         )}
-        <Button size="sm" className="w-fit" onClick={generate}>
+        <Button
+          size="sm"
+          className="w-fit"
+          onClick={generate}
+          disabled={
+            (kind === 'number' && (min === null || max === null)) ||
+            ((kind === 'string' || kind === 'hex' || kind === 'nanoid') && length === null)
+          }
+        >
           <DicesIcon /> {t('text.generate')}
         </Button>
         {output && (

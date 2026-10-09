@@ -9,7 +9,7 @@ import {
 } from '@/core/engines/password'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
+import { NumberField, parseNumberInRange } from '@/shared/components/NumberField'
 import { Switch } from '@/shared/components/ui/switch'
 import { CopyButton } from '@/shared/components/CopyButton'
 import { JsonErrorView } from '@/tools/developer/_shared'
@@ -31,11 +31,15 @@ export default function PasswordGeneratorTool() {
   const { t } = useTranslation()
   const tool = useSecurityTool('security.password-generator')
   const [options, setOptions] = useState<PasswordOptions>(DEFAULT_PASSWORD_OPTIONS)
-  const [count, setCount] = useState(1)
+  const [lengthText, setLengthText] = useState(String(DEFAULT_PASSWORD_OPTIONS.length))
+  const [countText, setCountText] = useState('1')
+  const length = parseNumberInRange(lengthText, 4, 256)
+  const count = parseNumberInRange(countText, 1, 50)
   const [output, setOutput] = useState<string[]>([])
 
   const generate = () => {
-    const results = generatePasswords(options, count)
+    if (length === null || count === null) return
+    const results = generatePasswords({ ...options, length }, count)
     const first = results[0]
     if (first && !first.ok) {
       setOutput([])
@@ -52,33 +56,24 @@ export default function PasswordGeneratorTool() {
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-2 text-xs">
             {t('security.length')}
-            <Input
-              type="number"
+            <NumberField
+              value={lengthText}
+              onChange={setLengthText}
               min={4}
               max={256}
-              value={options.length}
-              onChange={(e) => {
-                const v = Number(e.target.value)
-                if (Number.isFinite(v))
-                  setOptions((o) => ({ ...o, length: Math.min(Math.max(4, v), 256) }))
-              }}
               className="w-20"
-              aria-label={t('security.length')}
+              ariaLabel={t('security.length')}
             />
           </label>
           <label className="flex items-center gap-2 text-xs">
             {t('text.count')}
-            <Input
-              type="number"
+            <NumberField
+              value={countText}
+              onChange={setCountText}
               min={1}
               max={50}
-              value={count}
-              onChange={(e) => {
-                const v = Number(e.target.value)
-                if (Number.isFinite(v)) setCount(Math.min(Math.max(1, v), 50))
-              }}
               className="w-16"
-              aria-label={t('text.count')}
+              ariaLabel={t('text.count')}
             />
           </label>
         </div>
@@ -95,7 +90,7 @@ export default function PasswordGeneratorTool() {
           ))}
         </div>
         {noCharset && <JsonErrorView message={t('security.needCharset')} />}
-        <Button size="sm" className="w-fit" onClick={generate} disabled={noCharset}>
+        <Button size="sm" className="w-fit" onClick={generate} disabled={noCharset || length === null || count === null}>
           <RefreshCwIcon /> {t('text.generate')}
         </Button>
         {output.length > 0 && (
@@ -104,7 +99,7 @@ export default function PasswordGeneratorTool() {
               <span className="text-xs font-medium">{t('text.output')}</span>
               <ToolActions value={output.join('\n')} onClear={() => setOutput([])} />
             </div>
-            <div className="max-h-72 space-y-1 overflow-y-auto">
+            <div className="scrollbar-styled max-h-[calc(100dvh-12rem)] space-y-1 overflow-y-auto">
               {output.map((password, index) => (
                 <div
                   key={index}

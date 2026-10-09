@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { generateDummyText, type DummyTextVariant, type LoremMode } from '@/core/engines/text'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
+import { NumberField, parseNumberInRange } from '@/shared/components/NumberField'
 import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
 import { Tabs, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { ToolActions, useTransformTool } from '../_shared'
 
@@ -18,8 +18,7 @@ export default function DummyDataTool() {
   const [output, setOutput] = useState('')
 
   const max = mode === 'words' ? 500 : 50
-  const count = Number(countText)
-  const countReady = /^\d+$/.test(countText) && count >= 1 && count <= max
+  const count = parseNumberInRange(countText, 1, max)
 
   return (
     <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col overflow-hidden">
@@ -40,20 +39,20 @@ export default function DummyDataTool() {
           </Tabs>
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
             {t('text.count')}
-            <Input
-              inputMode="numeric"
+            <NumberField
               value={countText}
-              onChange={(event) => setCountText(event.target.value.replace(/\D/g, ''))}
+              onChange={setCountText}
+              min={1}
+              max={max}
               placeholder={t('text.countRange', { max })}
-              className="h-8 w-16 tabular-nums"
-              aria-label={t('text.count')}
-              aria-invalid={countText.length > 0 && !countReady}
+              className="h-8 w-16"
+              ariaLabel={t('text.count')}
             />
           </label>
           <Button
             size="sm"
-            disabled={!countReady}
-            onClick={() => setOutput(generateDummyText(mode, count, variant))}
+            disabled={count === null}
+            onClick={() => count !== null && setOutput(generateDummyText(mode, count, variant))}
           >
             {t('text.generate')}
           </Button>

@@ -4,7 +4,7 @@ import { PauseIcon, PlayIcon, RotateCcwIcon } from 'lucide-react'
 
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
+import { NumberField, parseNumberInRange } from '@/shared/components/NumberField'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { useProductivityTool } from '../_shared'
 
@@ -21,7 +21,8 @@ export default function TimerTool() {
   const tool = useProductivityTool('productivity.timer')
   const [tab, setTab] = useState<'countdown' | 'stopwatch' | 'pomodoro'>('countdown')
 
-  const [minutes, setMinutes] = useState(5)
+  const [minutesText, setMinutesText] = useState('5')
+  const minutes = parseNumberInRange(minutesText, 1, 600)
   const [remaining, setRemaining] = useState<number | null>(null)
   const [counting, setCounting] = useState(false)
   const endAt = useRef(0)
@@ -54,6 +55,7 @@ export default function TimerTool() {
   }, [counting, timing, pomoRunning, pomoMode])
 
   const startCountdown = () => {
+    if (minutes === null) return
     endAt.current = Date.now() + minutes * 60000
     setRemaining(minutes * 60000)
     setCounting(true)
@@ -78,24 +80,23 @@ export default function TimerTool() {
 
         <TabsContent value="countdown" className="mt-2 flex flex-col items-center gap-3">
           <div className="flex items-center gap-1.5">
-            <Input
-              type="number"
+            <NumberField
+              value={minutesText}
+              onChange={setMinutesText}
               min={1}
               max={600}
-              value={minutes}
-              onChange={(e) => setMinutes(Math.max(1, Number(e.target.value) || 1))}
               className="w-20"
-              aria-label={t('timer.minutes')}
+              ariaLabel={t('timer.minutes')}
               disabled={counting}
             />
             <span className="text-xs text-muted-foreground">{t('timer.minutes')}</span>
           </div>
           <p className="font-mono text-4xl font-semibold tabular-nums">
-            {formatMs(remaining ?? minutes * 60000)}
+            {formatMs(remaining ?? (minutes ?? 0) * 60000)}
           </p>
           <div className="flex gap-1.5">
             {!counting ? (
-              <Button size="sm" onClick={startCountdown}>
+              <Button size="sm" onClick={startCountdown} disabled={minutes === null}>
                 <PlayIcon /> {t('timer.start')}
               </Button>
             ) : (

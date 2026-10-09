@@ -16,7 +16,7 @@ import {
 } from '@/core/engines/image'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
+import { NumberField, parseNumberInRange } from '@/shared/components/NumberField'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { CopyButton } from '@/shared/components/CopyButton'
 import { downloadDataUrl } from '@/core/engines/capture'
@@ -29,8 +29,10 @@ export default function ImageToolkitTool() {
   const [file, setFile] = useState<File | null>(null)
   const [img, setImg] = useState<HTMLImageElement | null>(null)
   const [info, setInfo] = useState<ImageInfo | null>(null)
-  const [width, setWidth] = useState(0)
-  const [height, setHeight] = useState(0)
+  const [widthText, setWidthText] = useState('')
+  const [heightText, setHeightText] = useState('')
+  const width = parseNumberInRange(widthText, 1)
+  const height = parseNumberInRange(heightText, 1)
   const [format, setFormat] = useState<ImageFormat>('image/png')
   const [output, setOutput] = useState('')
 
@@ -40,8 +42,8 @@ export default function ImageToolkitTool() {
     void getImageInfo(f).then((r) => {
       if (r.ok) {
         setInfo(r.value)
-        setWidth(r.value.width)
-        setHeight(r.value.height)
+        setWidthText(String(r.value.width))
+        setHeightText(String(r.value.height))
       }
     })
     void fileToDataUrl(f).then(loadImageFromDataUrl).then(setImg)
@@ -60,8 +62,9 @@ export default function ImageToolkitTool() {
 
   const run = async () => {
     if (!img || !file) return
-    if (tab === 'resize') setOutput(await resizeImage(img, width, height))
-    if (tab === 'crop') setOutput(await cropImage(img, 0, 0, width, height))
+    if ((tab === 'resize' || tab === 'crop') && (width === null || height === null)) return
+    if (tab === 'resize') setOutput(await resizeImage(img, width ?? 1, height ?? 1))
+    if (tab === 'crop') setOutput(await cropImage(img, 0, 0, width ?? 1, height ?? 1))
     if (tab === 'convert') setOutput(await convertImage(img, format))
     if (tab === 'base64') {
       const r = await imageToBase64(file)
@@ -101,22 +104,20 @@ export default function ImageToolkitTool() {
             </Tabs>
             {(tab === 'resize' || tab === 'crop') && (
               <div className="flex items-center gap-2">
-                <Input
-                  type="number"
+                <NumberField
+                  value={widthText}
+                  onChange={setWidthText}
                   min={1}
-                  value={width}
-                  onChange={(e) => setWidth(Number(e.target.value) || 1)}
                   className="w-24"
-                  aria-label="width"
+                  ariaLabel="width"
                 />
                 <span className="text-xs text-muted-foreground">×</span>
-                <Input
-                  type="number"
+                <NumberField
+                  value={heightText}
+                  onChange={setHeightText}
                   min={1}
-                  value={height}
-                  onChange={(e) => setHeight(Number(e.target.value) || 1)}
                   className="w-24"
-                  aria-label="height"
+                  ariaLabel="height"
                 />
               </div>
             )}
@@ -135,7 +136,12 @@ export default function ImageToolkitTool() {
               </div>
             )}
             {tab !== 'info' && (
-              <Button size="sm" className="w-fit" onClick={() => void run()}>
+              <Button
+                size="sm"
+                className="w-fit"
+                onClick={() => void run()}
+                disabled={(tab === 'resize' || tab === 'crop') && (width === null || height === null)}
+              >
                 {t('text.generate')}
               </Button>
             )}

@@ -6,6 +6,7 @@ import { generateIds, isValidUuid, uuidVersion, type IdKind } from '@/core/engin
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
+import { NumberField, parseNumberInRange } from '@/shared/components/NumberField'
 import { Input } from '@/shared/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { ToolActions } from '@/tools/text/_shared'
@@ -21,7 +22,8 @@ export default function IdToolkitTool() {
   const { t } = useTranslation()
   const tool = useDevTool('developer.id-toolkit')
   const [kind, setKind] = useState<IdKind>('uuid-v4')
-  const [count, setCount] = useState(1)
+  const [countText, setCountText] = useState('1')
+  const count = parseNumberInRange(countText, 1, 500)
   const [output, setOutput] = useState<string[]>([])
   const [validateInput, setValidateInput] = useState('')
 
@@ -29,7 +31,10 @@ export default function IdToolkitTool() {
     ? { valid: isValidUuid(validateInput), version: uuidVersion(validateInput) }
     : null
 
-  const generate = () => setOutput(generateIds(kind, count))
+  const generate = () => {
+    if (count === null) return
+    setOutput(generateIds(kind, count))
+  }
 
   return (
     <ToolPage tool={tool}>
@@ -53,19 +58,15 @@ export default function IdToolkitTool() {
                     {k.label}
                   </Button>
                 ))}
-                <Input
-                  type="number"
+                <NumberField
+                  value={countText}
+                  onChange={setCountText}
                   min={1}
                   max={500}
-                  value={count}
-                  onChange={(e) => {
-                    const v = Number(e.target.value)
-                    if (Number.isFinite(v)) setCount(Math.min(Math.max(1, v), 500))
-                  }}
                   className="w-20"
-                  aria-label={t('text.count')}
+                  ariaLabel={t('text.count')}
                 />
-                <Button size="sm" onClick={generate}>
+                <Button size="sm" onClick={generate} disabled={count === null}>
                   <RefreshCwIcon /> {t('text.generate')}
                 </Button>
               </div>
@@ -77,7 +78,7 @@ export default function IdToolkitTool() {
                     </span>
                     <ToolActions value={output.join('\n')} onClear={() => setOutput([])} />
                   </div>
-                  <div className="max-h-72 space-y-1 overflow-y-auto">
+                  <div className="scrollbar-styled max-h-[calc(100dvh-12rem)] space-y-1 overflow-y-auto">
                     {output.map((id) => (
                       <code
                         key={id}

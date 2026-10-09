@@ -16,7 +16,7 @@ import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
 import { TextPaneGrid } from '@/shared/components/TextPaneGrid'
 import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
+import { NumberField, parseNumberInRange } from '@/shared/components/NumberField'
 import { Switch } from '@/shared/components/ui/switch'
 import { Tabs, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { OutputPane } from '@/tools/developer/_shared'
@@ -38,7 +38,8 @@ export default function LineToolsTool() {
   const [trimFirst, setTrimFirst] = useState(true)
   const [sortMode, setSortMode] = useState<SortMode>('alpha-asc')
   const [numberMode, setNumberMode] = useState<'add' | 'remove'>('add')
-  const [startAt, setStartAt] = useState(1)
+  const [startAtText, setStartAtText] = useState('1')
+  const startAt = parseNumberInRange(startAtText, 0)
   const [result, setResult] = useState<LineToolResult | null>(null)
 
   const run = () => {
@@ -64,7 +65,9 @@ export default function LineToolsTool() {
       case 'numbering':
         setResult({
           output:
-            numberMode === 'add' ? addLineNumbers(input, { startAt }) : removeLineNumbers(input),
+            numberMode === 'add'
+              ? addLineNumbers(input, { startAt: startAt ?? 1 })
+              : removeLineNumbers(input),
         })
         break
       case 'empty':
@@ -159,23 +162,24 @@ export default function LineToolsTool() {
             {numberMode === 'add' && (
               <label className="flex items-center gap-2 text-xs">
                 {t('text.startAt')}
-                <Input
-                  type="number"
+                <NumberField
+                  value={startAtText}
+                  onChange={setStartAtText}
                   min={0}
-                  value={startAt}
-                  onChange={(event) => {
-                    const value = Number(event.target.value)
-                    if (Number.isFinite(value)) setStartAt(Math.max(0, Math.trunc(value)))
-                  }}
                   className="w-20"
-                  aria-label={t('text.startAt')}
+                  ariaLabel={t('text.startAt')}
                 />
               </label>
             )}
           </div>
         )}
         {op !== 'sort' && (
-          <Button size="sm" className="w-fit" onClick={run} disabled={!input}>
+          <Button
+            size="sm"
+            className="w-fit"
+            onClick={run}
+            disabled={!input || (op === 'numbering' && numberMode === 'add' && startAt === null)}
+          >
             {t('text.apply')}
           </Button>
         )}
