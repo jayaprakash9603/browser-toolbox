@@ -129,6 +129,10 @@ const chromeMock = {
     remove: vi.fn(async () => true),
   },
   tabs: { query: vi.fn(async () => []), sendMessage: vi.fn(async () => undefined) },
+  windows: {
+    getLastFocused: vi.fn(async () => ({ tabs: [] })),
+    getAll: vi.fn(async () => []),
+  },
   i18n: {
     getMessage: (name: string) =>
       (

@@ -5,6 +5,7 @@ import {
   DEFAULT_MAX_BYTES,
   scanAnchorList,
   type HtmlBundleOutput,
+  type HtmlBundleProgress,
 } from '@/core/engines/htmlArchive'
 
 export type FileIndex = Map<string, Uint8Array>
@@ -123,6 +124,7 @@ export interface FolderBundleRequest {
   selectedFileNames: string[]
   includeAssets: boolean
   maxBytes?: number
+  onProgress?: (progress: HtmlBundleProgress) => void
 }
 
 export async function buildBundleFromFolderIndex(
@@ -139,6 +141,7 @@ export async function buildBundleFromFolderIndex(
       pageUrls: [request.currentPageFileName, ...request.selectedFileNames].map(toUrl),
       includeAssets: request.includeAssets,
       maxBytes: request.maxBytes ?? DEFAULT_MAX_BYTES,
+      onProgress: request.onProgress,
     },
     { loadBytes: folderLoader(index, prefix) },
   )

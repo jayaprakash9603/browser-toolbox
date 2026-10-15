@@ -1,7 +1,10 @@
 import { zipSync } from 'fflate'
 
-export const DEFAULT_MAX_PAGES = 50
-export const DEFAULT_MAX_BYTES = 32 * 1024 * 1024
+export const DEFAULT_MAX_PAGES = 300
+export const MAX_PAGES_CEILING = 2000
+export const DEFAULT_MAX_BYTES = 1024 * 1024 * 1024
+export const DEFAULT_MAX_ASSETS = 5000
+const FETCH_CONCURRENCY = 6
 
 export interface HtmlLinkCandidate {
   id: string
@@ -296,6 +299,15 @@ export interface HtmlBundleOptions {
   includeAssets: boolean
   maxBytes?: number
   maxAssets?: number
+  onProgress?: (progress: HtmlBundleProgress) => void
+}
+
+export type HtmlBundlePhase = 'pages' | 'assets' | 'zip'
+
+export interface HtmlBundleProgress {
+  phase: HtmlBundlePhase
+  done: number
+  total: number
 }
 
 export interface HtmlBundleOutput {
@@ -303,55 +315,86 @@ export interface HtmlBundleOutput {
   stats: { pages: number; assets: number; bytes: number; missing: number }
 }
 
+async function runPool<T>(
+  items: T[],
+  worker: (item: T) => Promise<void>,
+  concurrency = FETCH_CONCURRENCY,
+): Promise<void> {
+  let next = 0
+  const lanes = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (next < items.length) {
+      const item = items[next]
+      next += 1
+      await worker(item)
+    }
+  })
+  await Promise.all(lanes)
+}
+
 export async function buildHtmlArchive(
   options: HtmlBundleOptions,
   source: HtmlBundleSource,
 ): Promise<HtmlBundleOutput> {
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES
-  const maxAssets = options.maxAssets ?? 500
+  const maxAssets = options.maxAssets ?? DEFAULT_MAX_ASSETS
+  const report = options.onProgress ?? (() => {})
   const urlToZipPath = new Map<string, string>()
   const pages = new Map<string, string>()
   let missing = 0
 
-  for (const raw of options.pageUrls) {
-    const url = stripQueryAndHash(raw)
-    if (pages.has(url)) continue
+  const pageUrls = [...new Set(options.pageUrls.map(stripQueryAndHash))]
+  let pagesDone = 0
+  report({ phase: 'pages', done: 0, total: pageUrls.length })
+  const loadedPages = new Map<string, string>()
+  await runPool(pageUrls, async (url) => {
     const bytes = await source.loadBytes(url)
     const html = bytes ? decodeText(bytes) : source.fallbackHtml?.get(url)
-    if (html == null) {
-      missing += 1
-      continue
-    }
+    if (html == null) missing += 1
+    else loadedPages.set(url, html)
+    pagesDone += 1
+    report({ phase: 'pages', done: pagesDone, total: pageUrls.length })
+  })
+  for (const url of pageUrls) {
+    const html = loadedPages.get(url)
+    if (html == null) continue
     pages.set(url, html)
     urlToZipPath.set(url, zipPathForUrl(url, options.rootPageUrl))
   }
 
   const assets = new Map<string, Uint8Array>()
   if (options.includeAssets) {
-    const queue: string[] = []
     const queued = new Set<string>()
-    const enqueue = (url: string) => {
+    let wave: string[] = []
+    const enqueue = (url: string, into: string[]) => {
       if (queued.has(url) || urlToZipPath.has(url) || queued.size >= maxAssets) return
       queued.add(url)
-      queue.push(url)
+      into.push(url)
     }
     for (const [pageUrl, html] of pages) {
-      for (const asset of collectSameOriginAssets(html, pageUrl, maxAssets)) enqueue(asset.url)
+      for (const asset of collectSameOriginAssets(html, pageUrl, maxAssets)) enqueue(asset.url, wave)
     }
-    while (queue.length > 0) {
-      const url = queue.shift()!
-      const bytes = await source.loadBytes(url)
-      if (!bytes) {
-        missing += 1
-        continue
-      }
-      assets.set(url, bytes)
-      urlToZipPath.set(url, zipPathForUrl(url, options.rootPageUrl))
-      if (isCssUrl(url)) {
-        for (const nested of collectCssAssets(decodeText(bytes), url)) enqueue(nested)
-      }
+    let assetsDone = 0
+    report({ phase: 'assets', done: 0, total: queued.size })
+    while (wave.length > 0) {
+      const nextWave: string[] = []
+      await runPool(wave, async (url) => {
+        const bytes = await source.loadBytes(url)
+        if (!bytes) {
+          missing += 1
+        } else {
+          assets.set(url, bytes)
+          urlToZipPath.set(url, zipPathForUrl(url, options.rootPageUrl))
+          if (isCssUrl(url)) {
+            for (const nested of collectCssAssets(decodeText(bytes), url)) enqueue(nested, nextWave)
+          }
+        }
+        assetsDone += 1
+        report({ phase: 'assets', done: assetsDone, total: queued.size })
+      })
+      wave = nextWave
     }
   }
+  report({ phase: 'zip', done: 0, total: 1 })
 
   const files = new Map<string, Uint8Array>()
   let totalBytes = 0
@@ -376,8 +419,11 @@ export async function buildHtmlArchive(
     addFile(zipPath, textEncoder(rewriteHtmlRefs(html, url, zipPath, urlToZipPath)))
   }
 
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  const zipBytes = buildZip(files)
+  report({ phase: 'zip', done: 1, total: 1 })
   return {
-    zipBytes: buildZip(files),
+    zipBytes,
     stats: { pages: pages.size, assets: assets.size, bytes: totalBytes, missing },
   }
 }

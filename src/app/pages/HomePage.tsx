@@ -6,6 +6,7 @@ import { filterTools } from '@/features/search/filterTools'
 import { toolRegistry } from '@/core/registry'
 import { AllToolsCategories } from '@/app/pages/home/AllToolsCategories'
 import { BottomTip } from '@/app/pages/home/BottomTip'
+import { BundleJobBanner } from '@/app/pages/home/BundleJobBanner'
 import { FavoritesSection } from '@/app/pages/home/FavoritesSection'
 import { GlobalSearch } from '@/app/pages/home/GlobalSearch'
 import { HeroCard } from '@/app/pages/home/HeroCard'
@@ -88,6 +89,7 @@ export default function HomePage({ section }: HomePageProps) {
       <div className="scrollbar-styled min-h-0 flex-1 overflow-y-auto overflow-x-clip px-3 pb-6 @[360px]:px-4">
         <div ref={sentinelRef} className="h-px w-full" aria-hidden />
         <div className="pt-3">
+          <BundleJobBanner />
           <HeroCard />
           <QuickActions />
           <RecentSection />

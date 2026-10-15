@@ -1,4 +1,4 @@
-import type { BuildHtmlBundleResult, ScanHtmlBundleResult } from '@/chrome/content/htmlBundle'
+import type { ScanHtmlBundleResult } from '@/chrome/content/htmlBundle'
 import {
   TabMessagingError,
   classifyTabUrl,
@@ -7,8 +7,9 @@ import {
   isFileUrlTab,
   pingContentScript,
 } from '@/chrome/contentScriptClient'
-import { base64ToBytes } from '@/core/engines/htmlArchive'
-import type { ExtensionResponse } from '@/core/messaging/types'
+import { DEFAULT_MAX_PAGES, MAX_PAGES_CEILING } from '@/core/engines/htmlArchive'
+import type { HtmlBundleJobRequest } from '@/core/htmlBundleJob'
+import type { ExtensionMessage, ExtensionResponse } from '@/core/messaging/types'
 
 async function resolveTargetTab(tabId?: number): Promise<chrome.tabs.Tab> {
   if (tabId != null) {
@@ -29,10 +30,8 @@ function assertTabReady(tab: chrome.tabs.Tab): void {
   if (restriction) throw new TabMessagingError(restriction)
 }
 
-async function sendMessage<T>(payload: object, tabId?: number): Promise<T> {
-  const tab = await resolveTargetTab(tabId)
+async function prepareTab(tab: chrome.tabs.Tab): Promise<void> {
   assertTabReady(tab)
-
   try {
     await ensureContentScriptInTab(tab.id!)
   } catch (error: unknown) {
@@ -43,6 +42,11 @@ async function sendMessage<T>(payload: object, tabId?: number): Promise<T> {
     }
     throw error
   }
+}
+
+async function sendMessage<T>(payload: object, tabId?: number): Promise<T> {
+  const tab = await resolveTargetTab(tabId)
+  await prepareTab(tab)
 
   let response: ExtensionResponse<T>
   try {
@@ -85,19 +89,54 @@ export async function scanHtmlBundle(
   )
 }
 
-export async function buildHtmlBundle(
-  request: {
-    includeCurrent: boolean
-    selectedResolvedUrls: string[]
-    includeAssets: boolean
-  },
-  options?: { tabId?: number },
-): Promise<BuildHtmlBundleResult> {
-  const data = await sendMessage<{ zipBase64: string; stats: BuildHtmlBundleResult['stats'] }>(
-    { type: 'BUILD_HTML_BUNDLE', ...request },
-    options?.tabId,
-  )
-  return { zipBytes: base64ToBytes(data.zipBase64), stats: data.stats }
+async function sendToBackground<T>(message: ExtensionMessage): Promise<T> {
+  const response = (await chrome.runtime.sendMessage(message)) as ExtensionResponse<T> | undefined
+  if (!response) throw new Error('The extension background is not responding. Reload the extension.')
+  if (!response.ok) throw new Error(response.error)
+  return response.data
+}
+
+export async function startHtmlBundleJob(input: {
+  tabId?: number
+  pageUrl: string
+  pageTitle: string
+  fileName: string
+  pageCount: number
+  request: HtmlBundleJobRequest
+}): Promise<string> {
+  const tab = await resolveTargetTab(input.tabId)
+  await prepareTab(tab)
+  const { jobId } = await sendToBackground<{ jobId: string }>({
+    type: 'START_HTML_BUNDLE_JOB',
+    tabId: tab.id!,
+    pageUrl: input.pageUrl,
+    pageTitle: input.pageTitle,
+    fileName: input.fileName,
+    pageCount: input.pageCount,
+    request: input.request,
+  })
+  return jobId
+}
+
+export async function cancelHtmlBundleJob(jobId: string): Promise<void> {
+  await sendToBackground({ type: 'CANCEL_HTML_BUNDLE_JOB', jobId })
+}
+
+const PAGE_LIMIT_KEY = 'htmlBundle.maxPages'
+
+export function clampPageLimit(value: number): number {
+  if (!Number.isFinite(value)) return DEFAULT_MAX_PAGES
+  return Math.min(MAX_PAGES_CEILING, Math.max(1, Math.round(value)))
+}
+
+export async function loadPageLimit(): Promise<number> {
+  const stored = await chrome.storage.local.get(PAGE_LIMIT_KEY)
+  const value = stored[PAGE_LIMIT_KEY]
+  return typeof value === 'number' ? clampPageLimit(value) : DEFAULT_MAX_PAGES
+}
+
+export async function savePageLimit(value: number): Promise<void> {
+  await chrome.storage.local.set({ [PAGE_LIMIT_KEY]: clampPageLimit(value) })
 }
 
 export async function getActivePageMeta(): Promise<{ url: string; title: string; tabId?: number }> {

@@ -3,6 +3,7 @@ import {
   DEFAULT_MAX_BYTES,
   DEFAULT_MAX_PAGES,
   scanAnchorList,
+  type HtmlBundleProgress,
   type HtmlLinkCandidate,
 } from '@/core/engines/htmlArchive'
 
@@ -59,6 +60,7 @@ async function fetchBytes(url: string, signal?: AbortSignal): Promise<Uint8Array
 
 export async function buildHtmlBundleInPage(
   request: BuildHtmlBundleRequest,
+  onProgress?: (progress: HtmlBundleProgress) => void,
   signal?: AbortSignal,
 ): Promise<BuildHtmlBundleResult> {
   const maxPages = request.maxPages ?? DEFAULT_MAX_PAGES
@@ -77,6 +79,7 @@ export async function buildHtmlBundleInPage(
       pageUrls,
       includeAssets: request.includeAssets,
       maxBytes: request.maxBytes ?? DEFAULT_MAX_BYTES,
+      onProgress,
     },
     {
       loadBytes: (url) => fetchBytes(url, signal),

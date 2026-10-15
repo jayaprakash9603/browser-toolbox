@@ -38,6 +38,8 @@ export default defineManifest({
     'activeTab',
     'scripting',
     'tabs',
+    'downloads',
+    'offscreen',
   ],
   host_permissions: ['<all_urls>'],
   commands: {

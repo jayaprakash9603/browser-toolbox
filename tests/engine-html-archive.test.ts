@@ -95,6 +95,32 @@ describe('htmlArchive engine', () => {
     expect(result.stats).toMatchObject({ pages: 2, assets: 4, missing: 0 })
   })
 
+  it('bundles 300 pages and reports progress through every phase', async () => {
+    const root = 'https://ci.example.com/r/'
+    const pageUrls = Array.from({ length: 300 }, (_, index) => `${root}report-${index}.html`)
+    const phases = new Set<string>()
+    let lastPages = 0
+    const result = await buildHtmlArchive(
+      {
+        rootPageUrl: pageUrls[0],
+        pageUrls,
+        includeAssets: true,
+        onProgress: (progress) => {
+          phases.add(progress.phase)
+          if (progress.phase === 'pages') lastPages = progress.done
+        },
+      },
+      {
+        loadBytes: async (url) =>
+          textEncoder(url.endsWith('.css') ? 'body{}' : '<link rel="stylesheet" href="css/app.css">'),
+      },
+    )
+    expect(result.stats).toMatchObject({ pages: 300, assets: 1, missing: 0 })
+    expect(lastPages).toBe(300)
+    expect([...phases]).toEqual(['pages', 'assets', 'zip'])
+    expect(Object.keys(unzipSync(result.zipBytes))).toHaveLength(301)
+  })
+
   it('names zips after the page title like chrome save-as', () => {
     const url = 'https://ci.example.com/r/overview-features.html'
     expect(zipFileName('Cucumber Reports (no 1764) - Features Overview', url)).toBe(

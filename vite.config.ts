@@ -43,6 +43,11 @@ export default defineVitestConfig({
       { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
     ],
   },
+  build: {
+    rollupOptions: {
+      input: { offscreen: 'offscreen.html' },
+    },
+  },
   optimizeDeps: {
     include: ['postman-lite'],
   },

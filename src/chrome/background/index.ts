@@ -11,6 +11,7 @@ import { contentScriptBundlePath, ensureContentScriptInTab } from '@/chrome/cont
 
 import { registerApiClientSendHandler } from './api-client-send'
 import { registerCaptureHandler } from './capture'
+import { registerHtmlBundleJobHandlers } from './htmlBundleJob'
 import { buildMenuItems } from '../context-menu/menuTree'
 
 const logger = createLogger('background')
@@ -131,4 +132,5 @@ chrome.commands.onCommand.addListener((command, tab) => {
 
 registerApiClientSendHandler()
 registerCaptureHandler()
+registerHtmlBundleJobHandlers()
 startMessageRouter()

@@ -1,3 +1,5 @@
+import type { BundleStats, HtmlBundleJobRequest } from '@/core/htmlBundleJob'
+
 export type ExtensionMessage =
   | { type: 'CONTENT_SCRIPT_PING' }
   | { type: 'GET_SELECTED_ELEMENT' }
@@ -18,12 +20,43 @@ export type ExtensionMessage =
     }
   | {
       type: 'BUILD_HTML_BUNDLE'
+      buildId: string
       includeCurrent: boolean
       selectedResolvedUrls: string[]
       includeAssets: boolean
       maxPages?: number
       maxBytes?: number
     }
+  | { type: 'READ_HTML_BUNDLE_CHUNK'; buildId: string; index: number }
+  | {
+      type: 'HTML_BUNDLE_PROGRESS'
+      buildId: string
+      phase: 'pages' | 'assets' | 'zip' | 'transfer'
+      done: number
+      total: number
+    }
+  | {
+      type: 'HTML_BUNDLE_READY'
+      buildId: string
+      stats: BundleStats
+      size: number
+      chunkCount: number
+    }
+  | { type: 'HTML_BUNDLE_FAILED'; buildId: string; error: string }
+  | { type: 'CANCEL_HTML_BUNDLE'; buildId: string }
+  | {
+      type: 'START_HTML_BUNDLE_JOB'
+      tabId: number
+      pageUrl: string
+      pageTitle: string
+      fileName: string
+      pageCount: number
+      request: HtmlBundleJobRequest
+    }
+  | { type: 'CANCEL_HTML_BUNDLE_JOB'; jobId: string }
+  | { type: 'OFFSCREEN_BUNDLE_CHUNK'; buildId: string; base64: string }
+  | { type: 'OFFSCREEN_BUNDLE_FINALIZE'; buildId: string }
+  | { type: 'OFFSCREEN_BUNDLE_RELEASE'; buildId: string }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
@@ -44,6 +77,16 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'CAPTURE_VISIBLE',
   'SCAN_HTML_BUNDLE',
   'BUILD_HTML_BUNDLE',
+  'READ_HTML_BUNDLE_CHUNK',
+  'HTML_BUNDLE_PROGRESS',
+  'HTML_BUNDLE_READY',
+  'HTML_BUNDLE_FAILED',
+  'CANCEL_HTML_BUNDLE',
+  'START_HTML_BUNDLE_JOB',
+  'CANCEL_HTML_BUNDLE_JOB',
+  'OFFSCREEN_BUNDLE_CHUNK',
+  'OFFSCREEN_BUNDLE_FINALIZE',
+  'OFFSCREEN_BUNDLE_RELEASE',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {
