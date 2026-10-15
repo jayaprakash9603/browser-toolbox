@@ -30,7 +30,7 @@ export default function JwtToolkitTool() {
 
   return (
     <ToolPage tool={tool}>
-      <div className="flex flex-col gap-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
         <TextEditor
           value={input}
           onChange={setInput}
@@ -45,7 +45,7 @@ export default function JwtToolkitTool() {
         </div>
         {decoded && !decoded.ok && <JsonErrorView message={decoded.error} />}
         {decoded?.ok && (
-          <div className="flex flex-col gap-2">
+          <div className="flex min-h-0 flex-1 flex-col gap-2">
             <div className="flex items-center gap-1.5">
               <Badge variant="outline" className={STATUS_STYLE[decoded.value.status]}>
                 {t(`security.jwtStatus.${decoded.value.status}`)}
@@ -88,12 +88,12 @@ export default function JwtToolkitTool() {
 function Segment({ title, value }: { title: string; value: Record<string, unknown> }) {
   const json = JSON.stringify(value, null, 2)
   return (
-    <div className="rounded-md border p-2">
+    <div className="flex min-h-0 flex-1 flex-col rounded-md border p-2">
       <div className="mb-1 flex items-center justify-between">
         <span className="text-[11px] font-medium">{title}</span>
         <CopyButton text={json} />
       </div>
-      <pre className="scrollbar-both max-h-48 font-mono text-xs leading-relaxed text-muted-foreground">
+      <pre className="scrollbar-both min-h-0 flex-1 overflow-auto font-mono text-xs leading-relaxed text-muted-foreground">
         {json}
       </pre>
     </div>

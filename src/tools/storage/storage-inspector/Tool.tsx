@@ -56,7 +56,7 @@ export default function StorageInspectorTool() {
 
   return (
     <ToolPage tool={tool}>
-      <div className="flex flex-col gap-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="flex items-center gap-1.5">
           <SearchInput
             value={query}
@@ -81,7 +81,7 @@ export default function StorageInspectorTool() {
             {t('storage.noAccess')}
           </p>
         ) : (
-          <Tabs defaultValue="local">
+          <Tabs defaultValue="local" className="min-h-0 flex-1">
             <TabsList>
               <TabsTrigger value="local">
                 localStorage{' '}
@@ -123,7 +123,7 @@ function StorageTable({
   if (entries.length === 0)
     return <p className="py-6 text-center text-xs text-muted-foreground">{emptyLabel}</p>
   return (
-    <div className="max-h-96 space-y-1 overflow-y-auto">
+    <div className="scrollbar-styled min-h-0 flex-1 space-y-1 overflow-y-auto">
       {entries.map(([key, value]) => (
         <div key={key} className="rounded border p-1.5">
           <div className="flex items-center justify-between gap-1">

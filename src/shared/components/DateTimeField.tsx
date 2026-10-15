@@ -3,6 +3,13 @@ import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/components/ui/popover'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/components/ui/select'
 import { cn } from '@/shared/utils/cn'
 
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
@@ -49,6 +56,36 @@ function buildMonth(view: Date): Array<Date | null> {
   }
   while (cells.length % 7 !== 0) cells.push(null)
   return cells
+}
+
+function TimeSelect({
+  label,
+  value,
+  count,
+  onChange,
+}: {
+  label: string
+  value: number
+  count: number
+  onChange: (value: number) => void
+}) {
+  return (
+    <div className="flex flex-1 flex-col gap-1 text-[11px] text-muted-foreground">
+      {label}
+      <Select value={String(value)} onValueChange={(next) => onChange(Number(next))}>
+        <SelectTrigger aria-label={label} className="w-full text-sm text-foreground">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {Array.from({ length: count }, (_, index) => (
+            <SelectItem key={index} value={String(index)}>
+              {pad(index)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  )
 }
 
 interface DateTimeFieldProps {
@@ -148,53 +185,34 @@ export function DateTimeField({
               day.getMonth() === selected.getMonth() &&
               day.getDate() === selected.getDate()
             return day ? (
-              <button
+              <Button
                 key={day.toISOString()}
                 type="button"
+                variant={active ? 'default' : 'ghost'}
+                size="icon-sm"
                 onClick={() => pickDay(day)}
-                className={cn(
-                  'h-8 rounded-md text-sm hover:bg-accent',
-                  active && 'bg-primary text-primary-foreground hover:bg-primary/90',
-                )}
+                className="w-full font-normal"
               >
                 {day.getDate()}
-              </button>
+              </Button>
             ) : (
               <span key={`empty-${index}`} />
             )
           })}
         </div>
         <div className="mt-3 flex items-center gap-2">
-          <label className="flex flex-1 flex-col gap-1 text-[11px] text-muted-foreground">
-            Hour
-            <select
-              aria-label="Hour"
-              value={hour}
-              onChange={(event) => setTime(Number(event.target.value), minute)}
-              className="h-8 rounded-md border bg-background px-2 text-sm text-foreground"
-            >
-              {Array.from({ length: 24 }, (_, index) => (
-                <option key={index} value={index}>
-                  {pad(index)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-1 flex-col gap-1 text-[11px] text-muted-foreground">
-            Minute
-            <select
-              aria-label="Minute"
-              value={minute}
-              onChange={(event) => setTime(hour, Number(event.target.value))}
-              className="h-8 rounded-md border bg-background px-2 text-sm text-foreground"
-            >
-              {Array.from({ length: 60 }, (_, index) => (
-                <option key={index} value={index}>
-                  {pad(index)}
-                </option>
-              ))}
-            </select>
-          </label>
+          <TimeSelect
+            label="Hour"
+            value={hour}
+            count={24}
+            onChange={(next) => setTime(next, minute)}
+          />
+          <TimeSelect
+            label="Minute"
+            value={minute}
+            count={60}
+            onChange={(next) => setTime(hour, next)}
+          />
         </div>
         <div className="mt-3 flex justify-between">
           <Button type="button" variant="ghost" size="xs" onClick={() => onChange('')}>

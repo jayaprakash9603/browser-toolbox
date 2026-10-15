@@ -97,6 +97,40 @@ export async function writeClipboardText(text: string): Promise<void> {
   await navigator.clipboard.writeText(text)
 }
 
+function insertTextIntoPage(value: string): boolean {
+  const active = document.activeElement
+  if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
+    const start = active.selectionStart ?? active.value.length
+    const end = active.selectionEnd ?? start
+    active.setRangeText(value, start, end, 'end')
+    active.dispatchEvent(new Event('input', { bubbles: true }))
+    return true
+  }
+  if (active instanceof HTMLElement && active.isContentEditable) {
+    return document.execCommand('insertText', false, value)
+  }
+  return false
+}
+
+export async function pasteClipboardEntry(text: string): Promise<'page' | 'clipboard'> {
+  await writeClipboardText(text)
+  if (typeof chrome === 'undefined' || !chrome.scripting?.executeScript || !chrome.tabs?.query) {
+    return 'clipboard'
+  }
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+  if (tab?.id == null) return 'clipboard'
+  try {
+    const [result] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: insertTextIntoPage,
+      args: [text],
+    })
+    return result?.result ? 'page' : 'clipboard'
+  } catch {
+    return 'clipboard'
+  }
+}
+
 export async function captureClipboard(): Promise<ClipboardEntry | undefined> {
   try {
     const text = await readClipboardText()

@@ -100,7 +100,7 @@ export function ToolPage({
       <Separator />
       <div
         className={cn(
-          'flex-1 overflow-y-auto overscroll-contain p-[var(--density-page-pad)]',
+          'flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain p-[var(--density-page-pad)]',
           contentClassName,
         )}
       >

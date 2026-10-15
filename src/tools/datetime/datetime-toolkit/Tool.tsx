@@ -59,9 +59,9 @@ export default function DateTimeToolkitTool() {
   const cron = useMemo(() => (cronInput.trim() ? parseCron(cronInput) : null), [cronInput])
 
   return (
-    <ToolPage tool={tool}>
-      <div className="flex flex-col gap-3">
-        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+    <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="min-h-0 flex-1">
           <TabsList>
             <TabsTrigger value="timestamp">{t('dt.tabTimestamp')}</TabsTrigger>
             <TabsTrigger value="calc">{t('dt.tabCalc')}</TabsTrigger>
@@ -112,10 +112,10 @@ export default function DateTimeToolkitTool() {
           </div>
         </TabsContent>
 
-        <TabsContent value="zones" className="mt-0">
-          <div className="flex flex-col gap-2">
+        <TabsContent value="zones" className="mt-0 flex min-h-0 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col gap-2">
             <DateTimeField value={zoneDate} onChange={setZoneDate} ariaLabel={t('dt.zoneDate')} />
-            <div className="max-h-80 space-y-1 overflow-y-auto">
+            <div className="scrollbar-styled min-h-0 flex-1 space-y-1 overflow-y-auto">
               {zones.map((zone) => (
                 <div
                   key={zone.timeZone}

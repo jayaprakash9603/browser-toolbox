@@ -52,7 +52,7 @@ export default function PasswordGeneratorTool() {
 
   return (
     <ToolPage tool={tool}>
-      <div className="flex flex-col gap-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-2 text-xs">
             {t('security.length')}
@@ -94,12 +94,12 @@ export default function PasswordGeneratorTool() {
           <RefreshCwIcon /> {t('text.generate')}
         </Button>
         {output.length > 0 && (
-          <div>
-            <div className="mb-1 flex items-center justify-between">
+          <div className="flex min-h-0 flex-1 flex-col">
+            <div className="mb-1 flex shrink-0 items-center justify-between">
               <span className="text-xs font-medium">{t('text.output')}</span>
               <ToolActions value={output.join('\n')} onClear={() => setOutput([])} />
             </div>
-            <div className="scrollbar-styled max-h-[calc(100dvh-12rem)] space-y-1 overflow-y-auto">
+            <div className="scrollbar-styled min-h-0 flex-1 space-y-1 overflow-y-auto">
               {output.map((password, index) => (
                 <div
                   key={index}

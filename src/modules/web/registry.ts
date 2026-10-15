@@ -1,4 +1,4 @@
-import { InfoIcon, ImageIcon, Link2Icon, LinkIcon } from 'lucide-react'
+import { ArchiveIcon, InfoIcon, ImageIcon, Link2Icon, LinkIcon } from 'lucide-react'
 
 import { defineTool } from '@/core/registry'
 
@@ -65,5 +65,28 @@ export const webTools = [
     contextSurfaces: ['PAGE'],
     status: 'active',
     loader: () => import('@/tools/web/page-info/Tool'),
+  }),
+  defineTool({
+    id: 'web.html-bundle',
+    name: 'HTML Bundle Downloader',
+    description:
+      'Download the current page and selected linked HTML reports as an offline ZIP with assets.',
+    category: 'web',
+    icon: ArchiveIcon,
+    keywords: ['html', 'download', 'zip', 'archive', 'cucumber', 'report', 'offline', 'bundle'],
+    aliases: [
+      'save page',
+      'download html',
+      'html zip',
+      'cucumber report',
+      'report bundle',
+      'offline archive',
+    ],
+    route: '/tools/web/html-bundle',
+    capabilities: ['SIDE_PANEL', 'CONTENT_SCRIPT', 'PAGE_ACCESS', 'COMMAND'],
+    contextSurfaces: ['PAGE'],
+    dependencies: ['htmlArchive'],
+    status: 'active',
+    loader: () => import('@/tools/web/html-bundle/Tool'),
   }),
 ]

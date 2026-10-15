@@ -240,19 +240,20 @@ function TreeNode({ node, depth }: { node: JsonTreeNode; depth: number }) {
     const Chevron = open ? ChevronDownIcon : ChevronRightIcon
     return (
       <div className="font-mono text-xs leading-6">
-        <button
+        <Button
           type="button"
+          variant="ghost"
           style={indent}
           aria-expanded={open}
           onClick={() => setOpen(!open)}
-          className="flex w-full cursor-pointer items-center gap-1 rounded px-1 text-left outline-none transition-colors duration-150 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-6 w-full justify-start gap-1 rounded px-1 font-mono text-xs font-normal active:scale-100"
         >
           <Chevron className="size-3.5 text-muted-foreground" aria-hidden />
           <span className="text-[color:var(--syntax-key)]">{node.key ?? 'root'}</span>
           <span className="text-muted-foreground">
             {node.type === 'array' ? `[${node.size}]` : `{${node.size}}`}
           </span>
-        </button>
+        </Button>
         {open &&
           node.children?.map((child) => (
             <TreeNode key={child.path} node={child} depth={depth + 1} />

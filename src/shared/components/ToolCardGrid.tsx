@@ -10,9 +10,9 @@ interface ToolCardGridProps {
 export function toolCardGridClassName(className?: string) {
   return cn(
     'grid grid-cols-1 gap-[var(--density-grid-gap)]',
-    '@[240px]:grid-cols-2',
-    '@[380px]:grid-cols-3',
-    '@[520px]:grid-cols-4',
+    '@[440px]:grid-cols-2',
+    '@[680px]:grid-cols-3',
+    '@[920px]:grid-cols-4',
     className,
   )
 }

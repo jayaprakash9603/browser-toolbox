@@ -49,7 +49,7 @@ export default function RegexToolkitTool() {
   return (
     <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col overflow-hidden">
       <div className="flex min-h-0 flex-1 flex-col gap-3">
-        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="min-h-0 flex-1">
           <TabsList>
             <TabsTrigger value="test">{t('dev.tabTest')}</TabsTrigger>
             <TabsTrigger value="replace">{t('dev.tabReplace')}</TabsTrigger>
@@ -99,7 +99,7 @@ export default function RegexToolkitTool() {
         <TabsContent value="test" className="mt-0">
           {result && !result.ok && <JsonErrorView message={result.error} />}
           {result?.ok && (
-            <div className="flex flex-col gap-2">
+            <div className="flex min-h-0 flex-1 flex-col gap-2">
               {result.riskWarnings.map((warning) => (
                 <div
                   key={warning}
@@ -116,7 +116,7 @@ export default function RegexToolkitTool() {
                   <span className="text-muted-foreground">({t('dev.truncated')})</span>
                 )}
               </div>
-              <div className="max-h-56 space-y-1 overflow-y-auto">
+              <div className="scrollbar-styled min-h-0 flex-1 space-y-1 overflow-y-auto">
                 {result.matches.slice(0, 50).map((match, index) => (
                   <div
                     key={`${match.index}-${index}`}
@@ -141,7 +141,7 @@ export default function RegexToolkitTool() {
         </TabsContent>
 
         <TabsContent value="replace" className="mt-0">
-          <div className="flex flex-col gap-2">
+          <div className="flex min-h-0 flex-1 flex-col gap-2">
             <Input
               value={replacement}
               onChange={(e) => setReplacement(e.target.value)}
@@ -155,7 +155,7 @@ export default function RegexToolkitTool() {
                 <div className="text-xs text-muted-foreground">
                   {t('text.replaced', { count: replaced.count })}
                 </div>
-                <pre className="max-h-56 scrollbar-both rounded-lg border bg-muted/30 p-3 font-mono text-xs leading-relaxed">
+                <pre className="scrollbar-both min-h-0 flex-1 overflow-auto rounded-lg border bg-muted/30 p-3 font-mono text-xs leading-relaxed">
                   {replaced.output}
                 </pre>
               </>

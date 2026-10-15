@@ -6,6 +6,7 @@ export {
   getHistory,
   pinEntry,
   readClipboardText,
+  pasteClipboardEntry,
   writeClipboardText,
 } from './clipboardService'
 export type { ClipboardEntry } from './clipboardService'

@@ -136,7 +136,10 @@ function TabsTrigger({
 function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Content>) {
   return (
     <TabsPrimitive.Content
-      className={cn('flex-1 outline-none focus-visible:ring-2 focus-visible:ring-ring/40 rounded-md', className)}
+      className={cn(
+        'min-h-0 flex-1 outline-none focus-visible:ring-2 focus-visible:ring-ring/40 rounded-md data-[state=active]:flex data-[state=active]:flex-col',
+        className,
+      )}
       {...props}
     />
   )

@@ -34,8 +34,8 @@ export default function EncoderDecoderTool() {
   const output = result?.ok ? result.value : ''
 
   return (
-    <ToolPage tool={tool}>
-      <div className="flex flex-col gap-3">
+    <ToolPage tool={tool} contentClassName="overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
         <Tabs value={kind} onValueChange={(v) => setKind(v as EncodingKind)}>
           <TabsList className="flex-wrap">
             {KINDS.map((k) => (
@@ -85,12 +85,12 @@ export default function EncoderDecoderTool() {
         />
         {result && !result.ok && <JsonErrorView message={result.error} />}
         {output && (
-          <div>
-            <div className="mb-1 flex items-center justify-between">
+          <div className="flex min-h-0 flex-1 flex-col">
+            <div className="mb-1 flex shrink-0 items-center justify-between">
               <span className="text-xs font-medium">{t('text.output')}</span>
               <ToolActions value={output} onClear={() => setInput('')} />
             </div>
-            <pre className="max-h-64 scrollbar-both rounded-lg border bg-muted/30 p-3 font-mono text-xs leading-relaxed">
+            <pre className="scrollbar-both min-h-0 flex-1 overflow-auto rounded-lg border bg-muted/30 p-3 font-mono text-xs leading-relaxed">
               {output}
             </pre>
           </div>

@@ -42,7 +42,7 @@ export default function TestDataGeneratorTool() {
 
   return (
     <ToolPage tool={tool}>
-      <div className="flex flex-col gap-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="grid grid-cols-3 gap-1.5">
           {TEST_DATA_KINDS.map(({ id, label }) => (
             <label key={id} className="flex items-center gap-1.5 text-xs">
@@ -85,14 +85,14 @@ export default function TestDataGeneratorTool() {
           </Button>
         </div>
         {rows.length > 0 && (
-          <div>
-            <div className="mb-1 flex items-center justify-between">
+          <div className="flex min-h-0 flex-1 flex-col">
+            <div className="mb-1 flex shrink-0 items-center justify-between">
               <span className="text-xs font-medium">
                 {t('text.output')} ({rows.length})
               </span>
               <ToolActions value={output} onClear={() => setRows([])} />
             </div>
-            <pre className="scrollbar-both max-h-[calc(100dvh-12rem)] rounded-lg border bg-muted/30 p-3 font-mono text-xs leading-relaxed">
+            <pre className="scrollbar-both min-h-0 flex-1 overflow-auto rounded-lg border bg-muted/30 p-3 font-mono text-xs leading-relaxed">
               {output}
             </pre>
           </div>

@@ -134,6 +134,7 @@ Engines: `src/core/engines/` (`json`, `xml`, `yaml`, `sql`, `regex`, `id`, `date
 | Link Toolkit | `/tools/web/link-toolkit` | Internal/external links |
 | Image Links | `/tools/web/image-links` | Image URLs, alt text |
 | Page Information | `/tools/web/page-info` | Meta, canonical, OG, Twitter |
+| HTML Bundle Downloader | `/tools/web/html-bundle` | Scan `.html` anchor links, select pages, ZIP with assets (file:// folder fallback) |
 
 ---
 

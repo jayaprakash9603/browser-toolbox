@@ -15,8 +15,9 @@ export default function TextAnalyzerTool() {
 
   return (
     <ToolPage tool={tool}>
-      <div className="flex flex-col gap-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
         <TextEditor
+          fill
           value={input}
           onChange={setInput}
           placeholder={t('text.pasteOrType')}

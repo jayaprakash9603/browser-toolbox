@@ -39,7 +39,7 @@ export default function ImageLinksTool() {
 
   return (
     <ToolPage tool={tool}>
-      <div className="flex flex-col gap-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
         {!loaded ? (
           <p className="text-xs text-muted-foreground">{t('nav.loading')}</p>
         ) : images.length === 0 ? (
@@ -58,7 +58,7 @@ export default function ImageLinksTool() {
               )}
               <CopyButton text={urls.join('\n')} size="xs" label={t('web.copyUrls')} />
             </div>
-            <div className="max-h-96 space-y-1.5 overflow-y-auto">
+            <div className="scrollbar-styled min-h-0 flex-1 space-y-1.5 overflow-y-auto">
               {images.map((img, index) => (
                 <div key={`${img.src}-${index}`} className="rounded-md border p-1.5">
                   <div className="flex items-start gap-1.5">

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Input } from '@/shared/components/ui/input'
+import { Slider } from '@/shared/components/ui/slider'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { ToolActions } from '@/tools/text/_shared'
 import { useDesignTool } from '../_shared'
@@ -197,12 +198,11 @@ function NumField({
   return (
     <label className="flex items-center gap-2 text-xs">
       <span className="w-16">{label}</span>
-      <input
-        type="range"
+      <Slider
         min={min}
         max={max}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
+        value={[value]}
+        onValueChange={([next]) => onChange(next)}
         className="flex-1"
         aria-label={label}
       />

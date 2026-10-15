@@ -22,7 +22,7 @@ export function ToolCard({ tool }: { tool: ToolDefinition }) {
               aria-hidden
             />
           </div>
-          <span className="truncate text-[13px] font-semibold leading-tight">{name}</span>
+          <span className="line-clamp-2 min-w-0 text-[13px] font-semibold leading-snug">{name}</span>
         </div>
         <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">{description}</p>
       </Link>

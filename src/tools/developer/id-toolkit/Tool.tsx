@@ -38,16 +38,16 @@ export default function IdToolkitTool() {
 
   return (
     <ToolPage tool={tool}>
-      <div className="flex flex-col gap-3">
-        <Tabs defaultValue="generate">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        <Tabs defaultValue="generate" className="min-h-0 flex-1">
           <TabsList>
             <TabsTrigger value="generate">{t('dev.tabGenerate')}</TabsTrigger>
             <TabsTrigger value="validate">{t('dev.tabValidate')}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="generate" className="mt-2">
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-wrap items-center gap-2">
+          <TabsContent value="generate" className="mt-2 gap-3">
+            <div className="flex min-h-0 flex-1 flex-col gap-3">
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
                 {KINDS.map((k) => (
                   <Button
                     key={k.id}
@@ -71,14 +71,14 @@ export default function IdToolkitTool() {
                 </Button>
               </div>
               {output.length > 0 && (
-                <div>
-                  <div className="mb-1 flex items-center justify-between">
+                <div className="flex min-h-0 flex-1 flex-col">
+                  <div className="mb-1 flex shrink-0 items-center justify-between">
                     <span className="text-xs font-medium">
                       {t('text.output')} ({output.length})
                     </span>
                     <ToolActions value={output.join('\n')} onClear={() => setOutput([])} />
                   </div>
-                  <div className="scrollbar-styled max-h-[calc(100dvh-12rem)] space-y-1 overflow-y-auto">
+                  <div className="scrollbar-styled min-h-0 flex-1 space-y-1 overflow-y-auto">
                     {output.map((id) => (
                       <code
                         key={id}

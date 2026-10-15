@@ -1,12 +1,13 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { I18nextProvider } from 'react-i18next'
 import { describe, expect, it, vi } from 'vitest'
 
 import i18n from '@/i18n'
 import { HistoryItem } from '@/tools/clipboard/_HistoryItem'
 
-describe('clipboard history context menu', () => {
-  it('offers copy, pin and delete actions on right click', () => {
+describe('clipboard history item', () => {
+  it('shows copy, paste, pin and delete on each entry', () => {
     const entry = {
       id: 'entry-1',
       text: 'Clipboard sample',
@@ -21,14 +22,33 @@ describe('clipboard history context menu', () => {
         <HistoryItem entry={entry} onChanged={vi.fn()} />
       </I18nextProvider>,
     )
-    fireEvent.contextMenu(screen.getByText('Clipboard sample'), {
-      button: 2,
-      clientX: 40,
-      clientY: 40,
-    })
 
-    expect(screen.getByRole('menuitem', { name: 'Copy again' })).toBeInTheDocument()
-    expect(screen.getByRole('menuitem', { name: 'Pin' })).toBeInTheDocument()
-    expect(screen.getByRole('menuitem', { name: 'Delete' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Copy' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Paste' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Pin' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument()
+  })
+
+  it('expands the full clipboard text', async () => {
+    const user = userEvent.setup()
+    const text = Array.from({ length: 12 }, (_, index) => `line ${index} of a long clipboard entry`).join('\n')
+    render(
+      <I18nextProvider i18n={i18n}>
+        <HistoryItem
+          entry={{
+            id: 'entry-2',
+            text,
+            createdAt: Date.now(),
+            pinned: false,
+            charCount: text.length,
+            wordCount: 40,
+          }}
+          onChanged={vi.fn()}
+        />
+      </I18nextProvider>,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Show full text' }))
+    expect(screen.getByText(/line 11 of a long clipboard entry/)).toBeVisible()
   })
 })

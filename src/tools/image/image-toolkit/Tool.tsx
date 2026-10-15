@@ -74,7 +74,7 @@ export default function ImageToolkitTool() {
 
   return (
     <ToolPage tool={tool}>
-      <div className="flex flex-col gap-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
         <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-6 text-xs text-muted-foreground hover:bg-accent/40">
           <UploadIcon className="size-4" />
           {file ? file.name : t('image.upload')}
@@ -166,7 +166,7 @@ export default function ImageToolkitTool() {
               )}
             </TabsContent>
             {output && (
-              <div>
+              <div className="flex min-h-0 flex-1 flex-col">
                 <div className="mb-1 flex items-center justify-between">
                   <span className="text-xs font-medium">{t('text.output')}</span>
                   <div className="flex gap-1">
@@ -183,9 +183,9 @@ export default function ImageToolkitTool() {
                   </div>
                 </div>
                 {output.startsWith('data:image') ? (
-                  <img src={output} alt={t('text.output')} className="max-h-64 rounded-md border" />
+                  <img src={output} alt={t('text.output')} className="min-h-0 flex-1 rounded-md border object-contain" />
                 ) : (
-                  <pre className="max-h-40 scrollbar-both rounded-lg border bg-muted/30 p-3 font-mono text-xs leading-relaxed">
+                  <pre className="scrollbar-both min-h-0 flex-1 overflow-auto rounded-lg border bg-muted/30 p-3 font-mono text-xs leading-relaxed">
                     {output.slice(0, 2000)}
                     {output.length > 2000 ? '…' : ''}
                   </pre>

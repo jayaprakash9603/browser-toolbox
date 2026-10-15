@@ -1,3 +1,4 @@
+import { getActiveBrowserTab } from '@/chrome/contentScriptClient'
 import { toolRegistry } from '@/core/registry'
 
 export function useWebTool(toolId: string) {
@@ -7,8 +8,7 @@ export function useWebTool(toolId: string) {
 }
 
 export async function getActiveTab(): Promise<chrome.tabs.Tab | undefined> {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-  return tab
+  return getActiveBrowserTab()
 }
 
 export async function getPageInfo(): Promise<import('@/chrome/content/index').PageInfo | null> {

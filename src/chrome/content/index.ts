@@ -1,6 +1,9 @@
 import { isExtensionMessage } from '@/core/messaging/types'
 
 import { cancelPicker, isPickerActive, startPicker } from './elementPicker'
+import { bytesToBase64 } from '@/core/engines/htmlArchive'
+
+import { buildHtmlBundleInPage, scanHtmlBundleFromDom } from './htmlBundle'
 
 export interface PageInfo {
   url: string
@@ -94,6 +97,9 @@ function collectStorage(): StorageSnapshot {
 chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
   if (!isExtensionMessage(raw)) return false
   switch (raw.type) {
+    case 'CONTENT_SCRIPT_PING':
+      sendResponse({ ok: true, data: { ready: true } })
+      return false
     case 'PICK_ELEMENT_START':
       startPicker()
       sendResponse({ ok: true, data: { active: true } })
@@ -111,6 +117,36 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
     case 'GET_SELECTED_ELEMENT':
       sendResponse({ ok: true, data: { pickerActive: isPickerActive() } })
       return false
+    case 'SCAN_HTML_BUNDLE':
+      sendResponse({
+        ok: true,
+        data: scanHtmlBundleFromDom({
+          htmlOnly: raw.htmlOnly ?? true,
+          sameFolderOnly: raw.sameFolderOnly ?? true,
+        }),
+      })
+      return false
+    case 'BUILD_HTML_BUNDLE':
+      void buildHtmlBundleInPage({
+        includeCurrent: raw.includeCurrent,
+        selectedResolvedUrls: raw.selectedResolvedUrls,
+        includeAssets: raw.includeAssets,
+        maxPages: raw.maxPages,
+        maxBytes: raw.maxBytes,
+      })
+        .then((result) =>
+          sendResponse({
+            ok: true,
+            data: { stats: result.stats, zipBase64: bytesToBase64(result.zipBytes) },
+          }),
+        )
+        .catch((error: unknown) =>
+          sendResponse({
+            ok: false,
+            error: error instanceof Error ? error.message : 'Bundle build failed.',
+          }),
+        )
+      return true
     default:
       return false
   }

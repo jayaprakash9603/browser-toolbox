@@ -57,7 +57,7 @@ export default function LinkToolkitTool() {
 
   return (
     <ToolPage tool={tool}>
-      <div className="flex flex-col gap-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="flex items-center gap-1.5">
           {(['all', 'internal', 'external'] as const).map((f) => (
             <Button
@@ -96,7 +96,7 @@ export default function LinkToolkitTool() {
               )}
               <CopyButton text={uniqueUrls.join('\n')} size="xs" label={t('web.copyUrls')} />
             </div>
-            <div className="max-h-96 space-y-1 overflow-y-auto">
+            <div className="scrollbar-styled min-h-0 flex-1 space-y-1 overflow-y-auto">
               {filtered.map((link, index) => (
                 <div
                   key={`${link.href}-${index}`}

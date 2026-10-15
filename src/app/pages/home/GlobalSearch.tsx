@@ -8,6 +8,7 @@ import { filterTools } from '@/features/search/filterTools'
 import { TOOLBOX_FOCUS_HOME_SEARCH } from '@/features/search/searchFocus'
 import { Link } from '@/app/router'
 import { Button } from '@/shared/components/ui/button'
+import { Input } from '@/shared/components/ui/input'
 import { useFavorites } from '@/shared/hooks/useFavorites'
 import { useRecentTools } from '@/shared/hooks/useRecentTools'
 import { useToolLabels } from '@/shared/hooks/useToolLabels'
@@ -90,7 +91,7 @@ export function GlobalSearch({ compact = false, className }: GlobalSearchProps) 
         )}
       >
         <SearchIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-        <input
+        <Input
           ref={inputRef}
           type="search"
           role="combobox"
@@ -107,7 +108,7 @@ export function GlobalSearch({ compact = false, className }: GlobalSearchProps) 
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
           placeholder={t('home.searchPlaceholder')}
-          className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          className="h-auto flex-1 border-0 bg-transparent px-0 text-sm shadow-none hover:border-0 focus-visible:ring-0 placeholder:text-muted-foreground"
         />
         {query ? (
           <Button

@@ -133,11 +133,12 @@ export function CsvTableView({ rows }: CsvTableViewProps) {
                       aria-sort={direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : 'none'}
                       className="sticky top-0 z-10 border-b bg-muted p-0 font-semibold text-foreground"
                     >
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
                         onClick={() => toggleSort(index)}
                         className={cn(
-                          'group flex w-full cursor-pointer items-center gap-1 px-3 py-2 whitespace-nowrap outline-none hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
+                          'group h-auto w-full justify-start gap-1 rounded-none px-3 py-2 text-xs font-semibold text-foreground hover:bg-accent/60 focus-visible:ring-inset focus-visible:ring-offset-0 active:scale-100',
                           numericColumns[index] && 'justify-end',
                         )}
                       >
@@ -149,7 +150,7 @@ export function CsvTableView({ rows }: CsvTableViewProps) {
                           )}
                           aria-hidden
                         />
-                      </button>
+                      </Button>
                     </th>
                   )
                 })}

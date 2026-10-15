@@ -7,15 +7,13 @@ import { stashPayload } from '@/core/payloads'
 import { toolRegistry } from '@/core/registry'
 import { initStorage } from '@/core/storage'
 
+import { contentScriptBundlePath, ensureContentScriptInTab } from '@/chrome/contentScriptClient'
+
 import { registerApiClientSendHandler } from './api-client-send'
 import { registerCaptureHandler } from './capture'
 import { buildMenuItems } from '../context-menu/menuTree'
 
 const logger = createLogger('background')
-
-function contentScriptFile(): string | null {
-  return chrome.runtime.getManifest().content_scripts?.[0]?.js?.[0] ?? null
-}
 
 function findToolForMenuItem(menuItemId: string) {
   const match = /^toolbox\.tool\.([\w.-]+)\.(selection|link|image|page)$/.exec(menuItemId)
@@ -85,10 +83,9 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 })
 
 async function injectContentScript(tabId: number): Promise<boolean> {
-  const file = contentScriptFile()
-  if (!file) return false
+  if (!contentScriptBundlePath()) return false
   try {
-    await chrome.scripting.executeScript({ target: { tabId }, files: [file] })
+    await ensureContentScriptInTab(tabId)
     return true
   } catch (error) {
     logger.warn('content script injection failed', error)

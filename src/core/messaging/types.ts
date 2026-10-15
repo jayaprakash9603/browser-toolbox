@@ -1,4 +1,5 @@
 export type ExtensionMessage =
+  | { type: 'CONTENT_SCRIPT_PING' }
   | { type: 'GET_SELECTED_ELEMENT' }
   | { type: 'EXTRACT_PAGE_LINKS' }
   | { type: 'OPEN_TOOL'; toolId: string }
@@ -10,12 +11,26 @@ export type ExtensionMessage =
   | { type: 'GET_PAGE_INFO' }
   | { type: 'GET_STORAGE_SNAPSHOT' }
   | { type: 'CAPTURE_VISIBLE'; windowId?: number }
+  | {
+      type: 'SCAN_HTML_BUNDLE'
+      htmlOnly?: boolean
+      sameFolderOnly?: boolean
+    }
+  | {
+      type: 'BUILD_HTML_BUNDLE'
+      includeCurrent: boolean
+      selectedResolvedUrls: string[]
+      includeAssets: boolean
+      maxPages?: number
+      maxBytes?: number
+    }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
 export type ExtensionResponse<T = unknown> = { ok: true; data: T } | { ok: false; error: string }
 
 const MESSAGE_TYPES = new Set<ExtensionMessageType>([
+  'CONTENT_SCRIPT_PING',
   'GET_SELECTED_ELEMENT',
   'EXTRACT_PAGE_LINKS',
   'OPEN_TOOL',
@@ -27,6 +42,8 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'GET_PAGE_INFO',
   'GET_STORAGE_SNAPSHOT',
   'CAPTURE_VISIBLE',
+  'SCAN_HTML_BUNDLE',
+  'BUILD_HTML_BUNDLE',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {
