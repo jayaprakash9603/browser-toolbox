@@ -56,8 +56,8 @@ export default function SqlToolkitTool() {
             <SparklesIcon /> {t('dev.tryExample')}
           </Button>
         </div>
-        <TabsContent value="format" className="mt-0 hidden" />
-        <TabsContent value="minify" className="mt-0 hidden" />
+        <TabsContent value="format" className="mt-0 hidden data-[state=active]:hidden" />
+        <TabsContent value="minify" className="mt-0 hidden data-[state=active]:hidden" />
 
         <TextPaneGrid split={Boolean(result?.ok)}>
           <TextEditor

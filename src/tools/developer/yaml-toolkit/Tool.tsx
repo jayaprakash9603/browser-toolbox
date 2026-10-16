@@ -100,8 +100,8 @@ export default function YamlToolkitTool() {
             {valid && <span className="text-xs text-emerald-700 dark:text-emerald-400">{t('dev.yamlValid')}</span>}
           </div>
         </TabsContent>
-        <TabsContent value="convert" className="mt-0 hidden" />
-        <TabsContent value="fromJson" className="mt-0 hidden" />
+        <TabsContent value="convert" className="mt-0 hidden data-[state=active]:hidden" />
+        <TabsContent value="fromJson" className="mt-0 hidden data-[state=active]:hidden" />
 
         <TextPaneGrid split={Boolean(output)}>
           {fromJsonMode ? (

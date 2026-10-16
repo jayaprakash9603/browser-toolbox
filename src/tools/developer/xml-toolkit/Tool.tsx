@@ -71,7 +71,7 @@ export default function XmlToolkitTool() {
             </p>
           )}
         </TabsContent>
-        <TabsContent value="convert" className="mt-0 hidden" />
+        <TabsContent value="convert" className="mt-0 hidden data-[state=active]:hidden" />
 
         <TextPaneGrid split={Boolean(output)}>
           <TextEditor
