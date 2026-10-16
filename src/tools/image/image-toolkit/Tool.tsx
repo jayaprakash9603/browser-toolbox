@@ -95,9 +95,9 @@ export default function ImageToolkitTool() {
   return (
     <ToolPage tool={tool}>
       <div className="flex min-h-0 flex-1 flex-col gap-3">
-        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-6 text-xs text-muted-foreground hover:bg-accent/40">
-          <UploadIcon className="size-4" />
-          {file ? file.name : t('image.upload')}
+        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed py-4 px-3 text-xs text-muted-foreground hover:bg-accent/40">
+          <UploadIcon className="size-4 shrink-0" />
+          <span className="truncate">{file ? file.name : t('image.upload')}</span>
           <input
             type="file"
             accept="image/*"
@@ -117,8 +117,8 @@ export default function ImageToolkitTool() {
           </p>
         )}
         {img && (
-          <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="flex flex-col gap-3">
-            <TabsList className="flex-wrap">
+          <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="flex min-h-0 flex-1 flex-col gap-3">
+            <TabsList className="shrink-0 flex-wrap">
               <TabsTrigger value="resize">{t('image.resize')}</TabsTrigger>
               <TabsTrigger value="crop">{t('image.crop')}</TabsTrigger>
               <TabsTrigger value="convert">{t('image.convert')}</TabsTrigger>
@@ -126,75 +126,90 @@ export default function ImageToolkitTool() {
               <TabsTrigger value="info">{t('image.info')}</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="resize" className="mt-0 flex flex-col gap-3 data-[state=inactive]:hidden">
-              <div className="flex items-center gap-2">
-                <NumberField
-                  value={widthText}
-                  onChange={setWidthText}
-                  min={1}
-                  className="w-24"
-                  ariaLabel="width"
-                />
-                <span className="text-xs text-muted-foreground">×</span>
-                <NumberField
-                  value={heightText}
-                  onChange={setHeightText}
-                  min={1}
-                  className="w-24"
-                  ariaLabel="height"
-                />
+            <TabsContent value="resize" className="mt-0 shrink-0 flex-none flex-col gap-3 data-[state=inactive]:hidden">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <NumberField
+                    value={widthText}
+                    onChange={setWidthText}
+                    min={1}
+                    className="w-24"
+                    ariaLabel="width"
+                  />
+                  <span className="text-xs text-muted-foreground">×</span>
+                  <NumberField
+                    value={heightText}
+                    onChange={setHeightText}
+                    min={1}
+                    className="w-24"
+                    ariaLabel="height"
+                  />
+                  <span className="text-xs text-muted-foreground">px</span>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => void run()}
+                  disabled={width === null || height === null}
+                >
+                  {t('text.generate')}
+                </Button>
               </div>
-              <Button
-                size="sm"
-                className="w-fit"
-                onClick={() => void run()}
-                disabled={width === null || height === null}
-              >
-                {t('text.generate')}
-              </Button>
             </TabsContent>
 
-            <TabsContent value="crop" className="mt-0 flex flex-col gap-3 data-[state=inactive]:hidden">
-              <div className="flex items-center gap-2">
-                <NumberField
-                  value={widthText}
-                  onChange={setWidthText}
-                  min={1}
-                  className="w-24"
-                  ariaLabel="width"
-                />
-                <span className="text-xs text-muted-foreground">×</span>
-                <NumberField
-                  value={heightText}
-                  onChange={setHeightText}
-                  min={1}
-                  className="w-24"
-                  ariaLabel="height"
-                />
+            <TabsContent value="crop" className="mt-0 shrink-0 flex-none flex-col gap-3 data-[state=inactive]:hidden">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <NumberField
+                    value={widthText}
+                    onChange={setWidthText}
+                    min={1}
+                    className="w-24"
+                    ariaLabel="width"
+                  />
+                  <span className="text-xs text-muted-foreground">×</span>
+                  <NumberField
+                    value={heightText}
+                    onChange={setHeightText}
+                    min={1}
+                    className="w-24"
+                    ariaLabel="height"
+                  />
+                  <span className="text-xs text-muted-foreground">px</span>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => void run()}
+                  disabled={width === null || height === null}
+                >
+                  {t('text.generate')}
+                </Button>
               </div>
-              <Button
-                size="sm"
-                className="w-fit"
-                onClick={() => void run()}
-                disabled={width === null || height === null}
-              >
-                {t('text.generate')}
-              </Button>
             </TabsContent>
 
-            <TabsContent value="convert" className="mt-0 flex flex-col gap-3 data-[state=inactive]:hidden">
-              <div className="flex gap-1.5">
-                {(['image/png', 'image/jpeg', 'image/webp'] as const).map((f) => (
-                  <Button
-                    key={f}
-                    size="sm"
-                    variant={format === f ? 'secondary' : 'outline'}
-                    onClick={() => setFormat(f)}
-                  >
-                    {f.split('/')[1].toUpperCase()}
-                  </Button>
-                ))}
+            <TabsContent value="convert" className="mt-0 shrink-0 flex-none flex-col gap-3 data-[state=inactive]:hidden">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex gap-1.5">
+                  {(['image/png', 'image/jpeg', 'image/webp'] as const).map((f) => (
+                    <Button
+                      key={f}
+                      size="sm"
+                      variant={format === f ? 'secondary' : 'outline'}
+                      onClick={() => setFormat(f)}
+                    >
+                      {f.split('/')[1].toUpperCase()}
+                    </Button>
+                  ))}
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => void run()}
+                >
+                  {t('text.generate')}
+                </Button>
               </div>
+            </TabsContent>
+
+            <TabsContent value="base64" className="mt-0 shrink-0 flex-none flex-col gap-3 data-[state=inactive]:hidden">
               <Button
                 size="sm"
                 className="w-fit"
@@ -204,17 +219,7 @@ export default function ImageToolkitTool() {
               </Button>
             </TabsContent>
 
-            <TabsContent value="base64" className="mt-0 flex flex-col gap-3 data-[state=inactive]:hidden">
-              <Button
-                size="sm"
-                className="w-fit"
-                onClick={() => void run()}
-              >
-                {t('text.generate')}
-              </Button>
-            </TabsContent>
-
-            <TabsContent value="info" className="mt-0 data-[state=inactive]:hidden">
+            <TabsContent value="info" className="mt-0 shrink-0 flex-none data-[state=inactive]:hidden">
               {info && (
                 <div className="space-y-1 text-[11px]">
                   {[
@@ -236,8 +241,8 @@ export default function ImageToolkitTool() {
             </TabsContent>
 
             {output && (
-              <div className="flex min-h-0 flex-1 flex-col">
-                <div className="mb-1 flex items-center justify-between">
+              <div className="flex min-h-0 flex-1 flex-col gap-2 pt-1">
+                <div className="flex items-center justify-between">
                   <span className="text-xs font-medium">{t('text.output')}</span>
                   <div className="flex gap-1">
                     {output.startsWith('data:image') && (
@@ -253,9 +258,15 @@ export default function ImageToolkitTool() {
                   </div>
                 </div>
                 {output.startsWith('data:image') ? (
-                  <img src={output} alt={t('text.output')} className="min-h-0 flex-1 rounded-md border object-contain" />
+                  <div className="flex min-h-[160px] max-h-[360px] items-center justify-center rounded-lg border bg-muted/20 p-3">
+                    <img
+                      src={output}
+                      alt={t('text.output')}
+                      className="max-h-[330px] max-w-full rounded object-contain shadow-xs"
+                    />
+                  </div>
                 ) : (
-                  <pre className="scrollbar-both min-h-0 flex-1 overflow-auto rounded-lg border bg-muted/30 p-3 font-mono text-xs leading-relaxed">
+                  <pre className="scrollbar-both min-h-[120px] max-h-[260px] overflow-auto rounded-lg border bg-muted/30 p-3 font-mono text-xs leading-relaxed">
                     {output.slice(0, 2000)}
                     {output.length > 2000 ? '…' : ''}
                   </pre>
