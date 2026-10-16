@@ -19,12 +19,14 @@ interface FormatLanguageSelectProps {
   value: TextFormatSelection
   detectedFormat: TextFormatId
   onValueChange: (value: TextFormatSelection) => void
+  className?: string
 }
 
 export function FormatLanguageSelect({
   value,
   detectedFormat,
   onValueChange,
+  className,
 }: FormatLanguageSelectProps) {
   const { t } = useTranslation()
   const detected = getTextFormatter(detectedFormat)
@@ -34,7 +36,10 @@ export function FormatLanguageSelect({
       <SelectTrigger
         aria-label={t('text.formatSelection')}
         size="sm"
-        className="h-7 w-[min(100%,10.5rem)] min-w-[8.75rem] shrink-0 gap-1.5 whitespace-nowrap shadow-none"
+        className={cn(
+          'h-8 w-[min(100%,11rem)] min-w-[8.75rem] shrink-0 gap-1.5 whitespace-nowrap shadow-none',
+          className,
+        )}
       >
         <SparklesIcon
           className={cn(
