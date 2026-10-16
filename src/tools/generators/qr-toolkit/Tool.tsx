@@ -135,7 +135,7 @@ export default function QrToolkitTool() {
             </TabsTrigger>
           </TabsList>
 
-        <TabsContent value="generate" className="mt-0 flex flex-col gap-2">
+        <TabsContent value="generate" className="mt-0 flex flex-col gap-2 data-[state=inactive]:hidden">
           <Select value={preset} onValueChange={(v) => setPreset(v as QrPreset)}>
             <SelectTrigger aria-label={t('qr.type')}>
               <SelectValue />
@@ -210,18 +210,20 @@ export default function QrToolkitTool() {
           )}
           {preset === 'contact' && (
             <>
-              <Input
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder={t('qr.firstName')}
-                aria-label={t('qr.firstName')}
-              />
-              <Input
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder={t('qr.lastName')}
-                aria-label={t('qr.lastName')}
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <Input
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder={t('qr.firstName')}
+                  aria-label={t('qr.firstName')}
+                />
+                <Input
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder={t('qr.lastName')}
+                  aria-label={t('qr.lastName')}
+                />
+              </div>
               <Input
                 value={text}
                 onChange={(e) => setText(e.target.value)}
@@ -241,7 +243,7 @@ export default function QrToolkitTool() {
           )}
         </TabsContent>
 
-        <TabsContent value="decode" className="mt-0 flex flex-col gap-2">
+        <TabsContent value="decode" className="mt-0 flex flex-col gap-2 data-[state=inactive]:hidden">
           <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-6 text-xs text-muted-foreground hover:bg-accent/40">
             <ScanLineIcon className="size-4" />
             {t('qr.uploadImage')}

@@ -70,7 +70,7 @@ export default function CssGeneratorTool() {
           </div>
         </div>
 
-        <TabsContent value="gradient" className="mt-0 flex flex-col gap-2">
+        <TabsContent value="gradient" className="mt-0 flex flex-col gap-2 data-[state=inactive]:hidden">
           <ColorField label={t('design.from')} value={gradFrom} onChange={setGradFrom} />
           <ColorField label={t('design.to')} value={gradTo} onChange={setGradTo} />
           <NumField
@@ -81,7 +81,7 @@ export default function CssGeneratorTool() {
             max={360}
           />
         </TabsContent>
-        <TabsContent value="shadow" className="mt-0 flex flex-col gap-2">
+        <TabsContent value="shadow" className="mt-0 flex flex-col gap-2 data-[state=inactive]:hidden">
           <NumField label="X" value={shadowX} onChange={setShadowX} min={-50} max={50} />
           <NumField label="Y" value={shadowY} onChange={setShadowY} min={-50} max={50} />
           <NumField
@@ -93,7 +93,7 @@ export default function CssGeneratorTool() {
           />
           <ColorField label={t('design.color')} value={shadowColor} onChange={setShadowColor} />
         </TabsContent>
-        <TabsContent value="radius" className="mt-0">
+        <TabsContent value="radius" className="mt-0 flex flex-col gap-2 data-[state=inactive]:hidden">
           <NumField
             label={t('design.radius')}
             value={radius}
@@ -102,7 +102,7 @@ export default function CssGeneratorTool() {
             max={100}
           />
         </TabsContent>
-        <TabsContent value="glass" className="mt-0 flex flex-col gap-2">
+        <TabsContent value="glass" className="mt-0 flex flex-col gap-2 data-[state=inactive]:hidden">
           <NumField
             label={t('design.blur')}
             value={glassBlur}
