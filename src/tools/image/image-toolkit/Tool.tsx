@@ -36,17 +36,32 @@ export default function ImageToolkitTool() {
   const [format, setFormat] = useState<ImageFormat>('image/png')
   const [output, setOutput] = useState('')
 
+  const [error, setError] = useState<string | null>(null)
+
   const onFile = (f: File | null) => {
     if (!f) return
+    setError(null)
     setFile(f)
-    void getImageInfo(f).then((r) => {
-      if (r.ok) {
-        setInfo(r.value)
-        setWidthText(String(r.value.width))
-        setHeightText(String(r.value.height))
-      }
-    })
-    void fileToDataUrl(f).then(loadImageFromDataUrl).then(setImg)
+    void getImageInfo(f)
+      .then((r) => {
+        if (r.ok) {
+          setInfo(r.value)
+          setWidthText(String(r.value.width))
+          setHeightText(String(r.value.height))
+        } else {
+          setError(r.error)
+        }
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Could not read image info.')
+      })
+
+    void fileToDataUrl(f)
+      .then(loadImageFromDataUrl)
+      .then(setImg)
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Could not load image file.')
+      })
     setOutput('')
   }
 
@@ -63,12 +78,17 @@ export default function ImageToolkitTool() {
   const run = async () => {
     if (!img || !file) return
     if ((tab === 'resize' || tab === 'crop') && (width === null || height === null)) return
-    if (tab === 'resize') setOutput(await resizeImage(img, width ?? 1, height ?? 1))
-    if (tab === 'crop') setOutput(await cropImage(img, 0, 0, width ?? 1, height ?? 1))
-    if (tab === 'convert') setOutput(await convertImage(img, format))
-    if (tab === 'base64') {
-      const r = await imageToBase64(file)
-      if (r.ok) setOutput(r.value)
+    try {
+      if (tab === 'resize') setOutput(await resizeImage(img, width ?? 1, height ?? 1))
+      if (tab === 'crop') setOutput(await cropImage(img, 0, 0, width ?? 1, height ?? 1))
+      if (tab === 'convert') setOutput(await convertImage(img, format))
+      if (tab === 'base64') {
+        const r = await imageToBase64(file)
+        if (r.ok) setOutput(r.value)
+        else setError(r.error)
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Operation failed.')
     }
   }
 
@@ -86,23 +106,27 @@ export default function ImageToolkitTool() {
             aria-label={t('image.upload')}
           />
         </label>
+        {error && (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-destructive">
+            {error}
+          </div>
+        )}
         {info && (
           <p className="text-[11px] text-muted-foreground">
             {info.width}×{info.height} · {info.format} · {formatBytes(info.sizeBytes)}
           </p>
         )}
         {img && (
-          <>
-            <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-              <TabsList className="flex-wrap">
-                <TabsTrigger value="resize">{t('image.resize')}</TabsTrigger>
-                <TabsTrigger value="crop">{t('image.crop')}</TabsTrigger>
-                <TabsTrigger value="convert">{t('image.convert')}</TabsTrigger>
-                <TabsTrigger value="base64">Base64</TabsTrigger>
-                <TabsTrigger value="info">{t('image.info')}</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            {(tab === 'resize' || tab === 'crop') && (
+          <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="flex flex-col gap-3">
+            <TabsList className="flex-wrap">
+              <TabsTrigger value="resize">{t('image.resize')}</TabsTrigger>
+              <TabsTrigger value="crop">{t('image.crop')}</TabsTrigger>
+              <TabsTrigger value="convert">{t('image.convert')}</TabsTrigger>
+              <TabsTrigger value="base64">Base64</TabsTrigger>
+              <TabsTrigger value="info">{t('image.info')}</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="resize" className="mt-0 flex flex-col gap-3 data-[state=inactive]:hidden">
               <div className="flex items-center gap-2">
                 <NumberField
                   value={widthText}
@@ -120,8 +144,45 @@ export default function ImageToolkitTool() {
                   ariaLabel="height"
                 />
               </div>
-            )}
-            {tab === 'convert' && (
+              <Button
+                size="sm"
+                className="w-fit"
+                onClick={() => void run()}
+                disabled={width === null || height === null}
+              >
+                {t('text.generate')}
+              </Button>
+            </TabsContent>
+
+            <TabsContent value="crop" className="mt-0 flex flex-col gap-3 data-[state=inactive]:hidden">
+              <div className="flex items-center gap-2">
+                <NumberField
+                  value={widthText}
+                  onChange={setWidthText}
+                  min={1}
+                  className="w-24"
+                  ariaLabel="width"
+                />
+                <span className="text-xs text-muted-foreground">×</span>
+                <NumberField
+                  value={heightText}
+                  onChange={setHeightText}
+                  min={1}
+                  className="w-24"
+                  ariaLabel="height"
+                />
+              </div>
+              <Button
+                size="sm"
+                className="w-fit"
+                onClick={() => void run()}
+                disabled={width === null || height === null}
+              >
+                {t('text.generate')}
+              </Button>
+            </TabsContent>
+
+            <TabsContent value="convert" className="mt-0 flex flex-col gap-3 data-[state=inactive]:hidden">
               <div className="flex gap-1.5">
                 {(['image/png', 'image/jpeg', 'image/webp'] as const).map((f) => (
                   <Button
@@ -134,18 +195,26 @@ export default function ImageToolkitTool() {
                   </Button>
                 ))}
               </div>
-            )}
-            {tab !== 'info' && (
               <Button
                 size="sm"
                 className="w-fit"
                 onClick={() => void run()}
-                disabled={(tab === 'resize' || tab === 'crop') && (width === null || height === null)}
               >
                 {t('text.generate')}
               </Button>
-            )}
-            <TabsContent value="info" className="mt-0">
+            </TabsContent>
+
+            <TabsContent value="base64" className="mt-0 flex flex-col gap-3 data-[state=inactive]:hidden">
+              <Button
+                size="sm"
+                className="w-fit"
+                onClick={() => void run()}
+              >
+                {t('text.generate')}
+              </Button>
+            </TabsContent>
+
+            <TabsContent value="info" className="mt-0 data-[state=inactive]:hidden">
               {info && (
                 <div className="space-y-1 text-[11px]">
                   {[
@@ -165,6 +234,7 @@ export default function ImageToolkitTool() {
                 </div>
               )}
             </TabsContent>
+
             {output && (
               <div className="flex min-h-0 flex-1 flex-col">
                 <div className="mb-1 flex items-center justify-between">
@@ -174,7 +244,7 @@ export default function ImageToolkitTool() {
                       <Button
                         size="xs"
                         variant="outline"
-                        onClick={() => downloadDataUrl(output, `image-${Date.now()}.png`)}
+                        onClick={() => downloadDataUrl(output, `image-${Date.now()}.${format.split('/')[1] || 'png'}`)}
                       >
                         {t('capture.download')}
                       </Button>
@@ -192,7 +262,7 @@ export default function ImageToolkitTool() {
                 )}
               </div>
             )}
-          </>
+          </Tabs>
         )}
       </div>
     </ToolPage>

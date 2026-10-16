@@ -39,10 +39,17 @@ export class ErrorBoundary extends Component<Props, State> {
 
 function ErrorFallback({ error, onRetry }: { error: Error; onRetry: () => void }) {
   const { t } = useTranslation()
+  const detail = error instanceof Error && error.message ? error.message : null
+
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
       <p className="text-sm font-medium">{t('errors.toolFailed')}</p>
       <p className="text-xs text-muted-foreground">{toUserMessage(error, t('errors.generic'))}</p>
+      {detail && (
+        <pre className="max-w-md overflow-auto rounded border bg-muted/40 p-2 text-left font-mono text-[11px] text-muted-foreground">
+          {detail}
+        </pre>
+      )}
       <Button size="sm" variant="outline" onClick={onRetry}>
         {t('common.tryAgain')}
       </Button>
