@@ -19,9 +19,7 @@ export function ApiClientHostLifecycle() {
     document.documentElement.dataset.browserToolboxApiClient = 'open'
     return () => {
       const { openTabs, cancelActiveRequest } = storeApi.getState()
-      for (const tab of openTabs) {
-        if (tab.sending) cancelActiveRequest(tab.id)
-      }
+      if (openTabs.some((tab) => tab.sending)) cancelActiveRequest()
       delete document.documentElement.dataset.browserToolboxApiClient
       cleanupHostDocument()
     }

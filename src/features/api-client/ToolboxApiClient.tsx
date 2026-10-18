@@ -1,16 +1,13 @@
-import { useEffect, useMemo } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useMemo } from 'react'
 import ApiClient, {
   createDefaultI18n,
   createExtensionAdapters,
-  registerExtensionHistoryListener,
   shadcnKit,
 } from 'postman-lite'
 import 'postman-lite/style.css'
 
 import {
   ApiClientHostLifecycle,
-  useToolboxApiClientAppearanceSync,
 } from '@/features/api-client/ApiClientHostLifecycle'
 import { buildApiClientTheme } from '@/features/api-client/build-api-client-theme'
 import type { ThemeMode } from '@/features/settings/settingsService'
@@ -23,7 +20,6 @@ const HOST_APPEARANCE_NOTE = (
 )
 
 export function ToolboxApiClient() {
-  const { t } = useTranslation()
   const settings = useSettings()
   const themeMode: ThemeMode = settings?.theme ?? 'system'
 
@@ -36,7 +32,6 @@ export function ToolboxApiClient() {
   )
 
   const theme = useMemo(() => buildApiClientTheme(themeMode), [themeMode])
-  const appearanceSync = useToolboxApiClientAppearanceSync(themeMode)
 
   const settingsExtras = useMemo(
     () => (
@@ -47,10 +42,6 @@ export function ToolboxApiClient() {
     ),
     [],
   )
-
-  useEffect(() => {
-    registerExtensionHistoryListener()
-  }, [])
 
   return (
     <ApiClient
@@ -63,11 +54,6 @@ export function ToolboxApiClient() {
       persistSidebarState={false}
       defaultSidebarOpen={false}
       settingsExtras={settingsExtras}
-      workingDirectoryHostContent={
-        <p className="text-xs text-muted-foreground">{t('apiClient.storageHostHint')}</p>
-      }
-      appearanceControlledByHost
-      appearanceSync={appearanceSync}
     />
   )
 }

@@ -20,16 +20,9 @@ const TOOLBOX_LIGHT: Partial<ApiClientThemeTokens> = {
   mutedForeground: '0 0% 45%',
   accent: '0 0% 93%',
   accentForeground: '0 0% 9%',
-  accentSoft: '18 70% 96%',
-  accentBorder: '18 40% 86%',
   border: '0 0% 90%',
   input: '0 0% 83%',
   ring: '18 78% 48%',
-  link: '18 78% 48%',
-  variableHighlight: '18 78% 48%',
-  scrollbarThumb: '18 12% 72%',
-  scrollbarThumbHover: '18 78% 48%',
-  scrollbarTrack: '0 0% 94%',
 }
 
 /** HSL channels matching Browser Toolbox dark tokens. */
@@ -48,16 +41,9 @@ const TOOLBOX_DARK: Partial<ApiClientThemeTokens> = {
   mutedForeground: '0 0% 64%',
   accent: '0 0% 16%',
   accentForeground: '0 0% 96%',
-  accentSoft: '18 30% 16%',
-  accentBorder: '18 20% 28%',
   border: '0 0% 20%',
   input: '0 0% 25%',
   ring: '22 82% 62%',
-  link: '22 82% 62%',
-  variableHighlight: '22 82% 62%',
-  scrollbarThumb: '0 0% 32%',
-  scrollbarThumbHover: '22 82% 62%',
-  scrollbarTrack: '0 0% 8%',
 }
 
 export function buildApiClientTheme(themeMode: ThemeMode): ApiClientTheme {
