@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_PROTECTION_STATE } from '@/core/protection'
-import { buildThreatRules, buildTrustedAllowRules, isProtectionManagedRuleId } from '@/core/protection/rules'
+import {
+  buildThreatRules,
+  buildTrustedAllowRules,
+  isProtectionManagedRuleId,
+  isSafeToBlock,
+} from '@/core/protection/rules'
 import type { ThreatsFile } from '@/core/protection/types'
 
 const sampleThreats: ThreatsFile = {
@@ -49,6 +54,21 @@ describe('protection DNR rules', () => {
       'chrome-extension://abc',
     )
     expect(off.some((r) => r.condition.requestDomains?.includes('coinhive.test'))).toBe(false)
+  })
+
+  it('never turns TLDs, public suffixes or major sites into domain-wide blocks', () => {
+    const poisoned: ThreatsFile = {
+      ...sampleThreats,
+      scam: ['com', 'co.uk', 'www.google.com', 'mail.google.co.in', 'youtube.com', 'vlc.de', 'scam.test'],
+    }
+    const rules = buildThreatRules(poisoned, DEFAULT_PROTECTION_STATE, 'chrome-extension://abc')
+    const domains = rules.flatMap((r) => r.condition.requestDomains ?? [])
+    for (const host of ['com', 'co.uk', 'www.google.com', 'mail.google.co.in', 'youtube.com']) {
+      expect(domains).not.toContain(host)
+    }
+    expect(domains).toContain('vlc.de')
+    expect(domains).toContain('scam.test')
+    expect(isSafeToBlock('203.0.113.7')).toBe(true)
   })
 
   it('omits rules when protection is disabled or category is off', () => {

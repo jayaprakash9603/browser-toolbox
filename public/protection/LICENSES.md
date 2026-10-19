@@ -9,4 +9,4 @@ Bundled data is rebuilt with `npm run protection:lists`. No threat data is downl
 | uBlock Origin – Badware risks | GPL-3.0 |
 | NoCoin adblock list (cryptominers) | MIT |
 
-Generated: 2026-10-19T17:48:30.836Z
+Generated: 2026-10-19T18:11:56.428Z

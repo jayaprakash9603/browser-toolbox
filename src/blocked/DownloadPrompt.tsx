@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FileWarningIcon, ShieldAlertIcon } from 'lucide-react'
 
@@ -20,6 +20,13 @@ export function DownloadPrompt() {
   const { t } = useTranslation()
   const ctx = useMemo(() => parseDownloadContext(), [])
   const [busy, setBusy] = useState(false)
+
+  // the held download lives in the service worker; regular messages stop Chrome idling it out
+  useEffect(() => {
+    if (ctx.id == null) return
+    const timer = window.setInterval(() => void sendMessage({ type: 'PROTECTION_GET_STATS' }), 20_000)
+    return () => window.clearInterval(timer)
+  }, [ctx.id])
 
   // a framed prompt could be click-jacked into keeping a file
   if (window.top !== window) return null

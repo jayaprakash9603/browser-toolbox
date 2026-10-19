@@ -226,7 +226,7 @@ const en = {
     'This file came from a site on the malware or phishing blocklist, so the download was cancelled.',
   'protection.download.confirmTitle': 'Keep this download?',
   'protection.download.confirmBody':
-    'A page started downloading a program without you clicking anything. It is paused until you decide.',
+    'A page started downloading a program without you clicking anything. Nothing has been saved yet. Closing this window deletes it.',
   'protection.download.from': 'From {{host}}',
   'protection.download.delete': 'Delete download (recommended)',
   'protection.download.keep': 'Keep it, I started this',

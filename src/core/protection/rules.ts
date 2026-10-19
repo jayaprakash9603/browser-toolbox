@@ -1,6 +1,7 @@
 import {
   DOMAINS_PER_RULE,
   PROCEED_SESSION_RULE_ID_BASE,
+  SAFE_DOMAINS,
   THREAT_RULE_ID_BASE,
   THREAT_RULE_PRIORITY,
   TRUSTED_RULE_ID_BASE,
@@ -37,8 +38,25 @@ function categoryEnabled(state: ProtectionState, category: ThreatListCategory): 
   return state.scams
 }
 
+const IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/
+const GOOGLE_HOST = /(^|\.)google\.(com?\.)?[a-z]{2,3}$/
+const PUBLIC_SUFFIX = /^(co|com|net|org|gov|edu|ac|ne|or|go|gob|mil)\.[a-z]{2}$/
+
+/**
+ * `requestDomains` also matches subdomains, so one bad entry ("com", "co.uk", "google.com")
+ * would block huge parts of the web. Such entries are dropped even if a list ships them.
+ */
+export function isSafeToBlock(host: string): boolean {
+  if (IPV4.test(host)) return true
+  const labels = host.split('.')
+  if (labels.length < 2 || labels.some((l) => !l)) return false
+  if (PUBLIC_SUFFIX.test(host)) return false
+  if (GOOGLE_HOST.test(host)) return false
+  return !SAFE_DOMAINS.some((safe) => host === safe || host.endsWith(`.${safe}`))
+}
+
 function hostsForCategory(threats: ThreatsFile, category: ThreatListCategory): string[] {
-  return threats[category] ?? []
+  return (threats[category] ?? []).filter(isSafeToBlock)
 }
 
 /**

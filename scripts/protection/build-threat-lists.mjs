@@ -41,8 +41,37 @@ const FEEDS = [
 
 const CATEGORIES = ['phishing', 'malware', 'scam', 'miner']
 
-/** Exact hosts never blocked (major shared infrastructure). Subdomains of these are still blocked. */
+/**
+ * Domains never blocked, including all of their subdomains. A domain-level block on these would
+ * break search, mail or sign-in for everyone; page-level threats on them are out of scope.
+ */
 export const NEVER_BLOCK = new Set([
+  'bing.com',
+  'duckduckgo.com',
+  'yahoo.com',
+  'baidu.com',
+  'yandex.ru',
+  'gmail.com',
+  'google.co.in',
+  'google.co.uk',
+  'chatgpt.com',
+  'openai.com',
+  'netflix.com',
+  'zoom.us',
+  'outlook.com',
+  'microsoftonline.com',
+  'windows.net',
+  'akamaihd.net',
+  'jsdelivr.net',
+  'unpkg.com',
+  'npmjs.com',
+  'pages.dev',
+  'vercel.app',
+  'netlify.app',
+  'web.app',
+  'firebaseapp.com',
+  'dropbox.com',
+  'drive.google.com',
   'google.com',
   'googleapis.com',
   'gstatic.com',
@@ -80,14 +109,74 @@ export const NEVER_BLOCK = new Set([
   'docs.google.com',
 ])
 
+/** Shared hosting platforms are in NEVER_BLOCK as exact hosts only; their customer subdomains stay blockable. */
+const HOSTING_PLATFORMS = new Set([
+  'github.io',
+  'blogspot.com',
+  'wordpress.com',
+  'pages.dev',
+  'vercel.app',
+  'netlify.app',
+  'web.app',
+  'firebaseapp.com',
+  'googleusercontent.com',
+  'cloudfront.net',
+  'windows.net',
+  'akamaihd.net',
+])
+
+/** Public suffixes with two labels; a bare entry like `co.uk` would block a whole country. */
+const MULTI_PART_SUFFIXES = new Set([
+  'co.uk', 'org.uk', 'ac.uk', 'gov.uk', 'co.in', 'net.in', 'org.in', 'gov.in', 'co.jp', 'ne.jp',
+  'or.jp', 'com.au', 'net.au', 'org.au', 'com.br', 'com.cn', 'net.cn', 'org.cn', 'com.mx',
+  'com.tr', 'co.za', 'co.kr', 'com.tw', 'com.hk', 'com.sg', 'co.nz', 'co.id', 'com.ar',
+  'com.ru', 'com.ua', 'com.pl', 'co.il', 'com.my', 'com.ph', 'com.vn', 'com.pk', 'com.ng',
+  'com.eg', 'com.sa', 'hl.cn',
+])
+
+const GOOGLE_HOST = /(^|\.)google\.(com?\.)?[a-z]{2,3}$/
+
+/** True for hosts that must never become a domain-wide block. */
+export function isProtectedHost(host) {
+  if (GOOGLE_HOST.test(host)) return true
+  if (MULTI_PART_SUFFIXES.has(host)) return true
+  const parts = host.split('.')
+  for (let i = 0; i < parts.length - 1; i++) {
+    const suffix = parts.slice(i).join('.')
+    if (!NEVER_BLOCK.has(suffix)) continue
+    // customer subdomains of hosting platforms remain blockable
+    if (i > 0 && HOSTING_PLATFORMS.has(suffix)) return false
+    return true
+  }
+  return false
+}
+
+/** ABP options that keep a `||host^` filter a plain whole-site block. */
+const PLAIN_ABP_OPTIONS = new Set([
+  'all', 'doc', 'document', 'important', 'popup', 'frame', 'subdocument', 'script', 'xhr',
+  'xmlhttprequest', 'image', 'media', 'other', 'ping', 'websocket', 'third-party', '3p',
+  'first-party', '1p', 'object',
+])
+
+function isPlainAbpOptions(options) {
+  if (!options) return true
+  return options
+    .replace(/^\$/, '')
+    .split(',')
+    .every((opt) => PLAIN_ABP_OPTIONS.has(opt.trim().toLowerCase()))
+}
+
 export function normalizeThreatHost(raw) {
   let h = raw.trim().toLowerCase()
   if (!h || h.startsWith('#') || h.startsWith('!')) return null
   h = h.replace(/^\|\|/, '').replace(/\^.*$/, '').replace(/^\*/, '').split('/')[0].split(':')[0]
   if (!h || h.length > 253) return null
-  if (/^[\d.]+$/.test(h)) return h
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(h)) return h
+  if (/^[\d.]+$/.test(h)) return null
   if (!/^[a-z0-9.-]+$/.test(h) || h.startsWith('.') || h.endsWith('.')) return null
   const labels = h.split('.')
+  // a single label is a TLD ("com"), which would block every site under it
+  if (labels.length < 2) return null
   if (labels.some((label) => label.length < 2)) return null
   if (labels.length >= 2 && labels[labels.length - 2].length < 2) return null
   return h
@@ -114,8 +203,8 @@ export function parseBadwareList(text) {
     if (!trimmed || trimmed.startsWith('!')) continue
     const m = /^\|\|([^/^|*$]+)\^(\$.*)?$/.exec(trimmed)
     if (!m) continue
-    // context-limited or modifier-only filters are not whole-site blocks
-    if (m[2] && /domain=|badfilter|removeparam|redirect|csp|header=/.test(m[2])) continue
+    // conditional filters (ipaddress=, domain=, to=, badfilter, ...) are not whole-site blocks
+    if (!isPlainAbpOptions(m[2])) continue
     const host = normalizeThreatHost(m[1])
     if (host) hosts.push(host)
   }
@@ -212,7 +301,7 @@ async function main() {
   for (const category of CATEGORIES) {
     const unique = [...new Set(byCategory[category])]
     const filtered = unique.filter((h) => {
-      if (NEVER_BLOCK.has(h)) return false
+      if (isProtectedHost(h)) return false
       if (assigned.has(h)) return false
       assigned.add(h)
       return true

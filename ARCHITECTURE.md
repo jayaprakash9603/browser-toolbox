@@ -66,7 +66,9 @@ On by default (`privacy.web-protection` tool + Settings). State lives in `core/p
    - `guard-scam.js` (main world, top frame): neutralises browser lockers (dialog floods, forced fullscreen, keyboard lock, `pushState` floods, `beforeunload` traps).
    - `guard-clipboard.js` (main world, all frames): blocks hidden shell commands copied to the clipboard (ClickFix / fake CAPTCHA).
    - `guard-notify.js` (main world, top frame): denies notification/push requests made without a user gesture.
-4. Watches `chrome.downloads`: downloads from threat hosts are cancelled; executables that start without a recent user gesture on the source site are paused and confirmed in `blocked.html?mode=download`.
+4. Hooks `chrome.downloads.onDeterminingFilename`, which holds every download before anything is written or the Save As dialog opens: downloads from threat hosts are cancelled; executables that start without a recent user gesture on the source site stay held until the user answers `blocked.html?mode=download` (closing it deletes the download).
+
+List entries that would block a whole TLD, a public suffix or a site in `SAFE_DOMAINS` (Google, YouTube, Bing, Microsoft, ...) are dropped both when lists are built and when rules are installed (`isSafeToBlock`), because `requestDomains` also matches every subdomain.
 
 Page-world guards talk to the isolated script through `window.postMessage` (`PAGE_MESSAGE_KEY` / `PAGE_COMMAND_KEY`); the background only trusts `sender.url`, and only extension pages may decide on paused downloads.
 

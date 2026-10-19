@@ -8,6 +8,7 @@ export {
   PAGE_MESSAGE_KEY,
   PROTECTION_FILES,
   PROTECTION_RULES_VERSION_KEY,
+  SAFE_DOMAINS,
   THREAT_RULE_ID_BASE,
 } from './constants'
 export { assessDownload, downloadHost, fileExtension, isRiskyFile } from './downloads'
@@ -36,6 +37,7 @@ export {
   buildThreatRules,
   buildTrustedAllowRules,
   isProtectionManagedRuleId,
+  isSafeToBlock,
   proceedOnceRuleId,
 } from './rules'
 export { THREAT_CATEGORIES, THREAT_LIST_CATEGORIES } from './types'

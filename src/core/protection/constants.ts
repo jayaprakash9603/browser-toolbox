@@ -9,6 +9,49 @@ export const THREAT_RULE_PRIORITY = 200
 export const TRUSTED_RULE_PRIORITY = 300
 
 export const DOMAINS_PER_RULE = 1000
+
+/**
+ * Sites (and all their subdomains) that list blocking and the download guard never touch.
+ * Hosting platforms whose customer subdomains are often abused (github.io, pages.dev, ...) are
+ * deliberately absent.
+ */
+export const SAFE_DOMAINS = [
+  'google.com',
+  'googleapis.com',
+  'gstatic.com',
+  'youtube.com',
+  'ytimg.com',
+  'gmail.com',
+  'bing.com',
+  'duckduckgo.com',
+  'yahoo.com',
+  'microsoft.com',
+  'microsoftonline.com',
+  'live.com',
+  'outlook.com',
+  'office.com',
+  'apple.com',
+  'icloud.com',
+  'amazon.com',
+  'facebook.com',
+  'instagram.com',
+  'whatsapp.com',
+  'twitter.com',
+  'x.com',
+  'linkedin.com',
+  'wikipedia.org',
+  'github.com',
+  'githubusercontent.com',
+  'stackoverflow.com',
+  'reddit.com',
+  'paypal.com',
+  'cloudflare.com',
+  'chatgpt.com',
+  'openai.com',
+  'netflix.com',
+  'zoom.us',
+  'mozilla.org',
+]
 export const MAX_RECENT_ENTRIES = 20
 
 export const PROTECTION_RULES_VERSION_KEY = 'protectionRulesVersion'

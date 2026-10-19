@@ -2,6 +2,7 @@ import {
   buildThreatRules,
   buildTrustedAllowRules,
   isProtectionManagedRuleId,
+  isSafeToBlock,
   PROTECTION_FILES,
   THREAT_LIST_CATEGORIES,
   type ProtectionState,
@@ -15,7 +16,7 @@ import { createLogger } from '@/core/logging'
 const logger = createLogger('protection-rules')
 
 /** Bump when the rule shape changes so installed rules are rebuilt on update. */
-const RULE_SCHEMA_VERSION = 2
+const RULE_SCHEMA_VERSION = 3
 
 let cachedThreats: ThreatsFile | null = null
 let hostIndex: Map<string, ThreatListCategory> | null = null
@@ -36,13 +37,13 @@ export async function loadThreatsFile(): Promise<ThreatsFile | null> {
 
 /** Category of a host (or any of its parent domains) on the bundled threat lists. */
 export async function threatCategoryForHost(host: string): Promise<ThreatListCategory | null> {
-  if (!host) return null
+  if (!host || !isSafeToBlock(host)) return null
   if (!hostIndex) {
     const threats = await loadThreatsFile()
     if (!threats) return null
     hostIndex = new Map()
     for (const category of THREAT_LIST_CATEGORIES) {
-      for (const h of threats[category] ?? []) hostIndex.set(h, category)
+      for (const h of threats[category] ?? []) if (isSafeToBlock(h)) hostIndex.set(h, category)
     }
   }
   const parts = host.toLowerCase().split('.')
