@@ -12,6 +12,7 @@ const DEFAULT_TOOLKIT_BY_CATEGORY: Record<string, ToolkitGroupId> = {
   data: 'data',
   design: 'design',
   security: 'security',
+  privacy: 'privacy',
   calculators: 'calculators',
   datetime: 'datetime',
   screenshots: 'screenshots',

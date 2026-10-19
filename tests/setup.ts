@@ -122,13 +122,36 @@ const chromeMock = {
   },
   sidePanel: { setPanelBehavior: vi.fn(async () => undefined), open: vi.fn(async () => undefined) },
   commands: { onCommand: makeEvent() },
-  action: { onClicked: makeEvent() },
+  action: {
+    onClicked: makeEvent(),
+    setBadgeText: vi.fn(async () => undefined),
+    setBadgeBackgroundColor: vi.fn(async () => undefined),
+  },
   permissions: {
     contains: vi.fn(async () => false),
     request: vi.fn(async () => false),
     remove: vi.fn(async () => true),
   },
-  tabs: { query: vi.fn(async () => []), sendMessage: vi.fn(async () => undefined) },
+  tabs: {
+    query: vi.fn(async () => [{ id: 1, url: 'https://example.com', active: true }]),
+    sendMessage: vi.fn(async () => undefined),
+    reload: vi.fn(async () => undefined),
+    get: vi.fn(async (id: number) => ({ id, url: 'https://example.com' })),
+  },
+  scripting: {
+    registerContentScripts: vi.fn(async () => undefined),
+    unregisterContentScripts: vi.fn(async () => undefined),
+    executeScript: vi.fn(async () => undefined),
+    insertCSS: vi.fn(async () => undefined),
+    getRegisteredContentScripts: vi.fn(async () => []),
+  },
+  declarativeNetRequest: {
+    updateEnabledRulesets: vi.fn(async () => undefined),
+    updateDynamicRules: vi.fn(async () => undefined),
+    getDynamicRules: vi.fn(async () => []),
+    getMatchedRules: vi.fn(async () => ({ rulesMatchedInfo: [] })),
+    setExtensionActionOptions: vi.fn(async () => undefined),
+  },
   windows: {
     getLastFocused: vi.fn(async () => ({ tabs: [] })),
     getAll: vi.fn(async () => []),

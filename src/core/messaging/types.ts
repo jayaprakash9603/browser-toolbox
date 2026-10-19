@@ -57,6 +57,10 @@ export type ExtensionMessage =
   | { type: 'OFFSCREEN_BUNDLE_CHUNK'; buildId: string; base64: string }
   | { type: 'OFFSCREEN_BUNDLE_FINALIZE'; buildId: string }
   | { type: 'OFFSCREEN_BUNDLE_RELEASE'; buildId: string }
+  | { type: 'ADBLOCK_GET_TAB_STATS'; tabId?: number }
+  | { type: 'ADBLOCK_RELOAD_TAB'; tabId?: number }
+  | { type: 'ADBLOCK_COSMETIC_REPORT'; hidden?: number; youtube?: number }
+  | { type: 'ADBLOCK_RESET_TOTALS' }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
@@ -87,6 +91,10 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'OFFSCREEN_BUNDLE_CHUNK',
   'OFFSCREEN_BUNDLE_FINALIZE',
   'OFFSCREEN_BUNDLE_RELEASE',
+  'ADBLOCK_GET_TAB_STATS',
+  'ADBLOCK_RELOAD_TAB',
+  'ADBLOCK_COSMETIC_REPORT',
+  'ADBLOCK_RESET_TOTALS',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {

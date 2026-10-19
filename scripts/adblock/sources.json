@@ -1,0 +1,39 @@
+{
+  "lists": [
+    {
+      "id": "easylist",
+      "url": "https://easylist.to/easylist/easylist.txt",
+      "license": "GPLv3",
+      "ruleset": "ads",
+      "defaultEnabled": true
+    },
+    {
+      "id": "easyprivacy",
+      "url": "https://easylist.to/easylist/easyprivacy.txt",
+      "license": "GPLv3",
+      "ruleset": "privacy",
+      "defaultEnabled": true
+    },
+    {
+      "id": "ublock-filters",
+      "url": "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/filters.txt",
+      "license": "GPLv3",
+      "ruleset": "ads",
+      "defaultEnabled": true
+    },
+    {
+      "id": "ublock-quick-fixes",
+      "url": "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/quick-fixes.txt",
+      "license": "GPLv3",
+      "ruleset": "ads",
+      "defaultEnabled": true
+    },
+    {
+      "id": "fanboy-annoyance",
+      "url": "https://easylist.to/easylist/fanboy-annoyance.txt",
+      "license": "CC BY-SA 3.0",
+      "ruleset": "annoyances",
+      "defaultEnabled": false
+    }
+  ]
+}

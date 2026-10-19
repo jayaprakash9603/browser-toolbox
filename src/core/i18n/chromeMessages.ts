@@ -4,6 +4,7 @@ const CHROME_UI_FALLBACKS: Record<string, string> = {
     'All-in-one productivity toolbox: clipboard, text, developer, QA and web utilities in one side panel.',
   actionTitle: 'Open Browser Toolbox',
   contextMenuOpen: 'Open Browser Toolbox',
+  contextMenuPauseAdblock: 'Pause ad blocking on this site',
 }
 
 export function getChromeMessage(messageName: string): string {

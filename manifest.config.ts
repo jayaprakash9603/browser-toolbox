@@ -40,8 +40,27 @@ export default defineManifest({
     'tabs',
     'downloads',
     'offscreen',
+    'declarativeNetRequest',
+    'declarativeNetRequestFeedback',
   ],
   host_permissions: ['<all_urls>'],
+  declarative_net_request: {
+    rule_resources: [
+      { id: 'ruleset-ads', enabled: false, path: 'adblock/rulesets/ads.json' },
+      { id: 'ruleset-privacy', enabled: false, path: 'adblock/rulesets/privacy.json' },
+      { id: 'ruleset-annoyances', enabled: false, path: 'adblock/rulesets/annoyances.json' },
+      { id: 'ruleset-youtube', enabled: false, path: 'adblock/rulesets/youtube.json' },
+    ],
+  },
+  web_accessible_resources: [
+    {
+      matches: ['<all_urls>'],
+      resources: [
+        'adblock/scripts/*',
+        'adblock/cosmetic/*',
+      ],
+    },
+  ],
   commands: {
     'open-command-palette': {
       suggested_key: { default: 'Ctrl+Shift+Space', mac: 'Command+Shift+Space' },

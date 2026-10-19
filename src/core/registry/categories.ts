@@ -16,6 +16,7 @@ import {
   PaletteIcon,
   PanelsTopLeftIcon,
   SearchCheckIcon,
+  ShieldBanIcon,
   ShieldIcon,
   TypeIcon,
   ZapIcon,
@@ -94,6 +95,14 @@ export const CATEGORIES: CategoryDefinition[] = [
     description: 'Hashing, encoding, headers',
     icon: ShieldIcon,
     order: 70,
+    enabled: true,
+  },
+  {
+    id: 'privacy',
+    name: 'Privacy',
+    description: 'Ad blocking and browsing privacy',
+    icon: ShieldBanIcon,
+    order: 72,
     enabled: true,
   },
   {

@@ -26,7 +26,7 @@ tests/
 | Background service worker | `src/chrome/background/index.ts` | Implemented (menus, commands, message router) |
 | Context menus | `src/chrome/context-menu/` | Manager scaffold; "Open toolbox" item live |
 | DevTools page | `devtools.html` → `src/chrome/devtools/` | Placeholder panel registration |
-| Content scripts | `src/chrome/content/` | Bridge placeholder (not registered in manifest) |
+| Content scripts | `src/chrome/content/` | Page-tools bridge (on-demand inject) + ad-blocker scripts (`public/adblock/scripts`, registered when enabled) |
 
 Message flow targets `SIDE PANEL ↔ BACKGROUND ↔ CONTENT SCRIPT ↔ PAGE` and `DEVTOOLS ↔ BACKGROUND ↔ SIDE PANEL`, using the discriminated-union `ExtensionMessage` contract in `core/messaging/types.ts`. Components never call `chrome.*` directly; they go through services in `core/`.
 
@@ -43,7 +43,17 @@ A tiny hash router (`#/tools/text/word-counter`) maps routes to tools via the re
 
 ## Storage
 
-`core/storage/storageService` wraps `chrome.storage.local` with typed keys (`settings`, `favorites`, `recentTools`, `clipboardHistory`, `meta`) and a `storageVersion` field for future migrations.
+`core/storage/storageService` wraps `chrome.storage.local` with typed keys (`settings`, `favorites`, `recentTools`, `clipboardHistory`, `adblock`, `meta`) and a `storageVersion` field for future migrations.
+
+## Ad blocking
+
+Opt-in feature (`privacy.ad-blocker` tool + Settings). State lives in `core/adblock/` (`adblock` storage key). The background module `chrome/background/adblock/` syncs:
+
+1. Static `declarativeNetRequest` rulesets (`public/adblock/rulesets/*.json`, toggled via `updateEnabledRulesets`).
+2. Dynamic allowlist rules (`allowAllRequests` per hostname).
+3. Registered content scripts for cosmetic CSS and YouTube pruning/skipper.
+
+Filter lists are converted at build time (`npm run adblock:lists`); page scripts are built with `npm run adblock:scripts` (IIFE, no CRXJS loader).
 
 ## Theming
 

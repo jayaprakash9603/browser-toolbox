@@ -19,5 +19,8 @@
   },
   "contextMenuOpen": {
     "message": "Open Browser Toolbox"
+  },
+  "contextMenuPauseAdblock": {
+    "message": "Pause ad blocking on this site"
   }
 }

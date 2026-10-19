@@ -1,5 +1,6 @@
 import '@/i18n'
 
+import { addAllowlistHost, hostnameFromUrl } from '@/core/adblock'
 import { createLogger } from '@/core/logging'
 import { getChromeMessage } from '@/core/i18n/chromeMessages'
 import { startMessageRouter } from '@/core/messaging'
@@ -9,6 +10,7 @@ import { initStorage } from '@/core/storage'
 
 import { contentScriptBundlePath, ensureContentScriptInTab } from '@/chrome/contentScriptClient'
 
+import { registerAdblock, syncAdblockState } from './adblock'
 import { registerApiClientSendHandler } from './api-client-send'
 import { registerCaptureHandler } from './capture'
 import { registerHtmlBundleJobHandlers } from './htmlBundleJob'
@@ -28,6 +30,11 @@ async function rebuildContextMenus() {
     id: 'toolbox.open',
     title: getChromeMessage('contextMenuOpen'),
     contexts: ['all'],
+  })
+  chrome.contextMenus.create({
+    id: 'toolbox.adblock.pause-site',
+    title: getChromeMessage('contextMenuPauseAdblock'),
+    contexts: ['page', 'frame'],
   })
   for (const item of buildMenuItems(toolRegistry.getAll())) {
     chrome.contextMenus.create({
@@ -65,10 +72,16 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.runtime.onStartup.addListener(() => {
   void rebuildContextMenus()
+  void syncAdblockState()
 })
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   const menuItemId = String(info.menuItemId)
+  if (menuItemId === 'toolbox.adblock.pause-site' && tab?.url) {
+    const host = hostnameFromUrl(tab.url)
+    if (host) void addAllowlistHost(host)
+    return
+  }
   if (menuItemId === 'toolbox.open' || menuItemId.startsWith('toolbox.open.')) {
     if (tab?.windowId != null) void chrome.sidePanel.open({ windowId: tab.windowId })
     return
@@ -133,4 +146,5 @@ chrome.commands.onCommand.addListener((command, tab) => {
 registerApiClientSendHandler()
 registerCaptureHandler()
 registerHtmlBundleJobHandlers()
+registerAdblock()
 startMessageRouter()

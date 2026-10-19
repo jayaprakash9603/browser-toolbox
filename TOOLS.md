@@ -1,6 +1,6 @@
 # Tools catalog & capability matrix
 
-Browser Toolbox ships **53 registry tools** (including one disabled legacy entry) as **consolidated toolkits**, not hundreds of separate icons. Search, favorites, the command palette (`Ctrl/Cmd+Shift+Space`), context menus, and clipboard insights surface the same capabilities.
+Browser Toolbox ships **55 registry tools** (including one disabled legacy entry) as **consolidated toolkits**, not hundreds of separate icons. Search, favorites, the command palette (`Ctrl/Cmd+Shift+Space`), context menus, and clipboard insights surface the same capabilities.
 
 See [ROADMAP.md](./ROADMAP.md) for what is planned next.
 
@@ -36,6 +36,7 @@ See [ROADMAP.md](./ROADMAP.md) for what is planned next.
 | **24. SQL** | **Partial** | Format/minify; no SQL→JSON UI. |
 | **25. Translation / language** | **Out of scope** | Not a translation product. |
 | **26. Browser quick actions** | **Shipped** | Context menus + commands; see [PERMISSIONS.md](./PERMISSIONS.md). |
+| **Ad blocking (MV3)** | **Shipped** | `privacy.ad-blocker` — DNR filter lists, cosmetic hiding, YouTube scripts; off by default. |
 | **Storage (local/session)** | **Partial** | `storage.inspector` — **localStorage + sessionStorage only** (cookies planned Phase 2). |
 
 ---
@@ -181,6 +182,7 @@ Engines: `src/core/engines/` (`json`, `xml`, `yaml`, `sql`, `regex`, `id`, `date
 | Generators | QR Code Toolkit | `/tools/generators/qr-toolkit` |
 | SEO | SEO Toolkit | `/tools/seo/toolkit` |
 | Productivity | Notes, Timer, Tab Manager | `/tools/productivity/*` |
+| Privacy | Ad Blocker | `/tools/privacy/ad-blocker` |
 | Browser | Browser Toolkit | `/tools/browser/toolkit` |
 | Storage | Storage Inspector | `/tools/storage/inspector` (local + session storage) |
 | Accessibility | Accessibility Quick Check | `/tools/accessibility/toolkit` |

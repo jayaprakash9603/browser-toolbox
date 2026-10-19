@@ -5,6 +5,8 @@ export const STORAGE_KEYS = {
   favorites: 'favorites',
   recentTools: 'recentTools',
   clipboardHistory: 'clipboardHistory',
+  adblock: 'adblock',
+  adblockTotals: 'adblockTotals',
   meta: 'meta',
 } as const
 

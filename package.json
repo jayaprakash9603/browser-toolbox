@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/copy-postman-sandbox.mjs && tsc -b && vite build",
+    "adblock:lists": "node scripts/adblock/build-filter-lists.mjs",
+    "adblock:scripts": "node scripts/build-adblock-scripts.mjs",
+    "build": "node scripts/copy-postman-sandbox.mjs && npm run adblock:scripts && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",

@@ -1,0 +1,98 @@
+[
+  {
+    "id": 900000,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "requestDomains": [
+        "googleads.g.doubleclick.net"
+      ],
+      "initiatorDomains": [
+        "youtube.com",
+        "youtube-nocookie.com"
+      ],
+      "resourceTypes": [
+        "script",
+        "xmlhttprequest",
+        "image",
+        "sub_frame",
+        "ping",
+        "media"
+      ]
+    }
+  },
+  {
+    "id": 900001,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "requestDomains": [
+        "pagead2.googlesyndication.com"
+      ],
+      "initiatorDomains": [
+        "youtube.com",
+        "youtube-nocookie.com"
+      ],
+      "resourceTypes": [
+        "script",
+        "xmlhttprequest",
+        "image",
+        "sub_frame",
+        "ping",
+        "media"
+      ]
+    }
+  },
+  {
+    "id": 900002,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "requestDomains": [
+        "googleadservices.com"
+      ],
+      "initiatorDomains": [
+        "youtube.com",
+        "youtube-nocookie.com"
+      ],
+      "resourceTypes": [
+        "script",
+        "xmlhttprequest",
+        "image",
+        "sub_frame",
+        "ping",
+        "media"
+      ]
+    }
+  },
+  {
+    "id": 900003,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "requestDomains": [
+        "imasdk.googleapis.com"
+      ],
+      "initiatorDomains": [
+        "youtube.com",
+        "youtube-nocookie.com"
+      ],
+      "resourceTypes": [
+        "script",
+        "xmlhttprequest",
+        "image",
+        "sub_frame",
+        "ping",
+        "media"
+      ]
+    }
+  }
+]

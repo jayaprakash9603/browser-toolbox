@@ -1,0 +1,47 @@
+import { ALLOWLIST_RULE_ID_BASE, ALLOWLIST_RULE_PRIORITY } from '@/core/adblock'
+import { normalizeHostname } from '@/core/adblock/hostname'
+import { createLogger } from '@/core/logging'
+
+const logger = createLogger('adblock-allowlist')
+
+export function allowlistRuleIdForIndex(index: number): number {
+  return ALLOWLIST_RULE_ID_BASE + index
+}
+
+export function buildAllowlistRules(hosts: string[]): chrome.declarativeNetRequest.Rule[] {
+  const rules: chrome.declarativeNetRequest.Rule[] = []
+  const seen = new Set<string>()
+  let index = 0
+  for (const raw of hosts) {
+    const host = normalizeHostname(raw)
+    if (!host || seen.has(host)) continue
+    seen.add(host)
+    rules.push({
+      id: allowlistRuleIdForIndex(index),
+      priority: ALLOWLIST_RULE_PRIORITY,
+      action: { type: 'allowAllRequests' },
+      condition: {
+        requestDomains: [host],
+        resourceTypes: ['main_frame', 'sub_frame'],
+      },
+    })
+    index += 1
+  }
+  return rules
+}
+
+export async function syncAllowlistRules(allowlist: string[]): Promise<void> {
+  const existing = await chrome.declarativeNetRequest.getDynamicRules()
+  const removeRuleIds = existing
+    .filter((rule) => rule.id >= ALLOWLIST_RULE_ID_BASE)
+    .map((rule) => rule.id)
+  const addRules = buildAllowlistRules(allowlist)
+  try {
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds,
+      addRules,
+    })
+  } catch (error) {
+    logger.warn('updateDynamicRules failed', error)
+  }
+}

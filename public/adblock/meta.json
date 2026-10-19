@@ -1,0 +1,45 @@
+{
+  "lists": [
+    {
+      "id": "easylist",
+      "ruleset": "ads",
+      "lines": 84188
+    },
+    {
+      "id": "easyprivacy",
+      "ruleset": "privacy",
+      "lines": 57139
+    },
+    {
+      "id": "ublock-filters",
+      "ruleset": "ads",
+      "lines": 10836
+    },
+    {
+      "id": "ublock-quick-fixes",
+      "ruleset": "ads",
+      "lines": 706
+    },
+    {
+      "id": "fanboy-annoyance",
+      "ruleset": "annoyances",
+      "lines": 50743
+    }
+  ],
+  "totals": {
+    "network": 100487,
+    "cosmetic": 70241,
+    "skipped": 32884
+  },
+  "rulesets": {
+    "ads": 16000,
+    "privacy": 12000,
+    "annoyances": 1018,
+    "youtube": 4
+  },
+  "cosmetic": {
+    "generic": 6000,
+    "specificHosts": 4000
+  },
+  "generatedAt": "2026-10-19T16:24:41.394Z"
+}
