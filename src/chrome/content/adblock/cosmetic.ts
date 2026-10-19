@@ -114,21 +114,46 @@ function report(hidden: number): void {
   }
 }
 
-function countHidden(): void {
-  countTimer = null
-  if (!active) return
-  let fresh = 0
-  for (const chunk of selectorChunks) {
+let countChunkIndex = 0
+let countFresh = 0
+
+const scheduleIdle =
+  typeof requestIdleCallback === 'function'
+    ? requestIdleCallback
+    : (cb: (deadline: IdleDeadline) => void) => {
+        window.setTimeout(() => cb({ timeRemaining: () => 50 } as IdleDeadline), 0)
+      }
+
+function runCountIdle(deadline: IdleDeadline): void {
+  if (!active || document.visibilityState !== 'visible') return
+  while (countChunkIndex < selectorChunks.length) {
+    const chunk = selectorChunks[countChunkIndex]
     for (const el of document.querySelectorAll(chunk)) {
       if (counted.has(el)) continue
       counted.add(el)
-      fresh++
+      countFresh++
+    }
+    countChunkIndex++
+    if (deadline.timeRemaining() < 8) {
+      scheduleIdle(runCountIdle)
+      return
     }
   }
-  report(fresh)
+  report(countFresh)
+  countFresh = 0
+  countChunkIndex = 0
+}
+
+function countHidden(): void {
+  countTimer = null
+  if (!active || document.visibilityState !== 'visible') return
+  countFresh = 0
+  countChunkIndex = 0
+  scheduleIdle(runCountIdle)
 }
 
 function scheduleCount(): void {
+  if (document.visibilityState !== 'visible') return
   if (!countTimer) countTimer = setTimeout(countHidden, COUNT_THROTTLE_MS)
 }
 
@@ -176,6 +201,9 @@ async function activate(state: StoredState | undefined): Promise<void> {
     document.addEventListener('DOMContentLoaded', start, { once: true })
   } else start()
   window.addEventListener('hashchange', clearVignette)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') scheduleCount()
+  })
 }
 
 function deactivate(): void {

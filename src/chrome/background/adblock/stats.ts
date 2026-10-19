@@ -3,13 +3,11 @@ import {
   getAdblockTabStats,
   getAdblockTotals,
   hostnameFromUrl,
-  RULESET_PATHS,
-  RULESET_MANIFEST_IDS,
   setAdblockTabStats,
+  sumCounts,
   type AdblockCounts,
   type AdblockTabEntry,
   type AdblockTotals,
-  type RulesetId,
 } from '@/core/adblock'
 import { STORAGE_KEYS } from '@/core/constants'
 import { createLogger } from '@/core/logging'
@@ -17,12 +15,15 @@ import { set } from '@/core/storage'
 
 const logger = createLogger('adblock-stats')
 
-const FLUSH_DELAY_MS = 400
+const FLUSH_DELAY_MS = 1000
 
 const tabStats = new Map<number, AdblockTabEntry>()
 let totals: AdblockTotals = emptyTotals()
 let loadPromise: Promise<void> | null = null
 let flushTimer: ReturnType<typeof setTimeout> | null = null
+let dirty = false
+let lastPersistedMapJson = ''
+let lastPersistedTotalsJson = ''
 let allowRuleIds: Map<string, Set<number>> | null = null
 
 function ensureLoaded(): Promise<void> {
@@ -34,11 +35,30 @@ function ensureLoaded(): Promise<void> {
   return loadPromise
 }
 
+function buildPersistMap(): Record<string, AdblockTabEntry> {
+  return Object.fromEntries(
+    [...tabStats]
+      .filter(([, entry]) => sumCounts(entry) > 0)
+      .map(([id, entry]) => [String(id), entry]),
+  )
+}
+
 function scheduleFlush(): void {
+  dirty = true
   if (flushTimer) return
   flushTimer = setTimeout(() => {
     flushTimer = null
-    const map = Object.fromEntries([...tabStats].map(([id, entry]) => [String(id), entry]))
+    if (!dirty) return
+    const map = buildPersistMap()
+    const mapJson = JSON.stringify(map)
+    const totalsJson = JSON.stringify(totals)
+    if (mapJson === lastPersistedMapJson && totalsJson === lastPersistedTotalsJson) {
+      dirty = false
+      return
+    }
+    lastPersistedMapJson = mapJson
+    lastPersistedTotalsJson = totalsJson
+    dirty = false
     void Promise.all([setAdblockTabStats(map), set(STORAGE_KEYS.adblockTotals, totals)]).catch(
       (error) => logger.warn('flush stats failed', error),
     )
@@ -97,13 +117,21 @@ export async function updateTabMeta(tabId: number, tab: chrome.tabs.Tab): Promis
   await ensureLoaded()
   const entry = tabStats.get(tabId)
   if (!entry) return
+  let changed = false
   if (tab.url) {
     entry.url = tab.url
     entry.host = hostnameFromUrl(tab.url) ?? entry.host
+    changed = true
   }
-  if (tab.title) entry.title = tab.title
-  if (tab.favIconUrl) entry.favIconUrl = tab.favIconUrl
-  scheduleFlush()
+  if (tab.title) {
+    entry.title = tab.title
+    changed = true
+  }
+  if (tab.favIconUrl) {
+    entry.favIconUrl = tab.favIconUrl
+    changed = true
+  }
+  if (changed) scheduleFlush()
 }
 
 export async function removeTab(tabId: number): Promise<void> {
@@ -119,23 +147,15 @@ export async function resetTotals(): Promise<void> {
 
 async function loadAllowRuleIds(): Promise<Map<string, Set<number>>> {
   if (allowRuleIds) return allowRuleIds
-  const map = new Map<string, Set<number>>()
-  await Promise.all(
-    (Object.keys(RULESET_PATHS) as RulesetId[]).map(async (id) => {
-      try {
-        const res = await fetch(chrome.runtime.getURL(RULESET_PATHS[id]))
-        const rules = (await res.json()) as chrome.declarativeNetRequest.Rule[]
-        map.set(
-          RULESET_MANIFEST_IDS[id],
-          new Set(rules.filter((rule) => rule.action.type !== 'block').map((rule) => rule.id)),
-        )
-      } catch {
-        map.set(RULESET_MANIFEST_IDS[id], new Set())
-      }
-    }),
-  )
-  allowRuleIds = map
-  return map
+  try {
+    const res = await fetch(chrome.runtime.getURL('adblock/allow-ids.json'))
+    const data = (await res.json()) as Record<string, number[]>
+    allowRuleIds = new Map(Object.entries(data).map(([id, ids]) => [id, new Set(ids)]))
+  } catch (error) {
+    logger.warn('allow-ids.json missing, network counts may be inflated', error)
+    allowRuleIds = new Map()
+  }
+  return allowRuleIds
 }
 
 async function isBlockingMatch(rulesetId: string, ruleId: number): Promise<boolean> {

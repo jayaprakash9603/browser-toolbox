@@ -1,25 +1,44 @@
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 
 import { getSettings, type Settings } from '@/features/settings/settingsService'
 
-export function useSettings() {
-  const [settings, setSettings] = useState<Settings | null>(null)
+let cached: Settings | null = null
+let initialized = false
+const listeners = new Set<() => void>()
 
-  useEffect(() => {
-    void getSettings().then(setSettings)
-    const listener = (
-      changes: Record<string, chrome.storage.StorageChange>,
-      area: string,
-    ) => {
-      if (area === 'local' && changes.settings) {
-        void getSettings().then(setSettings)
-      }
+function notify(): void {
+  for (const listener of listeners) listener()
+}
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
+function getSnapshot(): Settings | null {
+  return cached
+}
+
+function initStore(): void {
+  if (initialized) return
+  initialized = true
+  void getSettings().then((settings) => {
+    cached = settings
+    notify()
+  })
+  const storage = chrome.storage
+  if (!storage?.onChanged) return
+  storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.settings) {
+      void getSettings().then((settings) => {
+        cached = settings
+        notify()
+      })
     }
-    const storage = chrome.storage
-    if (!storage?.onChanged) return
-    storage.onChanged.addListener(listener)
-    return () => storage.onChanged.removeListener(listener)
-  }, [])
+  })
+}
 
-  return settings
+export function useSettings(): Settings | null {
+  initStore()
+  return useSyncExternalStore(subscribe, getSnapshot, () => null)
 }

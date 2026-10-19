@@ -151,6 +151,16 @@ async function main() {
     join(outDir, 'meta.json'),
     `${JSON.stringify({ ...report, cosmetic: built.counts, generatedAt: new Date().toISOString() }, null, 2)}\n`,
   )
+
+  const allowIds = {}
+  for (const name of ['ads', 'privacy', 'annoyances', 'youtube']) {
+    const rules = await readJson(join(rulesetDir, `${name}.json`), [])
+    allowIds[`ruleset-${name}`] = rules
+      .filter((rule) => rule.action?.type !== 'block')
+      .map((rule) => rule.id)
+  }
+  await writeFile(join(outDir, 'allow-ids.json'), `${JSON.stringify(allowIds)}\n`)
+
   console.log('[adblock] done', report.totals)
 }
 

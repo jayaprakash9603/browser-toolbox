@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react'
 
-import { TOOLBOX_RESTORE_THEME_EVENT } from '@/features/api-client/ApiClientHostLifecycle'
+import { TOOLBOX_RESTORE_THEME_EVENT } from '@/features/api-client/themeEvents'
 import { useSettings } from '@/shared/hooks/useSettings'
+import { writeThemeBootCache } from '@/shared/lib/themeBootCache'
 import { DEFAULT_PALETTE } from '@/shared/lib/theme/palettes'
 
 export function ThemeApplicator() {
@@ -31,6 +32,11 @@ export function ThemeApplicator() {
       root.classList.toggle('dark', dark)
       root.dataset.palette = palette
       root.dataset.density = settings.density ?? 'comfortable'
+      writeThemeBootCache({
+        dark,
+        palette,
+        density: settings.density ?? 'comfortable',
+      })
       previousTheme.current = dark
       previousPalette.current = palette
     }

@@ -167,6 +167,7 @@ const en = {
   'adblock.liveActiveTab': 'Current tab',
   'adblock.liveBackground': 'Blocking in background',
   'adblock.liveYoutubeBackground': '{{count}} video ads stopped in background',
+  'adblock.liveShowAll': 'Show all {{count}} tabs',
   'adblock.resetTotals': 'Reset total counter',
   'adblock.listsUpdated': 'Lists generated {{date}}',
   'adblock.plus.title': 'Premium features',

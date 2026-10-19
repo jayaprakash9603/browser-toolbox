@@ -101,29 +101,36 @@ function checkPlayer(): void {
   }
 }
 
+function stopPoll(): void {
+  if (!pollTimer) return
+  clearInterval(pollTimer)
+  pollTimer = null
+}
+
 function observePlayer(): void {
   const player = getPlayer()
   if (!player || playerObserver) return
   playerObserver = new MutationObserver(checkPlayer)
   playerObserver.observe(player, { attributes: true, attributeFilter: ['class'] })
   checkPlayer()
+  stopPoll()
 }
 
 function start(): void {
   injectCss()
   observePlayer()
-  pollTimer ??= setInterval(() => {
-    observePlayer()
-    checkPlayer()
-  }, 1000)
+  if (!getPlayer()) {
+    pollTimer ??= setInterval(() => {
+      observePlayer()
+    }, 1000)
+  }
 }
 
 function stop(): void {
   document.getElementById(STYLE_ID)?.remove()
   playerObserver?.disconnect()
   playerObserver = null
-  if (pollTimer) clearInterval(pollTimer)
-  pollTimer = null
+  stopPoll()
   const player = getPlayer()
   restoreVideo(player ? getVideo(player) : null)
   adActive = false

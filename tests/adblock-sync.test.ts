@@ -58,4 +58,18 @@ describe('adblock background sync', () => {
     await syncAdblockState()
     expect(chrome.scripting.insertCSS).toHaveBeenCalledTimes(1)
   })
+
+  it('skips discarded tabs when injecting into open tabs', async () => {
+    vi.mocked(chrome.tabs.query).mockImplementation(async (query) => {
+      if (query && typeof query === 'object' && 'active' in query) {
+        return [{ id: 1, url: 'https://example.com', active: true }] as chrome.tabs.Tab[]
+      }
+      return [
+        { id: 1, url: 'https://example.com', discarded: false },
+        { id: 2, url: 'https://discarded.test', discarded: true },
+      ] as chrome.tabs.Tab[]
+    })
+    await syncAdblockState()
+    expect(chrome.scripting.insertCSS).toHaveBeenCalledTimes(1)
+  })
 })

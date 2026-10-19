@@ -12,6 +12,7 @@ const logger = createLogger('adblock-scripts')
 
 const ALL_URLS = ['<all_urls>']
 const YOUTUBE_HOST_RE = /(^|\.)(youtube\.com|youtube-nocookie\.com)$/
+const INJECT_CONCURRENCY = 4
 
 function allowlistExcludePatterns(allowlist: string[]): string[] | undefined {
   if (!allowlist.length) return undefined
@@ -106,6 +107,45 @@ function sessionArea(): chrome.storage.StorageArea {
   return chrome.storage.session ?? chrome.storage.local
 }
 
+async function injectOneTab(tab: chrome.tabs.Tab, state: AdblockState): Promise<void> {
+  if (tab.id == null || !tab.url || tab.discarded || isAllowlisted(state.allowlist, tab.url)) return
+  const target = { tabId: tab.id, allFrames: true }
+  try {
+    const files: string[] = [ADBLOCK_FILES.genericCss]
+    if (state.cookieBanners) files.push(ADBLOCK_FILES.cookiesCss)
+    if (state.distractions) files.push(ADBLOCK_FILES.distractionsCss)
+    if (state.cosmeticEnabled) {
+      await chrome.scripting.insertCSS({ target, files })
+      await chrome.scripting.executeScript({ target, files: [ADBLOCK_FILES.cosmeticJs] })
+    }
+    const host = new URL(tab.url).hostname
+    if (state.youtubeEnabled && state.lists.youtube && YOUTUBE_HOST_RE.test(host)) {
+      await chrome.scripting.executeScript({
+        target,
+        files: [ADBLOCK_FILES.youtubeMainJs],
+        world: 'MAIN',
+      })
+      await chrome.scripting.executeScript({
+        target,
+        files: [ADBLOCK_FILES.youtubeIsolatedJs],
+      })
+    }
+  } catch (error) {
+    logger.debug('inject skipped', tab.url, error)
+  }
+}
+
+async function runPool(tabs: chrome.tabs.Tab[], state: AdblockState): Promise<void> {
+  let index = 0
+  async function worker(): Promise<void> {
+    while (index < tabs.length) {
+      const tab = tabs[index++]
+      await injectOneTab(tab, state)
+    }
+  }
+  await Promise.all(Array.from({ length: INJECT_CONCURRENCY }, () => worker()))
+}
+
 /**
  * Registered scripts only run on future navigations, so tabs that were already
  * open (including background YouTube tabs) get the scripts injected once.
@@ -121,33 +161,12 @@ export async function injectIntoOpenTabs(state: AdblockState): Promise<void> {
   await area.set({ [INJECTED_SESSION_KEY]: true })
 
   const tabs = await chrome.tabs.query({ url: ['http://*/*', 'https://*/*'] })
-  await Promise.all(
-    tabs.map(async (tab) => {
-      if (tab.id == null || !tab.url || isAllowlisted(state.allowlist, tab.url)) return
-      const target = { tabId: tab.id, allFrames: true }
-      try {
-        const files: string[] = [ADBLOCK_FILES.genericCss]
-        if (state.cookieBanners) files.push(ADBLOCK_FILES.cookiesCss)
-        if (state.distractions) files.push(ADBLOCK_FILES.distractionsCss)
-        if (state.cosmeticEnabled) {
-          await chrome.scripting.insertCSS({ target, files })
-          await chrome.scripting.executeScript({ target, files: [ADBLOCK_FILES.cosmeticJs] })
-        }
-        const host = new URL(tab.url).hostname
-        if (state.youtubeEnabled && state.lists.youtube && YOUTUBE_HOST_RE.test(host)) {
-          await chrome.scripting.executeScript({
-            target,
-            files: [ADBLOCK_FILES.youtubeMainJs],
-            world: 'MAIN',
-          })
-          await chrome.scripting.executeScript({
-            target,
-            files: [ADBLOCK_FILES.youtubeIsolatedJs],
-          })
-        }
-      } catch (error) {
-        logger.debug('inject skipped', tab.url, error)
-      }
-    }),
-  )
+  const eligible = tabs.filter((tab) => tab.id != null && tab.url && !tab.discarded)
+  const [active] = await chrome.tabs.query({ active: true, currentWindow: true })
+  const activeId = active?.id
+  const ordered = [
+    ...eligible.filter((tab) => tab.id === activeId),
+    ...eligible.filter((tab) => tab.id !== activeId),
+  ]
+  await runPool(ordered, state)
 }

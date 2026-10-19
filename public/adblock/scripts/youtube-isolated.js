@@ -134,6 +134,11 @@
 		if (clickSkip(player)) return;
 		if (Number.isFinite(video.duration) && video.duration > 0 && video.duration < 300) video.currentTime = Math.max(video.currentTime, video.duration - .1);
 	}
+	function stopPoll() {
+		if (!pollTimer) return;
+		clearInterval(pollTimer);
+		pollTimer = null;
+	}
 	function observePlayer() {
 		const player = getPlayer();
 		if (!player || playerObserver) return;
@@ -143,21 +148,20 @@
 			attributeFilter: ["class"]
 		});
 		checkPlayer();
+		stopPoll();
 	}
 	function start() {
 		injectCss();
 		observePlayer();
-		pollTimer ??= setInterval(() => {
+		if (!getPlayer()) pollTimer ??= setInterval(() => {
 			observePlayer();
-			checkPlayer();
 		}, 1e3);
 	}
 	function stop() {
 		document.getElementById(STYLE_ID)?.remove();
 		playerObserver?.disconnect();
 		playerObserver = null;
-		if (pollTimer) clearInterval(pollTimer);
-		pollTimer = null;
+		stopPoll();
 		const player = getPlayer();
 		restoreVideo(player ? getVideo(player) : null);
 		adActive = false;

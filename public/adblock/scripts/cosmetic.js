@@ -91,18 +91,36 @@
 			}).catch(() => {});
 		} catch {}
 	}
+	var countChunkIndex = 0;
+	var countFresh = 0;
+	function runCountIdle(deadline) {
+		if (!active || document.visibilityState !== "visible") return;
+		while (countChunkIndex < selectorChunks.length) {
+			const chunk = selectorChunks[countChunkIndex];
+			for (const el of document.querySelectorAll(chunk)) {
+				if (counted.has(el)) continue;
+				counted.add(el);
+				countFresh++;
+			}
+			countChunkIndex++;
+			if (deadline.timeRemaining() < 8) {
+				requestIdleCallback(runCountIdle);
+				return;
+			}
+		}
+		report(countFresh);
+		countFresh = 0;
+		countChunkIndex = 0;
+	}
 	function countHidden() {
 		countTimer = null;
-		if (!active) return;
-		let fresh = 0;
-		for (const chunk of selectorChunks) for (const el of document.querySelectorAll(chunk)) {
-			if (counted.has(el)) continue;
-			counted.add(el);
-			fresh++;
-		}
-		report(fresh);
+		if (!active || document.visibilityState !== "visible") return;
+		countFresh = 0;
+		countChunkIndex = 0;
+		requestIdleCallback(runCountIdle);
 	}
 	function scheduleCount() {
+		if (document.visibilityState !== "visible") return;
 		if (!countTimer) countTimer = setTimeout(countHidden, COUNT_THROTTLE_MS);
 	}
 	/** Google's full-page "vignette" interstitial leaves a hash and a scroll lock behind. */
@@ -141,6 +159,9 @@
 		if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start, { once: true });
 		else start();
 		window.addEventListener("hashchange", clearVignette);
+		document.addEventListener("visibilitychange", () => {
+			if (document.visibilityState === "visible") scheduleCount();
+		});
 	}
 	function deactivate() {
 		active = false;

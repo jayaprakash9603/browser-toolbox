@@ -8,11 +8,16 @@ import { useToolLabels } from '@/shared/hooks/useToolLabels'
 export function ToolCard({ tool }: { tool: ToolDefinition }) {
   const Icon = tool.icon
   const { name, description } = useToolLabels(tool)
+  const preload = () => {
+    void tool.loader()
+  }
   return (
     <Card className="group relative h-full shadow-xs transition-[border-color,background-color,box-shadow,transform] duration-150 ease-out hover:border-primary/35 hover:bg-accent/40 hover:shadow-sm has-[a:active]:scale-[0.99]">
       <Link
         to={tool.route}
         title={description}
+        onPointerEnter={preload}
+        onFocus={preload}
         className="flex h-full min-h-[var(--density-card-min-h)] flex-col gap-2 rounded-lg p-[var(--density-card-pad)] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
       >
         <div className="flex items-center gap-2.5 pr-8">

@@ -1,13 +1,13 @@
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import { Suspense, lazy, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SearchIcon, SettingsIcon } from 'lucide-react'
 
+import { LEGACY_TOOL_ROUTES } from '@/app/legacyToolRoutes'
 import { Link, useRouter } from '@/app/router'
 import { getToolComponent } from '@/app/toolComponents'
 import { toolRegistry } from '@/core/registry'
 import { trackRecentTool } from '@/features/recent-tools/recentToolsService'
-import { CommandPalette } from '@/features/command-palette/CommandPalette'
 import { requestFocusHomeSearch } from '@/features/search/searchFocus'
 import {
   AppLoadingSkeleton,
@@ -18,45 +18,52 @@ import { Button } from '@/shared/components/ui/button'
 import { ThemeToggle } from '@/shared/components/ThemeToggle'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip'
 import { SEARCH_SHORTCUT_LABEL } from '@/shared/lib/keyboardShortcut'
+
 const HomePage = lazy(() => import('@/app/pages/HomePage'))
 const SettingsPage = lazy(() => import('@/app/pages/SettingsPage'))
 const CategoryPage = lazy(() => import('@/app/pages/CategoryPage'))
 const DevToolsPage = lazy(() => import('@/app/pages/DevToolsPage'))
-
-const LEGACY_TOOL_ROUTES: Record<string, string> = {
-  '/tools/clipboard/history': 'clipboard.manager',
-  '/tools/clipboard/pinned': 'clipboard.manager',
-  '/tools/clipboard/search': 'clipboard.manager',
-  '/tools/text/markdown-formatter': 'text.formatter',
-  '/tools/text/html-formatter': 'text.formatter',
-  '/tools/text/css-formatter': 'text.formatter',
-  '/tools/text/javascript-formatter': 'text.formatter',
-  '/tools/text/word-counter': 'text.analyzer',
-  '/tools/text/line-counter': 'text.analyzer',
-  '/tools/text/duplicate-line-remover': 'text.line-tools',
-  '/tools/text/sort-lines': 'text.line-tools',
-  '/tools/text/lorem-ipsum': 'text.dummy-data',
-  '/tools/qa/api-request-builder': 'api.request-builder',
-  '/tools/developer/timestamp-toolkit': 'datetime.toolkit',
-}
+const CommandPalette = lazy(() =>
+  import('@/features/command-palette/CommandPalette').then((m) => ({ default: m.CommandPalette })),
+)
 
 function isHomePath(path: string) {
   return path === '/' || path === ''
+}
+
+function scheduleIdle(callback: () => void): void {
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(callback, { timeout: 3000 })
+  } else {
+    window.setTimeout(callback, 1500)
+  }
 }
 
 export function AppShell({ children }: { children?: ReactNode }) {
   const { t } = useTranslation()
   const { path } = useRouter()
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const [paletteMounted, setPaletteMounted] = useState(false)
   const mainRef = useRef<HTMLElement>(null)
   const reduceMotion = useReducedMotion()
+
+  useEffect(() => {
+    scheduleIdle(() => {
+      void import('@/features/command-palette/CommandPalette')
+    })
+  }, [])
+
+  const openPalette = () => {
+    setPaletteMounted(true)
+    setPaletteOpen(true)
+  }
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault()
         if (isHomePath(path)) requestFocusHomeSearch()
-        else setPaletteOpen((open) => !open)
+        else openPalette()
       }
       if (event.key === 'Escape') setPaletteOpen(false)
     }
@@ -99,7 +106,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
               aria-keyshortcuts="Control+K Meta+K"
               onClick={() => {
                 if (isHomePath(path)) requestFocusHomeSearch()
-                else setPaletteOpen(true)
+                else openPalette()
               }}
             >
               <SearchIcon className="size-4" />
@@ -130,27 +137,28 @@ export function AppShell({ children }: { children?: ReactNode }) {
         tabIndex={-1}
         className="@container min-h-0 min-w-0 flex-1 overflow-hidden outline-none"
       >
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={path}
-            className="h-full"
-            initial={reduceMotion ? false : { opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
-            transition={{ duration: reduceMotion ? 0.15 : 0.28, ease: [0.2, 0.8, 0.2, 1] }}
+        <motion.div
+          key={path}
+          className="h-full"
+          initial={reduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: reduceMotion ? 0.1 : 0.15, ease: 'easeOut' }}
+        >
+          <Suspense
+            fallback={
+              <AppLoadingSkeleton variant={getLoadingVariant(path)} label={t('nav.loading')} />
+            }
           >
-            <Suspense
-              fallback={
-                <AppLoadingSkeleton variant={getLoadingVariant(path)} label={t('nav.loading')} />
-              }
-            >
-              {content}
-            </Suspense>
-          </motion.div>
-        </AnimatePresence>
+            {content}
+          </Suspense>
+        </motion.div>
       </main>
 
-      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+      {paletteMounted && (
+        <Suspense fallback={null}>
+          <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+        </Suspense>
+      )}
       {children}
     </div>
   )

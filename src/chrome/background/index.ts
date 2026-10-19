@@ -1,5 +1,3 @@
-import '@/i18n'
-
 import { addAllowlistHost, hostnameFromUrl } from '@/core/adblock'
 import { createLogger } from '@/core/logging'
 import { getChromeMessage } from '@/core/i18n/chromeMessages'

@@ -2,14 +2,13 @@ import { useEffect } from 'react'
 import { useApiClientStoreApi } from 'postman-lite'
 
 import { TOOLBOX_THEME_ID } from '@/features/api-client/build-api-client-theme'
-
-export const TOOLBOX_RESTORE_THEME_EVENT = 'browser-toolbox:restore-theme'
+import { dispatchToolboxRestoreTheme } from '@/features/api-client/themeEvents'
 
 function cleanupHostDocument() {
   const root = document.documentElement
   delete root.dataset.apiClientTheme
   delete root.dataset.themePreview
-  window.dispatchEvent(new CustomEvent(TOOLBOX_RESTORE_THEME_EVENT))
+  dispatchToolboxRestoreTheme()
 }
 
 export function ApiClientHostLifecycle() {
