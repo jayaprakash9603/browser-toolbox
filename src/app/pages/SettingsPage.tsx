@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from '@/shared/components/ui/select'
 import { AdblockSettingsSection } from '@/app/pages/settings/AdblockSettingsSection'
+import { ProtectionSettingsSection } from '@/app/pages/settings/ProtectionSettingsSection'
 
 export default function SettingsPage() {
   const { t } = useTranslation()
@@ -97,6 +98,13 @@ export default function SettingsPage() {
       </h2>
       <p className="mb-3 text-[11px] text-muted-foreground">{t('settings.adblockSectionDescription')}</p>
       <AdblockSettingsSection />
+
+      <Separator className="my-4" />
+      <h2 className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+        {t('settings.protectionSection')}
+      </h2>
+      <p className="mb-3 text-[11px] text-muted-foreground">{t('settings.protectionSectionDescription')}</p>
+      <ProtectionSettingsSection />
 
       <Separator className="my-4" />
       <h2 className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">

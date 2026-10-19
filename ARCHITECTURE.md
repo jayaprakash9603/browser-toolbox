@@ -55,6 +55,16 @@ Opt-in feature (`privacy.ad-blocker` tool + Settings). State lives in `core/adbl
 
 Filter lists are converted at build time (`npm run adblock:lists`); page scripts are built with `npm run adblock:scripts` (IIFE, no CRXJS loader).
 
+## Web protection
+
+On by default (`privacy.web-protection` tool + Settings). State lives in `core/protection/` (`protection` and `protectionStats` storage keys). The background module `chrome/background/protection/`:
+
+1. Loads bundled `public/protection/threats.json` (rebuilt with `npm run protection:lists` from phishing, URLhaus and uBO badware feeds).
+2. Installs **dynamic** `declarativeNetRequest` rules: `main_frame` navigations to known threats redirect to `blocked.html`; sub-resources from those hosts are blocked.
+3. Registers a heuristics content script (`public/protection/scripts/heuristics.js`) for look-alike login detection on password pages.
+
+Trusted sites and one-time “proceed anyway” use dynamic/session allow rules in dedicated ID ranges (separate from the ad-block allowlist at 1_000_000+).
+
 ## Theming
 
 shadcn/ui CSS variables (`src/styles/globals.css`) with light/dark palettes; `ThemeApplicator` applies light/dark/system based on the settings service. No hardcoded colors in components.

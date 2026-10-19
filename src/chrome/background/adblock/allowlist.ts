@@ -4,8 +4,14 @@ import { createLogger } from '@/core/logging'
 
 const logger = createLogger('adblock-allowlist')
 
+export const ALLOWLIST_RULE_ID_MAX = ALLOWLIST_RULE_ID_BASE + 50_000
+
 export function allowlistRuleIdForIndex(index: number): number {
   return ALLOWLIST_RULE_ID_BASE + index
+}
+
+export function isAdblockAllowlistRuleId(id: number): boolean {
+  return id >= ALLOWLIST_RULE_ID_BASE && id < ALLOWLIST_RULE_ID_MAX
 }
 
 export function buildAllowlistRules(hosts: string[]): chrome.declarativeNetRequest.Rule[] {
@@ -32,9 +38,7 @@ export function buildAllowlistRules(hosts: string[]): chrome.declarativeNetReque
 
 export async function syncAllowlistRules(allowlist: string[]): Promise<void> {
   const existing = await chrome.declarativeNetRequest.getDynamicRules()
-  const removeRuleIds = existing
-    .filter((rule) => rule.id >= ALLOWLIST_RULE_ID_BASE)
-    .map((rule) => rule.id)
+  const removeRuleIds = existing.filter((rule) => isAdblockAllowlistRuleId(rule.id)).map((rule) => rule.id)
   const addRules = buildAllowlistRules(allowlist)
   try {
     await chrome.declarativeNetRequest.updateDynamicRules({

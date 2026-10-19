@@ -9,6 +9,7 @@ import { initStorage } from '@/core/storage'
 import { contentScriptBundlePath, ensureContentScriptInTab } from '@/chrome/contentScriptClient'
 
 import { registerAdblock, syncAdblockState } from './adblock'
+import { registerProtection, syncProtectionState } from './protection'
 import { registerApiClientSendHandler } from './api-client-send'
 import { registerCaptureHandler } from './capture'
 import { registerHtmlBundleJobHandlers } from './htmlBundleJob'
@@ -66,11 +67,13 @@ chrome.runtime.onInstalled.addListener(() => {
   logger.info('installed')
   void initStorage().then(rebuildContextMenus)
   void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+  void syncProtectionState()
 })
 
 chrome.runtime.onStartup.addListener(() => {
   void rebuildContextMenus()
   void syncAdblockState()
+  void syncProtectionState()
 })
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
@@ -145,4 +148,5 @@ registerApiClientSendHandler()
 registerCaptureHandler()
 registerHtmlBundleJobHandlers()
 registerAdblock()
+registerProtection()
 startMessageRouter()

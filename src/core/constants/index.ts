@@ -7,6 +7,9 @@ export const STORAGE_KEYS = {
   clipboardHistory: 'clipboardHistory',
   adblock: 'adblock',
   adblockTotals: 'adblockTotals',
+  protection: 'protection',
+  protectionStats: 'protectionStats',
+  protectionRulesVersion: 'protectionRulesVersion',
   meta: 'meta',
 } as const
 

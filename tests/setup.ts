@@ -149,6 +149,8 @@ const chromeMock = {
     updateEnabledRulesets: vi.fn(async () => undefined),
     updateDynamicRules: vi.fn(async () => undefined),
     getDynamicRules: vi.fn(async () => []),
+    getSessionRules: vi.fn(async () => []),
+    updateSessionRules: vi.fn(async () => undefined),
     getMatchedRules: vi.fn(async () => ({ rulesMatchedInfo: [] })),
     setExtensionActionOptions: vi.fn(async () => undefined),
   },

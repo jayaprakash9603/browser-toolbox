@@ -61,6 +61,11 @@ export type ExtensionMessage =
   | { type: 'ADBLOCK_RELOAD_TAB'; tabId?: number }
   | { type: 'ADBLOCK_COSMETIC_REPORT'; hidden?: number; youtube?: number }
   | { type: 'ADBLOCK_RESET_TOTALS' }
+  | { type: 'PROTECTION_REPORT'; category: string; host: string; source?: string }
+  | { type: 'PROTECTION_GET_STATS' }
+  | { type: 'PROTECTION_PROCEED_ONCE'; url: string }
+  | { type: 'PROTECTION_TRUST_SITE'; host: string }
+  | { type: 'PROTECTION_RESET_STATS' }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
@@ -95,6 +100,11 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'ADBLOCK_RELOAD_TAB',
   'ADBLOCK_COSMETIC_REPORT',
   'ADBLOCK_RESET_TOTALS',
+  'PROTECTION_REPORT',
+  'PROTECTION_GET_STATS',
+  'PROTECTION_PROCEED_ONCE',
+  'PROTECTION_TRUST_SITE',
+  'PROTECTION_RESET_STATS',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {
