@@ -1,3 +1,5 @@
+import { hostShard } from '@/core/adblock/shard'
+
 type GuardedWindow = Window & { __toolboxCosmetic?: boolean }
 
 interface StoredState {
@@ -87,19 +89,24 @@ function buildChunks(selectors: string[]): string[] {
   return chunks
 }
 
-async function buildSpecificCss(host: string): Promise<{ css: string; selectors: string[] }> {
-  let file: SpecificCosmeticFile = { specific: {}, exceptions: {} }
+async function loadShard(index: number): Promise<SpecificCosmeticFile> {
   try {
-    const res = await fetch(chrome.runtime.getURL('adblock/cosmetic/specific.json'))
-    file = (await res.json()) as SpecificCosmeticFile
+    const res = await fetch(chrome.runtime.getURL(`adblock/cosmetic/specific/${index}.json`))
+    return (await res.json()) as SpecificCosmeticFile
   } catch {
-    /* keep empty */
+    return { specific: {}, exceptions: {} }
   }
+}
+
+async function buildSpecificCss(host: string): Promise<{ css: string; selectors: string[] }> {
   const candidates = hostCandidates(host)
-  const exceptions = new Set(candidates.flatMap((h) => file.exceptions[h] ?? []))
-  const selectors = [...new Set(candidates.flatMap((h) => file.specific[h] ?? []))].filter(
-    (s) => !exceptions.has(s),
-  )
+  // Only the few shards that can hold this host (or its parents) are downloaded.
+  const shardIds = [...new Set(candidates.map(hostShard))]
+  const shards = await Promise.all(shardIds.map(loadShard))
+  const specific = (h: string) => shards.flatMap((s) => s.specific[h] ?? [])
+  const exceptionList = (h: string) => shards.flatMap((s) => s.exceptions[h] ?? [])
+  const exceptions = new Set(candidates.flatMap(exceptionList))
+  const selectors = [...new Set(candidates.flatMap(specific))].filter((s) => !exceptions.has(s))
   const hide = selectors.map((s) => `${s}{display:none!important}`)
   const unhide = [...exceptions].map((s) => `${s}{display:revert!important}`)
   return { css: [...hide, ...unhide].join('\n'), selectors }
@@ -169,6 +176,98 @@ function clearVignette(): void {
   }
 }
 
+/** Ad-network frames and slots. Hidden inline so the page cannot override it with a later stylesheet. */
+const AD_FRAME_SELECTOR = [
+  'iframe[id^="google_ads_iframe"]',
+  'iframe[id^="aswift_"]',
+  'iframe[name^="google_ads_iframe"]',
+  'iframe[data-google-container-id]',
+  'iframe[src*="googlesyndication.com"]',
+  'iframe[src*="doubleclick.net"]',
+  'iframe[src*="googleadservices.com"]',
+  'iframe[src*="/pagead/"]',
+  'iframe[src*="adsterra"]',
+  'iframe[src*="taboola.com"]',
+  'iframe[src*="outbrain.com"]',
+  'iframe[src*="amazon-adsystem.com"]',
+  'ins.adsbygoogle',
+  'div[id^="google_ads_iframe"]',
+  'div[id^="div-gpt-ad"]',
+  'div[data-google-query-id]',
+].join(',')
+
+const SWEEP_THROTTLE_MS = 800
+const MAX_WRAPPER_HEIGHT = 400
+let sweepTimer: ReturnType<typeof setTimeout> | null = null
+
+function hideInline(el: HTMLElement): void {
+  el.style.setProperty('display', 'none', 'important')
+}
+
+/** Remove the page offset Google's top and bottom "anchor" ads add so no blank strip is left behind. */
+function resetAnchorOffset(adRect: DOMRect): void {
+  const height = adRect.height
+  if (height < 20) return
+  const atTop = adRect.top <= 4
+  const atBottom = adRect.bottom >= window.innerHeight - 4
+  for (const el of [document.documentElement, document.body]) {
+    if (!el) continue
+    const props = atTop ? ['margin-top', 'padding-top'] : atBottom ? ['margin-bottom', 'padding-bottom'] : []
+    for (const prop of props) {
+      const value = Number.parseFloat(el.style.getPropertyValue(prop))
+      if (Number.isFinite(value) && Math.abs(value - height) <= 12) el.style.removeProperty(prop)
+    }
+  }
+}
+
+/** Hide the ad and the empty wrapper boxes it leaves (labels, borders, reserved height). */
+function collapseAd(ad: HTMLElement): void {
+  const rect = ad.getBoundingClientRect()
+  let anchorRect = rect
+  hideInline(ad)
+  let parent = ad.parentElement
+  for (let depth = 0; parent && depth < 3; depth++) {
+    if (parent === document.body || parent === document.documentElement) break
+    const onlyChild = parent.children.length === 1
+    const text = (parent.textContent ?? '').trim()
+    const emptyish = text.length < 40
+    const parentRect = parent.getBoundingClientRect()
+    const fixed = getComputedStyle(parent).position === 'fixed'
+    if (!(onlyChild && emptyish) || (!fixed && parentRect.height > MAX_WRAPPER_HEIGHT)) break
+    if (fixed) anchorRect = parentRect
+    hideInline(parent)
+    parent = parent.parentElement
+  }
+  resetAnchorOffset(anchorRect)
+}
+
+function sweepAds(): void {
+  sweepTimer = null
+  if (!active || document.visibilityState !== 'visible') return
+  let fresh = 0
+  for (const el of document.querySelectorAll<HTMLElement>(AD_FRAME_SELECTOR)) {
+    if (counted.has(el)) continue
+    counted.add(el)
+    collapseAd(el)
+    fresh++
+  }
+  report(fresh)
+}
+
+function scheduleSweep(): void {
+  if (sweepTimer || document.visibilityState !== 'visible') return
+  sweepTimer = setTimeout(() => scheduleIdle(sweepAds), SWEEP_THROTTLE_MS)
+}
+
+/** popups-main.ts runs in the page world and signals each pop-up it stops. */
+function listenForPopupReports(): void {
+  window.addEventListener('message', (event) => {
+    if (event.source !== window) return
+    const data = event.data as Record<string, unknown> | null
+    if (data && typeof data === 'object' && data.__toolboxAdblock === 'popup-blocked') report(1)
+  })
+}
+
 async function activate(state: StoredState | undefined): Promise<void> {
   const host = siteHost()
   const specific = await buildSpecificCss(host)
@@ -190,19 +289,24 @@ async function activate(state: StoredState | undefined): Promise<void> {
 
   observer ??= new MutationObserver(() => {
     scheduleCount()
+    scheduleSweep()
     if (location.hash === '#google_vignette') clearVignette()
   })
   const start = () => {
     observer?.observe(document.documentElement, { childList: true, subtree: true })
     clearVignette()
     scheduleCount()
+    scheduleSweep()
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', start, { once: true })
   } else start()
   window.addEventListener('hashchange', clearVignette)
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') scheduleCount()
+    if (document.visibilityState === 'visible') {
+      scheduleCount()
+      scheduleSweep()
+    }
   })
 }
 
@@ -213,6 +317,8 @@ function deactivate(): void {
   observer = null
   if (countTimer) clearTimeout(countTimer)
   countTimer = null
+  if (sweepTimer) clearTimeout(sweepTimer)
+  sweepTimer = null
 }
 
 function apply(state: StoredState | undefined): void {
@@ -223,6 +329,7 @@ function apply(state: StoredState | undefined): void {
 const guarded = window as GuardedWindow
 if (!guarded.__toolboxCosmetic) {
   guarded.__toolboxCosmetic = true
+  listenForPopupReports()
   chrome.storage.local.get('adblock', (result) => apply(result.adblock as StoredState | undefined))
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local' && changes.adblock) {

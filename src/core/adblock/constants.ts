@@ -36,6 +36,7 @@ export const DEFAULT_ADBLOCK_STATE: AdblockState = {
   cookieBanners: false,
   distractions: false,
   blockNotifications: false,
+  blockPopups: true,
   lists: { ...DEFAULT_LIST_TOGGLES },
   allowlist: [],
 }
@@ -51,6 +52,7 @@ export const CONTENT_SCRIPT_IDS = {
   cookies: 'adblock-cookies',
   distractions: 'adblock-distractions',
   notifications: 'adblock-notifications',
+  popups: 'adblock-popups',
   youtubeMain: 'adblock-yt-main',
   youtubeIsolated: 'adblock-yt-isolated',
 } as const
@@ -67,6 +69,7 @@ export const ADBLOCK_FILES = {
   distractionsCss: 'adblock/cosmetic/distractions.css',
   cosmeticJs: 'adblock/scripts/cosmetic.js',
   notificationsJs: 'adblock/scripts/notifications-main.js',
+  popupsJs: 'adblock/scripts/popups-main.js',
   youtubeMainJs: 'adblock/scripts/youtube-main.js',
   youtubeIsolatedJs: 'adblock/scripts/youtube-isolated.js',
 } as const

@@ -58,6 +58,7 @@ export default defineManifest({
       resources: [
         'adblock/scripts/*',
         'adblock/cosmetic/*',
+        'adblock/cosmetic/specific/*',
       ],
     },
   ],

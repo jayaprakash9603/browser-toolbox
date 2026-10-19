@@ -12,6 +12,8 @@ export interface AdblockState {
   distractions: boolean
   /** Plus: auto-deny site notification and push permission prompts. */
   blockNotifications: boolean
+  /** Block pop-up and pop-under windows and click-anywhere ad overlays. */
+  blockPopups: boolean
   lists: Record<RulesetId, boolean>
   allowlist: string[]
 }

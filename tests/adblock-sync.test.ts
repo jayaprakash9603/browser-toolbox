@@ -34,10 +34,20 @@ describe('adblock background sync', () => {
   it('registers cosmetic and YouTube scripts, excluding allowlisted hosts', () => {
     const scripts = buildContentScripts({ ...DEFAULT_ADBLOCK_STATE, allowlist: ['example.com'] })
     const ids = scripts.map((s) => s.id)
-    expect(ids).toEqual(['adblock-cosmetic', 'adblock-yt-main', 'adblock-yt-isolated'])
+    expect(ids).toEqual(['adblock-cosmetic', 'adblock-popups', 'adblock-yt-main', 'adblock-yt-isolated'])
     expect(scripts[0].css).toEqual(['adblock/cosmetic/generic.css'])
     expect(scripts[0].excludeMatches).toEqual(['*://*.example.com/*'])
     expect(scripts.find((s) => s.id === 'adblock-yt-main')?.world).toBe('MAIN')
+  })
+
+  it('runs the pop-up blocker in every frame of the page world, and can be turned off', () => {
+    const popups = buildContentScripts(DEFAULT_ADBLOCK_STATE).find((s) => s.id === 'adblock-popups')
+    expect(popups?.world).toBe('MAIN')
+    expect(popups?.allFrames).toBe(true)
+    expect(popups?.runAt).toBe('document_start')
+    expect(popups?.js).toEqual(['adblock/scripts/popups-main.js'])
+    const off = buildContentScripts({ ...DEFAULT_ADBLOCK_STATE, blockPopups: false })
+    expect(off.some((s) => s.id === 'adblock-popups')).toBe(false)
   })
 
   it('registers premium feature scripts when enabled', () => {

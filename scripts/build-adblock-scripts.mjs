@@ -6,6 +6,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const entries = {
   cosmetic: 'src/chrome/content/adblock/cosmetic.ts',
   'notifications-main': 'src/chrome/content/adblock/notifications-main.ts',
+  'popups-main': 'src/chrome/content/adblock/popups-main.ts',
   'youtube-main': 'src/chrome/content/adblock/youtube/main.ts',
   'youtube-isolated': 'src/chrome/content/adblock/youtube/isolated.ts',
 }

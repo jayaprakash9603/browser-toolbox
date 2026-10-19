@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "adblock:lists": "node scripts/adblock/build-filter-lists.mjs",
+    "adblock:audit": "node scripts/adblock/audit-coverage.mjs",
     "adblock:scripts": "node scripts/build-adblock-scripts.mjs",
     "build": "node scripts/copy-postman-sandbox.mjs && npm run adblock:scripts && tsc -b && vite build && node scripts/check-startup-budget.mjs",
     "lint": "eslint .",

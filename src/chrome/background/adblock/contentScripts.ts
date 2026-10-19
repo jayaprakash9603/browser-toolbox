@@ -59,6 +59,15 @@ export function buildContentScripts(state: AdblockState): chrome.scripting.Regis
       world: 'MAIN',
     })
   }
+  if (state.blockPopups) {
+    scripts.push({
+      ...base,
+      id: CONTENT_SCRIPT_IDS.popups,
+      js: [ADBLOCK_FILES.popupsJs],
+      matches: ALL_URLS,
+      world: 'MAIN',
+    })
+  }
   if (state.youtubeEnabled && state.lists.youtube) {
     scripts.push({
       ...base,
@@ -117,6 +126,9 @@ async function injectOneTab(tab: chrome.tabs.Tab, state: AdblockState): Promise<
     if (state.cosmeticEnabled) {
       await chrome.scripting.insertCSS({ target, files })
       await chrome.scripting.executeScript({ target, files: [ADBLOCK_FILES.cosmeticJs] })
+    }
+    if (state.blockPopups) {
+      await chrome.scripting.executeScript({ target, files: [ADBLOCK_FILES.popupsJs], world: 'MAIN' })
     }
     const host = new URL(tab.url).hostname
     if (state.youtubeEnabled && state.lists.youtube && YOUTUBE_HOST_RE.test(host)) {

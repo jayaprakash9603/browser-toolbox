@@ -172,6 +172,9 @@ const en = {
   'adblock.listsUpdated': 'Lists generated {{date}}',
   'adblock.plus.title': 'Premium features',
   'adblock.plus.badge': 'Free',
+  'adblock.plus.popups': 'Block pop-ups and pop-unders',
+  'adblock.plus.popupsDescription':
+    'Stop sites opening ad windows or tabs, and "click anywhere" ad overlays.',
   'adblock.plus.cookies': 'Block cookie consent pop-ups',
   'adblock.plus.cookiesDescription': 'Hide cookie banners and unlock page scrolling.',
   'adblock.plus.distractions': 'Distraction control',

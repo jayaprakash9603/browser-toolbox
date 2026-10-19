@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Downloaded ad-blocker filter list cache (npm run adblock:lists)
+scripts/adblock/.cache
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

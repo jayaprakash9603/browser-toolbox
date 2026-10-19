@@ -72,7 +72,7 @@ function parseNetworkFilter(body) {
   const opts = parseOptions(options)
   if (opts.unsupported) return null
 
-  const host = parseHostPattern(pattern)
+  const host = parseHostPattern(pattern) ?? parseUrlPattern(pattern)
   if (!host) return null
 
   return { pattern, host, opts }
@@ -121,6 +121,29 @@ function parseOptions(options) {
     return out
   }
   return out
+}
+
+/**
+ * ABP patterns (`||`, `|`, `^`, `*`) map almost 1:1 onto DNR `urlFilter`. Anything that DNR
+ * would reject or that is dangerously broad (regex filters, tiny literals) is skipped.
+ */
+export function toUrlFilter(pattern) {
+  let p = pattern.trim()
+  if (p.length > 2 && p.startsWith('/') && p.endsWith('/')) return null // regex filter
+  if (/[^\x21-\x7e]/.test(p)) return null // whitespace or non-ASCII
+  p = p.replace(/^\*+/, '').replace(/\*+$/, '')
+  if (!p) return null
+  const anchored = p.startsWith('||')
+  const body = p.replace(/^\|\|?/, '').replace(/\|$/, '')
+  if (!anchored && p.includes('||')) return null
+  if (body.includes('|') || body.startsWith('*')) return null
+  if (body.replace(/[\^*]/g, '').length < 4) return null // too broad
+  return p
+}
+
+function parseUrlPattern(pattern) {
+  const value = toUrlFilter(pattern)
+  return value ? { type: 'url', value } : null
 }
 
 function parseHostPattern(pattern) {

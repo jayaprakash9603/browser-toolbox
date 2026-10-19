@@ -1,19 +1,46 @@
 {
-  "lists": [],
+  "lists": [
+    {
+      "id": "easylist",
+      "ruleset": "ads",
+      "lines": 84196
+    },
+    {
+      "id": "easyprivacy",
+      "ruleset": "privacy",
+      "lines": 57139
+    },
+    {
+      "id": "ublock-filters",
+      "ruleset": "ads",
+      "lines": 10836
+    },
+    {
+      "id": "ublock-quick-fixes",
+      "ruleset": "ads",
+      "lines": 706
+    },
+    {
+      "id": "fanboy-annoyance",
+      "ruleset": "annoyances",
+      "lines": 50743
+    }
+  ],
   "totals": {
-    "network": 0,
-    "cosmetic": 0,
-    "skipped": 0
+    "network": 116750,
+    "cosmetic": 70241,
+    "skipped": 16629
   },
   "rulesets": {
-    "ads": 16000,
-    "privacy": 12000,
-    "annoyances": 1018,
+    "ads": 4529,
+    "privacy": 9153,
+    "annoyances": 3147,
     "youtube": 4
   },
   "cosmetic": {
-    "generic": 0,
-    "specificHosts": 0
+    "generic": 8000,
+    "specificHosts": 32009,
+    "shards": 64
   },
-  "generatedAt": "2026-10-19T16:53:33.348Z"
+  "generatedAt": "2026-10-19T17:05:59.488Z"
 }

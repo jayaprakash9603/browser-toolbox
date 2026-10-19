@@ -19,6 +19,7 @@ describe('adblock service', () => {
     expect(state.lists.ads).toBe(true)
     expect(state.cookieBanners).toBe(false)
     expect(state.blockNotifications).toBe(false)
+    expect(state.blockPopups).toBe(true)
   })
 
   it('normalizes hostnames', () => {

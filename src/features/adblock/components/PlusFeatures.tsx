@@ -1,5 +1,13 @@
 import type { LucideIcon } from 'lucide-react'
-import { BellOffIcon, CookieIcon, EyeOffIcon, MonitorPlayIcon, RadarIcon, SparklesIcon } from 'lucide-react'
+import {
+  BellOffIcon,
+  CookieIcon,
+  ExternalLinkIcon,
+  EyeOffIcon,
+  MonitorPlayIcon,
+  RadarIcon,
+  SparklesIcon,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { AdblockState } from '@/core/adblock'
@@ -22,6 +30,14 @@ const FEATURES: Feature[] = [
     descKey: 'settings.adblockYoutubeDescription',
     checked: (s) => s.youtubeEnabled && s.lists.youtube,
     patch: (s, on) => ({ youtubeEnabled: on, lists: { ...s.lists, youtube: on } }),
+  },
+  {
+    id: 'popups',
+    icon: ExternalLinkIcon,
+    labelKey: 'adblock.plus.popups',
+    descKey: 'adblock.plus.popupsDescription',
+    checked: (s) => s.blockPopups,
+    patch: (_s, on) => ({ blockPopups: on }),
   },
   {
     id: 'cookies',

@@ -1,4 +1,4 @@
-import { MAX_COSMETIC_GENERIC, MAX_COSMETIC_SPECIFIC_HOSTS } from './limits.mjs'
+import { MAX_COSMETIC_GENERIC } from './limits.mjs'
 
 export function createCosmeticCollector() {
   const generic = new Set()
@@ -25,10 +25,7 @@ export function createCosmeticCollector() {
         .filter((selector) => !genericExceptions.has(selector))
         .slice(0, MAX_COSMETIC_GENERIC)
       const specificObj = {}
-      for (const [host, selectors] of specific) {
-        if (Object.keys(specificObj).length >= MAX_COSMETIC_SPECIFIC_HOSTS) break
-        specificObj[host] = [...selectors]
-      }
+      for (const [host, selectors] of specific) specificObj[host] = [...selectors]
       const exceptionsObj = {}
       for (const [host, selectors] of specificExceptions) exceptionsObj[host] = [...selectors]
       return {
