@@ -15,9 +15,7 @@ export function ProtectionToolHeader({
   onToggle: (on: boolean) => void
 }) {
   const { t } = useTranslation()
-  const total = stats
-    ? stats.blocked.phishing + stats.blocked.malware + stats.blocked.scam + stats.blocked.lookalike
-    : 0
+  const total = stats ? Object.values(stats.blocked).reduce((sum, n) => sum + (n ?? 0), 0) : 0
 
   return (
     <div className="rounded-xl border bg-card p-4">

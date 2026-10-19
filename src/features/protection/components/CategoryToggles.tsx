@@ -1,35 +1,40 @@
 import type { LucideIcon } from 'lucide-react'
-import { BugIcon, FishIcon, ScanEyeIcon, SkullIcon } from 'lucide-react'
+import {
+  BellOffIcon,
+  BugIcon,
+  ClipboardXIcon,
+  CpuIcon,
+  DownloadIcon,
+  FishIcon,
+  PhoneOffIcon,
+  ScanEyeIcon,
+  SkullIcon,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { ProtectionState, ThreatsFile } from '@/core/protection'
 import { Switch } from '@/shared/components/ui/switch'
 
+type ToggleKey = keyof Omit<ProtectionState, 'enabled' | 'trusted'>
+
 interface Row {
-  key: keyof Pick<ProtectionState, 'phishing' | 'malware' | 'scams' | 'lookalike'>
+  key: ToggleKey
   icon: LucideIcon
   count?: number
 }
 
-export function CategoryToggles({
+function ToggleList({
+  rows,
   state,
-  threats,
   disabled,
   onPatch,
 }: {
+  rows: Row[]
   state: ProtectionState
-  threats: ThreatsFile | null
   disabled: boolean
   onPatch: (patch: Partial<ProtectionState>) => void
 }) {
   const { t } = useTranslation()
-  const rows: Row[] = [
-    { key: 'phishing', icon: FishIcon, count: threats?.counts.phishing },
-    { key: 'malware', icon: BugIcon, count: threats?.counts.malware },
-    { key: 'scams', icon: SkullIcon, count: threats?.counts.scam },
-    { key: 'lookalike', icon: ScanEyeIcon },
-  ]
-
   return (
     <ul className="flex flex-col divide-y rounded-xl border bg-card">
       {rows.map((row) => {
@@ -56,4 +61,45 @@ export function CategoryToggles({
       })}
     </ul>
   )
+}
+
+/** Blocklist-based layers: sites are stopped before they load. */
+export function CategoryToggles({
+  state,
+  threats,
+  disabled,
+  onPatch,
+}: {
+  state: ProtectionState
+  threats: ThreatsFile | null
+  disabled: boolean
+  onPatch: (patch: Partial<ProtectionState>) => void
+}) {
+  const rows: Row[] = [
+    { key: 'phishing', icon: FishIcon, count: threats?.counts.phishing },
+    { key: 'malware', icon: BugIcon, count: threats?.counts.malware },
+    { key: 'scams', icon: SkullIcon, count: threats?.counts.scam },
+    { key: 'miners', icon: CpuIcon, count: threats?.counts.miner },
+  ]
+  return <ToggleList rows={rows} state={state} disabled={disabled} onPatch={onPatch} />
+}
+
+/** Behaviour-based guards running inside pages and on downloads. */
+export function GuardToggles({
+  state,
+  disabled,
+  onPatch,
+}: {
+  state: ProtectionState
+  disabled: boolean
+  onPatch: (patch: Partial<ProtectionState>) => void
+}) {
+  const rows: Row[] = [
+    { key: 'lookalike', icon: ScanEyeIcon },
+    { key: 'scamGuard', icon: PhoneOffIcon },
+    { key: 'clipboardGuard', icon: ClipboardXIcon },
+    { key: 'downloadGuard', icon: DownloadIcon },
+    { key: 'notificationGuard', icon: BellOffIcon },
+  ]
+  return <ToggleList rows={rows} state={state} disabled={disabled} onPatch={onPatch} />
 }

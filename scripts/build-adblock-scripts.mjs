@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const adblockEntries = {
   cosmetic: 'src/chrome/content/adblock/cosmetic.ts',
+  'cookies-reject': 'src/chrome/content/adblock/cookies-reject.ts',
   'notifications-main': 'src/chrome/content/adblock/notifications-main.ts',
   'popups-main': 'src/chrome/content/adblock/popups-main.ts',
   'youtube-main': 'src/chrome/content/adblock/youtube/main.ts',
@@ -13,6 +14,9 @@ const adblockEntries = {
 
 const protectionEntries = {
   heuristics: 'src/chrome/content/protection/heuristics.ts',
+  'guard-scam': 'src/chrome/content/protection/guard-scam.ts',
+  'guard-clipboard': 'src/chrome/content/protection/guard-clipboard.ts',
+  'guard-notify': 'src/chrome/content/protection/guard-notify.ts',
 }
 
 async function buildEntry(name, entry, outDir) {

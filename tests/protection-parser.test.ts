@@ -23,6 +23,24 @@ evil-phish.example
     expect(hosts).toEqual(['dailyque.site', 'calmnotice.site'])
   })
 
+  it('parses hosts-file lines and skips sinkhole addresses', () => {
+    const hosts = parseDomainList(`0.0.0.0 miner-pool.example
+127.0.0.1 localhost
+0.0.0.0
+`)
+    expect(hosts).toContain('miner-pool.example')
+    expect(hosts).not.toContain('0.0.0.0')
+    expect(hosts).not.toContain('127.0.0.1')
+  })
+
+  it('skips ABP filters whose options narrow or change their meaning', () => {
+    const hosts = parseBadwareList(`||scoped.example^$domain=a.test
+||killed.example^$badfilter
+||plain.example^
+`)
+    expect(hosts).toEqual(['plain.example'])
+  })
+
   it('normalizes hosts and rejects garbage', () => {
     expect(normalizeThreatHost('||PayPal.com^')).toBe('paypal.com')
     expect(normalizeThreatHost('a')).toBeNull()

@@ -4,7 +4,8 @@ import { RotateCcwIcon } from 'lucide-react'
 
 import { PROTECTION_FILES, type ThreatsFile } from '@/core/protection'
 import { sendMessage } from '@/core/messaging'
-import { CategoryToggles } from '@/features/protection/components/CategoryToggles'
+import { CategoryToggles, GuardToggles } from '@/features/protection/components/CategoryToggles'
+import { ProtectionSuite } from '@/features/protection/components/ProtectionSuite'
 import { ProtectionToolHeader } from '@/features/protection/components/ProtectionToolHeader'
 import { RecentBlocked } from '@/features/protection/components/RecentBlocked'
 import { TrustedSitesEditor } from '@/features/protection/components/TrustedSitesEditor'
@@ -56,6 +57,14 @@ export default function WebProtectionTool() {
             disabled={!state.enabled}
             onPatch={onPatch}
           />
+        </StaggerItem>
+        <StaggerItem>
+          <h3 className="mb-2 text-xs font-semibold">{t('protection.guardsTitle')}</h3>
+          <GuardToggles state={state} disabled={!state.enabled} onPatch={onPatch} />
+        </StaggerItem>
+        <StaggerItem>
+          <h3 className="mb-2 text-xs font-semibold">{t('protection.suiteTitle')}</h3>
+          <ProtectionSuite />
         </StaggerItem>
         <StaggerItem>
           <h3 className="mb-2 text-xs font-semibold">{t('protection.recent.title')}</h3>

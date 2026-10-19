@@ -129,6 +129,72 @@ function typosquatBrand(host: string): string | null {
   return null
 }
 
+/** Wording typical of fake virus alerts and "call support" browser lockers. */
+const SCAM_PHRASES = [
+  /windows defender (security )?(warning|alert)/i,
+  /(your )?(computer|pc|device|system|browser) (has been|is|was) (locked|blocked|infected|compromised|hacked)/i,
+  /call (microsoft|apple|windows|amazon|paypal) (support|help|technicians?|helpline)/i,
+  /(microsoft|windows|apple) (technical )?support (team|number|helpline)/i,
+  /do not (close|restart|shut ?down|turn off) (this (window|page)|your (computer|pc|device)|the browser)/i,
+  /(trojan|spyware|virus|malware|ransomware|pornographic spyware)[^.]{0,30}(detected|alert|infection|found)/i,
+  /access to this (pc|computer|device) has been blocked/i,
+  /(firewall|security) (alert|warning)[^.]{0,20}(call|contact)/i,
+  /error (code|#)[:\s#]*[a-z0-9]{5,}/i,
+  /your (personal|banking|credit card) (data|information|details) (is|are|may be) (at risk|being stolen|stolen)/i,
+]
+
+const PHONE_NUMBER =
+  /(toll[- ]?free|\+?\d{1,3}[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{3,4})/i
+
+/** Official vendor domains that legitimately talk about viruses and support numbers. */
+const SCAM_TEXT_EXEMPT = [
+  'microsoft.com',
+  'apple.com',
+  'support.google.com',
+  'malwarebytes.com',
+  'norton.com',
+  'mcafee.com',
+  'kaspersky.com',
+  'avast.com',
+  'bitdefender.com',
+  'eset.com',
+  'wikipedia.org',
+]
+
+/** Fake "your computer is infected, call this number" pages. */
+export function assessScamText(host: string, title: string, text: string): RiskVerdict {
+  const registrable = registrableDomain(host)
+  if (SCAM_TEXT_EXEMPT.some((d) => registrable === d || host.endsWith(`.${d}`) || host === d)) {
+    return { level: 'none' }
+  }
+  const sample = `${title}\n${text}`.slice(0, 20_000)
+  const hits = SCAM_PHRASES.filter((re) => re.test(sample)).length
+  const phone = PHONE_NUMBER.test(sample)
+  if ((hits >= 2 && phone) || hits >= 3) return { level: 'high', reason: 'tech_support_scam' }
+  return { level: 'none' }
+}
+
+/**
+ * Commands that "fake CAPTCHA / ClickFix" pages copy to the clipboard and then ask the user
+ * to paste into Win+R, Terminal or PowerShell.
+ */
+const SHELL_COMMAND_PATTERNS = [
+  /\b(powershell|pwsh)(\.exe)?\b/i,
+  /\bcmd(\.exe)?\s+\/[ck]\b/i,
+  /\b(mshta|rundll32|regsvr32|certutil|bitsadmin|wscript|cscript|msiexec)(\.exe)?\b/i,
+  /\b(iex|invoke-expression|invoke-webrequest|iwr|downloadstring|frombase64string|start-process)\b/i,
+  /-e(nc(odedcommand)?)?\s+[a-z0-9+/=]{20,}/i,
+  /\b(curl|wget)\b[^\n|]*\|\s*(ba|z)?sh\b/i,
+  /\bbash\s+-c\b/i,
+  /\bosascript\b/i,
+  /\bbase64\s+(-d|--decode)\b[^\n]*\|/i,
+]
+
+export function looksLikeShellCommand(text: string): boolean {
+  const sample = text.slice(0, 4000)
+  return SHELL_COMMAND_PATTERNS.some((re) => re.test(sample))
+}
+
 export function assessPage(signals: PageSignals): RiskVerdict {
   if (!signals.hasPassword) return { level: 'none' }
 

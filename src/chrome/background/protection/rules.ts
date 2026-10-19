@@ -3,7 +3,9 @@ import {
   buildTrustedAllowRules,
   isProtectionManagedRuleId,
   PROTECTION_FILES,
+  THREAT_LIST_CATEGORIES,
   type ProtectionState,
+  type ThreatListCategory,
   type ThreatsFile,
 } from '@/core/protection'
 import { STORAGE_KEYS } from '@/core/constants'
@@ -12,7 +14,11 @@ import { createLogger } from '@/core/logging'
 
 const logger = createLogger('protection-rules')
 
+/** Bump when the rule shape changes so installed rules are rebuilt on update. */
+const RULE_SCHEMA_VERSION = 2
+
 let cachedThreats: ThreatsFile | null = null
+let hostIndex: Map<string, ThreatListCategory> | null = null
 
 export async function loadThreatsFile(): Promise<ThreatsFile | null> {
   if (cachedThreats) return cachedThreats
@@ -28,12 +34,33 @@ export async function loadThreatsFile(): Promise<ThreatsFile | null> {
   }
 }
 
+/** Category of a host (or any of its parent domains) on the bundled threat lists. */
+export async function threatCategoryForHost(host: string): Promise<ThreatListCategory | null> {
+  if (!host) return null
+  if (!hostIndex) {
+    const threats = await loadThreatsFile()
+    if (!threats) return null
+    hostIndex = new Map()
+    for (const category of THREAT_LIST_CATEGORIES) {
+      for (const h of threats[category] ?? []) hostIndex.set(h, category)
+    }
+  }
+  const parts = host.toLowerCase().split('.')
+  for (let i = 0; i < parts.length - 1; i++) {
+    const hit = hostIndex.get(parts.slice(i).join('.'))
+    if (hit) return hit
+  }
+  return hostIndex.get(host.toLowerCase()) ?? null
+}
+
 function stateFingerprint(state: ProtectionState): string {
   return JSON.stringify({
+    schema: RULE_SCHEMA_VERSION,
     enabled: state.enabled,
     phishing: state.phishing,
     malware: state.malware,
     scams: state.scams,
+    miners: state.miners,
     trusted: [...state.trusted].sort(),
   })
 }
@@ -55,11 +82,9 @@ export async function syncProtectionRules(state: ProtectionState): Promise<void>
   const addRules = [...threatRules, ...trustedRules]
 
   const existing = await chrome.declarativeNetRequest.getDynamicRules()
-  const sessionRules = await chrome.declarativeNetRequest.getSessionRules()
-  const removeRuleIds = [
-    ...existing.filter((rule) => isProtectionManagedRuleId(rule.id)).map((rule) => rule.id),
-    ...sessionRules.filter((rule) => isProtectionManagedRuleId(rule.id)).map((rule) => rule.id),
-  ]
+  const removeRuleIds = existing
+    .filter((rule) => isProtectionManagedRuleId(rule.id))
+    .map((rule) => rule.id)
 
   try {
     await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds, addRules })
@@ -72,4 +97,5 @@ export async function syncProtectionRules(state: ProtectionState): Promise<void>
 
 export function invalidateThreatsCache(): void {
   cachedThreats = null
+  hostIndex = null
 }

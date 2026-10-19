@@ -2,8 +2,13 @@ import { STORAGE_KEYS } from '@/core/constants'
 import { get, set } from '@/core/storage'
 import { normalizeHostname } from '@/core/adblock/hostname'
 
-import { DEFAULT_PROTECTION_STATE, emptyProtectionStats } from './constants'
+import { DEFAULT_PROTECTION_STATE, emptyProtectionStats, MAX_RECENT_ENTRIES } from './constants'
+import { THREAT_CATEGORIES } from './types'
 import type { ProtectionState, ProtectionStats, ThreatCategory } from './types'
+
+export function isThreatCategory(value: unknown): value is ThreatCategory {
+  return typeof value === 'string' && (THREAT_CATEGORIES as readonly string[]).includes(value)
+}
 
 export async function getProtectionState(): Promise<ProtectionState> {
   const stored = await get<Partial<ProtectionState>>(STORAGE_KEYS.protection)
@@ -40,11 +45,13 @@ export async function recordProtectionBlock(
   host: string,
 ): Promise<ProtectionStats> {
   const stats = await getProtectionStats()
+  // reports arrive from web pages, so only known categories may touch storage
+  if (!isThreatCategory(category)) return stats
   stats.blocked[category] = (stats.blocked[category] ?? 0) + 1
-  const entry = { host, category, at: Date.now() }
+  const entry = { host: host.slice(0, 253), category, at: Date.now() }
   stats.recent = [entry, ...stats.recent.filter((r) => r.host !== host || r.category !== category)].slice(
     0,
-    20,
+    MAX_RECENT_ENTRIES,
   )
   await set(STORAGE_KEYS.protectionStats, stats)
   return stats

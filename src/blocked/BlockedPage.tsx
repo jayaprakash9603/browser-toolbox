@@ -5,11 +5,15 @@ import { ShieldAlertIcon } from 'lucide-react'
 import { sendMessage } from '@/core/messaging'
 import { Button } from '@/shared/components/ui/button'
 
-type ListCategory = 'phishing' | 'malware' | 'scam'
+import { DownloadPrompt } from './DownloadPrompt'
+
+const LIST_CATEGORIES = ['phishing', 'malware', 'scam', 'miner'] as const
+type ListCategory = (typeof LIST_CATEGORIES)[number]
 
 function parseBlockedContext(): { category: ListCategory; targetUrl: string; host: string } {
   const params = new URLSearchParams(window.location.search)
-  const category = (params.get('c') ?? 'phishing') as ListCategory
+  const raw = params.get('c') ?? 'phishing'
+  const category = (LIST_CATEGORIES as readonly string[]).includes(raw) ? (raw as ListCategory) : 'phishing'
   const hash = window.location.hash.replace(/^#/, '')
   const targetUrl = hash || 'about:blank'
   let host = targetUrl
@@ -22,6 +26,11 @@ function parseBlockedContext(): { category: ListCategory; targetUrl: string; hos
 }
 
 export function BlockedPage() {
+  const isDownload = new URLSearchParams(window.location.search).get('mode') === 'download'
+  return isDownload ? <DownloadPrompt /> : <BlockedSitePage />
+}
+
+function BlockedSitePage() {
   const { t } = useTranslation()
   const ctx = useMemo(() => parseBlockedContext(), [])
   const reported = useRef(false)

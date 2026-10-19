@@ -39,6 +39,7 @@ export function buildContentScripts(state: AdblockState): chrome.scripting.Regis
       ...base,
       id: CONTENT_SCRIPT_IDS.cookies,
       css: [ADBLOCK_FILES.cookiesCss],
+      js: [ADBLOCK_FILES.cookiesRejectJs],
       matches: ALL_URLS,
     })
   }
@@ -126,6 +127,9 @@ async function injectOneTab(tab: chrome.tabs.Tab, state: AdblockState): Promise<
     if (state.cosmeticEnabled) {
       await chrome.scripting.insertCSS({ target, files })
       await chrome.scripting.executeScript({ target, files: [ADBLOCK_FILES.cosmeticJs] })
+    }
+    if (state.cookieBanners) {
+      await chrome.scripting.executeScript({ target, files: [ADBLOCK_FILES.cookiesRejectJs] })
     }
     if (state.blockPopups) {
       await chrome.scripting.executeScript({ target, files: [ADBLOCK_FILES.popupsJs], world: 'MAIN' })

@@ -68,6 +68,7 @@ export const ADBLOCK_FILES = {
   cookiesCss: 'adblock/cosmetic/cookies.css',
   distractionsCss: 'adblock/cosmetic/distractions.css',
   cosmeticJs: 'adblock/scripts/cosmetic.js',
+  cookiesRejectJs: 'adblock/scripts/cookies-reject.js',
   notificationsJs: 'adblock/scripts/notifications-main.js',
   popupsJs: 'adblock/scripts/popups-main.js',
   youtubeMainJs: 'adblock/scripts/youtube-main.js',

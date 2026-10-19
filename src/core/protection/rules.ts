@@ -6,6 +6,7 @@ import {
   TRUSTED_RULE_ID_BASE,
   TRUSTED_RULE_PRIORITY,
 } from './constants'
+import { THREAT_LIST_CATEGORIES } from './types'
 import type { ProtectionState, ThreatListCategory, ThreatsFile } from './types'
 
 const SUB_RESOURCE_TYPES = [
@@ -22,10 +23,6 @@ const SUB_RESOURCE_TYPES = [
   'other',
 ] as chrome.declarativeNetRequest.ResourceType[]
 
-function isIpv4(host: string): boolean {
-  return /^(\d{1,3}\.){3}\d{1,3}$/.test(host)
-}
-
 function chunkArray<T>(items: T[], size: number): T[][] {
   const out: T[][] = []
   for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size))
@@ -36,13 +33,18 @@ function categoryEnabled(state: ProtectionState, category: ThreatListCategory): 
   if (!state.enabled) return false
   if (category === 'phishing') return state.phishing
   if (category === 'malware') return state.malware
+  if (category === 'miner') return state.miners
   return state.scams
 }
 
 function hostsForCategory(threats: ThreatsFile, category: ThreatListCategory): string[] {
-  return threats[category]
+  return threats[category] ?? []
 }
 
+/**
+ * IPv4 hosts go into `requestDomains` like names do. One redirect rule per IP would blow
+ * through Chrome's 5,000 unsafe dynamic rule limit (URLhaus alone lists ~15k IPs).
+ */
 export function buildThreatRules(
   threats: ThreatsFile,
   state: ProtectionState,
@@ -53,19 +55,10 @@ export function buildThreatRules(
   const rules: chrome.declarativeNetRequest.Rule[] = []
   let id = THREAT_RULE_ID_BASE
 
-  const categories: ThreatListCategory[] = ['phishing', 'malware', 'scam']
-  for (const category of categories) {
+  for (const category of THREAT_LIST_CATEGORIES) {
     if (!categoryEnabled(state, category)) continue
-    const hosts = hostsForCategory(threats, category)
-    const domains: string[] = []
-    const ips: string[] = []
-    for (const h of hosts) {
-      if (isIpv4(h)) ips.push(h)
-      else domains.push(h)
-    }
-
-    for (const domainChunk of chunkArray(domains, DOMAINS_PER_RULE)) {
-      const redirectUrl = `${extensionBase}/blocked.html?c=${category}`
+    const redirectUrl = `${extensionBase}/blocked.html?c=${category}`
+    for (const domainChunk of chunkArray(hostsForCategory(threats, category), DOMAINS_PER_RULE)) {
       rules.push({
         id: id++,
         priority: THREAT_RULE_PRIORITY,
@@ -89,31 +82,6 @@ export function buildThreatRules(
         },
       })
     }
-
-    for (const ip of ips) {
-      const redirectUrl = `${extensionBase}/blocked.html?c=${category}`
-      rules.push({
-        id: id++,
-        priority: THREAT_RULE_PRIORITY,
-        action: {
-          type: 'redirect',
-          redirect: { regexSubstitution: `${redirectUrl}#\\0` },
-        },
-        condition: {
-          urlFilter: `||${ip}^`,
-          resourceTypes: ['main_frame'],
-        },
-      })
-      rules.push({
-        id: id++,
-        priority: THREAT_RULE_PRIORITY,
-        action: { type: 'block' },
-        condition: {
-          urlFilter: `||${ip}^`,
-          resourceTypes: [...SUB_RESOURCE_TYPES],
-        },
-      })
-    }
   }
 
   return rules
@@ -133,7 +101,8 @@ export function buildTrustedAllowRules(trustedHosts: string[]): chrome.declarati
       action: { type: 'allowAllRequests' },
       condition: {
         requestDomains: [host],
-        resourceTypes: ['main_frame', 'sub_frame', 'script', 'xmlhttprequest', 'image', 'other'],
+        // allowAllRequests only accepts frame types; it then allows everything the frame loads
+        resourceTypes: ['main_frame', 'sub_frame'],
       },
     })
     index += 1

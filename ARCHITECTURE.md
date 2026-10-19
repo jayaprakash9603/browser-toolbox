@@ -59,11 +59,18 @@ Filter lists are converted at build time (`npm run adblock:lists`); page scripts
 
 On by default (`privacy.web-protection` tool + Settings). State lives in `core/protection/` (`protection` and `protectionStats` storage keys). The background module `chrome/background/protection/`:
 
-1. Loads bundled `public/protection/threats.json` (rebuilt with `npm run protection:lists` from phishing, URLhaus and uBO badware feeds).
-2. Installs **dynamic** `declarativeNetRequest` rules: `main_frame` navigations to known threats redirect to `blocked.html`; sub-resources from those hosts are blocked.
-3. Registers a heuristics content script (`public/protection/scripts/heuristics.js`) for look-alike login detection on password pages.
+1. Loads bundled `public/protection/threats.json` (rebuilt with `npm run protection:lists` from phishing, URLhaus, uBO badware and NoCoin cryptominer feeds).
+2. Installs **dynamic** `declarativeNetRequest` rules: hosts (including IP literals) are chunked 1,000 per rule into `requestDomains`; `main_frame` navigations redirect to `blocked.html`, sub-resources are blocked. This keeps the redirect (unsafe) and regex rule counts far below Chrome's 5,000 / 1,000 limits.
+3. Registers content scripts at `document_start` (trusted sites excluded via `excludeMatches`):
+   - `heuristics.js` (isolated world, all frames): look-alike login and tech-support scam text detection with overlays, relays page-guard signals, reports user gestures for the download guard.
+   - `guard-scam.js` (main world, top frame): neutralises browser lockers (dialog floods, forced fullscreen, keyboard lock, `pushState` floods, `beforeunload` traps).
+   - `guard-clipboard.js` (main world, all frames): blocks hidden shell commands copied to the clipboard (ClickFix / fake CAPTCHA).
+   - `guard-notify.js` (main world, top frame): denies notification/push requests made without a user gesture.
+4. Watches `chrome.downloads`: downloads from threat hosts are cancelled; executables that start without a recent user gesture on the source site are paused and confirmed in `blocked.html?mode=download`.
 
-Trusted sites and one-time “proceed anyway” use dynamic/session allow rules in dedicated ID ranges (separate from the ad-block allowlist at 1_000_000+).
+Page-world guards talk to the isolated script through `window.postMessage` (`PAGE_MESSAGE_KEY` / `PAGE_COMMAND_KEY`); the background only trusts `sender.url`, and only extension pages may decide on paused downloads.
+
+Trusted sites and one-time “proceed anyway” use dynamic/session allow rules in dedicated ID ranges (separate from the ad-block allowlist at 1_000_000+). Cookie consent auto-decline (`adblock/scripts/cookies-reject.js`) belongs to the ad blocker's cookie-banner setting and is mirrored in the Web Protection tool.
 
 ## Theming
 

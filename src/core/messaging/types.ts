@@ -66,6 +66,8 @@ export type ExtensionMessage =
   | { type: 'PROTECTION_PROCEED_ONCE'; url: string }
   | { type: 'PROTECTION_TRUST_SITE'; host: string }
   | { type: 'PROTECTION_RESET_STATS' }
+  | { type: 'PROTECTION_GESTURE'; host?: string }
+  | { type: 'PROTECTION_DOWNLOAD_DECISION'; id: number; keep: boolean }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
@@ -105,6 +107,8 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'PROTECTION_PROCEED_ONCE',
   'PROTECTION_TRUST_SITE',
   'PROTECTION_RESET_STATS',
+  'PROTECTION_GESTURE',
+  'PROTECTION_DOWNLOAD_DECISION',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {

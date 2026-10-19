@@ -26,10 +26,20 @@ const FEEDS = [
   {
     id: 'badware',
     category: 'scam',
+    format: 'abp',
     url: 'https://ublockorigin.github.io/uAssets/filters/badware.txt',
     license: 'GPL-3.0 (uBlock Origin uAssets)',
   },
+  {
+    id: 'nocoin',
+    category: 'miner',
+    format: 'abp',
+    url: 'https://raw.githubusercontent.com/hoshsadiq/adblock-nocoin-list/master/nocoin.txt',
+    license: 'MIT (NoCoin adblock list)',
+  },
 ]
+
+const CATEGORIES = ['phishing', 'malware', 'scam', 'miner']
 
 /** Exact hosts never blocked (major shared infrastructure). Subdomains of these are still blocked. */
 export const NEVER_BLOCK = new Set([
@@ -88,28 +98,28 @@ export function parseDomainList(text) {
   for (const line of text.split('\n')) {
     const trimmed = line.trim()
     if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('!')) continue
-    const host = normalizeThreatHost(trimmed)
-    if (host) hosts.push(host)
+    // hosts-file lines look like "0.0.0.0 bad.example"; keep the host part
+    const token = trimmed.split(/\s+/).pop() ?? ''
+    const host = normalizeThreatHost(token)
+    if (host && host !== '0.0.0.0' && host !== '127.0.0.1') hosts.push(host)
   }
   return hosts
 }
 
-/** uBO badware: keep ||domain^$all or $doc style domain blocks. */
+/** ABP-style lists (uBO badware, NoCoin): keep whole-domain `||domain^` blocks, skip path rules. */
 export function parseBadwareList(text) {
   const hosts = []
   for (const line of text.split('\n')) {
     const trimmed = line.trim()
     if (!trimmed || trimmed.startsWith('!')) continue
-    const m = /^\|\|([^/^|*]+)\^(\$all|\$doc)?/.exec(trimmed)
+    const m = /^\|\|([^/^|*$]+)\^(\$.*)?$/.exec(trimmed)
     if (!m) continue
+    // context-limited or modifier-only filters are not whole-site blocks
+    if (m[2] && /domain=|badfilter|removeparam|redirect|csp|header=/.test(m[2])) continue
     const host = normalizeThreatHost(m[1])
     if (host) hosts.push(host)
   }
   return hosts
-}
-
-function isSubdomainOf(child, parent) {
-  return child !== parent && (child === parent || child.endsWith(`.${parent}`))
 }
 
 function dropSubdomainsCoveredByParent(hosts) {
@@ -177,7 +187,7 @@ async function main() {
   await mkdir(outDir, { recursive: true })
   await mkdir(cacheDir, { recursive: true })
 
-  const byCategory = { phishing: [], malware: [], scam: [] }
+  const byCategory = Object.fromEntries(CATEGORIES.map((c) => [c, []]))
   const sources = []
   let loaded = 0
 
@@ -185,8 +195,7 @@ async function main() {
     const text = await loadFeed(feed)
     if (text == null) continue
     loaded++
-    const hosts =
-      feed.id === 'badware' ? parseBadwareList(text) : parseDomainList(text)
+    const hosts = feed.format === 'abp' ? parseBadwareList(text) : parseDomainList(text)
     byCategory[feed.category].push(...hosts)
     sources.push({ id: feed.id, category: feed.category, lines: hosts.length, license: feed.license })
     console.log(`[protection] ${feed.id}: ${hosts.length} hosts`)
@@ -198,9 +207,9 @@ async function main() {
   }
 
   const assigned = new Set()
-  const result = { phishing: [], malware: [], scam: [] }
+  const result = Object.fromEntries(CATEGORIES.map((c) => [c, []]))
 
-  for (const category of ['phishing', 'malware', 'scam']) {
+  for (const category of CATEGORIES) {
     const unique = [...new Set(byCategory[category])]
     const filtered = unique.filter((h) => {
       if (NEVER_BLOCK.has(h)) return false
@@ -211,12 +220,8 @@ async function main() {
     result[category] = dropSubdomainsCoveredByParent(filtered)
   }
 
-  const counts = {
-    phishing: result.phishing.length,
-    malware: result.malware.length,
-    scam: result.scam.length,
-    total: result.phishing.length + result.malware.length + result.scam.length,
-  }
+  const counts = Object.fromEntries(CATEGORIES.map((c) => [c, result[c].length]))
+  counts.total = CATEGORIES.reduce((sum, c) => sum + result[c].length, 0)
 
   if (counts.total === 0) {
     console.error('[protection] zero hosts after parse; not writing')
@@ -227,9 +232,7 @@ async function main() {
     generated: new Date().toISOString(),
     sources,
     counts,
-    phishing: result.phishing,
-    malware: result.malware,
-    scam: result.scam,
+    ...result,
   }
 
   await writeFile(join(outDir, 'threats.json'), `${JSON.stringify(payload)}\n`)
@@ -243,6 +246,7 @@ Bundled data is rebuilt with \`npm run protection:lists\`. No threat data is dow
 | Phishing URL Blocklist (malware-filter) | CC0 / MIT |
 | URLhaus domain filter (malware-filter) | CC0 / MIT |
 | uBlock Origin – Badware risks | GPL-3.0 |
+| NoCoin adblock list (cryptominers) | MIT |
 
 Generated: ${payload.generated}
 `

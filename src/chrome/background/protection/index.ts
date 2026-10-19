@@ -11,6 +11,7 @@ import { registerMessageHandler } from '@/core/messaging'
 import { createLogger } from '@/core/logging'
 
 import { syncProtectionContentScripts } from './contentScripts'
+import { decideDownload, recordGesture, registerDownloadGuard } from './downloads'
 import { invalidateThreatsCache, syncProtectionRules } from './rules'
 import { allowProceedOnce } from './trusted'
 
@@ -65,5 +66,19 @@ export function registerProtection(): void {
     return { reset: true }
   })
 
+  registerMessageHandler('PROTECTION_GESTURE', (_message, sender) => {
+    // trust the sender's real URL, not the host claimed in the message
+    recordGesture([sender.url, sender.tab?.url])
+    return null
+  })
+
+  registerMessageHandler('PROTECTION_DOWNLOAD_DECISION', async (message, sender) => {
+    if (message.type !== 'PROTECTION_DOWNLOAD_DECISION') return null
+    if (!sender.url?.startsWith(chrome.runtime.getURL(''))) return null
+    await decideDownload(message.id, message.keep)
+    return { ok: true }
+  })
+
+  registerDownloadGuard()
   void syncProtectionState()
 }
