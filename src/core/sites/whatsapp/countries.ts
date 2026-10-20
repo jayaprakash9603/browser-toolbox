@@ -99,6 +99,62 @@ const CALLING_CODES: Record<string, string> = {
 }
 
 /** Longest-prefix match of an international number (digits only) to a calling code. */
+/** ISO 3166-1 alpha-2 for map highlighting (subset of calling-code destinations). */
+const COUNTRY_ISO2: Record<string, string> = {
+  'United States / Canada': 'US',
+  'Russia / Kazakhstan': 'RU',
+  Egypt: 'EG',
+  'South Africa': 'ZA',
+  Greece: 'GR',
+  Netherlands: 'NL',
+  Belgium: 'BE',
+  France: 'FR',
+  Spain: 'ES',
+  Hungary: 'HU',
+  Italy: 'IT',
+  Romania: 'RO',
+  Switzerland: 'CH',
+  Austria: 'AT',
+  'United Kingdom': 'GB',
+  Denmark: 'DK',
+  Sweden: 'SE',
+  Norway: 'NO',
+  Poland: 'PL',
+  Germany: 'DE',
+  Peru: 'PE',
+  Mexico: 'MX',
+  Cuba: 'CU',
+  Argentina: 'AR',
+  Brazil: 'BR',
+  Chile: 'CL',
+  Colombia: 'CO',
+  Venezuela: 'VE',
+  Malaysia: 'MY',
+  Australia: 'AU',
+  Indonesia: 'ID',
+  Philippines: 'PH',
+  'New Zealand': 'NZ',
+  Singapore: 'SG',
+  Thailand: 'TH',
+  Japan: 'JP',
+  'South Korea': 'KR',
+  Vietnam: 'VN',
+  China: 'CN',
+  Turkey: 'TR',
+  India: 'IN',
+  Pakistan: 'PK',
+  Bangladesh: 'BD',
+  Nigeria: 'NG',
+  Kenya: 'KE',
+  Israel: 'IL',
+  'Saudi Arabia': 'SA',
+  'United Arab Emirates': 'AE',
+}
+
+export function iso2ForCountry(country: string): string {
+  return COUNTRY_ISO2[country] ?? ''
+}
+
 export function countryForNumber(digits: string): { code: string; country: string } {
   for (let len = 3; len >= 1; len--) {
     const code = digits.slice(0, len)

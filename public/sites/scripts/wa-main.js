@@ -213,7 +213,6 @@
 		"974": "Qatar",
 		"977": "Nepal"
 	};
-	/** Longest-prefix match of an international number (digits only) to a calling code. */
 	function countryForNumber(digits) {
 		for (let len = 3; len >= 1; len--) {
 			const code = digits.slice(0, len);
@@ -226,6 +225,120 @@
 		return {
 			code: "",
 			country: "Unknown"
+		};
+	}
+	new Set("a an the and or but in on at to for of is it i you we they he she this that with as be are was were have has had do does did not".split(" "));
+	function resolveRangeMs(range) {
+		const now = Date.now();
+		if (typeof range !== "string") return {
+			fromMs: Date.parse(range.from),
+			toMs: range.to ? Date.parse(range.to) + 864e5 - 1 : Date.now(),
+			label: `${range.from} – ${range.to || "now"}`
+		};
+		const d = {
+			"7d": 7,
+			"30d": 30,
+			"90d": 90,
+			"1y": 365,
+			all: null
+		}[range] ?? 30;
+		if (d === null) return {
+			fromMs: null,
+			toMs: now,
+			label: "All time"
+		};
+		return {
+			fromMs: now - d * 864e5,
+			toMs: now,
+			label: `Last ${d} days`
+		};
+	}
+	//#endregion
+	//#region src/chrome/content/sites/whatsapp/analytics/collect.ts
+	var PER_CHAT_CAP = 1e3;
+	var URL_RE = /https?:\/\/|www\./i;
+	function call$1(fn, ...args) {
+		if (typeof fn !== "function") return Promise.resolve(void 0);
+		return Promise.resolve(fn(...args)).catch(() => void 0);
+	}
+	function chatTitle(c) {
+		return c.formattedTitle ?? c.name ?? c.id?.user ?? "Chat";
+	}
+	function serializeMessage(chat, m) {
+		const t = Number(m.t ?? 0);
+		const timestampMs = t > 0xe8d4a51000 ? t : t * 1e3;
+		if (!timestampMs) return null;
+		const body = String(m.body ?? m.caption ?? "").trim().slice(0, 2e3);
+		const type = String(m.type ?? "chat");
+		const author = m.author?.user ?? String(m.author ?? "");
+		const authorName = String(m.notifyName ?? m.pushName ?? "");
+		const hasMedia = Boolean(m.isMedia || m.mediaData || type !== "chat");
+		return {
+			chatId: chat.id?._serialized ?? "",
+			chatName: chatTitle(chat),
+			isGroup: chat.isGroup === true || chat.id?.server === "g.us",
+			fromMe: Boolean(m.fromMe),
+			timestampMs,
+			type,
+			author,
+			authorName,
+			body: body || (type !== "chat" ? `[${type}]` : ""),
+			hasMedia,
+			hasLink: URL_RE.test(body)
+		};
+	}
+	async function optionalCount(paths) {
+		for (const [root, key] of paths) {
+			if (!root) continue;
+			const fn = root[key];
+			const list = await call$1(fn);
+			if (Array.isArray(list)) return list.length;
+		}
+		return null;
+	}
+	async function collectAnalytics(wpp, range, onProgress) {
+		const { fromMs } = resolveRangeMs(range);
+		const chats = await call$1(wpp.chat.list) ?? [];
+		const messages = [];
+		let analyzedChats = 0;
+		for (const chat of chats) {
+			const chatId = chat.id?._serialized;
+			if (!chatId || !wpp.chat.getMessages) continue;
+			let batch = await call$1(wpp.chat.getMessages, chatId, { count: PER_CHAT_CAP }) ?? [];
+			if (!batch.length) batch = await call$1(wpp.chat.getMessages, chatId) ?? [];
+			for (const raw of batch) {
+				if (!raw || typeof raw !== "object") continue;
+				const msg = serializeMessage(chat, raw);
+				if (!msg) continue;
+				if (fromMs != null && msg.timestampMs < fromMs) continue;
+				messages.push(msg);
+			}
+			analyzedChats++;
+			if (analyzedChats % 5 === 0 || analyzedChats === chats.length) onProgress?.(`Analyzed ${messages.length} messages across ${analyzedChats} chats`);
+		}
+		const contactCount = (await call$1(wpp.contact?.list) ?? []).filter((c) => c.isMyContact).length;
+		const labels = await call$1(wpp.labels?.getAllLabels) ?? [];
+		const blocked = await call$1(wpp.blocklist?.all) ?? [];
+		const optional = {
+			channels: await optionalCount([[wpp.newsletter, "getSubscribers"], [wpp.newsletter, "list"]]),
+			statusPosts: await optionalCount([[wpp.status, "list"], [wpp.status, "get"]]),
+			communities: await optionalCount([[wpp.community, "list"], [wpp.community, "getAll"]]),
+			calls: await optionalCount([[wpp.call, "list"], [wpp.call, "getCalls"]]),
+			catalogProducts: await optionalCount([[wpp.catalog, "getProducts"], [wpp.catalog, "list"]]),
+			orders: await optionalCount([[wpp.order, "list"], [wpp.order, "getAll"]])
+		};
+		return {
+			messages,
+			chats: chats.map((c) => ({
+				id: c.id?._serialized ?? "",
+				name: chatTitle(c),
+				isGroup: c.isGroup === true || c.id?.server === "g.us",
+				unreadCount: Math.max(0, c.unreadCount ?? 0)
+			})),
+			contactCount,
+			blockedCount: blocked.length,
+			labelCount: labels.length,
+			optional
 		};
 	}
 	//#endregion
@@ -258,6 +371,13 @@
 		},
 		{
 			id: "showSideLauncher",
+			section: "custom",
+			kind: "toggle",
+			impl: "script",
+			default: true
+		},
+		{
+			id: "chatPulse",
 			section: "custom",
 			kind: "toggle",
 			impl: "script",
@@ -480,6 +600,28 @@
 		if (cmd === "startChat" && payload && typeof payload === "object") {
 			const num = String(payload.number).replace(/\D/g, "");
 			if (num && wpp.chat?.openChatBottom) await wpp.chat.openChatBottom(`${num}@c.us`);
+		}
+		if (cmd === "analytics" && payload && typeof payload === "object") {
+			const { reqId, range } = payload;
+			const postProgress = (message) => {
+				window.postMessage({
+					[PAGE_EVT_KEY]: "analyticsProgress",
+					payload: {
+						reqId,
+						message
+					}
+				}, location.origin || "*");
+			};
+			let dataset = null;
+			if (wpp) dataset = await collectAnalytics(wpp, range, postProgress);
+			window.postMessage({
+				[PAGE_EVT_KEY]: "analyticsResult",
+				payload: {
+					reqId,
+					dataset
+				}
+			}, location.origin || "*");
+			return;
 		}
 		if (cmd === "exportChat" && payload && typeof payload === "object") {
 			const { reqId, options } = payload;

@@ -24,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { useSitesTool } from '../_shared'
 import { SiteFeatureSection } from '../_components/SiteFeatureSection'
 import { BusinessTab } from './BusinessTab'
+import { ChatPulsePanel } from './ChatPulsePanel'
 import { ExportTab } from './ExportTab'
 import { PresetBar } from './PresetBar'
 import { UtilitiesTab } from './UtilitiesTab'
@@ -119,6 +120,7 @@ export default function ChatBoostTool() {
               })}
             </TabsList>
             <TabsContent value="enhancements" className="mt-3 flex flex-col gap-3">
+              <ChatPulsePanel disabled={!state.enabled} />
               <PresetBar onApply={(values) => void patch({ values: { ...state.values, ...values } })} />
               {WHATSAPP_SECTIONS.map((section) => (
                 <SiteFeatureSection

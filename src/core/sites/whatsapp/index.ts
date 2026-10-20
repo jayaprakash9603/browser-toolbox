@@ -19,6 +19,7 @@ export {
   featureLabelKey,
   sectionLabelKey,
 } from './features'
+export { computeReport, resolveRangeMs, type AnalyticsRange, type ChatPulseReport, type RawDataset } from './analytics'
 export {
   buildChatExportFile,
   DEFAULT_CHAT_EXPORT_OPTIONS,

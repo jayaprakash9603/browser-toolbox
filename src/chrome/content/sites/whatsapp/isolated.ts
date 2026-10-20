@@ -2,6 +2,9 @@ import type { WhatsappPlusState } from '@/core/sites/whatsapp'
 import { PAGE_EVT_KEY } from '@/core/sites/whatsapp/constants'
 
 import { postToMain } from './bridge'
+import { isFeatureOn } from '@/core/sites/whatsapp/helpers'
+
+import { openAnalyticsDashboard } from './features/analyticsDashboard'
 import { applyWhatsappPlus, stopAll } from './manager'
 
 type Guarded = Window & { __toolboxWaEnhancer?: boolean }
@@ -59,6 +62,22 @@ if (!guarded.__toolboxWaEnhancer) {
         window.addEventListener('message', listener)
         postToMain('exportChat', { reqId: `panel-${Date.now()}`, options: msg.options })
         setTimeout(() => sendResponse({ ok: false, file: null }), 60_000)
+        return true
+      }
+      if (msg?.type === 'WA_OPEN_ANALYTICS') {
+        chrome.storage.local.get('whatsappPlus', (result) => {
+          const state = readState(result.whatsappPlus)
+          if (!state?.enabled || !isFeatureOn(state.values, 'chatPulse')) {
+            const t = document.createElement('div')
+            t.className = 'tbx-wa-toast'
+            t.textContent = 'Enable ChatPulse in ChatBoost'
+            document.body.appendChild(t)
+            setTimeout(() => t.remove(), 2600)
+            return
+          }
+          openAnalyticsDashboard()
+        })
+        sendResponse({ ok: true })
         return true
       }
       if (msg?.type === 'WA_EXPORT' && msg.kind) {

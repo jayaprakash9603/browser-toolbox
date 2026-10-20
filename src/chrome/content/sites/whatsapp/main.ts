@@ -6,6 +6,9 @@ import {
 import { PAGE_CMD_KEY, PAGE_EVT_KEY } from '@/core/sites/whatsapp/constants'
 import { countryForNumber } from '@/core/sites/whatsapp/countries'
 
+import type { AnalyticsRange } from '@/core/sites/whatsapp/analytics'
+
+import { collectAnalytics } from './analytics/collect'
 import { startPrivacy, stopPrivacy } from './features/privacy'
 
 type Guarded = Window & {
@@ -154,6 +157,25 @@ async function handleCmd(cmd: string, payload: unknown): Promise<void> {
   if (cmd === 'startChat' && payload && typeof payload === 'object') {
     const num = String((payload as { number: string }).number).replace(/\D/g, '')
     if (num && wpp.chat?.openChatBottom) await (wpp.chat.openChatBottom as (id: string) => Promise<unknown>)(`${num}@c.us`)
+  }
+
+  if (cmd === 'analytics' && payload && typeof payload === 'object') {
+    const { reqId, range } = payload as { reqId: string; range: AnalyticsRange }
+    const postProgress = (message: string) => {
+      window.postMessage(
+        { [PAGE_EVT_KEY]: 'analyticsProgress', payload: { reqId, message } },
+        location.origin || '*',
+      )
+    }
+    let dataset = null
+    if (wpp) {
+      dataset = await collectAnalytics(wpp as Parameters<typeof collectAnalytics>[0], range, postProgress)
+    }
+    window.postMessage(
+      { [PAGE_EVT_KEY]: 'analyticsResult', payload: { reqId, dataset } },
+      location.origin || '*',
+    )
+    return
   }
 
   if (cmd === 'exportChat' && payload && typeof payload === 'object') {

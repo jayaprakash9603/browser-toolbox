@@ -59,6 +59,7 @@ export const sitesWhatsappStrings: Record<string, string> = {
   'sites.whatsapp.utilities.clickToChat': 'Click to chat',
   'sites.whatsapp.utilities.numberCheck': 'Number checker',
   'sites.whatsapp.utilities.unavailable': 'Requires a server (not available in extension)',
+  'sites.whatsapp.chatPulse.open': 'Open ChatPulse Analytics',
   'sites.whatsapp.broadcast.warning': 'Bulk messaging may get your account restricted. Delays and daily caps are enforced.',
   ...featureStrings,
 }

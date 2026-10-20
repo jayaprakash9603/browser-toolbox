@@ -145,6 +145,13 @@ export function registerSitesWhatsapp(): void {
     return res ?? { ok: false }
   })
 
+  registerMessageHandler('WA_OPEN_ANALYTICS', async () => {
+    const tabId = await getWhatsappTabId()
+    if (tabId == null) return { ok: false, error: 'no_tab' }
+    await chrome.tabs.sendMessage(tabId, { type: 'WA_OPEN_ANALYTICS' })
+    return { ok: true }
+  })
+
   registerMessageHandler('WA_TRANSLATE', async (message) => {
     if (message.type !== 'WA_TRANSLATE') return null
     const target = message.target || 'en'

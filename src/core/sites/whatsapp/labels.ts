@@ -9,6 +9,10 @@ export const WHATSAPP_FEATURE_LABELS: Record<string, { label: string; descriptio
   restoreDeletedMessages: { label: 'Restore deleted messages', description: 'Show a copy of messages deleted for everyone.' },
   customChatBackground: { label: 'Set custom chat background image', description: 'Use your own wallpaper behind conversations.' },
   showSideLauncher: { label: 'Show ChatBoost button in sidebar', description: 'Green plus button in the left navigation rail.' },
+  chatPulse: {
+    label: 'ChatPulse Analytics',
+    description: 'Full messaging dashboard overlay with charts and insights (right-click or drawer).',
+  },
   btnStartChat: { label: 'Start chat with any number', description: 'Header button to open a chat without saving the contact.' },
   btnTranslate: { label: 'Translate message button', description: 'Translate a message inline on hover.' },
   btnQuickReply: { label: 'Quick reply button', description: 'Insert a saved template from the chat header.' },

@@ -11,6 +11,13 @@ import { registerAdblock, syncAdblockState } from './adblock'
 import { registerProtection, syncProtectionState } from './protection'
 import { registerSitesWhatsapp, registerSitesYoutube, syncYoutubeEnhancerState } from './sites'
 import {
+  bindChatPulseMenuRebuild,
+  buildChatPulseMenus,
+  isChatPulseMenuItem,
+  registerChatPulseMenuSync,
+  sendOpenAnalyticsToTab,
+} from './sites/whatsappAnalytics'
+import {
   bindImageConvertMenuRebuild,
   buildImageConvertMenus,
   handleImageConvertMenuClick,
@@ -65,6 +72,7 @@ async function rebuildContextMenus() {
   }
   await buildImageConvertMenus()
   await buildPipMenus()
+  await buildChatPulseMenus()
 }
 
 async function openPanelWithTool(
@@ -111,6 +119,10 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     void togglePipInTab(tab)
     return
   }
+  if (isChatPulseMenuItem(menuItemId) && tab?.id != null) {
+    void sendOpenAnalyticsToTab(tab.id)
+    return
+  }
   if (menuItemId === 'toolbox.adblock.pause-site' && tab?.url) {
     const host = hostnameFromUrl(tab.url)
     if (host) void addAllowlistHost(host)
@@ -143,6 +155,8 @@ registerSitesYoutube()
 registerSitesWhatsapp()
 bindImageConvertMenuRebuild(rebuildContextMenus)
 bindPipMenuRebuild(rebuildContextMenus)
+bindChatPulseMenuRebuild(rebuildContextMenus)
+registerChatPulseMenuSync()
 registerImageConvert()
 registerPip()
 registerShortcuts()

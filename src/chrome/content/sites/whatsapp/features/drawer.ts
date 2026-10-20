@@ -11,7 +11,9 @@ import {
   type WhatsappSection,
 } from '@/core/sites/whatsapp'
 
+import { openAnalyticsDashboard } from './analyticsDashboard'
 import { openExportChatModal } from './exportChatModal'
+import { isFeatureOn } from '@/core/sites/whatsapp/helpers'
 import { queryMain } from '../bridge'
 import {
   activeChatTitle,
@@ -48,6 +50,7 @@ const ICONS = {
   dashboard: 'M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z',
   download: 'M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z',
   chart: 'M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z',
+  insights: 'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z',
   more: 'M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z',
   back: 'M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z',
   close: 'M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
@@ -306,6 +309,10 @@ function viewHome(): HTMLElement {
     navRow('dashboard', 'Business Tools', 'Accelerate daily tasks with smart business solutions.', () => go('business')),
     navRow('download', 'Exporting', 'Easily save and manage your WhatsApp data.', () => go('export')),
     navRow('chart', 'Statistics', 'Gain valuable insights from your data.', () => go('stats')),
+    navRow('insights', 'ChatPulse Analytics', 'Full messaging dashboard with charts and trends.', () => {
+      if (!isFeatureOn(s.values, 'chatPulse')) return toast('Enable ChatPulse in Enhancements')
+      openAnalyticsDashboard()
+    }),
     navRow('more', 'More…', 'Open the full panel, hide the button or turn off.', () => go('more')),
     el('p', 'tbx-d-hint', `${countActiveFeatures(s)} features active`),
   )
