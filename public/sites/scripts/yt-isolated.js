@@ -1018,9 +1018,14 @@
 	function values(ctx) {
 		return ctx.state.values;
 	}
-	function feedFiltersActive(ctx) {
+	/** Hiding tiles in the feed — requires DOM scans (keep separate from undo-bar cleanup). */
+	function feedTileFiltersActive(ctx) {
 		const v = values(ctx);
-		return isFeatureOn(v, "keywordFilter") || isFeatureOn(v, "hideChannels") || isFeatureOn(v, "hideWatchedVideos") || isFeatureOn(v, "autoHideUndoBar");
+		return isFeatureOn(v, "keywordFilter") || isFeatureOn(v, "hideChannels") || isFeatureOn(v, "hideWatchedVideos");
+	}
+	function feedScriptsActive(ctx) {
+		const v = values(ctx);
+		return feedTileFiltersActive(ctx) || isFeatureOn(v, "autoHideUndoBar");
 	}
 	function shouldHideTile(tile, ctx) {
 		const title = tile.querySelector("#video-title, .title")?.textContent ?? "";
@@ -1055,7 +1060,7 @@
 		} else for (const tile of root.querySelectorAll?.(TILE_SELECTOR) ?? []) applyTile(tile, ctx);
 	}
 	function scanFeeds(ctx) {
-		if (!feedFiltersActive(ctx)) return;
+		if (!feedTileFiltersActive(ctx)) return;
 		scanTilesUnder(document, ctx);
 	}
 	function scheduleFeedScan(ctx, roots) {
@@ -1072,19 +1077,22 @@
 	}
 	reg("feedFilters", {
 		start(ctx) {
-			if (!feedFiltersActive(ctx)) return;
-			scanFeeds(ctx);
-			const target = feedObserveTarget();
-			if (!target) return;
-			feedObserver = new MutationObserver((mutations) => {
-				const roots = [];
-				for (const m of mutations) for (const node of m.addedNodes) if (node instanceof Element) roots.push(node);
-				scheduleFeedScan(ctx, roots.length ? roots : void 0);
-			});
-			feedObserver.observe(target, {
-				childList: true,
-				subtree: true
-			});
+			if (!feedScriptsActive(ctx)) return;
+			if (feedTileFiltersActive(ctx)) {
+				scanFeeds(ctx);
+				const target = feedObserveTarget();
+				if (target) {
+					feedObserver = new MutationObserver((mutations) => {
+						const roots = [];
+						for (const m of mutations) for (const node of m.addedNodes) if (node instanceof Element) roots.push(node);
+						scheduleFeedScan(ctx, roots.length ? roots : void 0);
+					});
+					feedObserver.observe(target, {
+						childList: true,
+						subtree: true
+					});
+				}
+			}
 			if (isFeatureOn(values(ctx), "autoHideUndoBar")) undoTimer = setInterval(() => {
 				document.querySelectorAll("yt-button-renderer #button[aria-label*=\"Undo\"]").forEach((el) => {
 					const row = el.closest("ytd-notification-action-renderer, tp-yt-paper-toast");
@@ -1226,10 +1234,20 @@
 	function stopScriptFeatures() {
 		for (const runner of runners.values()) runner.stop();
 	}
+	var NAV_REFRESH_RUNNERS = [
+		"sponsor",
+		"dislikes",
+		"redirectShorts",
+		"player"
+	];
 	function onYoutubeNavigate(ctx) {
 		if (!ctx.state.enabled) return;
-		stopScriptFeatures();
-		startScriptFeatures(ctx);
+		for (const id of NAV_REFRESH_RUNNERS) {
+			const runner = runners.get(id);
+			runner?.stop();
+			runner?.start(ctx);
+		}
+		if (feedTileFiltersActive(ctx)) scanFeeds(ctx);
 	}
 	//#endregion
 	//#region src/chrome/content/sites/youtube/manager.ts
@@ -1345,12 +1363,14 @@
 	function stopAll() {
 		stopScriptFeatures();
 		const root = document.documentElement;
-		root.removeAttribute(ACTIVE_ATTR);
-		for (const id of CSS_FEATURE_IDS) root.removeAttribute(featureAttrName(id));
+		for (const attr of [...root.attributes]) if (attr.name.startsWith("data-tbx-yt-")) root.removeAttribute(attr.name);
 		clearProgressDom(root);
-		root.removeAttribute(featureAttrName("searchThumbSize"));
-		root.removeAttribute(featureAttrName("gridMinPerRow"));
-		root.removeAttribute(featureAttrName("shortsMinPerRow"));
+		const customProps = [];
+		for (let i = 0; i < root.style.length; i++) {
+			const name = root.style.item(i);
+			if (name.startsWith("--tbx-yt-")) customProps.push(name);
+		}
+		for (const name of customProps) root.style.removeProperty(name);
 		document.getElementById(STYLE_LINK_ID)?.remove();
 		document.querySelectorAll("ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer").forEach((el) => el.style.removeProperty("display"));
 	}

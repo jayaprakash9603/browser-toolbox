@@ -131,12 +131,16 @@ export function applyYoutubeEnhancer(state: YoutubeEnhancerState): void {
 export function stopAll(): void {
   stopScriptFeatures()
   const root = document.documentElement
-  root.removeAttribute(ACTIVE_ATTR)
-  for (const id of CSS_FEATURE_IDS) root.removeAttribute(featureAttrName(id))
+  for (const attr of [...root.attributes]) {
+    if (attr.name.startsWith('data-tbx-yt-')) root.removeAttribute(attr.name)
+  }
   clearProgressDom(root)
-  root.removeAttribute(featureAttrName('searchThumbSize'))
-  root.removeAttribute(featureAttrName('gridMinPerRow'))
-  root.removeAttribute(featureAttrName('shortsMinPerRow'))
+  const customProps: string[] = []
+  for (let i = 0; i < root.style.length; i++) {
+    const name = root.style.item(i)
+    if (name.startsWith('--tbx-yt-')) customProps.push(name)
+  }
+  for (const name of customProps) root.style.removeProperty(name)
   document.getElementById(STYLE_LINK_ID)?.remove()
   document
     .querySelectorAll<HTMLElement>(

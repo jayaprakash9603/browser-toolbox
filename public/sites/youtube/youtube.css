@@ -15,12 +15,13 @@ html[data-tbx-yt-hide-premium-upsell] ytd-mealbar-promo-renderer {
   display: none !important;
 }
 
-html[data-tbx-yt-hide-info-panels] ytd-info-panel-container-renderer,
-html[data-tbx-yt-hide-info-panels] ytd-expandable-metadata-renderer {
+/* Watch page only — the same tags appear in home feed cards; hiding globally breaks thumbnails. */
+html[data-tbx-yt-hide-info-panels] ytd-watch-flexy ytd-info-panel-container-renderer,
+html[data-tbx-yt-hide-info-panels] ytd-watch-flexy ytd-expandable-metadata-renderer {
   display: none !important;
 }
 
-html[data-tbx-yt-hide-ai-summaries] ytd-expandable-metadata-renderer {
+html[data-tbx-yt-hide-ai-summaries] ytd-watch-flexy ytd-expandable-metadata-renderer {
   display: none !important;
 }
 

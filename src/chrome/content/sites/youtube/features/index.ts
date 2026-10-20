@@ -45,14 +45,19 @@ function values(ctx: FeatureContext): Record<string, unknown> {
   return ctx.state.values
 }
 
-function feedFiltersActive(ctx: FeatureContext): boolean {
+/** Hiding tiles in the feed — requires DOM scans (keep separate from undo-bar cleanup). */
+function feedTileFiltersActive(ctx: FeatureContext): boolean {
   const v = values(ctx)
   return (
     isFeatureOn(v, 'keywordFilter') ||
     isFeatureOn(v, 'hideChannels') ||
-    isFeatureOn(v, 'hideWatchedVideos') ||
-    isFeatureOn(v, 'autoHideUndoBar')
+    isFeatureOn(v, 'hideWatchedVideos')
   )
+}
+
+function feedScriptsActive(ctx: FeatureContext): boolean {
+  const v = values(ctx)
+  return feedTileFiltersActive(ctx) || isFeatureOn(v, 'autoHideUndoBar')
 }
 
 function shouldHideTile(tile: Element, ctx: FeatureContext): boolean {
@@ -96,7 +101,7 @@ function scanTilesUnder(root: ParentNode, ctx: FeatureContext): void {
 }
 
 function scanFeeds(ctx: FeatureContext): void {
-  if (!feedFiltersActive(ctx)) return
+  if (!feedTileFiltersActive(ctx)) return
   scanTilesUnder(document, ctx)
 }
 
@@ -122,20 +127,23 @@ function feedObserveTarget(): Element | null {
 
 reg('feedFilters', {
   start(ctx) {
-    if (!feedFiltersActive(ctx)) return
-    scanFeeds(ctx)
-    const target = feedObserveTarget()
-    if (!target) return
-    feedObserver = new MutationObserver((mutations) => {
-      const roots: ParentNode[] = []
-      for (const m of mutations) {
-        for (const node of m.addedNodes) {
-          if (node instanceof Element) roots.push(node)
-        }
+    if (!feedScriptsActive(ctx)) return
+    if (feedTileFiltersActive(ctx)) {
+      scanFeeds(ctx)
+      const target = feedObserveTarget()
+      if (target) {
+        feedObserver = new MutationObserver((mutations) => {
+          const roots: ParentNode[] = []
+          for (const m of mutations) {
+            for (const node of m.addedNodes) {
+              if (node instanceof Element) roots.push(node)
+            }
+          }
+          scheduleFeedScan(ctx, roots.length ? roots : undefined)
+        })
+        feedObserver.observe(target, { childList: true, subtree: true })
       }
-      scheduleFeedScan(ctx, roots.length ? roots : undefined)
-    })
-    feedObserver.observe(target, { childList: true, subtree: true })
+    }
     if (isFeatureOn(values(ctx), 'autoHideUndoBar')) {
       undoTimer = setInterval(() => {
         document.querySelectorAll('yt-button-renderer #button[aria-label*="Undo"]').forEach((el) => {
@@ -309,8 +317,14 @@ export function stopScriptFeatures(): void {
   for (const runner of runners.values()) runner.stop()
 }
 
+const NAV_REFRESH_RUNNERS = ['sponsor', 'dislikes', 'redirectShorts', 'player'] as const
+
 export function onYoutubeNavigate(ctx: FeatureContext): void {
   if (!ctx.state.enabled) return
-  stopScriptFeatures()
-  startScriptFeatures(ctx)
+  for (const id of NAV_REFRESH_RUNNERS) {
+    const runner = runners.get(id)
+    runner?.stop()
+    runner?.start(ctx)
+  }
+  if (feedTileFiltersActive(ctx)) scanFeeds(ctx)
 }
