@@ -89,56 +89,60 @@ export function AppShell({ children }: { children?: ReactNode }) {
   }, [path])
 
   const content = renderRoute(path)
+  // The DevTools Interceptor panel is a standalone network tool: no toolbox navigation chrome.
+  const chromeless = path === '/devtools/interceptor'
 
   return (
     <div className="flex h-full flex-col overflow-x-clip bg-background">
-      <header
-        className="sticky top-0 z-30 flex h-11 shrink-0 items-center gap-1.5 border-b bg-background/85 px-2.5 backdrop-blur-md @[360px]:gap-2 @[360px]:px-3"
-      >
-        <Link
-          to="/"
-          className="flex min-w-0 items-center gap-2 rounded-md pr-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <BrandLogo size={26} />
-          <span className="truncate text-[13px] font-semibold tracking-tight">{t('home.title')}</span>
-        </Link>
-        <div className="flex-1" />
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-[var(--density-control-h)] gap-1.5 px-2 font-normal text-muted-foreground"
-              aria-label={isHomePath(path) ? t('nav.focusSearch') : t('nav.openCommandPalette')}
-              aria-keyshortcuts="Control+K Meta+K"
-              onClick={() => {
-                if (isHomePath(path)) requestFocusHomeSearch()
-                else openPalette()
-              }}
-            >
-              <SearchIcon className="size-4" />
-              <kbd className="rounded border bg-muted px-1.5 font-sans text-[10px] leading-5 font-medium">
-                {searchShortcutLabel}
-              </kbd>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {isHomePath(path) ? t('nav.focusSearch') : t('nav.commandPalette')}
-          </TooltipContent>
-        </Tooltip>
-        {isHomePath(path) && <NetStatusIndicator />}
-        <ThemeToggle />
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button asChild variant="ghost" size="icon" aria-label={t('nav.settings')}>
-              <Link to="/settings">
-                <SettingsIcon className="size-[18px]" />
-              </Link>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{t('nav.settings')}</TooltipContent>
-        </Tooltip>
-      </header>
+      {!chromeless && (
+        <header className="sticky top-0 z-30 flex h-11 shrink-0 items-center gap-1.5 border-b bg-background/85 px-2.5 backdrop-blur-md @[360px]:gap-2 @[360px]:px-3">
+          <Link
+            to="/"
+            className="flex min-w-0 items-center gap-2 rounded-md pr-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <BrandLogo size={26} />
+            <span className="truncate text-[13px] font-semibold tracking-tight">
+              {t('home.title')}
+            </span>
+          </Link>
+          <div className="flex-1" />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-[var(--density-control-h)] gap-1.5 px-2 font-normal text-muted-foreground"
+                aria-label={isHomePath(path) ? t('nav.focusSearch') : t('nav.openCommandPalette')}
+                aria-keyshortcuts="Control+K Meta+K"
+                onClick={() => {
+                  if (isHomePath(path)) requestFocusHomeSearch()
+                  else openPalette()
+                }}
+              >
+                <SearchIcon className="size-4" />
+                <kbd className="rounded border bg-muted px-1.5 font-sans text-[10px] leading-5 font-medium">
+                  {searchShortcutLabel}
+                </kbd>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isHomePath(path) ? t('nav.focusSearch') : t('nav.commandPalette')}
+            </TooltipContent>
+          </Tooltip>
+          {isHomePath(path) && <NetStatusIndicator />}
+          <ThemeToggle />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button asChild variant="ghost" size="icon" aria-label={t('nav.settings')}>
+                <Link to="/settings">
+                  <SettingsIcon className="size-[18px]" />
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t('nav.settings')}</TooltipContent>
+          </Tooltip>
+        </header>
+      )}
 
       <main
         ref={mainRef}
