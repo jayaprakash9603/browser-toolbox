@@ -17,7 +17,16 @@ export function SettingsTab({ state, patchSettings }: Props) {
     <div className="flex flex-col gap-4 text-sm">
       <label className="flex items-center justify-between gap-4">
         <span>{t('interceptor.settings.deep')}</span>
-        <Switch checked={s.deepIntercept} onCheckedChange={(on) => void patchSettings({ deepIntercept: on })} />
+        <Switch
+          checked={s.deepIntercept}
+          onCheckedChange={(on) => {
+            if (on) {
+              void chrome.permissions
+                .request({ permissions: ['debugger'] })
+                .then((granted) => patchSettings({ deepIntercept: granted }))
+            } else void patchSettings({ deepIntercept: false })
+          }}
+        />
       </label>
       <p className="text-xs text-muted-foreground">{t('interceptor.settings.deepHint')}</p>
       <label className="flex items-center justify-between gap-4">

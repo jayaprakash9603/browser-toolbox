@@ -138,7 +138,7 @@ export function applyReplaceTransform(url: string, from: string, to: string): st
   try {
     const re = new RegExp(from)
     if (!re.test(url)) return null
-    return url.replace(re, to)
+    return url.replace(re, to.replace(/\\(\d)/g, '$$$1'))
   } catch {
     return null
   }

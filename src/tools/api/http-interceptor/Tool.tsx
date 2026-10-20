@@ -56,7 +56,7 @@ export default function HttpInterceptorTool() {
           <RulesTab state={state} onStateChange={setState} />
         </TabsContent>
         <TabsContent value="network">
-          <NetworkTab state={state} />
+          <NetworkTab />
         </TabsContent>
         <TabsContent value="library">
           <LibraryTab state={state} onStateChange={setState} />
