@@ -165,10 +165,25 @@
       'all:initial;position:fixed;z-index:2147483647;width:36px;height:36px;display:none;' +
       'align-items:center;justify-content:center;cursor:pointer;border-radius:8px;' +
       'background:rgba(20,20,20,.72);color:#fff;box-shadow:0 1px 6px rgba(0,0,0,.4);'
-    btn.innerHTML =
-      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
-      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="14" rx="2"/>' +
-      '<rect x="12" y="10" width="8" height="6" rx="1" fill="currentColor"/></svg>'
+    // Built with DOM APIs: innerHTML throws on players that enforce Trusted Types.
+    const NS = 'http://www.w3.org/2000/svg'
+    const svg = document.createElementNS(NS, 'svg')
+    svg.setAttribute('width', '20')
+    svg.setAttribute('height', '20')
+    svg.setAttribute('viewBox', '0 0 24 24')
+    svg.setAttribute('fill', 'none')
+    svg.setAttribute('stroke', 'currentColor')
+    svg.setAttribute('stroke-width', '2')
+    svg.setAttribute('aria-hidden', 'true')
+    const outer = document.createElementNS(NS, 'rect')
+    outer.setAttribute('x', '2'); outer.setAttribute('y', '4'); outer.setAttribute('width', '20')
+    outer.setAttribute('height', '14'); outer.setAttribute('rx', '2')
+    const inner = document.createElementNS(NS, 'rect')
+    inner.setAttribute('x', '12'); inner.setAttribute('y', '10'); inner.setAttribute('width', '8')
+    inner.setAttribute('height', '6'); inner.setAttribute('rx', '1'); inner.setAttribute('fill', 'currentColor')
+    svg.appendChild(outer)
+    svg.appendChild(inner)
+    btn.appendChild(svg)
 
     let hideTimer = 0
     function show() {

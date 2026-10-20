@@ -114,6 +114,12 @@ export async function togglePipInTab(tab?: chrome.tabs.Tab): Promise<PipToggleRe
     const enterResult = enterResults?.[0]?.result
     if (enterResult === 'entered') return { action: 'entered' }
     if (enterResult === 'error') {
+      if (best.frameId !== 0) {
+        notify(
+          'Use the PiP button on the video',
+          'This player is embedded from another site, so Chrome blocks the shortcut. Hover the video and click the Picture-in-Picture button in its top-left corner.',
+        )
+      }
       return { action: 'error', gestureRequired: true }
     }
     notify('No video found', 'Could not start Picture-in-Picture on this page.')
