@@ -79,32 +79,31 @@ export default function SettingsPage() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-        <div className="flex items-center gap-2 px-4 pt-3">
+        <div className="flex items-center gap-2 px-4 py-3">
           <BackButton />
           <div className="min-w-0">
             <h1 className="text-base leading-tight font-semibold">{t('settings.title')}</h1>
             <p className="truncate text-xs text-muted-foreground">{t('settings.description')}</p>
           </div>
         </div>
-        <nav
-          aria-label={t('settings.jumpTo')}
-          className="flex gap-1.5 overflow-x-auto px-4 py-2.5 [scrollbar-width:none]"
-        >
+
+      </div>
+
+      <div className="flex flex-col gap-6 p-4 pb-8">
+        <nav aria-label={t('settings.jumpTo')} className="flex flex-wrap gap-2">
           {sections.map(({ id, icon: Icon, label }) => (
             <button
               key={id}
               type="button"
               onClick={() => jump(id)}
-              className="inline-flex min-h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border bg-card px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-full border bg-card px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
-              <Icon className="size-3.5" aria-hidden />
+              <Icon className="size-3.5 text-primary" aria-hidden />
               {label}
             </button>
           ))}
         </nav>
-      </div>
 
-      <div className="flex flex-col gap-6 p-4 pb-8">
         <SettingsGroup
           id="appearance"
           icon={BrushIcon}
