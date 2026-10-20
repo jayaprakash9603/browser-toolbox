@@ -82,7 +82,7 @@ async function openDownloadPrompt(params: Record<string, string>): Promise<numbe
   const query = new URLSearchParams({ mode: 'download', ...params })
   const url = chrome.runtime.getURL(`blocked.html?${query}`)
   try {
-    const win = await chrome.windows.create({ url, type: 'popup', width: 460, height: 420, focused: true })
+    const win = await chrome.windows.create({ url, type: 'popup', width: 440, height: 520, focused: true })
     return win?.id
   } catch (error) {
     logger.warn('open download prompt failed', error)
