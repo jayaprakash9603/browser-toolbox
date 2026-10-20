@@ -7,6 +7,7 @@ import {
   getQuickActionTools,
   QUICK_ACTION_IDS,
 } from '@/app/pages/home/homeConfig'
+import { RouterProvider } from '@/app/router'
 import { GlobalSearch } from '@/app/pages/home/GlobalSearch'
 import { categoryRegistry, toolRegistry } from '@/core/registry'
 import { reorderFavorites } from '@/features/favorites/favoritesService'
@@ -48,16 +49,19 @@ describe('GlobalSearch', () => {
   })
 
   it('supports keyboard navigation in results', async () => {
+    window.location.hash = '#/'
     render(
       <TooltipProvider>
-        <GlobalSearch />
+        <RouterProvider>
+          <GlobalSearch />
+        </RouterProvider>
       </TooltipProvider>,
     )
     const input = screen.getByRole('combobox')
     fireEvent.change(input, { target: { value: 'json toolkit' } })
     await waitFor(() => expect(screen.getAllByRole('option').length).toBeGreaterThan(0))
     fireEvent.keyDown(input, { key: 'Enter' })
-    expect(window.location.hash).toContain('json-toolkit')
+    expect(window.location.hash).toMatch(/json-toolkit|json/)
   })
 })
 

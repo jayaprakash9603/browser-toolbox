@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+
+import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 import { RefreshCwIcon } from 'lucide-react'
 
@@ -14,6 +16,7 @@ import type { StorageSnapshot } from '@/chrome/content/index'
 export default function StorageInspectorTool() {
   const { t } = useTranslation()
   const tool = useStorageTool('storage.inspector')
+  const [tab, setTab] = useDeepLinkTab('tab', ['local', 'session'] as const, 'local')
   const [snapshot, setSnapshot] = useState<StorageSnapshot | null>(null)
   const [query, setQuery] = useState('')
   const [loaded, setLoaded] = useState(false)
@@ -81,7 +84,7 @@ export default function StorageInspectorTool() {
             {t('storage.noAccess')}
           </p>
         ) : (
-          <Tabs defaultValue="local" className="min-h-0 flex-1">
+          <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="min-h-0 flex-1">
             <TabsList>
               <TabsTrigger value="local">
                 localStorage{' '}

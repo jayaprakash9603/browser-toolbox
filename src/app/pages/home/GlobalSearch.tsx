@@ -3,15 +3,18 @@ import { SearchIcon, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useNavigate } from '@/app/navigation'
 import { toolRegistry } from '@/core/registry'
-import { filterTools } from '@/features/search/filterTools'
+import {
+  flattenGroupedSearchResults,
+  groupSearchResults,
+  searchAll,
+  type SearchItem,
+} from '@/features/search/searchIndex'
 import { TOOLBOX_FOCUS_HOME_SEARCH } from '@/features/search/searchFocus'
-import { Link } from '@/app/router'
+import { getToolDescription } from '@/i18n/toolLabels'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
-import { useFavorites } from '@/shared/hooks/useFavorites'
-import { useRecentTools } from '@/shared/hooks/useRecentTools'
-import { useToolLabels } from '@/shared/hooks/useToolLabels'
 import { SEARCH_SHORTCUT_LABEL } from '@/shared/lib/keyboardShortcut'
 import { cn } from '@/shared/utils/cn'
 
@@ -21,21 +24,25 @@ interface GlobalSearchProps {
   className?: string
 }
 
+const LIMITS = { options: 10, settings: 5, tools: 8 }
+
 export function GlobalSearch({ compact = false, className }: GlobalSearchProps) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const listId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
-  const { favorites } = useFavorites()
-  const { recent } = useRecentTools()
 
-  const tools = toolRegistry.getAll()
-  const { results } = useMemo(
-    () => filterTools(tools, query, favorites, recent.map((r) => r.toolId)),
-    [tools, query, favorites, recent],
-  )
+  const sections = useMemo(() => {
+    const grouped = groupSearchResults(searchAll(query))
+    const options = grouped.options.slice(0, LIMITS.options)
+    const settings = grouped.settings.slice(0, LIMITS.settings)
+    const tools = grouped.tools.slice(0, LIMITS.tools)
+    const flat = flattenGroupedSearchResults({ options, settings, tools }, LIMITS)
+    return { options, settings, tools, flat }
+  }, [query])
 
   const showResults = open && query.trim().length > 0
 
@@ -48,12 +55,16 @@ export function GlobalSearch({ compact = false, className }: GlobalSearchProps) 
     return () => window.removeEventListener(TOOLBOX_FOCUS_HOME_SEARCH, onFocus)
   }, [])
 
-  const selectTool = useCallback(
+  const selectItem = useCallback(
     (index: number) => {
-      const tool = results[index]
-      if (tool) window.location.hash = tool.route
+      const item = sections.flat[index]
+      if (item) {
+        setQuery('')
+        setOpen(false)
+        navigate(item.route)
+      }
     },
-    [results],
+    [sections.flat, navigate],
   )
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -63,18 +74,22 @@ export function GlobalSearch({ compact = false, className }: GlobalSearchProps) 
       inputRef.current?.blur()
       return
     }
-    if (!showResults || results.length === 0) return
+    if (!showResults || sections.flat.length === 0) return
     if (event.key === 'ArrowDown') {
       event.preventDefault()
-      setActiveIndex((i) => (i + 1) % results.length)
+      setActiveIndex((i) => (i + 1) % sections.flat.length)
     } else if (event.key === 'ArrowUp') {
       event.preventDefault()
-      setActiveIndex((i) => (i - 1 + results.length) % results.length)
+      setActiveIndex((i) => (i - 1 + sections.flat.length) % sections.flat.length)
     } else if (event.key === 'Enter') {
       event.preventDefault()
-      selectTool(activeIndex)
+      selectItem(activeIndex)
     }
   }
+
+  const optionsStart = 0
+  const settingsStart = sections.options.length
+  const toolsStart = settingsStart + sections.settings.length
 
   return (
     <div
@@ -138,55 +153,136 @@ export function GlobalSearch({ compact = false, className }: GlobalSearchProps) 
 
       <AnimatePresence>
         {showResults && (
-          <motion.ul
+          <motion.div
             id={listId}
             role="listbox"
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.18 }}
-            className="mt-2 max-h-56 overflow-y-auto rounded-xl border bg-popover p-1 shadow-md"
+            className="mt-2 max-h-[min(24rem,55vh)] overflow-y-auto rounded-xl border bg-popover p-1 shadow-md"
           >
-            {results.length === 0 ? (
-              <li className="px-3 py-4 text-center text-tool-desc">{t('home.noSearchResults')}</li>
+            {sections.flat.length === 0 ? (
+              <p className="px-3 py-4 text-center text-tool-desc">{t('home.noSearchResults')}</p>
             ) : (
-              results.slice(0, 12).map((tool, index) => (
-                <SearchResultRow
-                  key={tool.id}
-                  tool={tool}
-                  id={`${listId}-option-${index}`}
-                  active={index === activeIndex}
-                  onHover={() => setActiveIndex(index)}
-                />
-              ))
+              <>
+                {sections.options.length > 0 && (
+                  <SearchGroup
+                    heading={t('palette.options')}
+                    items={sections.options}
+                    startIndex={optionsStart}
+                    listId={listId}
+                    activeIndex={activeIndex}
+                    onHover={setActiveIndex}
+                    onSelect={selectItem}
+                  />
+                )}
+                {sections.settings.length > 0 && (
+                  <SearchGroup
+                    heading={t('palette.settings')}
+                    items={sections.settings}
+                    startIndex={settingsStart}
+                    listId={listId}
+                    activeIndex={activeIndex}
+                    onHover={setActiveIndex}
+                    onSelect={selectItem}
+                  />
+                )}
+                {sections.tools.length > 0 && (
+                  <SearchGroup
+                    heading={t('palette.allTools')}
+                    items={sections.tools}
+                    startIndex={toolsStart}
+                    listId={listId}
+                    activeIndex={activeIndex}
+                    onHover={setActiveIndex}
+                    onSelect={selectItem}
+                  />
+                )}
+              </>
             )}
-          </motion.ul>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
   )
 }
 
+function SearchGroup({
+  heading,
+  items,
+  startIndex,
+  listId,
+  activeIndex,
+  onHover,
+  onSelect,
+}: {
+  heading: string
+  items: SearchItem[]
+  startIndex: number
+  listId: string
+  activeIndex: number
+  onHover: (index: number) => void
+  onSelect: (index: number) => void
+}) {
+  return (
+    <div className="py-0.5">
+      <p className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {heading}
+      </p>
+      <ul>
+        {items.map((item, offset) => {
+          const index = startIndex + offset
+          return (
+            <SearchResultRow
+              key={item.id}
+              item={item}
+              id={`${listId}-option-${index}`}
+              active={index === activeIndex}
+              onHover={() => onHover(index)}
+              onSelect={() => onSelect(index)}
+            />
+          )
+        })}
+      </ul>
+    </div>
+  )
+}
+
 function SearchResultRow({
-  tool,
+  item,
   id,
   active,
   onHover,
+  onSelect,
 }: {
-  tool: ReturnType<typeof toolRegistry.getAll>[number]
+  item: SearchItem
   id: string
   active: boolean
   onHover: () => void
+  onSelect: () => void
 }) {
-  const Icon = tool.icon
-  const { name, description } = useToolLabels(tool)
+  const { t } = useTranslation()
+  const Icon = item.icon
+  const tool = item.toolId ? toolRegistry.get(item.toolId) : undefined
+  const subtitle =
+    item.kind === 'tool' && tool ? getToolDescription(tool, t) : item.breadcrumb
+
+  const kindLabel =
+    item.kind === 'option'
+      ? t('home.searchKindOption', { defaultValue: 'Option' })
+      : item.kind === 'setting'
+        ? t('home.searchKindSetting', { defaultValue: 'Setting' })
+        : null
+
   return (
     <li id={id} role="option" aria-selected={active}>
-      <Link
-        to={tool.route}
+      <button
+        type="button"
         onMouseEnter={onHover}
+        onClick={onSelect}
         className={cn(
-          'flex items-center gap-2.5 rounded-lg px-2.5 py-2 outline-none transition-colors',
+          'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left outline-none transition-colors',
           active ? 'bg-accent text-accent-foreground' : 'hover:bg-muted/60',
         )}
       >
@@ -194,10 +290,17 @@ function SearchResultRow({
           <Icon className="size-4" aria-hidden />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-tool-name">{name}</span>
-          <span className="block truncate text-tool-desc">{description}</span>
+          <span className="flex items-center gap-1.5">
+            <span className="truncate text-tool-name">{item.title}</span>
+            {kindLabel && (
+              <span className="shrink-0 rounded bg-muted px-1 py-0.5 text-[9px] font-medium uppercase text-muted-foreground">
+                {kindLabel}
+              </span>
+            )}
+          </span>
+          <span className="block truncate text-tool-desc">{subtitle}</span>
         </span>
-      </Link>
+      </button>
     </li>
   )
 }

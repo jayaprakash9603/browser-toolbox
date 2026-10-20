@@ -1,4 +1,6 @@
 import { useState } from 'react'
+
+import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 import { DicesIcon } from 'lucide-react'
 
@@ -17,7 +19,11 @@ type RandomKind = 'number' | 'string' | 'hex' | 'uuid' | 'nanoid'
 export default function RandomGeneratorTool() {
   const { t } = useTranslation()
   const tool = useSecurityTool('security.random-generator')
-  const [kind, setKind] = useState<RandomKind>('string')
+  const [kind, setKind] = useDeepLinkTab(
+    'tab',
+    ['number', 'string', 'hex', 'uuid', 'nanoid'] as const,
+    'string',
+  )
   const [minText, setMinText] = useState('1')
   const [maxText, setMaxText] = useState('100')
   const [lengthText, setLengthText] = useState('16')

@@ -1,4 +1,6 @@
 import { useState } from 'react'
+
+import { useFocusTarget } from '@/shared/hooks/useFocusTarget'
 import { useTranslation } from 'react-i18next'
 
 import { ToolPage } from '@/shared/components/ToolPage'
@@ -11,6 +13,7 @@ import { CASE_STYLES, convertCase, type CaseStyle } from '@/core/engines/text'
 export default function CaseConverterTool() {
   const { t } = useTranslation()
   const tool = useTransformTool('text.case-converter')
+  useFocusTarget()
   const [input, setInput] = useState('')
   const [result, setResult] = useState<{ style: CaseStyle; text: string } | null>(null)
 
@@ -25,6 +28,7 @@ export default function CaseConverterTool() {
               key={style.id}
               variant={result?.style === style.id ? 'default' : 'outline'}
               size="xs"
+              data-search-id={style.id}
               onClick={() => convert(style.id)}
               disabled={!input.trim()}
             >

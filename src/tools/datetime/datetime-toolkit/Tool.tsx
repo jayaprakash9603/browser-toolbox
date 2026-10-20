@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+
+import { useDeepLinkParam, useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -28,7 +30,11 @@ const CRON_EXAMPLE = '30 9 * * 1-5'
 export default function DateTimeToolkitTool() {
   const { t } = useTranslation()
   const tool = useDateTimeTool('datetime.toolkit')
-  const [tab, setTab] = useState<'timestamp' | 'calc' | 'zones' | 'cron'>('timestamp')
+  const [tab, setTab] = useDeepLinkTab(
+    'tab',
+    ['timestamp', 'calc', 'zones', 'cron'] as const,
+    'timestamp',
+  )
 
   const [dateA, setDateA] = useState('')
   const [dateB, setDateB] = useState('')
@@ -180,6 +186,11 @@ function Row({ label, value }: { label: string; value: string }) {
 
 function TimestampPanel() {
   const { t } = useTranslation()
+  const [subtab, setSubtab] = useDeepLinkParam(
+    'subtab',
+    ['toDate', 'toTimestamp', 'now'] as const,
+    'toDate',
+  )
   const [tsInput, setTsInput] = useState('')
   const [dateInput, setDateInput] = useState('')
   const parsed = tsInput.trim() ? parseTimestamp(tsInput) : null
@@ -187,7 +198,7 @@ function TimestampPanel() {
   const validDate = fromDate && !Number.isNaN(fromDate.getTime()) ? fromDate : null
 
   return (
-    <Tabs defaultValue="toDate">
+    <Tabs value={subtab} onValueChange={(v) => setSubtab(v as typeof subtab)}>
       <TabsList>
         <TabsTrigger value="toDate">{t('dev.tabToDate')}</TabsTrigger>
         <TabsTrigger value="toTimestamp">{t('dev.tabToTimestamp')}</TabsTrigger>

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+
+import { useDeepLinkParam } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 import { RefreshCwIcon } from 'lucide-react'
 
@@ -8,13 +10,11 @@ import { Button } from '@/shared/components/ui/button'
 import { CopyButton } from '@/shared/components/CopyButton'
 import { useWebTool, getPageInfo } from '../_shared'
 
-type LinkFilter = 'all' | 'internal' | 'external'
-
 export default function LinkToolkitTool() {
   const { t } = useTranslation()
   const tool = useWebTool('web.link-toolkit')
   const [links, setLinks] = useState<{ href: string; text: string; internal: boolean }[]>([])
-  const [filter, setFilter] = useState<LinkFilter>('all')
+  const [filter, setFilter] = useDeepLinkParam('filter', ['all', 'internal', 'external'] as const, 'all')
   const [loaded, setLoaded] = useState(false)
 
   const load = async () => {

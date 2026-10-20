@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+
+import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 import { PauseIcon, PlayIcon, RotateCcwIcon } from 'lucide-react'
 
@@ -19,7 +21,11 @@ function formatMs(ms: number): string {
 export default function TimerTool() {
   const { t } = useTranslation()
   const tool = useProductivityTool('productivity.timer')
-  const [tab, setTab] = useState<'countdown' | 'stopwatch' | 'pomodoro'>('countdown')
+  const [tab, setTab] = useDeepLinkTab(
+    'tab',
+    ['countdown', 'stopwatch', 'pomodoro'] as const,
+    'countdown',
+  )
 
   const [minutesText, setMinutesText] = useState('5')
   const minutes = parseNumberInRange(minutesText, 1, 600)

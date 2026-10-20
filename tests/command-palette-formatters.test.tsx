@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { I18nextProvider } from 'react-i18next'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
@@ -38,8 +38,21 @@ describe('formatter search shortcuts', () => {
       </I18nextProvider>,
     )
 
-    await user.type(screen.getByPlaceholderText('Search tools…'), 'JSON Formatter')
-    await user.click(await screen.findByRole('option', { name: /JSON Formatter/ }))
+    fireEvent.change(screen.getByPlaceholderText('Search tools…'), {
+      target: { value: 'code formatter json' },
+    })
+    await waitFor(() => {
+      const options = screen.getAllByRole('option')
+      expect(
+        options.some((node) => node.getAttribute('data-value')?.includes('text.formatter:json')),
+      ).toBe(true)
+    })
+    const options = screen.getAllByRole('option')
+    const jsonFormat = options.find((node) =>
+      node.getAttribute('data-value')?.includes('text.formatter:json'),
+    )
+    expect(jsonFormat).toBeTruthy()
+    await user.click(jsonFormat!)
 
     expect(window.location.hash).toBe('#/tools/text/formatter?format=json')
   }, 15_000)

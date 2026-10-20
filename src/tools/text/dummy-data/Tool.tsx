@@ -1,4 +1,6 @@
 import { useState } from 'react'
+
+import { useDeepLinkParam } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 
 import { generateDummyText, type DummyTextVariant, type LoremMode } from '@/core/engines/text'
@@ -12,8 +14,12 @@ import { ToolActions, useTransformTool } from '../_shared'
 export default function DummyDataTool() {
   const { t } = useTranslation()
   const tool = useTransformTool('text.dummy-data')
-  const [mode, setMode] = useState<LoremMode>('paragraphs')
-  const [variant, setVariant] = useState<DummyTextVariant>('lorem')
+  const [mode, setMode] = useDeepLinkParam(
+    'mode',
+    ['paragraphs', 'sentences', 'words'] as const,
+    'paragraphs',
+  )
+  const [variant, setVariant] = useDeepLinkParam('variant', ['lorem', 'random'] as const, 'lorem')
   const [countText, setCountText] = useState('3')
   const [output, setOutput] = useState('')
 

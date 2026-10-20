@@ -14,6 +14,7 @@ import { ToolPage } from '@/shared/components/ToolPage'
 import { Switch } from '@/shared/components/ui/switch'
 import { Input } from '@/shared/components/ui/input'
 
+import { useFocusTarget } from '@/shared/hooks/useFocusTarget'
 import { useSitesTool } from '../_shared'
 import { FeatureSection } from './FeatureSection'
 import { PresetBar } from './PresetBar'
@@ -23,6 +24,7 @@ export default function YoutubeControlPanelTool() {
   const { t } = useTranslation()
   const tool = useSitesTool('sites.youtube')
   const { state, patch } = useYoutubeSettings()
+  useFocusTarget()
   const [query, setQuery] = useState('')
 
   const active = useMemo(() => (state ? countActiveFeatures(state) : 0), [state])

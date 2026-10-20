@@ -46,6 +46,13 @@ function toolHaystack(tool: ToolDefinition, t: typeof i18n.t): string {
     .toLowerCase()
 }
 
+function wordsFromId(id: string): string {
+  return id
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/[-_]/g, ' ')
+    .toLowerCase()
+}
+
 function entryHaystack(
   tool: ToolDefinition,
   entry: ToolSearchEntry,
@@ -54,8 +61,10 @@ function entryHaystack(
 ): string {
   return [
     toolHaystack(tool, t),
+    tool.id.replace(/\./g, ' '),
     optionLabel,
     entry.fallbackLabel,
+    wordsFromId(entry.id),
     ...(entry.keywords ?? []),
     ...(entry.aliases ?? []),
   ]
@@ -181,11 +190,41 @@ export function searchAll(query: string): SearchItem[] {
 
       let score = scoreMatch(haystack, name, aliases, tokens, q)
       if (item.kind === 'tool') score += 5
-      if (item.kind === 'option') score += 25
+      if (item.kind === 'option') {
+        score += 35
+        const label = name.toLowerCase()
+        const labelHits = tokens.filter((token) => label.includes(token)).length
+        score += labelHits * 20
+      }
+      if (item.kind === 'setting') score += 30
       return { item, score }
     })
     .filter((row) => row.score > 0)
 
-  scored.sort((a, b) => b.score - a.score)
+  scored.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score
+    const kindRank = (kind: SearchItemKind) =>
+      kind === 'option' ? 0 : kind === 'setting' ? 1 : 2
+    return kindRank(a.item.kind) - kindRank(b.item.kind)
+  })
   return scored.map((row) => row.item)
+}
+
+export function groupSearchResults(items: SearchItem[]) {
+  return {
+    options: items.filter((item) => item.kind === 'option'),
+    settings: items.filter((item) => item.kind === 'setting'),
+    tools: items.filter((item) => item.kind === 'tool'),
+  }
+}
+
+export function flattenGroupedSearchResults(
+  grouped: ReturnType<typeof groupSearchResults>,
+  limits = { options: 10, settings: 5, tools: 8 },
+): SearchItem[] {
+  return [
+    ...grouped.options.slice(0, limits.options),
+    ...grouped.settings.slice(0, limits.settings),
+    ...grouped.tools.slice(0, limits.tools),
+  ]
 }

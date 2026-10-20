@@ -1,4 +1,6 @@
 import { useState } from 'react'
+
+import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -32,7 +34,11 @@ interface LineToolResult {
 export default function LineToolsTool() {
   const { t } = useTranslation()
   const tool = useTransformTool('text.line-tools')
-  const [op, setOp] = useState<LineOp>('dedupe')
+  const [op, setOp] = useDeepLinkTab(
+    'tab',
+    ['dedupe', 'sort', 'reverse', 'shuffle', 'numbering', 'empty'] as const,
+    'dedupe',
+  )
   const [input, setInput] = useState('')
   const [caseSensitive, setCaseSensitive] = useState(false)
   const [trimFirst, setTrimFirst] = useState(true)

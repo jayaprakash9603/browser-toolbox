@@ -31,6 +31,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Checkbox } from '@/shared/components/ui/checkbox'
 import { Input } from '@/shared/components/ui/input'
 import { Switch } from '@/shared/components/ui/switch'
+import { useFocusTarget } from '@/shared/hooks/useFocusTarget'
 import { cn } from '@/shared/utils/cn'
 import { useWebTool } from '../_shared'
 import { BundleProgress } from './BundleProgress'
@@ -118,6 +119,7 @@ function jobOutcome(job: HtmlBundleJob | null, t: Translate) {
 export default function HtmlBundleTool() {
   const { t } = useTranslation()
   const tool = useWebTool('web.html-bundle')
+  useFocusTarget()
   const job = useHtmlBundleJob()
   const [entries, setEntries] = useState<HtmlLinkCandidate[]>([])
   const [pageUrl, setPageUrl] = useState('')
@@ -510,11 +512,11 @@ export default function HtmlBundleTool() {
         )}
 
         <div className="flex flex-col gap-2 rounded-md border p-2 text-[11px]">
-          <label className="flex items-center justify-between gap-2">
+          <label className="flex items-center justify-between gap-2" data-search-id="htmlOnly">
             {t('htmlBundle.htmlOnly')}
             <Switch checked={htmlOnly} onCheckedChange={setHtmlOnly} />
           </label>
-          <label className="flex items-center justify-between gap-2">
+          <label className="flex items-center justify-between gap-2" data-search-id="sameFolderOnly">
             {t('htmlBundle.sameFolderOnly')}
             <Switch checked={sameFolderOnly} onCheckedChange={setSameFolderOnly} />
           </label>

@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+
+import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 import { AlertTriangleIcon } from 'lucide-react'
 
@@ -28,7 +30,7 @@ const FLAG_LABELS: { key: keyof RegexFlags; label: string; title: string }[] = [
 export default function RegexToolkitTool() {
   const { t } = useTranslation()
   const tool = useDevTool('developer.regex-toolkit')
-  const [tab, setTab] = useState<'test' | 'replace' | 'library'>('test')
+  const [tab, setTab] = useDeepLinkTab('tab', ['test', 'replace', 'library'] as const, 'test')
   const [pattern, setPattern] = useState('')
   const [flags, setFlags] = useState<RegexFlags>(DEFAULT_REGEX_FLAGS)
   const [input, setInput] = useState('')

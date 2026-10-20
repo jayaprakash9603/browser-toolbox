@@ -22,6 +22,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { CopyButton } from '@/shared/components/CopyButton'
 import { JsonErrorView } from '@/tools/developer/_shared'
+import { useFocusTarget } from '@/shared/hooks/useFocusTarget'
 import { useCaptureTool } from '../_shared'
 
 const TOOLS: { id: AnnotationTool; label: string }[] = [
@@ -37,6 +38,7 @@ const TOOLS: { id: AnnotationTool; label: string }[] = [
 export default function CaptureTool() {
   const { t } = useTranslation()
   const tool = useCaptureTool('screenshots.capture')
+  useFocusTarget()
   const [shot, setShot] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [capturing, setCapturing] = useState(false)
@@ -206,13 +208,30 @@ export default function CaptureTool() {
     <ToolPage tool={tool}>
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap gap-1.5">
-          <Button size="sm" onClick={() => void capture('visible')} disabled={capturing}>
+          <Button
+            size="sm"
+            data-search-id="capture-visible"
+            onClick={() => void capture('visible')}
+            disabled={capturing}
+          >
             <CameraIcon /> {capturing ? t('capture.capturing') : t('capture.captureVisible')}
           </Button>
-          <Button size="sm" variant="outline" onClick={() => void capture('area')} disabled={capturing}>
+          <Button
+            size="sm"
+            variant="outline"
+            data-search-id="capture-area"
+            onClick={() => void capture('area')}
+            disabled={capturing}
+          >
             <FrameIcon /> {t('capture.captureArea')}
           </Button>
-          <Button size="sm" variant="outline" onClick={() => void capture('full')} disabled={capturing}>
+          <Button
+            size="sm"
+            variant="outline"
+            data-search-id="capture-full"
+            onClick={() => void capture('full')}
+            disabled={capturing}
+          >
             <UnfoldVerticalIcon /> {t('capture.captureFull')}
           </Button>
         </div>

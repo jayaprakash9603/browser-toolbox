@@ -31,9 +31,11 @@ import {
 import { AdblockSettingsSection } from '@/app/pages/settings/AdblockSettingsSection'
 import { ProtectionSettingsSection } from '@/app/pages/settings/ProtectionSettingsSection'
 import { SitesSettingsSection } from '@/app/pages/settings/SitesSettingsSection'
+import { useFocusTarget } from '@/shared/hooks/useFocusTarget'
 
 export default function SettingsPage() {
   const { t } = useTranslation()
+  useFocusTarget()
   const [settings, setSettings] = useState<Settings | null>(null)
   const [confirm, setConfirm] = useState<'clipboard' | 'recent' | 'reset' | null>(null)
 
@@ -53,7 +55,7 @@ export default function SettingsPage() {
       <h1 className="mb-1 text-sm font-semibold">{t('settings.title')}</h1>
       <p className="mb-4 text-xs text-muted-foreground">{t('settings.description')}</p>
 
-      <SettingRow label={t('settings.theme')} description={t('settings.themeDescription')}>
+      <SettingRow searchId="theme" label={t('settings.theme')} description={t('settings.themeDescription')}>
         <Select
           value={settings.theme}
           onValueChange={(value) => void update({ theme: value as ThemeMode })}
@@ -69,7 +71,7 @@ export default function SettingsPage() {
         </Select>
       </SettingRow>
 
-      <SettingRow label={t('settings.density')} description={t('settings.densityDescription')}>
+      <SettingRow searchId="density" label={t('settings.density')} description={t('settings.densityDescription')}>
         <Select
           value={settings.density}
           onValueChange={(value) => void update({ density: value as Density })}
@@ -84,7 +86,7 @@ export default function SettingsPage() {
         </Select>
       </SettingRow>
 
-      <div className="mb-4 @container">
+      <div className="mb-4 @container" data-search-id="palette">
         <p className="mb-1 text-xs font-medium">{t('settings.palette')}</p>
         <p className="mb-2 text-[11px] text-muted-foreground">{t('settings.paletteDescription')}</p>
         <PalettePicker
@@ -117,7 +119,11 @@ export default function SettingsPage() {
         {t('settings.clipboardPrivacy')}
       </p>
 
-      <SettingRow label={t('settings.clipboardHistory')} description={t('settings.clipboardHistoryDescription')}>
+      <SettingRow
+        searchId="clipboardHistory"
+        label={t('settings.clipboardHistory')}
+        description={t('settings.clipboardHistoryDescription')}
+      >
         <Switch
           checked={settings.clipboardHistoryEnabled}
           onCheckedChange={(checked) => void update({ clipboardHistoryEnabled: checked })}
@@ -125,7 +131,11 @@ export default function SettingsPage() {
         />
       </SettingRow>
 
-      <SettingRow label={t('settings.historySize')} description={t('settings.historySizeDescription')}>
+      <SettingRow
+        searchId="historySize"
+        label={t('settings.historySize')}
+        description={t('settings.historySizeDescription')}
+      >
         <HistorySizeField
           saved={settings.clipboardHistoryLimit}
           label={t('settings.clipboardHistorySize')}
@@ -139,13 +149,13 @@ export default function SettingsPage() {
       </h2>
 
       <div className="flex flex-col gap-2">
-        <Button variant="outline" size="sm" onClick={() => setConfirm('clipboard')}>
+        <Button variant="outline" size="sm" data-search-id="clearClipboard" onClick={() => setConfirm('clipboard')}>
           {t('settings.clearClipboardHistory')}
         </Button>
-        <Button variant="outline" size="sm" onClick={() => setConfirm('recent')}>
+        <Button variant="outline" size="sm" data-search-id="clearRecent" onClick={() => setConfirm('recent')}>
           {t('settings.clearRecentTools')}
         </Button>
-        <Button variant="destructive" size="sm" onClick={() => setConfirm('reset')}>
+        <Button variant="destructive" size="sm" data-search-id="resetAll" onClick={() => setConfirm('reset')}>
           {t('settings.resetAll')}
         </Button>
       </div>
@@ -217,16 +227,18 @@ function HistorySizeField({
 }
 
 function SettingRow({
+  searchId,
   label,
   description,
   children,
 }: {
+  searchId?: string
   label: string
   description?: string
   children: React.ReactNode
 }) {
   return (
-    <div className="mb-3 flex items-center justify-between gap-4">
+    <div className="mb-3 flex items-center justify-between gap-4" data-search-id={searchId}>
       <div className="min-w-0">
         <p className="text-xs font-medium">{label}</p>
         {description && <p className="text-[11px] text-muted-foreground">{description}</p>}

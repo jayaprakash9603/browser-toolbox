@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+
+import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { SparklesIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -17,7 +19,7 @@ type XmlTab = 'format' | 'validate' | 'convert'
 export default function XmlToolkitTool() {
   const { t } = useTranslation()
   const tool = useDevTool('developer.xml-toolkit')
-  const [tab, setTab] = useState<XmlTab>('format')
+  const [tab, setTab] = useDeepLinkTab('tab', ['format', 'validate', 'convert'] as const, 'format')
   const [input, setInput] = useState('')
 
   const validation = useMemo(() => (input.trim() ? validateXml(input) : null), [input])

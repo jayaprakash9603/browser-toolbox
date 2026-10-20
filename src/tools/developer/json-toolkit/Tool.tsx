@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ChevronDownIcon, ChevronRightIcon, SparklesIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -22,12 +22,18 @@ import { Input } from '@/shared/components/ui/input'
 import { Segmented } from '@/shared/components/ui/segmented'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import type { EditorLanguage } from '@/shared/lib/code-editor/languages'
+import { useDeepLinkParam, useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { JsonErrorView, OutputPane, useDevTool } from '../_shared'
+import {
+  JSON_CONVERT_TARGETS,
+  JSON_TABS,
+  type JsonConvertTarget,
+  type JsonTab,
+} from './tabs'
 
 const EXAMPLE = '{\n  "name": "Ada",\n  "tags": ["dev", "qa"],\n  "active": true\n}'
 
-type JsonTab = 'format' | 'validate' | 'tree' | 'path' | 'convert'
-type ConvertTarget = 'csv' | 'xml' | 'ts' | 'markdown'
+type ConvertTarget = JsonConvertTarget
 type Indent = '2' | '4' | 'tab'
 
 const CONVERT_LANGUAGE: Record<ConvertTarget, EditorLanguage> = {
@@ -40,11 +46,17 @@ const CONVERT_LANGUAGE: Record<ConvertTarget, EditorLanguage> = {
 export default function JsonToolkitTool() {
   const { t } = useTranslation()
   const tool = useDevTool('developer.json-toolkit')
-  const [tab, setTab] = useState<JsonTab>('format')
+  const [tab, setTab] = useDeepLinkTab('tab', JSON_TABS, 'format')
   const [input, setInput] = useState('')
   const [indent, setIndent] = useState<Indent>('2')
   const [pathQuery, setPathQuery] = useState('$')
-  const [convertTarget, setConvertTarget] = useState<ConvertTarget>('csv')
+  const [convertTarget, setConvertTarget] = useDeepLinkParam('target', JSON_CONVERT_TARGETS, 'csv')
+
+  useEffect(() => {
+    if (tab === 'convert' && !JSON_CONVERT_TARGETS.includes(convertTarget)) {
+      setConvertTarget('csv')
+    }
+  }, [tab, convertTarget, setConvertTarget])
 
   const parsed = useMemo(() => parseJson(input), [input])
   const valid = parsed.ok

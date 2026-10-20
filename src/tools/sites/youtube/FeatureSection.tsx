@@ -1,4 +1,7 @@
 import { useMemo, useState } from 'react'
+
+import { useRouter } from '@/app/router'
+import { parseSearchParam } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 import { ChevronDownIcon } from 'lucide-react'
 
@@ -36,7 +39,7 @@ export function FeatureSection({
   onResetSection: () => void
 }) {
   const { t } = useTranslation()
-  const [open, setOpen] = useState(true)
+  const { search, navKey } = useRouter()
   const features = useMemo(() => {
     const q = query.trim().toLowerCase()
     return YOUTUBE_FEATURES.filter((f) => {
@@ -50,6 +53,22 @@ export function FeatureSection({
     })
   }, [section, query, t])
 
+  const shouldExpand = useMemo(() => {
+    const focusId = parseSearchParam(search, 'focus')
+    const sectionParam = parseSearchParam(search, 'section')
+    if (focusId === `section-${section}` || sectionParam === section) return true
+    if (focusId && features.some((f) => f.id === focusId)) return true
+    return false
+  }, [search, section, features])
+
+  const [open, setOpen] = useState(true)
+  const [expandSync, setExpandSync] = useState(`${search}|${navKey}`)
+  const expandKey = `${search}|${navKey}`
+  if (shouldExpand && expandKey !== expandSync) {
+    setExpandSync(expandKey)
+    if (!open) setOpen(true)
+  }
+
   if (!features.length) return null
 
   const active = features.filter((f) => isActive(state, f.id, f.default)).length
@@ -59,6 +78,7 @@ export function FeatureSection({
       <button
         type="button"
         className="flex w-full cursor-pointer items-center justify-between gap-2 px-3 py-2.5 text-left"
+        data-search-id={`section-${section}`}
         onClick={() => setOpen((o) => !o)}
       >
         <span className="text-xs font-semibold">{t(sectionLabelKey(section))}</span>

@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+
+import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { SparklesIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -23,7 +25,7 @@ const EXAMPLE =
 export default function SqlToolkitTool() {
   const { t } = useTranslation()
   const tool = useDevTool('developer.sql-toolkit')
-  const [tab, setTab] = useState<'format' | 'minify'>('format')
+  const [tab, setTab] = useDeepLinkTab('tab', ['format', 'minify'] as const, 'format')
   const [input, setInput] = useState('')
   const [dialect, setDialect] = useState<SqlDialect>('sql')
 

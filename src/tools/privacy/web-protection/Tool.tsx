@@ -14,6 +14,7 @@ import { StaggerChildren, StaggerItem } from '@/shared/components/motion/Stagger
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
 
+import { useFocusTarget } from '@/shared/hooks/useFocusTarget'
 import { usePrivacyTool } from '../_shared'
 
 export default function WebProtectionTool() {
@@ -21,6 +22,7 @@ export default function WebProtectionTool() {
   const tool = usePrivacyTool('privacy.web-protection')
   const { state, stats, patch, refreshStats } = useProtection()
   const [threats, setThreats] = useState<ThreatsFile | null>(null)
+  useFocusTarget()
 
   useEffect(() => {
     void fetch(chrome.runtime.getURL(PROTECTION_FILES.threatsJson))
@@ -50,21 +52,27 @@ export default function WebProtectionTool() {
           />
         </StaggerItem>
         <StaggerItem>
-          <h3 className="mb-2 text-xs font-semibold">{t('protection.categoriesTitle')}</h3>
-          <CategoryToggles
-            state={state}
-            threats={threats}
-            disabled={!state.enabled}
-            onPatch={onPatch}
-          />
+          <div data-search-id="categories">
+            <h3 className="mb-2 text-xs font-semibold">{t('protection.categoriesTitle')}</h3>
+            <CategoryToggles
+              state={state}
+              threats={threats}
+              disabled={!state.enabled}
+              onPatch={onPatch}
+            />
+          </div>
         </StaggerItem>
         <StaggerItem>
-          <h3 className="mb-2 text-xs font-semibold">{t('protection.guardsTitle')}</h3>
-          <GuardToggles state={state} disabled={!state.enabled} onPatch={onPatch} />
+          <div data-search-id="guards">
+            <h3 className="mb-2 text-xs font-semibold">{t('protection.guardsTitle')}</h3>
+            <GuardToggles state={state} disabled={!state.enabled} onPatch={onPatch} />
+          </div>
         </StaggerItem>
         <StaggerItem>
-          <h3 className="mb-2 text-xs font-semibold">{t('protection.suiteTitle')}</h3>
-          <ProtectionSuite />
+          <div data-search-id="suite">
+            <h3 className="mb-2 text-xs font-semibold">{t('protection.suiteTitle')}</h3>
+            <ProtectionSuite />
+          </div>
         </StaggerItem>
         <StaggerItem>
           <h3 className="mb-2 text-xs font-semibold">{t('protection.recent.title')}</h3>

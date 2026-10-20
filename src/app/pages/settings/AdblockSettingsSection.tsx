@@ -6,16 +6,18 @@ import { useAdblock } from '@/features/adblock/useAdblock'
 import { Switch } from '@/shared/components/ui/switch'
 
 function SettingRow({
+  searchId,
   label,
   description,
   children,
 }: {
+  searchId?: string
   label: string
   description?: string
   children: React.ReactNode
 }) {
   return (
-    <div className="mb-3 flex items-center justify-between gap-4">
+    <div className="mb-3 flex items-center justify-between gap-4" data-search-id={searchId}>
       <div className="min-w-0">
         <p className="text-xs font-medium">{label}</p>
         {description && <p className="text-[11px] text-muted-foreground">{description}</p>}
@@ -34,6 +36,7 @@ export function AdblockSettingsSection() {
   return (
     <>
       <SettingRow
+        searchId="adblockEnabled"
         label={t('settings.adblockEnabled')}
         description={t('settings.adblockEnabledDescription')}
       >
@@ -45,6 +48,7 @@ export function AdblockSettingsSection() {
       </SettingRow>
 
       <SettingRow
+        searchId="adblockYoutube"
         label={t('settings.adblockYoutube')}
         description={t('settings.adblockYoutubeDescription')}
       >

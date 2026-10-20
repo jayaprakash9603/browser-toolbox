@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+
+import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 import { FileJsonIcon, FileSpreadsheetIcon, FileTextIcon, InfoIcon, type LucideIcon } from 'lucide-react'
 
@@ -54,7 +56,7 @@ function jsonShape(source: string): { keys?: number; items?: number } {
 export default function FileToolkitTool() {
   const { t } = useTranslation()
   const tool = useFileTool('files.file-toolkit')
-  const [tab, setTab] = useState<FileTab>('csv')
+  const [tab, setTab] = useDeepLinkTab('tab', ['csv', 'json', 'text', 'pdf'] as const, 'csv')
   const [files, setFiles] = useState<Partial<Record<TextFileKind, LoadedFile>>>({})
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)

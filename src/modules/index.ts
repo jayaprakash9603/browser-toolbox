@@ -1,4 +1,5 @@
 import { categoryRegistry, toolRegistry } from '@/core/registry'
+import { invalidateSearchIndex } from '@/features/search/searchIndex'
 import { CATEGORIES } from '@/core/registry/categories'
 import { clipboardTools } from './clipboard/registry'
 import { textTools } from './text/registry'
@@ -51,4 +52,5 @@ export function registerModules() {
   toolRegistry.registerAll(storageTools)
   toolRegistry.registerAll(accessibilityTools)
   toolRegistry.registerAll(filesTools)
+  invalidateSearchIndex()
 }

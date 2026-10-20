@@ -6,6 +6,7 @@ export { TOOLKIT_GROUP_IDS, TOOLKIT_GROUP_LABEL_KEYS } from './toolkitGroups'
 export type { ToolkitGroupId } from './toolkitGroups'
 export type {
   ToolDefinition,
+  ToolSearchEntry,
   CategoryDefinition,
   ToolCapability,
   ToolStatus,

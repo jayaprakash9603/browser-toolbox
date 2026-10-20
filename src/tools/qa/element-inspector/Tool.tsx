@@ -6,6 +6,7 @@ import { ToolPage } from '@/shared/components/ToolPage'
 import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
 import { CopyButton } from '@/shared/components/CopyButton'
+import { useFocusTarget } from '@/shared/hooks/useFocusTarget'
 import { useQaTool } from '../_shared'
 
 interface PickedElement {
@@ -25,6 +26,7 @@ interface PickedElement {
 export default function ElementInspectorTool() {
   const { t } = useTranslation()
   const tool = useQaTool('qa.element-inspector')
+  useFocusTarget()
   const [picked, setPicked] = useState<PickedElement | null>(null)
   const [picking, setPicking] = useState(false)
 
@@ -99,11 +101,12 @@ export default function ElementInspectorTool() {
               <Stat label="Y" value={Math.round(picked.element.dimensions.y)} />
             </div>
             {picked.element.text.trim() && (
-              <Section title={t('qa.text')} copy={picked.element.text.trim()}>
+              <Section searchId="section-text" title={t('qa.text')} copy={picked.element.text.trim()}>
                 <p className="text-xs">{picked.element.text.trim().slice(0, 200)}</p>
               </Section>
             )}
             <Section
+              searchId="section-attributes"
               title={t('qa.attributes')}
               copy={JSON.stringify(picked.element.attributes, null, 2)}
             >
@@ -116,7 +119,7 @@ export default function ElementInspectorTool() {
                 ))}
               </div>
             </Section>
-            <Section title={t('qa.selectors')} copy={picked.selectors.cssRelative ?? ''}>
+            <Section searchId="section-selectors" title={t('qa.selectors')} copy={picked.selectors.cssRelative ?? ''}>
               <div className="space-y-1">
                 {Object.entries(picked.selectors)
                   .filter(([, v]) => v)
@@ -129,6 +132,7 @@ export default function ElementInspectorTool() {
               </div>
             </Section>
             <Section
+              searchId="section-computed"
               title={t('qa.computedStyles')}
               copy={JSON.stringify(picked.element.computedStyles, null, 2)}
             >
@@ -158,16 +162,18 @@ function Stat({ label, value }: { label: string; value: number }) {
 }
 
 function Section({
+  searchId,
   title,
   copy,
   children,
 }: {
+  searchId: string
   title: string
   copy: string
   children: React.ReactNode
 }) {
   return (
-    <div className="rounded-md border p-2">
+    <div className="rounded-md border p-2" data-search-id={searchId}>
       <div className="mb-1 flex items-center justify-between">
         <span className="text-[11px] font-medium">{title}</span>
         <CopyButton text={copy} />

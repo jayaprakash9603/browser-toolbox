@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react'
 import { Minimize2Icon, SparklesIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { useRouter } from '@/app/router'
 import { toUserMessage } from '@/core/errors'
+import { useDeepLinkParam } from '@/shared/hooks/useDeepLinkTab'
 import { ErrorState } from '@/shared/components/ErrorState'
 import { TextPaneGrid } from '@/shared/components/TextPaneGrid'
 import { ToolPage } from '@/shared/components/ToolPage'
@@ -16,10 +16,9 @@ import { FormatLanguageSelect } from './FormatLanguageSelect'
 import {
   detectTextFormat,
   formatText,
-  getTextFormatSelection,
   minifyText,
 } from './logic'
-import type { TextFormatId, TextFormatSelection } from './formatters/types'
+import { TEXT_FORMAT_IDS, type TextFormatId, type TextFormatSelection } from './formatters/types'
 
 const EXAMPLES: Partial<Record<TextFormatId, string>> = {
   javascript: `function calculateTotal(items, discountRate = 0.1) {
@@ -64,23 +63,20 @@ function toEditorLanguage(format: TextFormatId): EditorLanguage {
 
 export default function TextFormatterTool() {
   const { t } = useTranslation()
-  const { search } = useRouter()
   const tool = useTransformTool('text.formatter')
   const [input, setInput] = useState('')
   const [output, setOutput] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [lastAction, setLastAction] = useState<'format' | 'minify'>('format')
-  const [formatSelection, setFormatSelection] = useState(() => getTextFormatSelection(search))
-  const [lastSearch, setLastSearch] = useState(search)
+  const [formatSelection, setFormatSelection] = useDeepLinkParam(
+    'format',
+    TEXT_FORMAT_IDS,
+    'auto' as TextFormatSelection,
+  )
 
   const detectedFormat = useMemo(() => detectTextFormat(input), [input])
   const activeFormat = formatSelection === 'auto' ? detectedFormat : formatSelection
   const editorLanguage = useMemo(() => toEditorLanguage(activeFormat), [activeFormat])
-
-  if (search !== lastSearch) {
-    setLastSearch(search)
-    setFormatSelection(getTextFormatSelection(search))
-  }
 
   const run = (action: 'format' | 'minify') => {
     setLastAction(action)

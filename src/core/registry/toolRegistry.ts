@@ -1,3 +1,5 @@
+import { scoreMatch } from '@/features/search/scoreMatch'
+
 import type { ToolDefinition } from './types'
 
 class ToolRegistry {
@@ -47,26 +49,20 @@ function scoreToolSearch(
   fullQuery: string,
 ): number {
   if ((tool.status ?? 'active') === 'disabled') return 0
-  const name = tool.name.toLowerCase()
+  const name = tool.name
   const id = tool.id.toLowerCase()
-  const aliases = (tool.aliases ?? []).map((alias) => alias.toLowerCase())
+  const aliases = [...(tool.aliases ?? []), ...tool.keywords]
   const haystack = [
-    name,
+    name.toLowerCase(),
     tool.description.toLowerCase(),
     tool.category,
     ...tool.keywords.map((keyword) => keyword.toLowerCase()),
-    ...aliases,
+    ...(tool.aliases ?? []).map((alias) => alias.toLowerCase()),
   ].join(' ')
 
-  if (!tokens.every((token) => haystack.includes(token))) return 0
-
-  let score = 10
-  if (name === fullQuery || aliases.includes(fullQuery)) score += 100
-  if (name.startsWith(fullQuery) || aliases.some((alias) => alias.startsWith(fullQuery))) score += 40
-  if (id.includes(fullQuery.replace(/\s+/g, '.'))) score += 20
+  let score = scoreMatch(haystack, name, aliases, tokens, fullQuery)
+  if (score > 0 && id.includes(fullQuery.trim().toLowerCase().replace(/\s+/g, '.'))) score += 20
   for (const token of tokens) {
-    if (name === token) score += 30
-    if (aliases.includes(token)) score += 25
     if (tool.keywords.some((keyword) => keyword.toLowerCase() === token)) score += 15
   }
   return score

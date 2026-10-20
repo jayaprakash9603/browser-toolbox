@@ -12,6 +12,7 @@ import { StaggerChildren, StaggerItem } from '@/shared/components/motion/Stagger
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
 
+import { useFocusTarget } from '@/shared/hooks/useFocusTarget'
 import { usePrivacyTool } from '../_shared'
 import { AllowlistEditor } from './AllowlistEditor'
 import { FilterListToggles } from './FilterListToggles'
@@ -21,6 +22,7 @@ export default function AdBlockerTool() {
   const tool = usePrivacyTool('privacy.ad-blocker')
   const { state, patch } = useAdblock()
   const live = useAdblockLive()
+  useFocusTarget()
 
   if (!state) {
     return (
@@ -57,15 +59,19 @@ export default function AdBlockerTool() {
           <PlusFeatures state={state} onPatch={onPatch} />
         </StaggerItem>
         <StaggerItem>
-          <h3 className="mb-2 text-xs font-semibold">{t('adblock.filterLists')}</h3>
-          <FilterListToggles state={state} disabled={!state.enabled} onPatch={onPatch} />
+          <div data-search-id="filterLists">
+            <h3 className="mb-2 text-xs font-semibold">{t('adblock.filterLists')}</h3>
+            <FilterListToggles state={state} disabled={!state.enabled} onPatch={onPatch} />
+          </div>
         </StaggerItem>
         <StaggerItem>
-          <h3 className="mb-2 text-xs font-semibold">{t('adblock.allowlistTitle')}</h3>
-          <AllowlistEditor
+          <div data-search-id="allowlist">
+            <h3 className="mb-2 text-xs font-semibold">{t('adblock.allowlistTitle')}</h3>
+            <AllowlistEditor
             allowlist={state.allowlist}
             onChange={(allowlist) => onPatch({ allowlist })}
           />
+          </div>
         </StaggerItem>
         <StaggerItem>
           <Button

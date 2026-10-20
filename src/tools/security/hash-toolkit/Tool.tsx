@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+
+import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 import { AlertTriangleIcon } from 'lucide-react'
 
@@ -20,7 +22,7 @@ import { useSecurityTool } from '../_shared'
 export default function HashToolkitTool() {
   const { t } = useTranslation()
   const tool = useSecurityTool('security.hash-toolkit')
-  const [tab, setTab] = useState<'hash' | 'hmac'>('hash')
+  const [tab, setTab] = useDeepLinkTab('tab', ['hash', 'hmac'] as const, 'hash')
   const [input, setInput] = useState('')
   const [secret, setSecret] = useState('')
   const [results, setResults] = useState<Record<string, string>>({})

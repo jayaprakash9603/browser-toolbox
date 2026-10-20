@@ -1,4 +1,6 @@
 import { useState } from 'react'
+
+import { useDeepLinkParam } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 import { RefreshCwIcon } from 'lucide-react'
 
@@ -22,7 +24,7 @@ export default function TestDataGeneratorTool() {
   const [selected, setSelected] = useState<Set<TestDataKind>>(new Set(['name', 'email']))
   const [countText, setCountText] = useState('5')
   const count = parseNumberInRange(countText, 1, 1000)
-  const [format, setFormat] = useState<'json' | 'csv'>('json')
+  const [format, setFormat] = useDeepLinkParam('format', ['json', 'csv'] as const, 'json')
   const [rows, setRows] = useState<Record<string, string>[]>([])
 
   const toggle = (kind: TestDataKind) => {

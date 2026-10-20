@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+
+import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 import { EraserIcon, PlusIcon, Trash2Icon } from 'lucide-react'
 
@@ -25,7 +27,7 @@ const EXAMPLE = 'https://shop.example.com/products?id=42&color=red&utm_source=ne
 export default function UrlToolkitTool() {
   const { t } = useTranslation()
   const tool = useWebTool('web.url-toolkit')
-  const [tab, setTab] = useState<'parse' | 'encode' | 'clean'>('parse')
+  const [tab, setTab] = useDeepLinkTab('tab', ['parse', 'encode', 'clean'] as const, 'parse')
   const [input, setInput] = useState('')
   const [encodeInput, setEncodeInput] = useState('')
 

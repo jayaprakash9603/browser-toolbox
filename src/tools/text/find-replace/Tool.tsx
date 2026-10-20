@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+
+import { useFocusTarget } from '@/shared/hooks/useFocusTarget'
 import { useTranslation } from 'react-i18next'
 
 import { ToolPage } from '@/shared/components/ToolPage'
@@ -12,6 +14,7 @@ import { countMatches, replaceText } from '@/core/engines/text'
 export default function FindReplaceTool() {
   const { t } = useTranslation()
   const tool = useTransformTool('text.find-replace')
+  useFocusTarget()
   const [input, setInput] = useState('')
   const [find, setFind] = useState('')
   const [replace, setReplace] = useState('')
@@ -27,9 +30,9 @@ export default function FindReplaceTool() {
   }
 
   const optionDefs = [
-    { key: 'caseSensitive', labelKey: 'text.caseSensitive' },
-    { key: 'wholeWord', labelKey: 'text.wholeWord' },
-    { key: 'regex', labelKey: 'text.regex' },
+    { key: 'caseSensitive', labelKey: 'text.caseSensitive', searchId: 'caseSensitive' },
+    { key: 'wholeWord', labelKey: 'text.wholeWord', searchId: 'wholeWord' },
+    { key: 'regex', labelKey: 'text.regex', searchId: 'regex' },
   ] as const
 
   return (
@@ -67,8 +70,8 @@ export default function FindReplaceTool() {
         </div>
 
         <div className="flex flex-wrap gap-4">
-          {optionDefs.map(({ key, labelKey }) => (
-            <label key={key} className="flex items-center gap-2 text-xs">
+          {optionDefs.map(({ key, labelKey, searchId }) => (
+            <label key={key} className="flex items-center gap-2 text-xs" data-search-id={searchId}>
               <Switch
                 checked={options[key]}
                 onCheckedChange={(checked) => setOptions((prev) => ({ ...prev, [key]: checked }))}

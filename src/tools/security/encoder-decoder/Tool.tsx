@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+
+import { useDeepLinkParam, useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 import { ArrowDownUpIcon } from 'lucide-react'
 
@@ -22,8 +24,12 @@ const KINDS: { id: EncodingKind; label: string }[] = [
 export default function EncoderDecoderTool() {
   const { t } = useTranslation()
   const tool = useSecurityTool('security.encoder-decoder')
-  const [kind, setKind] = useState<EncodingKind>('base64')
-  const [direction, setDirection] = useState<'encode' | 'decode'>('encode')
+  const [kind, setKind] = useDeepLinkTab(
+    'tab',
+    ['base64', 'url', 'html', 'unicode', 'hex'] as const,
+    'base64',
+  )
+  const [direction, setDirection] = useDeepLinkParam('mode', ['encode', 'decode'] as const, 'encode')
   const [input, setInput] = useState('')
 
   const result = useMemo(() => {

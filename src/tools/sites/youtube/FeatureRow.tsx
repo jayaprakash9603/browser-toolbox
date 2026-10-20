@@ -59,7 +59,7 @@ export function FeatureRow({
 
   if (feature.kind === 'toggle') {
     return (
-      <li className="flex items-center gap-3 px-3 py-2.5">
+      <li className="flex items-center gap-3 px-3 py-2.5" data-search-id={feature.id}>
         {label}
         <Switch
           checked={value === true}
@@ -73,7 +73,7 @@ export function FeatureRow({
 
   if (feature.kind === 'number') {
     return (
-      <li className="flex items-center gap-3 px-3 py-2.5">
+      <li className="flex items-center gap-3 px-3 py-2.5" data-search-id={feature.id}>
         {label}
         <NumberField
           className="w-20"
@@ -93,7 +93,7 @@ export function FeatureRow({
 
   if (feature.kind === 'select' && feature.options) {
     return (
-      <li className="flex items-center gap-3 px-3 py-2.5">
+      <li className="flex items-center gap-3 px-3 py-2.5" data-search-id={feature.id}>
         {label}
         <Select
           value={String(value ?? feature.default)}
@@ -115,7 +115,7 @@ export function FeatureRow({
 
   if (feature.kind === 'color') {
     return (
-      <li className="flex items-center gap-3 px-3 py-2.5">
+      <li className="flex items-center gap-3 px-3 py-2.5" data-search-id={feature.id}>
         {label}
         <Input
           type="color"
@@ -130,7 +130,7 @@ export function FeatureRow({
 
   if (feature.kind === 'text') {
     return (
-      <li className="flex flex-col gap-1.5 px-3 py-2.5">
+      <li className="flex flex-col gap-1.5 px-3 py-2.5" data-search-id={feature.id}>
         {label}
         <Input
           className="text-xs"
@@ -170,7 +170,7 @@ function MirrorAdblockRow({
   }, [refresh])
 
   return (
-    <li className="flex items-center gap-3 px-3 py-2.5">
+    <li className="flex items-center gap-3 px-3 py-2.5" data-search-id="blockAds">
       {label}
       <Switch
         checked={on}

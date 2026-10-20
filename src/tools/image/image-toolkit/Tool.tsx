@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+
+import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 import { UploadIcon } from 'lucide-react'
 
@@ -28,7 +30,11 @@ const tabPanelClass =
 export default function ImageToolkitTool() {
   const { t } = useTranslation()
   const tool = useImageTool('image.image-toolkit')
-  const [tab, setTab] = useState<'resize' | 'crop' | 'convert' | 'base64' | 'info'>('resize')
+  const [tab, setTab] = useDeepLinkTab(
+    'tab',
+    ['resize', 'crop', 'convert', 'base64', 'info'] as const,
+    'resize',
+  )
   const [file, setFile] = useState<File | null>(null)
   const [img, setImg] = useState<HTMLImageElement | null>(null)
   const [info, setInfo] = useState<ImageInfo | null>(null)

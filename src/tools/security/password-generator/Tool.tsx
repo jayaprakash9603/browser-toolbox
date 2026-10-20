@@ -1,4 +1,6 @@
 import { useState } from 'react'
+
+import { useFocusTarget } from '@/shared/hooks/useFocusTarget'
 import { useTranslation } from 'react-i18next'
 import { RefreshCwIcon } from 'lucide-react'
 
@@ -19,17 +21,19 @@ import { useSecurityTool } from '../_shared'
 const OPTION_KEYS: {
   key: 'uppercase' | 'lowercase' | 'numbers' | 'symbols' | 'excludeAmbiguous'
   labelKey: string
+  searchId: string
 }[] = [
-  { key: 'uppercase', labelKey: 'security.optUpper' },
-  { key: 'lowercase', labelKey: 'security.optLower' },
-  { key: 'numbers', labelKey: 'security.optNumbers' },
-  { key: 'symbols', labelKey: 'security.optSymbols' },
-  { key: 'excludeAmbiguous', labelKey: 'security.optNoAmbiguous' },
+  { key: 'uppercase', labelKey: 'security.optUpper', searchId: 'optUpper' },
+  { key: 'lowercase', labelKey: 'security.optLower', searchId: 'optLower' },
+  { key: 'numbers', labelKey: 'security.optNumbers', searchId: 'optNumbers' },
+  { key: 'symbols', labelKey: 'security.optSymbols', searchId: 'optSymbols' },
+  { key: 'excludeAmbiguous', labelKey: 'security.optNoAmbiguous', searchId: 'optNoAmbiguous' },
 ]
 
 export default function PasswordGeneratorTool() {
   const { t } = useTranslation()
   const tool = useSecurityTool('security.password-generator')
+  useFocusTarget()
   const [options, setOptions] = useState<PasswordOptions>(DEFAULT_PASSWORD_OPTIONS)
   const [lengthText, setLengthText] = useState(String(DEFAULT_PASSWORD_OPTIONS.length))
   const [countText, setCountText] = useState('1')
@@ -78,8 +82,8 @@ export default function PasswordGeneratorTool() {
           </label>
         </div>
         <div className="grid grid-cols-2 gap-1.5">
-          {OPTION_KEYS.map(({ key, labelKey }) => (
-            <label key={key} className="flex items-center gap-1.5 text-xs">
+          {OPTION_KEYS.map(({ key, labelKey, searchId }) => (
+            <label key={key} className="flex items-center gap-1.5 text-xs" data-search-id={searchId}>
               <Switch
                 checked={options[key]}
                 onCheckedChange={(v) => setOptions((o) => ({ ...o, [key]: v }))}

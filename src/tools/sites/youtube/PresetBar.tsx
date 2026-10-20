@@ -25,6 +25,7 @@ export function PresetBar({
           size="sm"
           variant={id === 'reset' ? 'outline' : 'secondary'}
           className="text-xs"
+          data-search-id={id === 'reset' ? undefined : `preset-${id}`}
           onClick={() => {
             if (id === 'reset') onApply(defaultYoutubeValues())
             else onApply({ ...defaultYoutubeValues(), ...YOUTUBE_PRESETS[id] })

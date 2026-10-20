@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+
+import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 
 import { analyzeText } from '@/core/engines/text'
@@ -10,6 +12,7 @@ import { ToolActions, useTransformTool } from '../_shared'
 export default function TextAnalyzerTool() {
   const { t } = useTranslation()
   const tool = useTransformTool('text.analyzer')
+  const [tab, setTab] = useDeepLinkTab('tab', ['metrics', 'lines'] as const, 'metrics')
   const [input, setInput] = useState('')
   const stats = useMemo(() => analyzeText(input), [input])
 
@@ -24,7 +27,7 @@ export default function TextAnalyzerTool() {
           ariaLabel={t('text.analyzeInput')}
           minRows={8}
         />
-        <Tabs defaultValue="metrics">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <TabsList>
             <TabsTrigger value="metrics">{t('text.tabMetrics')}</TabsTrigger>
             <TabsTrigger value="lines">{t('text.tabLines')}</TabsTrigger>

@@ -1,14 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Command } from 'cmdk'
-import { BracesIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from '@/app/navigation'
 
 import { toolRegistry } from '@/core/registry'
 import { getToolName } from '@/i18n/toolLabels'
+import { searchAll, type SearchItem } from '@/features/search/searchIndex'
 import { useFavorites } from '@/shared/hooks/useFavorites'
-import { TEXT_FORMAT_IDS, type TextFormatId } from '@/tools/text/text-formatter/formatters/types'
 import { HighlightedText } from './HighlightedText'
 
 interface CommandPaletteProps {
@@ -23,19 +22,33 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState('')
 
+  const tools = useMemo(
+    () =>
+      toolRegistry
+        .getAll()
+        .filter((tool) => (tool.status ?? 'active') !== 'disabled'),
+    [],
+  )
+  const favoriteTools = useMemo(
+    () => tools.filter((tool) => favorites.includes(tool.id)),
+    [tools, favorites],
+  )
+  const defaultTools = useMemo(
+    () => tools.filter((tool) => tool.capabilities.includes('COMMAND')),
+    [tools],
+  )
+
+  const trimmed = query.trim()
+  const searchResults = trimmed ? searchAll(trimmed) : []
+  const toolItems = searchResults.filter((item) => item.kind === 'tool')
+  const optionItems = searchResults.filter((item) => item.kind === 'option')
+  const settingItems = searchResults.filter((item) => item.kind === 'setting')
+
   useEffect(() => {
     if (open) inputRef.current?.focus()
   }, [open])
 
   if (!open) return null
-
-  const tools = toolRegistry
-    .getAll()
-    .filter((tool) => (tool.status ?? 'active') !== 'disabled')
-  const favoriteTools = tools.filter((tool) => favorites.includes(tool.id))
-  const commandTools = query.trim()
-    ? toolRegistry.search(query.trim())
-    : tools.filter((tool) => tool.capabilities.includes('COMMAND'))
 
   const select = (route: string) => {
     setQuery('')
@@ -47,6 +60,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     setQuery('')
     onOpenChange(false)
   }
+
+  const searching = trimmed.length > 0
 
   return createPortal(
     <div
@@ -60,7 +75,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         role="dialog"
         aria-label={t('nav.commandPalette')}
       >
-        <Command label={t('nav.commandPalette')} shouldFilter>
+        <Command label={t('nav.commandPalette')} shouldFilter={false}>
           <div className="border-b px-3">
             <Command.Input
               ref={inputRef}
@@ -74,45 +89,98 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             <Command.Empty className="py-6 text-center text-xs text-muted-foreground">
               {t('palette.noToolsFound')}
             </Command.Empty>
-            {favoriteTools.length > 0 && (
-              <Command.Group
-                heading={t('palette.favorites')}
-                className="text-[11px] font-medium text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1"
-              >
-                {favoriteTools.map((tool) => (
-                  <CommandItem key={tool.id} tool={tool} query={query} onSelect={select} />
-                ))}
-              </Command.Group>
+            {searching ? (
+              <>
+                {toolItems.length > 0 && (
+                  <SearchItemGroup
+                    heading={t('palette.allTools')}
+                    items={toolItems}
+                    query={query}
+                    onSelect={select}
+                  />
+                )}
+                {optionItems.length > 0 && (
+                  <SearchItemGroup
+                    heading={t('palette.options', { defaultValue: 'Options' })}
+                    items={optionItems}
+                    query={query}
+                    onSelect={select}
+                  />
+                )}
+                {settingItems.length > 0 && (
+                  <SearchItemGroup
+                    heading={t('palette.settings', { defaultValue: 'Settings' })}
+                    items={settingItems}
+                    query={query}
+                    onSelect={select}
+                  />
+                )}
+              </>
+            ) : (
+              <>
+                {favoriteTools.length > 0 && (
+                  <Command.Group
+                    heading={t('palette.favorites')}
+                    className="text-[11px] font-medium text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1"
+                  >
+                    {favoriteTools.map((tool) => (
+                      <CommandItem key={tool.id} tool={tool} query={query} onSelect={select} />
+                    ))}
+                  </Command.Group>
+                )}
+                <Command.Group
+                  heading={t('palette.allTools')}
+                  className="text-[11px] font-medium text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1"
+                >
+                  {defaultTools.map((tool) => (
+                    <CommandItem key={tool.id} tool={tool} query={query} onSelect={select} />
+                  ))}
+                </Command.Group>
+              </>
             )}
-            <Command.Group
-              heading={t('palette.formatters')}
-              className="text-[11px] font-medium text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1"
-            >
-              {TEXT_FORMAT_IDS.map((format) => (
-                <FormatterCommandItem
-                  key={format}
-                  format={format}
-                  query={query}
-                  onSelect={(selectedFormat) => {
-                    const route = toolRegistry.get('text.formatter')?.route
-                    if (route) select(`${route}?format=${selectedFormat}`)
-                  }}
-                />
-              ))}
-            </Command.Group>
-            <Command.Group
-              heading={t('palette.allTools')}
-              className="text-[11px] font-medium text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1"
-            >
-              {commandTools.map((tool) => (
-                <CommandItem key={tool.id} tool={tool} query={query} onSelect={select} />
-              ))}
-            </Command.Group>
           </Command.List>
         </Command>
       </div>
     </div>,
     document.body,
+  )
+}
+
+function SearchItemGroup({
+  heading,
+  items,
+  query,
+  onSelect,
+}: {
+  heading: string
+  items: SearchItem[]
+  query: string
+  onSelect: (route: string) => void
+}) {
+  return (
+    <Command.Group
+      heading={heading}
+      className="text-[11px] font-medium text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1"
+    >
+      {items.map((item) => (
+        <Command.Item
+          key={item.id}
+          value={`${item.title} ${item.breadcrumb} ${item.id}`}
+          onSelect={() => onSelect(item.route)}
+          className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs outline-none data-[selected=true]:bg-accent"
+        >
+          <item.icon className="size-3.5 shrink-0 text-muted-foreground" />
+          <span className="min-w-0 flex-1 truncate">
+            <HighlightedText text={item.title} query={query} />
+            {item.kind !== 'tool' && (
+              <span className="block truncate text-[10px] text-muted-foreground">
+                <HighlightedText text={item.breadcrumb} query={query} />
+              </span>
+            )}
+          </span>
+        </Command.Item>
+      ))}
+    </Command.Group>
   )
 }
 
@@ -138,35 +206,6 @@ function CommandItem({
       <Icon className="size-3.5 text-muted-foreground" />
       <span className="flex-1 truncate"><HighlightedText text={name} query={query} /></span>
       <span className="text-[11px] text-muted-foreground"><HighlightedText text={category} query={query} /></span>
-    </Command.Item>
-  )
-}
-
-function FormatterCommandItem({
-  format,
-  query,
-  onSelect,
-}: {
-  format: TextFormatId
-  query: string
-  onSelect: (format: TextFormatId) => void
-}) {
-  const { t } = useTranslation()
-  const label = t(`text.format.${format}`)
-  const name = t('text.formatter.optionName', { format: label })
-  const category = t('categories.text.name')
-
-  return (
-    <Command.Item
-      value={`${name} ${format} formatter ${category}`}
-      onSelect={() => onSelect(format)}
-      className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs outline-none data-[selected=true]:bg-accent"
-    >
-      <BracesIcon className="size-3.5 text-muted-foreground" />
-      <span className="flex-1 truncate"><HighlightedText text={name} query={query} /></span>
-      <span className="text-[11px] text-muted-foreground">
-        <HighlightedText text={category} query={query} />
-      </span>
     </Command.Item>
   )
 }

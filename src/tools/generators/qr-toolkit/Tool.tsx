@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+
+import { useDeepLinkParam, useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 import { QrCodeIcon, ScanLineIcon } from 'lucide-react'
 
@@ -33,8 +35,8 @@ const PRESETS: QrPreset[] = ['text', 'url', 'wifi', 'email', 'phone', 'contact']
 export default function QrToolkitTool() {
   const { t } = useTranslation()
   const tool = useGeneratorTool('generators.qr-toolkit')
-  const [mode, setMode] = useState<'generate' | 'decode'>('generate')
-  const [preset, setPreset] = useState<QrPreset>('text')
+  const [mode, setMode] = useDeepLinkTab('tab', ['generate', 'decode'] as const, 'generate')
+  const [preset, setPreset] = useDeepLinkParam('preset', PRESETS, 'text')
   const [text, setText] = useState('')
   const [ssid, setSsid] = useState('')
   const [password, setPassword] = useState('')

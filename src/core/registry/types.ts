@@ -33,6 +33,15 @@ export const CONTEXT_SURFACES = [
 
 export type ContextSurface = (typeof CONTEXT_SURFACES)[number]
 
+export interface ToolSearchEntry {
+  id: string
+  labelKey: string
+  fallbackLabel: string
+  keywords?: string[]
+  aliases?: string[]
+  params: Record<string, string>
+}
+
 export interface ToolDefinition {
   id: string
   name: string
@@ -51,6 +60,7 @@ export interface ToolDefinition {
   permissions?: string[]
   shortcut?: string
   status?: ToolStatus
+  searchEntries?: ToolSearchEntry[]
   loader: () => Promise<{ default: React.ComponentType }>
 }
 

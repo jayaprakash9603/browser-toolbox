@@ -1,4 +1,6 @@
 import { useState } from 'react'
+
+import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 
 import { ToolPage } from '@/shared/components/ToolPage'
@@ -11,7 +13,11 @@ import { useDesignTool } from '../_shared'
 export default function CssGeneratorTool() {
   const { t } = useTranslation()
   const tool = useDesignTool('design.css-generator')
-  const [tab, setTab] = useState<'gradient' | 'shadow' | 'radius' | 'glass'>('gradient')
+  const [tab, setTab] = useDeepLinkTab(
+    'tab',
+    ['gradient', 'shadow', 'radius', 'glass'] as const,
+    'gradient',
+  )
 
   const [gradFrom, setGradFrom] = useState('#6366f1')
   const [gradTo, setGradTo] = useState('#ec4899')

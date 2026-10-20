@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+
+import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 import { CheckCircle2Icon, AlertTriangleIcon, XCircleIcon } from 'lucide-react'
 
@@ -19,6 +21,11 @@ import type { PageInfo } from '@/chrome/content/index'
 export default function SeoToolkitTool() {
   const { t } = useTranslation()
   const tool = useSeoTool('seo.toolkit')
+  const [tab, setTab] = useDeepLinkTab(
+    'tab',
+    ['checks', 'headings', 'links', 'images', 'meta'] as const,
+    'checks',
+  )
   const [page, setPage] = useState<PageInfo | null>(null)
   const [loaded, setLoaded] = useState(false)
 
@@ -69,7 +76,7 @@ export default function SeoToolkitTool() {
               {score}/100
             </Badge>
           </div>
-          <Tabs defaultValue="checks">
+          <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
             <TabsList className="flex-wrap">
               <TabsTrigger value="checks">{t('seo.tabChecks')}</TabsTrigger>
               <TabsTrigger value="headings">{t('seo.tabHeadings')}</TabsTrigger>

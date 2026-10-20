@@ -94,7 +94,11 @@ export function PlusFeatures({
         {FEATURES.map((feature) => {
           const Icon = feature.icon
           return (
-            <li key={feature.id} className="flex items-center gap-3 py-2">
+            <li
+              key={feature.id}
+              className="flex items-center gap-3 py-2"
+              data-search-id={feature.id === 'youtube' ? 'plus-youtube' : undefined}
+            >
               <Icon className="size-4 shrink-0 text-muted-foreground" />
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-medium">{t(feature.labelKey)}</p>

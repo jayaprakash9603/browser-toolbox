@@ -1,4 +1,6 @@
 import { useState } from 'react'
+
+import { useDeepLinkParam, useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 import { RefreshCwIcon } from 'lucide-react'
 
@@ -21,7 +23,8 @@ const KINDS: { id: IdKind; label: string }[] = [
 export default function IdToolkitTool() {
   const { t } = useTranslation()
   const tool = useDevTool('developer.id-toolkit')
-  const [kind, setKind] = useState<IdKind>('uuid-v4')
+  const [tab, setTab] = useDeepLinkTab('tab', ['generate', 'validate'] as const, 'generate')
+  const [kind, setKind] = useDeepLinkParam('kind', ['uuid-v4', 'uuid-v7', 'nanoid'] as const, 'uuid-v4')
   const [countText, setCountText] = useState('1')
   const count = parseNumberInRange(countText, 1, 500)
   const [output, setOutput] = useState<string[]>([])
@@ -39,7 +42,7 @@ export default function IdToolkitTool() {
   return (
     <ToolPage tool={tool}>
       <div className="flex min-h-0 flex-1 flex-col gap-3">
-        <Tabs defaultValue="generate" className="min-h-0 flex-1">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="min-h-0 flex-1">
           <TabsList>
             <TabsTrigger value="generate">{t('dev.tabGenerate')}</TabsTrigger>
             <TabsTrigger value="validate">{t('dev.tabValidate')}</TabsTrigger>
@@ -53,6 +56,7 @@ export default function IdToolkitTool() {
                     key={k.id}
                     size="sm"
                     variant={kind === k.id ? 'secondary' : 'outline'}
+                    data-search-id={k.id}
                     onClick={() => setKind(k.id)}
                   >
                     {k.label}

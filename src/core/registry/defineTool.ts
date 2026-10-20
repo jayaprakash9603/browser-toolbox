@@ -1,3 +1,5 @@
+import { TOOL_SEARCH_ENTRIES } from '@/features/search/allToolSearchEntries'
+
 import type { ToolDefinition } from './types'
 import type { ToolkitGroupId } from './toolkitGroups'
 import { TOOLKIT_GROUP_LABEL_KEYS } from './toolkitGroups'
@@ -41,5 +43,6 @@ export function defineTool(tool: DefineToolInput): ToolDefinition {
     toolkitGroup,
     toolkitGroupLabel: TOOLKIT_GROUP_LABEL_KEYS[toolkitGroup],
     ...tool,
+    searchEntries: tool.searchEntries ?? TOOL_SEARCH_ENTRIES[tool.id],
   }
 }

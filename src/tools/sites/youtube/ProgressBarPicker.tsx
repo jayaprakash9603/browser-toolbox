@@ -1,4 +1,7 @@
 import { useMemo, useState } from 'react'
+
+import { useRouter } from '@/app/router'
+import { parseSearchParam } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 import { ChevronDownIcon, PaletteIcon, RotateCcwIcon } from 'lucide-react'
 
@@ -103,7 +106,18 @@ export function ProgressBarPicker({
   onPatch: (values: Record<string, YoutubeFeatureValue>) => void
 }) {
   const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
+  const { search, navKey } = useRouter()
+  const progressFocused = () => {
+    const focusId = parseSearchParam(search, 'focus')
+    return focusId === 'progress' || focusId === 'progress-picker'
+  }
+  const [open, setOpen] = useState(() => progressFocused())
+  const [expandSync, setExpandSync] = useState(`${search}|${navKey}`)
+  const expandKey = `${search}|${navKey}`
+  if (progressFocused() && expandKey !== expandSync) {
+    setExpandSync(expandKey)
+    if (!open) setOpen(true)
+  }
   const [collection, setCollection] = useState<ProgressCollectionId>('all')
   const [filter, setFilter] = useState('')
   const [fineOpen, setFineOpen] = useState(false)
@@ -155,6 +169,7 @@ export function ProgressBarPicker({
         <button
           type="button"
           className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left"
+          data-search-id="progress"
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
         >

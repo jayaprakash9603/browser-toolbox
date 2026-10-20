@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+
+import { useDeepLinkParam } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 
 import { generatePalette, parseColor, rgbToHex, type PaletteMode } from '@/core/engines/color'
@@ -17,7 +19,7 @@ export default function PaletteGeneratorTool() {
   const { t } = useTranslation()
   const tool = useDesignTool('design.palette-generator')
   const [input, setInput] = useState(EXAMPLE)
-  const [mode, setMode] = useState<PaletteMode>('analogous')
+  const [mode, setMode] = useDeepLinkParam('mode', MODES, 'analogous')
   const [randomSeed, setRandomSeed] = useState(0)
 
   const rgb = useMemo(() => parseColor(input), [input])
