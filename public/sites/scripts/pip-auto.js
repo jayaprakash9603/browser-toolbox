@@ -74,6 +74,7 @@
 		const target = resolveTarget();
 		if (!target || !target.container.parentNode) return "none";
 		const { video, container } = target;
+		if (video.mediaKeys) return "none";
 		const ratio = video.videoWidth && video.videoHeight ? video.videoWidth / video.videoHeight : 16 / 9;
 		const width = 640;
 		const height = Math.round(width / ratio);
