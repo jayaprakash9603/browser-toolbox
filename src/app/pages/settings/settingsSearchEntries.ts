@@ -13,6 +13,12 @@ export interface SettingsSearchEntry {
 
 export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
   {
+    id: 'keyboardShortcuts',
+    labelKey: 'shortcuts.settingsTitle',
+    fallbackLabel: 'Keyboard shortcuts',
+    keywords: ['shortcut', 'hotkey', 'keyboard', 'alt+p', 'ctrl+k'],
+  },
+  {
     id: 'theme',
     labelKey: 'settings.theme',
     fallbackLabel: 'Theme',

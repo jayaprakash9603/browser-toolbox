@@ -1,36 +1,34 @@
-export interface ToolboxCommand {
-  id: string
-  title: string
-  suggestedKey?: string
-  macKey?: string
-  toolId?: string
-  opensPanel: boolean
-}
+export {
+  acceleratorFromKeyboardEvent,
+  formatAcceleratorDisplay,
+  isMacPlatform,
+  keyModifiersFromKeyboardEvent,
+  matchesAccelerator,
+  parseAccelerator,
+} from './accelerator'
+export { buildManifestCommands } from './manifest'
+export {
+  GLOBAL_TOOLBOX_COMMANDS,
+  getToolboxCommand,
+  PANEL_TOOLBOX_COMMANDS,
+  TOOLBOX_COMMANDS,
+} from './registry'
+export {
+  DEFAULT_KEYBOARD_SHORTCUTS_STATE,
+  findCommandForKeyEvent,
+  getEffectiveBinding,
+  getKeyboardShortcutsState,
+  listBindingConflicts,
+  resetCommandBinding,
+  setCommandBinding,
+  updateKeyboardShortcutsState,
+  defaultBindingForCommand,
+} from './service'
+export type { CommandKeyBinding, CommandScope, KeyboardShortcutsState, KeyModifiers, ToolboxCommandDef } from './types'
 
-export const TOOLBOX_COMMANDS: ToolboxCommand[] = [
-  {
-    id: 'open-command-palette',
-    title: 'Open command palette',
-    suggestedKey: 'Ctrl+Shift+Space',
-    macKey: 'Command+Shift+Space',
-    opensPanel: true,
-  },
-  {
-    id: 'pick-element',
-    title: 'Pick element on page',
-    suggestedKey: 'Ctrl+Shift+E',
-    macKey: 'Command+Shift+E',
-    opensPanel: true,
-  },
-  {
-    id: 'capture-screenshot',
-    title: 'Capture screenshot',
-    suggestedKey: 'Ctrl+Shift+S',
-    macKey: 'Command+Shift+S',
-    opensPanel: true,
-  },
-]
+import { getToolboxCommand } from './registry'
 
-export function getCommand(id: string): ToolboxCommand | undefined {
-  return TOOLBOX_COMMANDS.find((command) => command.id === id)
+/** @deprecated Use getToolboxCommand */
+export function getCommand(id: string) {
+  return getToolboxCommand(id)
 }

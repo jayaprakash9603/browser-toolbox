@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { buildMenuItems } from '@/chrome/context-menu/menuTree'
-import { getCommand, TOOLBOX_COMMANDS } from '@/core/commands'
+import { getCommand, GLOBAL_TOOLBOX_COMMANDS, TOOLBOX_COMMANDS } from '@/core/commands'
 import { isExtensionMessage } from '@/core/messaging/types'
 import { clearStalePayloads, consumePayload, peekPayload, stashPayload } from '@/core/payloads'
 import type { ToolDefinition } from '@/core/registry'
@@ -73,15 +73,17 @@ describe('context menu tree', () => {
 })
 
 describe('command registry', () => {
-  it('defines the three wired commands with shortcuts', () => {
-    expect(TOOLBOX_COMMANDS.map((command) => command.id)).toEqual([
+  it('defines global commands with default bindings in the registry', () => {
+    expect(GLOBAL_TOOLBOX_COMMANDS.map((command) => command.id)).toEqual([
       'open-command-palette',
       'pick-element',
       'capture-screenshot',
+      'toggle-pip',
     ])
-    expect(TOOLBOX_COMMANDS.every((command) => command.suggestedKey)).toBe(true)
-    expect(getCommand('pick-element')?.macKey).toBe('Command+Shift+E')
+    expect(GLOBAL_TOOLBOX_COMMANDS.every((command) => command.binding.default)).toBe(true)
+    expect(getCommand('pick-element')?.binding.mac).toBe('Command+Shift+E')
     expect(getCommand('nope')).toBeUndefined()
+    expect(TOOLBOX_COMMANDS.some((c) => c.id === 'panel-search')).toBe(true)
   })
 })
 

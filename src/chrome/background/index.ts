@@ -6,7 +6,6 @@ import { stashPayload } from '@/core/payloads'
 import { toolRegistry } from '@/core/registry'
 import { initStorage } from '@/core/storage'
 
-import { contentScriptBundlePath, ensureContentScriptInTab } from '@/chrome/contentScriptClient'
 
 import { registerAdblock, syncAdblockState } from './adblock'
 import { registerProtection, syncProtectionState } from './protection'
@@ -18,6 +17,7 @@ import {
   isImageConvertMenuItem,
   registerImageConvert,
 } from './imageConvert'
+import { executeToolboxCommand } from './executeCommand'
 import {
   bindPipMenuRebuild,
   buildPipMenus,
@@ -26,6 +26,7 @@ import {
   registerPip,
   togglePipInTab,
 } from './pip'
+import { initShortcutsOnStartup, registerShortcuts } from './shortcuts'
 import { registerApiClientSendHandler } from './api-client-send'
 import { registerCaptureHandler } from './capture'
 import { registerHtmlBundleJobHandlers } from './htmlBundleJob'
@@ -88,6 +89,7 @@ chrome.runtime.onInstalled.addListener(() => {
   void syncProtectionState()
   void syncYoutubeEnhancerState()
   void initPipOnStartup()
+  void initShortcutsOnStartup()
 })
 
 chrome.runtime.onStartup.addListener(() => {
@@ -96,6 +98,7 @@ chrome.runtime.onStartup.addListener(() => {
   void syncProtectionState()
   void syncYoutubeEnhancerState()
   void initPipOnStartup()
+  void initShortcutsOnStartup()
 })
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
@@ -127,55 +130,8 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   })
 })
 
-async function injectContentScript(tabId: number): Promise<boolean> {
-  if (!contentScriptBundlePath()) return false
-  try {
-    await ensureContentScriptInTab(tabId)
-    return true
-  } catch (error) {
-    logger.warn('content script injection failed', error)
-    return false
-  }
-}
-
 chrome.commands.onCommand.addListener((command, tab) => {
-  void (async () => {
-    if (command === 'toggle-pip') {
-      await togglePipInTab(tab)
-      return
-    }
-    if (tab?.windowId != null) {
-      try {
-        await chrome.sidePanel.open({ windowId: tab.windowId })
-      } catch (error) {
-        logger.warn('side panel open failed', error)
-      }
-    }
-    switch (command) {
-      case 'open-command-palette':
-        await stashPayload({ toolId: 'command-palette' })
-        break
-      case 'pick-element': {
-        if (tab?.id != null) {
-          const injected = await injectContentScript(tab.id)
-          if (injected) {
-            await stashPayload({ toolId: 'qa.element-inspector', pageUrl: tab.url })
-            try {
-              await chrome.tabs.sendMessage(tab.id, { type: 'PICK_ELEMENT_START' })
-            } catch (error) {
-              logger.warn('picker start failed', error)
-            }
-          }
-        }
-        break
-      }
-      case 'capture-screenshot':
-        await stashPayload({ toolId: 'screenshots.capture', pageUrl: tab?.url })
-        break
-      default:
-        logger.debug('unknown command', command)
-    }
-  })()
+  void executeToolboxCommand(command, tab)
 })
 
 registerApiClientSendHandler()
@@ -189,4 +145,5 @@ bindImageConvertMenuRebuild(rebuildContextMenus)
 bindPipMenuRebuild(rebuildContextMenus)
 registerImageConvert()
 registerPip()
+registerShortcuts()
 startMessageRouter()

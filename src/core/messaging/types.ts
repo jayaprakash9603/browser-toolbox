@@ -91,6 +91,7 @@ export type ExtensionMessage =
     }
   | { type: 'OFFSCREEN_IMAGE_RELEASE'; url: string }
   | { type: 'PIP_TOGGLE'; tabId?: number }
+  | { type: 'SHORTCUT_KEY_EVENT'; modifiers: { key: string; ctrl: boolean; alt: boolean; shift: boolean; meta: boolean } }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
@@ -149,6 +150,7 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'OFFSCREEN_IMAGE_CONVERT',
   'OFFSCREEN_IMAGE_RELEASE',
   'PIP_TOGGLE',
+  'SHORTCUT_KEY_EVENT',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {

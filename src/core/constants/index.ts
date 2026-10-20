@@ -14,6 +14,7 @@ export const STORAGE_KEYS = {
   whatsappPlus: 'whatsappPlus',
   saveImageAs: 'saveImageAs',
   pip: 'pip',
+  keyboardShortcuts: 'keyboardShortcuts',
   meta: 'meta',
 } as const
 

@@ -1,5 +1,15 @@
 import { defineManifest } from '@crxjs/vite-plugin'
 
+/** Keep ids in sync with src/core/commands/manifest.ts */
+function buildManifestCommands(): Record<string, { description: string }> {
+  return {
+    'open-command-palette': { description: '__MSG_commandPaletteDescription__' },
+    'pick-element': { description: '__MSG_commandPickElement__' },
+    'capture-screenshot': { description: '__MSG_commandCaptureScreenshot__' },
+    'toggle-pip': { description: '__MSG_commandTogglePip__' },
+  }
+}
+
 export default defineManifest({
   manifest_version: 3,
   default_locale: 'en',
@@ -71,22 +81,5 @@ export default defineManifest({
       ],
     },
   ],
-  commands: {
-    'open-command-palette': {
-      suggested_key: { default: 'Ctrl+Shift+Space', mac: 'Command+Shift+Space' },
-      description: '__MSG_commandPaletteDescription__',
-    },
-    'pick-element': {
-      suggested_key: { default: 'Ctrl+Shift+E', mac: 'Command+Shift+E' },
-      description: '__MSG_commandPickElement__',
-    },
-    'capture-screenshot': {
-      suggested_key: { default: 'Ctrl+Shift+S', mac: 'Command+Shift+S' },
-      description: '__MSG_commandCaptureScreenshot__',
-    },
-    'toggle-pip': {
-      suggested_key: { default: 'Alt+P', mac: 'Alt+P' },
-      description: '__MSG_commandTogglePip__',
-    },
-  },
+  commands: buildManifestCommands(),
 })

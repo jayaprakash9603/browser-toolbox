@@ -17,7 +17,8 @@ import { BrandLogo } from '@/shared/components/BrandLogo'
 import { Button } from '@/shared/components/ui/button'
 import { ThemeToggle } from '@/shared/components/ThemeToggle'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip'
-import { SEARCH_SHORTCUT_LABEL } from '@/shared/lib/keyboardShortcut'
+import { usePanelShortcuts } from '@/features/shortcuts/usePanelShortcuts'
+import { useShortcutDisplay } from '@/features/shortcuts/useShortcutDisplay'
 
 const HomePage = lazy(() => import('@/app/pages/HomePage'))
 const SettingsPage = lazy(() => import('@/app/pages/SettingsPage'))
@@ -46,6 +47,8 @@ export function AppShell({ children }: { children?: ReactNode }) {
   const [paletteMounted, setPaletteMounted] = useState(false)
   const mainRef = useRef<HTMLElement>(null)
   const reduceMotion = useReducedMotion()
+  const { resolvePanelCommand } = usePanelShortcuts()
+  const searchShortcutLabel = useShortcutDisplay('panel-search')
 
   useEffect(() => {
     scheduleIdle(() => {
@@ -60,7 +63,8 @@ export function AppShell({ children }: { children?: ReactNode }) {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      const panelCommand = resolvePanelCommand(event)
+      if (panelCommand === 'panel-search') {
         event.preventDefault()
         if (isHomePath(path)) requestFocusHomeSearch()
         else openPalette()
@@ -69,7 +73,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [path])
+  }, [path, resolvePanelCommand])
 
   const tool = useMemo(() => toolRegistry.getAll().find((entry) => entry.route === path), [path])
 
@@ -111,7 +115,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
             >
               <SearchIcon className="size-4" />
               <kbd className="rounded border bg-muted px-1.5 font-sans text-[10px] leading-5 font-medium">
-                {SEARCH_SHORTCUT_LABEL}
+                {searchShortcutLabel}
               </kbd>
             </Button>
           </TooltipTrigger>

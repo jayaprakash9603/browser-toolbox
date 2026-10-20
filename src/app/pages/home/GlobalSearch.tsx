@@ -18,7 +18,7 @@ import { TOOLBOX_FOCUS_HOME_SEARCH } from '@/features/search/searchFocus'
 import { getToolDescription } from '@/i18n/toolLabels'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
-import { SEARCH_SHORTCUT_LABEL } from '@/shared/lib/keyboardShortcut'
+import { useShortcutDisplay } from '@/features/shortcuts/useShortcutDisplay'
 import { cn } from '@/shared/utils/cn'
 
 interface GlobalSearchProps {
@@ -37,6 +37,7 @@ export function GlobalSearch({ compact = false, className }: GlobalSearchProps) 
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
+  const searchShortcutLabel = useShortcutDisplay('panel-search')
 
   const sections = useMemo(() => {
     const grouped = groupSearchResults(searchAll(query))
@@ -156,14 +157,14 @@ export function GlobalSearch({ compact = false, className }: GlobalSearchProps) 
         ) : (
           <kbd
             className="shrink-0 rounded border bg-muted px-1.5 font-sans text-[10px] leading-5 font-medium text-muted-foreground"
-            aria-label={t('home.searchShortcut', { shortcut: SEARCH_SHORTCUT_LABEL })}
+            aria-label={t('home.searchShortcut', { shortcut: searchShortcutLabel })}
           >
-            {SEARCH_SHORTCUT_LABEL}
+            {searchShortcutLabel}
           </kbd>
         )}
       </div>
       <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
-        {t('home.searchShortcutHint', { shortcut: SEARCH_SHORTCUT_LABEL })}
+        {t('home.searchShortcutHint', { shortcut: searchShortcutLabel })}
       </p>
 
       <AnimatePresence>

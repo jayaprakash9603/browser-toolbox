@@ -1,12 +1,15 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { Link } from '@/app/router'
 import { sendMessage } from '@/core/messaging'
 import type { PipToggleResult } from '@/core/pip'
 import { usePipSettings } from '@/features/browser/usePipSettings'
+import { useShortcutDisplay } from '@/features/shortcuts/useShortcutDisplay'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
 import { Switch } from '@/shared/components/ui/switch'
+import { buildRoute } from '@/features/search/buildRoute'
 
 import { useBrowserTool } from '../_shared'
 
@@ -14,15 +17,8 @@ export default function PictureInPictureTool() {
   const { t } = useTranslation()
   const tool = useBrowserTool('browser.picture-in-picture')
   const { state, patch } = usePipSettings()
-  const [shortcut, setShortcut] = useState('Alt+P')
+  const shortcut = useShortcutDisplay('toggle-pip')
   const [lastResult, setLastResult] = useState<PipToggleResult | null>(null)
-
-  useEffect(() => {
-    void chrome.commands.getAll().then((commands) => {
-      const pip = commands.find((c) => c.name === 'toggle-pip')
-      if (pip?.shortcut) setShortcut(pip.shortcut)
-    })
-  }, [])
 
   const toggleOnTab = useCallback(async () => {
     const result = await sendMessage<PipToggleResult>({ type: 'PIP_TOGGLE' })
@@ -51,25 +47,17 @@ export default function PictureInPictureTool() {
             <li>{t('pip.howTo3')}</li>
           </ol>
           <p className="mt-3 text-xs text-muted-foreground">
-            <a
-              href="chrome://extensions/shortcuts"
+            <Link
+              to={buildRoute('/settings', { focus: 'keyboardShortcuts' })}
               className="text-primary underline-offset-2 hover:underline"
-              onClick={(e) => {
-                e.preventDefault()
-                void chrome.tabs.create({ url: 'chrome://extensions/shortcuts' })
-              }}
             >
-              {t('pip.shortcutsLink')}
-            </a>
+              {t('pip.customizeShortcut')}
+            </Link>
           </p>
         </section>
 
         <section className="rounded-xl border bg-card p-4">
-          <Button
-            className="w-full"
-            disabled={!state.enabled}
-            onClick={() => void toggleOnTab()}
-          >
+          <Button className="w-full" disabled={!state.enabled} onClick={() => void toggleOnTab()}>
             {t('pip.toggleButton')}
           </Button>
           {lastResult?.gestureRequired && (
