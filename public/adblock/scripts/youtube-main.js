@@ -190,26 +190,6 @@
 			});
 		} });
 	}
-	function patchFetch() {
-		const original = window.fetch.bind(window);
-		window.fetch = ((input, init) => {
-			return original(input, init).then((response) => {
-				if (!isYoutubePlayerEndpoint(typeof input === "string" ? input : input instanceof URL ? input.href : input instanceof Request ? input.url : "") && !isYoutubePlayerEndpoint(response.url)) return response;
-				return new Proxy(response, { get(target, prop, receiver) {
-					if (prop === "json") return () => target.json().then((data) => {
-						if (hasYoutubeAdPayload(data)) reportPruned(pruneYoutubeAdsInPlace(data));
-						return data;
-					});
-					if (prop === "text") return () => target.text().then((text) => {
-						const pruned = pruneYoutubeResponseText(text);
-						reportPruned(pruned.removed);
-						return pruned.text;
-					});
-					return Reflect.get(target, prop, receiver);
-				} });
-			});
-		});
-	}
 	function patchXhr() {
 		const proto = XMLHttpRequest.prototype;
 		const textDesc = Object.getOwnPropertyDescriptor(proto, "responseText");
@@ -310,7 +290,6 @@
 		guarded.__toolboxAdblockYtMain = true;
 		patchJsonParse();
 		patchResponse();
-		patchFetch();
 		patchXhr();
 		trapGlobal("ytInitialPlayerResponse");
 		trapGlobal("ytInitialData");

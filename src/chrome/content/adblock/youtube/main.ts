@@ -51,43 +51,6 @@ function patchResponse(): void {
   })
 }
 
-function patchFetch(): void {
-  const original = window.fetch.bind(window)
-  window.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
-    return original(input, init).then((response) => {
-      const reqUrl =
-        typeof input === 'string'
-          ? input
-          : input instanceof URL
-            ? input.href
-            : input instanceof Request
-              ? input.url
-              : ''
-      if (!isYoutubePlayerEndpoint(reqUrl) && !isYoutubePlayerEndpoint(response.url)) return response
-      return new Proxy(response, {
-        get(target, prop, receiver) {
-          if (prop === 'json') {
-            return () =>
-              target.json().then((data: unknown) => {
-                if (hasYoutubeAdPayload(data)) reportPruned(pruneYoutubeAdsInPlace(data))
-                return data
-              })
-          }
-          if (prop === 'text') {
-            return () =>
-              target.text().then((text: string) => {
-                const pruned = pruneYoutubeResponseText(text)
-                reportPruned(pruned.removed)
-                return pruned.text
-              })
-          }
-          return Reflect.get(target, prop, receiver)
-        },
-      }) as Response
-    })
-  }) as typeof fetch
-}
-
 function patchXhr(): void {
   const proto = XMLHttpRequest.prototype
   const textDesc = Object.getOwnPropertyDescriptor(proto, 'responseText')
@@ -201,7 +164,6 @@ if (!guarded.__toolboxAdblockYtMain && window === window.top) {
   guarded.__toolboxAdblockYtMain = true
   patchJsonParse()
   patchResponse()
-  patchFetch()
   patchXhr()
   trapGlobal('ytInitialPlayerResponse')
   trapGlobal('ytInitialData')
