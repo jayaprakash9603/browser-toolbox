@@ -43,11 +43,14 @@ export const YOUTUBE_AD_UI_SELECTORS = [
 ] as const
 
 export const YOUTUBE_SKIP_BUTTON_SELECTORS = [
-  '.ytp-ad-skip-button',
-  '.ytp-ad-skip-button-modern',
   '.ytp-skip-ad-button',
+  '.ytp-ad-skip-button:not(.ytp-ad-skip-button-disabled)',
+  '.ytp-ad-skip-button-modern:not(.ytp-ad-skip-button-disabled)',
+  '.ytp-ad-skip-button-container:not(.ytp-ad-skip-button-disabled) .ytp-ad-skip-button',
+  '.ytp-ad-skip-button-container:not(.ytp-ad-skip-button-disabled) button',
   'button.ytp-ad-skip-button-modern',
-  '.ytp-ad-button-icon',
+  '.ytp-ad-skip-button-slot:not(.ytp-ad-skip-button-disabled) .ytp-ad-button-icon',
   'button.ytp-ad-skip-button-slot',
   '.video-ads .ytp-ad-skip-button-container button',
+  '.ytp-ad-skip-button-modern .ytp-ad-button-icon',
 ] as const

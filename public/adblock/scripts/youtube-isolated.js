@@ -42,19 +42,76 @@
 		".video-ads .ytp-ad-module > *"
 	];
 	var YOUTUBE_SKIP_BUTTON_SELECTORS = [
-		".ytp-ad-skip-button",
-		".ytp-ad-skip-button-modern",
 		".ytp-skip-ad-button",
+		".ytp-ad-skip-button:not(.ytp-ad-skip-button-disabled)",
+		".ytp-ad-skip-button-modern:not(.ytp-ad-skip-button-disabled)",
+		".ytp-ad-skip-button-container:not(.ytp-ad-skip-button-disabled) .ytp-ad-skip-button",
+		".ytp-ad-skip-button-container:not(.ytp-ad-skip-button-disabled) button",
 		"button.ytp-ad-skip-button-modern",
-		".ytp-ad-button-icon",
+		".ytp-ad-skip-button-slot:not(.ytp-ad-skip-button-disabled) .ytp-ad-button-icon",
 		"button.ytp-ad-skip-button-slot",
-		".video-ads .ytp-ad-skip-button-container button"
+		".video-ads .ytp-ad-skip-button-container button",
+		".ytp-ad-skip-button-modern .ytp-ad-button-icon"
 	];
+	//#endregion
+	//#region src/chrome/content/adblock/youtube/skipAd.ts
+	function isSkipElementClickable(el) {
+		if (!el.isConnected) return false;
+		if (el.getAttribute("aria-disabled") === "true" || el.hasAttribute("disabled")) return false;
+		if (el.classList.contains("ytp-ad-skip-button-disabled")) return false;
+		if (el.closest(".ytp-ad-skip-button-container")?.classList.contains("ytp-ad-skip-button-disabled")) return false;
+		const style = getComputedStyle(el);
+		if (style.display === "none" || style.visibility === "hidden" || style.pointerEvents === "none") return false;
+		const rect = el.getBoundingClientRect();
+		return rect.width >= 2 && rect.height >= 2;
+	}
+	function playerRoot() {
+		return document.querySelector("#movie_player, .html5-video-player");
+	}
+	function findSkipButton() {
+		const scope = playerRoot() ?? document;
+		for (const selector of YOUTUBE_SKIP_BUTTON_SELECTORS) {
+			const el = scope.querySelector(selector);
+			if (el && isSkipElementClickable(el)) return el;
+		}
+		for (const el of scope.querySelectorAll("button, div[role=\"button\"], span[role=\"button\"], .ytp-button")) {
+			const label = `${el.getAttribute("aria-label") ?? ""} ${el.textContent ?? ""}`.toLowerCase();
+			if (!/\bskip\b/.test(label)) continue;
+			if (isSkipElementClickable(el)) return el;
+		}
+		return null;
+	}
+	function forceClick(el) {
+		try {
+			el.click();
+		} catch {}
+		const opts = {
+			bubbles: true,
+			cancelable: true,
+			view: window,
+			buttons: 1
+		};
+		for (const type of [
+			"pointerdown",
+			"mousedown",
+			"pointerup",
+			"mouseup",
+			"click"
+		]) el.dispatchEvent(new MouseEvent(type, opts));
+	}
+	/** Click “Skip ad” in the page context (MAIN world). Returns true if a click was attempted. */
+	function tryAutoSkipAd() {
+		const button = findSkipButton();
+		if (!button) return false;
+		forceClick(button);
+		return true;
+	}
 	//#endregion
 	//#region src/chrome/content/adblock/youtube/isolated.ts
 	var STYLE_ID = "toolbox-adblock-youtube";
 	var REPORT_DELAY_MS = 1500;
 	var FAST_FORWARD_RATE = 16;
+	var AD_POLL_MS = 50;
 	var enabled = false;
 	var pendingBlocked = 0;
 	var reportTimer = null;
@@ -96,16 +153,6 @@
 		if (YOUTUBE_AD_PLAYER_CLASSES.some((cls) => player.classList.contains(cls))) return true;
 		return YOUTUBE_AD_UI_SELECTORS.some((selector) => player.querySelector(selector));
 	}
-	function clickSkip(player) {
-		for (const selector of YOUTUBE_SKIP_BUTTON_SELECTORS) {
-			const button = player.querySelector(selector);
-			if (button) {
-				button.click();
-				return true;
-			}
-		}
-		return false;
-	}
 	function restoreVideo(video) {
 		if (!saved || !video) return;
 		video.muted = saved.muted;
@@ -114,6 +161,7 @@
 	}
 	/** Fallback when an ad still slips through pruning: mute, fast-forward, skip. */
 	function checkPlayer() {
+		tryAutoSkipAd();
 		const player = getPlayer();
 		if (!player) return;
 		const video = getVideo(player);
@@ -135,28 +183,39 @@
 		}
 		video.muted = true;
 		if (video.playbackRate !== FAST_FORWARD_RATE) video.playbackRate = FAST_FORWARD_RATE;
-		if (clickSkip(player)) return;
-		if (Number.isFinite(video.duration) && video.duration > 0 && video.duration < 300) video.currentTime = Math.max(video.currentTime, video.duration - .1);
+		if (tryAutoSkipAd()) return;
+		if (Number.isFinite(video.duration) && video.duration > 0 && video.duration < 600) {
+			const nearEnd = video.duration - .05;
+			if (video.currentTime < nearEnd) video.currentTime = nearEnd;
+		}
 	}
 	function stopPoll() {
 		if (!pollTimer) return;
 		clearInterval(pollTimer);
 		pollTimer = null;
 	}
+	function resetPlayerObserver() {
+		playerObserver?.disconnect();
+		playerObserver = null;
+	}
 	function observePlayer() {
 		const player = getPlayer();
-		if (!player || playerObserver) return;
-		playerObserver = new MutationObserver(checkPlayer);
-		playerObserver.observe(player, {
-			attributes: true,
-			attributeFilter: ["class"]
-		});
+		if (!player) return;
+		if (!playerObserver) {
+			playerObserver = new MutationObserver(checkPlayer);
+			playerObserver.observe(player, {
+				subtree: true,
+				childList: true,
+				attributes: true,
+				attributeFilter: ["class", "aria-disabled"]
+			});
+		}
 		checkPlayer();
 		stopPoll();
 	}
 	function startAdPoll() {
 		if (adPollTimer) return;
-		adPollTimer = setInterval(checkPlayer, 250);
+		adPollTimer = setInterval(checkPlayer, AD_POLL_MS);
 	}
 	function stopAdPoll() {
 		if (!adPollTimer) return;
@@ -173,8 +232,7 @@
 	}
 	function stop() {
 		document.getElementById(STYLE_ID)?.remove();
-		playerObserver?.disconnect();
-		playerObserver = null;
+		resetPlayerObserver();
 		stopPoll();
 		stopAdPoll();
 		const player = getPlayer();
@@ -207,7 +265,10 @@
 			if (area === "local" && changes.adblock) applyState(changes.adblock.newValue);
 		});
 		document.addEventListener("yt-navigate-finish", () => {
-			if (enabled) observePlayer();
+			if (!enabled) return;
+			resetPlayerObserver();
+			observePlayer();
+			tryAutoSkipAd();
 		});
 	}
 	//#endregion

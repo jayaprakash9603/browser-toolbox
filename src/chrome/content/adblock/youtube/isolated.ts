@@ -2,14 +2,15 @@ import {
   YOUTUBE_AD_PLAYER_CLASSES,
   YOUTUBE_AD_UI_SELECTORS,
   YOUTUBE_COSMETIC_SELECTORS,
-  YOUTUBE_SKIP_BUTTON_SELECTORS,
 } from './selectors'
+import { tryAutoSkipAd } from './skipAd'
 
 type GuardedWindow = Window & { __toolboxYtIsolated?: boolean }
 
 const STYLE_ID = 'toolbox-adblock-youtube'
 const REPORT_DELAY_MS = 1500
 const FAST_FORWARD_RATE = 16
+const AD_POLL_MS = 50
 
 let enabled = false
 let pendingBlocked = 0
@@ -57,17 +58,6 @@ function isAdPlaying(player: HTMLElement): boolean {
   return YOUTUBE_AD_UI_SELECTORS.some((selector) => player.querySelector(selector))
 }
 
-function clickSkip(player: HTMLElement): boolean {
-  for (const selector of YOUTUBE_SKIP_BUTTON_SELECTORS) {
-    const button = player.querySelector<HTMLElement>(selector)
-    if (button) {
-      button.click()
-      return true
-    }
-  }
-  return false
-}
-
 function restoreVideo(video: HTMLVideoElement | null): void {
   if (!saved || !video) return
   video.muted = saved.muted
@@ -77,6 +67,7 @@ function restoreVideo(video: HTMLVideoElement | null): void {
 
 /** Fallback when an ad still slips through pruning: mute, fast-forward, skip. */
 function checkPlayer(): void {
+  tryAutoSkipAd()
   const player = getPlayer()
   if (!player) return
   const video = getVideo(player)
@@ -95,9 +86,10 @@ function checkPlayer(): void {
   }
   video.muted = true
   if (video.playbackRate !== FAST_FORWARD_RATE) video.playbackRate = FAST_FORWARD_RATE
-  if (clickSkip(player)) return
-  if (Number.isFinite(video.duration) && video.duration > 0 && video.duration < 300) {
-    video.currentTime = Math.max(video.currentTime, video.duration - 0.1)
+  if (tryAutoSkipAd()) return
+  if (Number.isFinite(video.duration) && video.duration > 0 && video.duration < 600) {
+    const nearEnd = video.duration - 0.05
+    if (video.currentTime < nearEnd) video.currentTime = nearEnd
   }
 }
 
@@ -107,18 +99,30 @@ function stopPoll(): void {
   pollTimer = null
 }
 
+function resetPlayerObserver(): void {
+  playerObserver?.disconnect()
+  playerObserver = null
+}
+
 function observePlayer(): void {
   const player = getPlayer()
-  if (!player || playerObserver) return
-  playerObserver = new MutationObserver(checkPlayer)
-  playerObserver.observe(player, { attributes: true, attributeFilter: ['class'] })
+  if (!player) return
+  if (!playerObserver) {
+    playerObserver = new MutationObserver(checkPlayer)
+    playerObserver.observe(player, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ['class', 'aria-disabled'],
+    })
+  }
   checkPlayer()
   stopPoll()
 }
 
 function startAdPoll(): void {
   if (adPollTimer) return
-  adPollTimer = setInterval(checkPlayer, 250)
+  adPollTimer = setInterval(checkPlayer, AD_POLL_MS)
 }
 
 function stopAdPoll(): void {
@@ -140,8 +144,7 @@ function start(): void {
 
 function stop(): void {
   document.getElementById(STYLE_ID)?.remove()
-  playerObserver?.disconnect()
-  playerObserver = null
+  resetPlayerObserver()
   stopPoll()
   stopAdPoll()
   const player = getPlayer()
@@ -186,6 +189,9 @@ if (!guarded.__toolboxYtIsolated) {
   })
 
   document.addEventListener('yt-navigate-finish', () => {
-    if (enabled) observePlayer()
+    if (!enabled) return
+    resetPlayerObserver()
+    observePlayer()
+    tryAutoSkipAd()
   })
 }

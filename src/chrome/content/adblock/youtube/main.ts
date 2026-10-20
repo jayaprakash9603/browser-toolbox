@@ -5,6 +5,8 @@ import {
   pruneYoutubeResponseText,
 } from '../scriptlets/jsonPrune'
 
+import { tryAutoSkipAd } from './skipAd'
+
 type GuardedWindow = Window & { __toolboxYtMain?: boolean }
 
 const MESSAGE_SOURCE = 'toolbox-adblock'
@@ -149,6 +151,32 @@ function pruneInlineGlobals(): void {
   }
 }
 
+let skipObserver: MutationObserver | null = null
+
+function attachSkipObserver(): void {
+  const player = document.querySelector('#movie_player')
+  if (!player || skipObserver) return
+  skipObserver = new MutationObserver(() => tryAutoSkipAd())
+  skipObserver.observe(player, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    attributeFilter: ['class', 'aria-disabled', 'style'],
+  })
+}
+
+function startAutoSkip(): void {
+  window.setInterval(() => tryAutoSkipAd(), 50)
+  window.setInterval(attachSkipObserver, 1500)
+  document.addEventListener('yt-navigate-finish', () => {
+    skipObserver?.disconnect()
+    skipObserver = null
+    attachSkipObserver()
+    tryAutoSkipAd()
+  })
+  attachSkipObserver()
+}
+
 const guarded = window as GuardedWindow
 if (!guarded.__toolboxYtMain) {
   guarded.__toolboxYtMain = true
@@ -159,4 +187,5 @@ if (!guarded.__toolboxYtMain) {
   trapGlobal('ytInitialPlayerResponse')
   trapGlobal('ytInitialData')
   pruneInlineGlobals()
+  startAutoSkip()
 }
