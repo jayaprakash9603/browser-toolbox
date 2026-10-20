@@ -128,7 +128,20 @@ export async function pipEnterDocumentInFrame(): Promise<'entered' | 'unsupporte
   pip.document.head.appendChild(fit)
   pip.document.body.append(player)
 
-  // Re-layout the player on every resize (throttled to one pass per frame) so the video and\n  // control bar always fill the window.\n  let frame = 0\n  const nudge = () => {\n    if (frame) return\n    frame = window.requestAnimationFrame(() => {\n      frame = 0\n      window.dispatchEvent(new Event('resize'))\n    })\n  }\n  pip.addEventListener('resize', nudge)\n  const observer = new ResizeObserver(nudge)\n  observer.observe(pip.document.documentElement)\n  nudge()
+  // Re-layout the player on every resize (throttled to one pass per frame) so the video and
+  // control bar always fill the window.
+  let frame = 0
+  const nudge = () => {
+    if (frame) return
+    frame = window.requestAnimationFrame(() => {
+      frame = 0
+      window.dispatchEvent(new Event('resize'))
+    })
+  }
+  pip.addEventListener('resize', nudge)
+  const observer = new ResizeObserver(nudge)
+  observer.observe(pip.document.documentElement)
+  nudge()
 
   pip.addEventListener('pagehide', () => {
     pip.removeEventListener('resize', nudge)

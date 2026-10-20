@@ -72,7 +72,18 @@
     pip.document.head.appendChild(fit)
     pip.document.body.append(player)
 
-    let frame = 0\n    const nudge = function () {\n      if (frame) return\n      frame = window.requestAnimationFrame(function () {\n        frame = 0\n        window.dispatchEvent(new Event('resize'))\n      })\n    }\n    pip.addEventListener('resize', nudge)\n    const observer = new ResizeObserver(nudge)\n    observer.observe(pip.document.documentElement)\n    nudge()
+    let frame = 0
+    const nudge = function () {
+      if (frame) return
+      frame = window.requestAnimationFrame(function () {
+        frame = 0
+        window.dispatchEvent(new Event('resize'))
+      })
+    }
+    pip.addEventListener('resize', nudge)
+    const observer = new ResizeObserver(nudge)
+    observer.observe(pip.document.documentElement)
+    nudge()
     pip.addEventListener('pagehide', function () {
       pip.removeEventListener('resize', nudge)
       observer.disconnect()
