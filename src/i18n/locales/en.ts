@@ -1,3 +1,5 @@
+import { sitesYoutubeStrings } from './sitesYoutubeEn'
+
 const en = {
   'app.name': 'Browser Toolbox',
   'document.title': 'Browser Toolbox',
@@ -944,6 +946,7 @@ const en = {
   'toolkitGroups.design': 'Design',
   'toolkitGroups.security': 'Security',
   'toolkitGroups.privacy': 'Privacy',
+  'toolkitGroups.sites': 'Site enhancements',
   'toolkitGroups.generators': 'Generators',
   'toolkitGroups.calculators': 'Calculators',
   'toolkitGroups.datetime': 'Date & Time',
@@ -1110,6 +1113,7 @@ const en = {
   'files.pages_other': '{{count}} pages',
   'files.readError': 'Could not read {{name}}.',
   'files.unsupported': '{{name}} is not a supported file type for this tab.',
+  ...sitesYoutubeStrings,
 } as const
 
 export default en

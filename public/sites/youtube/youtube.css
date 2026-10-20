@@ -1,0 +1,235 @@
+/* Browser Toolbox YouTube enhancements — toggled via html[data-tbx-yt-*] from yt-isolated.js */
+
+html[data-tbx-yt-hide-sponsored] ytd-ad-slot-renderer,
+html[data-tbx-yt-hide-sponsored] ytd-in-feed-ad-layout-renderer,
+html[data-tbx-yt-hide-sponsored] ytd-banner-promo-renderer {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-merch] ytd-merch-shelf-renderer,
+html[data-tbx-yt-hide-merch] ytd-product-list-item-renderer {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-premium-upsell] ytd-mealbar-promo-renderer {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-info-panels] ytd-info-panel-container-renderer,
+html[data-tbx-yt-hide-info-panels] ytd-expandable-metadata-renderer {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-ai-summaries] ytd-expandable-metadata-renderer {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-shorts-shelf] ytd-reel-shelf-renderer {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-live] ytd-badge-supported-renderer[aria-label*='LIVE'] {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-streamed] ytd-thumbnail-overlay-time-status-renderer[overlay-style='DEFAULT'] {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-members-only] ytd-badge-supported-renderer[aria-label*='Members only'] {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-auto-dubbed] ytd-badge-supported-renderer[aria-label*='dubbed'] {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-sub-collaborations] ytd-grid-video-renderer:has([aria-label*='collab']) {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-share-actions] #top-level-buttons-computed {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-fs-title] .ytp-chrome-top.ytp-fullscreen-grid {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-fs-like] .ytp-fullscreen-grid .ytp-button {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-shorts-actions] ytd-reel-player-overlay-renderer #actions {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-shorts-remix] ytd-reel-player-overlay-renderer [aria-label*='Remix'] {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-shorts-related-link] ytd-reel-player-overlay-renderer a[href*='/shorts/'] {
+  display: none !important;
+}
+
+html[data-tbx-yt-tidy-guide] #guide #sections ytd-guide-section-renderer:not(:first-child) {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-mixes] ytd-radio-renderer {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-playlists] ytd-playlist-renderer {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-movies-tv] ytd-movie-renderer,
+html[data-tbx-yt-hide-movies-tv] ytd-grid-movie-renderer {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-upcoming] ytd-thumbnail-overlay-time-status-renderer[overlay-style='UPCOMING'] {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-suggested-sections] ytd-shelf-renderer {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-home-categories] yt-chip-cloud-chip-renderer {
+  display: none !important;
+}
+
+html[data-tbx-yt-disable-home-feed] ytd-browse[page-subtype='home'] #contents {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-sub-latest-bar] ytd-feed-filter-chip-bar-renderer {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-related] #related {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-next-button] .ytp-next-button {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-watermark] .ytp-watermark {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-metadata] ytd-watch-metadata {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-comments] ytd-comments#comments {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-chat] ytd-live-chat-frame,
+html[data-tbx-yt-hide-chat] #chat {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-end-cards] .ytp-ce-element {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-endscreen] .html5-endscreen {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-fs-more-videos] .ytp-fullscreen-grid {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-shorts] ytd-reel-shelf-renderer,
+html[data-tbx-yt-hide-shorts] a[href^='/shorts/'] {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-embed-share] .ytp-share-button {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-embed-pause-overlay] .ytp-pause-overlay {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-channel-banners] #channel-header-container {
+  display: none !important;
+}
+
+html[data-tbx-yt-hide-voice-search] button[aria-label*='voice'] {
+  display: none !important;
+}
+
+html[data-tbx-yt-full-titles] h3.ytd-rich-grid-media,
+html[data-tbx-yt-full-titles] #video-title {
+  -webkit-line-clamp: unset !important;
+  max-height: none !important;
+  white-space: normal !important;
+}
+
+html[data-tbx-yt-square-corners] ytd-thumbnail,
+html[data-tbx-yt-square-corners] .ytp-progress-bar-container {
+  border-radius: 0 !important;
+}
+
+html[data-tbx-yt-no-pink-gradient] .ytp-progress-bar,
+html[data-tbx-yt-no-pink-gradient] .ytp-play-progress {
+  background-image: none !important;
+}
+
+html[data-tbx-yt-small-related-thumbs] ytd-compact-video-renderer ytd-thumbnail {
+  width: 120px !important;
+  min-width: 120px !important;
+}
+
+html[data-tbx-yt-search-thumb-size='large'] ytd-video-renderer ytd-thumbnail {
+  width: 360px !important;
+}
+
+html[data-tbx-yt-search-thumb-size='small'] ytd-video-renderer ytd-thumbnail {
+  width: 168px !important;
+}
+
+html[data-tbx-yt-grid-min-per-row='1'] ytd-rich-grid-renderer {
+  --ytd-rich-grid-items-per-row: 1 !important;
+}
+html[data-tbx-yt-grid-min-per-row='2'] ytd-rich-grid-renderer {
+  --ytd-rich-grid-items-per-row: 2 !important;
+}
+html[data-tbx-yt-grid-min-per-row='3'] ytd-rich-grid-renderer {
+  --ytd-rich-grid-items-per-row: 3 !important;
+}
+html[data-tbx-yt-grid-min-per-row='4'] ytd-rich-grid-renderer {
+  --ytd-rich-grid-items-per-row: 4 !important;
+}
+
+/* Custom progress bar */
+.ytp-progress-bar-container,
+.ytp-progress-bar {
+  height: var(--tbx-yt-progress-height, 3px) !important;
+}
+
+.ytp-play-progress {
+  background: var(--tbx-yt-progress-played, #cc0000) !important;
+}
+
+.ytp-progress-bar {
+  background: var(--tbx-yt-progress-bar, #ff0000) !important;
+}
+
+html[data-tbx-yt-progress-custom] .ytp-scrubber-button {
+  transform: scale(1.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-tbx-yt-progress-animated] .ytp-play-progress {
+    animation: none !important;
+  }
+}

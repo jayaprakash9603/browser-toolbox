@@ -62,6 +62,8 @@ export default defineManifest({
         'blocked.html',
         'protection/threats.json',
         'protection/scripts/*',
+        'sites/scripts/*',
+        'sites/youtube/*',
       ],
     },
   ],

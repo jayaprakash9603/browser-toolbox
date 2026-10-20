@@ -42,6 +42,14 @@ async function buildEntry(name, entry, outDir) {
 for (const [name, entry] of Object.entries(adblockEntries)) {
   await buildEntry(name, entry, 'public/adblock/scripts')
 }
+const sitesEntries = {
+  'yt-isolated': 'src/chrome/content/sites/youtube/isolated.ts',
+  'yt-main': 'src/chrome/content/sites/youtube/main.ts',
+}
+
 for (const [name, entry] of Object.entries(protectionEntries)) {
   await buildEntry(name, entry, 'public/protection/scripts')
+}
+for (const [name, entry] of Object.entries(sitesEntries)) {
+  await buildEntry(name, entry, 'public/sites/scripts')
 }

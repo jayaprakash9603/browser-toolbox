@@ -10,6 +10,7 @@ import { contentScriptBundlePath, ensureContentScriptInTab } from '@/chrome/cont
 
 import { registerAdblock, syncAdblockState } from './adblock'
 import { registerProtection, syncProtectionState } from './protection'
+import { registerSitesYoutube, syncYoutubeEnhancerState } from './sites'
 import { registerApiClientSendHandler } from './api-client-send'
 import { registerCaptureHandler } from './capture'
 import { registerHtmlBundleJobHandlers } from './htmlBundleJob'
@@ -68,12 +69,14 @@ chrome.runtime.onInstalled.addListener(() => {
   void initStorage().then(rebuildContextMenus)
   void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
   void syncProtectionState()
+  void syncYoutubeEnhancerState()
 })
 
 chrome.runtime.onStartup.addListener(() => {
   void rebuildContextMenus()
   void syncAdblockState()
   void syncProtectionState()
+  void syncYoutubeEnhancerState()
 })
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
@@ -149,4 +152,5 @@ registerCaptureHandler()
 registerHtmlBundleJobHandlers()
 registerAdblock()
 registerProtection()
+registerSitesYoutube()
 startMessageRouter()

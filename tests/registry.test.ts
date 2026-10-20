@@ -7,7 +7,7 @@ describe('tool registry', () => {
   registerModules()
 
   it('registers all tools across enabled categories', () => {
-    expect(toolRegistry.getAll()).toHaveLength(56)
+    expect(toolRegistry.getAll()).toHaveLength(57)
   })
 
   it('rejects duplicate tool ids', () => {
@@ -68,6 +68,7 @@ describe('category registry', () => {
       'design',
       'security',
       'privacy',
+      'sites',
       'calculators',
       'datetime',
       'screenshots',

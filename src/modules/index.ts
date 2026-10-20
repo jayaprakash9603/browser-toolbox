@@ -21,6 +21,7 @@ import { storageTools } from './storage/registry'
 import { accessibilityTools } from './accessibility/registry'
 import { filesTools } from './files/registry'
 import { privacyTools } from './privacy/registry'
+import { sitesTools } from './sites/registry'
 
 let initialized = false
 
@@ -37,6 +38,7 @@ export function registerModules() {
   toolRegistry.registerAll(dataTools)
   toolRegistry.registerAll(securityTools)
   toolRegistry.registerAll(privacyTools)
+  toolRegistry.registerAll(sitesTools)
   toolRegistry.registerAll(designTools)
   toolRegistry.registerAll(screenshotsTools)
   toolRegistry.registerAll(calculatorsTools)

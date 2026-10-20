@@ -74,6 +74,17 @@ Page-world guards talk to the isolated script through `window.postMessage` (`PAG
 
 Trusted sites and one-time “proceed anyway” use dynamic/session allow rules in dedicated ID ranges (separate from the ad-block allowlist at 1_000_000+). Cookie consent auto-decline (`adblock/scripts/cookies-reject.js`) belongs to the ad blocker's cookie-banner setting and is mirrored in the Web Protection tool.
 
+## Site enhancements (YouTube)
+
+Category `sites` / tool `sites.youtube`. State in `core/sites/youtube/` (`youtubeEnhancer` storage key). A declarative feature catalog drives the side-panel UI, defaults, presets, and tests.
+
+Background `chrome/background/sites/` registers `yt-isolated.js` + `yt-main.js` (MAIN world) and `sites/youtube/youtube.css` on YouTube matches at `document_start`, and reinjects into open tabs when settings change.
+
+- **CSS features:** isolated script sets `data-tbx-yt-*` on `<html>`; static `public/sites/youtube/youtube.css` hides clutter (feeds, watch page, Shorts, embeds).
+- **Script features:** feed filters (keywords, channels, watched %), Shorts redirect, player controls (speed, wheel, quality), still-watching dismiss, SponsorBlock skip (opt-in; background fetches `sponsor.ajay.app`), Return YouTube Dislike (opt-in; `returnyoutubedislikeapi.com`).
+- **Progress bar:** CSS variables + theme presets in the tool UI.
+- **Ads:** “Block ads” mirrors `adblock.youtubeEnabled` (same as Web Protection’s ad-block mirror); does not duplicate `adblock/youtube` scripts.
+
 ## Theming
 
 shadcn/ui CSS variables (`src/styles/globals.css`) with light/dark palettes; `ThemeApplicator` applies light/dark/system based on the settings service. No hardcoded colors in components.

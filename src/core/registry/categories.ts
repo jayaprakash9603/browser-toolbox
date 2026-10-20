@@ -16,6 +16,7 @@ import {
   PaletteIcon,
   PanelsTopLeftIcon,
   SearchCheckIcon,
+  SparklesIcon,
   ShieldBanIcon,
   ShieldIcon,
   TypeIcon,
@@ -103,6 +104,14 @@ export const CATEGORIES: CategoryDefinition[] = [
     description: 'Ad blocking and browsing privacy',
     icon: ShieldBanIcon,
     order: 72,
+    enabled: true,
+  },
+  {
+    id: 'sites',
+    name: 'Site Enhancements',
+    description: 'Per-site tweaks and control panels',
+    icon: SparklesIcon,
+    order: 73,
     enabled: true,
   },
   {

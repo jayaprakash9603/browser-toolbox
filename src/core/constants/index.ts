@@ -10,6 +10,7 @@ export const STORAGE_KEYS = {
   protection: 'protection',
   protectionStats: 'protectionStats',
   protectionRulesVersion: 'protectionRulesVersion',
+  youtubeEnhancer: 'youtubeEnhancer',
   meta: 'meta',
 } as const
 
