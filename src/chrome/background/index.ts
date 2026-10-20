@@ -165,5 +165,9 @@ registerImageConvert()
 registerPip()
 registerShortcuts()
 registerNetMonitor()
-registerInterceptor()
+try {
+  registerInterceptor()
+} catch (error) {
+  logger.error('interceptor failed to register', error)
+}
 startMessageRouter()

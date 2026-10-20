@@ -145,7 +145,12 @@ async function handlePaused(tabId: number, paused: Paused): Promise<void> {
   }
 }
 
+let deepListenerBound = false
+
+/** The debugger API only exists once the optional permission is granted. */
 export function registerDeepInterceptListener(): void {
+  if (deepListenerBound || !chrome.debugger?.onEvent) return
+  deepListenerBound = true
   chrome.debugger.onEvent.addListener((source, method, params) => {
     if (method !== 'Fetch.requestPaused') return
     const tabId = source.tabId
