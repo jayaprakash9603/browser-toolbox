@@ -255,11 +255,21 @@
 	}
 	//#endregion
 	//#region src/chrome/content/sites/whatsapp/analytics/collect.ts
-	var PER_CHAT_CAP = 1e3;
 	var URL_RE = /https?:\/\/|www\./i;
-	function call$1(fn, ...args) {
+	var CONCURRENCY = 8;
+	var CALL_TIMEOUT_MS = 4e3;
+	var MSG_TIMEOUT_MS = 3e3;
+	function call$1(fn, timeoutMs, ...args) {
 		if (typeof fn !== "function") return Promise.resolve(void 0);
-		return Promise.resolve(fn(...args)).catch(() => void 0);
+		const work = Promise.resolve().then(() => fn(...args)).catch(() => void 0);
+		const timeout = new Promise((resolve) => setTimeout(() => resolve(void 0), timeoutMs));
+		return Promise.race([work, timeout]);
+	}
+	function perChatCap(range) {
+		if (range === "7d") return 150;
+		if (range === "30d") return 300;
+		if (range === "90d") return 500;
+		return 1e3;
 	}
 	function chatTitle(c) {
 		return c.formattedTitle ?? c.name ?? c.id?.user ?? "Chat";
@@ -268,65 +278,77 @@
 		const t = Number(m.t ?? 0);
 		const timestampMs = t > 0xe8d4a51000 ? t : t * 1e3;
 		if (!timestampMs) return null;
-		const body = String(m.body ?? m.caption ?? "").trim().slice(0, 2e3);
 		const type = String(m.type ?? "chat");
-		const author = m.author?.user ?? String(m.author ?? "");
-		const authorName = String(m.notifyName ?? m.pushName ?? "");
-		const hasMedia = Boolean(m.isMedia || m.mediaData || type !== "chat");
+		const body = String(m.body ?? m.caption ?? "").trim().slice(0, 500);
+		const author = m.author?.user ?? "";
+		const id = m.id;
 		return {
 			chatId: chat.id?._serialized ?? "",
 			chatName: chatTitle(chat),
 			isGroup: chat.isGroup === true || chat.id?.server === "g.us",
-			fromMe: Boolean(m.fromMe),
+			fromMe: Boolean(m.fromMe ?? id?.fromMe),
 			timestampMs,
 			type,
 			author,
-			authorName,
-			body: body || (type !== "chat" ? `[${type}]` : ""),
-			hasMedia,
+			authorName: String(m.notifyName ?? ""),
+			body: type === "chat" ? body : body || `[${type}]`,
+			hasMedia: type !== "chat" && type !== "revoked",
 			hasLink: URL_RE.test(body)
 		};
+	}
+	/** Messages already in memory are instant; WPP fetch fills in older history with a per-chat timeout. */
+	async function messagesForChat(wpp, chat, cap, fromMs) {
+		const inMemory = chat.msgs?.getModelsArray?.() ?? [];
+		const oldest = inMemory.length ? Number(inMemory[0].t ?? 0) * 1e3 : Infinity;
+		if (inMemory.length >= cap || fromMs != null && oldest <= fromMs) return inMemory;
+		const fetched = await call$1(wpp.chat.getMessages, MSG_TIMEOUT_MS, chat.id?._serialized, { count: cap });
+		return fetched && fetched.length > inMemory.length ? fetched : inMemory;
 	}
 	async function optionalCount(paths) {
 		for (const [root, key] of paths) {
 			if (!root) continue;
-			const fn = root[key];
-			const list = await call$1(fn);
+			const list = await call$1(root[key], CALL_TIMEOUT_MS);
 			if (Array.isArray(list)) return list.length;
 		}
 		return null;
 	}
 	async function collectAnalytics(wpp, range, onProgress) {
 		const { fromMs } = resolveRangeMs(range);
-		const chats = await call$1(wpp.chat.list) ?? [];
+		const cap = perChatCap(range);
+		const chats = await call$1(wpp.chat.list, 1e4) ?? [];
 		const messages = [];
-		let analyzedChats = 0;
-		for (const chat of chats) {
-			const chatId = chat.id?._serialized;
-			if (!chatId || !wpp.chat.getMessages) continue;
-			let batch = await call$1(wpp.chat.getMessages, chatId, { count: PER_CHAT_CAP }) ?? [];
-			if (!batch.length) batch = await call$1(wpp.chat.getMessages, chatId) ?? [];
-			for (const raw of batch) {
-				if (!raw || typeof raw !== "object") continue;
-				const msg = serializeMessage(chat, raw);
-				if (!msg) continue;
-				if (fromMs != null && msg.timestampMs < fromMs) continue;
-				messages.push(msg);
+		let done = 0;
+		let next = 0;
+		const worker = async () => {
+			while (next < chats.length) {
+				const chat = chats[next++];
+				if (!chat.id?._serialized) continue;
+				const batch = await messagesForChat(wpp, chat, cap, fromMs);
+				for (const raw of batch) {
+					if (!raw || typeof raw !== "object") continue;
+					const msg = serializeMessage(chat, raw);
+					if (msg && (fromMs == null || msg.timestampMs >= fromMs)) messages.push(msg);
+				}
+				done++;
+				if (done % 10 === 0) onProgress?.(`Analyzed ${messages.length} messages across ${done} of ${chats.length} chats`);
 			}
-			analyzedChats++;
-			if (analyzedChats % 5 === 0 || analyzedChats === chats.length) onProgress?.(`Analyzed ${messages.length} messages across ${analyzedChats} chats`);
-		}
-		const contactCount = (await call$1(wpp.contact?.list) ?? []).filter((c) => c.isMyContact).length;
-		const labels = await call$1(wpp.labels?.getAllLabels) ?? [];
-		const blocked = await call$1(wpp.blocklist?.all) ?? [];
-		const optional = {
-			channels: await optionalCount([[wpp.newsletter, "getSubscribers"], [wpp.newsletter, "list"]]),
-			statusPosts: await optionalCount([[wpp.status, "list"], [wpp.status, "get"]]),
-			communities: await optionalCount([[wpp.community, "list"], [wpp.community, "getAll"]]),
-			calls: await optionalCount([[wpp.call, "list"], [wpp.call, "getCalls"]]),
-			catalogProducts: await optionalCount([[wpp.catalog, "getProducts"], [wpp.catalog, "list"]]),
-			orders: await optionalCount([[wpp.order, "list"], [wpp.order, "getAll"]])
 		};
+		const sideData = Promise.all([
+			call$1(wpp.contact?.list, CALL_TIMEOUT_MS),
+			call$1(wpp.labels?.getAllLabels, CALL_TIMEOUT_MS),
+			call$1(wpp.blocklist?.all, CALL_TIMEOUT_MS),
+			Promise.all([
+				optionalCount([[wpp.newsletter, "list"]]),
+				optionalCount([[wpp.status, "list"]]),
+				optionalCount([[wpp.community, "list"]]),
+				optionalCount([[wpp.call, "list"]]),
+				optionalCount([[wpp.catalog, "getProducts"]]),
+				optionalCount([[wpp.order, "list"]])
+			])
+		]);
+		await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+		onProgress?.(`Analyzed ${messages.length} messages across ${chats.length} chats · finishing…`);
+		const [contacts, labels, blocked, [channels, statusPosts, communities, calls, catalogProducts, orders]] = await sideData;
 		return {
 			messages,
 			chats: chats.map((c) => ({
@@ -335,10 +357,17 @@
 				isGroup: c.isGroup === true || c.id?.server === "g.us",
 				unreadCount: Math.max(0, c.unreadCount ?? 0)
 			})),
-			contactCount,
-			blockedCount: blocked.length,
-			labelCount: labels.length,
-			optional
+			contactCount: (contacts ?? []).filter((c) => c.isMyContact).length,
+			blockedCount: blocked?.length ?? 0,
+			labelCount: labels?.length ?? 0,
+			optional: {
+				channels,
+				statusPosts,
+				communities,
+				calls,
+				catalogProducts,
+				orders
+			}
 		};
 	}
 	//#endregion

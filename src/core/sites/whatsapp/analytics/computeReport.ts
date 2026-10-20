@@ -215,10 +215,13 @@ export function computeReport(dataset: RawDataset, range: AnalyticsRange): ChatP
 
   const unreadChats = dataset.chats.filter((c) => c.unreadCount > 0).length
   const unreadMessages = dataset.chats.reduce((n, c) => n + c.unreadCount, 0)
-  const daySpan =
-    messages.length > 1
-      ? Math.max(1, (messages[messages.length - 1].timestampMs - messages[0].timestampMs) / 86_400_000)
-      : 1
+  let minTs = Infinity
+  let maxTs = -Infinity
+  for (const m of messages) {
+    if (m.timestampMs < minTs) minTs = m.timestampMs
+    if (m.timestampMs > maxTs) maxTs = m.timestampMs
+  }
+  const daySpan = messages.length > 1 ? Math.max(1, (maxTs - minTs) / 86_400_000) : 1
 
   const dailyActivity: DualSeriesPoint[] = [...daily.entries()]
     .sort(([a], [b]) => a.localeCompare(b))

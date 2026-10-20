@@ -6,6 +6,7 @@ import { isFeatureOn } from '@/core/sites/whatsapp/helpers'
 
 import { openAnalyticsDashboard } from './features/analyticsDashboard'
 import { applyWhatsappPlus, stopAll } from './manager'
+import { loadState } from './store'
 
 type Guarded = Window & { __toolboxWaEnhancer?: boolean }
 
@@ -65,9 +66,8 @@ if (!guarded.__toolboxWaEnhancer) {
         return true
       }
       if (msg?.type === 'WA_OPEN_ANALYTICS') {
-        chrome.storage.local.get('whatsappPlus', (result) => {
-          const state = readState(result.whatsappPlus)
-          if (!state?.enabled || !isFeatureOn(state.values, 'chatPulse')) {
+        void loadState().then((state) => {
+          if (!state.enabled || !isFeatureOn(state.values, 'chatPulse')) {
             const t = document.createElement('div')
             t.className = 'tbx-wa-toast'
             t.textContent = 'Enable ChatPulse in ChatBoost'

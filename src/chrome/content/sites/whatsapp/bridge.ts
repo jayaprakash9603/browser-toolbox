@@ -67,7 +67,7 @@ export function exportChatMain(
 export function analyticsMain(
   range: AnalyticsRange,
   onProgress?: (message: string) => void,
-  timeoutMs = 300_000,
+  timeoutMs = 120_000,
 ): Promise<import('@/core/sites/whatsapp/analytics').RawDataset | null> {
   const reqId = `an${Date.now()}_${++reqSeq}`
   return new Promise((resolve) => {

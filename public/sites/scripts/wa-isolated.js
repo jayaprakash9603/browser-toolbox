@@ -58,7 +58,7 @@
 			});
 		});
 	}
-	function analyticsMain(range, onProgress, timeoutMs = 3e5) {
+	function analyticsMain(range, onProgress, timeoutMs = 12e4) {
 		const reqId = `an${Date.now()}_${++reqSeq}`;
 		return new Promise((resolve) => {
 			const finish = (dataset) => {
@@ -491,7 +491,13 @@
 		}
 		const unreadChats = dataset.chats.filter((c) => c.unreadCount > 0).length;
 		const unreadMessages = dataset.chats.reduce((n, c) => n + c.unreadCount, 0);
-		const daySpan = messages.length > 1 ? Math.max(1, (messages[messages.length - 1].timestampMs - messages[0].timestampMs) / 864e5) : 1;
+		let minTs = Infinity;
+		let maxTs = -Infinity;
+		for (const m of messages) {
+			if (m.timestampMs < minTs) minTs = m.timestampMs;
+			if (m.timestampMs > maxTs) maxTs = m.timestampMs;
+		}
+		const daySpan = messages.length > 1 ? Math.max(1, (maxTs - minTs) / 864e5) : 1;
 		const dailyActivity = [...daily.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([label, v]) => ({
 			label,
 			sent: v.sent,
@@ -815,9 +821,13 @@
 		"1y",
 		"all"
 	];
+	var CLOSE_ICON = "M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z";
 	var currentRange = "30d";
 	var report = null;
 	var worldMapCache = null;
+	var cached = null;
+	var loadSeq = 0;
+	var escHandler = null;
 	function el$1(tag, cls, ...children) {
 		const node = document.createElement(tag);
 		if (cls) node.className = cls;
@@ -826,6 +836,29 @@
 			node.append(typeof c === "string" ? document.createTextNode(c) : c);
 		}
 		return node;
+	}
+	function button(label, cls, onClick) {
+		const b = el$1("button", cls, label);
+		b.type = "button";
+		b.addEventListener("click", onClick);
+		return b;
+	}
+	function closeIconButton() {
+		const b = el$1("button", "tbx-cp-x");
+		b.type = "button";
+		b.title = "Close";
+		b.setAttribute("aria-label", "Close ChatPulse Analytics");
+		const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+		svg.setAttribute("viewBox", "0 0 24 24");
+		svg.setAttribute("width", "20");
+		svg.setAttribute("height", "20");
+		const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+		path.setAttribute("d", CLOSE_ICON);
+		path.setAttribute("fill", "currentColor");
+		svg.appendChild(path);
+		b.appendChild(svg);
+		b.addEventListener("click", closeAnalyticsDashboard);
+		return b;
 	}
 	function download(filename, mime, content) {
 		const blob = new Blob([content], { type: mime });
@@ -841,13 +874,12 @@
 	function reportToCsv(r) {
 		const lines = ["section,key,value"];
 		for (const [key, value] of Object.entries(r.kpis)) lines.push(`kpi,${key},${value}`);
-		for (const row of r.topConversations) lines.push(`top_chat,${row.label},${row.value}`);
+		for (const row of r.topConversations) lines.push(`top_chat,"${row.label.replace(/"/g, "\"\"")}",${row.value}`);
 		return lines.join("\n");
 	}
 	async function loadWorldMap(highlightCodes) {
 		try {
-			const url = chrome.runtime.getURL("sites/whatsapp/world-map.json");
-			const res = await fetch(url);
+			const res = await fetch(chrome.runtime.getURL("sites/whatsapp/world-map.json"));
 			if (!res.ok) return "";
 			const data = await res.json();
 			const set = new Set(highlightCodes.map((c) => c.toUpperCase()));
@@ -861,13 +893,26 @@
 			return "";
 		}
 	}
+	/** A cached collection can serve any range that starts at or after its own start. */
+	function cacheCovers(range) {
+		if (!cached) return false;
+		if (cached.fromMs == null) return true;
+		const { fromMs } = resolveRangeMs(range);
+		return fromMs != null && fromMs >= cached.fromMs;
+	}
 	function closeAnalyticsDashboard() {
+		loadSeq++;
 		document.getElementById(ROOT_ID)?.remove();
+		if (escHandler) document.removeEventListener("keydown", escHandler, true);
+		escHandler = null;
 	}
 	function openAnalyticsDashboard() {
 		closeAnalyticsDashboard();
 		const root = el$1("div", "tbx-cp-root");
 		root.id = ROOT_ID;
+		root.setAttribute("role", "dialog");
+		root.setAttribute("aria-modal", "true");
+		root.setAttribute("aria-label", "ChatPulse Analytics");
 		const subtitle = el$1("p", "tbx-cp-subtitle", "Loading…");
 		const content = el$1("div", "tbx-cp-content");
 		const chipRow = el$1("div", "tbx-cp-chips");
@@ -877,61 +922,73 @@
 		toInput.type = "date";
 		const setRange = (range) => {
 			currentRange = range;
-			for (const btn of chipRow.querySelectorAll("button")) btn.classList.toggle("is-active", btn.dataset.range === (typeof range === "string" ? range : "custom"));
+			const key = typeof range === "string" ? range : "custom";
+			for (const btn of chipRow.querySelectorAll("button")) btn.classList.toggle("is-active", btn.dataset.range === key);
 		};
 		for (const preset of PRESETS) {
-			const label = preset === "all" ? "All" : preset;
-			const btn = el$1("button", "tbx-cp-chip", label);
-			btn.type = "button";
-			btn.dataset.range = preset;
-			btn.textContent = label;
-			btn.addEventListener("click", () => {
+			const btn = button(preset === "all" ? "All" : preset, "tbx-cp-chip", () => {
 				setRange(preset);
-				runLoad();
+				runLoad(false);
 			});
+			btn.dataset.range = preset;
 			chipRow.appendChild(btn);
 		}
-		const refresh = () => void runLoad();
-		const header = el$1("header", "tbx-cp-header", el$1("div", "tbx-cp-header__title", el$1("h1", "", "ChatPulse Analytics"), el$1("span", "tbx-cp-beta", "BETA")), el$1("div", "tbx-cp-toolbar", chipRow, fromInput, toInput, el$1("button", "tbx-cp-btn", "Refresh"), el$1("button", "tbx-cp-btn", "Export JSON"), el$1("button", "tbx-cp-btn", "Export CSV"), el$1("button", "tbx-cp-btn tbx-cp-btn--ghost", "Close")), subtitle);
-		const [refreshBtn, jsonBtn, csvBtn, closeBtn] = header.querySelectorAll("button");
-		refreshBtn.addEventListener("click", () => {
+		const box = el$1("div", "tbx-cp-box", el$1("header", "tbx-cp-header", el$1("div", "tbx-cp-header__top", el$1("div", "tbx-cp-header__title", el$1("h1", "", "ChatPulse Analytics"), el$1("span", "tbx-cp-beta", "BETA")), closeIconButton()), el$1("div", "tbx-cp-toolbar", chipRow, fromInput, toInput, button("Refresh", "tbx-cp-btn", () => {
 			if (fromInput.value && toInput.value) setRange({
 				from: fromInput.value,
 				to: toInput.value
 			});
-			refresh();
-		});
-		jsonBtn.addEventListener("click", () => {
-			if (!report) return;
-			download(`chatpulse-${Date.now()}.json`, "application/json", JSON.stringify(report, null, 2));
-		});
-		csvBtn.addEventListener("click", () => {
-			if (!report) return;
-			download(`chatpulse-${Date.now()}.csv`, "text/csv", reportToCsv(report));
-		});
-		closeBtn.addEventListener("click", () => closeAnalyticsDashboard());
-		root.append(header, content);
-		document.body.appendChild(root);
+			runLoad(true);
+		}), button("Export JSON", "tbx-cp-btn", () => {
+			if (report) download(`chatpulse-${Date.now()}.json`, "application/json", JSON.stringify(report, null, 2));
+		}), button("Export CSV", "tbx-cp-btn", () => {
+			if (report) download(`chatpulse-${Date.now()}.csv`, "text/csv", reportToCsv(report));
+		}), button("Close", "tbx-cp-btn tbx-cp-btn--ghost", closeAnalyticsDashboard)), subtitle), content);
+		root.appendChild(box);
 		root.addEventListener("click", (e) => {
 			if (e.target === root) closeAnalyticsDashboard();
 		});
+		escHandler = (e) => {
+			if (e.key !== "Escape") return;
+			e.stopPropagation();
+			closeAnalyticsDashboard();
+		};
+		document.addEventListener("keydown", escHandler, true);
+		document.body.appendChild(root);
 		setRange(currentRange);
-		runLoad();
-		async function runLoad() {
-			subtitle.textContent = "Collecting messages…";
-			content.replaceChildren(el$1("div", "tbx-cp-loading", "Analyzing chats…"));
-			const dataset = await analyticsMain(currentRange, (msg) => {
-				subtitle.textContent = msg;
-			});
-			if (!dataset) {
-				subtitle.textContent = "Could not load data. Is WhatsApp ready?";
-				content.replaceChildren(el$1("p", "tbx-cp-muted", "Try refreshing WhatsApp Web and open ChatPulse again."));
-				return;
-			}
+		runLoad(false);
+		async function render(dataset) {
 			report = computeReport(dataset, currentRange);
 			subtitle.textContent = `Analyzed ${report.meta.messageCount} messages across ${report.meta.chatCount} chats · ${report.meta.rangeLabel}`;
-			if (!worldMapCache) worldMapCache = await loadWorldMap(report.countries.map((c) => c.iso2).filter(Boolean));
 			content.replaceChildren(renderPanels(report, worldMapCache || void 0));
+			if (worldMapCache == null) {
+				worldMapCache = await loadWorldMap(report.countries.map((c) => c.iso2).filter(Boolean));
+				if (worldMapCache && document.getElementById(ROOT_ID)) content.replaceChildren(renderPanels(report, worldMapCache));
+			}
+		}
+		async function runLoad(force) {
+			const seq = ++loadSeq;
+			if (!force && cached && cacheCovers(currentRange)) {
+				await render(cached.dataset);
+				return;
+			}
+			subtitle.textContent = "Collecting messages…";
+			content.replaceChildren(el$1("div", "tbx-cp-loading", el$1("span", "tbx-cp-spinner"), "Analyzing chats…"));
+			const range = currentRange;
+			const dataset = await analyticsMain(range, (msg) => {
+				if (seq === loadSeq) subtitle.textContent = msg;
+			});
+			if (seq !== loadSeq) return;
+			if (!dataset) {
+				subtitle.textContent = "Could not load data. Is WhatsApp ready?";
+				content.replaceChildren(el$1("p", "tbx-cp-muted", "Try again in a moment, or reload WhatsApp Web."));
+				return;
+			}
+			cached = {
+				dataset,
+				fromMs: resolveRangeMs(range).fromMs
+			};
+			await render(dataset);
 		}
 	}
 	//#endregion
@@ -2447,9 +2504,8 @@
 					return true;
 				}
 				if (msg?.type === "WA_OPEN_ANALYTICS") {
-					chrome.storage.local.get("whatsappPlus", (result) => {
-						const state = readState(result.whatsappPlus);
-						if (!state?.enabled || !isFeatureOn(state.values, "chatPulse")) {
+					loadState().then((state) => {
+						if (!state.enabled || !isFeatureOn(state.values, "chatPulse")) {
 							const t = document.createElement("div");
 							t.className = "tbx-wa-toast";
 							t.textContent = "Enable ChatPulse in ChatBoost";
