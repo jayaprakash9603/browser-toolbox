@@ -90,6 +90,8 @@
       if (next && next.parentNode === parent) parent.insertBefore(player, next)
       else parent.appendChild(player)
       placeholder.remove()
+      // Closed from the floating window while the tab is hidden: stop playback.
+      if (document.visibilityState === 'hidden') video.pause()
       nudge()
     })
     return true
@@ -102,6 +104,13 @@
     video.removeAttribute('disablePictureInPicture')
     try {
       await video.requestPictureInPicture()
+      video.addEventListener(
+        'leavepictureinpicture',
+        function () {
+          if (document.visibilityState === 'hidden') video.pause()
+        },
+        { once: true },
+      )
     } catch (e) {
       /* page may block PiP */
     }

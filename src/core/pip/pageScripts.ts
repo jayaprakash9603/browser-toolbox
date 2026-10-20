@@ -152,6 +152,9 @@ export async function pipEnterDocumentInFrame(): Promise<'entered' | 'unsupporte
       originalParent.appendChild(player)
     }
     placeholder.remove()
+    // Closed from the floating window while the tab is in the background: stop playback
+    // (same as Chrome's own PiP). Returning to the tab keeps it playing.
+    if (document.visibilityState === 'hidden') video.pause()
     nudge()
   })
   return 'entered'
