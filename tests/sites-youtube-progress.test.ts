@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest'
 
 import {
   defaultYoutubeValues,
+  bundleToValuePatch,
+  getPresetBundle,
   isAllowedScrubberImageUrl,
+  isGalleryItemSelected,
   isProgressCustomizationActive,
+  searchPresets,
   themeCssVars,
 } from '@/core/sites/youtube'
 
@@ -25,5 +29,21 @@ describe('youtube progress bar', () => {
     expect(isAllowedScrubberImageUrl('https://example.com/icon.png')).toBe(true)
     expect(isAllowedScrubberImageUrl('data:image/png;base64,abc')).toBe(true)
     expect(isAllowedScrubberImageUrl('javascript:alert(1)')).toBe(false)
+  })
+
+  it('applies preset bundles with theme and scrubber image', () => {
+    const bundle = getPresetBundle('preset-nyan')
+    expect(bundle).toBeTruthy()
+    const values = { ...defaultYoutubeValues(), ...bundleToValuePatch(bundle!) }
+    expect(values.progressTheme).toBe('rainbow')
+    expect(String(values.progressScrubberImage)).toMatch(/^data:image\/svg\+xml/)
+    expect(isGalleryItemSelected({ kind: 'bundle', bundle: bundle! }, values)).toBe(true)
+  })
+
+  it('filters presets by collection and search', () => {
+    const memes = searchPresets('', 'memes')
+    expect(memes.length).toBeGreaterThan(5)
+    const doge = searchPresets('doge', 'all')
+    expect(doge.some((i) => i.kind === 'bundle' && i.bundle.id === 'preset-doge')).toBe(true)
   })
 })

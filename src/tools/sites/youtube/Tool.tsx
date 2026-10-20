@@ -73,7 +73,7 @@ export default function YoutubeControlPanelTool() {
         <StaggerItem>
           <ProgressBarPicker state={state} onPatch={onValues} />
         </StaggerItem>
-        {YOUTUBE_SECTIONS.map((section) => (
+        {YOUTUBE_SECTIONS.filter((section) => section !== 'progress').map((section) => (
           <StaggerItem key={section}>
             <FeatureSection
               section={section}

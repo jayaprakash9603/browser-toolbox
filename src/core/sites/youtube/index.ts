@@ -18,12 +18,32 @@ export {
 } from './service'
 export { YOUTUBE_PRESETS, type YoutubePresetId } from './presets'
 export {
+  PROGRESS_COLLECTIONS,
+  PROGRESS_PRESET_BUNDLES,
   PROGRESS_THEMES,
+  SCRUBBER_ASSETS,
+  activePresetLabelKey,
+  bundleToValuePatch,
+  getGradientGalleryItems,
+  getPresetBundle,
+  getPresetsByCollection,
   getProgressTheme,
+  getScrubberAsset,
+  getScrubbersByCollection,
   isAllowedScrubberImageUrl,
+  isGalleryItemSelected,
   isProgressCustomizationActive,
+  resolveGalleryScrubber,
+  resolveGalleryTheme,
+  searchPresets,
+  scrubberAssetForValues,
   themeCssVars,
+  type ProgressCollectionDef,
+  type ProgressCollectionId,
+  type ProgressGalleryItem,
+  type ProgressPresetBundle,
   type ProgressThemeDef,
+  type ScrubberAssetDef,
 } from './progressThemes'
 export {
   featureAttrName,
