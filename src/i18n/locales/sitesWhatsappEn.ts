@@ -20,7 +20,7 @@ export const sitesWhatsappStrings: Record<string, string> = {
   'sites.whatsapp.status.not_logged_in': 'Log in to WhatsApp Web',
   'sites.whatsapp.status.ready': 'Connected',
   'sites.whatsapp.tabs.enhancements': 'Enhancements',
-  'sites.whatsapp.tabs.business': 'Business tools',
+  'sites.whatsapp.tabs.business': 'Business',
   'sites.whatsapp.tabs.export': 'Export',
   'sites.whatsapp.tabs.utilities': 'Utilities',
   'sites.whatsapp.sections.privacy': 'Private mode',
