@@ -198,7 +198,7 @@
 			if (placeholder.parentNode) placeholder.parentNode.replaceChild(container, placeholder);
 			else if (originalNext && originalNext.parentNode === originalParent) originalParent.insertBefore(container, originalNext);
 			else originalParent.appendChild(container);
-			if (document.visibilityState === "hidden") video.pause();
+			if (Object.getOwnPropertyDescriptor(Document.prototype, "visibilityState")?.get?.call(document) === "hidden") video.pause();
 			nudge();
 		});
 		return "entered";
@@ -284,10 +284,11 @@
 		pip.addEventListener("message", onTime);
 		pip.addEventListener("pagehide", () => {
 			pip.removeEventListener("message", onTime);
+			const realVisibility = Object.getOwnPropertyDescriptor(Document.prototype, "visibilityState")?.get?.call(document);
 			original.contentWindow?.postMessage({
 				__tbxPip: "seek",
 				t: lastT,
-				play: document.visibilityState === "visible"
+				play: realVisibility === "visible"
 			}, "*");
 		});
 		return "entered";
@@ -318,6 +319,46 @@
 		return best;
 	}
 	var playingVideo = () => largestVideo((v) => !v.paused && !v.ended && v.readyState > 2);
+	var nativeVisibility = Object.getOwnPropertyDescriptor(Document.prototype, "visibilityState")?.get;
+	var nativeHidden = Object.getOwnPropertyDescriptor(Document.prototype, "hidden")?.get;
+	var realVisibility = () => nativeVisibility?.call(document) ?? "visible";
+	var isFloatingCopy = /(?:^|[#&])tbx-pip-t=/.test(location.hash);
+	var pipEnteredAt = 0;
+	function pipActive() {
+		const docPip = window.documentPictureInPicture;
+		return isFloatingCopy || !!document.pictureInPictureElement || !!docPip?.window;
+	}
+	/**
+	* While a video is floating, stop the page from reacting to the tab being hidden or blurred
+	* (many players pause or tear down playback then) and from immediately kicking the video out
+	* of PiP. Runs at document_start so these guards are in place before the page's own listeners.
+	*/
+	function installPipGuards() {
+		try {
+			Object.defineProperty(document, "visibilityState", {
+				configurable: true,
+				get: () => pipActive() ? "visible" : realVisibility()
+			});
+			Object.defineProperty(document, "hidden", {
+				configurable: true,
+				get: () => pipActive() ? false : Boolean(nativeHidden?.call(document))
+			});
+		} catch {}
+		const swallow = (event) => {
+			if (pipActive()) event.stopImmediatePropagation();
+		};
+		for (const type of ["visibilitychange", "webkitvisibilitychange"]) {
+			document.addEventListener(type, swallow, true);
+			window.addEventListener(type, swallow, true);
+		}
+		for (const type of ["blur", "freeze"]) window.addEventListener(type, swallow, true);
+		document.addEventListener("enterpictureinpicture", () => pipEnteredAt = Date.now(), true);
+		const nativeExit = document.exitPictureInPicture.bind(document);
+		document.exitPictureInPicture = () => {
+			if (Date.now() - pipEnteredAt < 2e3) return Promise.resolve();
+			return nativeExit();
+		};
+	}
 	/**
 	* Pages sometimes replace requestPictureInPicture with a no-op to block PiP. Use the browser's
 	* own implementation from a clean frame in that case. Does not touch DRM / content protection.
@@ -349,7 +390,7 @@
 		try {
 			await requestPipUnblocked(video);
 			video.addEventListener("leavepictureinpicture", () => {
-				if (document.visibilityState === "hidden") video.pause();
+				if (realVisibility() === "hidden") video.pause();
 			}, { once: true });
 		} catch {}
 	}
@@ -513,6 +554,7 @@
 	var guarded = window;
 	if ("mediaSession" in navigator && !guarded.__tbxPipAuto) {
 		guarded.__tbxPipAuto = true;
+		installPipGuards();
 		register();
 		installFrameButton();
 		installEmbedBridge();

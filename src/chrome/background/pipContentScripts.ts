@@ -10,7 +10,7 @@ export function buildPipAutoContentScript(): chrome.scripting.RegisteredContentS
     id: PIP_AUTO_SCRIPT_ID,
     js: [PIP_AUTO_JS],
     matches: ['<all_urls>'],
-    runAt: 'document_idle',
+    runAt: 'document_start',
     allFrames: true,
     world: 'MAIN',
   }

@@ -30,6 +30,57 @@ function largestVideo(filter: (v: HTMLVideoElement, r: DOMRect) => boolean): HTM
 const playingVideo = () =>
   largestVideo((v) => !v.paused && !v.ended && v.readyState > 2)
 
+const nativeVisibility = Object.getOwnPropertyDescriptor(Document.prototype, 'visibilityState')?.get
+const nativeHidden = Object.getOwnPropertyDescriptor(Document.prototype, 'hidden')?.get
+const realVisibility = (): DocumentVisibilityState =>
+  (nativeVisibility?.call(document) as DocumentVisibilityState | undefined) ?? 'visible'
+
+const isFloatingCopy = /(?:^|[#&])tbx-pip-t=/.test(location.hash)
+let pipEnteredAt = 0
+
+function pipActive(): boolean {
+  const docPip = (window as unknown as { documentPictureInPicture?: { window: Window | null } })
+    .documentPictureInPicture
+  return isFloatingCopy || !!document.pictureInPictureElement || !!docPip?.window
+}
+
+/**
+ * While a video is floating, stop the page from reacting to the tab being hidden or blurred
+ * (many players pause or tear down playback then) and from immediately kicking the video out
+ * of PiP. Runs at document_start so these guards are in place before the page's own listeners.
+ */
+function installPipGuards(): void {
+  try {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => (pipActive() ? 'visible' : realVisibility()),
+    })
+    Object.defineProperty(document, 'hidden', {
+      configurable: true,
+      get: () => (pipActive() ? false : Boolean(nativeHidden?.call(document))),
+    })
+  } catch {
+    /* non-configurable on this page */
+  }
+
+  const swallow = (event: Event) => {
+    if (pipActive()) event.stopImmediatePropagation()
+  }
+  for (const type of ['visibilitychange', 'webkitvisibilitychange']) {
+    document.addEventListener(type, swallow, true)
+    window.addEventListener(type, swallow, true)
+  }
+  for (const type of ['blur', 'freeze']) window.addEventListener(type, swallow, true)
+
+  document.addEventListener('enterpictureinpicture', () => (pipEnteredAt = Date.now()), true)
+  const nativeExit = document.exitPictureInPicture.bind(document)
+  document.exitPictureInPicture = () => {
+    // Pages that eject the video right after it floats are ignored; later exits go through.
+    if (Date.now() - pipEnteredAt < 2000) return Promise.resolve()
+    return nativeExit()
+  }
+}
+
 type RequestPip = (this: HTMLVideoElement) => Promise<PictureInPictureWindow>
 
 /**
@@ -70,7 +121,7 @@ async function enterNativePip(video: HTMLVideoElement): Promise<void> {
     video.addEventListener(
       'leavepictureinpicture',
       () => {
-        if (document.visibilityState === 'hidden') video.pause()
+        if (realVisibility() === 'hidden') video.pause()
       },
       { once: true },
     )
@@ -268,6 +319,7 @@ function installTopBridge(): void {
 const guarded = window as Guarded
 if ('mediaSession' in navigator && !guarded.__tbxPipAuto) {
   guarded.__tbxPipAuto = true
+  installPipGuards()
   register()
   installFrameButton()
   installEmbedBridge()
