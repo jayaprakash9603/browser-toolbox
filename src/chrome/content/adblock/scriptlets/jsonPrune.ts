@@ -9,7 +9,8 @@ const YT_AD_KEYS = [
   'adParams',
   'playerLegacyDesktopWatchAdsRenderer',
 ] as const
-const NESTED_KEYS = ['playerResponse', 'playerConfig', 'response'] as const
+/** Do not recurse into generic `response` — it appears on comment/browse APIs and is not player ads. */
+const NESTED_KEYS = ['playerResponse', 'playerConfig'] as const
 const MAX_DEPTH = 4
 
 type JsonRecord = Record<string, unknown>
@@ -18,10 +19,24 @@ function isRecord(value: unknown): value is JsonRecord {
   return Boolean(value) && typeof value === 'object'
 }
 
+/** Empty ad arrays appear on browse/comment payloads — pruning them breaks loading and is wasted work. */
+function isNonEmptyAdValue(value: unknown): boolean {
+  if (value == null) return false
+  if (Array.isArray(value)) return value.length > 0
+  if (typeof value === 'object') return Object.keys(value as JsonRecord).length > 0
+  return true
+}
+
+function recordHasAdPayload(record: JsonRecord): boolean {
+  if (YT_AD_KEYS.some((key) => key in record && isNonEmptyAdValue(record[key]))) return true
+  const renderers = (record.auxiliaryUi as JsonRecord | undefined)?.messageRenderers
+  return isRecord(renderers) && 'enforcementMessageViewModel' in renderers
+}
+
 function stripAdKeys(record: JsonRecord): number {
   let removed = 0
   for (const key of YT_AD_KEYS) {
-    if (key in record) {
+    if (key in record && isNonEmptyAdValue(record[key])) {
       delete record[key]
       removed++
     }
@@ -58,13 +73,14 @@ export function pruneYoutubePlayerJson<T extends JsonRecord>(data: T): T {
 export function hasYoutubeAdPayload(data: unknown): boolean {
   if (!isRecord(data)) return false
   if (Array.isArray(data)) return data.some((item) => hasYoutubeAdPayload(item))
-  if (YT_AD_KEYS.some((key) => key in data)) return true
-  return isRecord(data.playerResponse) && YT_AD_KEYS.some((key) => key in (data.playerResponse as JsonRecord))
+  if (recordHasAdPayload(data)) return true
+  const pr = data.playerResponse
+  return isRecord(pr) && recordHasAdPayload(pr)
 }
 
 export function pruneYoutubeResponseText(text: string): { text: string; removed: number } {
   if (
-    !/"(adPlacements|adSlots|playerAds|adBreakHeartbeatParams|adPlacement|enforcementMessageViewModel)"/.test(
+    !/"(adPlacements|adSlots|playerAds|adBreakHeartbeatParams|adPlacement|enforcementMessageViewModel)"\s*:\s*(?!\[\s*\])(?!\{\s*\})/.test(
       text,
     )
   ) {

@@ -21,7 +21,7 @@ describe('YouTube json prune', () => {
     expect(out).not.toHaveProperty('adPlacements')
     expect(out).not.toHaveProperty('adSlots')
     expect(out).not.toHaveProperty('playerAds')
-    expect(out.playerConfig).toEqual({ latency: 1 })
+    expect(out.playerConfig).toEqual({ adSlots: [], latency: 1 })
     expect(out.videoDetails).toEqual({ videoId: 'abc' })
   })
 
@@ -29,7 +29,7 @@ describe('YouTube json prune', () => {
     const data = [
       {
         playerResponse: {
-          adPlacements: [],
+          adPlacements: [{ foo: 1 }],
           auxiliaryUi: { messageRenderers: { enforcementMessageViewModel: {} } },
         },
       },
@@ -37,6 +37,14 @@ describe('YouTube json prune', () => {
     expect(hasYoutubeAdPayload(data)).toBe(true)
     expect(pruneYoutubeAdsInPlace(data)).toBe(2)
     expect(data[0].playerResponse).toEqual({ auxiliaryUi: { messageRenderers: {} } })
+  })
+
+  it('ignores empty ad slot markers on browse-style payloads', () => {
+    expect(hasYoutubeAdPayload({ adSlots: [], contents: { x: 1 } })).toBe(false)
+    const browse = { adSlots: [], response: { commentSection: { id: 'c' } } }
+    expect(hasYoutubeAdPayload(browse)).toBe(false)
+    expect(pruneYoutubeAdsInPlace(browse)).toBe(0)
+    expect(browse).toEqual({ adSlots: [], response: { commentSection: { id: 'c' } } })
   })
 
   it('leaves non-ad responses untouched', () => {

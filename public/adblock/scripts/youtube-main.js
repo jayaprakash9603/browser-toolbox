@@ -11,18 +11,27 @@
 		"adParams",
 		"playerLegacyDesktopWatchAdsRenderer"
 	];
-	var NESTED_KEYS = [
-		"playerResponse",
-		"playerConfig",
-		"response"
-	];
+	/** Do not recurse into generic `response` — it appears on comment/browse APIs and is not player ads. */
+	var NESTED_KEYS = ["playerResponse", "playerConfig"];
 	var MAX_DEPTH = 4;
 	function isRecord(value) {
 		return Boolean(value) && typeof value === "object";
 	}
+	/** Empty ad arrays appear on browse/comment payloads — pruning them breaks loading and is wasted work. */
+	function isNonEmptyAdValue(value) {
+		if (value == null) return false;
+		if (Array.isArray(value)) return value.length > 0;
+		if (typeof value === "object") return Object.keys(value).length > 0;
+		return true;
+	}
+	function recordHasAdPayload(record) {
+		if (YT_AD_KEYS.some((key) => key in record && isNonEmptyAdValue(record[key]))) return true;
+		const renderers = record.auxiliaryUi?.messageRenderers;
+		return isRecord(renderers) && "enforcementMessageViewModel" in renderers;
+	}
 	function stripAdKeys(record) {
 		let removed = 0;
-		for (const key of YT_AD_KEYS) if (key in record) {
+		for (const key of YT_AD_KEYS) if (key in record && isNonEmptyAdValue(record[key])) {
 			delete record[key];
 			removed++;
 		}
@@ -49,11 +58,12 @@
 	function hasYoutubeAdPayload(data) {
 		if (!isRecord(data)) return false;
 		if (Array.isArray(data)) return data.some((item) => hasYoutubeAdPayload(item));
-		if (YT_AD_KEYS.some((key) => key in data)) return true;
-		return isRecord(data.playerResponse) && YT_AD_KEYS.some((key) => key in data.playerResponse);
+		if (recordHasAdPayload(data)) return true;
+		const pr = data.playerResponse;
+		return isRecord(pr) && recordHasAdPayload(pr);
 	}
 	function pruneYoutubeResponseText(text) {
-		if (!/"(adPlacements|adSlots|playerAds|adBreakHeartbeatParams|adPlacement|enforcementMessageViewModel)"/.test(text)) return {
+		if (!/"(adPlacements|adSlots|playerAds|adBreakHeartbeatParams|adPlacement|enforcementMessageViewModel)"\s*:\s*(?!\[\s*\])(?!\{\s*\})/.test(text)) return {
 			text,
 			removed: 0
 		};

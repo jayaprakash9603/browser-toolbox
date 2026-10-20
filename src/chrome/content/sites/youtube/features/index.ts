@@ -119,9 +119,10 @@ function scheduleFeedScan(ctx: FeatureContext, roots?: ParentNode[]): void {
 
 function feedObserveTarget(): Element | null {
   return (
-    document.querySelector('ytd-app') ??
-    document.querySelector('#content') ??
-    document.body
+    document.querySelector('ytd-browse #contents') ??
+    document.querySelector('ytd-browse') ??
+    document.querySelector('ytd-two-column-browse-results-renderer') ??
+    null
   )
 }
 
@@ -317,7 +318,7 @@ export function stopScriptFeatures(): void {
   for (const runner of runners.values()) runner.stop()
 }
 
-const NAV_REFRESH_RUNNERS = ['sponsor', 'dislikes', 'redirectShorts', 'player'] as const
+const NAV_REFRESH_RUNNERS = ['sponsor', 'dislikes', 'redirectShorts', 'player', 'feedFilters', 'stillWatching'] as const
 
 export function onYoutubeNavigate(ctx: FeatureContext): void {
   if (!ctx.state.enabled) return

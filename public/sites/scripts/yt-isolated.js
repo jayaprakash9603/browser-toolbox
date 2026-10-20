@@ -1073,7 +1073,7 @@
 		}, FEED_DEBOUNCE_MS);
 	}
 	function feedObserveTarget() {
-		return document.querySelector("ytd-app") ?? document.querySelector("#content") ?? document.body;
+		return document.querySelector("ytd-browse #contents") ?? document.querySelector("ytd-browse") ?? document.querySelector("ytd-two-column-browse-results-renderer") ?? null;
 	}
 	reg("feedFilters", {
 		start(ctx) {
@@ -1238,7 +1238,9 @@
 		"sponsor",
 		"dislikes",
 		"redirectShorts",
-		"player"
+		"player",
+		"feedFilters",
+		"stillWatching"
 	];
 	function onYoutubeNavigate(ctx) {
 		if (!ctx.state.enabled) return;
