@@ -237,6 +237,8 @@ export function searchAll(query: string): SearchItem[] {
         const label = name.toLowerCase()
         const labelHits = tokens.filter((token) => label.includes(token)).length
         score += labelHits * 20
+        if (tokens.length >= 2 && labelHits === tokens.length) score += 50
+        if (aliases.some((alias) => alias.toLowerCase() === q)) score += 80
       }
       if (item.kind === 'setting') score += 30
       return { item, score }
@@ -250,6 +252,17 @@ export function searchAll(query: string): SearchItem[] {
     return kindRank(a.item.kind) - kindRank(b.item.kind)
   })
   return scored.map((row) => row.item)
+}
+
+export function toolsVisibleForQuery(
+  tools: SearchItem[],
+  optionCount: number,
+  query: string,
+): SearchItem[] {
+  const tokens = query.trim().split(/\s+/).filter(Boolean)
+  if (optionCount === 0) return tools
+  if (tokens.length >= 2) return []
+  return tools.slice(0, 3)
 }
 
 export function groupSearchResults(items: SearchItem[]) {

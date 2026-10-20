@@ -10,6 +10,7 @@ import {
   groupSearchResults,
   invalidateSearchIndex,
   searchAll,
+  toolsVisibleForQuery,
   type SearchItem,
 } from '@/features/search/searchIndex'
 import { registerModules } from '@/modules'
@@ -41,8 +42,15 @@ export function GlobalSearch({ compact = false, className }: GlobalSearchProps) 
     const grouped = groupSearchResults(searchAll(query))
     const options = grouped.options.slice(0, LIMITS.options)
     const settings = grouped.settings.slice(0, LIMITS.settings)
-    const tools = grouped.tools.slice(0, LIMITS.tools)
-    const flat = flattenGroupedSearchResults({ options, settings, tools }, LIMITS)
+    const tools = toolsVisibleForQuery(
+      grouped.tools.slice(0, LIMITS.tools),
+      options.length,
+      query,
+    )
+    const flat = flattenGroupedSearchResults({ options, settings, tools }, {
+      ...LIMITS,
+      tools: tools.length,
+    })
     return { options, settings, tools, flat }
   }, [query])
 

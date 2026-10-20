@@ -7,7 +7,12 @@ registerModules()
 import { TOOL_SEARCH_ENTRIES } from '@/features/search/allToolSearchEntries'
 import { JSON_TABS } from '@/tools/developer/json-toolkit/tabs'
 import { getYoutubeSearchEntries } from '@/core/sites/youtube/searchEntries'
-import { getAllSearchItems, searchAll } from '@/features/search/searchIndex'
+import {
+  getAllSearchItems,
+  groupSearchResults,
+  searchAll,
+  toolsVisibleForQuery,
+} from '@/features/search/searchIndex'
 
 describe('searchIndex', () => {
   it('indexes hundreds of tool options including YouTube controls', () => {
@@ -50,6 +55,24 @@ describe('searchIndex', () => {
   it('finds hide live youtube option', () => {
     const results = searchAll('hide live')
     expect(results.some((item) => item.id === 'sites.youtube:hideLive')).toBe(true)
+  })
+
+  it('ranks JSON format option above JSON Toolkit for format json', () => {
+    const results = searchAll('format json')
+    const grouped = groupSearchResults(results)
+    expect(grouped.options.length).toBeGreaterThan(0)
+    expect(results[0]?.id).toBe('text.formatter:json')
+    expect(toolsVisibleForQuery(grouped.tools, grouped.options.length, 'format json')).toEqual([])
+  })
+
+  it('puts JSON-related options before tools for json query', () => {
+    const results = searchAll('json')
+    const grouped = groupSearchResults(results)
+    expect(grouped.options.length).toBeGreaterThan(0)
+    expect(results[0]?.kind).toBe('option')
+    expect(['text.formatter:json', 'developer.json-toolkit:validate', 'developer.json-toolkit:format']).toContain(
+      results[0]?.id,
+    )
   })
 
   it('finds hide premium upsell for youtube premium query', () => {

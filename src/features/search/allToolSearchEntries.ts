@@ -89,6 +89,11 @@ export const TOOL_SEARCH_ENTRIES: Record<string, ToolSearchEntry[]> = {
       id: format,
       labelKey: `text.format.${format}`,
       fallbackLabel: format,
+      keywords: ['format', 'formatter', 'beautify', 'minify', format],
+      aliases:
+        format === 'json'
+          ? ['format json', 'json format', 'json formatter', 'format json code']
+          : [`format ${format}`, `${format} formatter`],
       params: { format },
     })),
   ],

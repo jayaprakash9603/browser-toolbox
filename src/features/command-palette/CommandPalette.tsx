@@ -6,7 +6,7 @@ import { useNavigate } from '@/app/navigation'
 
 import { toolRegistry } from '@/core/registry'
 import { getToolName } from '@/i18n/toolLabels'
-import { searchAll, type SearchItem } from '@/features/search/searchIndex'
+import { searchAll, toolsVisibleForQuery, type SearchItem } from '@/features/search/searchIndex'
 import { useFavorites } from '@/shared/hooks/useFavorites'
 import { HighlightedText } from './HighlightedText'
 
@@ -40,9 +40,13 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
   const trimmed = query.trim()
   const searchResults = trimmed ? searchAll(trimmed) : []
-  const toolItems = searchResults.filter((item) => item.kind === 'tool')
   const optionItems = searchResults.filter((item) => item.kind === 'option')
   const settingItems = searchResults.filter((item) => item.kind === 'setting')
+  const toolItems = toolsVisibleForQuery(
+    searchResults.filter((item) => item.kind === 'tool'),
+    optionItems.length,
+    trimmed,
+  )
 
   useEffect(() => {
     if (open) inputRef.current?.focus()
