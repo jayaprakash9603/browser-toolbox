@@ -5,7 +5,7 @@ import type { PipState } from './types'
 
 export const DEFAULT_PIP_STATE: PipState = {
   enabled: true,
-  autoPip: false,
+  autoPip: true,
   showContextMenu: true,
 }
 

@@ -962,7 +962,7 @@ const en = {
   'pip.entered': 'Picture-in-Picture started.',
   'pip.exited': 'Picture-in-Picture closed.',
   'pip.autoPip': 'Auto PiP when switching tabs',
-  'pip.autoPipHint': 'Float the video when you leave the tab (Chrome 120+).',
+  'pip.autoPipHint': 'Leave a tab and the video floats on top of other tabs and windows. On YouTube the full player moves with you; return to the tab and it goes back. Chrome may ask once to allow it.',
   'pip.showContextMenu': 'Show in right-click menu',
   'pip.showContextMenuHint': 'Adds Picture-in-Picture on pages and videos.',
   'pip.limits':
