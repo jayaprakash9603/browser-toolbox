@@ -318,11 +318,36 @@
 		return best;
 	}
 	var playingVideo = () => largestVideo((v) => !v.paused && !v.ended && v.readyState > 2);
-	async function enterNativePip(video) {
+	/**
+	* Pages sometimes replace requestPictureInPicture with a no-op to block PiP. Use the browser's
+	* own implementation from a clean frame in that case. Does not touch DRM / content protection.
+	*/
+	async function requestPipUnblocked(video) {
 		video.removeAttribute("disablePictureInPicture");
-		video.disablePictureInPicture = false;
 		try {
-			await video.requestPictureInPicture();
+			Object.defineProperty(video, "disablePictureInPicture", {
+				configurable: true,
+				get: () => false,
+				set: () => void 0
+			});
+		} catch {}
+		const current = HTMLVideoElement.prototype.requestPictureInPicture;
+		if (/\[native code\]/.test(Function.prototype.toString.call(current))) {
+			await current.call(video);
+			return;
+		}
+		const frame = document.createElement("iframe");
+		frame.style.display = "none";
+		document.documentElement.appendChild(frame);
+		try {
+			await (frame.contentWindow?.HTMLVideoElement.prototype.requestPictureInPicture ?? current).call(video);
+		} finally {
+			frame.remove();
+		}
+	}
+	async function enterNativePip(video) {
+		try {
+			await requestPipUnblocked(video);
 			video.addEventListener("leavepictureinpicture", () => {
 				if (document.visibilityState === "hidden") video.pause();
 			}, { once: true });

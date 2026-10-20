@@ -30,11 +30,43 @@ function largestVideo(filter: (v: HTMLVideoElement, r: DOMRect) => boolean): HTM
 const playingVideo = () =>
   largestVideo((v) => !v.paused && !v.ended && v.readyState > 2)
 
-async function enterNativePip(video: HTMLVideoElement): Promise<void> {
+type RequestPip = (this: HTMLVideoElement) => Promise<PictureInPictureWindow>
+
+/**
+ * Pages sometimes replace requestPictureInPicture with a no-op to block PiP. Use the browser's
+ * own implementation from a clean frame in that case. Does not touch DRM / content protection.
+ */
+async function requestPipUnblocked(video: HTMLVideoElement): Promise<void> {
   video.removeAttribute('disablePictureInPicture')
-  video.disablePictureInPicture = false
   try {
-    await video.requestPictureInPicture()
+    Object.defineProperty(video, 'disablePictureInPicture', {
+      configurable: true,
+      get: () => false,
+      set: () => undefined,
+    })
+  } catch {
+    /* non-configurable */
+  }
+  const current = HTMLVideoElement.prototype.requestPictureInPicture as RequestPip
+  if (/\[native code\]/.test(Function.prototype.toString.call(current))) {
+    await current.call(video)
+    return
+  }
+  const frame = document.createElement('iframe')
+  frame.style.display = 'none'
+  document.documentElement.appendChild(frame)
+  try {
+    const clean = (frame.contentWindow as (Window & typeof globalThis) | null)?.HTMLVideoElement.prototype
+      .requestPictureInPicture as RequestPip | undefined
+    await (clean ?? current).call(video)
+  } finally {
+    frame.remove()
+  }
+}
+
+async function enterNativePip(video: HTMLVideoElement): Promise<void> {
+  try {
+    await requestPipUnblocked(video)
     video.addEventListener(
       'leavepictureinpicture',
       () => {

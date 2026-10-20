@@ -87,14 +87,38 @@ export async function pipEnterInFrame(): Promise<'entered' | 'none' | 'error'> {
   }
   const video = findBest()
   if (!video) return 'none'
-  // Some sites (Netflix, custom players) disable PiP; override it.
+  // Some sites disable PiP on the element or replace requestPictureInPicture with a no-op.
+  // Undo that and use the browser's own implementation (DRM / content protection untouched).
+  type RequestPip = (this: HTMLVideoElement) => Promise<PictureInPictureWindow>
   video.removeAttribute('disablePictureInPicture')
-  video.disablePictureInPicture = false
   try {
-    await video.requestPictureInPicture()
+    Object.defineProperty(video, 'disablePictureInPicture', {
+      configurable: true,
+      get: () => false,
+      set: () => undefined,
+    })
+  } catch {
+    /* non-configurable */
+  }
+  const current = HTMLVideoElement.prototype.requestPictureInPicture as RequestPip
+  const frame = /\[native code\]/.test(Function.prototype.toString.call(current))
+    ? null
+    : document.createElement('iframe')
+  try {
+    if (!frame) {
+      await current.call(video)
+    } else {
+      frame.style.display = 'none'
+      document.documentElement.appendChild(frame)
+      const clean = (frame.contentWindow as (Window & typeof globalThis) | null)?.HTMLVideoElement.prototype
+        .requestPictureInPicture as RequestPip | undefined
+      await (clean ?? current).call(video)
+    }
     return 'entered'
   } catch {
     return 'error'
+  } finally {
+    frame?.remove()
   }
 }
 
