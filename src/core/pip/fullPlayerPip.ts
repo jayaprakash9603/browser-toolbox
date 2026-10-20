@@ -228,3 +228,102 @@ export async function enterFullPlayerPip(): Promise<FullPlayerPipResult> {
   })
   return 'entered'
 }
+
+/**
+ * Embedded players from another origin (Dailymotion, Vimeo, news embeds) cannot open a Document
+ * PiP window themselves and cannot be moved without reloading. Instead, open a fresh copy of the
+ * same embed inside a Document PiP window from the top-level page, resume it at the current
+ * position, and pause the original. On close, the original jumps to where the copy stopped.
+ *
+ * Talks to the auto-PiP page script inside the embed via postMessage ({ __tbxPip: ... }).
+ * Must stay fully self-contained (serialized by chrome.scripting.executeScript).
+ */
+export async function enterEmbeddedPlayerPip(): Promise<FullPlayerPipResult> {
+  type DocPipApi = {
+    window: Window | null
+    requestWindow(options?: { width?: number; height?: number }): Promise<Window>
+  }
+  type Snapshot = { frame: HTMLIFrameElement; t: number; playing: boolean; ratio: number }
+  const api = (window as unknown as { documentPictureInPicture?: DocPipApi }).documentPictureInPicture
+  if (!api || window !== window.top) return 'unsupported'
+  if (api.window) return 'entered'
+
+  const frames = Array.from(document.querySelectorAll('iframe')).filter((f) => {
+    const r = f.getBoundingClientRect()
+    return r.width >= 160 && r.height >= 90 && !!f.contentWindow && !!f.src
+  })
+  if (frames.length === 0) return 'none'
+
+  // Ask every candidate embed for its playback state; only embeds running our script reply.
+  const snapshots = await new Promise<Snapshot[]>((resolve) => {
+    const replies: Snapshot[] = []
+    const onMessage = (event: MessageEvent) => {
+      const data = event.data as { __tbxPip?: string; t?: number; playing?: boolean; ratio?: number } | null
+      if (!data || data.__tbxPip !== 'snapshot') return
+      const frame = frames.find((f) => f.contentWindow === event.source)
+      if (frame) {
+        replies.push({ frame, t: Number(data.t) || 0, playing: !!data.playing, ratio: Number(data.ratio) || 16 / 9 })
+      }
+    }
+    window.addEventListener('message', onMessage)
+    for (const f of frames) f.contentWindow?.postMessage({ __tbxPip: 'snapshot-request' }, '*')
+    window.setTimeout(() => {
+      window.removeEventListener('message', onMessage)
+      resolve(replies)
+    }, 350)
+  })
+  if (snapshots.length === 0) return 'none'
+  snapshots.sort((a, b) => Number(b.playing) - Number(a.playing))
+  const target = snapshots[0]
+  const original = target.frame
+
+  const width = 640
+  const height = Math.round(width / target.ratio)
+  let pip: Window
+  try {
+    pip = await api.requestWindow({ width, height })
+  } catch {
+    return 'error'
+  }
+
+  original.contentWindow?.postMessage({ __tbxPip: 'pause' }, '*')
+
+  const url = new URL(original.src, location.href)
+  const hash = url.hash.replace(/^#/, '')
+  url.hash = `${hash ? `${hash}&` : ''}tbx-pip-t=${target.t.toFixed(2)}`
+
+  const pdoc = pip.document
+  const style = pdoc.createElement('style')
+  style.textContent =
+    'html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}' +
+    'iframe{position:fixed;inset:0;width:100%;height:100%;border:0}'
+  pdoc.head.appendChild(style)
+  const copy = pdoc.createElement('iframe')
+  const allow = new Set(
+    (original.getAttribute('allow') ?? '')
+      .split(';')
+      .map((s) => s.trim())
+      .filter(Boolean),
+  )
+  for (const feature of ['autoplay', 'fullscreen', 'picture-in-picture', 'encrypted-media']) allow.add(feature)
+  copy.setAttribute('allow', Array.from(allow).join('; '))
+  copy.setAttribute('allowfullscreen', '')
+  copy.src = url.toString()
+  pdoc.body.appendChild(copy)
+
+  let lastT = target.t
+  const onTime = (event: MessageEvent) => {
+    const data = event.data as { __tbxPip?: string; t?: number } | null
+    if (data?.__tbxPip === 'time' && event.source === copy.contentWindow) lastT = Number(data.t) || lastT
+  }
+  pip.addEventListener('message', onTime)
+
+  pip.addEventListener('pagehide', () => {
+    pip.removeEventListener('message', onTime)
+    original.contentWindow?.postMessage(
+      { __tbxPip: 'seek', t: lastT, play: document.visibilityState === 'visible' },
+      '*',
+    )
+  })
+  return 'entered'
+}

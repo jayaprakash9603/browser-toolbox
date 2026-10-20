@@ -10,6 +10,7 @@ import {
 } from '@/core/pip'
 import {
   pipEnterDocumentInFrame,
+  pipEnterEmbeddedInTopFrame,
   pipEnterInFrame,
   pipMeasureInFrame,
   pipTryExitInFrame,
@@ -93,6 +94,13 @@ export async function togglePipInTab(tab?: chrome.tabs.Tab): Promise<PipToggleRe
         .then((r) => r?.[0]?.result)
         .catch(() => undefined)
       if (docResult === 'entered') return { action: 'entered' }
+    } else {
+      // Player embedded from another site: open a full copy of it in a Document PiP window.
+      const embedResult = await chrome.scripting
+        .executeScript({ target: { tabId, frameIds: [0] }, world: 'MAIN', func: pipEnterEmbeddedInTopFrame })
+        .then((r) => r?.[0]?.result)
+        .catch(() => undefined)
+      if (embedResult === 'entered') return { action: 'entered' }
     }
 
     const enterResults = await chrome.scripting.executeScript({

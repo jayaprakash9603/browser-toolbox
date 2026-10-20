@@ -1,4 +1,4 @@
-import { enterFullPlayerPip } from '@/core/pip/fullPlayerPip'
+import { enterEmbeddedPlayerPip, enterFullPlayerPip } from '@/core/pip/fullPlayerPip'
 
 type Guarded = Window & { __tbxPipAuto?: boolean }
 
@@ -48,7 +48,11 @@ async function enterNativePip(video: HTMLVideoElement): Promise<void> {
 }
 
 async function onEnterPip(): Promise<void> {
-  if (!playingVideo()) return
+  if (!playingVideo()) {
+    // Video plays inside an embed from another site: float a full copy of that player.
+    if (window === window.top) await enterEmbeddedPlayerPip()
+    return
+  }
   // Full player (site controls) first; native video PiP when the player can't be moved.
   if ((await enterFullPlayerPip()) === 'entered') return
   const video = playingVideo()
@@ -138,7 +142,24 @@ function installFrameButton(): void {
       return
     }
     const v = bestVideo()
-    if (v) void enterNativePip(v)
+    if (!v) return
+    // The click's activation also reaches the top page, which can open a full-player window
+    // with a copy of this embed. Fall back to native PiP if it doesn't answer.
+    let handled = false
+    const onResult = (event: MessageEvent) => {
+      const data = event.data as { __tbxPip?: string; ok?: boolean } | null
+      if (event.source !== window.top || data?.__tbxPip !== 'embedded-result') return
+      handled = true
+      window.removeEventListener('message', onResult)
+      if (!data.ok) void enterNativePip(v)
+    }
+    window.addEventListener('message', onResult)
+    window.top?.postMessage({ __tbxPip: 'open-embedded' }, '*')
+    window.setTimeout(() => {
+      if (handled) return
+      window.removeEventListener('message', onResult)
+      void enterNativePip(v)
+    }, 1500)
   })
   btn.addEventListener('mouseenter', () => window.clearTimeout(hideTimer))
   btn.addEventListener('mouseleave', show)
@@ -146,11 +167,79 @@ function installFrameButton(): void {
   document.documentElement.appendChild(btn)
 }
 
+// Inside an embedded player: cooperate with the top page's full-player PiP (see
+// enterEmbeddedPlayerPip). Only the direct parent may control playback.
+function installEmbedBridge(): void {
+  if (window === window.top) return
+  const mainVideo = () => largestVideo((_v, r) => r.width >= 160 && r.height >= 90)
+
+  window.addEventListener('message', (event) => {
+    if (event.source !== window.parent) return
+    const data = event.data as { __tbxPip?: string; t?: number; play?: boolean } | null
+    if (!data?.__tbxPip) return
+    const v = mainVideo()
+    if (!v) return
+    if (data.__tbxPip === 'snapshot-request') {
+      window.parent.postMessage(
+        {
+          __tbxPip: 'snapshot',
+          t: v.currentTime,
+          playing: !v.paused && !v.ended,
+          ratio: v.videoWidth && v.videoHeight ? v.videoWidth / v.videoHeight : 16 / 9,
+        },
+        '*',
+      )
+    } else if (data.__tbxPip === 'pause') {
+      v.pause()
+    } else if (data.__tbxPip === 'seek') {
+      if (Number.isFinite(data.t)) v.currentTime = Number(data.t)
+      if (data.play) void v.play().catch(() => undefined)
+    }
+  })
+
+  // Running as the floating copy: resume at the handed-over position and report progress.
+  const match = /(?:^|[#&])tbx-pip-t=([\d.]+)/.exec(location.hash)
+  if (!match) return
+  const startAt = Number(match[1])
+  let resumed = false
+  const startedAt = Date.now()
+  const timer = window.setInterval(() => {
+    const v = mainVideo()
+    if (!v) {
+      if (Date.now() - startedAt > 20000) window.clearInterval(timer)
+      return
+    }
+    if (!resumed && v.readyState > 0) {
+      resumed = true
+      if (startAt > 0 && Math.abs(v.currentTime - startAt) > 1.5) v.currentTime = startAt
+      void v.play().catch(() => {
+        v.muted = true
+        void v.play().catch(() => undefined)
+      })
+    }
+    window.parent.postMessage({ __tbxPip: 'time', t: v.currentTime }, '*')
+  }, 1000)
+}
+
+function installTopBridge(): void {
+  if (window !== window.top) return
+  window.addEventListener('message', (event) => {
+    const data = event.data as { __tbxPip?: string } | null
+    if (data?.__tbxPip !== 'open-embedded' || !event.source) return
+    const source = event.source as Window
+    void enterEmbeddedPlayerPip().then((result) => {
+      source.postMessage({ __tbxPip: 'embedded-result', ok: result === 'entered' }, '*')
+    })
+  })
+}
+
 const guarded = window as Guarded
 if ('mediaSession' in navigator && !guarded.__tbxPipAuto) {
   guarded.__tbxPipAuto = true
   register()
   installFrameButton()
+  installEmbedBridge()
+  installTopBridge()
   // Sites such as YouTube replace media-session handlers; keep ours registered.
   document.addEventListener('playing', register, true)
   window.setInterval(register, 4000)

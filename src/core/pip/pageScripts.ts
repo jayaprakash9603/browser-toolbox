@@ -98,4 +98,7 @@ export async function pipEnterInFrame(): Promise<'entered' | 'none' | 'error'> {
   }
 }
 
-export { enterFullPlayerPip as pipEnterDocumentInFrame } from './fullPlayerPip'
+export {
+  enterEmbeddedPlayerPip as pipEnterEmbeddedInTopFrame,
+  enterFullPlayerPip as pipEnterDocumentInFrame,
+} from './fullPlayerPip'

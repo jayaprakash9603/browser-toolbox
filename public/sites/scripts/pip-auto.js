@@ -182,6 +182,95 @@
 		});
 		return "entered";
 	}
+	/**
+	* Embedded players from another origin (Dailymotion, Vimeo, news embeds) cannot open a Document
+	* PiP window themselves and cannot be moved without reloading. Instead, open a fresh copy of the
+	* same embed inside a Document PiP window from the top-level page, resume it at the current
+	* position, and pause the original. On close, the original jumps to where the copy stopped.
+	*
+	* Talks to the auto-PiP page script inside the embed via postMessage ({ __tbxPip: ... }).
+	* Must stay fully self-contained (serialized by chrome.scripting.executeScript).
+	*/
+	async function enterEmbeddedPlayerPip() {
+		const api = window.documentPictureInPicture;
+		if (!api || window !== window.top) return "unsupported";
+		if (api.window) return "entered";
+		const frames = Array.from(document.querySelectorAll("iframe")).filter((f) => {
+			const r = f.getBoundingClientRect();
+			return r.width >= 160 && r.height >= 90 && !!f.contentWindow && !!f.src;
+		});
+		if (frames.length === 0) return "none";
+		const snapshots = await new Promise((resolve) => {
+			const replies = [];
+			const onMessage = (event) => {
+				const data = event.data;
+				if (!data || data.__tbxPip !== "snapshot") return;
+				const frame = frames.find((f) => f.contentWindow === event.source);
+				if (frame) replies.push({
+					frame,
+					t: Number(data.t) || 0,
+					playing: !!data.playing,
+					ratio: Number(data.ratio) || 16 / 9
+				});
+			};
+			window.addEventListener("message", onMessage);
+			for (const f of frames) f.contentWindow?.postMessage({ __tbxPip: "snapshot-request" }, "*");
+			window.setTimeout(() => {
+				window.removeEventListener("message", onMessage);
+				resolve(replies);
+			}, 350);
+		});
+		if (snapshots.length === 0) return "none";
+		snapshots.sort((a, b) => Number(b.playing) - Number(a.playing));
+		const target = snapshots[0];
+		const original = target.frame;
+		const width = 640;
+		const height = Math.round(width / target.ratio);
+		let pip;
+		try {
+			pip = await api.requestWindow({
+				width,
+				height
+			});
+		} catch {
+			return "error";
+		}
+		original.contentWindow?.postMessage({ __tbxPip: "pause" }, "*");
+		const url = new URL(original.src, location.href);
+		const hash = url.hash.replace(/^#/, "");
+		url.hash = `${hash ? `${hash}&` : ""}tbx-pip-t=${target.t.toFixed(2)}`;
+		const pdoc = pip.document;
+		const style = pdoc.createElement("style");
+		style.textContent = "html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}iframe{position:fixed;inset:0;width:100%;height:100%;border:0}";
+		pdoc.head.appendChild(style);
+		const copy = pdoc.createElement("iframe");
+		const allow = new Set((original.getAttribute("allow") ?? "").split(";").map((s) => s.trim()).filter(Boolean));
+		for (const feature of [
+			"autoplay",
+			"fullscreen",
+			"picture-in-picture",
+			"encrypted-media"
+		]) allow.add(feature);
+		copy.setAttribute("allow", Array.from(allow).join("; "));
+		copy.setAttribute("allowfullscreen", "");
+		copy.src = url.toString();
+		pdoc.body.appendChild(copy);
+		let lastT = target.t;
+		const onTime = (event) => {
+			const data = event.data;
+			if (data?.__tbxPip === "time" && event.source === copy.contentWindow) lastT = Number(data.t) || lastT;
+		};
+		pip.addEventListener("message", onTime);
+		pip.addEventListener("pagehide", () => {
+			pip.removeEventListener("message", onTime);
+			original.contentWindow?.postMessage({
+				__tbxPip: "seek",
+				t: lastT,
+				play: document.visibilityState === "visible"
+			}, "*");
+		});
+		return "entered";
+	}
 	//#endregion
 	//#region src/chrome/content/pip/auto.ts
 	function collectVideos(root, out) {
@@ -219,7 +308,10 @@
 		} catch {}
 	}
 	async function onEnterPip() {
-		if (!playingVideo()) return;
+		if (!playingVideo()) {
+			if (window === window.top) await enterEmbeddedPlayerPip();
+			return;
+		}
 		if (await enterFullPlayerPip() === "entered") return;
 		const video = playingVideo();
 		if (video) await enterNativePip(video);
@@ -288,7 +380,22 @@
 				return;
 			}
 			const v = bestVideo();
-			if (v) enterNativePip(v);
+			if (!v) return;
+			let handled = false;
+			const onResult = (event) => {
+				const data = event.data;
+				if (event.source !== window.top || data?.__tbxPip !== "embedded-result") return;
+				handled = true;
+				window.removeEventListener("message", onResult);
+				if (!data.ok) enterNativePip(v);
+			};
+			window.addEventListener("message", onResult);
+			window.top?.postMessage({ __tbxPip: "open-embedded" }, "*");
+			window.setTimeout(() => {
+				if (handled) return;
+				window.removeEventListener("message", onResult);
+				enterNativePip(v);
+			}, 1500);
 		});
 		btn.addEventListener("mouseenter", () => window.clearTimeout(hideTimer));
 		btn.addEventListener("mouseleave", show);
@@ -298,11 +405,72 @@
 		});
 		document.documentElement.appendChild(btn);
 	}
+	function installEmbedBridge() {
+		if (window === window.top) return;
+		const mainVideo = () => largestVideo((_v, r) => r.width >= 160 && r.height >= 90);
+		window.addEventListener("message", (event) => {
+			if (event.source !== window.parent) return;
+			const data = event.data;
+			if (!data?.__tbxPip) return;
+			const v = mainVideo();
+			if (!v) return;
+			if (data.__tbxPip === "snapshot-request") window.parent.postMessage({
+				__tbxPip: "snapshot",
+				t: v.currentTime,
+				playing: !v.paused && !v.ended,
+				ratio: v.videoWidth && v.videoHeight ? v.videoWidth / v.videoHeight : 16 / 9
+			}, "*");
+			else if (data.__tbxPip === "pause") v.pause();
+			else if (data.__tbxPip === "seek") {
+				if (Number.isFinite(data.t)) v.currentTime = Number(data.t);
+				if (data.play) v.play().catch(() => void 0);
+			}
+		});
+		const match = /(?:^|[#&])tbx-pip-t=([\d.]+)/.exec(location.hash);
+		if (!match) return;
+		const startAt = Number(match[1]);
+		let resumed = false;
+		const startedAt = Date.now();
+		const timer = window.setInterval(() => {
+			const v = mainVideo();
+			if (!v) {
+				if (Date.now() - startedAt > 2e4) window.clearInterval(timer);
+				return;
+			}
+			if (!resumed && v.readyState > 0) {
+				resumed = true;
+				if (startAt > 0 && Math.abs(v.currentTime - startAt) > 1.5) v.currentTime = startAt;
+				v.play().catch(() => {
+					v.muted = true;
+					v.play().catch(() => void 0);
+				});
+			}
+			window.parent.postMessage({
+				__tbxPip: "time",
+				t: v.currentTime
+			}, "*");
+		}, 1e3);
+	}
+	function installTopBridge() {
+		if (window !== window.top) return;
+		window.addEventListener("message", (event) => {
+			if (event.data?.__tbxPip !== "open-embedded" || !event.source) return;
+			const source = event.source;
+			enterEmbeddedPlayerPip().then((result) => {
+				source.postMessage({
+					__tbxPip: "embedded-result",
+					ok: result === "entered"
+				}, "*");
+			});
+		});
+	}
 	var guarded = window;
 	if ("mediaSession" in navigator && !guarded.__tbxPipAuto) {
 		guarded.__tbxPipAuto = true;
 		register();
 		installFrameButton();
+		installEmbedBridge();
+		installTopBridge();
 		document.addEventListener("playing", register, true);
 		window.setInterval(register, 4e3);
 	}
