@@ -67,7 +67,9 @@ export function stopAll(): void {
     if (attr.name.startsWith('data-tbx-wa-')) root.removeAttribute(attr.name)
   }
   document.getElementById(STYLE_LINK_ID)?.remove()
-  document.querySelectorAll('.tbx-wa-launcher, .tbx-wa-extra-btn, .tbx-wa-restored-msg').forEach((el) => el.remove())
+  document
+    .querySelectorAll('#tbx-wa-launcher, .tbx-wa-launcher, .tbx-wa-extra-btn, .tbx-wa-restored-msg')
+    .forEach((el) => el.remove())
   const main = document.querySelector('#main') as HTMLElement | null
   if (main) main.style.removeProperty('background-image')
 }

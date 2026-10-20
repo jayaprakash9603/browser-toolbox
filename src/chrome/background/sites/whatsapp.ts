@@ -35,8 +35,8 @@ export function registerSitesWhatsapp(): void {
     if (area === 'local' && changes[STORAGE_KEYS.whatsappPlus]) void syncWhatsappPlusState()
   })
 
-  registerMessageHandler('WA_OPEN_PANEL', async () => {
-    const tabId = await getWhatsappTabId()
+  registerMessageHandler('WA_OPEN_PANEL', async (_message, sender) => {
+    const tabId = sender.tab?.id
     if (tabId == null) return { opened: false }
     await chrome.sidePanel.open({ tabId })
     return { opened: true }
