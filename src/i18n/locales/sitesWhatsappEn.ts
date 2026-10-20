@@ -1,46 +1,7 @@
-const featureIds = [
-  'blurContactNames',
-  'blurContactPhotos',
-  'blurRecentMessages',
-  'blurConversationMessages',
-  'blurComposer',
-  'hideTyping',
-  'hideRecording',
-  'viewStatusPrivately',
-  'playAudioPrivately',
-  'disableReadReceipts',
-  'invisibleMode',
-  'restoreDeletedMessages',
-  'notifyOnline',
-  'notifyTyping',
-  'preventListJump',
-  'customChatBackground',
-  'showSideLauncher',
-  'btnLike',
-  'btnPinChat',
-  'btnStartChat',
-  'btnMarkRead',
-  'btnTranslate',
-  'btnTranscribe',
-  'btnDownloadStatus',
-  'btnChatInfo',
-  'btnQuickReply',
-  'btnAddTask',
-  'btnSaveContact',
-  'whisperApiKey',
-] as const
-
-const features: Record<string, { label: string; description: string }> = {}
-for (const id of featureIds) {
-  const words = id.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase())
-  features[id] = {
-    label: words,
-    description: `Enable ${words.toLowerCase()} on WhatsApp Web.`,
-  }
-}
+import { WHATSAPP_FEATURE_LABELS } from '@/core/sites/whatsapp/labels'
 
 const featureStrings: Record<string, string> = {}
-for (const [id, v] of Object.entries(features)) {
+for (const [id, v] of Object.entries(WHATSAPP_FEATURE_LABELS)) {
   featureStrings[`sites.whatsapp.features.${id}.label`] = v.label
   featureStrings[`sites.whatsapp.features.${id}.description`] = v.description
 }

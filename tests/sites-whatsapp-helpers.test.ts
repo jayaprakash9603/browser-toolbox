@@ -7,8 +7,16 @@ import {
   matchesSmartReply,
   spinText,
 } from '@/core/sites/whatsapp'
+import { countryForNumber } from '@/core/sites/whatsapp/countries'
 
 describe('whatsapp helpers', () => {
+  it('maps numbers to countries by longest calling code', () => {
+    expect(countryForNumber('917780591898')).toEqual({ code: '91', country: 'India' })
+    expect(countryForNumber('971501234567')).toEqual({ code: '971', country: 'United Arab Emirates' })
+    expect(countryForNumber('14155550100').country).toBe('United States / Canada')
+    expect(countryForNumber('999').country).toBe('Unknown')
+  })
+
   it('applies template variables', () => {
     expect(applyTemplateVariables('Hi {name}', { name: 'Ada' })).toBe('Hi Ada')
   })

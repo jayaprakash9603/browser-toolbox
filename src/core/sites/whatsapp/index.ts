@@ -30,6 +30,7 @@ export {
   randomDelayMs,
   spinText,
 } from './helpers'
+export { WHATSAPP_FEATURE_LABELS, WHATSAPP_SECTION_INFO, featureLabel } from './labels'
 export { WHATSAPP_PRESETS, type WhatsappPresetId } from './presets'
 export { getWhatsappSearchEntries } from './searchEntries'
 export {

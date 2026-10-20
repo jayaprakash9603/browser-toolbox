@@ -1,4 +1,5 @@
 import { PAGE_CMD_KEY, PAGE_EVT_KEY } from '@/core/sites/whatsapp/constants'
+import { countryForNumber } from '@/core/sites/whatsapp/countries'
 
 import { startPrivacy, stopPrivacy, patchReadReceipts } from './features/privacy'
 
@@ -19,6 +20,114 @@ async function whenReady(): Promise<void> {
   const wpp = getWpp()
   if (!wpp) return
   await wpp.isReady
+}
+
+type Wid = { user?: string; server?: string; _serialized?: string }
+type ChatLike = {
+  id?: Wid
+  name?: string
+  formattedTitle?: string
+  unreadCount?: number
+  archive?: boolean
+  pin?: number
+  isGroup?: boolean
+  muteExpiration?: number
+  contact?: { isMyContact?: boolean; pushname?: string; name?: string }
+  groupMetadata?: { participants?: { length?: number; getModelsArray?: () => unknown[] } }
+}
+type ContactLike = { id?: Wid; name?: string; pushname?: string; isMyContact?: boolean; isBusiness?: boolean }
+
+function call<T>(fn: unknown, ...args: unknown[]): Promise<T | undefined> {
+  if (typeof fn !== 'function') return Promise.resolve(undefined)
+  return Promise.resolve((fn as (...a: unknown[]) => T | Promise<T>)(...args)).catch(() => undefined)
+}
+
+function participantCount(chat: ChatLike): number {
+  const p = chat.groupMetadata?.participants
+  if (!p) return 0
+  return p.getModelsArray?.().length ?? p.length ?? 0
+}
+
+function isUserChat(c: ChatLike): boolean {
+  return c.id?.server === 'c.us' || c.id?.server === 'lid'
+}
+
+async function runQuery(wpp: NonNullable<Guarded['WPP']>, kind: string): Promise<Record<string, string>[]> {
+  const rows: Record<string, string>[] = []
+  try {
+    if (kind.startsWith('check:')) {
+      const num = kind.slice(6).replace(/\D/g, '')
+      const exists = await call<{ wid?: unknown }>(wpp.contact?.queryExists, `${num}@c.us`)
+      rows.push({ number: num, exists: exists?.wid ? 'yes' : 'no' })
+      return rows
+    }
+
+    const chats = (await call<ChatLike[]>(wpp.chat.list)) ?? []
+    const contacts = (await call<ContactLike[]>(wpp.contact?.list)) ?? []
+
+    if (kind === 'contacts_all' || kind === 'contacts') {
+      for (const c of contacts) {
+        if (!c.isMyContact || c.id?.server !== 'c.us') continue
+        rows.push({ number: c.id?.user ?? '', name: c.name ?? '', pushname: c.pushname ?? '' })
+      }
+    } else if (kind === 'contacts_chatted' || kind === 'contacts_unsaved') {
+      const unsavedOnly = kind === 'contacts_unsaved'
+      for (const c of chats) {
+        if (!isUserChat(c)) continue
+        const saved = c.contact?.isMyContact === true
+        if (unsavedOnly && saved) continue
+        rows.push({
+          number: c.id?.user ?? '',
+          name: c.contact?.name ?? c.formattedTitle ?? '',
+          pushname: c.contact?.pushname ?? '',
+          saved: saved ? 'yes' : 'no',
+        })
+      }
+    } else if (kind === 'groups') {
+      for (const c of chats) {
+        if (c.id?.server !== 'g.us') continue
+        rows.push({ id: c.id?._serialized ?? '', name: c.formattedTitle ?? c.name ?? '', participants: String(participantCount(c)) })
+      }
+    } else if (kind === 'labels') {
+      const labelsApi = (window as Guarded & { WPP?: { labels?: Record<string, unknown> } }).WPP?.labels
+      const labels = (await call<{ id?: string; name?: string; hexColor?: string; count?: number }[]>(labelsApi?.getAllLabels)) ?? []
+      for (const l of labels) {
+        rows.push({ id: String(l.id ?? ''), name: l.name ?? '', color: l.hexColor ?? '', chats: String(l.count ?? '') })
+      }
+    } else if (kind === 'countries') {
+      const counts = new Map<string, { code: string; country: string; n: number }>()
+      for (const c of contacts) {
+        if (!c.isMyContact || c.id?.server !== 'c.us' || !c.id.user) continue
+        const { code, country } = countryForNumber(c.id.user)
+        const cur = counts.get(country) ?? { code, country, n: 0 }
+        cur.n++
+        counts.set(country, cur)
+      }
+      for (const v of [...counts.values()].sort((a, b) => b.n - a.n)) {
+        rows.push({ country: v.country, code: v.code ? `+${v.code}` : '', contacts: String(v.n) })
+      }
+    } else if (kind === 'stats') {
+      const users = chats.filter(isUserChat)
+      const groups = chats.filter((c) => c.id?.server === 'g.us')
+      const now = Date.now() / 1000
+      const stat = (key: string, value: number) => rows.push({ key, value: String(value) })
+      stat('chats', chats.length)
+      stat('users', users.length)
+      stat('groups', groups.length)
+      stat('unread', chats.filter((c) => (c.unreadCount ?? 0) > 0).length)
+      stat('unreadMessages', chats.reduce((n, c) => n + Math.max(0, c.unreadCount ?? 0), 0))
+      stat('archived', chats.filter((c) => c.archive).length)
+      stat('pinned', chats.filter((c) => (c.pin ?? 0) > 0).length)
+      stat('muted', chats.filter((c) => (c.muteExpiration ?? 0) !== 0 && ((c.muteExpiration ?? 0) < 0 || (c.muteExpiration ?? 0) > now)).length)
+      stat('contacts', contacts.filter((c) => c.isMyContact && c.id?.server === 'c.us').length)
+      stat('unsaved', users.filter((c) => !c.contact?.isMyContact).length)
+      stat('business', contacts.filter((c) => c.isBusiness).length)
+      stat('groupMembers', groups.reduce((n, c) => n + participantCount(c), 0))
+    }
+  } catch {
+    /* WPP not ready */
+  }
+  return rows
 }
 
 async function handleCmd(cmd: string, payload: unknown): Promise<void> {
@@ -81,24 +190,15 @@ async function handleCmd(cmd: string, payload: unknown): Promise<void> {
 
   if (cmd === 'export' && payload && typeof payload === 'object') {
     const kind = String((payload as { kind: string }).kind)
-    const rows: Record<string, string>[] = []
-    try {
-      if (kind.startsWith('check:')) {
-        const num = kind.slice(6).replace(/\D/g, '')
-        const exists = wpp.contact?.queryExists
-          ? await (wpp.contact.queryExists as (id: string) => Promise<{ wid?: unknown }>)(`${num}@c.us`)
-          : null
-        rows.push({ number: num, exists: exists?.wid ? 'yes' : 'no' })
-      } else if (wpp.contact?.list) {
-        const list = await (wpp.contact.list as () => Promise<{ id?: { user?: string }; name?: string }[]>)()
-        for (const c of list ?? []) {
-          rows.push({ id: c.id?.user ?? '', name: c.name ?? '' })
-        }
-      }
-    } catch {
-      /* WPP not ready */
-    }
+    const rows = await runQuery(wpp, kind)
     window.postMessage({ [PAGE_EVT_KEY]: 'exportResult', payload: rows }, location.origin || '*')
+    return
+  }
+
+  if (cmd === 'query' && payload && typeof payload === 'object') {
+    const { kind, reqId } = payload as { kind: string; reqId: string }
+    const rows = await runQuery(wpp, String(kind))
+    window.postMessage({ [PAGE_EVT_KEY]: 'queryResult', payload: { reqId, rows } }, location.origin || '*')
     return
   }
 

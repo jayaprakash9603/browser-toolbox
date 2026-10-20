@@ -1,3 +1,5 @@
+import { toggleDrawer } from './drawer'
+
 const LAUNCHER_ID = 'tbx-wa-launcher'
 const RAIL_MAX_X = 100
 const REMOUNT_DEBOUNCE_MS = 250
@@ -52,11 +54,12 @@ function createItem(anchor: HTMLElement): HTMLElement {
   const btn = document.createElement('button')
   btn.type = 'button'
   btn.className = 'tbx-wa-launcher'
-  btn.title = 'Browser Toolbox'
-  btn.setAttribute('aria-label', 'Browser Toolbox')
+  btn.title = 'WA Web Plus'
+  btn.setAttribute('aria-label', 'WA Web Plus')
   btn.innerHTML = PLUS_SVG
-  btn.addEventListener('click', () => {
-    void chrome.runtime.sendMessage({ type: 'WA_OPEN_PANEL' }).catch(() => {})
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation()
+    toggleDrawer()
   })
   item.appendChild(btn)
   return item

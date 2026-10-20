@@ -7,6 +7,7 @@ import {
 } from '@/core/sites/whatsapp'
 
 import { startScriptFeatures, stopScriptFeatures } from './features'
+import { destroyDrawer } from './features/drawer'
 
 const STYLE_LINK_ID = 'toolbox-wa-css'
 const ACTIVE_ATTR = 'data-tbx-wa-active'
@@ -62,6 +63,7 @@ export function applyWhatsappPlus(state: WhatsappPlusState): void {
 
 export function stopAll(): void {
   stopScriptFeatures()
+  destroyDrawer()
   const root = document.documentElement
   for (const attr of [...root.attributes]) {
     if (attr.name.startsWith('data-tbx-wa-')) root.removeAttribute(attr.name)
