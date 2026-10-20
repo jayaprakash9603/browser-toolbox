@@ -14,7 +14,7 @@ const ALL_URLS = ['<all_urls>']
 
 export async function pushPageConfigToTab(tabId: number): Promise<void> {
   const state = await getInterceptorState()
-  const config = compilePageRules(state.rules, state.library, state.settings.paused)
+  const config = compilePageRules(state.rules, state.library, state.settings.paused, state.groups)
   await chrome.storage.session.set({ [INTERCEPTOR_PAGE_CONFIG_KEY]: config })
   try {
     await chrome.tabs.sendMessage(tabId, {
@@ -60,7 +60,7 @@ async function unregisterAll(): Promise<void> {
 export async function syncInterceptorContentScripts(): Promise<void> {
   const state = await getInterceptorState()
   await unregisterAll()
-  if (!needsPageInterceptor(state.rules, state.settings.paused)) return
+  if (!needsPageInterceptor(state.rules, state.settings.paused, state.groups)) return
   try {
     await chrome.scripting.registerContentScripts(buildInterceptorContentScripts())
   } catch (error) {

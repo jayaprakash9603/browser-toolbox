@@ -32,7 +32,7 @@ function matchSource(url: string, source: SourceCondition): boolean {
 }
 
 function matchRule(rule: PageInterceptorRule, url: string, method: string, body?: string): boolean {
-  if (!matchSource(url, rule.source)) return false
+  if (!rule.sources.some((s) => matchSource(url, s))) return false
   const f = rule.filters
   if (
     f?.methods?.length &&

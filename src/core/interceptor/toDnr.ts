@@ -1,11 +1,13 @@
 import { INTERCEPTOR_RULE_PRIORITY, USER_AGENT_PRESETS } from './constants'
-import { sourceToUrlFilter } from './matcher'
+import { isRuleActive, ruleSources, sourceToUrlFilter } from './matcher'
 import type {
   HeadersRule,
   HttpMethod,
   InterceptorRule,
   QueryParamRule,
   ReplaceRule,
+  RuleGroup,
+  SourceCondition,
   UserAgentRule,
 } from './types'
 import { DNR_RULE_TYPES } from './types'
@@ -36,10 +38,11 @@ const DNR_HTTP_METHODS: Record<HttpMethod, DnrHttpMethod> = {
   OPTIONS: 'options',
 }
 
-function conditionFromRule(
+function conditionFromSource(
   rule: InterceptorRule,
+  source: SourceCondition,
 ): chrome.declarativeNetRequest.RuleCondition | null {
-  const filter = sourceToUrlFilter(rule.source)
+  const filter = sourceToUrlFilter(source)
   if (!filter.urlFilter && !filter.regexFilter) return null
   const condition: chrome.declarativeNetRequest.RuleCondition = {
     ...(filter.urlFilter ? { urlFilter: filter.urlFilter } : { regexFilter: filter.regexFilter! }),
@@ -120,6 +123,7 @@ function buildAction(rule: InterceptorRule): chrome.declarativeNetRequest.RuleAc
 export function compileRulesToDnr(
   rules: InterceptorRule[],
   idBase: number,
+  groups: RuleGroup[] = [],
 ): DnrCompileResult {
   const errors: string[] = []
   const dnrRules: chrome.declarativeNetRequest.Rule[] = []
@@ -131,26 +135,33 @@ export function compileRulesToDnr(
     .sort((a, b) => b.priority - a.priority)
 
   for (const rule of enabled) {
-    const condition = conditionFromRule(rule)
+    if (groups.length && !isRuleActive(rule, groups)) continue
     const action = buildAction(rule)
-    if (!condition || !action) {
+    if (!action) {
       errors.push(`Rule "${rule.name}" could not compile to DNR`)
       continue
     }
-    if (condition.regexFilter) regexCount += 1
-    if (rule.type === 'replace') {
-      const rep = rule as ReplaceRule
-      condition.regexFilter = rep.from
-      delete (condition as { urlFilter?: string }).urlFilter
-      regexCount += 1
+    for (const source of ruleSources(rule)) {
+      const condition = conditionFromSource(rule, source)
+      if (!condition) {
+        errors.push(`Rule "${rule.name}" has an invalid source condition`)
+        continue
+      }
+      if (condition.regexFilter) regexCount += 1
+      if (rule.type === 'replace') {
+        const rep = rule as ReplaceRule
+        condition.regexFilter = rep.from
+        delete (condition as { urlFilter?: string }).urlFilter
+        regexCount += 1
+      }
+      dnrRules.push({
+        id: interceptorRuleIdForIndex(index, idBase),
+        priority: INTERCEPTOR_RULE_PRIORITY + Math.min(rule.priority, 50),
+        condition,
+        action,
+      })
+      index += 1
     }
-    dnrRules.push({
-      id: interceptorRuleIdForIndex(index, idBase),
-      priority: INTERCEPTOR_RULE_PRIORITY + Math.min(rule.priority, 50),
-      condition,
-      action,
-    })
-    index += 1
   }
 
   if (regexCount > 1000) {

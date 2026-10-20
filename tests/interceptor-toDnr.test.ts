@@ -22,4 +22,39 @@ describe('interceptor toDnr', () => {
     expect(rules).toHaveLength(1)
     expect(rules[0].action.type).toBe('block')
   })
+
+  it('emits one DNR rule per source condition', () => {
+    const rule: CancelRule = {
+      id: '1',
+      name: 'block',
+      enabled: true,
+      groupId: 'default',
+      priority: 1,
+      createdAt: 0,
+      updatedAt: 0,
+      type: 'cancel',
+      source: { field: 'url', operator: 'contains', value: 'a' },
+      extraSources: [{ field: 'url', operator: 'contains', value: 'b' }],
+    }
+    const { rules } = compileRulesToDnr([rule], INTERCEPTOR_RULE_ID_BASE)
+    expect(rules).toHaveLength(2)
+  })
+
+  it('skips rules in disabled groups', () => {
+    const rule: CancelRule = {
+      id: '1',
+      name: 'block',
+      enabled: true,
+      groupId: 'g1',
+      priority: 1,
+      createdAt: 0,
+      updatedAt: 0,
+      type: 'cancel',
+      source: { field: 'url', operator: 'contains', value: 'tracker' },
+    }
+    const { rules } = compileRulesToDnr([rule], INTERCEPTOR_RULE_ID_BASE, [
+      { id: 'g1', name: 'off', order: 0, enabled: false },
+    ])
+    expect(rules).toHaveLength(0)
+  })
 })

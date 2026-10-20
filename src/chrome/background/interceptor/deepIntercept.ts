@@ -69,11 +69,15 @@ async function handlePaused(tabId: number, paused: Paused): Promise<void> {
     const state = await getInterceptorState()
     const matched = state.settings.paused
       ? []
-      : matchRules(state.rules, {
-          url: paused.request.url,
-          method: paused.request.method,
-          requestBody: paused.request.postData,
-        })
+      : matchRules(
+          state.rules,
+          {
+            url: paused.request.url,
+            method: paused.request.method,
+            requestBody: paused.request.postData,
+          },
+          state.groups,
+        )
 
     const delay = matched.find((r) => r.type === 'delay')
     if (delay?.type === 'delay' && delay.delayMs > 0) {

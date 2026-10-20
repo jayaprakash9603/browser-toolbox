@@ -14,6 +14,7 @@ export async function syncInterceptorDnrRules(): Promise<string[]> {
   const { rules, errors } = compileRulesToDnr(
     state.settings.paused ? [] : state.rules,
     INTERCEPTOR_RULE_ID_BASE,
+    state.groups,
   )
   const existing = await chrome.declarativeNetRequest.getDynamicRules()
   const removeRuleIds = existing

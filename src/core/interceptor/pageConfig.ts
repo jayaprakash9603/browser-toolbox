@@ -1,9 +1,12 @@
+import { isRuleActive } from './matcher'
 import type {
   InterceptorRule,
   LibraryItem,
   PageInterceptorRule,
+  RuleGroup,
 } from './types'
 import { PAGE_RULE_TYPES, USER_SCRIPT_RULE_TYPES } from './types'
+import { ruleSources } from './matcher'
 
 function resolveBody(
   bodySource: string,
@@ -22,10 +25,11 @@ export function compilePageRules(
   rules: InterceptorRule[],
   library: LibraryItem[],
   paused: boolean,
+  groups: RuleGroup[] = [],
 ): PageInterceptorRule[] {
   if (paused) return []
   return rules
-    .filter((r) => r.enabled && PAGE_RULE_TYPES.includes(r.type))
+    .filter((r) => isRuleActive(r, groups) && PAGE_RULE_TYPES.includes(r.type))
     .sort((a, b) => b.priority - a.priority || b.updatedAt - a.updatedAt)
     .map((rule) => {
       const base = {
@@ -33,7 +37,7 @@ export function compilePageRules(
         name: rule.name,
         type: rule.type,
         priority: rule.priority,
-        source: rule.source,
+        sources: ruleSources(rule),
         filters: rule.filters,
         payload: {} as Record<string, unknown>,
       }
@@ -87,12 +91,20 @@ export function compilePageRules(
     })
 }
 
-export function needsPageInterceptor(rules: InterceptorRule[], paused: boolean): boolean {
+export function needsPageInterceptor(
+  rules: InterceptorRule[],
+  paused: boolean,
+  groups: RuleGroup[] = [],
+): boolean {
   if (paused) return false
-  return rules.some((r) => r.enabled && PAGE_RULE_TYPES.includes(r.type))
+  return rules.some((r) => isRuleActive(r, groups) && PAGE_RULE_TYPES.includes(r.type))
 }
 
-export function needsUserScripts(rules: InterceptorRule[], paused: boolean): boolean {
+export function needsUserScripts(
+  rules: InterceptorRule[],
+  paused: boolean,
+  groups: RuleGroup[] = [],
+): boolean {
   if (paused) return false
-  return rules.some((r) => r.enabled && USER_SCRIPT_RULE_TYPES.includes(r.type))
+  return rules.some((r) => isRuleActive(r, groups) && USER_SCRIPT_RULE_TYPES.includes(r.type))
 }

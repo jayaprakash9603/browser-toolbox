@@ -1,4 +1,4 @@
-import { getInterceptorState, needsUserScripts } from '@/core/interceptor'
+import { getInterceptorState, isRuleActive, needsUserScripts } from '@/core/interceptor'
 import type { InsertScriptRule, LibraryItem } from '@/core/interceptor'
 import { createLogger } from '@/core/logging'
 
@@ -17,7 +17,7 @@ function resolveScriptContent(rule: InsertScriptRule, library: LibraryItem[]): s
 
 export async function syncInterceptorUserScripts(): Promise<void> {
   const state = await getInterceptorState()
-  const has = needsUserScripts(state.rules, state.settings.paused)
+  const has = needsUserScripts(state.rules, state.settings.paused, state.groups)
   if (!has) {
     try {
       const registered = await chrome.userScripts?.getScripts() ?? []
@@ -36,7 +36,7 @@ export async function syncInterceptorUserScripts(): Promise<void> {
 
   const scripts: chrome.userScripts.RegisteredUserScript[] = []
   for (const rule of state.rules) {
-    if (rule.type !== 'insertScript' || !rule.enabled) continue
+    if (rule.type !== 'insertScript' || !isRuleActive(rule, state.groups)) continue
     const content = resolveScriptContent(rule, state.library)
     if (!content) continue
     const isCss = rule.kind === 'css'

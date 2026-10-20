@@ -50,11 +50,15 @@ function serializeBuffers(): Record<number, NetLogEntry[]> {
 async function annotateRules(entry: Pending): Promise<InterceptorRuleHit[]> {
   const state = await getInterceptorState()
   if (state.settings.paused) return []
-  const matched = matchRules(state.rules, {
-    url: entry.url ?? '',
-    method: entry.method,
-    resourceType: entry.resourceType,
-  })
+  const matched = matchRules(
+    state.rules,
+    {
+      url: entry.url ?? '',
+      method: entry.method,
+      resourceType: entry.resourceType,
+    },
+    state.groups,
+  )
   return matched.map((r) => ({
     ruleId: r.id,
     ruleName: r.name,

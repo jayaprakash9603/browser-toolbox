@@ -98,6 +98,101 @@ export async function toggleRule(ruleId: string, enabled: boolean): Promise<void
   await saveRules(next)
 }
 
+export async function togglePinRule(ruleId: string, pinned: boolean): Promise<void> {
+  const state = await getInterceptorState()
+  const next = state.rules.map((r) =>
+    r.id === ruleId ? { ...r, pinned, updatedAt: Date.now() } : r,
+  )
+  await saveRules(next)
+}
+
+export async function moveRuleToGroup(ruleId: string, groupId: string): Promise<void> {
+  const state = await getInterceptorState()
+  const next = state.rules.map((r) =>
+    r.id === ruleId ? { ...r, groupId, updatedAt: Date.now() } : r,
+  )
+  await saveRules(next)
+}
+
+export async function createGroup(name: string): Promise<RuleGroup[]> {
+  const state = await getInterceptorState()
+  const group: RuleGroup = {
+    id: newRuleId(),
+    name,
+    order: state.groups.length,
+    enabled: true,
+  }
+  const next = [...state.groups, group]
+  await saveGroups(next)
+  return next
+}
+
+export async function renameGroup(groupId: string, name: string): Promise<RuleGroup[]> {
+  const state = await getInterceptorState()
+  const next = state.groups.map((g) => (g.id === groupId ? { ...g, name } : g))
+  await saveGroups(next)
+  return next
+}
+
+export async function toggleGroup(groupId: string, enabled: boolean): Promise<RuleGroup[]> {
+  const state = await getInterceptorState()
+  const next = state.groups.map((g) => (g.id === groupId ? { ...g, enabled } : g))
+  await saveGroups(next)
+  return next
+}
+
+export async function setGroupCollapsed(groupId: string, collapsed: boolean): Promise<RuleGroup[]> {
+  const state = await getInterceptorState()
+  const next = state.groups.map((g) => (g.id === groupId ? { ...g, collapsed } : g))
+  await saveGroups(next)
+  return next
+}
+
+export async function deleteGroup(groupId: string): Promise<{ groups: RuleGroup[]; rules: InterceptorRule[] }> {
+  if (groupId === 'default') {
+    const state = await getInterceptorState()
+    return { groups: state.groups, rules: state.rules }
+  }
+  const state = await getInterceptorState()
+  const groups = state.groups.filter((g) => g.id !== groupId)
+  const rules = state.rules.map((r) =>
+    r.groupId === groupId ? { ...r, groupId: 'default', updatedAt: Date.now() } : r,
+  )
+  await saveGroups(groups.length ? groups : [DEFAULT_GROUP])
+  await saveRules(rules)
+  return { groups: groups.length ? groups : [DEFAULT_GROUP], rules }
+}
+
+export async function addRulesFromTemplate(
+  rules: InterceptorRule[],
+  groupName?: string,
+): Promise<{ rules: InterceptorRule[]; groups: RuleGroup[]; firstId: string }> {
+  const state = await getInterceptorState()
+  let groups = state.groups
+  let groupId = 'default'
+  if (groupName) {
+    const group: RuleGroup = {
+      id: newRuleId(),
+      name: groupName,
+      order: groups.length,
+      enabled: true,
+    }
+    groups = [...groups, group]
+    groupId = group.id
+    await saveGroups(groups)
+  }
+  const stamped = rules.map((r) => ({
+    ...r,
+    id: newRuleId(),
+    groupId: r.groupId === 'default' || !groupName ? groupId : r.groupId,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  }))
+  const nextRules = [...state.rules, ...stamped]
+  await saveRules(nextRules)
+  return { rules: nextRules, groups, firstId: stamped[0]?.id ?? '' }
+}
+
 export async function upsertLibraryItem(item: LibraryItem): Promise<void> {
   const state = await getInterceptorState()
   const idx = state.library.findIndex((i) => i.id === item.id)

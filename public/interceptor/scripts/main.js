@@ -30,7 +30,7 @@
 		}
 	}
 	function matchRule(rule, url, method, body) {
-		if (!matchSource(url, rule.source)) return false;
+		if (!rule.sources.some((s) => matchSource(url, s))) return false;
 		const f = rule.filters;
 		if (f?.methods?.length && !f.methods.map((m) => m.toUpperCase()).includes(method.toUpperCase())) return false;
 		if (f?.payloadKey && body) try {

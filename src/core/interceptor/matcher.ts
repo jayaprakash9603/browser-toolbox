@@ -1,4 +1,21 @@
-import type { InterceptorRule, RuleMatchContext, SourceCondition, TestRuleResult } from './types'
+import type {
+  InterceptorRule,
+  RuleGroup,
+  RuleMatchContext,
+  SourceCondition,
+  TestRuleResult,
+} from './types'
+
+export function ruleSources(rule: InterceptorRule): SourceCondition[] {
+  return [rule.source, ...(rule.extraSources ?? [])]
+}
+
+export function isRuleActive(rule: InterceptorRule, groups: RuleGroup[]): boolean {
+  if (!rule.enabled) return false
+  const group = groups.find((g) => g.id === rule.groupId)
+  if (group?.enabled === false) return false
+  return true
+}
 
 function fieldValue(url: string, field: SourceCondition['field']): string {
   try {
@@ -78,9 +95,15 @@ function payloadAllowed(body: string | undefined, key?: string, value?: string):
   }
 }
 
-export function matchRule(rule: InterceptorRule, ctx: RuleMatchContext): boolean {
-  if (!rule.enabled) return false
-  if (!matchSource(ctx.url, rule.source)) return false
+export function matchRule(
+  rule: InterceptorRule,
+  ctx: RuleMatchContext,
+  groups?: RuleGroup[],
+): boolean {
+  if (groups) {
+    if (!isRuleActive(rule, groups)) return false
+  } else if (!rule.enabled) return false
+  if (!ruleSources(rule).some((s) => matchSource(ctx.url, s))) return false
   const f = rule.filters
   if (!pageDomainAllowed(ctx.pageUrl, f?.pageDomains)) return false
   if (!methodAllowed(ctx.method, f?.methods)) return false
@@ -89,9 +112,13 @@ export function matchRule(rule: InterceptorRule, ctx: RuleMatchContext): boolean
   return true
 }
 
-export function matchRules(rules: InterceptorRule[], ctx: RuleMatchContext): InterceptorRule[] {
+export function matchRules(
+  rules: InterceptorRule[],
+  ctx: RuleMatchContext,
+  groups?: RuleGroup[],
+): InterceptorRule[] {
   return rules
-    .filter((r) => matchRule(r, ctx))
+    .filter((r) => matchRule(r, ctx, groups))
     .sort((a, b) => b.priority - a.priority || b.updatedAt - a.updatedAt)
 }
 
@@ -148,9 +175,10 @@ export function testRulesAgainstUrl(
   rules: InterceptorRule[],
   testUrl: string,
   pageUrl?: string,
+  groups?: RuleGroup[],
 ): TestRuleResult {
   const ctx: RuleMatchContext = { url: testUrl, pageUrl, method: 'GET' }
-  const matched = matchRules(rules, ctx)
+  const matched = matchRules(rules, ctx, groups)
   let transformedUrl: string | undefined
   for (const rule of matched) {
     if (rule.type === 'redirect') {

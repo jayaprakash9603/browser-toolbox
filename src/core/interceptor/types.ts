@@ -44,6 +44,7 @@ export type BodySourceKind = 'static' | 'library' | 'function'
 export interface InterceptorRuleBase {
   id: string
   name: string
+  description?: string
   enabled: boolean
   pinned?: boolean
   groupId: string
@@ -51,6 +52,8 @@ export interface InterceptorRuleBase {
   createdAt: number
   updatedAt: number
   source: SourceCondition
+  /** Additional OR conditions (Requestly-style "Add a new condition"). */
+  extraSources?: SourceCondition[]
   filters?: RuleFilters
 }
 
@@ -190,6 +193,8 @@ export interface RuleGroup {
   name: string
   collapsed?: boolean
   order: number
+  enabled?: boolean
+  pinned?: boolean
 }
 
 export type LibraryItemKind = 'json' | 'js' | 'css' | 'html' | 'text'
@@ -273,7 +278,7 @@ export interface PageInterceptorRule {
   name: string
   type: InterceptorRuleType
   priority: number
-  source: SourceCondition
+  sources: SourceCondition[]
   filters?: RuleFilters
   payload: Record<string, unknown>
 }
