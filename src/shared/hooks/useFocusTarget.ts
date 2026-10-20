@@ -3,11 +3,9 @@ import { useEffect, type RefObject } from 'react'
 import { useRouter } from '@/app/router'
 import { parseSearchParam } from '@/shared/hooks/useDeepLinkTab'
 
-function highlightElement(el: HTMLElement) {
-  el.scrollIntoView({ block: 'center', behavior: 'smooth' })
-  el.classList.add('search-highlight')
-  return window.setTimeout(() => el.classList.remove('search-highlight'), 1500)
-}
+import { highlightSearchTarget } from '@/shared/lib/searchHighlight'
+
+const MAX_WAIT_MS = 4000
 
 export function useFocusTarget(containerRef?: RefObject<HTMLElement | null>) {
   const { search, navKey } = useRouter()
@@ -17,31 +15,31 @@ export function useFocusTarget(containerRef?: RefObject<HTMLElement | null>) {
     if (!focusId) return
 
     const selector = `[data-search-id="${CSS.escape(focusId)}"]`
-    let timeoutId: number | undefined
-    let attempts = 0
-
-    const apply = () => {
-      const scope = containerRef?.current ?? document
-      const el =
-        scope instanceof Document
-          ? scope.querySelector<HTMLElement>(selector)
-          : scope.querySelector<HTMLElement>(selector)
-      if (!el) return false
-      if (timeoutId !== undefined) window.clearTimeout(timeoutId)
-      timeoutId = highlightElement(el)
-      return true
-    }
+    let highlightTimer: number | undefined
+    let frame = 0
+    let cancelled = false
+    const startedAt = performance.now()
 
     const tick = () => {
-      if (apply() || attempts > 20) return
-      attempts += 1
-      window.requestAnimationFrame(tick)
+      if (cancelled) return
+      const scope: ParentNode = containerRef?.current ?? document
+      const el = scope.querySelector<HTMLElement>(selector)
+      if (el) {
+        highlightTimer = highlightSearchTarget(el)
+        return
+      }
+      // Target may not be mounted yet (lazy tool, expanding section, async data).
+      if (performance.now() - startedAt < MAX_WAIT_MS) {
+        frame = window.requestAnimationFrame(tick)
+      }
     }
 
     tick()
 
     return () => {
-      if (timeoutId !== undefined) window.clearTimeout(timeoutId)
+      cancelled = true
+      window.cancelAnimationFrame(frame)
+      if (highlightTimer !== undefined) window.clearTimeout(highlightTimer)
     }
   }, [focusId, navKey, containerRef])
 }

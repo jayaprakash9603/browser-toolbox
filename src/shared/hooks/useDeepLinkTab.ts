@@ -1,6 +1,7 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { useRouter } from '@/app/router'
+import { highlightSearchTarget } from '@/shared/lib/searchHighlight'
 
 export function parseSearchParam(search: string, key: string): string | null {
   const value = new URLSearchParams(search).get(key)
@@ -34,6 +35,24 @@ export function useDeepLinkTab<T extends string>(
     const resolved = resolveFromSearch(search, paramKey, allowed, fallback)
     if (resolved !== tab) setTab(resolved)
   }
+
+  // Pulse the tab that search just selected so the landing spot is obvious.
+  const requested = parseSearchParam(search, paramKey)
+  const requestedValid = requested !== null && (allowed as readonly string[]).includes(requested)
+  useEffect(() => {
+    if (!requestedValid) return
+    let timer: number | undefined
+    const frame = window.setTimeout(() => {
+      const active = document.querySelector<HTMLElement>(
+        `[role="tab"][data-state="active"][id$="trigger-${CSS.escape(requested)}"]`,
+      ) ?? document.querySelector<HTMLElement>('[role="tab"][data-state="active"]')
+      if (active) timer = highlightSearchTarget(active, false)
+    }, 120)
+    return () => {
+      window.clearTimeout(frame)
+      if (timer !== undefined) window.clearTimeout(timer)
+    }
+  }, [requestedValid, requested, navKey])
 
   const setValue = useCallback((value: T) => setTab(value), [])
   return [tab, setValue]
