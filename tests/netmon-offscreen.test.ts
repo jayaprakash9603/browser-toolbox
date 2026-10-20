@@ -72,6 +72,23 @@ describe('internet monitor probe loop', () => {
     expect(samples().at(-1)!.status).toBe('offline')
   })
 
+  it('keeps reporting when the public IP lookup hangs', async () => {
+    vi.mocked(fetch).mockImplementation(
+      (url, init) =>
+        new Promise((resolve, reject) => {
+          if (!String(url).includes('ipify')) return resolve({} as Response)
+          init?.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))
+        }),
+    )
+    listener!(
+      { type: 'NETMON_OFFSCREEN_CONFIG', enabled: true, intervalSec: 2, pingUrl: 'https://ping.test/y', showIp: true },
+      {},
+      () => undefined,
+    )
+    await vi.advanceTimersByTimeAsync(15_000)
+    expect(samples().filter((s) => s.status === 'online').length).toBeGreaterThan(1)
+  })
+
   it('stops probing when disabled', async () => {
     listener!(
       { type: 'NETMON_OFFSCREEN_CONFIG', enabled: false, intervalSec: 1, pingUrl: 'https://ping.test/x', showIp: true },

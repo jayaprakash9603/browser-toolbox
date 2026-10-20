@@ -8,6 +8,8 @@ type Config = Extract<ExtensionMessage, { type: 'NETMON_OFFSCREEN_CONFIG' }>
 let config: Config | null = null
 let timer: ReturnType<typeof setTimeout> | null = null
 let inFlight = false
+let tickStartedAt = 0
+const STUCK_TICK_MS = PROBE_TIMEOUT_MS * 3
 let failures = 0
 let lastStatus: NetStatus | null = null
 let ip: string | undefined
@@ -37,18 +39,26 @@ async function probe(url: string): Promise<number | null> {
 async function refreshIp(force: boolean): Promise<void> {
   if (!force && ip && Date.now() - ipFetchedAt < IP_REFRESH_MS) return
   ipFetchedAt = Date.now()
+  // Without a timeout a stalled lookup would block every later sample ("Checking…" forever).
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS)
   try {
-    const res = await fetch(IP_ENDPOINT, { cache: 'no-store', credentials: 'omit' })
+    const res = await fetch(IP_ENDPOINT, { cache: 'no-store', credentials: 'omit', signal: controller.signal })
     const data = (await res.json()) as { ip?: string }
     if (data.ip) ip = data.ip
   } catch {
     // Keeps the previous address; it is retried on the next refresh.
+  } finally {
+    clearTimeout(timeout)
   }
 }
 
 async function tick(): Promise<void> {
-  if (!config?.enabled || inFlight) return
+  if (!config?.enabled) return
+  // A tick that never finished (hung request, suspended page) must not stop monitoring.
+  if (inFlight && Date.now() - tickStartedAt < STUCK_TICK_MS) return
   inFlight = true
+  tickStartedAt = Date.now()
   try {
     let status: NetStatus
     let latency: number | null = null
@@ -73,6 +83,8 @@ async function tick(): Promise<void> {
     await chrome.runtime
       .sendMessage({ type: 'NETMON_SAMPLE', status, latency, ip: config.showIp ? ip : undefined })
       .catch(() => {})
+  } catch {
+    // Never let one failed tick break the loop; the next one retries.
   } finally {
     inFlight = false
   }
@@ -83,8 +95,11 @@ function schedule(): void {
   timer = null
   if (!config?.enabled) return
   const loop = async () => {
-    await tick()
-    if (config?.enabled) timer = setTimeout(loop, config.intervalSec * 1000)
+    try {
+      await tick()
+    } finally {
+      if (config?.enabled) timer = setTimeout(loop, config.intervalSec * 1000)
+    }
   }
   void loop()
 }
@@ -101,7 +116,8 @@ function applyConfig(next: Config | null): void {
     lastStatus = null
     failures = 0
   }
-  if (changed) schedule()
+  // The background re-sends the config every minute; use it to revive a loop that died.
+  if (changed || (next?.enabled && !timer)) schedule()
 }
 
 chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
