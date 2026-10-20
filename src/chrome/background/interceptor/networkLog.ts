@@ -3,6 +3,7 @@ import {
   INTERCEPTOR_SESSION_LOG_KEY,
   getInterceptorState,
   matchRules,
+  type InterceptorRuleHit,
   type NetLogEntry,
 } from '@/core/interceptor'
 import { createLogger } from '@/core/logging'
@@ -46,7 +47,7 @@ function serializeBuffers(): Record<number, NetLogEntry[]> {
   return out
 }
 
-async function annotateRules(entry: Pending): Promise<string[]> {
+async function annotateRules(entry: Pending): Promise<InterceptorRuleHit[]> {
   const state = await getInterceptorState()
   if (state.settings.paused) return []
   const matched = matchRules(state.rules, {
@@ -54,7 +55,23 @@ async function annotateRules(entry: Pending): Promise<string[]> {
     method: entry.method,
     resourceType: entry.resourceType,
   })
-  return matched.map((r: { id: string }) => r.id)
+  return matched.map((r) => ({
+    ruleId: r.id,
+    ruleName: r.name,
+    ruleType: r.type,
+    action: 'matched',
+  }))
+}
+
+function mergeRuleHits(
+  existing: InterceptorRuleHit[] | undefined,
+  incoming: InterceptorRuleHit[] | undefined,
+): InterceptorRuleHit[] {
+  const out = [...(existing ?? [])]
+  for (const hit of incoming ?? []) {
+    if (!out.some((h) => h.ruleId === hit.ruleId && h.action === hit.action)) out.push(hit)
+  }
+  return out
 }
 
 export function getLogForTab(tabId: number): NetLogEntry[] {
@@ -113,6 +130,22 @@ export async function initNetworkLog(): Promise<void> {
     { urls: ['<all_urls>'] },
   )
 
+  chrome.webRequest.onBeforeRedirect.addListener(
+    (details) => {
+      if (!recording || details.tabId < 0) return
+      const key = entryKey(details.tabId, details.requestId)
+      const p = pending.get(key)
+      if (!p) return
+      p.modified = true
+      p.effectiveUrl = details.redirectUrl
+      void annotateRules(p).then((hits) => {
+        p.ruleHits = mergeRuleHits(p.ruleHits, hits)
+        p.appliedRuleIds = [...new Set([...(p.appliedRuleIds ?? []), ...hits.map((h) => h.ruleId)])]
+      })
+    },
+    { urls: ['<all_urls>'] },
+  )
+
   chrome.webRequest.onSendHeaders.addListener(
     (details) => {
       const key = entryKey(details.tabId, details.requestId)
@@ -153,7 +186,9 @@ export async function initNetworkLog(): Promise<void> {
     const p = pending.get(key)
     if (!p || !p.url) return
     pending.delete(key)
-    const ruleIds = await annotateRules(p)
+    const hits = await annotateRules(p)
+    const mergedHits = mergeRuleHits(p.ruleHits, hits)
+    const ruleIds = [...new Set([...(p.appliedRuleIds ?? []), ...mergedHits.map((h) => h.ruleId)])]
     const entry: NetLogEntry = {
       id: p.id ?? key,
       tabId: p.tabId,
@@ -162,6 +197,7 @@ export async function initNetworkLog(): Promise<void> {
       completedAt: details.timeStamp,
       method: p.method ?? 'GET',
       url: p.url,
+      effectiveUrl: p.effectiveUrl,
       status: p.status ?? details.statusCode,
       resourceType: p.resourceType,
       requestHeaders: p.requestHeaders,
@@ -169,7 +205,8 @@ export async function initNetworkLog(): Promise<void> {
       requestBody: p.requestBody,
       responseBody: p.responseBody,
       durationMs: details.timeStamp - (p.startedAt ?? details.timeStamp),
-      appliedRuleIds: [...(p.appliedRuleIds ?? []), ...ruleIds],
+      appliedRuleIds: ruleIds,
+      ruleHits: mergedHits,
       modified: ruleIds.length > 0 || Boolean(p.modified),
       fromPageScript: p.fromPageScript,
       error: (details as { error?: string }).error,
@@ -195,14 +232,32 @@ export function mergePageEvent(
 ): void {
   const key = entryKey(tabId, requestId)
   const p = pending.get(key)
+  const mergePatch = (base: Pending | NetLogEntry): Partial<NetLogEntry> => {
+    const hits = mergeRuleHits(base.ruleHits, patch.ruleHits)
+    const ids = [...new Set([...(base.appliedRuleIds ?? []), ...(patch.appliedRuleIds ?? []), ...hits.map((h) => h.ruleId)])]
+    return {
+      ...patch,
+      appliedRuleIds: ids,
+      ruleHits: hits,
+      modified: true,
+      fromPageScript: true,
+    }
+  }
   if (p) {
-    Object.assign(p, patch, { modified: true, fromPageScript: true })
+    Object.assign(p, mergePatch(p))
+    return
+  }
+  const pendingByUrl = [...pending.entries()].find(
+    ([k, row]) => k.startsWith(`${tabId}:`) && row.url === patch.url,
+  )
+  if (pendingByUrl) {
+    Object.assign(pendingByUrl[1], mergePatch(pendingByUrl[1]))
     return
   }
   const buf = buffers.get(tabId) ?? []
-  const idx = buf.findIndex((e) => e.url === patch.url && !e.completedAt)
+  const idx = buf.findIndex((e) => e.url === patch.url)
   if (idx >= 0) {
-    buf[idx] = { ...buf[idx], ...patch, modified: true, fromPageScript: true }
+    buf[idx] = { ...buf[idx], ...mergePatch(buf[idx]) }
     buffers.set(tabId, buf)
     broadcast(buf[idx])
   }

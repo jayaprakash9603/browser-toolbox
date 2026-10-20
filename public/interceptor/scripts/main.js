@@ -53,14 +53,43 @@
 		return true;
 	}
 	var rules = [];
+	var showToast = false;
 	var queue = [];
+	var TOAST_STACK = "tbx-interceptor-toasts";
 	function flushQueue() {
 		while (queue.length) queue.shift()?.();
 	}
-	function relay(kind, ruleId, url, method, extra) {
+	function actionLabel(kind, ruleType) {
+		if (kind === "mock") return "Mocked response";
+		if (kind === "response") return "Response modified";
+		if (kind === "request") return "Request modified";
+		if (kind === "delay") return "Request delayed";
+		if (kind === "userAgent") return "User-Agent changed";
+		return ruleType;
+	}
+	function showRuleToast(rule, kind, url) {
+		if (!showToast) return;
+		let stack = document.getElementById(TOAST_STACK);
+		if (!stack) {
+			stack = document.createElement("div");
+			stack.id = TOAST_STACK;
+			stack.setAttribute("style", "position:fixed;bottom:16px;right:16px;z-index:2147483647;display:flex;flex-direction:column;gap:8px;max-width:min(360px,calc(100vw - 32px));pointer-events:none");
+			document.documentElement.appendChild(stack);
+		}
+		const card = document.createElement("div");
+		const short = url.length > 56 ? `${url.slice(0, 53)}…` : url;
+		card.setAttribute("style", "pointer-events:auto;padding:10px 12px;background:#0f172a;color:#f8fafc;font:12px/1.4 system-ui,sans-serif;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.35);border-left:4px solid #3b82f6");
+		card.innerHTML = `<div style="font-weight:600;margin-bottom:4px">${actionLabel(kind, rule.type)}</div><div style="opacity:.9">${rule.name || rule.type}</div><div style="opacity:.65;margin-top:4px;word-break:break-all">${short}</div>`;
+		stack.appendChild(card);
+		window.setTimeout(() => card.remove(), 4500);
+	}
+	function relay(kind, rule, url, method, extra) {
+		showRuleToast(rule, kind, url);
 		window.postMessage({ [PAGE_MESSAGE_KEY]: {
 			kind,
-			ruleId,
+			ruleId: rule.id,
+			ruleName: rule.name,
+			ruleType: rule.type,
 			url,
 			method,
 			...extra
@@ -86,22 +115,29 @@
 			let body = init?.body ? String(init.body) : void 0;
 			const matched = [...rules].filter((r) => matchRule(r, url, method, body)).sort((a, b) => b.priority - a.priority);
 			for (const rule of matched) {
-				if (rule.type === "userAgent") applyUserAgent(rule);
+				if (rule.type === "userAgent") {
+					applyUserAgent(rule);
+					relay("userAgent", rule, url, method, {});
+				}
 				if (rule.type === "modifyRequestBody" && body) {
 					const fn = rule.payload.functionBody;
 					if (fn) try {
 						body = new Function("body", "url", "method", fn)(body, url, method);
 					} catch {}
 					else if (rule.payload.body) body = String(rule.payload.body);
+					relay("request", rule, url, method, { requestBody: body });
 				}
 				if (rule.type === "delay") {
 					const ms = Number(rule.payload.delayMs) || 0;
-					if (ms > 0) await new Promise((r) => setTimeout(r, ms));
+					if (ms > 0) {
+						relay("delay", rule, url, method, { delayMs: ms });
+						await new Promise((r) => setTimeout(r, ms));
+					}
 				}
 				if (rule.type === "mockApi" || rule.type === "mockGraphql") {
 					const status = Number(rule.payload.status) || 200;
 					const responseBody = String(rule.payload.body ?? "");
-					relay("mock", rule.id, url, method, {
+					relay("mock", rule, url, method, {
 						responseBody,
 						status
 					});
@@ -115,7 +151,7 @@
 			for (const rule of matched) {
 				if (rule.type === "statusCode") {
 					const status = Number(rule.payload.status) || response.status;
-					relay("response", rule.id, url, method, { status });
+					relay("response", rule, url, method, { status });
 					return new Response(response.body, {
 						status,
 						headers: response.headers
@@ -132,7 +168,7 @@
 					}
 					else if (rule.payload.body) next = String(rule.payload.body);
 					const status = Number(rule.payload.status) || response.status;
-					relay("response", rule.id, url, method, {
+					relay("response", rule, url, method, {
 						responseBody: next,
 						status
 					});
@@ -170,7 +206,7 @@
 				Object.defineProperty(this, "status", { value: status });
 				Object.defineProperty(this, "responseText", { value: responseBody });
 				Object.defineProperty(this, "response", { value: responseBody });
-				relay("mock", mock.id, url, method, {
+				relay("mock", mock, url, method, {
 					responseBody,
 					status
 				});
@@ -188,13 +224,14 @@
 		const data = event.data;
 		if (!data || data["__toolboxInterceptorCmd"] !== "config") return;
 		rules = data.config ?? [];
+		showToast = Boolean(data.showToast);
 		flushQueue();
-		if (data.showToast && rules.length) {
-			const el = document.createElement("div");
-			el.textContent = `HTTP Interceptor: ${rules.length} page rule(s) active`;
-			el.setAttribute("style", "position:fixed;bottom:12px;right:12px;z-index:2147483647;padding:8px 12px;background:#1e293b;color:#fff;font:12px system-ui;border-radius:8px;opacity:0.9");
-			document.documentElement.appendChild(el);
-			window.setTimeout(() => el.remove(), 4e3);
+		if (showToast && rules.length) {
+			const boot = document.createElement("div");
+			boot.textContent = `HTTP Interceptor enabled · ${rules.length} page rule(s) active`;
+			boot.setAttribute("style", "position:fixed;bottom:16px;right:16px;z-index:2147483646;padding:8px 12px;background:#1e293b;color:#fff;font:12px system-ui;border-radius:8px;opacity:0.92");
+			document.documentElement.appendChild(boot);
+			window.setTimeout(() => boot.remove(), 3500);
 		}
 	});
 	//#endregion

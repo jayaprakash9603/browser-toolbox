@@ -9,7 +9,7 @@ import { registerMessageHandler } from '@/core/messaging'
 import type { ExtensionMessage } from '@/core/messaging/types'
 
 import { clearTabBadge, incrementTabRuleCount } from './badge'
-import { syncInterceptorContentScripts } from './contentScripts'
+import { pushPageConfigToTab, syncInterceptorContentScripts } from './contentScripts'
 import { attachDeepIntercept, detachDeepIntercept, registerDeepInterceptListener } from './deepIntercept'
 import { syncInterceptorDnrRules } from './dnr'
 import {
@@ -30,6 +30,10 @@ async function fullSync(): Promise<void> {
   await syncInterceptorContentScripts()
   await syncInterceptorUserScripts()
   await refreshLogSize()
+  const tabs = await chrome.tabs.query({})
+  for (const tab of tabs) {
+    if (tab.id != null) await pushPageConfigToTab(tab.id)
+  }
 }
 
 export function registerInterceptor(): void {
@@ -94,6 +98,14 @@ export function registerInterceptor(): void {
       responseBody: ev.responseBody,
       status: ev.status,
       appliedRuleIds: [ev.ruleId],
+      ruleHits: [
+        {
+          ruleId: ev.ruleId,
+          ruleName: ev.ruleName,
+          ruleType: ev.ruleType,
+          action: ev.kind,
+        },
+      ],
     })
     return { ok: true }
   })

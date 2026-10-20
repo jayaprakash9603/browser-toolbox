@@ -1,24 +1,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIcon, GaugeIcon, ListIcon } from 'lucide-react'
+import { ActivityIcon, GaugeIcon, ListIcon, SettingsIcon } from 'lucide-react'
 
 import { sendMessage } from '@/core/messaging'
 import { useInterceptorLog, useInterceptorState } from '@/features/interceptor/hooks'
 import { fromHar, fromNetLog, type NetworkRow } from '@/features/interceptor/networkModel'
 import { NetworkInspector } from '@/tools/api/http-interceptor/NetworkInspector'
 import { RulesTab } from '@/tools/api/http-interceptor/RulesTab'
+import { SettingsTab } from '@/tools/api/http-interceptor/SettingsTab'
 import { cn } from '@/shared/utils/cn'
 
-type View = 'network' | 'executions' | 'rules'
+type View = 'network' | 'executions' | 'rules' | 'settings'
 
 const NAV: { id: View; label: string; icon: typeof ActivityIcon }[] = [
   { id: 'network', label: 'Network Traffic', icon: GaugeIcon },
   { id: 'executions', label: 'Rule Executions', icon: ActivityIcon },
   { id: 'rules', label: 'Rules', icon: ListIcon },
+  { id: 'settings', label: 'Settings', icon: SettingsIcon },
 ]
 
 export default function DevToolsInterceptorPage() {
   const tabId = chrome.devtools?.inspectedWindow?.tabId
-  const { state, setState } = useInterceptorState()
+  const { state, setState, patchSettings } = useInterceptorState()
   const { entries: logEntries, clear: clearLog } = useInterceptorLog(tabId)
   const [view, setView] = useState<View>('network')
   const [harRows, setHarRows] = useState<NetworkRow[]>([])
@@ -54,19 +56,27 @@ export default function DevToolsInterceptorPage() {
     }
   }, [])
 
-  const modifiedUrls = useMemo(() => {
-    const map = new Map<string, string[]>()
-    for (const e of logEntries) if (e.modified) map.set(e.url, e.appliedRuleIds)
+  const logByUrl = useMemo(() => {
+    const map = new Map<string, (typeof logEntries)[number]>()
+    for (const e of logEntries) if (e.modified) map.set(e.url, e)
     return map
   }, [logEntries])
 
   const networkRows = useMemo(
     () =>
       harRows.map((r) => {
-        const ids = modifiedUrls.get(r.url)
-        return ids ? { ...r, modified: true, appliedRuleIds: ids } : r
+        const log = logByUrl.get(r.url)
+        if (!log) return r
+        return {
+          ...r,
+          modified: true,
+          appliedRuleIds: log.appliedRuleIds,
+          ruleHits: log.ruleHits,
+          effectiveUrl: log.effectiveUrl,
+          status: log.status ?? r.status,
+        }
       }),
-    [harRows, modifiedUrls],
+    [harRows, logByUrl],
   )
 
   const executionRows = useMemo(() => logEntries.filter((e) => e.modified).map(fromNetLog), [logEntries])
@@ -128,6 +138,11 @@ export default function DevToolsInterceptorPage() {
         {view === 'rules' && state && (
           <div className="h-full overflow-y-auto p-3">
             <RulesTab state={state} onStateChange={setState} />
+          </div>
+        )}
+        {view === 'settings' && state && (
+          <div className="h-full overflow-y-auto p-3">
+            <SettingsTab state={state} patchSettings={patchSettings} />
           </div>
         )}
       </div>

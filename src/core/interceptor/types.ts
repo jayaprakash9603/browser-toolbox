@@ -256,10 +256,21 @@ export interface NetLogEntry {
   appliedRuleIds: string[]
   modified: boolean
   fromPageScript?: boolean
+  /** Final URL after redirect/replace (DNR). */
+  effectiveUrl?: string
+  ruleHits?: InterceptorRuleHit[]
+}
+
+export interface InterceptorRuleHit {
+  ruleId: string
+  ruleName?: string
+  ruleType?: string
+  action?: string
 }
 
 export interface PageInterceptorRule {
   id: string
+  name: string
   type: InterceptorRuleType
   priority: number
   source: SourceCondition
@@ -268,8 +279,10 @@ export interface PageInterceptorRule {
 }
 
 export interface InterceptorPageEvent {
-  kind: 'request' | 'response' | 'mock'
+  kind: 'request' | 'response' | 'mock' | 'delay' | 'userAgent'
   ruleId: string
+  ruleName?: string
+  ruleType?: string
   url: string
   method: string
   requestBody?: string

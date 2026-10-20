@@ -14,6 +14,8 @@ export interface NetworkRow {
   postData?: string
   modified?: boolean
   appliedRuleIds?: string[]
+  effectiveUrl?: string
+  ruleHits?: { ruleId: string; ruleName?: string; ruleType?: string; action?: string }[]
   /** Lazily loads the response body (DevTools HAR or captured). */
   getBody?: () => Promise<string>
   raw: unknown
@@ -121,6 +123,8 @@ export function fromNetLog(entry: NetLogEntry): NetworkRow {
     postData: entry.requestBody,
     modified: entry.modified,
     appliedRuleIds: entry.appliedRuleIds,
+    effectiveUrl: entry.effectiveUrl,
+    ruleHits: entry.ruleHits,
     getBody: entry.responseBody != null ? async () => entry.responseBody ?? '' : undefined,
     raw: entry,
   }

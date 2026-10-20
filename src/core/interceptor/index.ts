@@ -55,6 +55,7 @@ export type {
   HttpMethod,
   InsertScriptRule,
   InterceptorPageEvent,
+  InterceptorRuleHit,
   InterceptorRule,
   InterceptorRuleType,
   InterceptorSettings,

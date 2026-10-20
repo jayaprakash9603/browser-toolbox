@@ -17,7 +17,7 @@ export const DEFAULT_INTERCEPTOR_SETTINGS: InterceptorSettings = {
   paused: false,
   logSize: DEFAULT_LOG_SIZE,
   deepIntercept: false,
-  showPageToast: false,
+  showPageToast: true,
   userScriptsEnabled: false,
 }
 

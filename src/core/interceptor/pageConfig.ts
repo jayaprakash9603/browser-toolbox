@@ -30,6 +30,7 @@ export function compilePageRules(
     .map((rule) => {
       const base = {
         id: rule.id,
+        name: rule.name,
         type: rule.type,
         priority: rule.priority,
         source: rule.source,

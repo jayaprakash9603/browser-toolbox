@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   BanIcon,
   ClockIcon,
@@ -11,6 +12,7 @@ import {
 } from 'lucide-react'
 
 import { entryToCurl } from '@/features/interceptor/curl'
+import { ruleActionLabel } from '@/features/interceptor/ruleLabels'
 import {
   TYPE_FILTERS,
   formatSize,
@@ -47,7 +49,9 @@ function statusClass(status?: number): string {
 }
 
 export function NetworkInspector({ rows, onClear, preserveLog, onPreserveLogChange, deep }: Props) {
+  const { t } = useTranslation()
   const [filter, setFilter] = useState('')
+  const [modifiedOnly, setModifiedOnly] = useState(false)
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('All')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [tab, setTab] = useState<DetailTab>('General')
@@ -57,8 +61,13 @@ export function NetworkInspector({ rows, onClear, preserveLog, onPreserveLogChan
 
   const visible = useMemo(() => {
     const q = filter.trim().toLowerCase()
-    return rows.filter((r) => matchesTypeFilter(r, typeFilter) && (!q || r.url.toLowerCase().includes(q)))
-  }, [rows, filter, typeFilter])
+    return rows.filter(
+      (r) =>
+        matchesTypeFilter(r, typeFilter) &&
+        (!modifiedOnly || r.modified) &&
+        (!q || r.url.toLowerCase().includes(q)),
+    )
+  }, [rows, filter, typeFilter, modifiedOnly])
 
   const selected = rows.find((r) => r.id === selectedId) ?? null
 
@@ -95,6 +104,10 @@ export function NetworkInspector({ rows, onClear, preserveLog, onPreserveLogChan
         <label className="flex cursor-pointer items-center gap-1">
           <input type="checkbox" checked={preserveLog} onChange={(e) => onPreserveLogChange(e.target.checked)} />
           Preserve log
+        </label>
+        <label className="flex cursor-pointer items-center gap-1">
+          <input type="checkbox" checked={modifiedOnly} onChange={(e) => setModifiedOnly(e.target.checked)} />
+          {t('interceptor.network.onlyModified')}
         </label>
         {deep && (
           <Button type="button" variant={deep.active ? 'default' : 'outline'} size="xs" onClick={deep.onToggle}>
@@ -200,9 +213,38 @@ export function NetworkInspector({ rows, onClear, preserveLog, onPreserveLogChan
             <div className="min-h-0 flex-1 overflow-auto p-3">
               {tab === 'General' && (
                 <div className="space-y-3">
+                  {selected.modified && (selected.ruleHits?.length || selected.appliedRuleIds?.length) ? (
+                    <div className="rounded-lg border border-blue-500/40 bg-blue-500/10 p-2.5">
+                      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">
+                        {t('interceptor.network.intercepted')}
+                      </p>
+                      <ul className="space-y-1">
+                        {(selected.ruleHits?.length
+                          ? selected.ruleHits
+                          : (selected.appliedRuleIds ?? []).map((id) => ({
+                              ruleId: id,
+                              ruleName: undefined,
+                              ruleType: undefined,
+                              action: undefined,
+                            }))).map((hit) => (
+                          <li key={`${hit.ruleId}-${hit.action ?? ''}`} className="text-[11px]">
+                            <span className="font-medium">
+                              {ruleActionLabel(hit.ruleType, hit.action)}
+                            </span>
+                            {hit.ruleName ? ` · ${hit.ruleName}` : ` · ${hit.ruleId.slice(0, 8)}`}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
                   <p className="break-all">
                     <b>Request URL:</b> {selected.url}
                   </p>
+                  {selected.effectiveUrl && selected.effectiveUrl !== selected.url && (
+                    <p className="break-all text-blue-700 dark:text-blue-300">
+                      <b>{t('interceptor.network.redirectedTo')}:</b> {selected.effectiveUrl}
+                    </p>
+                  )}
                   <div className="flex flex-wrap gap-2">
                     <Button type="button" variant="outline" size="xs" onClick={() => open({ kind: 'redirect' })}>
                       <ShuffleIcon /> Redirect to a different URL
