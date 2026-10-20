@@ -1,7 +1,7 @@
 import { PAGE_CMD_KEY, PAGE_EVT_KEY } from '@/core/sites/whatsapp/constants'
 import { countryForNumber } from '@/core/sites/whatsapp/countries'
 
-import { startPrivacy, stopPrivacy, patchReadReceipts } from './features/privacy'
+import { startPrivacy, stopPrivacy } from './features/privacy'
 
 type Guarded = Window & {
   __toolboxWaMain?: boolean
@@ -138,38 +138,17 @@ async function handleCmd(cmd: string, payload: unknown): Promise<void> {
   if (cmd === 'syncState') {
     if (!payload || typeof payload !== 'object') {
       stopPrivacy()
-      patchReadReceipts(false)
       return
     }
     const p = payload as { values: Record<string, unknown>; data: unknown }
     const state = { enabled: true, values: p.values, data: p.data } as import('@/core/sites/whatsapp').WhatsappPlusState
     startPrivacy(state)
-    patchReadReceipts(p.values.disableReadReceipts === true)
     return
-  }
-
-  if (cmd === 'toggleRead' && wpp.chat) {
-    const active = (wpp.chat.getActiveChat as (() => { id?: { _serialized?: string } }) | undefined)?.()
-    const id = active?.id?._serialized
-    if (id && wpp.chat.markIsUnread) await (wpp.chat.markIsUnread as (c: string) => Promise<unknown>)(id)
-    else if (id && wpp.chat.markIsRead) await (wpp.chat.markIsRead as (c: string) => Promise<unknown>)(id)
-  }
-
-  if (cmd === 'pinChat' && wpp.chat?.pin) {
-    const active = (wpp.chat.getActiveChat as () => { id?: { _serialized?: string } })?.()
-    const id = active?.id?._serialized
-    if (id) await (wpp.chat.pin as (c: string) => Promise<unknown>)(id)
   }
 
   if (cmd === 'startChat' && payload && typeof payload === 'object') {
     const num = String((payload as { number: string }).number).replace(/\D/g, '')
     if (num && wpp.chat?.openChatBottom) await (wpp.chat.openChatBottom as (id: string) => Promise<unknown>)(`${num}@c.us`)
-  }
-
-  if (cmd === 'likeMessage' && payload && typeof payload === 'object') {
-    const msgId = String((payload as { msgId?: string }).msgId ?? '')
-    const react = wpp.chat?.sendReactionToMessage as ((id: string, r: string) => Promise<unknown>) | undefined
-    if (msgId && react) await react(msgId, '👍')
   }
 
   if (cmd === 'export' && payload && typeof payload === 'object') {

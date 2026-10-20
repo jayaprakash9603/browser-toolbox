@@ -15,7 +15,7 @@ export const SITE_FILES = {
 export const PAGE_CMD_KEY = '__toolboxWaCmd'
 export const PAGE_EVT_KEY = '__toolboxWaEvt'
 
-export const MAX_CHAT_BACKGROUND_BYTES = 500_000
+export const MAX_CHAT_BACKGROUND_BYTES = 2_500_000
 export const BROADCAST_DELAY_MIN_SEC = 8
 export const BROADCAST_DELAY_MAX_SEC = 20
 export const BROADCAST_DAILY_CAP_DEFAULT = 50

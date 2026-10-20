@@ -330,7 +330,6 @@ function sectionBlock(section: WhatsappSection): HTMLElement {
     list.appendChild(row)
 
     if (f.id === 'customChatBackground' && s.values[f.id] === true) list.appendChild(backgroundControls())
-    if (f.id === 'btnTranscribe' && s.values[f.id] === true) list.appendChild(whisperControls())
   }
 
   return el(
@@ -358,16 +357,30 @@ function backgroundControls(): HTMLElement {
   file.addEventListener('change', () => {
     const f = file.files?.[0]
     if (!f) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const url = String(reader.result ?? '')
-      if (url.length >= MAX_CHAT_BACKGROUND_BYTES) {
-        toast('Image is too large. Pick a smaller one.')
-        return
+    const src = URL.createObjectURL(f)
+    const img = new Image()
+    img.onload = () => {
+      URL.revokeObjectURL(src)
+      // Downscale so it always fits extension storage and stays sharp on large screens.
+      let scale = Math.min(1, 1920 / Math.max(img.width, img.height))
+      let url = ''
+      for (let i = 0; i < 5; i++) {
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.max(1, Math.round(img.width * scale))
+        canvas.height = Math.max(1, Math.round(img.height * scale))
+        canvas.getContext('2d')?.drawImage(img, 0, 0, canvas.width, canvas.height)
+        url = canvas.toDataURL('image/jpeg', 0.85)
+        if (url.length < MAX_CHAT_BACKGROUND_BYTES) break
+        scale *= 0.75
       }
+      if (url.length >= MAX_CHAT_BACKGROUND_BYTES) return toast('Image is too large. Pick a smaller one.')
       void patchState({ data: { chatBackgroundDataUrl: url } }).then(() => toast('Background updated'))
     }
-    reader.readAsDataURL(f)
+    img.onerror = () => {
+      URL.revokeObjectURL(src)
+      toast('Could not read that image')
+    }
+    img.src = src
   })
   const hasImage = Boolean(state?.data.chatBackgroundDataUrl)
   return el(
@@ -377,17 +390,6 @@ function backgroundControls(): HTMLElement {
     textButton(hasImage ? 'Change image' : 'Choose image', () => file.click(), 'ghost'),
     hasImage ? textButton('Remove', () => void patchState({ data: { chatBackgroundDataUrl: '' } }), 'ghost') : null,
   )
-}
-
-function whisperControls(): HTMLElement {
-  const key = input('OpenAI API key (sk-…)', 'password')
-  key.value = state?.data.whisperApiKey ?? ''
-  key.addEventListener('change', () => {
-    void patchState({ data: { whisperApiKey: key.value.trim() }, values: { whisperApiKey: key.value.trim() } }).then(() =>
-      toast('API key saved'),
-    )
-  })
-  return el('div', 'tbx-d-subcontrols', key)
 }
 
 function viewEnhancements(): HTMLElement {

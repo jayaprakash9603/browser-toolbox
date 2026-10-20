@@ -29,15 +29,14 @@ function applyCssFeatures(state: WhatsappPlusState): void {
 
 function applyChatBackground(state: WhatsappPlusState): void {
   const root = document.documentElement
-  const main = document.querySelector('#main') as HTMLElement | null
   const on = isFeatureOn(state.values, 'customChatBackground')
   const url = state.data.chatBackgroundDataUrl
   if (on && url && url.length < MAX_CHAT_BACKGROUND_BYTES) {
     root.setAttribute(featureAttrName('customChatBackground'), 'true')
-    if (main) main.style.backgroundImage = `url("${url.replace(/"/g, '')}")`
+    root.style.setProperty('--tbx-wa-bg', `url("${url.replace(/"/g, '')}")`)
   } else {
     root.removeAttribute(featureAttrName('customChatBackground'))
-    if (main) main.style.removeProperty('background-image')
+    root.style.removeProperty('--tbx-wa-bg')
   }
 }
 
@@ -72,6 +71,5 @@ export function stopAll(): void {
   document
     .querySelectorAll('#tbx-wa-launcher, .tbx-wa-launcher, .tbx-wa-header-actions, .tbx-wa-msg-actions, .tbx-wa-extra-btn, .tbx-wa-translation, .tbx-wa-popover, .tbx-wa-toast, .tbx-wa-restored-msg')
     .forEach((el) => el.remove())
-  const main = document.querySelector('#main') as HTMLElement | null
-  if (main) main.style.removeProperty('background-image')
+  root.style.removeProperty('--tbx-wa-bg')
 }

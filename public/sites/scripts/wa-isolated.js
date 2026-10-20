@@ -36,18 +36,16 @@
 	}
 	//#endregion
 	//#region src/core/sites/whatsapp/features.ts
-	function toggles(section, ids, opts) {
-		const impl = opts?.impl ?? "css";
-		const defaultVal = opts?.default ?? false;
+	function toggles(section, ids, impl) {
 		return ids.map((id) => ({
 			id,
 			section,
 			kind: "toggle",
 			impl,
-			default: defaultVal,
-			...opts?.bestEffort ? { bestEffort: true } : {}
+			default: false
 		}));
 	}
+	/** Only features WhatsApp Web does not already offer natively. */
 	var WHATSAPP_FEATURES = [
 		...toggles("privacy", [
 			"blurContactNames",
@@ -55,30 +53,8 @@
 			"blurRecentMessages",
 			"blurConversationMessages",
 			"blurComposer"
-		]),
-		...toggles("privacy", [
-			"hideTyping",
-			"hideRecording",
-			"viewStatusPrivately",
-			"playAudioPrivately",
-			"disableReadReceipts",
-			"invisibleMode"
-		], {
-			impl: "script",
-			bestEffort: true
-		}),
-		{
-			id: "restoreDeletedMessages",
-			section: "privacy",
-			kind: "toggle",
-			impl: "script",
-			default: false
-		},
-		...toggles("custom", [
-			"notifyOnline",
-			"notifyTyping",
-			"preventListJump"
-		], { impl: "script" }),
+		], "css"),
+		...toggles("privacy", ["restoreDeletedMessages"], "script"),
 		{
 			id: "customChatBackground",
 			section: "custom",
@@ -94,25 +70,11 @@
 			default: true
 		},
 		...toggles("buttons", [
-			"btnLike",
-			"btnPinChat",
 			"btnStartChat",
-			"btnMarkRead",
 			"btnTranslate",
-			"btnTranscribe",
-			"btnDownloadStatus",
-			"btnChatInfo",
 			"btnQuickReply",
-			"btnAddTask",
-			"btnSaveContact"
-		], { impl: "script" }),
-		{
-			id: "whisperApiKey",
-			section: "buttons",
-			kind: "text",
-			impl: "script",
-			default: ""
-		}
+			"btnAddTask"
+		], "script")
 	];
 	new Map(WHATSAPP_FEATURES.map((f) => [f.id, f]));
 	var CSS_FEATURE_IDS = WHATSAPP_FEATURES.filter((f) => f.impl === "css").map((f) => f.id);
@@ -173,115 +135,47 @@
 			label: "Blur message composer input",
 			description: "Hide what you type until the box is focused."
 		},
-		hideTyping: {
-			label: "Hide typing status",
-			description: "Others will not see \"typing…\"."
-		},
-		hideRecording: {
-			label: "Hide recording status",
-			description: "Others will not see \"recording audio…\"."
-		},
-		viewStatusPrivately: {
-			label: "View statuses privately",
-			description: "Watch statuses without sending a view receipt."
-		},
-		playAudioPrivately: {
-			label: "Play audio messages privately",
-			description: "Play voice notes without marking them played."
-		},
-		disableReadReceipts: {
-			label: "Disable read receipts",
-			description: "Read messages without blue ticks."
-		},
-		invisibleMode: {
-			label: "Hide online status (Invisible Mode)",
-			description: "Appear offline while using WhatsApp."
-		},
 		restoreDeletedMessages: {
 			label: "Restore deleted messages",
-			description: "Keep a copy of messages deleted for everyone."
-		},
-		notifyOnline: {
-			label: "Notify about online activities",
-			description: "Get a notification when a contact comes online."
-		},
-		notifyTyping: {
-			label: "Notify about typing and recording activities",
-			description: "Get a notification when someone is typing."
-		},
-		preventListJump: {
-			label: "Prevent chats list jumping on message submission",
-			description: "Keep the chat list scroll position."
+			description: "Show a copy of messages deleted for everyone."
 		},
 		customChatBackground: {
 			label: "Set custom chat background image",
-			description: "Use your own wallpaper for conversations."
+			description: "Use your own wallpaper behind conversations."
 		},
 		showSideLauncher: {
 			label: "Show ChatBoost button in sidebar",
 			description: "Green plus button in the left navigation rail."
 		},
-		btnLike: {
-			label: "Like button",
-			description: "Quick 👍 reaction on message hover."
-		},
-		btnPinChat: {
-			label: "Pin chat button",
-			description: "Pin the open chat from its header."
-		},
 		btnStartChat: {
-			label: "Start new chat",
-			description: "Open a chat with any phone number."
-		},
-		btnMarkRead: {
-			label: "Mark conversation as read/unread",
-			description: "Toggle unread state from the chat header."
-		},
-		btnTranscribe: {
-			label: "Transcribe audio messages button",
-			description: "Convert voice notes to text (Whisper API key)."
+			label: "Start chat with any number",
+			description: "Header button to open a chat without saving the contact."
 		},
 		btnTranslate: {
 			label: "Translate message button",
-			description: "Translate a message on hover."
-		},
-		btnDownloadStatus: {
-			label: "Download status button",
-			description: "Save status photos and videos."
-		},
-		btnChatInfo: {
-			label: "Chat info button",
-			description: "Show details about the open chat."
+			description: "Translate a message inline on hover."
 		},
 		btnQuickReply: {
-			label: "Quick reply buttons",
-			description: "Insert a template from the chat header."
+			label: "Quick reply button",
+			description: "Insert a saved template from the chat header."
 		},
 		btnAddTask: {
 			label: "Add task button",
-			description: "Create a task from the open chat."
-		},
-		btnSaveContact: {
-			label: "Save contact button",
-			description: "Save an unknown number as a contact."
-		},
-		whisperApiKey: {
-			label: "Whisper API key",
-			description: "OpenAI key used for audio transcription."
+			description: "Create a task linked to the open chat."
 		}
 	};
 	var WHATSAPP_SECTION_INFO = {
 		privacy: {
 			label: "Private Mode",
-			description: "Anti screen and status spying"
+			description: "Anti screen spying and deleted messages"
 		},
 		custom: {
 			label: "Customizations",
-			description: "Other different useful functions"
+			description: "Make WhatsApp yours"
 		},
 		buttons: {
 			label: "Extra Buttons",
-			description: "Add new buttons with additional functions"
+			description: "Header and message buttons WhatsApp lacks"
 		}
 	};
 	//#endregion
@@ -387,9 +281,6 @@
 	var observer = null;
 	var currentState = null;
 	var ICONS$1 = {
-		markRead: "M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41 6 19l1.41-1.41L1.83 12 .41 13.41z",
-		pin: "M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z",
-		info: "M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z",
 		startChat: "M19.005 3.175H4.674C3.642 3.175 3 3.789 3 4.821V21.02l3.544-3.514h12.461c1.033 0 2.064-1.06 2.064-2.093V4.821c-.001-1.032-1.032-1.646-2.064-1.646zm-4.989 9.869H7.041V11.1h6.975v1.944zm3-4H7.041V7.1h9.975v1.944z",
 		quickReply: "M7 2v11h3v9l7-12h-4l4-8z",
 		addTask: "M14 10H3v2h11v-2zm0-4H3v2h11V6zm4 8v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM3 16h7v-2H3v2z",
@@ -469,9 +360,6 @@
 		});
 		return form;
 	}
-	function openChatInfo() {
-		(document.querySelector("#main header [role=\"button\"]") ?? document.querySelector("#main header img"))?.click();
-	}
 	function quickReplyList() {
 		const list = document.createElement("div");
 		list.className = "tbx-wa-popover__list";
@@ -531,15 +419,6 @@
 			wrap.appendChild(b);
 		};
 		const v = state.values;
-		if (isFeatureOn(v, "btnMarkRead")) add(ICONS$1.markRead, "Mark as read / unread", () => {
-			postToMain("toggleRead", {});
-			pageToast("Chat read state toggled");
-		});
-		if (isFeatureOn(v, "btnPinChat")) add(ICONS$1.pin, "Pin chat", () => {
-			postToMain("pinChat", {});
-			pageToast("Chat pinned");
-		});
-		if (isFeatureOn(v, "btnChatInfo")) add(ICONS$1.info, "Chat info", openChatInfo);
 		if (isFeatureOn(v, "btnStartChat")) add(ICONS$1.startChat, "Start new chat", (btn) => openPopover(btn, "Start a chat with any number", inputForm("Phone number with country code", "Chat", (num) => {
 			const digits = num.replace(/\D/g, "");
 			if (digits.length < 6) return pageToast("Enter a valid phone number");
@@ -614,17 +493,13 @@
 	}
 	function injectMessageButtons(state) {
 		const v = state.values;
-		if (!isFeatureOn(v, "btnLike") && !isFeatureOn(v, "btnTranslate")) return;
+		if (!isFeatureOn(v, "btnTranslate")) return;
 		document.querySelectorAll("[data-testid=\"msg-container\"]:not([data-tbx-wa-btn])").forEach((row) => {
 			row.setAttribute("data-tbx-wa-btn", "1");
 			if (row.querySelector(":scope > .tbx-wa-msg-actions")) return;
-			const msgId = row.closest("[data-id]")?.getAttribute("data-id") ?? "";
 			const bar = document.createElement("span");
 			bar.className = "tbx-wa-msg-actions";
-			if (isFeatureOn(v, "btnLike") && msgId) bar.appendChild(msgButton("👍", "React with 👍", () => {
-				postToMain("likeMessage", { msgId });
-			}));
-			if (isFeatureOn(v, "btnTranslate") && row.querySelector(".selectable-text, [data-testid=\"selectable-text\"]")) bar.appendChild(msgButton(svgIcon(ICONS$1.translate, 18), "Translate", (b) => void toggleTranslation(row, b)));
+			if (row.querySelector(".selectable-text, [data-testid=\"selectable-text\"]")) bar.appendChild(msgButton(svgIcon(ICONS$1.translate, 18), "Translate", (b) => void toggleTranslation(row, b)));
 			if (bar.childElementCount) row.appendChild(bar);
 		});
 	}
@@ -868,7 +743,6 @@
 			row.title = meta?.description ?? "";
 			list.appendChild(row);
 			if (f.id === "customChatBackground" && s.values[f.id] === true) list.appendChild(backgroundControls());
-			if (f.id === "btnTranscribe" && s.values[f.id] === true) list.appendChild(whisperControls());
 		}
 		return el("section", "tbx-d-section", el("div", "tbx-d-section__head", el("div", "tbx-d-section__text", el("h3", "tbx-d-section__title", info.label), el("p", "tbx-d-section__sub", info.description)), switchEl(allOn, (on) => {
 			const values = {};
@@ -884,30 +758,32 @@
 		file.addEventListener("change", () => {
 			const f = file.files?.[0];
 			if (!f) return;
-			const reader = new FileReader();
-			reader.onload = () => {
-				const url = String(reader.result ?? "");
-				if (url.length >= 5e5) {
-					toast("Image is too large. Pick a smaller one.");
-					return;
+			const src = URL.createObjectURL(f);
+			const img = new Image();
+			img.onload = () => {
+				URL.revokeObjectURL(src);
+				let scale = Math.min(1, 1920 / Math.max(img.width, img.height));
+				let url = "";
+				for (let i = 0; i < 5; i++) {
+					const canvas = document.createElement("canvas");
+					canvas.width = Math.max(1, Math.round(img.width * scale));
+					canvas.height = Math.max(1, Math.round(img.height * scale));
+					canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
+					url = canvas.toDataURL("image/jpeg", .85);
+					if (url.length < 25e5) break;
+					scale *= .75;
 				}
+				if (url.length >= 25e5) return toast("Image is too large. Pick a smaller one.");
 				patchState({ data: { chatBackgroundDataUrl: url } }).then(() => toast("Background updated"));
 			};
-			reader.readAsDataURL(f);
+			img.onerror = () => {
+				URL.revokeObjectURL(src);
+				toast("Could not read that image");
+			};
+			img.src = src;
 		});
 		const hasImage = Boolean(state?.data.chatBackgroundDataUrl);
 		return el("div", "tbx-d-subcontrols", file, textButton(hasImage ? "Change image" : "Choose image", () => file.click(), "ghost"), hasImage ? textButton("Remove", () => void patchState({ data: { chatBackgroundDataUrl: "" } }), "ghost") : null);
-	}
-	function whisperControls() {
-		const key = input("OpenAI API key (sk-…)", "password");
-		key.value = state?.data.whisperApiKey ?? "";
-		key.addEventListener("change", () => {
-			patchState({
-				data: { whisperApiKey: key.value.trim() },
-				values: { whisperApiKey: key.value.trim() }
-			}).then(() => toast("API key saved"));
-		});
-		return el("div", "tbx-d-subcontrols", key);
 	}
 	function viewEnhancements() {
 		return el("div", "tbx-d-view", heading("Enhancements"), ...WHATSAPP_SECTIONS.map(sectionBlock));
@@ -1416,15 +1292,14 @@
 	}
 	function applyChatBackground(state) {
 		const root = document.documentElement;
-		const main = document.querySelector("#main");
 		const on = isFeatureOn(state.values, "customChatBackground");
 		const url = state.data.chatBackgroundDataUrl;
-		if (on && url && url.length < 5e5) {
+		if (on && url && url.length < 25e5) {
 			root.setAttribute(featureAttrName("customChatBackground"), "true");
-			if (main) main.style.backgroundImage = `url("${url.replace(/"/g, "")}")`;
+			root.style.setProperty("--tbx-wa-bg", `url("${url.replace(/"/g, "")}")`);
 		} else {
 			root.removeAttribute(featureAttrName("customChatBackground"));
-			if (main) main.style.removeProperty("background-image");
+			root.style.removeProperty("--tbx-wa-bg");
 		}
 	}
 	function ensureCssLink() {
@@ -1452,8 +1327,7 @@
 		for (const attr of [...root.attributes]) if (attr.name.startsWith("data-tbx-wa-")) root.removeAttribute(attr.name);
 		document.getElementById(STYLE_LINK_ID)?.remove();
 		document.querySelectorAll("#tbx-wa-launcher, .tbx-wa-launcher, .tbx-wa-header-actions, .tbx-wa-msg-actions, .tbx-wa-extra-btn, .tbx-wa-translation, .tbx-wa-popover, .tbx-wa-toast, .tbx-wa-restored-msg").forEach((el) => el.remove());
-		const main = document.querySelector("#main");
-		if (main) main.style.removeProperty("background-image");
+		root.style.removeProperty("--tbx-wa-bg");
 	}
 	//#endregion
 	//#region src/chrome/content/sites/whatsapp/isolated.ts

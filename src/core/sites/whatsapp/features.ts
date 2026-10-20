@@ -1,80 +1,16 @@
 import type { WhatsappFeatureDef, WhatsappSection } from './types'
 
-function toggles(
-  section: WhatsappSection,
-  ids: string[],
-  opts?: Partial<Pick<WhatsappFeatureDef, 'impl' | 'default' | 'bestEffort'>>,
-): WhatsappFeatureDef[] {
-  const impl = opts?.impl ?? 'css'
-  const defaultVal = opts?.default ?? false
-  return ids.map((id) => ({
-    id,
-    section,
-    kind: 'toggle',
-    impl,
-    default: defaultVal,
-    ...(opts?.bestEffort ? { bestEffort: true } : {}),
-  }))
+function toggles(section: WhatsappSection, ids: string[], impl: WhatsappFeatureDef['impl']): WhatsappFeatureDef[] {
+  return ids.map((id) => ({ id, section, kind: 'toggle', impl, default: false }))
 }
 
+/** Only features WhatsApp Web does not already offer natively. */
 export const WHATSAPP_FEATURES: WhatsappFeatureDef[] = [
-  ...toggles('privacy', [
-    'blurContactNames',
-    'blurContactPhotos',
-    'blurRecentMessages',
-    'blurConversationMessages',
-    'blurComposer',
-  ]),
-  ...toggles('privacy', [
-    'hideTyping',
-    'hideRecording',
-    'viewStatusPrivately',
-    'playAudioPrivately',
-    'disableReadReceipts',
-    'invisibleMode',
-  ], { impl: 'script', bestEffort: true }),
-  {
-    id: 'restoreDeletedMessages',
-    section: 'privacy',
-    kind: 'toggle',
-    impl: 'script',
-    default: false,
-  },
-  ...toggles('custom', ['notifyOnline', 'notifyTyping', 'preventListJump'], { impl: 'script' }),
-  {
-    id: 'customChatBackground',
-    section: 'custom',
-    kind: 'toggle',
-    impl: 'style',
-    default: false,
-  },
-  {
-    id: 'showSideLauncher',
-    section: 'custom',
-    kind: 'toggle',
-    impl: 'script',
-    default: true,
-  },
-  ...toggles('buttons', [
-    'btnLike',
-    'btnPinChat',
-    'btnStartChat',
-    'btnMarkRead',
-    'btnTranslate',
-    'btnTranscribe',
-    'btnDownloadStatus',
-    'btnChatInfo',
-    'btnQuickReply',
-    'btnAddTask',
-    'btnSaveContact',
-  ], { impl: 'script' }),
-  {
-    id: 'whisperApiKey',
-    section: 'buttons',
-    kind: 'text',
-    impl: 'script',
-    default: '',
-  },
+  ...toggles('privacy', ['blurContactNames', 'blurContactPhotos', 'blurRecentMessages', 'blurConversationMessages', 'blurComposer'], 'css'),
+  ...toggles('privacy', ['restoreDeletedMessages'], 'script'),
+  { id: 'customChatBackground', section: 'custom', kind: 'toggle', impl: 'style', default: false },
+  { id: 'showSideLauncher', section: 'custom', kind: 'toggle', impl: 'script', default: true },
+  ...toggles('buttons', ['btnStartChat', 'btnTranslate', 'btnQuickReply', 'btnAddTask'], 'script'),
 ]
 
 export const WHATSAPP_FEATURE_BY_ID = new Map(WHATSAPP_FEATURES.map((f) => [f.id, f]))

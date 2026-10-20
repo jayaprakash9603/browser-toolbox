@@ -120,18 +120,16 @@
 	}
 	//#endregion
 	//#region src/core/sites/whatsapp/features.ts
-	function toggles(section, ids, opts) {
-		const impl = opts?.impl ?? "css";
-		const defaultVal = opts?.default ?? false;
+	function toggles(section, ids, impl) {
 		return ids.map((id) => ({
 			id,
 			section,
 			kind: "toggle",
 			impl,
-			default: defaultVal,
-			...opts?.bestEffort ? { bestEffort: true } : {}
+			default: false
 		}));
 	}
+	/** Only features WhatsApp Web does not already offer natively. */
 	var WHATSAPP_FEATURES = [
 		...toggles("privacy", [
 			"blurContactNames",
@@ -139,30 +137,8 @@
 			"blurRecentMessages",
 			"blurConversationMessages",
 			"blurComposer"
-		]),
-		...toggles("privacy", [
-			"hideTyping",
-			"hideRecording",
-			"viewStatusPrivately",
-			"playAudioPrivately",
-			"disableReadReceipts",
-			"invisibleMode"
-		], {
-			impl: "script",
-			bestEffort: true
-		}),
-		{
-			id: "restoreDeletedMessages",
-			section: "privacy",
-			kind: "toggle",
-			impl: "script",
-			default: false
-		},
-		...toggles("custom", [
-			"notifyOnline",
-			"notifyTyping",
-			"preventListJump"
-		], { impl: "script" }),
+		], "css"),
+		...toggles("privacy", ["restoreDeletedMessages"], "script"),
 		{
 			id: "customChatBackground",
 			section: "custom",
@@ -178,25 +154,11 @@
 			default: true
 		},
 		...toggles("buttons", [
-			"btnLike",
-			"btnPinChat",
 			"btnStartChat",
-			"btnMarkRead",
 			"btnTranslate",
-			"btnTranscribe",
-			"btnDownloadStatus",
-			"btnChatInfo",
 			"btnQuickReply",
-			"btnAddTask",
-			"btnSaveContact"
-		], { impl: "script" }),
-		{
-			id: "whisperApiKey",
-			section: "buttons",
-			kind: "text",
-			impl: "script",
-			default: ""
-		}
+			"btnAddTask"
+		], "script")
 	];
 	new Map(WHATSAPP_FEATURES.map((f) => [f.id, f]));
 	WHATSAPP_FEATURES.filter((f) => f.impl === "css").map((f) => f.id);
@@ -245,64 +207,22 @@
 	//#endregion
 	//#region src/chrome/content/sites/whatsapp/features/privacy.ts
 	var privacyStop = null;
-	var revokeHandler = null;
-	var newMsgHandler = null;
-	function wpp() {
-		return window.WPP ?? null;
-	}
 	function startPrivacy(state) {
 		stopPrivacy();
-		const v = state.values;
-		const api = wpp();
-		if (!api) return;
-		if (isFeatureOn(v, "invisibleMode")) {
-			api.conn.setOnline?.(false);
-			api.privacy?.setOnline?.(false);
-		}
-		if (isFeatureOn(v, "restoreDeletedMessages")) {
-			newMsgHandler = (msg) => {
-				postToMain("cacheMessage", msg);
-			};
-			revokeHandler = (data) => {
-				postToMain("messageRevoked", data);
-			};
-			api.ev.on("chat.new_message", newMsgHandler);
-			api.ev.on("chat.msg_revoke", revokeHandler);
-		}
+		const api = window.WPP;
+		if (!api || !isFeatureOn(state.values, "restoreDeletedMessages")) return;
+		const onNew = (msg) => postToMain("cacheMessage", msg);
+		const onRevoke = (data) => postToMain("messageRevoked", data);
+		api.ev.on("chat.new_message", onNew);
+		api.ev.on("chat.msg_revoke", onRevoke);
 		privacyStop = () => {
-			if (newMsgHandler) api.ev.off("chat.new_message", newMsgHandler);
-			if (revokeHandler) api.ev.off("chat.msg_revoke", revokeHandler);
-			newMsgHandler = null;
-			revokeHandler = null;
-			if (isFeatureOn(v, "invisibleMode")) {
-				api.conn.setOnline?.(true);
-				api.privacy?.setOnline?.(true);
-			}
+			api.ev.off("chat.new_message", onNew);
+			api.ev.off("chat.msg_revoke", onRevoke);
 		};
 	}
 	function stopPrivacy() {
 		privacyStop?.();
 		privacyStop = null;
-	}
-	/** Best-effort: block read receipts by no-oping mark read when enabled */
-	function patchReadReceipts(enabled) {
-		const api = wpp();
-		if (!api?.chat) return;
-		const chat = api.chat;
-		if (enabled && !chat.__tbxPatched) {
-			const orig = chat.markIsRead?.bind(chat);
-			if (orig) {
-				chat.markIsRead = async () => void 0;
-				chat.__tbxPatched = true;
-				chat.__tbxOrigMark = orig;
-			}
-		} else if (!enabled) {
-			const orig = chat.__tbxOrigMark;
-			if (orig) {
-				chat.markIsRead = orig;
-				delete chat.__tbxPatched;
-			}
-		}
 	}
 	//#endregion
 	//#region src/chrome/content/sites/whatsapp/main.ts
@@ -427,7 +347,6 @@
 		if (cmd === "syncState") {
 			if (!payload || typeof payload !== "object") {
 				stopPrivacy();
-				patchReadReceipts(false);
 				return;
 			}
 			const p = payload;
@@ -436,26 +355,11 @@
 				values: p.values,
 				data: p.data
 			});
-			patchReadReceipts(p.values.disableReadReceipts === true);
 			return;
-		}
-		if (cmd === "toggleRead" && wpp.chat) {
-			const id = (wpp.chat.getActiveChat?.())?.id?._serialized;
-			if (id && wpp.chat.markIsUnread) await wpp.chat.markIsUnread(id);
-			else if (id && wpp.chat.markIsRead) await wpp.chat.markIsRead(id);
-		}
-		if (cmd === "pinChat" && wpp.chat?.pin) {
-			const id = (wpp.chat.getActiveChat?.())?.id?._serialized;
-			if (id) await wpp.chat.pin(id);
 		}
 		if (cmd === "startChat" && payload && typeof payload === "object") {
 			const num = String(payload.number).replace(/\D/g, "");
 			if (num && wpp.chat?.openChatBottom) await wpp.chat.openChatBottom(`${num}@c.us`);
-		}
-		if (cmd === "likeMessage" && payload && typeof payload === "object") {
-			const msgId = String(payload.msgId ?? "");
-			const react = wpp.chat?.sendReactionToMessage;
-			if (msgId && react) await react(msgId, "👍");
 		}
 		if (cmd === "export" && payload && typeof payload === "object") {
 			const rows = await runQuery(wpp, String(payload.kind));

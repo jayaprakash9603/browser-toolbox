@@ -45,10 +45,21 @@ html[data-tbx-wa-prevent-list-jump] [data-testid="chat-list"] {
   scroll-behavior: auto !important;
 }
 
-html[data-tbx-wa-custom-chat-background] #main {
+/* Wallpaper: WhatsApp paints its doodle on #main and on a child layer; cover both on every chat. */
+html[data-tbx-wa-custom-chat-background] #main,
+html[data-tbx-wa-custom-chat-background] #main > div[class*="background"],
+html[data-tbx-wa-custom-chat-background] [data-asset-chat-background-light],
+html[data-tbx-wa-custom-chat-background] [data-asset-chat-background-dark],
+html[data-tbx-wa-custom-chat-background] [data-testid="conversation-panel-wrapper"] {
+  background-image: var(--tbx-wa-bg) !important;
   background-size: cover !important;
   background-position: center !important;
   background-repeat: no-repeat !important;
+  opacity: 1 !important;
+}
+html[data-tbx-wa-custom-chat-background] #main::before,
+html[data-tbx-wa-custom-chat-background] #main > div::before {
+  background-image: none !important;
 }
 
 #tbx-wa-launcher {

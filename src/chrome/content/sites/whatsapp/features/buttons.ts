@@ -7,9 +7,6 @@ let observer: MutationObserver | null = null
 let currentState: WhatsappPlusState | null = null
 
 const ICONS = {
-  markRead: 'M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41 6 19l1.41-1.41L1.83 12 .41 13.41z',
-  pin: 'M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z',
-  info: 'M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z',
   startChat: 'M19.005 3.175H4.674C3.642 3.175 3 3.789 3 4.821V21.02l3.544-3.514h12.461c1.033 0 2.064-1.06 2.064-2.093V4.821c-.001-1.032-1.032-1.646-2.064-1.646zm-4.989 9.869H7.041V11.1h6.975v1.944zm3-4H7.041V7.1h9.975v1.944z',
   quickReply: 'M7 2v11h3v9l7-12h-4l4-8z',
   addTask: 'M14 10H3v2h11v-2zm0-4H3v2h11V6zm4 8v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM3 16h7v-2H3v2z',
@@ -101,11 +98,6 @@ function inputForm(placeholder: string, submitLabel: string, onSubmit: (value: s
 
 // ---------- header actions ----------
 
-function openChatInfo(): void {
-  const target = document.querySelector<HTMLElement>('#main header [role="button"]') ?? document.querySelector<HTMLElement>('#main header img')
-  target?.click()
-}
-
 function quickReplyList(): HTMLElement {
   const list = document.createElement('div')
   list.className = 'tbx-wa-popover__list'
@@ -163,19 +155,6 @@ function injectHeaderButtons(state: WhatsappPlusState): void {
   }
 
   const v = state.values
-  if (isFeatureOn(v, 'btnMarkRead')) {
-    add(ICONS.markRead, 'Mark as read / unread', () => {
-      postToMain('toggleRead', {})
-      pageToast('Chat read state toggled')
-    })
-  }
-  if (isFeatureOn(v, 'btnPinChat')) {
-    add(ICONS.pin, 'Pin chat', () => {
-      postToMain('pinChat', {})
-      pageToast('Chat pinned')
-    })
-  }
-  if (isFeatureOn(v, 'btnChatInfo')) add(ICONS.info, 'Chat info', openChatInfo)
   if (isFeatureOn(v, 'btnStartChat')) {
     add(ICONS.startChat, 'Start new chat', (btn) =>
       openPopover(btn, 'Start a chat with any number', inputForm('Phone number with country code', 'Chat', (num) => {
@@ -272,20 +251,14 @@ function msgButton(content: Node | string, title: string, onClick: (b: HTMLButto
 
 function injectMessageButtons(state: WhatsappPlusState): void {
   const v = state.values
-  if (!isFeatureOn(v, 'btnLike') && !isFeatureOn(v, 'btnTranslate')) return
+  if (!isFeatureOn(v, 'btnTranslate')) return
 
   document.querySelectorAll<HTMLElement>('[data-testid="msg-container"]:not([data-tbx-wa-btn])').forEach((row) => {
     row.setAttribute('data-tbx-wa-btn', '1')
     if (row.querySelector(':scope > .tbx-wa-msg-actions')) return
-    const msgId = row.closest('[data-id]')?.getAttribute('data-id') ?? ''
     const bar = document.createElement('span')
     bar.className = 'tbx-wa-msg-actions'
-    if (isFeatureOn(v, 'btnLike') && msgId) {
-      bar.appendChild(msgButton('👍', 'React with 👍', () => {
-        postToMain('likeMessage', { msgId })
-      }))
-    }
-    if (isFeatureOn(v, 'btnTranslate') && row.querySelector('.selectable-text, [data-testid="selectable-text"]')) {
+    if (row.querySelector('.selectable-text, [data-testid="selectable-text"]')) {
       bar.appendChild(msgButton(svgIcon(ICONS.translate, 18), 'Translate', (b) => void toggleTranslation(row, b)))
     }
     if (bar.childElementCount) row.appendChild(bar)
