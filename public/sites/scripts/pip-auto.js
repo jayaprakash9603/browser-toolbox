@@ -3,15 +3,26 @@
   if (window.__tbxPipAuto) return
   window.__tbxPipAuto = true
 
-  function pickPlayingVideo() {
-    const videos = document.querySelectorAll('video')
-    for (const video of videos) {
-      if (video.readyState === 0) continue
-      if (!video.paused && !video.ended && video.readyState > 2) return video
-    }
-    return null
+  function collectVideos(root, out) {
+    root.querySelectorAll('video').forEach(function (v) { out.push(v) })
+    root.querySelectorAll('*').forEach(function (el) {
+      if (el.shadowRoot) collectVideos(el.shadowRoot, out)
+    })
   }
 
+  function pickPlayingVideo() {
+    const videos = []
+    collectVideos(document, videos)
+    let best = null
+    let bestArea = -1
+    for (const video of videos) {
+      if (video.readyState === 0 || video.paused || video.ended || video.readyState <= 2) continue
+      const r = video.getBoundingClientRect()
+      const area = r.width * r.height
+      if (area > bestArea) { bestArea = area; best = video }
+    }
+    return best
+  }
   function isYoutubeWatch() {
     const h = location.hostname
     const yt = h === 'www.youtube.com' || h === 'youtube.com' || h === 'm.youtube.com'
@@ -102,6 +113,7 @@
     const video = pickPlayingVideo()
     if (!video) return
     video.removeAttribute('disablePictureInPicture')
+    video.disablePictureInPicture = false
     try {
       await video.requestPictureInPicture()
       video.addEventListener(
