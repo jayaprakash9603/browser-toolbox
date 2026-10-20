@@ -8,7 +8,12 @@ import {
   type PipToggleResult,
   type VideoCandidate,
 } from '@/core/pip'
-import { pipEnterInFrame, pipMeasureInFrame, pipTryExitInFrame } from '@/core/pip/pageScripts'
+import {
+  pipEnterDocumentInFrame,
+  pipEnterInFrame,
+  pipMeasureInFrame,
+  pipTryExitInFrame,
+} from '@/core/pip/pageScripts'
 
 import { syncPipAutoContentScript } from './pipContentScripts'
 
@@ -26,6 +31,19 @@ function isRestrictedUrl(url?: string): boolean {
     )
   } catch {
     return true
+  }
+}
+
+function isYoutubeWatchUrl(url?: string): boolean {
+  if (!url) return false
+  try {
+    const { hostname, pathname } = new URL(url)
+    return (
+      (hostname === 'www.youtube.com' || hostname === 'youtube.com' || hostname === 'm.youtube.com') &&
+      (pathname === '/watch' || pathname.startsWith('/live/'))
+    )
+  } catch {
+    return false
   }
 }
 
@@ -55,6 +73,14 @@ export async function togglePipInTab(tab?: chrome.tabs.Tab): Promise<PipToggleRe
       return { action: 'exited' }
     }
 
+    // YouTube: float the full player (all controls) in a Document PiP window.
+    if (isYoutubeWatchUrl(tab.url)) {
+      const docResult = await chrome.scripting
+        .executeScript({ target: { tabId, frameIds: [0] }, world: 'MAIN', func: pipEnterDocumentInFrame })
+        .then((r) => r?.[0]?.result)
+        .catch(() => undefined)
+      if (docResult === 'entered') return { action: 'entered' }
+    }
     const measureResults = await chrome.scripting.executeScript({
       target: { tabId, allFrames: true },
       world: 'MAIN',
