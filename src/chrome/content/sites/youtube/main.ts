@@ -1,6 +1,8 @@
 import { PAGE_CMD_KEY, PAGE_EVT_KEY } from '@/core/sites/youtube/constants'
 
-type Guarded = Window & { __toolboxYtMain?: boolean }
+type Guarded = Window & { __toolboxSitesYtMain?: boolean }
+
+let sponsorTimeHandler: ((this: HTMLVideoElement, ev: Event) => void) | null = null
 
 function getVideo(): HTMLVideoElement | null {
   return document.querySelector('video.html5-main-video, video')
@@ -36,26 +38,25 @@ function applyPlayerSettings(payload: Record<string, unknown> | null): void {
 function skipSponsor(segments: { segment: [number, number] }[]): void {
   const video = getVideo()
   if (!video) return
-  const t = video.currentTime
-  for (const s of segments) {
-    const [start, end] = s.segment
-    if (t >= start && t < end - 0.05) {
-      video.currentTime = end
-      break
-    }
-  }
-  video.addEventListener('timeupdate', () => {
+  if (sponsorTimeHandler) video.removeEventListener('timeupdate', sponsorTimeHandler)
+  const jump = () => {
     const now = video.currentTime
     for (const s of segments) {
       const [start, end] = s.segment
-      if (now >= start && now < end - 0.05) video.currentTime = end
+      if (now >= start && now < end - 0.05) {
+        video.currentTime = end
+        break
+      }
     }
-  })
+  }
+  sponsorTimeHandler = jump
+  jump()
+  video.addEventListener('timeupdate', jump)
 }
 
 const guarded = window as Guarded
-if (!guarded.__toolboxYtMain) {
-  guarded.__toolboxYtMain = true
+if (!guarded.__toolboxSitesYtMain && window === window.top) {
+  guarded.__toolboxSitesYtMain = true
   window.addEventListener('message', (event) => {
     if (event.source !== window) return
     const data = event.data as Record<string, unknown> | null

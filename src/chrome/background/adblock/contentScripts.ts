@@ -72,6 +72,7 @@ export function buildContentScripts(state: AdblockState): chrome.scripting.Regis
   if (state.youtubeEnabled && state.lists.youtube) {
     scripts.push({
       ...base,
+      allFrames: false,
       id: CONTENT_SCRIPT_IDS.youtubeMain,
       js: [ADBLOCK_FILES.youtubeMainJs],
       matches: YOUTUBE_MATCHES,
@@ -79,6 +80,7 @@ export function buildContentScripts(state: AdblockState): chrome.scripting.Regis
     })
     scripts.push({
       ...base,
+      allFrames: false,
       id: CONTENT_SCRIPT_IDS.youtubeIsolated,
       js: [ADBLOCK_FILES.youtubeIsolatedJs],
       matches: YOUTUBE_MATCHES,
@@ -136,13 +138,14 @@ async function injectOneTab(tab: chrome.tabs.Tab, state: AdblockState): Promise<
     }
     const host = new URL(tab.url).hostname
     if (state.youtubeEnabled && state.lists.youtube && YOUTUBE_HOST_RE.test(host)) {
+      const ytTarget = { tabId: tab.id, allFrames: false }
       await chrome.scripting.executeScript({
-        target,
+        target: ytTarget,
         files: [ADBLOCK_FILES.youtubeMainJs],
         world: 'MAIN',
       })
       await chrome.scripting.executeScript({
-        target,
+        target: ytTarget,
         files: [ADBLOCK_FILES.youtubeIsolatedJs],
       })
     }
@@ -174,7 +177,7 @@ export async function injectYoutubeOpenTabs(state: AdblockState): Promise<void> 
   })
   for (const tab of tabs) {
     if (tab.id == null || !tab.url || tab.discarded || isAllowlisted(state.allowlist, tab.url)) continue
-    const target = { tabId: tab.id, allFrames: true }
+    const target = { tabId: tab.id, allFrames: false }
     try {
       await chrome.scripting.executeScript({
         target,

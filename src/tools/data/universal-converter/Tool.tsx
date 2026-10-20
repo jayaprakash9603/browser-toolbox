@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+
+import { useDeepLinkParam } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 
 import { csvToJson } from '@/core/engines/csv'
@@ -26,7 +28,6 @@ import {
 type DataFormat = 'json' | 'csv' | 'xml' | 'yaml' | 'markdown' | 'tsv'
 
 const FORMATS: DataFormat[] = ['json', 'csv', 'xml', 'yaml', 'markdown', 'tsv']
-
 function convert(input: string, from: DataFormat, to: DataFormat): string {
   if (from === to) return input
   if (from === 'tsv' && to === 'csv') {
@@ -104,8 +105,8 @@ export default function UniversalConverterTool() {
   const tool = toolRegistry.get('data.universal-converter')
   if (!tool) throw new Error('data.universal-converter')
   const [input, setInput] = useState('')
-  const [from, setFrom] = useState<DataFormat>('json')
-  const [to, setTo] = useState<DataFormat>('csv')
+  const [from, setFrom] = useDeepLinkParam('from', FORMATS, 'json')
+  const [to, setTo] = useDeepLinkParam('to', FORMATS, 'csv')
   const [output, setOutput] = useState('')
   const [error, setError] = useState('')
 

@@ -13,5 +13,7 @@ describe('youtube content script registration', () => {
     expect(scripts.map((s) => s.id)).toEqual(['sites-yt-isolated', 'sites-yt-main'])
     expect(scripts[1].world).toBe('MAIN')
     expect(scripts[0].matches?.[0]).toContain('youtube.com')
+    expect(scripts[0].allFrames).toBe(false)
+    expect(scripts[1].allFrames).toBe(false)
   })
 })

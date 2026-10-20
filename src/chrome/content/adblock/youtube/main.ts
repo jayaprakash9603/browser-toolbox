@@ -7,7 +7,9 @@ import {
 
 import { tryAutoSkipAd } from './skipAd'
 
-type GuardedWindow = Window & { __toolboxYtMain?: boolean }
+type GuardedWindow = Window & { __toolboxAdblockYtMain?: boolean }
+
+const SKIP_POLL_MS = 200
 
 const MESSAGE_SOURCE = 'toolbox-adblock'
 
@@ -152,11 +154,20 @@ function pruneInlineGlobals(): void {
 }
 
 let skipObserver: MutationObserver | null = null
+let skipDebounce: ReturnType<typeof setTimeout> | null = null
+
+function scheduleSkipTry(): void {
+  if (skipDebounce) return
+  skipDebounce = setTimeout(() => {
+    skipDebounce = null
+    tryAutoSkipAd()
+  }, 40)
+}
 
 function attachSkipObserver(): void {
   const player = document.querySelector('#movie_player')
   if (!player || skipObserver) return
-  skipObserver = new MutationObserver(() => tryAutoSkipAd())
+  skipObserver = new MutationObserver(() => scheduleSkipTry())
   skipObserver.observe(player, {
     subtree: true,
     childList: true,
@@ -166,8 +177,16 @@ function attachSkipObserver(): void {
 }
 
 function startAutoSkip(): void {
-  window.setInterval(() => tryAutoSkipAd(), 50)
-  window.setInterval(attachSkipObserver, 1500)
+  window.setInterval(() => {
+    const player = document.querySelector('#movie_player')
+    if (!player) return
+    const adLikely =
+      player.classList.contains('ad-showing') ||
+      player.classList.contains('ad-interrupting') ||
+      Boolean(player.querySelector('.ytp-ad-player-overlay, .ytp-ad-module'))
+    if (adLikely) tryAutoSkipAd()
+  }, SKIP_POLL_MS)
+  window.setInterval(attachSkipObserver, 2000)
   document.addEventListener('yt-navigate-finish', () => {
     skipObserver?.disconnect()
     skipObserver = null
@@ -178,8 +197,8 @@ function startAutoSkip(): void {
 }
 
 const guarded = window as GuardedWindow
-if (!guarded.__toolboxYtMain) {
-  guarded.__toolboxYtMain = true
+if (!guarded.__toolboxAdblockYtMain && window === window.top) {
+  guarded.__toolboxAdblockYtMain = true
   patchJsonParse()
   patchResponse()
   patchFetch()

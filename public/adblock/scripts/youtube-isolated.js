@@ -111,13 +111,14 @@
 	var STYLE_ID = "toolbox-adblock-youtube";
 	var REPORT_DELAY_MS = 1500;
 	var FAST_FORWARD_RATE = 16;
-	var AD_POLL_MS = 50;
+	var AD_POLL_MS = 200;
 	var enabled = false;
 	var pendingBlocked = 0;
 	var reportTimer = null;
 	var playerObserver = null;
 	var pollTimer = null;
 	var adPollTimer = null;
+	var playerMutationTimer = null;
 	var saved = null;
 	var adActive = false;
 	function queueReport(count) {
@@ -197,12 +198,20 @@
 	function resetPlayerObserver() {
 		playerObserver?.disconnect();
 		playerObserver = null;
+		if (playerMutationTimer) clearTimeout(playerMutationTimer);
+		playerMutationTimer = null;
 	}
 	function observePlayer() {
 		const player = getPlayer();
 		if (!player) return;
 		if (!playerObserver) {
-			playerObserver = new MutationObserver(checkPlayer);
+			playerObserver = new MutationObserver(() => {
+				if (playerMutationTimer) return;
+				playerMutationTimer = setTimeout(() => {
+					playerMutationTimer = null;
+					checkPlayer();
+				}, 50);
+			});
 			playerObserver.observe(player, {
 				subtree: true,
 				childList: true,
@@ -253,7 +262,7 @@
 		else stop();
 	}
 	var guarded = window;
-	if (!guarded.__toolboxYtIsolated) {
+	if (!guarded.__toolboxYtIsolated && window === window.top) {
 		guarded.__toolboxYtIsolated = true;
 		window.addEventListener("message", (event) => {
 			if (event.source !== window || !enabled) return;

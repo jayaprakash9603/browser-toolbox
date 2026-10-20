@@ -1005,11 +1005,16 @@
 	}
 	var TILE_SELECTOR = "ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer";
 	var feedObserver = null;
+	var feedScanTimer = null;
+	var feedCtx = null;
 	var undoTimer = null;
 	var stillWatchingObserver = null;
+	var stillScanTimer = null;
 	var wheelBound = false;
 	var keyBound = false;
 	var navHandler = null;
+	var FEED_DEBOUNCE_MS = 120;
+	var STILL_WATCHING_DEBOUNCE_MS = 200;
 	function values(ctx) {
 		return ctx.state.values;
 	}
@@ -1038,20 +1043,45 @@
 		}
 		return false;
 	}
+	function applyTile(tile, ctx) {
+		const el = tile;
+		if (shouldHideTile(tile, ctx)) el.style.display = "none";
+		else el.style.removeProperty("display");
+	}
+	function scanTilesUnder(root, ctx) {
+		if (root instanceof Element) {
+			if (root.matches(TILE_SELECTOR)) applyTile(root, ctx);
+			for (const tile of root.querySelectorAll(TILE_SELECTOR)) applyTile(tile, ctx);
+		} else for (const tile of root.querySelectorAll?.(TILE_SELECTOR) ?? []) applyTile(tile, ctx);
+	}
 	function scanFeeds(ctx) {
 		if (!feedFiltersActive(ctx)) return;
-		for (const tile of document.querySelectorAll(TILE_SELECTOR)) {
-			const el = tile;
-			if (shouldHideTile(tile, ctx)) el.style.display = "none";
-			else el.style.removeProperty("display");
-		}
+		scanTilesUnder(document, ctx);
+	}
+	function scheduleFeedScan(ctx, roots) {
+		feedCtx = ctx;
+		if (roots?.length) for (const root of roots) scanTilesUnder(root, ctx);
+		if (feedScanTimer) return;
+		feedScanTimer = setTimeout(() => {
+			feedScanTimer = null;
+			if (feedCtx) scanFeeds(feedCtx);
+		}, FEED_DEBOUNCE_MS);
+	}
+	function feedObserveTarget() {
+		return document.querySelector("ytd-app") ?? document.querySelector("#content") ?? document.body;
 	}
 	reg("feedFilters", {
 		start(ctx) {
 			if (!feedFiltersActive(ctx)) return;
 			scanFeeds(ctx);
-			feedObserver = new MutationObserver(() => scanFeeds(ctx));
-			feedObserver.observe(document.body, {
+			const target = feedObserveTarget();
+			if (!target) return;
+			feedObserver = new MutationObserver((mutations) => {
+				const roots = [];
+				for (const m of mutations) for (const node of m.addedNodes) if (node instanceof Element) roots.push(node);
+				scheduleFeedScan(ctx, roots.length ? roots : void 0);
+			});
+			feedObserver.observe(target, {
 				childList: true,
 				subtree: true
 			});
@@ -1065,6 +1095,9 @@
 		stop() {
 			feedObserver?.disconnect();
 			feedObserver = null;
+			feedCtx = null;
+			if (feedScanTimer) clearTimeout(feedScanTimer);
+			feedScanTimer = null;
 			if (undoTimer) clearInterval(undoTimer);
 			undoTimer = null;
 			document.querySelectorAll(TILE_SELECTOR).forEach((el) => el.style.removeProperty("display"));
@@ -1130,20 +1163,31 @@
 			postToMain("applyPlayer", null);
 		}
 	});
+	function dismissStillWatching() {
+		for (const el of document.querySelectorAll("yt-confirm-dialog-renderer, tp-yt-paper-dialog")) if (isStillWatchingDialog(el.textContent ?? "")) el.querySelector("#button, [aria-label*=\"Yes\"], [aria-label*=\"Continue\"]")?.click();
+	}
 	reg("stillWatching", {
 		start(ctx) {
 			if (!isFeatureOn(values(ctx), "dismissStillWatching")) return;
+			const target = document.querySelector("ytd-app") ?? document.body;
 			stillWatchingObserver = new MutationObserver(() => {
-				for (const el of document.querySelectorAll("yt-confirm-dialog-renderer, tp-yt-paper-dialog")) if (isStillWatchingDialog(el.textContent ?? "")) el.querySelector("#button, [aria-label*=\"Yes\"], [aria-label*=\"Continue\"]")?.click();
+				if (stillScanTimer) return;
+				stillScanTimer = setTimeout(() => {
+					stillScanTimer = null;
+					dismissStillWatching();
+				}, STILL_WATCHING_DEBOUNCE_MS);
 			});
-			stillWatchingObserver.observe(document.body, {
+			stillWatchingObserver.observe(target, {
 				childList: true,
 				subtree: true
 			});
+			dismissStillWatching();
 		},
 		stop() {
 			stillWatchingObserver?.disconnect();
 			stillWatchingObserver = null;
+			if (stillScanTimer) clearTimeout(stillScanTimer);
+			stillScanTimer = null;
 		}
 	});
 	reg("sponsor", {
@@ -1312,6 +1356,8 @@
 	}
 	//#endregion
 	//#region src/chrome/content/sites/youtube/isolated.ts
+	var cachedState = null;
+	var navigateTimer = null;
 	function readState(raw) {
 		if (!raw || typeof raw !== "object") return null;
 		const o = raw;
@@ -1320,28 +1366,34 @@
 	}
 	function apply(raw) {
 		const state = readState(raw);
+		cachedState = state;
 		if (!state?.enabled) {
 			stopAll();
 			return;
 		}
 		applyYoutubeEnhancer(state);
 	}
+	function scheduleNavigateRefresh() {
+		if (!cachedState?.enabled) return;
+		if (navigateTimer) clearTimeout(navigateTimer);
+		navigateTimer = setTimeout(() => {
+			navigateTimer = null;
+			if (cachedState?.enabled) onYoutubeNavigate({
+				state: cachedState,
+				onNavigate: () => {}
+			});
+		}, 80);
+	}
 	var guarded = window;
 	if (!guarded.__toolboxYtEnhancer) {
 		guarded.__toolboxYtEnhancer = true;
-		chrome.storage.local.get("youtubeEnhancer", (result) => apply(result.youtubeEnhancer));
-		chrome.storage.onChanged.addListener((changes, area) => {
-			if (area === "local" && changes.youtubeEnhancer) apply(changes.youtubeEnhancer.newValue);
-		});
-		document.addEventListener("yt-navigate-finish", () => {
-			chrome.storage.local.get("youtubeEnhancer", (result) => {
-				const state = readState(result.youtubeEnhancer);
-				if (state?.enabled) onYoutubeNavigate({
-					state,
-					onNavigate: () => {}
-				});
+		if (window === window.top) {
+			chrome.storage.local.get("youtubeEnhancer", (result) => apply(result.youtubeEnhancer));
+			chrome.storage.onChanged.addListener((changes, area) => {
+				if (area === "local" && changes.youtubeEnhancer) apply(changes.youtubeEnhancer.newValue);
 			});
-		});
+			document.addEventListener("yt-navigate-finish", scheduleNavigateRefresh);
+		}
 	}
 	//#endregion
 })();

@@ -29,11 +29,17 @@ const TILE_SELECTOR =
   'ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer'
 
 let feedObserver: MutationObserver | null = null
-let undoTimer: ReturnType<typeof setTimeout> | null = null
+let feedScanTimer: ReturnType<typeof setTimeout> | null = null
+let feedCtx: FeatureContext | null = null
+let undoTimer: ReturnType<typeof setInterval> | null = null
 let stillWatchingObserver: MutationObserver | null = null
+let stillScanTimer: ReturnType<typeof setTimeout> | null = null
 let wheelBound = false
 let keyBound = false
 let navHandler: (() => void) | null = null
+
+const FEED_DEBOUNCE_MS = 120
+const STILL_WATCHING_DEBOUNCE_MS = 200
 
 function values(ctx: FeatureContext): Record<string, unknown> {
   return ctx.state.values
@@ -72,21 +78,64 @@ function shouldHideTile(tile: Element, ctx: FeatureContext): boolean {
   return false
 }
 
+function applyTile(tile: Element, ctx: FeatureContext): void {
+  const el = tile as HTMLElement
+  if (shouldHideTile(tile, ctx)) el.style.display = 'none'
+  else el.style.removeProperty('display')
+}
+
+function scanTilesUnder(root: ParentNode, ctx: FeatureContext): void {
+  if (root instanceof Element) {
+    if (root.matches(TILE_SELECTOR)) applyTile(root, ctx)
+    for (const tile of root.querySelectorAll(TILE_SELECTOR)) applyTile(tile, ctx)
+  } else {
+    for (const tile of (root as Document | DocumentFragment).querySelectorAll?.(TILE_SELECTOR) ?? []) {
+      applyTile(tile, ctx)
+    }
+  }
+}
+
 function scanFeeds(ctx: FeatureContext): void {
   if (!feedFiltersActive(ctx)) return
-  for (const tile of document.querySelectorAll(TILE_SELECTOR)) {
-    const el = tile as HTMLElement
-    if (shouldHideTile(tile, ctx)) el.style.display = 'none'
-    else el.style.removeProperty('display')
+  scanTilesUnder(document, ctx)
+}
+
+function scheduleFeedScan(ctx: FeatureContext, roots?: ParentNode[]): void {
+  feedCtx = ctx
+  if (roots?.length) {
+    for (const root of roots) scanTilesUnder(root, ctx)
   }
+  if (feedScanTimer) return
+  feedScanTimer = setTimeout(() => {
+    feedScanTimer = null
+    if (feedCtx) scanFeeds(feedCtx)
+  }, FEED_DEBOUNCE_MS)
+}
+
+function feedObserveTarget(): Element | null {
+  return (
+    document.querySelector('ytd-app') ??
+    document.querySelector('#content') ??
+    document.body
+  )
 }
 
 reg('feedFilters', {
   start(ctx) {
     if (!feedFiltersActive(ctx)) return
     scanFeeds(ctx)
-    feedObserver = new MutationObserver(() => scanFeeds(ctx))
-    feedObserver.observe(document.body, { childList: true, subtree: true })
+    const target = feedObserveTarget()
+    if (!target) return
+    feedObserver = new MutationObserver((mutations) => {
+      const roots: ParentNode[] = []
+      for (const m of mutations) {
+        for (const node of m.addedNodes) {
+          if (node instanceof Element) roots.push(node)
+        }
+      }
+      scheduleFeedScan(ctx, roots.length ? roots : undefined)
+    })
+    feedObserver.observe(target, { childList: true, subtree: true })
     if (isFeatureOn(values(ctx), 'autoHideUndoBar')) {
       undoTimer = setInterval(() => {
         document.querySelectorAll('yt-button-renderer #button[aria-label*="Undo"]').forEach((el) => {
@@ -99,6 +148,9 @@ reg('feedFilters', {
   stop() {
     feedObserver?.disconnect()
     feedObserver = null
+    feedCtx = null
+    if (feedScanTimer) clearTimeout(feedScanTimer)
+    feedScanTimer = null
     if (undoTimer) clearInterval(undoTimer)
     undoTimer = null
     document.querySelectorAll<HTMLElement>(TILE_SELECTOR).forEach((el) => el.style.removeProperty('display'))
@@ -187,21 +239,33 @@ reg('player', {
   },
 })
 
+function dismissStillWatching(): void {
+  for (const el of document.querySelectorAll('yt-confirm-dialog-renderer, tp-yt-paper-dialog')) {
+    if (isStillWatchingDialog(el.textContent ?? '')) {
+      el.querySelector<HTMLElement>('#button, [aria-label*="Yes"], [aria-label*="Continue"]')?.click()
+    }
+  }
+}
+
 reg('stillWatching', {
   start(ctx) {
     if (!isFeatureOn(values(ctx), 'dismissStillWatching')) return
+    const target = document.querySelector('ytd-app') ?? document.body
     stillWatchingObserver = new MutationObserver(() => {
-      for (const el of document.querySelectorAll('yt-confirm-dialog-renderer, tp-yt-paper-dialog')) {
-        if (isStillWatchingDialog(el.textContent ?? '')) {
-          el.querySelector<HTMLElement>('#button, [aria-label*="Yes"], [aria-label*="Continue"]')?.click()
-        }
-      }
+      if (stillScanTimer) return
+      stillScanTimer = setTimeout(() => {
+        stillScanTimer = null
+        dismissStillWatching()
+      }, STILL_WATCHING_DEBOUNCE_MS)
     })
-    stillWatchingObserver.observe(document.body, { childList: true, subtree: true })
+    stillWatchingObserver.observe(target, { childList: true, subtree: true })
+    dismissStillWatching()
   },
   stop() {
     stillWatchingObserver?.disconnect()
     stillWatchingObserver = null
+    if (stillScanTimer) clearTimeout(stillScanTimer)
+    stillScanTimer = null
   },
 })
 

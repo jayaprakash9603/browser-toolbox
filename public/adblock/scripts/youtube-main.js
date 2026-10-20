@@ -146,6 +146,7 @@
 	}
 	//#endregion
 	//#region src/chrome/content/adblock/youtube/main.ts
+	var SKIP_POLL_MS = 200;
 	var MESSAGE_SOURCE = "toolbox-adblock";
 	function reportPruned(count) {
 		if (count > 0) window.postMessage({
@@ -256,10 +257,18 @@
 		for (const key of ["ytInitialPlayerResponse", "ytInitialData"]) if (win[key]) reportPruned(pruneYoutubeAdsInPlace(win[key]));
 	}
 	var skipObserver = null;
+	var skipDebounce = null;
+	function scheduleSkipTry() {
+		if (skipDebounce) return;
+		skipDebounce = setTimeout(() => {
+			skipDebounce = null;
+			tryAutoSkipAd();
+		}, 40);
+	}
 	function attachSkipObserver() {
 		const player = document.querySelector("#movie_player");
 		if (!player || skipObserver) return;
-		skipObserver = new MutationObserver(() => tryAutoSkipAd());
+		skipObserver = new MutationObserver(() => scheduleSkipTry());
 		skipObserver.observe(player, {
 			subtree: true,
 			childList: true,
@@ -272,8 +281,12 @@
 		});
 	}
 	function startAutoSkip() {
-		window.setInterval(() => tryAutoSkipAd(), 50);
-		window.setInterval(attachSkipObserver, 1500);
+		window.setInterval(() => {
+			const player = document.querySelector("#movie_player");
+			if (!player) return;
+			if (player.classList.contains("ad-showing") || player.classList.contains("ad-interrupting") || Boolean(player.querySelector(".ytp-ad-player-overlay, .ytp-ad-module"))) tryAutoSkipAd();
+		}, SKIP_POLL_MS);
+		window.setInterval(attachSkipObserver, 2e3);
 		document.addEventListener("yt-navigate-finish", () => {
 			skipObserver?.disconnect();
 			skipObserver = null;
@@ -283,8 +296,8 @@
 		attachSkipObserver();
 	}
 	var guarded = window;
-	if (!guarded.__toolboxYtMain) {
-		guarded.__toolboxYtMain = true;
+	if (!guarded.__toolboxAdblockYtMain && window === window.top) {
+		guarded.__toolboxAdblockYtMain = true;
 		patchJsonParse();
 		patchResponse();
 		patchFetch();

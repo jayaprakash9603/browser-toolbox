@@ -259,6 +259,7 @@ html[data-tbx-yt-grid-min-per-row='4'] ytd-rich-grid-renderer {
 
 html[data-tbx-yt-progress-on] .ytp-progress-bar-container {
   overflow: visible !important;
+  contain: layout style;
 }
 
 html[data-tbx-yt-progress-on] .ytp-progress-bar-container,

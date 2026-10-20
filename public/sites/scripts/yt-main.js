@@ -4,6 +4,7 @@
 	var PAGE_EVT_KEY = "__toolboxYtEvt";
 	//#endregion
 	//#region src/chrome/content/sites/youtube/main.ts
+	var sponsorTimeHandler = null;
 	function getVideo() {
 		return document.querySelector("video.html5-main-video, video");
 	}
@@ -28,25 +29,24 @@
 	function skipSponsor(segments) {
 		const video = getVideo();
 		if (!video) return;
-		const t = video.currentTime;
-		for (const s of segments) {
-			const [start, end] = s.segment;
-			if (t >= start && t < end - .05) {
-				video.currentTime = end;
-				break;
-			}
-		}
-		video.addEventListener("timeupdate", () => {
+		if (sponsorTimeHandler) video.removeEventListener("timeupdate", sponsorTimeHandler);
+		const jump = () => {
 			const now = video.currentTime;
 			for (const s of segments) {
 				const [start, end] = s.segment;
-				if (now >= start && now < end - .05) video.currentTime = end;
+				if (now >= start && now < end - .05) {
+					video.currentTime = end;
+					break;
+				}
 			}
-		});
+		};
+		sponsorTimeHandler = jump;
+		jump();
+		video.addEventListener("timeupdate", jump);
 	}
 	var guarded = window;
-	if (!guarded.__toolboxYtMain) {
-		guarded.__toolboxYtMain = true;
+	if (!guarded.__toolboxSitesYtMain && window === window.top) {
+		guarded.__toolboxSitesYtMain = true;
 		window.addEventListener("message", (event) => {
 			if (event.source !== window) return;
 			const data = event.data;

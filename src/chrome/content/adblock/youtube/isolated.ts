@@ -10,7 +10,7 @@ type GuardedWindow = Window & { __toolboxYtIsolated?: boolean }
 const STYLE_ID = 'toolbox-adblock-youtube'
 const REPORT_DELAY_MS = 1500
 const FAST_FORWARD_RATE = 16
-const AD_POLL_MS = 50
+const AD_POLL_MS = 200
 
 let enabled = false
 let pendingBlocked = 0
@@ -18,6 +18,7 @@ let reportTimer: ReturnType<typeof setTimeout> | null = null
 let playerObserver: MutationObserver | null = null
 let pollTimer: ReturnType<typeof setInterval> | null = null
 let adPollTimer: ReturnType<typeof setInterval> | null = null
+let playerMutationTimer: ReturnType<typeof setTimeout> | null = null
 let saved: { muted: boolean; rate: number } | null = null
 let adActive = false
 
@@ -102,13 +103,21 @@ function stopPoll(): void {
 function resetPlayerObserver(): void {
   playerObserver?.disconnect()
   playerObserver = null
+  if (playerMutationTimer) clearTimeout(playerMutationTimer)
+  playerMutationTimer = null
 }
 
 function observePlayer(): void {
   const player = getPlayer()
   if (!player) return
   if (!playerObserver) {
-    playerObserver = new MutationObserver(checkPlayer)
+    playerObserver = new MutationObserver(() => {
+      if (playerMutationTimer) return
+      playerMutationTimer = setTimeout(() => {
+        playerMutationTimer = null
+        checkPlayer()
+      }, 50)
+    })
     playerObserver.observe(player, {
       subtree: true,
       childList: true,
@@ -172,7 +181,7 @@ function applyState(raw: unknown): void {
 }
 
 const guarded = window as GuardedWindow
-if (!guarded.__toolboxYtIsolated) {
+if (!guarded.__toolboxYtIsolated && window === window.top) {
   guarded.__toolboxYtIsolated = true
 
   window.addEventListener('message', (event: MessageEvent) => {
