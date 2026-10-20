@@ -14,7 +14,7 @@ export function defaultYoutubeValues(): Record<string, YoutubeFeatureValue> {
 }
 
 export const DEFAULT_YOUTUBE_ENHANCER_STATE: YoutubeEnhancerState = {
-  enabled: true,
+  enabled: false,
   values: defaultYoutubeValues(),
 }
 

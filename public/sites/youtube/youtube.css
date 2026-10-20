@@ -32,7 +32,9 @@ html[data-tbx-yt-hide-live] ytd-badge-supported-renderer[aria-label*='LIVE'] {
   display: none !important;
 }
 
-html[data-tbx-yt-hide-streamed] ytd-thumbnail-overlay-time-status-renderer[overlay-style='DEFAULT'] {
+/* Only hide “was live” / streamed badges — not DEFAULT duration overlays on every video */
+html[data-tbx-yt-hide-streamed] ytd-thumbnail-overlay-time-status-renderer[overlay-style='STREAMED'],
+html[data-tbx-yt-hide-streamed] ytd-badge-supported-renderer[aria-label*='Streamed'] {
   display: none !important;
 }
 
@@ -93,7 +95,9 @@ html[data-tbx-yt-hide-upcoming] ytd-thumbnail-overlay-time-status-renderer[overl
   display: none !important;
 }
 
-html[data-tbx-yt-hide-suggested-sections] ytd-shelf-renderer {
+/* Horizontal promo shelves on Home/Subscriptions — not the watch-page “Up next” column */
+html[data-tbx-yt-hide-suggested-sections] ytd-browse ytd-rich-shelf-renderer,
+html[data-tbx-yt-hide-suggested-sections] ytd-browse ytd-shelf-renderer:not(#related) {
   display: none !important;
 }
 
@@ -210,26 +214,26 @@ html[data-tbx-yt-grid-min-per-row='4'] ytd-rich-grid-renderer {
   --ytd-rich-grid-items-per-row: 4 !important;
 }
 
-/* Custom progress bar */
-.ytp-progress-bar-container,
-.ytp-progress-bar {
+/* Progress bar theming only when a non-default theme or custom colors are active */
+html[data-tbx-yt-progress-on] .ytp-progress-bar-container,
+html[data-tbx-yt-progress-on] .ytp-progress-bar {
   height: var(--tbx-yt-progress-height, 3px) !important;
 }
 
-.ytp-play-progress {
+html[data-tbx-yt-progress-on] .ytp-play-progress {
   background: var(--tbx-yt-progress-played, #cc0000) !important;
 }
 
-.ytp-progress-bar {
+html[data-tbx-yt-progress-on] .ytp-progress-bar {
   background: var(--tbx-yt-progress-bar, #ff0000) !important;
 }
 
-html[data-tbx-yt-progress-custom] .ytp-scrubber-button {
+html[data-tbx-yt-progress-on] .ytp-scrubber-button {
   transform: scale(1.2);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html[data-tbx-yt-progress-animated] .ytp-play-progress {
+  html[data-tbx-yt-progress-on] .ytp-play-progress {
     animation: none !important;
   }
 }

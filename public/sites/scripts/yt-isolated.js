@@ -718,6 +718,7 @@
 	function reg(id, runner) {
 		runners.set(id, runner);
 	}
+	var TILE_SELECTOR = "ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer";
 	var feedObserver = null;
 	var undoTimer = null;
 	var stillWatchingObserver = null;
@@ -727,33 +728,42 @@
 	function values(ctx) {
 		return ctx.state.values;
 	}
-	function hideVideoTile(tile, ctx) {
+	function feedFiltersActive(ctx) {
+		const v = values(ctx);
+		return isFeatureOn(v, "keywordFilter") || isFeatureOn(v, "hideChannels") || isFeatureOn(v, "hideWatchedVideos") || isFeatureOn(v, "autoHideUndoBar");
+	}
+	function shouldHideTile(tile, ctx) {
 		const title = tile.querySelector("#video-title, .title")?.textContent ?? "";
 		const channel = tile.querySelector("#channel-name, ytd-channel-name")?.textContent?.trim() ?? "";
 		const channelId = tile.querySelector("a[href*=\"/channel/\"], a[href*=\"/@\"]")?.getAttribute("href") ?? "";
 		if (isFeatureOn(values(ctx), "keywordFilter")) {
-			if (matchesKeyword(title, parseKeywordList(String(values(ctx).blockedKeywords ?? "")))) {
-				tile.style.display = "none";
-				return;
-			}
+			const keys = parseKeywordList(String(values(ctx).blockedKeywords ?? ""));
+			if (keys.length && matchesKeyword(title, keys)) return true;
 		}
 		if (isFeatureOn(values(ctx), "hideChannels")) {
-			if (matchesChannel(channel, channelId, parseChannelList(String(values(ctx).blockedChannels ?? "")))) {
-				tile.style.display = "none";
-				return;
-			}
+			const blocked = parseChannelList(String(values(ctx).blockedChannels ?? ""));
+			if (blocked.length && matchesChannel(channel, channelId, blocked)) return true;
 		}
 		if (isFeatureOn(values(ctx), "hideWatchedVideos")) {
 			const min = Number(values(ctx).watchedMinPercent ?? 80);
-			const pct = watchedPercentFromAria(tile.querySelector("ytd-thumbnail-overlay-resume-playback-renderer")?.getAttribute("aria-label") ?? null);
-			if (pct != null && pct >= min) tile.style.display = "none";
+			const progress = tile.querySelector("ytd-thumbnail-overlay-resume-playback-renderer");
+			if (!progress) return false;
+			const pct = watchedPercentFromAria(progress.getAttribute("aria-label") ?? null);
+			if (pct != null && pct >= min) return true;
 		}
+		return false;
 	}
 	function scanFeeds(ctx) {
-		for (const tile of document.querySelectorAll("ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer")) hideVideoTile(tile, ctx);
+		if (!feedFiltersActive(ctx)) return;
+		for (const tile of document.querySelectorAll(TILE_SELECTOR)) {
+			const el = tile;
+			if (shouldHideTile(tile, ctx)) el.style.display = "none";
+			else el.style.removeProperty("display");
+		}
 	}
 	reg("feedFilters", {
 		start(ctx) {
+			if (!feedFiltersActive(ctx)) return;
 			scanFeeds(ctx);
 			feedObserver = new MutationObserver(() => scanFeeds(ctx));
 			feedObserver.observe(document.body, {
@@ -772,6 +782,7 @@
 			feedObserver = null;
 			if (undoTimer) clearInterval(undoTimer);
 			undoTimer = null;
+			document.querySelectorAll(TILE_SELECTOR).forEach((el) => el.style.removeProperty("display"));
 		}
 	});
 	reg("redirectShorts", {
@@ -793,6 +804,7 @@
 	reg("player", {
 		start(ctx) {
 			const v = values(ctx);
+			if (!(v.defaultSpeed !== "1" || v.defaultQuality !== "auto" || isFeatureOn(v, "disableAutoplay") || isFeatureOn(v, "disableAmbient") || isFeatureOn(v, "alwaysOriginalAudio") || isFeatureOn(v, "rememberVolume") || isFeatureOn(v, "loopButton") || isFeatureOn(v, "alwaysTheater") || isFeatureOn(v, "wheelVolume") || isFeatureOn(v, "wheelSpeed") || isFeatureOn(v, "speedHotkeys") || isFeatureOn(v, "shortsStopLoop"))) return;
 			postToMain("applyPlayer", {
 				defaultSpeed: v.defaultSpeed,
 				defaultQuality: v.defaultQuality,
@@ -893,8 +905,10 @@
 	//#endregion
 	//#region src/chrome/content/sites/youtube/manager.ts
 	var STYLE_LINK_ID = "toolbox-yt-css";
+	var ACTIVE_ATTR = "data-tbx-yt-active";
 	function applyCssFeatures(state) {
 		const root = document.documentElement;
+		root.setAttribute(ACTIVE_ATTR, "true");
 		for (const id of CSS_FEATURE_IDS) {
 			if (id === "gridMinPerRow" || id === "shortsMinPerRow" || id === "searchThumbSize") continue;
 			if (state.values[id] === true) root.setAttribute(featureAttrName(id), "true");
@@ -913,10 +927,19 @@
 	function applyProgressStyle(state) {
 		const root = document.documentElement;
 		const theme = String(state.values.progressTheme ?? "default");
-		const vars = themeCssVars(theme, String(state.values.progressBarColor ?? ""), String(state.values.progressPlayedColor ?? ""), Number(state.values.progressHeight ?? 3));
+		const barColor = String(state.values.progressBarColor ?? "#ff0000");
+		const playedColor = String(state.values.progressPlayedColor ?? "#cc0000");
+		const height = Number(state.values.progressHeight ?? 3);
+		if (!(theme !== "default" || barColor !== "#ff0000" || playedColor !== "#cc0000" || height !== 3)) {
+			root.removeAttribute(featureAttrName("progressOn"));
+			root.style.removeProperty("--tbx-yt-progress-bar");
+			root.style.removeProperty("--tbx-yt-progress-played");
+			root.style.removeProperty("--tbx-yt-progress-height");
+			return;
+		}
+		const vars = themeCssVars(theme, barColor, playedColor, height);
 		for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, v);
-		if (theme !== "default") root.setAttribute(featureAttrName("progressCustom"), "true");
-		else root.removeAttribute(featureAttrName("progressCustom"));
+		root.setAttribute(featureAttrName("progressOn"), "true");
 	}
 	function ensureCssLink() {
 		if (document.getElementById(STYLE_LINK_ID)) return;
@@ -945,12 +968,17 @@
 	function stopAll() {
 		stopScriptFeatures();
 		const root = document.documentElement;
+		root.removeAttribute(ACTIVE_ATTR);
 		for (const id of CSS_FEATURE_IDS) root.removeAttribute(featureAttrName(id));
-		root.removeAttribute(featureAttrName("progressCustom"));
+		root.removeAttribute(featureAttrName("progressOn"));
 		root.removeAttribute(featureAttrName("searchThumbSize"));
 		root.removeAttribute(featureAttrName("gridMinPerRow"));
 		root.removeAttribute(featureAttrName("shortsMinPerRow"));
+		root.style.removeProperty("--tbx-yt-progress-bar");
+		root.style.removeProperty("--tbx-yt-progress-played");
+		root.style.removeProperty("--tbx-yt-progress-height");
 		document.getElementById(STYLE_LINK_ID)?.remove();
+		document.querySelectorAll("ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer").forEach((el) => el.style.removeProperty("display"));
 	}
 	//#endregion
 	//#region src/chrome/content/sites/youtube/isolated.ts

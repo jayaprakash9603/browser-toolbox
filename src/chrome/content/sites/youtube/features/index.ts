@@ -25,6 +25,9 @@ function reg(id: string, runner: Runner): void {
   runners.set(id, runner)
 }
 
+const TILE_SELECTOR =
+  'ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer'
+
 let feedObserver: MutationObserver | null = null
 let undoTimer: ReturnType<typeof setTimeout> | null = null
 let stillWatchingObserver: MutationObserver | null = null
@@ -36,41 +39,51 @@ function values(ctx: FeatureContext): Record<string, unknown> {
   return ctx.state.values
 }
 
-function hideVideoTile(tile: Element, ctx: FeatureContext): void {
+function feedFiltersActive(ctx: FeatureContext): boolean {
+  const v = values(ctx)
+  return (
+    isFeatureOn(v, 'keywordFilter') ||
+    isFeatureOn(v, 'hideChannels') ||
+    isFeatureOn(v, 'hideWatchedVideos') ||
+    isFeatureOn(v, 'autoHideUndoBar')
+  )
+}
+
+function shouldHideTile(tile: Element, ctx: FeatureContext): boolean {
   const title = tile.querySelector('#video-title, .title')?.textContent ?? ''
   const channel =
     tile.querySelector('#channel-name, ytd-channel-name')?.textContent?.trim() ?? ''
   const channelId = tile.querySelector('a[href*="/channel/"], a[href*="/@"]')?.getAttribute('href') ?? ''
   if (isFeatureOn(values(ctx), 'keywordFilter')) {
     const keys = parseKeywordList(String(values(ctx).blockedKeywords ?? ''))
-    if (matchesKeyword(title, keys)) {
-      ;(tile as HTMLElement).style.display = 'none'
-      return
-    }
+    if (keys.length && matchesKeyword(title, keys)) return true
   }
   if (isFeatureOn(values(ctx), 'hideChannels')) {
     const blocked = parseChannelList(String(values(ctx).blockedChannels ?? ''))
-    if (matchesChannel(channel, channelId, blocked)) {
-      ;(tile as HTMLElement).style.display = 'none'
-      return
-    }
+    if (blocked.length && matchesChannel(channel, channelId, blocked)) return true
   }
   if (isFeatureOn(values(ctx), 'hideWatchedVideos')) {
     const min = Number(values(ctx).watchedMinPercent ?? 80)
     const progress = tile.querySelector('ytd-thumbnail-overlay-resume-playback-renderer')
-    const pct = watchedPercentFromAria(progress?.getAttribute('aria-label') ?? null)
-    if (pct != null && pct >= min) (tile as HTMLElement).style.display = 'none'
+    if (!progress) return false
+    const pct = watchedPercentFromAria(progress.getAttribute('aria-label') ?? null)
+    if (pct != null && pct >= min) return true
   }
+  return false
 }
 
 function scanFeeds(ctx: FeatureContext): void {
-  for (const tile of document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer')) {
-    hideVideoTile(tile, ctx)
+  if (!feedFiltersActive(ctx)) return
+  for (const tile of document.querySelectorAll(TILE_SELECTOR)) {
+    const el = tile as HTMLElement
+    if (shouldHideTile(tile, ctx)) el.style.display = 'none'
+    else el.style.removeProperty('display')
   }
 }
 
 reg('feedFilters', {
   start(ctx) {
+    if (!feedFiltersActive(ctx)) return
     scanFeeds(ctx)
     feedObserver = new MutationObserver(() => scanFeeds(ctx))
     feedObserver.observe(document.body, { childList: true, subtree: true })
@@ -88,6 +101,7 @@ reg('feedFilters', {
     feedObserver = null
     if (undoTimer) clearInterval(undoTimer)
     undoTimer = null
+    document.querySelectorAll<HTMLElement>(TILE_SELECTOR).forEach((el) => el.style.removeProperty('display'))
   },
 })
 
@@ -111,6 +125,20 @@ reg('redirectShorts', {
 reg('player', {
   start(ctx) {
     const v = values(ctx)
+    const playerActive =
+      v.defaultSpeed !== '1' ||
+      v.defaultQuality !== 'auto' ||
+      isFeatureOn(v, 'disableAutoplay') ||
+      isFeatureOn(v, 'disableAmbient') ||
+      isFeatureOn(v, 'alwaysOriginalAudio') ||
+      isFeatureOn(v, 'rememberVolume') ||
+      isFeatureOn(v, 'loopButton') ||
+      isFeatureOn(v, 'alwaysTheater') ||
+      isFeatureOn(v, 'wheelVolume') ||
+      isFeatureOn(v, 'wheelSpeed') ||
+      isFeatureOn(v, 'speedHotkeys') ||
+      isFeatureOn(v, 'shortsStopLoop')
+    if (!playerActive) return
     postToMain('applyPlayer', {
       defaultSpeed: v.defaultSpeed,
       defaultQuality: v.defaultQuality,
@@ -130,7 +158,11 @@ reg('player', {
             const player = document.querySelector('#movie_player')
             if (!player?.contains(e.target as Node)) return
             e.preventDefault()
-            postToMain('wheel', { deltaY: e.deltaY, volume: isFeatureOn(v, 'wheelVolume'), speed: isFeatureOn(v, 'wheelSpeed') })
+            postToMain('wheel', {
+              deltaY: e.deltaY,
+              volume: isFeatureOn(v, 'wheelVolume'),
+              speed: isFeatureOn(v, 'wheelSpeed'),
+            })
           },
           { passive: false },
         )
@@ -182,9 +214,7 @@ reg('sponsor', {
       .sendMessage({
         type: 'YT_SPONSOR_SEGMENTS',
         videoId,
-        categories: Array.isArray(values(ctx).sponsorCategories)
-          ? values(ctx).sponsorCategories
-          : [],
+        categories: Array.isArray(values(ctx).sponsorCategories) ? values(ctx).sponsorCategories : [],
       })
       .then((res: { ok?: boolean; data?: { segments?: unknown } } | undefined) => {
         const segments = res && 'ok' in res && res.ok ? res.data?.segments : undefined

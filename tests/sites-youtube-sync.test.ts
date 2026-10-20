@@ -9,7 +9,7 @@ describe('youtube content script registration', () => {
   })
 
   it('registers isolated and main scripts on YouTube', () => {
-    const scripts = buildYoutubeContentScripts(DEFAULT_YOUTUBE_ENHANCER_STATE)
+    const scripts = buildYoutubeContentScripts({ ...DEFAULT_YOUTUBE_ENHANCER_STATE, enabled: true })
     expect(scripts.map((s) => s.id)).toEqual(['sites-yt-isolated', 'sites-yt-main'])
     expect(scripts[1].world).toBe('MAIN')
     expect(scripts[0].matches?.[0]).toContain('youtube.com')

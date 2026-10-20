@@ -8,7 +8,7 @@ describe('youtube enhancer service', () => {
 
   it('defaults to enabled with catalog defaults', async () => {
     const state = await getYoutubeEnhancerState()
-    expect(state.enabled).toBe(true)
+    expect(state.enabled).toBe(false)
     expect(state.values.hideSponsored).toBe(false)
     expect(state.values.sponsorBlock).toBe(false)
   })

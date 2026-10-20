@@ -66,4 +66,38 @@ for (const f of YOUTUBE_FEATURES) {
       : `Adjust YouTube: ${title(f.id)}.`
 }
 
+// Progress bar section (overrides auto-generated feature titles)
+Object.assign(base, {
+  'sites.youtube.sections.progress': 'Progress bar',
+  'sites.youtube.features.progressTheme.label': 'Progress theme',
+  'sites.youtube.features.progressTheme.description':
+    'Preset look for the player progress bar, or custom colors below.',
+  'sites.youtube.features.progressBarColor.label': 'Progress bar color',
+  'sites.youtube.features.progressBarColor.description': 'Color of the unplayed portion of the bar.',
+  'sites.youtube.features.progressPlayedColor.label': 'Progress played color',
+  'sites.youtube.features.progressPlayedColor.description': 'Color of the played portion of the bar.',
+  'sites.youtube.features.progressHeight.label': 'Progress height',
+  'sites.youtube.features.progressHeight.description': 'Thickness of the progress bar in pixels (2–12).',
+  'sites.youtube.progress.default': 'YouTube default',
+  'sites.youtube.progress.ocean': 'Ocean',
+  'sites.youtube.progress.neon': 'Neon',
+  'sites.youtube.progress.fire': 'Fire',
+  'sites.youtube.progress.gold': 'Gold',
+  'sites.youtube.progress.forest': 'Forest',
+  'sites.youtube.progress.violet': 'Violet',
+  'sites.youtube.progress.rose': 'Rose',
+  'sites.youtube.progress.slate': 'Slate',
+  'sites.youtube.progress.rainbow': 'Rainbow',
+  'sites.youtube.progress.candy': 'Candy',
+  'sites.youtube.progress.pride': 'Pride',
+  'sites.youtube.progress.midnight': 'Midnight',
+  'sites.youtube.progress.mint': 'Mint',
+  'sites.youtube.progress.sunset': 'Sunset',
+  'sites.youtube.progress.ice': 'Ice',
+  'sites.youtube.progress.lava': 'Lava',
+  'sites.youtube.progress.matrix': 'Matrix',
+  'sites.youtube.progress.cyber': 'Cyber',
+  'sites.youtube.progress.mono': 'Mono',
+})
+
 export const sitesYoutubeStrings = base

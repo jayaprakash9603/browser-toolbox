@@ -9,7 +9,6 @@ export function buildYoutubeContentScripts(state: YoutubeEnhancerState): chrome.
     {
       id: CONTENT_SCRIPT_IDS.isolated,
       js: [SITE_FILES.isolatedJs],
-      css: [SITE_FILES.youtubeCss],
       matches: [...YOUTUBE_MATCHES],
       runAt: 'document_start',
       allFrames: true,
@@ -50,7 +49,6 @@ export async function injectYoutubeIntoOpenTabs(state: YoutubeEnhancerState): Pr
   for (const tab of tabs) {
     if (tab.id == null) continue
     try {
-      await chrome.scripting.insertCSS({ target: { tabId: tab.id, allFrames: true }, files: [SITE_FILES.youtubeCss] })
       await chrome.scripting.executeScript({ target: { tabId: tab.id, allFrames: true }, files: [SITE_FILES.isolatedJs] })
       await chrome.scripting.executeScript({
         target: { tabId: tab.id, allFrames: true },
