@@ -311,7 +311,11 @@ export async function enterStreamingPlayerPip(): Promise<StreamingPipResult> {
     else if (originalNext && originalNext.parentNode === originalParent) originalParent.insertBefore(v, originalNext)
     else originalParent.appendChild(v)
     const realVisibility = Object.getOwnPropertyDescriptor(Document.prototype, 'visibilityState')?.get?.call(document)
-    if (realVisibility === 'hidden') v.pause()
+    if ((window as unknown as { __tbxPipResume?: boolean }).__tbxPipResume) {
+      window.setTimeout(() => void v.play().catch(() => undefined), 0)
+    } else if (realVisibility === 'hidden') {
+      v.pause()
+    }
   })
   return 'entered'
 }

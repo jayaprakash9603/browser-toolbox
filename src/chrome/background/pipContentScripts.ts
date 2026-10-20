@@ -3,7 +3,7 @@ import { createLogger } from '@/core/logging'
 
 const logger = createLogger('pip-scripts')
 
-const PIP_AUTO_JS = 'sites/scripts/pip-auto.js'
+export const PIP_AUTO_JS = 'sites/scripts/pip-auto.js'
 
 export function buildPipAutoContentScript(): chrome.scripting.RegisteredContentScript {
   return {

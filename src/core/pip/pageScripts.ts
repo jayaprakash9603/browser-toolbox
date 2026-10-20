@@ -5,6 +5,62 @@ export type PipMeasureResult =
   | { kind: 'none' }
   | { kind: 'candidate'; area: number; playing: boolean; readyState: number }
 
+/**
+ * Feature switched off: stop auto-PiP in an already-loaded page, close any floating window and
+ * keep the video playing in the page. `__tbxPipResume` tells the restore handlers to resume
+ * playback instead of pausing the (background) tab.
+ */
+export function pipShutdownInFrame(): boolean {
+  const w = window as unknown as {
+    __tbxPipOff?: boolean
+    __tbxPipResume?: boolean
+    documentPictureInPicture?: { window: Window | null }
+  }
+  w.__tbxPipOff = true
+  try {
+    navigator.mediaSession.setActionHandler('enterpictureinpicture' as MediaSessionAction, null)
+  } catch {
+    /* unsupported */
+  }
+  document.querySelectorAll<HTMLElement>('[data-tbx-pip-btn]').forEach((el) => (el.style.display = 'none'))
+
+  let closed = false
+  w.__tbxPipResume = true
+  const docWin = w.documentPictureInPicture?.window
+  if (docWin) {
+    docWin.close()
+    closed = true
+  }
+  const video = document.pictureInPictureElement as HTMLVideoElement | null
+  if (video) {
+    closed = true
+    // The page may wrap exitPictureInPicture; call the browser's own implementation.
+    void Document.prototype.exitPictureInPicture
+      .call(document)
+      .catch(() => undefined)
+      .then(() => {
+        if (video.paused) void video.play().catch(() => undefined)
+      })
+  }
+  window.setTimeout(() => {
+    w.__tbxPipResume = false
+  }, 3000)
+  return closed
+}
+
+/** Turns auto-PiP on or off in an already-loaded page (see pipShutdownInFrame). */
+export function pipSetAutoActiveInFrame(active: boolean): void {
+  const w = window as unknown as { __tbxPipOff?: boolean }
+  w.__tbxPipOff = !active
+  if (active) return
+  try {
+    navigator.mediaSession.setActionHandler('enterpictureinpicture' as MediaSessionAction, null)
+  } catch {
+    /* unsupported */
+  }
+  document.querySelectorAll<HTMLElement>('[data-tbx-pip-btn]').forEach((el) => (el.style.display = 'none'))
+}
+
 export function pipTryExitInFrame(): 'exited' | null {
   const docPip = (window as unknown as { documentPictureInPicture?: { window: Window | null } })
     .documentPictureInPicture

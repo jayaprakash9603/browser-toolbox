@@ -199,7 +199,9 @@
 			if (placeholder.parentNode) placeholder.parentNode.replaceChild(container, placeholder);
 			else if (originalNext && originalNext.parentNode === originalParent) originalParent.insertBefore(container, originalNext);
 			else originalParent.appendChild(container);
-			if (Object.getOwnPropertyDescriptor(Document.prototype, "visibilityState")?.get?.call(document) === "hidden") video.pause();
+			const realVisibility = Object.getOwnPropertyDescriptor(Document.prototype, "visibilityState")?.get?.call(document);
+			if (window.__tbxPipResume) window.setTimeout(() => void video.play().catch(() => void 0), 0);
+			else if (realVisibility === "hidden") video.pause();
 			nudge();
 		});
 		return "entered";
@@ -286,10 +288,11 @@
 		pip.addEventListener("pagehide", () => {
 			pip.removeEventListener("message", onTime);
 			const realVisibility = Object.getOwnPropertyDescriptor(Document.prototype, "visibilityState")?.get?.call(document);
+			const resume = window.__tbxPipResume === true;
 			original.contentWindow?.postMessage({
 				__tbxPip: "seek",
 				t: lastT,
-				play: realVisibility === "visible"
+				play: resume || realVisibility === "visible"
 			}, "*");
 		});
 		return "entered";
@@ -595,12 +598,16 @@
 			if (placeholder.parentNode) placeholder.parentNode.replaceChild(v, placeholder);
 			else if (originalNext && originalNext.parentNode === originalParent) originalParent.insertBefore(v, originalNext);
 			else originalParent.appendChild(v);
-			if (Object.getOwnPropertyDescriptor(Document.prototype, "visibilityState")?.get?.call(document) === "hidden") v.pause();
+			const realVisibility = Object.getOwnPropertyDescriptor(Document.prototype, "visibilityState")?.get?.call(document);
+			if (window.__tbxPipResume) window.setTimeout(() => void v.play().catch(() => void 0), 0);
+			else if (realVisibility === "hidden") v.pause();
 		});
 		return "entered";
 	}
 	//#endregion
 	//#region src/chrome/content/pip/auto.ts
+	/** Set by the background when PiP (or auto-PiP) is switched off while this page is open. */
+	var pipOff = () => window.__tbxPipOff === true;
 	function collectVideos(root, out) {
 		root.querySelectorAll("video").forEach((v) => out.push(v));
 		root.querySelectorAll("*").forEach((el) => {
@@ -696,11 +703,13 @@
 		try {
 			await requestPipUnblocked(video);
 			video.addEventListener("leavepictureinpicture", () => {
-				if (realVisibility() === "hidden") video.pause();
+				if (window.__tbxPipResume) video.play().catch(() => void 0);
+				else if (realVisibility() === "hidden") video.pause();
 			}, { once: true });
 		} catch {}
 	}
 	async function onEnterPip() {
+		if (pipOff()) return;
 		if (!playingVideo()) {
 			if (window === window.top) await enterEmbeddedPlayerPip();
 			return;
@@ -713,7 +722,7 @@
 	}
 	function register() {
 		try {
-			navigator.mediaSession.setActionHandler("enterpictureinpicture", () => void onEnterPip());
+			navigator.mediaSession.setActionHandler("enterpictureinpicture", pipOff() ? null : () => void onEnterPip());
 		} catch {}
 	}
 	function buildIcon() {
@@ -748,12 +757,13 @@
 		const btn = document.createElement("button");
 		btn.type = "button";
 		btn.setAttribute("aria-label", "Picture-in-Picture");
+		btn.setAttribute("data-tbx-pip-btn", "");
 		btn.title = "Picture-in-Picture";
 		btn.style.cssText = "all:initial;position:fixed;z-index:2147483647;width:36px;height:36px;display:none;align-items:center;justify-content:center;cursor:pointer;border-radius:8px;background:rgba(20,20,20,.72);color:#fff;box-shadow:0 1px 6px rgba(0,0,0,.4);";
 		btn.appendChild(buildIcon());
 		let hideTimer = 0;
 		const show = () => {
-			const v = bestVideo();
+			const v = pipOff() ? null : bestVideo();
 			if (!v) {
 				btn.style.display = "none";
 				return;
@@ -774,6 +784,7 @@
 				document.exitPictureInPicture();
 				return;
 			}
+			if (pipOff()) return;
 			const v = bestVideo();
 			if (!v) return;
 			let handled = false;
@@ -851,6 +862,13 @@
 		window.addEventListener("message", (event) => {
 			if (event.data?.__tbxPip !== "open-embedded" || !event.source) return;
 			const source = event.source;
+			if (pipOff()) {
+				source.postMessage({
+					__tbxPip: "embedded-result",
+					ok: true
+				}, "*");
+				return;
+			}
 			enterEmbeddedPlayerPip().then((result) => {
 				source.postMessage({
 					__tbxPip: "embedded-result",

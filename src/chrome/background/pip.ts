@@ -2,9 +2,11 @@ import { getChromeMessage } from '@/core/i18n/chromeMessages'
 import { createLogger } from '@/core/logging'
 import { registerMessageHandler } from '@/core/messaging'
 import {
+  DEFAULT_PIP_STATE,
   PIP_MENU_ID,
   getPipState,
   pickBestVideoCandidate,
+  type PipState,
   type PipToggleResult,
   type VideoCandidate,
 } from '@/core/pip'
@@ -14,10 +16,12 @@ import {
   pipEnterInFrame,
   pipEnterStreamingInFrame,
   pipMeasureInFrame,
+  pipSetAutoActiveInFrame,
+  pipShutdownInFrame,
   pipTryExitInFrame,
 } from '@/core/pip/pageScripts'
 
-import { syncPipAutoContentScript } from './pipContentScripts'
+import { PIP_AUTO_JS, syncPipAutoContentScript } from './pipContentScripts'
 
 const logger = createLogger('pip')
 
@@ -163,6 +167,46 @@ async function syncPipFeatureState(): Promise<void> {
   void rebuildContextMenus?.()
 }
 
+async function scriptableTabIds(): Promise<number[]> {
+  const tabs = await chrome.tabs.query({})
+  return tabs
+    .filter((tab) => tab.id != null && !tab.discarded && /^(https?|file):/.test(tab.url ?? ''))
+    .map((tab) => tab.id as number)
+}
+
+/** Registered content scripts only reach new page loads; apply the switch to open tabs too. */
+async function applyPipStateToOpenTabs(prev: PipState, next: PipState): Promise<void> {
+  const autoWas = prev.enabled && prev.autoPip
+  const autoIs = next.enabled && next.autoPip
+  const shutdown = prev.enabled && !next.enabled
+  if (!shutdown && autoWas === autoIs) return
+
+  for (const tabId of await scriptableTabIds()) {
+    const target = { tabId, allFrames: true }
+    if (shutdown) {
+      void chrome.scripting
+        .executeScript({ target, world: 'MAIN', func: pipShutdownInFrame })
+        .catch(() => undefined)
+      continue
+    }
+    void chrome.scripting
+      .executeScript({ target, world: 'MAIN', func: pipSetAutoActiveInFrame, args: [autoIs] })
+      .then(() =>
+        autoIs ? chrome.scripting.executeScript({ target, world: 'MAIN', files: [PIP_AUTO_JS] }) : undefined,
+      )
+      .catch(() => undefined)
+  }
+}
+
+function toPipState(value: unknown): PipState {
+  const raw = (value ?? {}) as Partial<PipState>
+  return {
+    enabled: raw.enabled ?? DEFAULT_PIP_STATE.enabled,
+    autoPip: raw.autoPip ?? DEFAULT_PIP_STATE.autoPip,
+    showContextMenu: raw.showContextMenu ?? DEFAULT_PIP_STATE.showContextMenu,
+  }
+}
+
 export function registerPip(): void {
   registerMessageHandler('PIP_TOGGLE', async (message, sender) => {
     let tab: chrome.tabs.Tab | undefined
@@ -180,6 +224,7 @@ export function registerPip(): void {
 
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local' || !changes.pip) return
+    void applyPipStateToOpenTabs(toPipState(changes.pip.oldValue), toPipState(changes.pip.newValue))
     void syncPipFeatureState()
   })
 

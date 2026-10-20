@@ -1,7 +1,10 @@
 import { enterEmbeddedPlayerPip, enterFullPlayerPip } from '@/core/pip/fullPlayerPip'
 import { enterStreamingPlayerPip } from '@/core/pip/streamingPlayerPip'
 
-type Guarded = Window & { __tbxPipAuto?: boolean }
+type Guarded = Window & { __tbxPipAuto?: boolean; __tbxPipOff?: boolean; __tbxPipResume?: boolean }
+
+/** Set by the background when PiP (or auto-PiP) is switched off while this page is open. */
+const pipOff = () => (window as Guarded).__tbxPipOff === true
 
 function collectVideos(root: ParentNode, out: HTMLVideoElement[]): void {
   root.querySelectorAll('video').forEach((v) => out.push(v))
@@ -122,7 +125,8 @@ async function enterNativePip(video: HTMLVideoElement): Promise<void> {
     video.addEventListener(
       'leavepictureinpicture',
       () => {
-        if (realVisibility() === 'hidden') video.pause()
+        if ((window as Guarded).__tbxPipResume) void video.play().catch(() => undefined)
+        else if (realVisibility() === 'hidden') video.pause()
       },
       { once: true },
     )
@@ -132,6 +136,7 @@ async function enterNativePip(video: HTMLVideoElement): Promise<void> {
 }
 
 async function onEnterPip(): Promise<void> {
+  if (pipOff()) return
   if (!playingVideo()) {
     // Video plays inside an embed from another site: float a full copy of that player.
     if (window === window.top) await enterEmbeddedPlayerPip()
@@ -149,7 +154,7 @@ function register(): void {
   try {
     navigator.mediaSession.setActionHandler(
       'enterpictureinpicture' as MediaSessionAction,
-      () => void onEnterPip(),
+      pipOff() ? null : () => void onEnterPip(),
     )
   } catch {
     /* unsupported */
@@ -196,6 +201,7 @@ function installFrameButton(): void {
   const btn = document.createElement('button')
   btn.type = 'button'
   btn.setAttribute('aria-label', 'Picture-in-Picture')
+  btn.setAttribute('data-tbx-pip-btn', '')
   btn.title = 'Picture-in-Picture'
   btn.style.cssText =
     'all:initial;position:fixed;z-index:2147483647;width:36px;height:36px;display:none;' +
@@ -205,7 +211,7 @@ function installFrameButton(): void {
 
   let hideTimer = 0
   const show = () => {
-    const v = bestVideo()
+    const v = pipOff() ? null : bestVideo()
     if (!v) {
       btn.style.display = 'none'
       return
@@ -227,6 +233,7 @@ function installFrameButton(): void {
       void document.exitPictureInPicture()
       return
     }
+    if (pipOff()) return
     const v = bestVideo()
     if (!v) return
     // The click's activation also reaches the top page, which can open a full-player window
@@ -313,6 +320,10 @@ function installTopBridge(): void {
     const data = event.data as { __tbxPip?: string } | null
     if (data?.__tbxPip !== 'open-embedded' || !event.source) return
     const source = event.source as Window
+    if (pipOff()) {
+      source.postMessage({ __tbxPip: 'embedded-result', ok: true }, '*')
+      return
+    }
     void enterEmbeddedPlayerPip().then((result) => {
       source.postMessage({ __tbxPip: 'embedded-result', ok: result === 'entered' }, '*')
     })

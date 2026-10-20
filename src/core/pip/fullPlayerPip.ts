@@ -248,8 +248,13 @@ export async function enterFullPlayerPip(): Promise<FullPlayerPipResult> {
     // Closed from the floating window while the tab is in the background: stop playback
     // (same as Chrome's own PiP). Returning to the tab keeps it playing.
     // Real visibility: the auto-PiP script may report 'visible' to the page while in PiP.
+    // Closed because the feature was switched off: keep playing in the page.
     const realVisibility = Object.getOwnPropertyDescriptor(Document.prototype, 'visibilityState')?.get?.call(document)
-    if (realVisibility === 'hidden') video.pause()
+    if ((window as unknown as { __tbxPipResume?: boolean }).__tbxPipResume) {
+      window.setTimeout(() => void video.play().catch(() => undefined), 0)
+    } else if (realVisibility === 'hidden') {
+      video.pause()
+    }
     nudge()
   })
   return 'entered'
@@ -347,8 +352,9 @@ export async function enterEmbeddedPlayerPip(): Promise<FullPlayerPipResult> {
   pip.addEventListener('pagehide', () => {
     pip.removeEventListener('message', onTime)
     const realVisibility = Object.getOwnPropertyDescriptor(Document.prototype, 'visibilityState')?.get?.call(document)
+    const resume = (window as unknown as { __tbxPipResume?: boolean }).__tbxPipResume === true
     original.contentWindow?.postMessage(
-      { __tbxPip: 'seek', t: lastT, play: realVisibility === 'visible' },
+      { __tbxPip: 'seek', t: lastT, play: resume || realVisibility === 'visible' },
       '*',
     )
   })
