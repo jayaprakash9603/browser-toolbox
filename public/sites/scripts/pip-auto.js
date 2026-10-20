@@ -137,6 +137,69 @@
   }
 
   register()
+  // Embedded players (Dailymotion, Vimeo, news sites, ...) live in cross-origin iframes where
+  // the keyboard shortcut cannot grant the user gesture PiP needs. Show a small button over the
+  // video inside the frame so the click itself is the gesture.
+  function installFrameButton() {
+    if (window === window.top || !document.pictureInPictureEnabled) return
+
+    function bestVideo() {
+      const videos = []
+      collectVideos(document, videos)
+      let best = null
+      let bestArea = 0
+      for (const v of videos) {
+        if (v.readyState === 0) continue
+        const r = v.getBoundingClientRect()
+        const area = r.width * r.height
+        if (r.width >= 160 && r.height >= 90 && area > bestArea) { bestArea = area; best = v }
+      }
+      return best
+    }
+
+    const btn = document.createElement('button')
+    btn.type = 'button'
+    btn.setAttribute('aria-label', 'Picture-in-Picture')
+    btn.title = 'Picture-in-Picture'
+    btn.style.cssText =
+      'all:initial;position:fixed;z-index:2147483647;width:36px;height:36px;display:none;' +
+      'align-items:center;justify-content:center;cursor:pointer;border-radius:8px;' +
+      'background:rgba(20,20,20,.72);color:#fff;box-shadow:0 1px 6px rgba(0,0,0,.4);'
+    btn.innerHTML =
+      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="14" rx="2"/>' +
+      '<rect x="12" y="10" width="8" height="6" rx="1" fill="currentColor"/></svg>'
+
+    let hideTimer = 0
+    function show() {
+      const v = bestVideo()
+      if (!v) { btn.style.display = 'none'; return }
+      const r = v.getBoundingClientRect()
+      btn.style.left = Math.max(8, r.left + 8) + 'px'
+      btn.style.top = Math.max(8, r.top + 8) + 'px'
+      btn.style.display = 'flex'
+      clearTimeout(hideTimer)
+      hideTimer = setTimeout(function () { btn.style.display = 'none' }, 2800)
+    }
+
+    btn.addEventListener('click', function (e) {
+      e.preventDefault()
+      e.stopPropagation()
+      const v = bestVideo()
+      if (!v) return
+      if (document.pictureInPictureElement) { void document.exitPictureInPicture(); return }
+      v.removeAttribute('disablePictureInPicture')
+      v.disablePictureInPicture = false
+      v.requestPictureInPicture().catch(function () { /* blocked by page */ })
+    })
+    btn.addEventListener('mouseenter', function () { clearTimeout(hideTimer) })
+    btn.addEventListener('mouseleave', show)
+
+    document.addEventListener('mousemove', show, { passive: true, capture: true })
+    document.documentElement.appendChild(btn)
+  }
+  installFrameButton()
+
   // Sites such as YouTube replace media-session handlers; keep ours registered.
   document.addEventListener('playing', register, true)
   setInterval(register, 4000)
