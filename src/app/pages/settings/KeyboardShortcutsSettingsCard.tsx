@@ -14,12 +14,9 @@ export function KeyboardShortcutsSettingsCard() {
 
   return (
     <>
-      <h2 className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-        {t('settings.keyboardShortcutsSection')}
-      </h2>
       <Link
         to="/settings/keyboard-shortcuts"
-        className="group mb-4 block rounded-xl border bg-card outline-none transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring"
+        className="group block outline-none transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
         data-search-id="keyboardShortcuts"
       >
         <div className="flex items-center gap-3 p-3.5">

@@ -1,3 +1,14 @@
+import {
+  BrushIcon,
+  ClipboardIcon,
+  CpuIcon,
+  GlobeIcon,
+  KeyboardIcon,
+  ShieldCheckIcon,
+  ShieldIcon,
+  Trash2Icon,
+  type LucideIcon,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -19,7 +30,6 @@ import type { PaletteId } from '@/shared/lib/theme/palettes'
 import { AppLoadingSkeleton } from '@/shared/components/AppLoadingSkeleton'
 import { Button } from '@/shared/components/ui/button'
 import { NumberField, parseNumberInRange } from '@/shared/components/NumberField'
-import { Separator } from '@/shared/components/ui/separator'
 import { Switch } from '@/shared/components/ui/switch'
 import {
   Select,
@@ -34,6 +44,7 @@ import { KeyboardShortcutsSettingsCard } from '@/app/pages/settings/KeyboardShor
 import { PipSettingsSection } from '@/app/pages/settings/PipSettingsSection'
 import { SaveImageAsSettingsSection } from '@/app/pages/settings/SaveImageAsSettingsSection'
 import { SitesSettingsSection } from '@/app/pages/settings/SitesSettingsSection'
+import { SettingsGroup, SettingsRow } from '@/app/pages/settings/ui'
 import { useFocusTarget } from '@/shared/hooks/useFocusTarget'
 
 export default function SettingsPage() {
@@ -52,121 +63,185 @@ export default function SettingsPage() {
     setSettings(await updateSettings(patch))
   }
 
+  const sections: { id: string; icon: LucideIcon; label: string }[] = [
+    { id: 'appearance', icon: BrushIcon, label: t('settings.groupAppearance') },
+    { id: 'adblock', icon: ShieldCheckIcon, label: t('settings.adblockSection') },
+    { id: 'protection', icon: ShieldIcon, label: t('settings.protectionSection') },
+    { id: 'sites', icon: GlobeIcon, label: t('settings.groupSites') },
+    { id: 'features', icon: KeyboardIcon, label: t('settings.groupFeatures') },
+    { id: 'clipboard', icon: ClipboardIcon, label: t('settings.clipboard') },
+    { id: 'data', icon: Trash2Icon, label: t('settings.data') },
+  ]
+
+  const jump = (id: string) =>
+    document.getElementById(id)?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+
   return (
-    <div className="h-full overflow-y-auto p-4">
-      <div className="mb-3"><BackButton /></div>
-      <h1 className="mb-1 text-sm font-semibold">{t('settings.title')}</h1>
-      <p className="mb-4 text-xs text-muted-foreground">{t('settings.description')}</p>
-
-      <SettingRow searchId="theme" label={t('settings.theme')} description={t('settings.themeDescription')}>
-        <Select
-          value={settings.theme}
-          onValueChange={(value) => void update({ theme: value as ThemeMode })}
+    <div className="h-full overflow-y-auto">
+      <div className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+        <div className="flex items-center gap-2 px-4 pt-3">
+          <BackButton />
+          <div className="min-w-0">
+            <h1 className="text-base leading-tight font-semibold">{t('settings.title')}</h1>
+            <p className="truncate text-xs text-muted-foreground">{t('settings.description')}</p>
+          </div>
+        </div>
+        <nav
+          aria-label={t('settings.jumpTo')}
+          className="flex gap-1.5 overflow-x-auto px-4 py-2.5 [scrollbar-width:none]"
         >
-          <SelectTrigger className="w-[9.5rem]" aria-label={t('settings.theme')}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="light">{t('settings.light')}</SelectItem>
-            <SelectItem value="dark">{t('settings.dark')}</SelectItem>
-            <SelectItem value="system">{t('settings.system')}</SelectItem>
-          </SelectContent>
-        </Select>
-      </SettingRow>
-
-      <SettingRow searchId="density" label={t('settings.density')} description={t('settings.densityDescription')}>
-        <Select
-          value={settings.density}
-          onValueChange={(value) => void update({ density: value as Density })}
-        >
-          <SelectTrigger className="w-[9.5rem]" aria-label={t('settings.density')}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="compact">{t('settings.compact')}</SelectItem>
-            <SelectItem value="comfortable">{t('settings.comfortable')}</SelectItem>
-          </SelectContent>
-        </Select>
-      </SettingRow>
-
-      <div className="mb-4 @container" data-search-id="palette">
-        <p className="mb-1 text-xs font-medium">{t('settings.palette')}</p>
-        <p className="mb-2 text-[11px] text-muted-foreground">{t('settings.paletteDescription')}</p>
-        <PalettePicker
-          value={settings.palette}
-          onChange={(palette) => void update({ palette: palette as PaletteId })}
-        />
+          {sections.map(({ id, icon: Icon, label }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => jump(id)}
+              className="inline-flex min-h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border bg-card px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              <Icon className="size-3.5" aria-hidden />
+              {label}
+            </button>
+          ))}
+        </nav>
       </div>
 
-      <Separator className="my-4" />
-      <h2 className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-        {t('settings.adblockSection')}
-      </h2>
-      <p className="mb-3 text-[11px] text-muted-foreground">{t('settings.adblockSectionDescription')}</p>
-      <AdblockSettingsSection />
+      <div className="flex flex-col gap-6 p-4 pb-8">
+        <SettingsGroup
+          id="appearance"
+          icon={BrushIcon}
+          title={t('settings.groupAppearance')}
+          description={t('settings.groupAppearanceDescription')}
+        >
+          <SettingsRow searchId="theme" label={t('settings.theme')} description={t('settings.themeDescription')}>
+            <Select
+              value={settings.theme}
+              onValueChange={(value) => void update({ theme: value as ThemeMode })}
+            >
+              <SelectTrigger className="w-[9.5rem]" aria-label={t('settings.theme')}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="light">{t('settings.light')}</SelectItem>
+                <SelectItem value="dark">{t('settings.dark')}</SelectItem>
+                <SelectItem value="system">{t('settings.system')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </SettingsRow>
 
-      <Separator className="my-4" />
-      <h2 className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-        {t('settings.protectionSection')}
-      </h2>
-      <p className="mb-3 text-[11px] text-muted-foreground">{t('settings.protectionSectionDescription')}</p>
-      <ProtectionSettingsSection />
-      <Separator className="my-4" />
-      <SitesSettingsSection />
+          <SettingsRow searchId="density" label={t('settings.density')} description={t('settings.densityDescription')}>
+            <Select
+              value={settings.density}
+              onValueChange={(value) => void update({ density: value as Density })}
+            >
+              <SelectTrigger className="w-[9.5rem]" aria-label={t('settings.density')}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="compact">{t('settings.compact')}</SelectItem>
+                <SelectItem value="comfortable">{t('settings.comfortable')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </SettingsRow>
 
-      <Separator className="my-4" />
-      <KeyboardShortcutsSettingsCard />
-      <Separator className="my-4" />
-      <SaveImageAsSettingsSection />
-      <PipSettingsSection />
+          <SettingsRow
+            searchId="palette"
+            stacked
+            label={t('settings.palette')}
+            description={t('settings.paletteDescription')}
+          >
+            <div className="@container">
+              <PalettePicker
+                value={settings.palette}
+                onChange={(palette) => void update({ palette: palette as PaletteId })}
+              />
+            </div>
+          </SettingsRow>
+        </SettingsGroup>
 
-      <Separator className="my-4" />
-      <h2 className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-        {t('settings.clipboard')}
-      </h2>
-      <p className="mb-3 rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-[11px] text-amber-700 dark:text-amber-400">
-        {t('settings.clipboardPrivacy')}
-      </p>
+        <SettingsGroup
+          id="adblock"
+          icon={ShieldCheckIcon}
+          title={t('settings.adblockSection')}
+          description={t('settings.adblockSectionDescription')}
+        >
+          <AdblockSettingsSection />
+        </SettingsGroup>
 
-      <SettingRow
-        searchId="clipboardHistory"
-        label={t('settings.clipboardHistory')}
-        description={t('settings.clipboardHistoryDescription')}
-      >
-        <Switch
-          checked={settings.clipboardHistoryEnabled}
-          onCheckedChange={(checked) => void update({ clipboardHistoryEnabled: checked })}
-          aria-label={t('settings.enableClipboardHistory')}
-        />
-      </SettingRow>
+        <SettingsGroup
+          id="protection"
+          icon={ShieldIcon}
+          title={t('settings.protectionSection')}
+          description={t('settings.protectionSectionDescription')}
+        >
+          <ProtectionSettingsSection />
+        </SettingsGroup>
 
-      <SettingRow
-        searchId="historySize"
-        label={t('settings.historySize')}
-        description={t('settings.historySizeDescription')}
-      >
-        <HistorySizeField
-          saved={settings.clipboardHistoryLimit}
-          label={t('settings.clipboardHistorySize')}
-          onCommit={(value) => void update({ clipboardHistoryLimit: value })}
-        />
-      </SettingRow>
+        <SettingsGroup
+          id="sites"
+          icon={GlobeIcon}
+          title={t('settings.groupSites')}
+          description={t('settings.groupSitesDescription')}
+        >
+          <SitesSettingsSection />
+        </SettingsGroup>
 
-      <Separator className="my-4" />
-      <h2 className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-        {t('settings.data')}
-      </h2>
+        <SettingsGroup
+          id="features"
+          icon={CpuIcon}
+          title={t('settings.groupFeatures')}
+          description={t('settings.groupFeaturesDescription')}
+        >
+          <KeyboardShortcutsSettingsCard />
+          <SaveImageAsSettingsSection />
+          <PipSettingsSection />
+        </SettingsGroup>
 
-      <div className="flex flex-col gap-2">
-        <Button variant="outline" size="sm" data-search-id="clearClipboard" onClick={() => setConfirm('clipboard')}>
-          {t('settings.clearClipboardHistory')}
-        </Button>
-        <Button variant="outline" size="sm" data-search-id="clearRecent" onClick={() => setConfirm('recent')}>
-          {t('settings.clearRecentTools')}
-        </Button>
-        <Button variant="destructive" size="sm" data-search-id="resetAll" onClick={() => setConfirm('reset')}>
-          {t('settings.resetAll')}
-        </Button>
+        <SettingsGroup id="clipboard" icon={ClipboardIcon} title={t('settings.clipboard')}>
+          <p className="bg-amber-500/10 px-4 py-2.5 text-xs leading-snug text-amber-800 dark:text-amber-300">
+            {t('settings.clipboardPrivacy')}
+          </p>
+          <SettingsRow
+            searchId="clipboardHistory"
+            label={t('settings.clipboardHistory')}
+            description={t('settings.clipboardHistoryDescription')}
+          >
+            <Switch
+              checked={settings.clipboardHistoryEnabled}
+              onCheckedChange={(checked) => void update({ clipboardHistoryEnabled: checked })}
+              aria-label={t('settings.enableClipboardHistory')}
+            />
+          </SettingsRow>
+          <SettingsRow
+            searchId="historySize"
+            label={t('settings.historySize')}
+            description={t('settings.historySizeDescription')}
+          >
+            <HistorySizeField
+              saved={settings.clipboardHistoryLimit}
+              label={t('settings.clipboardHistorySize')}
+              onCommit={(value) => void update({ clipboardHistoryLimit: value })}
+            />
+          </SettingsRow>
+        </SettingsGroup>
+
+        <SettingsGroup
+          id="data"
+          icon={Trash2Icon}
+          tone="danger"
+          title={t('settings.data')}
+          description={t('settings.groupDataDescription')}
+        >
+          <div className="flex flex-col gap-2 p-3">
+            <Button variant="outline" size="sm" data-search-id="clearClipboard" onClick={() => setConfirm('clipboard')}>
+              {t('settings.clearClipboardHistory')}
+            </Button>
+            <Button variant="outline" size="sm" data-search-id="clearRecent" onClick={() => setConfirm('recent')}>
+              {t('settings.clearRecentTools')}
+            </Button>
+            <Button variant="destructive" size="sm" data-search-id="resetAll" onClick={() => setConfirm('reset')}>
+              {t('settings.resetAll')}
+            </Button>
+          </div>
+        </SettingsGroup>
       </div>
 
       <ConfirmDialog
@@ -203,7 +278,6 @@ export default function SettingsPage() {
     </div>
   )
 }
-
 function HistorySizeField({
   saved,
   label,
@@ -232,27 +306,5 @@ function HistorySizeField({
         if (parsed !== null) onCommit(parsed)
       }}
     />
-  )
-}
-
-function SettingRow({
-  searchId,
-  label,
-  description,
-  children,
-}: {
-  searchId?: string
-  label: string
-  description?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="mb-3 flex items-center justify-between gap-4" data-search-id={searchId}>
-      <div className="min-w-0">
-        <p className="text-xs font-medium">{label}</p>
-        {description && <p className="text-[11px] text-muted-foreground">{description}</p>}
-      </div>
-      <div className="shrink-0">{children}</div>
-    </div>
   )
 }

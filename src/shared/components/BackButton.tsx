@@ -16,7 +16,7 @@ export function BackButton({ to = '/', className }: { to?: string; className?: s
           size="icon"
           variant="ghost"
           className={cn(
-            'group shrink-0 rounded-full border border-border bg-background text-muted-foreground transition-[background-color,border-color,color,transform] duration-200 hover:border-primary hover:bg-primary hover:text-primary-foreground active:scale-95',
+            'group size-8 shrink-0 rounded-full border border-border bg-background text-muted-foreground transition-[background-color,border-color,color,transform] duration-200 hover:border-primary hover:bg-primary hover:text-primary-foreground active:scale-95',
             className,
           )}
         >

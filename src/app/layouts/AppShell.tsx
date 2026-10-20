@@ -91,14 +91,14 @@ export function AppShell({ children }: { children?: ReactNode }) {
   return (
     <div className="flex h-full flex-col overflow-x-clip bg-background">
       <header
-        className="sticky top-0 z-30 flex h-[52px] shrink-0 items-center gap-2 border-b bg-background/85 px-3 backdrop-blur-md"
+        className="sticky top-0 z-30 flex h-11 shrink-0 items-center gap-1.5 border-b bg-background/85 px-2.5 backdrop-blur-md @[360px]:gap-2 @[360px]:px-3"
       >
         <Link
           to="/"
           className="flex min-w-0 items-center gap-2 rounded-md pr-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <BrandLogo size={30} />
-          <span className="truncate text-sm font-semibold tracking-tight">{t('home.title')}</span>
+          <BrandLogo size={26} />
+          <span className="truncate text-[13px] font-semibold tracking-tight">{t('home.title')}</span>
         </Link>
         <div className="flex-1" />
         <Tooltip>

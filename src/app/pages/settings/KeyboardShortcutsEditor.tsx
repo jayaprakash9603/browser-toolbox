@@ -37,13 +37,13 @@ export function KeyboardShortcutsEditor({ showHeader = true }: KeyboardShortcuts
     const Icon = icon
     return (
       <section className="overflow-hidden rounded-xl border bg-card">
-        <div className="flex items-start gap-3 border-b bg-muted/30 px-4 py-3">
-          <div className="mt-0.5 rounded-md border bg-background p-1.5 text-muted-foreground">
-            <Icon className="size-4" aria-hidden />
+        <div className="flex items-center gap-2.5 border-b bg-muted/25 px-3 py-2">
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-md border bg-background text-muted-foreground">
+            <Icon className="size-3.5" aria-hidden />
           </div>
-          <div>
-            <h2 className="text-sm font-medium">{title}</h2>
-            <p className="text-xs text-muted-foreground">{description}</p>
+          <div className="min-w-0">
+            <h2 className="text-xs font-semibold leading-tight">{title}</h2>
+            <p className="text-[11px] leading-snug text-muted-foreground">{description}</p>
           </div>
         </div>
         <ul className="divide-y">
@@ -55,7 +55,7 @@ export function KeyboardShortcutsEditor({ showHeader = true }: KeyboardShortcuts
             return (
               <li
                 key={id}
-                className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-1.5 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between"
                 data-search-id={`shortcut-${id}`}
               >
                 <div className="min-w-0 flex-1">
@@ -102,11 +102,13 @@ export function KeyboardShortcutsEditor({ showHeader = true }: KeyboardShortcuts
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {showHeader && (
         <header data-search-id="keyboardShortcuts">
-          <h1 className="text-sm font-semibold">{t('shortcuts.settingsTitle')}</h1>
-          <p className="mt-1 text-xs text-muted-foreground">{t('shortcuts.settingsDescription')}</p>
+          <h1 className="text-sm font-semibold leading-tight">{t('shortcuts.settingsTitle')}</h1>
+          <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
+            {t('shortcuts.settingsDescription')}
+          </p>
         </header>
       )}
       {renderGroup(
