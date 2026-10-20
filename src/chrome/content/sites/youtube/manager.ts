@@ -1,6 +1,9 @@
 import {
   CSS_FEATURE_IDS,
   featureAttrName,
+  getProgressTheme,
+  isAllowedScrubberImageUrl,
+  isProgressCustomizationActive,
   themeCssVars,
   type YoutubeEnhancerState,
 } from '@/core/sites/youtube'
@@ -9,6 +12,9 @@ import { onYoutubeNavigate, startScriptFeatures, stopScriptFeatures } from './fe
 
 const STYLE_LINK_ID = 'toolbox-yt-css'
 const ACTIVE_ATTR = 'data-tbx-yt-active'
+const PROGRESS_THEME_ATTR = 'data-tbx-yt-progress-theme'
+const PROGRESS_ANIM_ATTR = 'data-tbx-yt-progress-animated'
+const PROGRESS_EFFECT_ATTR = 'data-tbx-yt-progress-effect'
 
 function applyCssFeatures(state: YoutubeEnhancerState): void {
   const root = document.documentElement
@@ -31,24 +37,74 @@ function applyCssFeatures(state: YoutubeEnhancerState): void {
   else root.removeAttribute(featureAttrName('searchThumbSize'))
 }
 
+function clearProgressDom(root: HTMLElement): void {
+  root.removeAttribute(featureAttrName('progressOn'))
+  root.removeAttribute(PROGRESS_THEME_ATTR)
+  root.removeAttribute(PROGRESS_ANIM_ATTR)
+  root.removeAttribute(PROGRESS_EFFECT_ATTR)
+  root.removeAttribute(featureAttrName('scrubberEmoji'))
+  root.removeAttribute(featureAttrName('scrubberImage'))
+  for (const key of [
+    '--tbx-yt-progress-bar',
+    '--tbx-yt-progress-played',
+    '--tbx-yt-progress-height',
+    '--tbx-yt-scrubber-emoji',
+    '--tbx-yt-scrubber-image',
+    '--tbx-yt-scrubber-size',
+  ]) {
+    root.style.removeProperty(key)
+  }
+}
+
 function applyProgressStyle(state: YoutubeEnhancerState): void {
   const root = document.documentElement
-  const theme = String(state.values.progressTheme ?? 'default')
+  if (!isProgressCustomizationActive(state.values)) {
+    clearProgressDom(root)
+    return
+  }
+
+  const themeId = String(state.values.progressTheme ?? 'default')
   const barColor = String(state.values.progressBarColor ?? '#ff0000')
   const playedColor = String(state.values.progressPlayedColor ?? '#cc0000')
   const height = Number(state.values.progressHeight ?? 3)
-  const progressOn =
-    theme !== 'default' || barColor !== '#ff0000' || playedColor !== '#cc0000' || height !== 3
-  if (!progressOn) {
-    root.removeAttribute(featureAttrName('progressOn'))
-    root.style.removeProperty('--tbx-yt-progress-bar')
-    root.style.removeProperty('--tbx-yt-progress-played')
-    root.style.removeProperty('--tbx-yt-progress-height')
-    return
-  }
-  const vars = themeCssVars(theme, barColor, playedColor, height)
+  const theme = getProgressTheme(themeId)
+
+  const vars = themeCssVars(themeId, barColor, playedColor, height)
   for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, v)
   root.setAttribute(featureAttrName('progressOn'), 'true')
+  root.setAttribute(PROGRESS_THEME_ATTR, themeId)
+
+  if (theme?.animated) {
+    root.setAttribute(PROGRESS_ANIM_ATTR, 'true')
+    if (theme.effect) root.setAttribute(PROGRESS_EFFECT_ATTR, theme.effect)
+    else root.removeAttribute(PROGRESS_EFFECT_ATTR)
+  } else {
+    root.removeAttribute(PROGRESS_ANIM_ATTR)
+    root.removeAttribute(PROGRESS_EFFECT_ATTR)
+  }
+
+  const emoji = String(state.values.progressScrubberEmoji ?? '').trim()
+  const imageRaw = String(state.values.progressScrubberImage ?? '').trim()
+  if (emoji) {
+    root.setAttribute(featureAttrName('scrubberEmoji'), 'true')
+    root.style.setProperty('--tbx-yt-scrubber-emoji', `"${emoji.replace(/"/g, '')}"`)
+    root.style.setProperty('--tbx-yt-scrubber-size', '22px')
+    root.removeAttribute(featureAttrName('scrubberImage'))
+    root.style.removeProperty('--tbx-yt-scrubber-image')
+  } else if (imageRaw && isAllowedScrubberImageUrl(imageRaw)) {
+    root.setAttribute(featureAttrName('scrubberImage'), 'true')
+    const safe = imageRaw.replace(/"/g, '\\"')
+    root.style.setProperty('--tbx-yt-scrubber-image', `url("${safe}")`)
+    root.style.setProperty('--tbx-yt-scrubber-size', '28px')
+    root.removeAttribute(featureAttrName('scrubberEmoji'))
+    root.style.removeProperty('--tbx-yt-scrubber-emoji')
+  } else {
+    root.removeAttribute(featureAttrName('scrubberEmoji'))
+    root.removeAttribute(featureAttrName('scrubberImage'))
+    root.style.removeProperty('--tbx-yt-scrubber-emoji')
+    root.style.removeProperty('--tbx-yt-scrubber-image')
+    root.style.setProperty('--tbx-yt-scrubber-size', '14px')
+  }
 }
 
 function ensureCssLink(): void {
@@ -77,13 +133,10 @@ export function stopAll(): void {
   const root = document.documentElement
   root.removeAttribute(ACTIVE_ATTR)
   for (const id of CSS_FEATURE_IDS) root.removeAttribute(featureAttrName(id))
-  root.removeAttribute(featureAttrName('progressOn'))
+  clearProgressDom(root)
   root.removeAttribute(featureAttrName('searchThumbSize'))
   root.removeAttribute(featureAttrName('gridMinPerRow'))
   root.removeAttribute(featureAttrName('shortsMinPerRow'))
-  root.style.removeProperty('--tbx-yt-progress-bar')
-  root.style.removeProperty('--tbx-yt-progress-played')
-  root.style.removeProperty('--tbx-yt-progress-height')
   document.getElementById(STYLE_LINK_ID)?.remove()
   document
     .querySelectorAll<HTMLElement>(

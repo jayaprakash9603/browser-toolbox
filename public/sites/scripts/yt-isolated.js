@@ -506,6 +506,9 @@
 	getExtensionName();
 	//#endregion
 	//#region src/core/sites/youtube/progressThemes.ts
+	var DEFAULT_BAR = "#ff0000";
+	var DEFAULT_PLAYED = "#cc0000";
+	var DEFAULT_HEIGHT = 3;
 	/** Built-in progress bar themes (Custom Progress Bar–style). */
 	var PROGRESS_THEMES = [
 		{
@@ -525,14 +528,16 @@
 			labelKey: "sites.youtube.progress.neon",
 			bar: "#22d3ee",
 			played: "#06b6d4",
-			animated: true
+			animated: true,
+			effect: "glow"
 		},
 		{
 			id: "fire",
 			labelKey: "sites.youtube.progress.fire",
 			bar: "#f97316",
 			played: "#ea580c",
-			animated: true
+			animated: true,
+			effect: "shimmer"
 		},
 		{
 			id: "gold",
@@ -568,15 +573,17 @@
 			id: "rainbow",
 			labelKey: "sites.youtube.progress.rainbow",
 			bar: "linear-gradient(90deg,red,orange,yellow,green,blue,violet)",
-			played: "#888",
-			animated: true
+			played: "linear-gradient(90deg,#f43f5e,#eab308,#22c55e,#3b82f6,#a855f7)",
+			animated: true,
+			effect: "flow"
 		},
 		{
 			id: "candy",
 			labelKey: "sites.youtube.progress.candy",
 			bar: "repeating-linear-gradient(45deg,#f472b6,#f472b6 8px,#fbcfe8 8px,#fbcfe8 16px)",
 			played: "#db2777",
-			animated: true
+			animated: true,
+			effect: "flow"
 		},
 		{
 			id: "pride",
@@ -613,21 +620,24 @@
 			labelKey: "sites.youtube.progress.lava",
 			bar: "#450a0a",
 			played: "#dc2626",
-			animated: true
+			animated: true,
+			effect: "glow"
 		},
 		{
 			id: "matrix",
 			labelKey: "sites.youtube.progress.matrix",
 			bar: "#22c55e",
 			played: "#14532d",
-			animated: true
+			animated: true,
+			effect: "matrix"
 		},
 		{
 			id: "cyber",
 			labelKey: "sites.youtube.progress.cyber",
 			bar: "#f0abfc",
 			played: "#c026d3",
-			animated: true
+			animated: true,
+			effect: "glow"
 		},
 		{
 			id: "mono",
@@ -636,18 +646,35 @@
 			played: "#a3a3a3"
 		}
 	];
+	function getProgressTheme(themeId) {
+		return PROGRESS_THEMES.find((t) => t.id === themeId);
+	}
+	function isProgressCustomizationActive(values) {
+		const theme = String(values.progressTheme ?? "default");
+		const barColor = String(values.progressBarColor ?? DEFAULT_BAR);
+		const playedColor = String(values.progressPlayedColor ?? DEFAULT_PLAYED);
+		const height = Number(values.progressHeight ?? DEFAULT_HEIGHT);
+		const emoji = String(values.progressScrubberEmoji ?? "").trim();
+		const image = String(values.progressScrubberImage ?? "").trim();
+		return theme !== "default" || barColor !== DEFAULT_BAR || playedColor !== DEFAULT_PLAYED || height !== DEFAULT_HEIGHT || emoji.length > 0 || image.length > 0;
+	}
+	function isAllowedScrubberImageUrl(url) {
+		const t = url.trim();
+		if (!t) return false;
+		return /^https:\/\//i.test(t) || /^data:image\//i.test(t);
+	}
 	function themeCssVars(themeId, customBar, customPlayed, height) {
-		const theme = PROGRESS_THEMES.find((t) => t.id === themeId);
-		let bar = theme?.bar ?? "#ff0000";
-		let played = theme?.played ?? "#cc0000";
-		if (themeId === "custom" || !theme) {
+		const theme = getProgressTheme(themeId);
+		let bar = theme?.bar ?? DEFAULT_BAR;
+		let played = theme?.played ?? DEFAULT_PLAYED;
+		if (themeId === "custom" || themeId === "default" || !theme) {
 			if (customBar) bar = customBar;
 			if (customPlayed) played = customPlayed;
 		}
 		return {
 			"--tbx-yt-progress-bar": bar,
 			"--tbx-yt-progress-played": played,
-			"--tbx-yt-progress-height": `${height ?? 3}px`
+			"--tbx-yt-progress-height": `${height ?? DEFAULT_HEIGHT}px`
 		};
 	}
 	//#endregion
@@ -906,6 +933,9 @@
 	//#region src/chrome/content/sites/youtube/manager.ts
 	var STYLE_LINK_ID = "toolbox-yt-css";
 	var ACTIVE_ATTR = "data-tbx-yt-active";
+	var PROGRESS_THEME_ATTR = "data-tbx-yt-progress-theme";
+	var PROGRESS_ANIM_ATTR = "data-tbx-yt-progress-animated";
+	var PROGRESS_EFFECT_ATTR = "data-tbx-yt-progress-effect";
 	function applyCssFeatures(state) {
 		const root = document.documentElement;
 		root.setAttribute(ACTIVE_ATTR, "true");
@@ -924,22 +954,67 @@
 		if (thumb !== "default") root.setAttribute(featureAttrName("searchThumbSize"), thumb);
 		else root.removeAttribute(featureAttrName("searchThumbSize"));
 	}
+	function clearProgressDom(root) {
+		root.removeAttribute(featureAttrName("progressOn"));
+		root.removeAttribute(PROGRESS_THEME_ATTR);
+		root.removeAttribute(PROGRESS_ANIM_ATTR);
+		root.removeAttribute(PROGRESS_EFFECT_ATTR);
+		root.removeAttribute(featureAttrName("scrubberEmoji"));
+		root.removeAttribute(featureAttrName("scrubberImage"));
+		for (const key of [
+			"--tbx-yt-progress-bar",
+			"--tbx-yt-progress-played",
+			"--tbx-yt-progress-height",
+			"--tbx-yt-scrubber-emoji",
+			"--tbx-yt-scrubber-image",
+			"--tbx-yt-scrubber-size"
+		]) root.style.removeProperty(key);
+	}
 	function applyProgressStyle(state) {
 		const root = document.documentElement;
-		const theme = String(state.values.progressTheme ?? "default");
+		if (!isProgressCustomizationActive(state.values)) {
+			clearProgressDom(root);
+			return;
+		}
+		const themeId = String(state.values.progressTheme ?? "default");
 		const barColor = String(state.values.progressBarColor ?? "#ff0000");
 		const playedColor = String(state.values.progressPlayedColor ?? "#cc0000");
 		const height = Number(state.values.progressHeight ?? 3);
-		if (!(theme !== "default" || barColor !== "#ff0000" || playedColor !== "#cc0000" || height !== 3)) {
-			root.removeAttribute(featureAttrName("progressOn"));
-			root.style.removeProperty("--tbx-yt-progress-bar");
-			root.style.removeProperty("--tbx-yt-progress-played");
-			root.style.removeProperty("--tbx-yt-progress-height");
-			return;
-		}
-		const vars = themeCssVars(theme, barColor, playedColor, height);
+		const theme = getProgressTheme(themeId);
+		const vars = themeCssVars(themeId, barColor, playedColor, height);
 		for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, v);
 		root.setAttribute(featureAttrName("progressOn"), "true");
+		root.setAttribute(PROGRESS_THEME_ATTR, themeId);
+		if (theme?.animated) {
+			root.setAttribute(PROGRESS_ANIM_ATTR, "true");
+			if (theme.effect) root.setAttribute(PROGRESS_EFFECT_ATTR, theme.effect);
+			else root.removeAttribute(PROGRESS_EFFECT_ATTR);
+		} else {
+			root.removeAttribute(PROGRESS_ANIM_ATTR);
+			root.removeAttribute(PROGRESS_EFFECT_ATTR);
+		}
+		const emoji = String(state.values.progressScrubberEmoji ?? "").trim();
+		const imageRaw = String(state.values.progressScrubberImage ?? "").trim();
+		if (emoji) {
+			root.setAttribute(featureAttrName("scrubberEmoji"), "true");
+			root.style.setProperty("--tbx-yt-scrubber-emoji", `"${emoji.replace(/"/g, "")}"`);
+			root.style.setProperty("--tbx-yt-scrubber-size", "22px");
+			root.removeAttribute(featureAttrName("scrubberImage"));
+			root.style.removeProperty("--tbx-yt-scrubber-image");
+		} else if (imageRaw && isAllowedScrubberImageUrl(imageRaw)) {
+			root.setAttribute(featureAttrName("scrubberImage"), "true");
+			const safe = imageRaw.replace(/"/g, "\\\"");
+			root.style.setProperty("--tbx-yt-scrubber-image", `url("${safe}")`);
+			root.style.setProperty("--tbx-yt-scrubber-size", "28px");
+			root.removeAttribute(featureAttrName("scrubberEmoji"));
+			root.style.removeProperty("--tbx-yt-scrubber-emoji");
+		} else {
+			root.removeAttribute(featureAttrName("scrubberEmoji"));
+			root.removeAttribute(featureAttrName("scrubberImage"));
+			root.style.removeProperty("--tbx-yt-scrubber-emoji");
+			root.style.removeProperty("--tbx-yt-scrubber-image");
+			root.style.setProperty("--tbx-yt-scrubber-size", "14px");
+		}
 	}
 	function ensureCssLink() {
 		if (document.getElementById(STYLE_LINK_ID)) return;
@@ -970,13 +1045,10 @@
 		const root = document.documentElement;
 		root.removeAttribute(ACTIVE_ATTR);
 		for (const id of CSS_FEATURE_IDS) root.removeAttribute(featureAttrName(id));
-		root.removeAttribute(featureAttrName("progressOn"));
+		clearProgressDom(root);
 		root.removeAttribute(featureAttrName("searchThumbSize"));
 		root.removeAttribute(featureAttrName("gridMinPerRow"));
 		root.removeAttribute(featureAttrName("shortsMinPerRow"));
-		root.style.removeProperty("--tbx-yt-progress-bar");
-		root.style.removeProperty("--tbx-yt-progress-played");
-		root.style.removeProperty("--tbx-yt-progress-height");
 		document.getElementById(STYLE_LINK_ID)?.remove();
 		document.querySelectorAll("ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer").forEach((el) => el.style.removeProperty("display"));
 	}

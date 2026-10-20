@@ -17,7 +17,14 @@ export {
   updateYoutubeEnhancerState,
 } from './service'
 export { YOUTUBE_PRESETS, type YoutubePresetId } from './presets'
-export { PROGRESS_THEMES, themeCssVars } from './progressThemes'
+export {
+  PROGRESS_THEMES,
+  getProgressTheme,
+  isAllowedScrubberImageUrl,
+  isProgressCustomizationActive,
+  themeCssVars,
+  type ProgressThemeDef,
+} from './progressThemes'
 export {
   featureAttrName,
   isFeatureOn,

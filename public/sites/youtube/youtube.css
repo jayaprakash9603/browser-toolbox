@@ -214,26 +214,136 @@ html[data-tbx-yt-grid-min-per-row='4'] ytd-rich-grid-renderer {
   --ytd-rich-grid-items-per-row: 4 !important;
 }
 
-/* Progress bar theming only when a non-default theme or custom colors are active */
+/* —— Custom progress bar (themes, animation, scrubber) —— */
+@keyframes tbx-yt-shimmer {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.45);
+  }
+}
+
+@keyframes tbx-yt-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 4px color-mix(in srgb, var(--tbx-yt-progress-played, #cc0000) 60%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 14px color-mix(in srgb, var(--tbx-yt-progress-played, #cc0000) 90%, transparent);
+  }
+}
+
+@keyframes tbx-yt-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+@keyframes tbx-yt-matrix-scan {
+  0% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+    filter: hue-rotate(15deg);
+  }
+  100% {
+    opacity: 0.85;
+  }
+}
+
+html[data-tbx-yt-progress-on] .ytp-progress-bar-container {
+  overflow: visible !important;
+}
+
 html[data-tbx-yt-progress-on] .ytp-progress-bar-container,
 html[data-tbx-yt-progress-on] .ytp-progress-bar {
   height: var(--tbx-yt-progress-height, 3px) !important;
-}
-
-html[data-tbx-yt-progress-on] .ytp-play-progress {
-  background: var(--tbx-yt-progress-played, #cc0000) !important;
+  border-radius: 999px !important;
 }
 
 html[data-tbx-yt-progress-on] .ytp-progress-bar {
   background: var(--tbx-yt-progress-bar, #ff0000) !important;
+  background-size: 200% 100% !important;
+}
+
+html[data-tbx-yt-progress-on] .ytp-play-progress {
+  background: var(--tbx-yt-progress-played, #cc0000) !important;
+  background-size: 200% 100% !important;
+  border-radius: 999px !important;
+}
+
+html[data-tbx-yt-progress-on][data-tbx-yt-progress-effect='flow'] .ytp-progress-bar,
+html[data-tbx-yt-progress-on][data-tbx-yt-progress-effect='flow'] .ytp-play-progress {
+  animation: tbx-yt-flow 4s linear infinite !important;
+}
+
+html[data-tbx-yt-progress-on][data-tbx-yt-progress-effect='shimmer'] .ytp-play-progress {
+  animation: tbx-yt-shimmer 1.8s ease-in-out infinite !important;
+}
+
+html[data-tbx-yt-progress-on][data-tbx-yt-progress-effect='glow'] .ytp-play-progress {
+  animation: tbx-yt-glow 2.2s ease-in-out infinite !important;
+}
+
+html[data-tbx-yt-progress-on][data-tbx-yt-progress-effect='matrix'] .ytp-play-progress {
+  animation: tbx-yt-matrix-scan 1.2s steps(3, end) infinite !important;
+}
+
+html[data-tbx-yt-progress-on][data-tbx-yt-progress-animated]:not([data-tbx-yt-progress-effect]) .ytp-play-progress {
+  animation: tbx-yt-shimmer 2s ease-in-out infinite !important;
+}
+
+html[data-tbx-yt-progress-on] .ytp-scrubber-container {
+  overflow: visible !important;
 }
 
 html[data-tbx-yt-progress-on] .ytp-scrubber-button {
-  transform: scale(1.2);
+  transform: scale(1.15);
+  overflow: visible !important;
+}
+
+html[data-tbx-yt-scrubber-emoji] .ytp-scrubber-button .ytp-scrubber-pull,
+html[data-tbx-yt-scrubber-image] .ytp-scrubber-button .ytp-scrubber-pull {
+  opacity: 0 !important;
+}
+
+html[data-tbx-yt-scrubber-emoji] .ytp-scrubber-button::after,
+html[data-tbx-yt-scrubber-image] .ytp-scrubber-button::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -58%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+html[data-tbx-yt-scrubber-emoji] .ytp-scrubber-button::after {
+  content: var(--tbx-yt-scrubber-emoji);
+  font-size: var(--tbx-yt-scrubber-size, 22px);
+  line-height: 1;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.55));
+}
+
+html[data-tbx-yt-scrubber-image] .ytp-scrubber-button::after {
+  width: var(--tbx-yt-scrubber-size, 28px);
+  height: var(--tbx-yt-scrubber-size, 28px);
+  background-image: var(--tbx-yt-scrubber-image);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.45));
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html[data-tbx-yt-progress-on] .ytp-play-progress {
+  html[data-tbx-yt-progress-on] .ytp-play-progress,
+  html[data-tbx-yt-progress-on] .ytp-progress-bar {
     animation: none !important;
   }
 }
