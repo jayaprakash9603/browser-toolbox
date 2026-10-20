@@ -7,9 +7,16 @@ registerModules()
 import { TOOL_SEARCH_ENTRIES } from '@/features/search/allToolSearchEntries'
 import { JSON_TABS } from '@/tools/developer/json-toolkit/tabs'
 import { getYoutubeSearchEntries } from '@/core/sites/youtube/searchEntries'
-import { searchAll } from '@/features/search/searchIndex'
+import { getAllSearchItems, searchAll } from '@/features/search/searchIndex'
 
 describe('searchIndex', () => {
+  it('indexes hundreds of tool options including YouTube controls', () => {
+    const items = getAllSearchItems()
+    const options = items.filter((item) => item.kind === 'option')
+    expect(options.length).toBeGreaterThan(150)
+    expect(options.some((item) => item.id === 'sites.youtube:hidePremiumUpsell')).toBe(true)
+  })
+
   it('has unique option entry ids per tool', () => {
     for (const tool of toolRegistry.getAll()) {
       const entries =
@@ -48,8 +55,7 @@ describe('searchIndex', () => {
   it('finds hide premium upsell for youtube premium query', () => {
     const results = searchAll('youtube premium')
     expect(results.some((item) => item.id === 'sites.youtube:hidePremiumUpsell')).toBe(true)
-    const premium = results.find((item) => item.id === 'sites.youtube:hidePremiumUpsell')
-    const toolkit = results.find((item) => item.id === 'sites.youtube')
-    expect(premium && toolkit && results.indexOf(premium) < results.indexOf(toolkit)).toBe(true)
+    expect(results[0]?.kind).toBe('option')
+    expect(results[0]?.id).toBe('sites.youtube:hidePremiumUpsell')
   })
 })

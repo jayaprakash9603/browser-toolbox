@@ -8,9 +8,11 @@ import { toolRegistry } from '@/core/registry'
 import {
   flattenGroupedSearchResults,
   groupSearchResults,
+  invalidateSearchIndex,
   searchAll,
   type SearchItem,
 } from '@/features/search/searchIndex'
+import { registerModules } from '@/modules'
 import { TOOLBOX_FOCUS_HOME_SEARCH } from '@/features/search/searchFocus'
 import { getToolDescription } from '@/i18n/toolLabels'
 import { Button } from '@/shared/components/ui/button'
@@ -24,7 +26,7 @@ interface GlobalSearchProps {
   className?: string
 }
 
-const LIMITS = { options: 10, settings: 5, tools: 8 }
+const LIMITS = { options: 20, settings: 8, tools: 6 }
 
 export function GlobalSearch({ compact = false, className }: GlobalSearchProps) {
   const { t } = useTranslation()
@@ -45,6 +47,11 @@ export function GlobalSearch({ compact = false, className }: GlobalSearchProps) 
   }, [query])
 
   const showResults = open && query.trim().length > 0
+
+  useEffect(() => {
+    registerModules()
+    invalidateSearchIndex()
+  }, [])
 
   useEffect(() => {
     const onFocus = () => {

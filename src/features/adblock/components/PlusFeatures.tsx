@@ -97,7 +97,7 @@ export function PlusFeatures({
             <li
               key={feature.id}
               className="flex items-center gap-3 py-2"
-              data-search-id={feature.id === 'youtube' ? 'plus-youtube' : undefined}
+              data-search-id={feature.id === 'youtube' ? 'plus-youtube' : `plus-${feature.id}`}
             >
               <Icon className="size-4 shrink-0 text-muted-foreground" />
               <div className="min-w-0 flex-1">

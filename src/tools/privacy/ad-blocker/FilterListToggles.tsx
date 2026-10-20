@@ -70,7 +70,11 @@ export function FilterListToggles({
   return (
     <div className="flex flex-col gap-2">
       {VISIBLE_LISTS.map((list) => (
-        <div key={list.id} className="flex items-start justify-between gap-3 rounded-md border p-2">
+        <div
+          key={list.id}
+          data-search-id={`list-${list.id}`}
+          className="flex items-start justify-between gap-3 rounded-md border p-2"
+        >
           <div className="min-w-0">
             <p className="text-xs font-medium">{t(list.labelKey)}</p>
             <p className="text-[11px] text-muted-foreground">{t(list.descKey)}</p>

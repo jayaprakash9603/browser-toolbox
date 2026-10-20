@@ -27,6 +27,17 @@ export interface SearchItem {
 
 let cachedLang: string | null = null
 let cachedItems: SearchItem[] | null = null
+let cachedToolCount = -1
+
+export function getSearchEntriesForTool(tool: ToolDefinition): ToolSearchEntry[] {
+  if (tool.id === 'sites.youtube') return getYoutubeSearchEntries()
+  return tool.searchEntries ?? []
+}
+
+function ensureRegistryReady() {
+  if (toolRegistry.getAll().length > 0) return
+  void import('@/modules').then(({ registerModules }) => registerModules())
+}
 
 function translate(key: string, fallback: string): string {
   return i18n.t(key, { defaultValue: fallback })
@@ -118,8 +129,12 @@ function buildSettingItems(): SearchItem[] {
 }
 
 export function getAllSearchItems(): SearchItem[] {
+  ensureRegistryReady()
   const lang = i18n.language
-  if (cachedLang === lang && cachedItems) return cachedItems
+  const toolCount = toolRegistry.getAll().length
+  if (cachedLang === lang && cachedItems && cachedToolCount === toolCount && toolCount > 0) {
+    return cachedItems
+  }
 
   const t = i18n.t.bind(i18n)
   const items: SearchItem[] = []
@@ -128,24 +143,39 @@ export function getAllSearchItems(): SearchItem[] {
     if ((tool.status ?? 'active') === 'disabled') continue
     items.push(buildToolItem(tool, t))
 
-    const entries =
-      tool.id === 'sites.youtube' ? getYoutubeSearchEntries() : (tool.searchEntries ?? [])
-
-    for (const entry of entries) {
+    for (const entry of getSearchEntriesForTool(tool)) {
       items.push(buildOptionItem(tool, entry, t))
     }
   }
 
   items.push(...buildSettingItems())
 
-  cachedLang = lang
-  cachedItems = items
+  if (toolCount > 0) {
+    cachedLang = lang
+    cachedItems = items
+    cachedToolCount = toolCount
+  }
   return items
 }
 
 export function invalidateSearchIndex() {
   cachedLang = null
   cachedItems = null
+  cachedToolCount = -1
+}
+
+function optionMatchesTokens(
+  haystack: string,
+  toolHaystackText: string,
+  label: string,
+  tokens: string[],
+): boolean {
+  if (tokens.every((token) => haystack.includes(token))) return true
+  if (tokens.length < 2) return false
+  const labelLower = label.toLowerCase()
+  const toolHit = tokens.filter((token) => toolHaystackText.includes(token))
+  const labelHit = tokens.filter((token) => labelLower.includes(token))
+  return toolHit.length > 0 && labelHit.length > 0 && toolHit.length + labelHit.length >= tokens.length
 }
 
 export function searchAll(query: string): SearchItem[] {
@@ -167,17 +197,21 @@ export function searchAll(query: string): SearchItem[] {
         haystack = toolHaystack(tool, t)
         name = item.title
         aliases = [...(tool.aliases ?? []), ...tool.keywords]
+        if (tokens.length > 1 && !tokens.every((token) => haystack.includes(token))) {
+          return { item, score: 0 }
+        }
       } else if (item.kind === 'option' && item.toolId) {
         const tool = toolRegistry.get(item.toolId)
         if (!tool) return { item, score: 0 }
         const entryId = item.id.split(':').slice(1).join(':')
-        const entry =
-          tool.id === 'sites.youtube'
-            ? getYoutubeSearchEntries().find((e) => e.id === entryId)
-            : tool.searchEntries?.find((e) => e.id === entryId)
+        const entry = getSearchEntriesForTool(tool).find((e) => e.id === entryId)
         if (!entry) return { item, score: 0 }
         const optionLabel = translate(entry.labelKey, entry.fallbackLabel)
         haystack = entryHaystack(tool, entry, optionLabel, t)
+        const parentHaystack = toolHaystack(tool, t)
+        if (!optionMatchesTokens(haystack, parentHaystack, optionLabel, tokens)) {
+          return { item, score: 0 }
+        }
         name = optionLabel
         aliases = [...(entry.aliases ?? []), ...(entry.keywords ?? [])]
       } else if (item.kind === 'setting') {
@@ -188,7 +222,15 @@ export function searchAll(query: string): SearchItem[] {
         aliases = entry.aliases ?? []
       }
 
-      let score = scoreMatch(haystack, name, aliases, tokens, q)
+      let scoreHaystack = haystack
+      if (item.kind === 'option') {
+        const label = name.toLowerCase()
+        if (!tokens.every((token) => haystack.includes(token))) {
+          scoreHaystack = `${haystack} ${label}`
+        }
+      }
+
+      let score = scoreMatch(scoreHaystack, name, aliases, tokens, q)
       if (item.kind === 'tool') score += 5
       if (item.kind === 'option') {
         score += 35
@@ -220,11 +262,15 @@ export function groupSearchResults(items: SearchItem[]) {
 
 export function flattenGroupedSearchResults(
   grouped: ReturnType<typeof groupSearchResults>,
-  limits = { options: 10, settings: 5, tools: 8 },
+  limits = { options: 20, settings: 8, tools: 6 },
 ): SearchItem[] {
   return [
     ...grouped.options.slice(0, limits.options),
     ...grouped.settings.slice(0, limits.settings),
     ...grouped.tools.slice(0, limits.tools),
   ]
+}
+
+if (typeof i18n.on === 'function') {
+  i18n.on('languageChanged', () => invalidateSearchIndex())
 }
