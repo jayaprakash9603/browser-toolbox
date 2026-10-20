@@ -14,6 +14,9 @@ The extension requests the minimum set required for the implemented features. Ea
 | `tabs`           | Reads the active tab and supports Tab Manager and Browser Toolkit actions.                                                                                                                                                   |
 | `declarativeNetRequest` | Applies bundled static filter rules to block ad and tracker requests when ad blocking is enabled.                                                                                                                      |
 | `declarativeNetRequestFeedback` | Shows per-tab blocked-request counts on the extension badge and in the Ad Blocker tool.                                                                                                                        |
+| `webRequest` | Observes (does not block) HTTP requests for the HTTP Interceptor network log; rules still use `declarativeNetRequest` and page scripts.                                                                      |
+| Optional `userScripts` | Insert Script rules register page scripts when you enable user scripts in HTTP Interceptor settings.                                                                                                            |
+| Optional `debugger` | Deep intercept attaches with the Fetch domain only when you turn on Deep intercept and attach to a tab (Chrome shows a debugging banner).                                                                      |
 | Optional HTTP(S) hosts | The API Request Builder requests access to the selected hostname only after Send is clicked. The grant covers all ports on that hostname and can be revoked in Chrome settings. |
 
 ## Deliberately NOT requested

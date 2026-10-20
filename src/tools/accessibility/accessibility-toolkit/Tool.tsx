@@ -7,6 +7,7 @@ import { analyzeHeadings, analyzeImages } from '@/core/engines/seo'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Badge } from '@/shared/components/ui/badge'
 import { toolRegistry } from '@/core/registry'
+import { loadPageInfo, pageLoadErrorKey } from '@/tools/seo/pageDataClient'
 import { useAccessibilityTool } from '../_shared'
 import type { PageInfo } from '@/chrome/content/index'
 
@@ -19,24 +20,22 @@ export default function AccessibilityToolkitTool() {
   const { t } = useTranslation()
   const tool = useAccessibilityTool('accessibility.toolkit')
   const [page, setPage] = useState<PageInfo | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
   const contrastTool = toolRegistry.get('design.contrast-checker')
 
   useEffect(() => {
     let live = true
-    const run = async () => {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-      if (tab?.id == null) return null
-      try {
-        const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_PAGE_INFO' })
-        return (response?.data ?? response) as PageInfo
-      } catch {
-        return null
-      }
-    }
-    void run()
-      .then((value) => {
-        if (live) setPage(value)
+    void loadPageInfo()
+      .then((result) => {
+        if (!live) return
+        if (result.ok) {
+          setPage(result.data)
+          setLoadError(null)
+        } else {
+          setPage(null)
+          setLoadError(pageLoadErrorKey(result.code))
+        }
       })
       .finally(() => {
         if (live) setLoaded(true)
@@ -56,7 +55,7 @@ export default function AccessibilityToolkitTool() {
         <p className="text-xs text-muted-foreground">{t('nav.loading')}</p>
       ) : !page ? (
         <p className="rounded-md border border-dashed py-8 text-center text-xs text-muted-foreground">
-          {t('a11y.noPage')}
+          {t(loadError ?? 'a11y.noPage')}
         </p>
       ) : (
         <div className="flex flex-col gap-3">

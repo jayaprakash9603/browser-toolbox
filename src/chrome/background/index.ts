@@ -39,6 +39,7 @@ import { registerCaptureHandler } from './capture'
 import { registerHtmlBundleJobHandlers } from './htmlBundleJob'
 import { registerImageDownloadJobHandlers } from './imageDownloadJob'
 import { registerNetMonitor } from './netmon'
+import { registerInterceptor } from './interceptor'
 import { buildMenuItems } from '../context-menu/menuTree'
 
 const logger = createLogger('background')
@@ -164,4 +165,5 @@ registerImageConvert()
 registerPip()
 registerShortcuts()
 registerNetMonitor()
+registerInterceptor()
 startMessageRouter()

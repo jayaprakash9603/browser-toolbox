@@ -56,3 +56,12 @@ for (const [name, entry] of Object.entries(protectionEntries)) {
 for (const [name, entry] of Object.entries(sitesEntries)) {
   await buildEntry(name, entry, 'public/sites/scripts')
 }
+
+const interceptorEntries = {
+  isolated: 'src/chrome/content/interceptor/isolated.ts',
+  main: 'src/chrome/content/interceptor/main.ts',
+}
+
+for (const [name, entry] of Object.entries(interceptorEntries)) {
+  await buildEntry(name, entry, 'public/interceptor/scripts')
+}

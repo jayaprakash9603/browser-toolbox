@@ -92,6 +92,8 @@ describe('message validation', () => {
     expect(isExtensionMessage({ type: 'PICK_ELEMENT_START' })).toBe(true)
     expect(isExtensionMessage({ type: 'OPEN_TOOL', toolId: 'text.analyzer' })).toBe(true)
     expect(isExtensionMessage({ type: 'GET_PAGE_INFO' })).toBe(true)
+    expect(isExtensionMessage({ type: 'GET_SEO_DATA' })).toBe(true)
+    expect(isExtensionMessage({ type: 'SEO_HIGHLIGHT', kind: 'headings' })).toBe(true)
   })
 
   it('rejects unknown types and malformed values', () => {

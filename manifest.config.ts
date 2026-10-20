@@ -54,7 +54,9 @@ export default defineManifest({
     'declarativeNetRequestFeedback',
     'alarms',
     'notifications',
+    'webRequest',
   ],
+  optional_permissions: ['userScripts', 'debugger'],
   host_permissions: ['<all_urls>'],
   declarative_net_request: {
     rule_resources: [
@@ -78,6 +80,7 @@ export default defineManifest({
         'sites/youtube/*',
         'sites/whatsapp/*',
         'sites/vendor/*',
+        'interceptor/scripts/*',
       ],
     },
   ],

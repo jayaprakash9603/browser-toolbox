@@ -25,8 +25,8 @@ tests/
 | Side panel (primary UI) | `index.html` → `src/main.tsx` | Implemented |
 | Background service worker | `src/chrome/background/index.ts` | Implemented (menus, commands, message router) |
 | Context menus | `src/chrome/context-menu/` | Manager scaffold; "Open toolbox" item live |
-| DevTools page | `devtools.html` → `src/chrome/devtools/` | Placeholder panel registration |
-| Content scripts | `src/chrome/content/` | Page-tools bridge (on-demand inject) + ad-blocker scripts (`public/adblock/scripts`, registered when enabled) |
+| DevTools page | `devtools.html` → `src/chrome/devtools/` | Toolbox + **Interceptor** panels (`#/devtools`, `#/devtools/interceptor`) |
+| Content scripts | `src/chrome/content/` | Page-tools bridge (on-demand inject) + ad-blocker scripts (`public/adblock/scripts`, registered when enabled) + HTTP Interceptor (`public/interceptor/scripts`, registered when page-level rules exist) |
 
 Message flow targets `SIDE PANEL ↔ BACKGROUND ↔ CONTENT SCRIPT ↔ PAGE` and `DEVTOOLS ↔ BACKGROUND ↔ SIDE PANEL`, using the discriminated-union `ExtensionMessage` contract in `core/messaging/types.ts`. Components never call `chrome.*` directly; they go through services in `core/`.
 
@@ -94,6 +94,10 @@ shadcn/ui CSS variables (`src/styles/globals.css`) with light/dark palettes; `Th
 React UI strings live in `src/i18n/locales/<language>.ts` and are resolved with i18next. The English catalog is the current supported and fallback locale. Tool and category names use stable registry IDs as translation keys, so routes and storage IDs do not change with the selected language. Chrome-owned strings (extension name, action title, command description and context menu) live in `public/_locales/<language>/messages.json` and are referenced with Chrome `__MSG_...__` messages.
 
 When adding a locale, provide the same translation keys in a new React catalog, register it in `src/i18n/index.ts`, add a matching Chrome messages file, and add the locale to `supportedLngs`.
+
+## HTTP Interceptor
+
+See `core/interceptor/` and `chrome/background/interceptor/` for DNR rules, page fetch/XHR mocks, optional userScripts/deep intercept, and the `webRequest` network log.
 
 ## Performance
 
