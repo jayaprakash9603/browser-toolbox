@@ -3,6 +3,7 @@ import type { ImageSaveFormat } from '@/core/imageConvert'
 import { isExtensionMessage } from '@/core/messaging/types'
 
 import { convertImageInOffscreen, releaseImageUrl } from './imageConvert'
+import './netmon'
 
 const pendingParts = new Map<string, BlobPart[]>()
 const blobUrls = new Map<string, string>()

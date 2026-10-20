@@ -37,6 +37,7 @@ import { initShortcutsOnStartup, registerShortcuts } from './shortcuts'
 import { registerApiClientSendHandler } from './api-client-send'
 import { registerCaptureHandler } from './capture'
 import { registerHtmlBundleJobHandlers } from './htmlBundleJob'
+import { registerNetMonitor } from './netmon'
 import { buildMenuItems } from '../context-menu/menuTree'
 
 const logger = createLogger('background')
@@ -160,4 +161,5 @@ registerChatPulseMenuSync()
 registerImageConvert()
 registerPip()
 registerShortcuts()
+registerNetMonitor()
 startMessageRouter()

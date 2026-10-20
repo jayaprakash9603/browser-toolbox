@@ -41,6 +41,7 @@ import {
 import { AdblockSettingsSection } from '@/app/pages/settings/AdblockSettingsSection'
 import { ProtectionSettingsSection } from '@/app/pages/settings/ProtectionSettingsSection'
 import { KeyboardShortcutsSettingsCard } from '@/app/pages/settings/KeyboardShortcutsSettingsCard'
+import { NetMonitorSettingsSection } from '@/app/pages/settings/NetMonitorSettingsSection'
 import { PipSettingsSection } from '@/app/pages/settings/PipSettingsSection'
 import { SaveImageAsSettingsSection } from '@/app/pages/settings/SaveImageAsSettingsSection'
 import { SitesSettingsSection } from '@/app/pages/settings/SitesSettingsSection'
@@ -192,6 +193,7 @@ export default function SettingsPage() {
           <KeyboardShortcutsSettingsCard />
           <SaveImageAsSettingsSection />
           <PipSettingsSection />
+          <NetMonitorSettingsSection />
         </SettingsGroup>
 
         <SettingsGroup id="clipboard" icon={ClipboardIcon} title={t('settings.clipboard')}>

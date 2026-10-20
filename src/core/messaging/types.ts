@@ -93,6 +93,23 @@ export type ExtensionMessage =
     }
   | { type: 'OFFSCREEN_IMAGE_RELEASE'; url: string }
   | { type: 'PIP_TOGGLE'; tabId?: number }
+  | {
+      type: 'NETMON_SAMPLE'
+      status: import('@/core/netmon/types').NetStatus
+      latency: number | null
+      ip?: string
+    }
+  | { type: 'NETMON_OFFSCREEN_READY' }
+  | { type: 'NETMON_GET_REALTIME' }
+  | { type: 'NETMON_RESET_REALTIME' }
+  | {
+      type: 'NETMON_OFFSCREEN_CONFIG'
+      enabled: boolean
+      intervalSec: number
+      pingUrl: string
+      showIp: boolean
+    }
+  | { type: 'NETMON_OFFSCREEN_SOUND'; sound: import('@/core/netmon/types').NetSoundId; volume: number }
   | { type: 'SHORTCUT_KEY_EVENT'; modifiers: { key: string; ctrl: boolean; alt: boolean; shift: boolean; meta: boolean } }
 
 export type ExtensionMessageType = ExtensionMessage['type']
@@ -154,6 +171,12 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'OFFSCREEN_IMAGE_CONVERT',
   'OFFSCREEN_IMAGE_RELEASE',
   'PIP_TOGGLE',
+  'NETMON_SAMPLE',
+  'NETMON_OFFSCREEN_READY',
+  'NETMON_GET_REALTIME',
+  'NETMON_RESET_REALTIME',
+  'NETMON_OFFSCREEN_CONFIG',
+  'NETMON_OFFSCREEN_SOUND',
   'SHORTCUT_KEY_EVENT',
 ])
 

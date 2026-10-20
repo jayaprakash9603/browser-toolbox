@@ -10,8 +10,9 @@ import { downloadWithName } from './downloadNames'
 import { registerMessageHandler } from '@/core/messaging'
 import type { ExtensionMessage, ExtensionResponse } from '@/core/messaging/types'
 
+import { ensureOffscreenDocument, releaseOffscreenDocument } from './offscreen'
+
 const logger = createLogger('html-bundle-job')
-const OFFSCREEN_PATH = 'offscreen.html'
 
 let writeQueue: Promise<unknown> = Promise.resolve()
 
@@ -54,18 +55,6 @@ async function request<T>(send: () => Promise<unknown>): Promise<T> {
   return response.data
 }
 
-async function ensureOffscreenDocument(): Promise<void> {
-  const contexts = await chrome.runtime.getContexts({
-    contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
-  })
-  if (contexts.length > 0) return
-  await chrome.offscreen.createDocument({
-    url: OFFSCREEN_PATH,
-    reasons: [chrome.offscreen.Reason.BLOBS],
-    justification: 'Assemble the HTML report ZIP so it can be saved to Downloads.',
-  })
-}
-
 function releaseAfterDownload(downloadId: number, buildId: string) {
   const onChanged = (delta: chrome.downloads.DownloadDelta) => {
     if (delta.id !== downloadId) return
@@ -74,7 +63,7 @@ function releaseAfterDownload(downloadId: number, buildId: string) {
     chrome.downloads.onChanged.removeListener(onChanged)
     void chrome.runtime
       .sendMessage({ type: 'OFFSCREEN_BUNDLE_RELEASE', buildId })
-      .then(() => chrome.offscreen.closeDocument())
+      .then(() => releaseOffscreenDocument())
       .catch(() => {})
   }
   chrome.downloads.onChanged.addListener(onChanged)

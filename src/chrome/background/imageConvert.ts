@@ -13,8 +13,9 @@ import { createLogger } from '@/core/logging'
 import { downloadWithName } from './downloadNames'
 import type { ExtensionResponse } from '@/core/messaging/types'
 
+import { ensureOffscreenDocument } from './offscreen'
+
 const logger = createLogger('image-convert')
-const OFFSCREEN_PATH = 'offscreen.html'
 
 export async function buildImageConvertMenus(): Promise<void> {
   const state = await getSaveImageAsState()
@@ -149,18 +150,6 @@ async function convertBytes(
       quality,
     }),
   )
-}
-
-async function ensureOffscreenDocument(): Promise<void> {
-  const contexts = await chrome.runtime.getContexts({
-    contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
-  })
-  if (contexts.length > 0) return
-  await chrome.offscreen.createDocument({
-    url: OFFSCREEN_PATH,
-    reasons: [chrome.offscreen.Reason.BLOBS],
-    justification: 'Convert images locally before download.',
-  })
 }
 
 /** Service workers cannot create blob URLs, so the offscreen page owns them until the download ends. */

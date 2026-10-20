@@ -13,6 +13,12 @@ export interface SettingsSearchEntry {
 
 export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
   {
+    id: 'internetMonitor',
+    labelKey: 'netmon.settingsPage.title',
+    fallbackLabel: 'Internet monitor',
+    keywords: ['internet', 'connection', 'network', 'wifi', 'ping', 'offline'],
+  },
+  {
     id: 'keyboardShortcuts',
     labelKey: 'shortcuts.settingsTitle',
     fallbackLabel: 'Keyboard shortcuts',

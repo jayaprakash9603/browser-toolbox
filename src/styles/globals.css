@@ -67,6 +67,11 @@
   --density-card-pad: 0.75rem;
   --density-card-min-h: 5.25rem;
   --density-control-h: 2.25rem;
+  --netmon-online: #16a34a;
+  --netmon-lan: #d97706;
+  --netmon-offline: #dc2626;
+  --netmon-nodata: #94a3b8;
+  --netmon-latency: #4f46e5;
 }
 
 html[data-density='compact'] {
@@ -128,6 +133,11 @@ html[data-density='comfortable'] {
   --syntax-punctuation: #c4c9d4;
   --shadow-card: 0 1px 2px rgb(0 0 0 / 45%);
   --shadow-card-hover: 0 8px 20px rgb(0 0 0 / 50%);
+  --netmon-online: #22c55e;
+  --netmon-lan: #fbbf24;
+  --netmon-offline: #f87171;
+  --netmon-nodata: #64748b;
+  --netmon-latency: #818cf8;
 }
 
 .dark,

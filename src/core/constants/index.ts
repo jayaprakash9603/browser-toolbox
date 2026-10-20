@@ -15,6 +15,9 @@ export const STORAGE_KEYS = {
   saveImageAs: 'saveImageAs',
   pip: 'pip',
   keyboardShortcuts: 'keyboardShortcuts',
+  netMonitor: 'netMonitor',
+  netMonitorLog: 'netMonitorLog',
+  netMonitorHeartbeat: 'netMonitorHeartbeat',
   meta: 'meta',
 } as const
 

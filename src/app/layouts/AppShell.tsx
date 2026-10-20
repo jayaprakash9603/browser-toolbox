@@ -8,6 +8,7 @@ import { Link, useRouter } from '@/app/router'
 import { getToolComponent } from '@/app/toolComponents'
 import { toolRegistry } from '@/core/registry'
 import { trackRecentTool } from '@/features/recent-tools/recentToolsService'
+import { NetStatusIndicator } from '@/features/netmon/components/NetStatusIndicator'
 import { requestFocusHomeSearch } from '@/features/search/searchFocus'
 import {
   AppLoadingSkeleton,
@@ -124,6 +125,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
             {isHomePath(path) ? t('nav.focusSearch') : t('nav.commandPalette')}
           </TooltipContent>
         </Tooltip>
+        {isHomePath(path) && <NetStatusIndicator />}
         <ThemeToggle />
         <Tooltip>
           <TooltipTrigger asChild>

@@ -1,4 +1,4 @@
-import { PanelsTopLeftIcon, PictureInPicture2Icon } from 'lucide-react'
+import { PanelsTopLeftIcon, PictureInPicture2Icon, WifiIcon } from 'lucide-react'
 
 import { defineTool } from '@/core/registry'
 
@@ -15,6 +15,49 @@ export const browserTools = [
     capabilities: ['CONTEXT_MENU', 'COMMAND'],
     status: 'active',
     loader: () => import('@/tools/browser/picture-in-picture/Tool'),
+  }),
+  defineTool({
+    id: 'browser.internet-monitor',
+    name: 'Internet Monitor',
+    description: 'Track connection status, latency, disconnects and downtime with a realtime graph and log.',
+    category: 'browser',
+    icon: WifiIcon,
+    keywords: ['internet', 'connection', 'network', 'wifi', 'ping', 'latency', 'offline', 'uptime', 'ip'],
+    aliases: ['internet connection monitor', 'connection log', 'network status', 'downtime tracker'],
+    route: '/tools/browser/internet-monitor',
+    capabilities: ['SIDE_PANEL'],
+    status: 'active',
+    searchEntries: [
+      {
+        id: 'netmon-realtime',
+        labelKey: 'netmon.tab.realtime',
+        fallbackLabel: 'Realtime',
+        keywords: ['graph', 'latency', 'live'],
+        params: { tab: 'realtime' },
+      },
+      {
+        id: 'netmon-log',
+        labelKey: 'netmon.tab.log',
+        fallbackLabel: 'Log',
+        keywords: ['events', 'csv', 'pdf', 'export', 'backup', 'restore'],
+        params: { tab: 'log' },
+      },
+      {
+        id: 'netmon-stats',
+        labelKey: 'netmon.tab.stats',
+        fallbackLabel: 'Stats',
+        keywords: ['daily', 'weekday', 'hour', 'availability', 'disconnects'],
+        params: { tab: 'stats' },
+      },
+      {
+        id: 'netmon-settings',
+        labelKey: 'netmon.tab.settings',
+        fallbackLabel: 'Settings',
+        keywords: ['interval', 'ping url', 'sound', 'toolbar icon'],
+        params: { tab: 'settings' },
+      },
+    ],
+    loader: () => import('@/tools/browser/internet-monitor/Tool'),
   }),
   defineTool({
     id: 'browser.toolkit',

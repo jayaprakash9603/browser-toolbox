@@ -1,3 +1,4 @@
+import { netmonStrings } from './netmonEn'
 import { sitesWhatsappStrings } from './sitesWhatsappEn'
 import { sitesYoutubeStrings } from './sitesYoutubeEn'
 
@@ -1190,6 +1191,7 @@ const en = {
   'files.unsupported': '{{name}} is not a supported file type for this tab.',
   ...sitesYoutubeStrings,
   ...sitesWhatsappStrings,
+  ...netmonStrings,
 } as const
 
 export default en
