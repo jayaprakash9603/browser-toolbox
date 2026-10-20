@@ -12,6 +12,9 @@ type MessageHandler = (
 const handlers = new Map<ExtensionMessage['type'], MessageHandler>()
 
 export function registerMessageHandler(type: ExtensionMessage['type'], handler: MessageHandler) {
+  if (handlers.has(type)) {
+    logger.warn('duplicate message handler', type)
+  }
   handlers.set(type, handler)
 }
 
@@ -35,7 +38,8 @@ export function startMessageRouter() {
     if (!isExtensionMessage(raw)) return false
     const handler = handlers.get(raw.type)
     if (!handler) return false
-    Promise.resolve(handler(raw, sender))
+    Promise.resolve()
+      .then(() => handler(raw, sender))
       .then((data) => sendResponse({ ok: true, data } satisfies ExtensionResponse))
       .catch((error: unknown) =>
         sendResponse({

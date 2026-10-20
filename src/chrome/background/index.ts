@@ -1,25 +1,22 @@
 import { addAllowlistHost, hostnameFromUrl } from '@/core/adblock'
 import { createLogger } from '@/core/logging'
-import { getChromeMessage } from '@/core/i18n/chromeMessages'
 import { startMessageRouter } from '@/core/messaging'
 import { stashPayload } from '@/core/payloads'
 import { toolRegistry } from '@/core/registry'
 import { initStorage } from '@/core/storage'
 
-
 import { registerAdblock, syncAdblockState } from './adblock'
+import { enqueueContextMenuRebuild } from './contextMenus'
 import { registerProtection, syncProtectionState } from './protection'
 import { registerSitesWhatsapp, registerSitesYoutube, syncYoutubeEnhancerState } from './sites'
 import {
   bindChatPulseMenuRebuild,
-  buildChatPulseMenus,
   isChatPulseMenuItem,
   registerChatPulseMenuSync,
   sendOpenAnalyticsToTab,
 } from './sites/whatsappAnalytics'
 import {
   bindImageConvertMenuRebuild,
-  buildImageConvertMenus,
   handleImageConvertMenuClick,
   isImageConvertMenuItem,
   registerImageConvert,
@@ -27,7 +24,6 @@ import {
 import { executeToolboxCommand } from './executeCommand'
 import {
   bindPipMenuRebuild,
-  buildPipMenus,
   initPipOnStartup,
   isPipMenuItem,
   registerPip,
@@ -40,7 +36,7 @@ import { registerHtmlBundleJobHandlers } from './htmlBundleJob'
 import { registerImageDownloadJobHandlers } from './imageDownloadJob'
 import { registerNetMonitor } from './netmon'
 import { registerInterceptor } from './interceptor'
-import { buildMenuItems } from '../context-menu/menuTree'
+import { safeRegister, safeStartup } from './safeInit'
 
 const logger = createLogger('background')
 
@@ -48,34 +44,6 @@ function findToolForMenuItem(menuItemId: string) {
   const match = /^toolbox\.tool\.([\w.-]+)\.(selection|link|image|page)$/.exec(menuItemId)
   if (!match) return null
   return { tool: toolRegistry.get(match[1]), surface: match[2] }
-}
-
-async function rebuildContextMenus() {
-  await chrome.contextMenus.removeAll()
-  chrome.contextMenus.create({
-    id: 'toolbox.open',
-    title: getChromeMessage('contextMenuOpen'),
-    contexts: ['all'],
-  })
-  chrome.contextMenus.create({
-    id: 'toolbox.adblock.pause-site',
-    title: getChromeMessage('contextMenuPauseAdblock'),
-    contexts: ['page', 'frame'],
-  })
-  for (const item of buildMenuItems(toolRegistry.getAll())) {
-    chrome.contextMenus.create({
-      id: item.id,
-      title: item.title,
-      contexts: item.contexts as [
-        chrome.contextMenus.ContextType,
-        ...chrome.contextMenus.ContextType[],
-      ],
-      ...(item.parentId ? { parentId: item.parentId } : {}),
-    })
-  }
-  await buildImageConvertMenus()
-  await buildPipMenus()
-  await buildChatPulseMenus()
 }
 
 async function openPanelWithTool(
@@ -95,21 +63,21 @@ async function openPanelWithTool(
 
 chrome.runtime.onInstalled.addListener(() => {
   logger.info('installed')
-  void initStorage().then(rebuildContextMenus)
-  void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
-  void syncProtectionState()
-  void syncYoutubeEnhancerState()
-  void initPipOnStartup()
-  void initShortcutsOnStartup()
+  safeStartup('initStorage', () => initStorage().then(() => enqueueContextMenuRebuild()))
+  safeStartup('sidePanel', () => chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }))
+  safeStartup('protection', () => syncProtectionState())
+  safeStartup('youtube', () => syncYoutubeEnhancerState())
+  safeStartup('pip', () => initPipOnStartup())
+  safeStartup('shortcuts', () => initShortcutsOnStartup())
 })
 
 chrome.runtime.onStartup.addListener(() => {
-  void rebuildContextMenus()
-  void syncAdblockState()
-  void syncProtectionState()
-  void syncYoutubeEnhancerState()
-  void initPipOnStartup()
-  void initShortcutsOnStartup()
+  safeStartup('contextMenus', () => enqueueContextMenuRebuild())
+  safeStartup('adblock', () => syncAdblockState())
+  safeStartup('protection', () => syncProtectionState())
+  safeStartup('youtube', () => syncYoutubeEnhancerState())
+  safeStartup('pip', () => initPipOnStartup())
+  safeStartup('shortcuts', () => initShortcutsOnStartup())
 })
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
@@ -149,25 +117,23 @@ chrome.commands.onCommand.addListener((command, tab) => {
   void executeToolboxCommand(command, tab)
 })
 
-registerApiClientSendHandler()
-registerCaptureHandler()
-registerHtmlBundleJobHandlers()
-registerImageDownloadJobHandlers()
-registerAdblock()
-registerProtection()
-registerSitesYoutube()
-registerSitesWhatsapp()
-bindImageConvertMenuRebuild(rebuildContextMenus)
-bindPipMenuRebuild(rebuildContextMenus)
-bindChatPulseMenuRebuild(rebuildContextMenus)
-registerChatPulseMenuSync()
-registerImageConvert()
-registerPip()
-registerShortcuts()
-registerNetMonitor()
-try {
-  registerInterceptor()
-} catch (error) {
-  logger.error('interceptor failed to register', error)
-}
+const rebuildMenus = () => enqueueContextMenuRebuild()
+
+safeRegister('apiClientSend', registerApiClientSendHandler)
+safeRegister('capture', registerCaptureHandler)
+safeRegister('htmlBundleJob', registerHtmlBundleJobHandlers)
+safeRegister('imageDownloadJob', registerImageDownloadJobHandlers)
+safeRegister('adblock', registerAdblock)
+safeRegister('protection', registerProtection)
+safeRegister('sitesYoutube', registerSitesYoutube)
+safeRegister('sitesWhatsapp', registerSitesWhatsapp)
+bindImageConvertMenuRebuild(rebuildMenus)
+bindPipMenuRebuild(rebuildMenus)
+bindChatPulseMenuRebuild(rebuildMenus)
+safeRegister('chatPulseMenuSync', registerChatPulseMenuSync)
+safeRegister('imageConvert', registerImageConvert)
+safeRegister('pip', registerPip)
+safeRegister('shortcuts', registerShortcuts)
+safeRegister('netMonitor', registerNetMonitor)
+safeRegister('interceptor', registerInterceptor)
 startMessageRouter()
