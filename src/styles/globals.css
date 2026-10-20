@@ -72,6 +72,8 @@
   --netmon-offline: #dc2626;
   --netmon-nodata: #94a3b8;
   --netmon-latency: #4f46e5;
+  --speed-down: #0ea5e9;
+  --speed-up: #a855f7;
 }
 
 html[data-density='compact'] {
@@ -138,6 +140,8 @@ html[data-density='comfortable'] {
   --netmon-offline: #f87171;
   --netmon-nodata: #64748b;
   --netmon-latency: #818cf8;
+  --speed-down: #38bdf8;
+  --speed-up: #c084fc;
 }
 
 .dark,

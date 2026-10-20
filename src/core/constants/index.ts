@@ -18,6 +18,7 @@ export const STORAGE_KEYS = {
   netMonitor: 'netMonitor',
   netMonitorLog: 'netMonitorLog',
   netMonitorHeartbeat: 'netMonitorHeartbeat',
+  speedTestHistory: 'speedTestHistory',
   meta: 'meta',
 } as const
 

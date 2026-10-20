@@ -1,4 +1,5 @@
 import { netmonStrings } from './netmonEn'
+import { speedtestStrings } from './speedtestEn'
 import { sitesWhatsappStrings } from './sitesWhatsappEn'
 import { sitesYoutubeStrings } from './sitesYoutubeEn'
 
@@ -1192,6 +1193,7 @@ const en = {
   ...sitesYoutubeStrings,
   ...sitesWhatsappStrings,
   ...netmonStrings,
+  ...speedtestStrings,
 } as const
 
 export default en

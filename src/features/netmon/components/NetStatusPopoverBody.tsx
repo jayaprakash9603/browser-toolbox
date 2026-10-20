@@ -13,6 +13,7 @@ import {
   outageSegments,
   type NetLive,
 } from '@/core/netmon'
+import { SPEEDTEST_ROUTE } from '@/features/speedtest/routes'
 import { Button } from '@/shared/components/ui/button'
 
 import { useNetEvents, useNetRealtime, useNow } from '../hooks'
@@ -97,6 +98,26 @@ export default function PopoverBody({ live, onNavigate }: { live: NetLive | null
           <Stat label={t('netmon.general.disconnects')} value={String(today.disconnects)} />
           <Stat label={t('netmon.general.downtime')} value={formatClockDuration(today.downtimeMs)} />
         </div>
+      </Section>
+
+      <Section className="px-3.5 pt-3">
+        <Link
+          to={SPEEDTEST_ROUTE}
+          onClick={onNavigate}
+          className="group flex items-center gap-2.5 rounded-xl border bg-[linear-gradient(110deg,color-mix(in_srgb,var(--speed-down)_10%,transparent),color-mix(in_srgb,var(--speed-up)_8%,transparent))] px-2.5 py-2 transition-colors hover:border-[var(--speed-down)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        >
+          <span className="flex size-7 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--speed-down)_16%,transparent)] text-[var(--speed-down)]">
+            <GaugeIcon className="size-4" aria-hidden />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-xs font-semibold">{t('speedtest.monitor.run')}</span>
+            <span className="block truncate text-[11px] text-muted-foreground">{t('speedtest.monitor.description')}</span>
+          </span>
+          <ArrowUpRightIcon
+            className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+            aria-hidden
+          />
+        </Link>
       </Section>
 
       <Section className="flex items-center gap-1 p-3">

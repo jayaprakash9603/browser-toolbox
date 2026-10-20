@@ -14,6 +14,7 @@ import { LogTab } from './LogTab'
 import { MonitorOffCard } from './MonitorOffCard'
 import { RealtimeTab } from './RealtimeTab'
 import { SettingsTab } from './SettingsTab'
+import { SpeedTestCard } from './SpeedTestCard'
 import { StatsTab } from './StatsTab'
 import { StatusHero } from './StatusHero'
 
@@ -52,6 +53,7 @@ export default function InternetMonitorTool() {
           <MonitorOffCard onEnable={() => void patch({ enabled: true })} />
         )}
         <GeneralStatsGrid events={events} />
+        <SpeedTestCard />
         <Tabs value={tab} onValueChange={(v) => setTab(v as NetmonTab)}>
           <TabsList>
             {NETMON_TABS.map((id) => {

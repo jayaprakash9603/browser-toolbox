@@ -1,4 +1,4 @@
-import { PanelsTopLeftIcon, PictureInPicture2Icon, WifiIcon } from 'lucide-react'
+import { GaugeIcon, PanelsTopLeftIcon, PictureInPicture2Icon, WifiIcon } from 'lucide-react'
 
 import { defineTool } from '@/core/registry'
 
@@ -58,6 +58,29 @@ export const browserTools = [
       },
     ],
     loader: () => import('@/tools/browser/internet-monitor/Tool'),
+  }),
+  defineTool({
+    id: 'browser.speed-test',
+    name: 'Speed Test',
+    description: 'Measure your download and upload speed, ping and jitter with an animated gauge and history.',
+    category: 'browser',
+    icon: GaugeIcon,
+    keywords: ['speed', 'speedtest', 'bandwidth', 'download', 'upload', 'ping', 'jitter', 'mbps', 'internet', 'network'],
+    aliases: ['internet speed test', 'speed check', 'download speed', 'upload speed', 'bandwidth test', 'net speed'],
+    route: '/tools/browser/speed-test',
+    capabilities: ['SIDE_PANEL'],
+    status: 'active',
+    searchEntries: [
+      {
+        id: 'speedtest-run',
+        labelKey: 'speedtest.monitor.run',
+        fallbackLabel: 'Run speed test',
+        keywords: ['internet speed', 'bandwidth', 'mbps', 'download', 'upload', 'ping', 'jitter'],
+        aliases: ['speed test', 'speedtest', 'internet speed test', 'check speed'],
+        params: {},
+      },
+    ],
+    loader: () => import('@/tools/browser/speed-test/Tool'),
   }),
   defineTool({
     id: 'browser.toolkit',
