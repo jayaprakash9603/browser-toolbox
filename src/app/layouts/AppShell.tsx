@@ -22,6 +22,7 @@ import { useShortcutDisplay } from '@/features/shortcuts/useShortcutDisplay'
 
 const HomePage = lazy(() => import('@/app/pages/HomePage'))
 const SettingsPage = lazy(() => import('@/app/pages/SettingsPage'))
+const KeyboardShortcutsPage = lazy(() => import('@/app/pages/settings/KeyboardShortcutsPage'))
 const CategoryPage = lazy(() => import('@/app/pages/CategoryPage'))
 const DevToolsPage = lazy(() => import('@/app/pages/DevToolsPage'))
 const CommandPalette = lazy(() =>
@@ -171,6 +172,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
 function renderRoute(path: string) {
   if (path === '/' || path === '') return <HomePage />
   if (path === '/settings') return <SettingsPage />
+  if (path === '/settings/keyboard-shortcuts') return <KeyboardShortcutsPage />
   if (path === '/favorites') return <HomePage section="favorites" />
   if (path === '/recent') return <HomePage section="recent" />
   if (path === '/devtools') return <DevToolsPage />
@@ -184,7 +186,7 @@ function renderRoute(path: string) {
 }
 
 function getLoadingVariant(path: string): AppLoadingSkeletonVariant {
-  if (path === '/settings') return 'settings'
+  if (path === '/settings' || path === '/settings/keyboard-shortcuts') return 'settings'
   if (path === '/favorites' || path === '/recent') return 'collection'
   if (path === '/devtools') return 'category'
   if (path in LEGACY_TOOL_ROUTES) return 'tool'

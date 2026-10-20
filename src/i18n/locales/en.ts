@@ -928,8 +928,13 @@ const en = {
   'shortcuts.settingsTitle': 'Keyboard shortcuts',
   'shortcuts.settingsDescription':
     'All shortcuts are stored in Browser Toolbox. Change them here — no need to open Chrome’s extension shortcuts page.',
+  'settings.keyboardShortcutsSection': 'Shortcuts',
+  'settings.keyboardShortcutsCardDescription':
+    'Customize hotkeys for search, Picture-in-Picture, screenshots, and more.',
   'shortcuts.panelGroup': 'Side panel',
-  'shortcuts.globalGroup': 'While browsing (any page)',
+  'shortcuts.panelGroupHint': 'Works when the Browser Toolbox side panel is focused.',
+  'shortcuts.globalGroup': 'While browsing',
+  'shortcuts.globalGroupHint': 'Works on normal web pages while you browse.',
   'shortcuts.defaultLabel': 'Default: {{shortcut}}',
   'shortcuts.reset': 'Reset',
   'shortcuts.clear': 'Clear',

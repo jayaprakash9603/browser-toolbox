@@ -9,7 +9,6 @@ import { useShortcutDisplay } from '@/features/shortcuts/useShortcutDisplay'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
 import { Switch } from '@/shared/components/ui/switch'
-import { buildRoute } from '@/features/search/buildRoute'
 
 import { useBrowserTool } from '../_shared'
 
@@ -47,10 +46,7 @@ export default function PictureInPictureTool() {
             <li>{t('pip.howTo3')}</li>
           </ol>
           <p className="mt-3 text-xs text-muted-foreground">
-            <Link
-              to={buildRoute('/settings', { focus: 'keyboardShortcuts' })}
-              className="text-primary underline-offset-2 hover:underline"
-            >
+            <Link to="/settings/keyboard-shortcuts" className="text-primary underline-offset-2 hover:underline">
               {t('pip.customizeShortcut')}
             </Link>
           </p>

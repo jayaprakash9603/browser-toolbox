@@ -114,5 +114,6 @@ export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
 export const SETTINGS_SEARCH_ICON: LucideIcon = SettingsIcon
 
 export function settingsSearchRoute(entryId: string): string {
+  if (entryId === 'keyboardShortcuts') return '/settings/keyboard-shortcuts'
   return buildRoute('/settings', { focus: entryId })
 }
