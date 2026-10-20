@@ -57,10 +57,10 @@ async function handleCmd(cmd: string, payload: unknown): Promise<void> {
     if (num && wpp.chat?.openChatBottom) await (wpp.chat.openChatBottom as (id: string) => Promise<unknown>)(`${num}@c.us`)
   }
 
-  if (cmd === 'likeMessage' && wpp.chat?.sendTextMessage) {
-    const active = (wpp.chat.getActiveChat as () => { id?: { _serialized?: string } })?.()
-    const id = active?.id?._serialized
-    if (id) await (wpp.chat.sendTextMessage as (to: string, t: string) => Promise<unknown>)(id, '👍')
+  if (cmd === 'likeMessage' && payload && typeof payload === 'object') {
+    const msgId = String((payload as { msgId?: string }).msgId ?? '')
+    const react = wpp.chat?.sendReactionToMessage as ((id: string, r: string) => Promise<unknown>) | undefined
+    if (msgId && react) await react(msgId, '👍')
   }
 
   if (cmd === 'translateMessage' && payload && typeof payload === 'object') {

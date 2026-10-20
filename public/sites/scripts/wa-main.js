@@ -230,9 +230,10 @@
 			const num = String(payload.number).replace(/\D/g, "");
 			if (num && wpp.chat?.openChatBottom) await wpp.chat.openChatBottom(`${num}@c.us`);
 		}
-		if (cmd === "likeMessage" && wpp.chat?.sendTextMessage) {
-			const id = (wpp.chat.getActiveChat?.())?.id?._serialized;
-			if (id) await wpp.chat.sendTextMessage(id, "👍");
+		if (cmd === "likeMessage" && payload && typeof payload === "object") {
+			const msgId = String(payload.msgId ?? "");
+			const react = wpp.chat?.sendReactionToMessage;
+			if (msgId && react) await react(msgId, "👍");
 		}
 		if (cmd === "translateMessage" && payload && typeof payload === "object") {
 			const text = String(payload.text);

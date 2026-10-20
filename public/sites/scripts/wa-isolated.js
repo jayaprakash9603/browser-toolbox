@@ -167,16 +167,20 @@
 		if (!isFeatureOn(v, "btnLike") && !isFeatureOn(v, "btnTranslate") && !isFeatureOn(v, "btnTranscribe")) return;
 		document.querySelectorAll("[data-testid=\"msg-container\"]:not([data-tbx-wa-btn])").forEach((row) => {
 			row.setAttribute("data-tbx-wa-btn", "1");
+			if (row.querySelector(":scope > .tbx-wa-msg-actions")) return;
+			const msgId = row.closest("[data-id]")?.getAttribute("data-id") ?? "";
 			const bar = document.createElement("span");
-			bar.style.display = "inline-flex";
-			bar.style.marginLeft = "4px";
-			if (isFeatureOn(v, "btnLike")) {
+			bar.className = "tbx-wa-msg-actions";
+			if (isFeatureOn(v, "btnLike") && msgId) {
 				const b = document.createElement("button");
 				b.type = "button";
 				b.className = "tbx-wa-extra-btn";
 				b.textContent = "👍";
-				b.title = "Like";
-				b.addEventListener("click", () => postToMain("likeMessage", { el: row.outerHTML.slice(0, 200) }));
+				b.title = "React 👍";
+				b.addEventListener("click", (e) => {
+					e.stopPropagation();
+					postToMain("likeMessage", { msgId });
+				});
 				bar.appendChild(b);
 			}
 			if (isFeatureOn(v, "btnTranslate")) {
@@ -186,10 +190,13 @@
 				b.textContent = "🌐";
 				b.title = "Translate";
 				const text = row.querySelector(".selectable-text")?.textContent ?? "";
-				b.addEventListener("click", () => postToMain("translateMessage", { text }));
+				b.addEventListener("click", (e) => {
+					e.stopPropagation();
+					postToMain("translateMessage", { text });
+				});
 				bar.appendChild(b);
 			}
-			row.appendChild(bar);
+			if (bar.childElementCount) row.appendChild(bar);
 		});
 	}
 	function startButtons(state) {
@@ -209,7 +216,7 @@
 	function stopButtons() {
 		observer?.disconnect();
 		observer = null;
-		document.querySelectorAll(".tbx-wa-header-actions").forEach((el) => el.remove());
+		document.querySelectorAll(".tbx-wa-header-actions, .tbx-wa-msg-actions").forEach((el) => el.remove());
 		document.querySelectorAll("[data-tbx-wa-btn]").forEach((el) => el.removeAttribute("data-tbx-wa-btn"));
 	}
 	//#endregion
@@ -370,7 +377,7 @@
 		const root = document.documentElement;
 		for (const attr of [...root.attributes]) if (attr.name.startsWith("data-tbx-wa-")) root.removeAttribute(attr.name);
 		document.getElementById(STYLE_LINK_ID)?.remove();
-		document.querySelectorAll("#tbx-wa-launcher, .tbx-wa-launcher, .tbx-wa-extra-btn, .tbx-wa-restored-msg").forEach((el) => el.remove());
+		document.querySelectorAll("#tbx-wa-launcher, .tbx-wa-launcher, .tbx-wa-msg-actions, .tbx-wa-extra-btn, .tbx-wa-restored-msg").forEach((el) => el.remove());
 		const main = document.querySelector("#main");
 		if (main) main.style.removeProperty("background-image");
 	}

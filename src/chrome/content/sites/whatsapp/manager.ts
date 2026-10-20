@@ -68,7 +68,7 @@ export function stopAll(): void {
   }
   document.getElementById(STYLE_LINK_ID)?.remove()
   document
-    .querySelectorAll('#tbx-wa-launcher, .tbx-wa-launcher, .tbx-wa-extra-btn, .tbx-wa-restored-msg')
+    .querySelectorAll('#tbx-wa-launcher, .tbx-wa-launcher, .tbx-wa-msg-actions, .tbx-wa-extra-btn, .tbx-wa-restored-msg')
     .forEach((el) => el.remove())
   const main = document.querySelector('#main') as HTMLElement | null
   if (main) main.style.removeProperty('background-image')

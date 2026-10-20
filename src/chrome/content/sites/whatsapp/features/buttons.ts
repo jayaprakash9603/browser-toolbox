@@ -55,18 +55,22 @@ function injectMessageButtons(state: WhatsappPlusState): void {
   const v = state.values
   if (!isFeatureOn(v, 'btnLike') && !isFeatureOn(v, 'btnTranslate') && !isFeatureOn(v, 'btnTranscribe')) return
 
-  document.querySelectorAll('[data-testid="msg-container"]:not([data-tbx-wa-btn])').forEach((row) => {
+  document.querySelectorAll<HTMLElement>('[data-testid="msg-container"]:not([data-tbx-wa-btn])').forEach((row) => {
     row.setAttribute('data-tbx-wa-btn', '1')
+    if (row.querySelector(':scope > .tbx-wa-msg-actions')) return
+    const msgId = row.closest('[data-id]')?.getAttribute('data-id') ?? ''
     const bar = document.createElement('span')
-    bar.style.display = 'inline-flex'
-    bar.style.marginLeft = '4px'
-    if (isFeatureOn(v, 'btnLike')) {
+    bar.className = 'tbx-wa-msg-actions'
+    if (isFeatureOn(v, 'btnLike') && msgId) {
       const b = document.createElement('button')
       b.type = 'button'
       b.className = 'tbx-wa-extra-btn'
       b.textContent = '👍'
-      b.title = 'Like'
-      b.addEventListener('click', () => postToMain('likeMessage', { el: row.outerHTML.slice(0, 200) }))
+      b.title = 'React 👍'
+      b.addEventListener('click', (e) => {
+        e.stopPropagation()
+        postToMain('likeMessage', { msgId })
+      })
       bar.appendChild(b)
     }
     if (isFeatureOn(v, 'btnTranslate')) {
@@ -76,10 +80,13 @@ function injectMessageButtons(state: WhatsappPlusState): void {
       b.textContent = '🌐'
       b.title = 'Translate'
       const text = row.querySelector('.selectable-text')?.textContent ?? ''
-      b.addEventListener('click', () => postToMain('translateMessage', { text }))
+      b.addEventListener('click', (e) => {
+        e.stopPropagation()
+        postToMain('translateMessage', { text })
+      })
       bar.appendChild(b)
     }
-    row.appendChild(bar)
+    if (bar.childElementCount) row.appendChild(bar)
   })
 }
 
@@ -98,6 +105,6 @@ export function startButtons(state: WhatsappPlusState): void {
 export function stopButtons(): void {
   observer?.disconnect()
   observer = null
-  document.querySelectorAll('.tbx-wa-header-actions').forEach((el) => el.remove())
+  document.querySelectorAll('.tbx-wa-header-actions, .tbx-wa-msg-actions').forEach((el) => el.remove())
   document.querySelectorAll('[data-tbx-wa-btn]').forEach((el) => el.removeAttribute('data-tbx-wa-btn'))
 }
