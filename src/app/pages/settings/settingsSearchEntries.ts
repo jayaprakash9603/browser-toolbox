@@ -68,6 +68,12 @@ export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
     keywords: ['image', 'download', 'jpg', 'png', 'pdf', 'context menu'],
   },
   {
+    id: 'pipPanel',
+    labelKey: 'pip.settingsTitle',
+    fallbackLabel: 'Picture-in-Picture',
+    keywords: ['pip', 'video', 'float', 'alt+p', 'picture in picture'],
+  },
+  {
     id: 'clipboardHistory',
     labelKey: 'settings.clipboardHistory',
     fallbackLabel: 'Clipboard history',

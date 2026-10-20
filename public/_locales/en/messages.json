@@ -17,6 +17,9 @@
   "commandCaptureScreenshot": {
     "message": "Capture a screenshot"
   },
+  "commandTogglePip": {
+    "message": "Toggle Picture-in-Picture for the current tab"
+  },
   "contextMenuOpen": {
     "message": "Open Browser Toolbox"
   },
@@ -25,5 +28,8 @@
   },
   "contextMenuSaveImageAs": {
     "message": "Save image as"
+  },
+  "contextMenuPip": {
+    "message": "Picture-in-Picture"
   }
 }

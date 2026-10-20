@@ -121,7 +121,10 @@ const chromeMock = {
     onClicked: makeEvent(),
   },
   sidePanel: { setPanelBehavior: vi.fn(async () => undefined), open: vi.fn(async () => undefined) },
-  commands: { onCommand: makeEvent() },
+  commands: {
+    onCommand: makeEvent(),
+    getAll: vi.fn(async () => [{ name: 'toggle-pip', shortcut: 'Alt+P' }]),
+  },
   action: {
     onClicked: makeEvent(),
     setBadgeText: vi.fn(async () => undefined),
@@ -137,6 +140,10 @@ const chromeMock = {
     sendMessage: vi.fn(async () => undefined),
     reload: vi.fn(async () => undefined),
     get: vi.fn(async (id: number) => ({ id, url: 'https://example.com' })),
+    create: vi.fn(async () => undefined),
+  },
+  notifications: {
+    create: vi.fn(async () => undefined),
   },
   scripting: {
     registerContentScripts: vi.fn(async () => undefined),

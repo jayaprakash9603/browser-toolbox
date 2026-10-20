@@ -18,6 +18,14 @@ import {
   isImageConvertMenuItem,
   registerImageConvert,
 } from './imageConvert'
+import {
+  bindPipMenuRebuild,
+  buildPipMenus,
+  initPipOnStartup,
+  isPipMenuItem,
+  registerPip,
+  togglePipInTab,
+} from './pip'
 import { registerApiClientSendHandler } from './api-client-send'
 import { registerCaptureHandler } from './capture'
 import { registerHtmlBundleJobHandlers } from './htmlBundleJob'
@@ -55,6 +63,7 @@ async function rebuildContextMenus() {
     })
   }
   await buildImageConvertMenus()
+  await buildPipMenus()
 }
 
 async function openPanelWithTool(
@@ -78,6 +87,7 @@ chrome.runtime.onInstalled.addListener(() => {
   void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
   void syncProtectionState()
   void syncYoutubeEnhancerState()
+  void initPipOnStartup()
 })
 
 chrome.runtime.onStartup.addListener(() => {
@@ -85,12 +95,17 @@ chrome.runtime.onStartup.addListener(() => {
   void syncAdblockState()
   void syncProtectionState()
   void syncYoutubeEnhancerState()
+  void initPipOnStartup()
 })
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   const menuItemId = String(info.menuItemId)
   if (isImageConvertMenuItem(menuItemId)) {
     void handleImageConvertMenuClick(info, tab)
+    return
+  }
+  if (isPipMenuItem(menuItemId)) {
+    void togglePipInTab(tab)
     return
   }
   if (menuItemId === 'toolbox.adblock.pause-site' && tab?.url) {
@@ -125,6 +140,10 @@ async function injectContentScript(tabId: number): Promise<boolean> {
 
 chrome.commands.onCommand.addListener((command, tab) => {
   void (async () => {
+    if (command === 'toggle-pip') {
+      await togglePipInTab(tab)
+      return
+    }
     if (tab?.windowId != null) {
       try {
         await chrome.sidePanel.open({ windowId: tab.windowId })
@@ -167,5 +186,7 @@ registerProtection()
 registerSitesYoutube()
 registerSitesWhatsapp()
 bindImageConvertMenuRebuild(rebuildContextMenus)
+bindPipMenuRebuild(rebuildContextMenus)
 registerImageConvert()
+registerPip()
 startMessageRouter()

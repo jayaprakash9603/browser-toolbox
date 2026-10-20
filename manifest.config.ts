@@ -84,5 +84,9 @@ export default defineManifest({
       suggested_key: { default: 'Ctrl+Shift+S', mac: 'Command+Shift+S' },
       description: '__MSG_commandCaptureScreenshot__',
     },
+    'toggle-pip': {
+      suggested_key: { default: 'Alt+P', mac: 'Alt+P' },
+      description: '__MSG_commandTogglePip__',
+    },
   },
 })

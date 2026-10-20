@@ -90,6 +90,7 @@ export type ExtensionMessage =
       quality: number
     }
   | { type: 'OFFSCREEN_IMAGE_RELEASE'; url: string }
+  | { type: 'PIP_TOGGLE'; tabId?: number }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
@@ -147,6 +148,7 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'WA_TRANSLATE',
   'OFFSCREEN_IMAGE_CONVERT',
   'OFFSCREEN_IMAGE_RELEASE',
+  'PIP_TOGGLE',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {

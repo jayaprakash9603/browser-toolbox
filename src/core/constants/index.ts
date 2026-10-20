@@ -13,6 +13,7 @@ export const STORAGE_KEYS = {
   youtubeEnhancer: 'youtubeEnhancer',
   whatsappPlus: 'whatsappPlus',
   saveImageAs: 'saveImageAs',
+  pip: 'pip',
   meta: 'meta',
 } as const
 

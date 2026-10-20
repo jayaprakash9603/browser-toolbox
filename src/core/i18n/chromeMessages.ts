@@ -6,6 +6,8 @@ const CHROME_UI_FALLBACKS: Record<string, string> = {
   contextMenuOpen: 'Open Browser Toolbox',
   contextMenuPauseAdblock: 'Pause ad blocking on this site',
   contextMenuSaveImageAs: 'Save image as',
+  contextMenuPip: 'Picture-in-Picture',
+  commandTogglePip: 'Toggle Picture-in-Picture for the current tab',
 }
 
 export function getChromeMessage(messageName: string): string {

@@ -30,6 +30,7 @@ import {
 } from '@/shared/components/ui/select'
 import { AdblockSettingsSection } from '@/app/pages/settings/AdblockSettingsSection'
 import { ProtectionSettingsSection } from '@/app/pages/settings/ProtectionSettingsSection'
+import { PipSettingsSection } from '@/app/pages/settings/PipSettingsSection'
 import { SaveImageAsSettingsSection } from '@/app/pages/settings/SaveImageAsSettingsSection'
 import { SitesSettingsSection } from '@/app/pages/settings/SitesSettingsSection'
 import { useFocusTarget } from '@/shared/hooks/useFocusTarget'
@@ -114,6 +115,7 @@ export default function SettingsPage() {
 
       <Separator className="my-4" />
       <SaveImageAsSettingsSection />
+      <PipSettingsSection />
 
       <Separator className="my-4" />
       <h2 className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
