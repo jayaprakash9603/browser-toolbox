@@ -66,15 +66,16 @@
       'html,body{margin:0;height:100%;background:#000;overflow:hidden}' +
       '#movie_player,.html5-video-player{position:fixed!important;inset:0!important;width:100%!important;height:100%!important}' +
       '.html5-video-container{width:100%!important;height:100%!important}' +
-      '.html5-main-video{width:100%!important;height:100%!important;left:0!important;top:0!important;object-fit:contain}'
+      '.html5-main-video{width:100%!important;height:100%!important;left:0!important;top:0!important;object-fit:contain}' +
+      '.ytp-chrome-bottom{width:calc(100% - 24px)!important;left:12px!important}' +
+      '.ytp-gradient-bottom,.ytp-gradient-top{width:100%!important}'
     pip.document.head.appendChild(fit)
     pip.document.body.append(player)
 
-    const nudge = function () { window.dispatchEvent(new Event('resize')) }
-    pip.addEventListener('resize', nudge)
-    nudge()
+    let frame = 0\n    const nudge = function () {\n      if (frame) return\n      frame = window.requestAnimationFrame(function () {\n        frame = 0\n        window.dispatchEvent(new Event('resize'))\n      })\n    }\n    pip.addEventListener('resize', nudge)\n    const observer = new ResizeObserver(nudge)\n    observer.observe(pip.document.documentElement)\n    nudge()
     pip.addEventListener('pagehide', function () {
       pip.removeEventListener('resize', nudge)
+      observer.disconnect()
       if (next && next.parentNode === parent) parent.insertBefore(player, next)
       else parent.appendChild(player)
       placeholder.remove()
