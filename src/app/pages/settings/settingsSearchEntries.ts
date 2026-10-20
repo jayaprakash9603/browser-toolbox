@@ -56,6 +56,12 @@ export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
     keywords: ['youtube', 'sites'],
   },
   {
+    id: 'whatsappPanel',
+    labelKey: 'sites.whatsapp.settings.title',
+    fallbackLabel: 'WhatsApp Web Plus',
+    keywords: ['whatsapp', 'wa', 'sites'],
+  },
+  {
     id: 'clipboardHistory',
     labelKey: 'settings.clipboardHistory',
     fallbackLabel: 'Clipboard history',

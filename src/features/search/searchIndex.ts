@@ -3,6 +3,7 @@ import i18n from 'i18next'
 
 import { toolRegistry } from '@/core/registry'
 import type { ToolDefinition, ToolSearchEntry } from '@/core/registry'
+import { getWhatsappSearchEntries } from '@/core/sites/whatsapp/searchEntries'
 import { getYoutubeSearchEntries } from '@/core/sites/youtube/searchEntries'
 import {
   SETTINGS_SEARCH_ENTRIES,
@@ -31,6 +32,7 @@ let cachedToolCount = -1
 
 export function getSearchEntriesForTool(tool: ToolDefinition): ToolSearchEntry[] {
   if (tool.id === 'sites.youtube') return getYoutubeSearchEntries()
+  if (tool.id === 'sites.whatsapp') return getWhatsappSearchEntries()
   return tool.searchEntries ?? []
 }
 

@@ -45,6 +45,8 @@ for (const [name, entry] of Object.entries(adblockEntries)) {
 const sitesEntries = {
   'yt-isolated': 'src/chrome/content/sites/youtube/isolated.ts',
   'yt-main': 'src/chrome/content/sites/youtube/main.ts',
+  'wa-isolated': 'src/chrome/content/sites/whatsapp/isolated.ts',
+  'wa-main': 'src/chrome/content/sites/whatsapp/main.ts',
 }
 
 for (const [name, entry] of Object.entries(protectionEntries)) {

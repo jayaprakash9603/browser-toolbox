@@ -1,3 +1,4 @@
+import { sitesWhatsappStrings } from './sitesWhatsappEn'
 import { sitesYoutubeStrings } from './sitesYoutubeEn'
 
 const en = {
@@ -1118,6 +1119,7 @@ const en = {
   'files.readError': 'Could not read {{name}}.',
   'files.unsupported': '{{name}} is not a supported file type for this tab.',
   ...sitesYoutubeStrings,
+  ...sitesWhatsappStrings,
 } as const
 
 export default en

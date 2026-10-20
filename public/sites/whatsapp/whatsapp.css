@@ -1,0 +1,98 @@
+/* Browser Toolbox WhatsApp Web Plus — html[data-tbx-wa-*] */
+
+html[data-tbx-wa-blur-contact-names] [data-testid="cell-frame-title"] span,
+html[data-tbx-wa-blur-contact-names] [data-testid="conversation-info-header-chat-title"] {
+  filter: blur(6px);
+  transition: filter 0.15s ease;
+}
+html[data-tbx-wa-blur-contact-names] [data-testid="cell-frame-title"]:hover span,
+html[data-tbx-wa-blur-contact-names] [data-testid="conversation-info-header-chat-title"]:hover {
+  filter: none;
+}
+
+html[data-tbx-wa-blur-contact-photos] img[src*="pps.whatsapp.net"],
+html[data-tbx-wa-blur-contact-photos] [data-testid="avatar"] img {
+  filter: blur(10px);
+  transition: filter 0.15s ease;
+}
+html[data-tbx-wa-blur-contact-photos] [data-testid="cell-frame-container"]:hover img,
+html[data-tbx-wa-blur-contact-photos] [data-testid="conversation-header"]:hover img {
+  filter: none;
+}
+
+html[data-tbx-wa-blur-recent-messages] [data-testid="cell-frame-secondary"] span {
+  filter: blur(5px);
+}
+html[data-tbx-wa-blur-recent-messages] [data-testid="cell-frame-container"]:hover [data-testid="cell-frame-secondary"] span {
+  filter: none;
+}
+
+html[data-tbx-wa-blur-conversation-messages] [data-testid="msg-container"] span.selectable-text {
+  filter: blur(6px);
+}
+html[data-tbx-wa-blur-conversation-messages] [data-testid="msg-container"]:hover span.selectable-text {
+  filter: none;
+}
+
+html[data-tbx-wa-blur-composer] [data-testid="conversation-compose-box-input"] {
+  filter: blur(6px);
+}
+html[data-tbx-wa-blur-composer] [data-testid="conversation-compose-box-input"]:focus {
+  filter: none;
+}
+
+html[data-tbx-wa-prevent-list-jump] [data-testid="chat-list"] {
+  scroll-behavior: auto !important;
+}
+
+html[data-tbx-wa-custom-chat-background] #main {
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+
+.tbx-wa-launcher {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin: 8px auto;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: var(--WDS-surface-emphasized, #00a884);
+  color: #fff;
+  font-size: 18px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.2);
+  transition: transform 0.15s ease;
+}
+.tbx-wa-launcher:hover {
+  transform: scale(1.05);
+}
+
+.tbx-wa-extra-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-left: 4px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  background: rgb(0 0 0 / 0.06);
+  color: inherit;
+  font-size: 14px;
+}
+.tbx-wa-extra-btn:hover {
+  background: rgb(0 0 0 / 0.12);
+}
+
+.tbx-wa-restored-msg {
+  opacity: 0.85;
+  border-left: 3px solid #e67e22;
+  padding-left: 6px;
+  margin-top: 4px;
+  font-size: 0.85em;
+}

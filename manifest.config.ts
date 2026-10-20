@@ -42,6 +42,8 @@ export default defineManifest({
     'offscreen',
     'declarativeNetRequest',
     'declarativeNetRequestFeedback',
+    'alarms',
+    'notifications',
   ],
   host_permissions: ['<all_urls>'],
   declarative_net_request: {
@@ -64,6 +66,8 @@ export default defineManifest({
         'protection/scripts/*',
         'sites/scripts/*',
         'sites/youtube/*',
+        'sites/whatsapp/*',
+        'sites/vendor/*',
       ],
     },
   ],

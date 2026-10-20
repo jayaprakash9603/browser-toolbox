@@ -10,7 +10,7 @@ import { contentScriptBundlePath, ensureContentScriptInTab } from '@/chrome/cont
 
 import { registerAdblock, syncAdblockState } from './adblock'
 import { registerProtection, syncProtectionState } from './protection'
-import { registerSitesYoutube, syncYoutubeEnhancerState } from './sites'
+import { registerSitesWhatsapp, registerSitesYoutube, syncYoutubeEnhancerState } from './sites'
 import { registerApiClientSendHandler } from './api-client-send'
 import { registerCaptureHandler } from './capture'
 import { registerHtmlBundleJobHandlers } from './htmlBundleJob'
@@ -153,4 +153,5 @@ registerHtmlBundleJobHandlers()
 registerAdblock()
 registerProtection()
 registerSitesYoutube()
+registerSitesWhatsapp()
 startMessageRouter()

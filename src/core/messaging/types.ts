@@ -71,6 +71,16 @@ export type ExtensionMessage =
   | { type: 'YT_SPONSOR_SEGMENTS'; videoId: string; categories: string[] }
   | { type: 'YT_DISLIKES'; videoId: string }
   | { type: 'YT_DOWNLOAD_TRANSCRIPT'; videoId: string }
+  | { type: 'WA_OPEN_PANEL' }
+  | { type: 'WA_GET_STATUS' }
+  | { type: 'WA_RUNTIME_STATUS'; status: string }
+  | { type: 'WA_CACHE_MESSAGE'; payload?: unknown }
+  | { type: 'WA_MESSAGE_REVOKED'; payload?: unknown }
+  | { type: 'WA_PRESENCE'; payload?: unknown }
+  | { type: 'WA_SMART_REPLY_CHECK'; payload?: unknown }
+  | { type: 'WA_FIRE_WEBHOOK'; event: string; payload: unknown }
+  | { type: 'WA_RUN_BROADCAST'; campaignId: string }
+  | { type: 'WA_EXPORT'; kind: string }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
@@ -115,6 +125,16 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'YT_SPONSOR_SEGMENTS',
   'YT_DISLIKES',
   'YT_DOWNLOAD_TRANSCRIPT',
+  'WA_OPEN_PANEL',
+  'WA_GET_STATUS',
+  'WA_RUNTIME_STATUS',
+  'WA_CACHE_MESSAGE',
+  'WA_MESSAGE_REVOKED',
+  'WA_PRESENCE',
+  'WA_SMART_REPLY_CHECK',
+  'WA_FIRE_WEBHOOK',
+  'WA_RUN_BROADCAST',
+  'WA_EXPORT',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {
