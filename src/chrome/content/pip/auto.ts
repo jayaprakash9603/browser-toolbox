@@ -1,4 +1,5 @@
 import { enterEmbeddedPlayerPip, enterFullPlayerPip } from '@/core/pip/fullPlayerPip'
+import { enterStreamingPlayerPip } from '@/core/pip/streamingPlayerPip'
 
 type Guarded = Window & { __tbxPipAuto?: boolean }
 
@@ -137,7 +138,9 @@ async function onEnterPip(): Promise<void> {
     return
   }
   // Full player (site controls) first; native video PiP when the player can't be moved.
-  if ((await enterFullPlayerPip()) === 'entered') return
+  const full = await enterFullPlayerPip()
+  if (full === 'entered') return
+  if (full === 'drm' && (await enterStreamingPlayerPip()) === 'entered') return
   const video = playingVideo()
   if (video) await enterNativePip(video)
 }

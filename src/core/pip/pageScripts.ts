@@ -126,3 +126,4 @@ export {
   enterEmbeddedPlayerPip as pipEnterEmbeddedInTopFrame,
   enterFullPlayerPip as pipEnterDocumentInFrame,
 } from './fullPlayerPip'
+export { enterStreamingPlayerPip as pipEnterStreamingInFrame } from './streamingPlayerPip'

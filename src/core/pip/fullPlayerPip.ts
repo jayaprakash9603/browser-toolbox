@@ -1,4 +1,4 @@
-export type FullPlayerPipResult = 'entered' | 'unsupported' | 'none' | 'error'
+export type FullPlayerPipResult = 'entered' | 'unsupported' | 'none' | 'error' | 'drm'
 
 /**
  * Moves the page's whole video player (video + the site's own controls: seek, speed, quality,
@@ -85,8 +85,8 @@ export async function enterFullPlayerPip(): Promise<FullPlayerPipResult> {
   if (!target || !target.container.parentNode) return 'none'
   const { video, container } = target
   // DRM streaming players (Prime Video, Netflix, Hotstar, ...) lay out their controls from the
-  // main window's size and break when moved; they expect the browser's native video PiP.
-  if ((video as HTMLVideoElement & { mediaKeys?: unknown }).mediaKeys) return 'none'
+  // main window's size and break when moved; enterStreamingPlayerPip handles them instead.
+  if ((video as HTMLVideoElement & { mediaKeys?: unknown }).mediaKeys) return 'drm'
 
   const ratio = video.videoWidth && video.videoHeight ? video.videoWidth / video.videoHeight : 16 / 9
   const width = 640

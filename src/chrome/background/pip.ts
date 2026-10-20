@@ -12,6 +12,7 @@ import {
   pipEnterDocumentInFrame,
   pipEnterEmbeddedInTopFrame,
   pipEnterInFrame,
+  pipEnterStreamingInFrame,
   pipMeasureInFrame,
   pipTryExitInFrame,
 } from '@/core/pip/pageScripts'
@@ -94,6 +95,13 @@ export async function togglePipInTab(tab?: chrome.tabs.Tab): Promise<PipToggleRe
         .then((r) => r?.[0]?.result)
         .catch(() => undefined)
       if (docResult === 'entered') return { action: 'entered' }
+      if (docResult === 'drm') {
+        const streamResult = await chrome.scripting
+          .executeScript({ target: { tabId, frameIds: [0] }, world: 'MAIN', func: pipEnterStreamingInFrame })
+          .then((r) => r?.[0]?.result)
+          .catch(() => undefined)
+        if (streamResult === 'entered') return { action: 'entered' }
+      }
     } else {
       // Player embedded from another site: open a full copy of it in a Document PiP window.
       const embedResult = await chrome.scripting
