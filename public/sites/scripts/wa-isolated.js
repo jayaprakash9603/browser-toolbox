@@ -185,7 +185,10 @@
 		extDescription: "All-in-one productivity toolbox: clipboard, text, developer, QA and web utilities in one side panel.",
 		actionTitle: "Open Browser Toolbox",
 		contextMenuOpen: "Open Browser Toolbox",
-		contextMenuPauseAdblock: "Pause ad blocking on this site"
+		contextMenuPauseAdblock: "Pause ad blocking on this site",
+		contextMenuSaveImageAs: "Save image as",
+		contextMenuPip: "Picture-in-Picture",
+		commandTogglePip: "Toggle Picture-in-Picture for the current tab"
 	};
 	function getChromeMessage(messageName) {
 		try {
