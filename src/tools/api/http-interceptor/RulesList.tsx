@@ -15,6 +15,7 @@ import {
   duplicateRule,
   getInterceptorState,
   isRuleActive,
+  moveRuleToGroup,
   renameGroup,
   saveRules,
   setGroupCollapsed,
@@ -76,6 +77,46 @@ export function RulesList({ state, onStateChange, nav }: Props) {
 
   const refresh = () => void getInterceptorState().then((s) => onStateChange(s))
 
+  const allGroups = useMemo(
+    () => [{ id: 'default', name: 'Default' }, ...groups.map((g) => ({ id: g.id, name: g.name }))],
+    [groups],
+  )
+
+  const setRules = async (rules: InterceptorRule[]) => {
+    await saveRules(rules)
+    onStateChange({ ...state, rules })
+  }
+
+  const bulkSetEnabled = (enabled: boolean) => {
+    const ids = selected
+    if (!ids.size) return
+    const next = state.rules.map((r) =>
+      ids.has(r.id) ? { ...r, enabled, updatedAt: Date.now() } : r,
+    )
+    void setRules(next).then(() => setSelected(new Set()))
+  }
+
+  const bulkDelete = () => {
+    if (!selected.size) return
+    if (!window.confirm(t('interceptor.rules.bulkDelete') + '?')) return
+    const ids = selected
+    void setRules(state.rules.filter((r) => !ids.has(r.id))).then(() => setSelected(new Set()))
+  }
+
+  const bulkExport = () => {
+    const rules = state.rules.filter((r) => selected.has(r.id))
+    if (!rules.length) return
+    void navigator.clipboard.writeText(exportRulesJson(rules, state.groups))
+  }
+
+  const moveRulesToGroup = (ruleIds: Iterable<string>, groupId: string) => {
+    const ids = new Set(ruleIds)
+    const next = state.rules.map((r) =>
+      ids.has(r.id) ? { ...r, groupId, updatedAt: Date.now() } : r,
+    )
+    return setRules(next)
+  }
+
   const onImport = async (file: File) => {
     const text = await file.text()
     const { rules: imported } = importRequestlyJson(text)
@@ -136,10 +177,18 @@ export function RulesList({ state, onStateChange, nav }: Props) {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => nav.goEditor(rule.id)}>Edit</DropdownMenuItem>
               <DropdownMenuItem onClick={() => void duplicateRule(rule.id).then(refresh)}>Duplicate</DropdownMenuItem>
+              {allGroups.map((g) => (
+                <DropdownMenuItem key={g.id} onClick={() => void moveRuleToGroup(rule.id, g.id).then(refresh)}>
+                  {t('interceptor.rules.moveToGroup')}: {g.name}
+                </DropdownMenuItem>
+              ))}
               <DropdownMenuItem
                 onClick={() => void navigator.clipboard.writeText(exportRulesJson([rule], state.groups))}
               >
                 Export JSON
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void togglePinRule(rule.id, !rule.pinned).then(refresh)}>
+                {rule.pinned ? t('interceptor.rules.unpin') : t('interceptor.rules.pin')}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
@@ -242,6 +291,42 @@ export function RulesList({ state, onStateChange, nav }: Props) {
           </Button>
         </div>
       ) : (
+        <>
+          {selected.size > 0 && (
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2">
+              <span className="text-sm font-medium">{t('interceptor.rules.bulkSelected', { count: selected.size })}</span>
+              <Button type="button" variant="outline" size="sm" onClick={() => bulkSetEnabled(true)}>
+                {t('interceptor.rules.bulkActivate')}
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => bulkSetEnabled(false)}>
+                {t('interceptor.rules.bulkDeactivate')}
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button type="button" variant="outline" size="sm">{t('interceptor.rules.bulkMove')}</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {allGroups.map((g) => (
+                    <DropdownMenuItem
+                      key={g.id}
+                      onClick={() => void moveRulesToGroup(selected, g.id).then(() => setSelected(new Set()))}
+                    >
+                      {g.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button type="button" variant="outline" size="sm" onClick={bulkExport}>
+                {t('interceptor.rules.bulkExport')}
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={bulkDelete}>
+                {t('interceptor.rules.bulkDelete')}
+              </Button>
+              <Button type="button" variant="ghost" size="sm" className="ml-auto" onClick={() => setSelected(new Set())}>
+                Clear
+              </Button>
+            </div>
+          )}
         <div className="overflow-x-auto rounded-lg border">
           <table className="w-full min-w-[520px] text-left text-sm">
             <thead className="border-b bg-muted/30 text-xs text-muted-foreground">
@@ -317,6 +402,7 @@ export function RulesList({ state, onStateChange, nav }: Props) {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   )
