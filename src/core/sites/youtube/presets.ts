@@ -4,7 +4,6 @@ export type YoutubePresetId = 'recommended' | 'focus' | 'player' | 'reset'
 
 export const YOUTUBE_PRESETS: Record<Exclude<YoutubePresetId, 'reset'>, Record<string, YoutubeFeatureValue>> = {
   recommended: {
-    hideSponsored: true,
     hidePremiumUpsell: true,
     hideAiSummaries: true,
     hideShortsShelf: true,

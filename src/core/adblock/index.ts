@@ -17,8 +17,10 @@ export {
   addAllowlistHost,
   getAdblockState,
   isBlockingActiveForUrl,
+  isYoutubeAdblockEnabled,
   isYoutubeBlockingActive,
   removeAllowlistHost,
+  setYoutubeAdblockEnabled,
   toggleAllowlistHost,
   updateAdblockState,
 } from './adblockService'

@@ -72,6 +72,11 @@ for (const f of YOUTUBE_FEATURES) {
 
 // Progress bar section (overrides auto-generated feature titles)
 Object.assign(base, {
+  'sites.youtube.features.blockAds.label': 'Block ads on YouTube',
+  'sites.youtube.features.blockAds.description':
+    'Uses the extension Ad blocker (YouTube filter list and player scripts). Off = allow ads on YouTube only; other sites unchanged.',
+  'sites.youtube.features.hideSponsored.description':
+    'Optional CSS cleanup for leftover promo tiles — not a replacement for Ad blocker.',
   'sites.youtube.sections.progress': 'Progress bar',
   'sites.youtube.features.progressTheme.label': 'Progress theme',
   'sites.youtube.features.progressTheme.description':

@@ -1,8 +1,13 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { InfoIcon } from 'lucide-react'
 
-import { getAdblockState, updateAdblockState } from '@/core/adblock'
+import {
+  getAdblockState,
+  isYoutubeAdblockEnabled,
+  setYoutubeAdblockEnabled,
+} from '@/core/adblock'
+import { STORAGE_KEYS } from '@/core/constants'
 import {
   featureDescKey,
   featureLabelKey,
@@ -49,7 +54,7 @@ export function FeatureRow({
   )
 
   if (feature.impl === 'mirror' && feature.id === 'blockAds') {
-    return <MirrorAdblockRow label={label} />
+    return <MirrorAdblockRow label={label} youtubePanelEnabled={state.enabled} />
   }
 
   if (feature.kind === 'toggle') {
@@ -141,20 +146,40 @@ export function FeatureRow({
   return null
 }
 
-function MirrorAdblockRow({ label }: { label: ReactNode }) {
-  const [on, setOn] = useState(false)
-  useEffect(() => {
-    void getAdblockState().then((s) => setOn(s.enabled && s.youtubeEnabled))
+function MirrorAdblockRow({
+  label,
+  youtubePanelEnabled,
+}: {
+  label: ReactNode
+  youtubePanelEnabled: boolean
+}) {
+  const { t } = useTranslation()
+  const [on, setOn] = useState(true)
+
+  const refresh = useCallback(() => {
+    void getAdblockState().then((s) => setOn(isYoutubeAdblockEnabled(s)))
   }, [])
+
+  useEffect(() => {
+    refresh()
+    const onStorage = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
+      if (area === 'local' && changes[STORAGE_KEYS.adblock]) refresh()
+    }
+    chrome.storage.onChanged.addListener(onStorage)
+    return () => chrome.storage.onChanged.removeListener(onStorage)
+  }, [refresh])
+
   return (
     <li className="flex items-center gap-3 px-3 py-2.5">
       {label}
       <Switch
         checked={on}
+        disabled={!youtubePanelEnabled}
         onCheckedChange={(checked) => {
           setOn(checked)
-          void updateAdblockState(checked ? { enabled: true, youtubeEnabled: true } : { youtubeEnabled: false })
+          void setYoutubeAdblockEnabled(checked)
         }}
+        aria-label={t('sites.youtube.features.blockAds.label')}
       />
     </li>
   )

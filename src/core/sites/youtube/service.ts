@@ -7,7 +7,10 @@ import { PROGRESS_THEMES } from './progressThemes'
 
 export function defaultYoutubeValues(): Record<string, YoutubeFeatureValue> {
   const values: Record<string, YoutubeFeatureValue> = {}
-  for (const f of YOUTUBE_FEATURES) values[f.id] = f.default
+  for (const f of YOUTUBE_FEATURES) {
+    if (f.impl === 'mirror') continue
+    values[f.id] = f.default
+  }
   const themeOptions = PROGRESS_THEMES.map((t) => t.id)
   if (!themeOptions.includes(String(values.progressTheme))) values.progressTheme = 'default'
   return values
@@ -43,6 +46,7 @@ export function countActiveFeatures(state: YoutubeEnhancerState): number {
   if (!state.enabled) return 0
   let n = 0
   for (const f of YOUTUBE_FEATURES) {
+    if (f.impl === 'mirror') continue
     const v = state.values[f.id]
     if (f.kind === 'toggle' && v === true) n++
     if (f.kind === 'number' && typeof v === 'number' && v !== f.default) n++

@@ -26,7 +26,7 @@ export const YOUTUBE_FEATURES: YoutubeFeatureDef[] = [
     impl: 'mirror',
     mirrorKey: 'youtubeEnabled',
     default: true,
-  },
+  }, // UI only — toggles core adblock youtubeEnabled + lists.youtube (no sites CSS/scripts)
   ...toggles('ads', [
     'hideSponsored',
     'hideMerch',

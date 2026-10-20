@@ -681,7 +681,10 @@
 	//#region src/core/sites/youtube/service.ts
 	function defaultYoutubeValues() {
 		const values = {};
-		for (const f of YOUTUBE_FEATURES) values[f.id] = f.default;
+		for (const f of YOUTUBE_FEATURES) {
+			if (f.impl === "mirror") continue;
+			values[f.id] = f.default;
+		}
 		if (!PROGRESS_THEMES.map((t) => t.id).includes(String(values.progressTheme))) values.progressTheme = "default";
 		return values;
 	}

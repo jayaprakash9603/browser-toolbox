@@ -61,10 +61,29 @@ export function isBlockingActiveForUrl(state: AdblockState, pageUrl?: string): b
   return !isAllowlisted(state.allowlist, pageUrl)
 }
 
+export function isYoutubeAdblockEnabled(state: AdblockState): boolean {
+  return state.enabled && state.youtubeEnabled && state.lists.youtube
+}
+
 export function isYoutubeBlockingActive(state: AdblockState, pageUrl?: string): boolean {
-  if (!state.enabled || !state.youtubeEnabled) return false
-  if (!state.lists.youtube) return false
+  if (!isYoutubeAdblockEnabled(state)) return false
   const host = hostnameFromUrl(pageUrl)
   if (host && !host.includes('youtube.com') && !host.includes('youtu.be')) return false
   return isBlockingActiveForUrl(state, pageUrl)
+}
+
+/** YouTube Control Panel mirror — toggles only YouTube rules/scripts in the ad blocker. */
+export async function setYoutubeAdblockEnabled(on: boolean): Promise<AdblockState> {
+  const current = await getAdblockState()
+  if (!on) {
+    return updateAdblockState({
+      youtubeEnabled: false,
+      lists: { ...current.lists, youtube: false },
+    })
+  }
+  return updateAdblockState({
+    enabled: current.enabled ? current.enabled : true,
+    youtubeEnabled: true,
+    lists: { ...current.lists, youtube: true },
+  })
 }
