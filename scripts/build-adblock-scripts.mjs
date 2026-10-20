@@ -47,6 +47,7 @@ const sitesEntries = {
   'yt-main': 'src/chrome/content/sites/youtube/main.ts',
   'wa-isolated': 'src/chrome/content/sites/whatsapp/isolated.ts',
   'wa-main': 'src/chrome/content/sites/whatsapp/main.ts',
+  'pip-auto': 'src/chrome/content/pip/auto.ts',
 }
 
 for (const [name, entry] of Object.entries(protectionEntries)) {

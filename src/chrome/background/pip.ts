@@ -34,19 +34,6 @@ function isRestrictedUrl(url?: string): boolean {
   }
 }
 
-function isYoutubeWatchUrl(url?: string): boolean {
-  if (!url) return false
-  try {
-    const { hostname, pathname } = new URL(url)
-    return (
-      (hostname === 'www.youtube.com' || hostname === 'youtube.com' || hostname === 'm.youtube.com') &&
-      (pathname === '/watch' || pathname.startsWith('/live/'))
-    )
-  } catch {
-    return false
-  }
-}
-
 function notify(title: string, message: string): void {
   void chrome.notifications.create(`pip-${Date.now()}`, {
     type: 'basic',
@@ -73,14 +60,6 @@ export async function togglePipInTab(tab?: chrome.tabs.Tab): Promise<PipToggleRe
       return { action: 'exited' }
     }
 
-    // YouTube: float the full player (all controls) in a Document PiP window.
-    if (isYoutubeWatchUrl(tab.url)) {
-      const docResult = await chrome.scripting
-        .executeScript({ target: { tabId, frameIds: [0] }, world: 'MAIN', func: pipEnterDocumentInFrame })
-        .then((r) => r?.[0]?.result)
-        .catch(() => undefined)
-      if (docResult === 'entered') return { action: 'entered' }
-    }
     const measureResults = await chrome.scripting.executeScript({
       target: { tabId, allFrames: true },
       world: 'MAIN',
@@ -104,6 +83,16 @@ export async function togglePipInTab(tab?: chrome.tabs.Tab): Promise<PipToggleRe
     if (!best) {
       notify('No video found', 'Play a video on this page, then try again.')
       return { action: 'none' }
+    }
+
+    // Video in the page itself: float the whole player (site controls included) in a
+    // Document PiP window. Falls back to native video PiP when that isn't possible.
+    if (best.frameId === 0) {
+      const docResult = await chrome.scripting
+        .executeScript({ target: { tabId, frameIds: [0] }, world: 'MAIN', func: pipEnterDocumentInFrame })
+        .then((r) => r?.[0]?.result)
+        .catch(() => undefined)
+      if (docResult === 'entered') return { action: 'entered' }
     }
 
     const enterResults = await chrome.scripting.executeScript({
