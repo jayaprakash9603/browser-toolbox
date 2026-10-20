@@ -1,4 +1,14 @@
-import { ArrowUpRightIcon, CheckIcon, CopyIcon, GaugeIcon, GlobeIcon, type LucideIcon } from 'lucide-react'
+import {
+  ActivityIcon,
+  ArrowDownIcon,
+  ArrowUpIcon,
+  ArrowUpRightIcon,
+  CheckIcon,
+  CopyIcon,
+  GaugeIcon,
+  GlobeIcon,
+  type LucideIcon,
+} from 'lucide-react'
 import { motion } from 'motion/react'
 import { useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -13,8 +23,12 @@ import {
   outageSegments,
   type NetLive,
 } from '@/core/netmon'
+import { formatMbps } from '@/core/speedtest/stats'
 import { SPEEDTEST_ROUTE } from '@/features/speedtest/routes'
+import { SPEED_DOWN, SPEED_UP } from '@/features/speedtest/style'
+import { useSpeedHistory } from '@/features/speedtest/useSpeedTest'
 import { Button } from '@/shared/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip'
 
 import { useNetEvents, useNetRealtime, useNow } from '../hooks'
 import { netmonTabRoute, type NetmonTab } from '../routes'
@@ -31,6 +45,7 @@ export default function PopoverBody({ live, onNavigate }: { live: NetLive | null
   const events = useNetEvents()
   const { samples } = useNetRealtime(live)
   const label = useLiveStatusLabel(live)
+  const lastSpeed = useSpeedHistory().history[0]
   const status = live?.status ?? null
   const color = statusColor(status)
 
@@ -100,38 +115,62 @@ export default function PopoverBody({ live, onNavigate }: { live: NetLive | null
         </div>
       </Section>
 
-      <Section className="px-3.5 pt-3">
-        <Link
-          to={SPEEDTEST_ROUTE}
-          onClick={onNavigate}
-          className="group flex items-center gap-2.5 rounded-xl border bg-[linear-gradient(110deg,color-mix(in_srgb,var(--speed-down)_10%,transparent),color-mix(in_srgb,var(--speed-up)_8%,transparent))] px-2.5 py-2 transition-colors hover:border-[var(--speed-down)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-        >
-          <span className="flex size-7 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--speed-down)_16%,transparent)] text-[var(--speed-down)]">
-            <GaugeIcon className="size-4" aria-hidden />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-xs font-semibold">{t('speedtest.monitor.run')}</span>
-            <span className="block truncate text-[11px] text-muted-foreground">{t('speedtest.monitor.description')}</span>
-          </span>
-          <ArrowUpRightIcon
-            className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-            aria-hidden
-          />
-        </Link>
-      </Section>
+      {lastSpeed && (
+        <Section className="px-3.5 pt-3">
+          <p className="mb-1 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+            <span>{t('speedtest.popover.last')}</span>
+            <span className="truncate tabular-nums">{shortWhen(lastSpeed.at)}</span>
+          </p>
+          <Link
+            to={SPEEDTEST_ROUTE}
+            onClick={onNavigate}
+            aria-label={t('speedtest.popover.open')}
+            className="grid grid-cols-3 divide-x divide-border/70 rounded-xl border bg-[linear-gradient(110deg,color-mix(in_srgb,var(--speed-down)_8%,transparent),color-mix(in_srgb,var(--speed-up)_7%,transparent))] text-center transition-colors hover:border-[var(--speed-down)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            <SpeedStat
+              icon={<ArrowDownIcon className="size-3 shrink-0" style={{ color: SPEED_DOWN }} aria-hidden />}
+              value={formatMbps(lastSpeed.downloadMbps)}
+              unit={t('speedtest.unit')}
+              label={t('speedtest.metric.download')}
+            />
+            <SpeedStat
+              icon={<ArrowUpIcon className="size-3 shrink-0" style={{ color: SPEED_UP }} aria-hidden />}
+              value={formatMbps(lastSpeed.uploadMbps)}
+              unit={t('speedtest.unit')}
+              label={t('speedtest.metric.upload')}
+            />
+            <SpeedStat
+              icon={<ActivityIcon className="size-3 shrink-0 text-[var(--netmon-latency)]" aria-hidden />}
+              value={lastSpeed.pingMs === null ? '—' : String(Math.round(lastSpeed.pingMs))}
+              unit={t('speedtest.ms')}
+              label={t('speedtest.metric.ping')}
+            />
+          </Link>
+        </Section>
+      )}
 
-      <Section className="flex items-center gap-1 p-3">
+      <Section className="@container flex items-center gap-1 p-3">
         {(['realtime', 'log', 'stats'] as NetmonTab[]).map((tab) => (
-          <Button key={tab} asChild variant="ghost" size="sm" className="h-8 px-2 text-xs">
+          <Button key={tab} asChild variant="ghost" size="sm" className="h-8 shrink-0 px-1.5 text-xs @[19.75rem]:px-2">
             <Link to={netmonTabRoute(tab)} onClick={onNavigate}>
               {t(`netmon.tab.${tab}`)}
             </Link>
           </Button>
         ))}
         <div className="flex-1" />
-        <Button asChild size="sm" className="h-8 gap-1 px-2.5 text-xs">
-          <Link to={netmonTabRoute('realtime')} onClick={onNavigate}>
-            {t('netmon.popover.open')}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button asChild variant="ghost" size="icon-sm" className="size-8 shrink-0 text-[var(--speed-down)] hover:text-[var(--speed-down)]">
+              <Link to={SPEEDTEST_ROUTE} onClick={onNavigate} aria-label={t('speedtest.popover.open')}>
+                <GaugeIcon className="size-4" aria-hidden />
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{t('speedtest.popover.open')}</TooltipContent>
+        </Tooltip>
+        <Button asChild size="sm" className="h-8 shrink-0 gap-1 px-2 text-xs @[19.75rem]:px-2.5">
+          <Link to={netmonTabRoute('realtime')} onClick={onNavigate} aria-label={t('netmon.popover.open')}>
+            <span className="hidden @[19.75rem]:inline">{t('netmon.popover.open')}</span>
             <ArrowUpRightIcon className="size-3.5" aria-hidden />
           </Link>
         </Button>
@@ -196,6 +235,23 @@ function IpMetric({ ip }: { ip: string | null }) {
         ) : null
       }
     />
+  )
+}
+
+function shortWhen(at: number): string {
+  return new Date(at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+function SpeedStat({ icon, value, unit, label }: { icon: ReactNode; value: string; unit: string; label: string }) {
+  return (
+    <div className="min-w-0 px-1.5 py-2">
+      <p className="flex min-w-0 items-baseline justify-center gap-0.5">
+        <span className="self-center">{icon}</span>
+        <span className="truncate font-mono text-[13px] font-semibold tabular-nums">{value}</span>
+        <span className="shrink-0 text-[10px] text-muted-foreground">{unit}</span>
+      </p>
+      <p className="truncate text-[10px] text-muted-foreground">{label}</p>
+    </div>
   )
 }
 

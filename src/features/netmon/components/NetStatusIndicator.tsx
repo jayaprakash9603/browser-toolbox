@@ -58,7 +58,7 @@ export function NetStatusIndicator() {
           <PopoverPrimitive.Portal forceMount>
             <PopoverPrimitive.Content forceMount asChild align="end" sideOffset={8} collisionPadding={8}>
               <motion.div
-                className="z-50 w-[20rem] origin-(--radix-popover-content-transform-origin) overflow-hidden rounded-2xl border bg-popover text-popover-foreground shadow-xl outline-none"
+                className="z-50 w-[22rem] max-w-[calc(100vw-1rem)] origin-(--radix-popover-content-transform-origin) overflow-hidden rounded-2xl border bg-popover text-popover-foreground shadow-xl outline-none"
                 initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: -8 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: -4, transition: { duration: 0.12 } }}

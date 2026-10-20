@@ -60,4 +60,6 @@ export const speedtestStrings = {
   'speedtest.monitor.last': 'Last test {{when}}',
   'speedtest.monitor.never': 'No tests run yet',
   'speedtest.monitor.run': 'Run speed test',
+  'speedtest.popover.open': 'Speed test',
+  'speedtest.popover.last': 'Last speed test',
 } as const
