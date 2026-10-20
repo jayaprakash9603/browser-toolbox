@@ -20,6 +20,7 @@ import { ThemeToggle } from '@/shared/components/ThemeToggle'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip'
 import { usePanelShortcuts } from '@/features/shortcuts/usePanelShortcuts'
 import { useShortcutDisplay } from '@/features/shortcuts/useShortcutDisplay'
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
 
 const HomePage = lazy(() => import('@/app/pages/HomePage'))
 const SettingsPage = lazy(() => import('@/app/pages/SettingsPage'))
@@ -156,13 +157,15 @@ export function AppShell({ children }: { children?: ReactNode }) {
           animate={{ opacity: 1 }}
           transition={{ duration: reduceMotion ? 0.1 : 0.15, ease: 'easeOut' }}
         >
-          <Suspense
-            fallback={
-              <AppLoadingSkeleton variant={getLoadingVariant(path)} label={t('nav.loading')} />
-            }
-          >
-            {content}
-          </Suspense>
+          <ErrorBoundary resetKey={path} showHomeLink>
+            <Suspense
+              fallback={
+                <AppLoadingSkeleton variant={getLoadingVariant(path)} label={t('nav.loading')} />
+              }
+            >
+              {content}
+            </Suspense>
+          </ErrorBoundary>
         </motion.div>
       </main>
 
