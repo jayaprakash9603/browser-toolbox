@@ -123,26 +123,37 @@ html[data-tbx-wa-custom-chat-background] #main > div::before {
 [data-tbx-wa-btn] {
   position: relative;
 }
+/* Sits beside the bubble, past WhatsApp's own emoji-react button, vertically centred. */
 .tbx-wa-msg-actions {
   position: absolute;
-  right: 8px;
-  bottom: -12px;
+  top: 50%;
   z-index: 2;
   display: inline-flex;
   gap: 2px;
   padding: 2px;
   border-radius: 16px;
-  background: var(--WDS-surface-default, #fff);
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.18);
+  background: #fff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.22);
   opacity: 0;
-  transform: translateY(4px);
   pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition: opacity 0.15s ease;
 }
-[data-tbx-wa-btn]:hover > .tbx-wa-msg-actions,
+body.dark .tbx-wa-msg-actions {
+  background: #233138;
+}
+.tbx-wa-msg-actions.is-out {
+  right: 100%;
+  margin-right: 52px;
+  transform: translateY(-50%);
+}
+.tbx-wa-msg-actions.is-in {
+  left: 100%;
+  margin-left: 52px;
+  transform: translateY(-50%);
+}
+[data-id]:hover .tbx-wa-msg-actions,
 .tbx-wa-msg-actions:focus-within {
   opacity: 1;
-  transform: translateY(0);
   pointer-events: auto;
 }
 .tbx-wa-msg-actions .tbx-wa-extra-btn {

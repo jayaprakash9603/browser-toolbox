@@ -257,7 +257,8 @@ function injectMessageButtons(state: WhatsappPlusState): void {
     row.setAttribute('data-tbx-wa-btn', '1')
     if (row.querySelector(':scope > .tbx-wa-msg-actions')) return
     const bar = document.createElement('span')
-    bar.className = 'tbx-wa-msg-actions'
+    const outgoing = (row.closest('[data-id]')?.getAttribute('data-id') ?? '').startsWith('true_') || Boolean(row.closest('.message-out'))
+    bar.className = `tbx-wa-msg-actions ${outgoing ? 'is-out' : 'is-in'}`
     if (row.querySelector('.selectable-text, [data-testid="selectable-text"]')) {
       bar.appendChild(msgButton(svgIcon(ICONS.translate, 18), 'Translate', (b) => void toggleTranslation(row, b)))
     }

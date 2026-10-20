@@ -498,7 +498,7 @@
 			row.setAttribute("data-tbx-wa-btn", "1");
 			if (row.querySelector(":scope > .tbx-wa-msg-actions")) return;
 			const bar = document.createElement("span");
-			bar.className = "tbx-wa-msg-actions";
+			bar.className = `tbx-wa-msg-actions ${(row.closest("[data-id]")?.getAttribute("data-id") ?? "").startsWith("true_") || Boolean(row.closest(".message-out")) ? "is-out" : "is-in"}`;
 			if (row.querySelector(".selectable-text, [data-testid=\"selectable-text\"]")) bar.appendChild(msgButton(svgIcon(ICONS$1.translate, 18), "Translate", (b) => void toggleTranslation(row, b)));
 			if (bar.childElementCount) row.appendChild(bar);
 		});
