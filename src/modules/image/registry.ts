@@ -1,4 +1,4 @@
-import { DownloadIcon, ImageIcon } from 'lucide-react'
+import { DownloadIcon, ImageIcon, ImagesIcon } from 'lucide-react'
 
 import { defineTool } from '@/core/registry'
 
@@ -36,5 +36,24 @@ export const imageTools = [
     dependencies: ['image'],
     status: 'active',
     loader: () => import('@/tools/image/image-toolkit/Tool'),
+  }),
+  defineTool({
+    id: 'image.image-downloader',
+    name: 'Image Downloader',
+    description: 'Browse, filter, and download multiple images from the active page.',
+    category: 'image',
+    icon: ImagesIcon,
+    keywords: [
+      'bulk download images',
+      'save all images',
+      'image grabber',
+      'download pictures',
+      'image downloader',
+    ],
+    aliases: ['image downloader', 'bulk image save', 'download images from page'],
+    route: '/tools/image/image-downloader',
+    capabilities: ['SIDE_PANEL'],
+    status: 'active',
+    loader: () => import('@/tools/image/image-downloader/Tool'),
   }),
 ]

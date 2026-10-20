@@ -26,6 +26,13 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
       sendResponse({ ok: true, data: { url } })
       return false
     }
+    case 'OFFSCREEN_ZIP_FROM_BYTES': {
+      const blob = new Blob([base64ToBytes(raw.base64) as BlobPart], { type: 'application/zip' })
+      const url = URL.createObjectURL(blob)
+      blobUrls.set(raw.buildId, url)
+      sendResponse({ ok: true, data: { url } })
+      return false
+    }
     case 'OFFSCREEN_BUNDLE_RELEASE': {
       const url = blobUrls.get(raw.buildId)
       if (url) URL.revokeObjectURL(url)

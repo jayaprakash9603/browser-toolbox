@@ -4,6 +4,9 @@ import { bytesToBase64, type HtmlBundleProgress } from '@/core/engines/htmlArchi
 
 import { cancelPicker, isPickerActive, startPicker } from './elementPicker'
 import { buildHtmlBundleInPage, scanHtmlBundleFromDom } from './htmlBundle'
+import { scanImagesOnPage } from './scanImages'
+import { collectSeoData } from './seoCollect'
+import { applySeoHighlight, clearSeoHighlight } from './seoHighlight'
 
 const BUNDLE_CHUNK_BYTES = 4 * 1024 * 1024
 const PROGRESS_INTERVAL_MS = 120
@@ -128,6 +131,19 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
       return false
     case 'GET_PAGE_INFO':
       sendResponse({ ok: true, data: collectPageInfo() })
+      return false
+    case 'GET_SEO_DATA':
+      sendResponse({ ok: true, data: collectSeoData() })
+      return false
+    case 'SEO_HIGHLIGHT':
+      sendResponse({ ok: true, data: { count: applySeoHighlight(raw.kind) } })
+      return false
+    case 'SEO_CLEAR_HIGHLIGHT':
+      clearSeoHighlight()
+      sendResponse({ ok: true, data: { cleared: true } })
+      return false
+    case 'SCAN_PAGE_IMAGES':
+      sendResponse({ ok: true, data: scanImagesOnPage() })
       return false
     case 'GET_STORAGE_SNAPSHOT':
       sendResponse({ ok: true, data: collectStorage() })

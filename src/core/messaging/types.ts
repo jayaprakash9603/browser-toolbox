@@ -11,7 +11,24 @@ export type ExtensionMessage =
   | { type: 'PICK_ELEMENT_START' }
   | { type: 'PICK_ELEMENT_CANCEL' }
   | { type: 'GET_PAGE_INFO' }
+  | { type: 'GET_SEO_DATA' }
+  | { type: 'SEO_HIGHLIGHT'; kind: import('@/core/engines/seo/types').SeoHighlightKind }
+  | { type: 'SEO_CLEAR_HIGHLIGHT' }
+  | { type: 'SCAN_PAGE_IMAGES' }
   | { type: 'GET_STORAGE_SNAPSHOT' }
+  | {
+      type: 'START_IMAGE_DOWNLOAD_JOB'
+      tabId: number
+      pageUrl: string
+      pageTitle: string
+      mode: 'files' | 'zip'
+      subfolder: string
+      filenameTemplate: string
+      zipFileName?: string
+      items: { url: string }[]
+    }
+  | { type: 'CANCEL_IMAGE_DOWNLOAD_JOB'; jobId: string }
+  | { type: 'OFFSCREEN_ZIP_FROM_BYTES'; buildId: string; base64: string }
   | { type: 'CAPTURE_VISIBLE'; windowId?: number }
   | {
       type: 'SCAN_HTML_BUNDLE'
@@ -111,6 +128,17 @@ export type ExtensionMessage =
     }
   | { type: 'NETMON_OFFSCREEN_SOUND'; sound: import('@/core/netmon/types').NetSoundId; volume: number }
   | { type: 'SHORTCUT_KEY_EVENT'; modifiers: { key: string; ctrl: boolean; alt: boolean; shift: boolean; meta: boolean } }
+  | { type: 'INTERCEPTOR_PAGE_EVENT'; tabId?: number; event: import('@/core/interceptor').InterceptorPageEvent }
+  | { type: 'INTERCEPTOR_GET_LOG'; tabId?: number }
+  | { type: 'INTERCEPTOR_CLEAR_LOG'; tabId?: number }
+  | {
+      type: 'INTERCEPTOR_TEST_RULE'
+      url: string
+      pageUrl?: string
+    }
+  | { type: 'INTERCEPTOR_SYNC' }
+  | { type: 'INTERCEPTOR_DEEP_ATTACH'; tabId: number }
+  | { type: 'INTERCEPTOR_DEEP_DETACH'; tabId: number }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
@@ -127,7 +155,14 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'PICK_ELEMENT_START',
   'PICK_ELEMENT_CANCEL',
   'GET_PAGE_INFO',
+  'GET_SEO_DATA',
+  'SEO_HIGHLIGHT',
+  'SEO_CLEAR_HIGHLIGHT',
+  'SCAN_PAGE_IMAGES',
   'GET_STORAGE_SNAPSHOT',
+  'START_IMAGE_DOWNLOAD_JOB',
+  'CANCEL_IMAGE_DOWNLOAD_JOB',
+  'OFFSCREEN_ZIP_FROM_BYTES',
   'CAPTURE_VISIBLE',
   'SCAN_HTML_BUNDLE',
   'BUILD_HTML_BUNDLE',
@@ -178,6 +213,13 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'NETMON_OFFSCREEN_CONFIG',
   'NETMON_OFFSCREEN_SOUND',
   'SHORTCUT_KEY_EVENT',
+  'INTERCEPTOR_PAGE_EVENT',
+  'INTERCEPTOR_GET_LOG',
+  'INTERCEPTOR_CLEAR_LOG',
+  'INTERCEPTOR_TEST_RULE',
+  'INTERCEPTOR_SYNC',
+  'INTERCEPTOR_DEEP_ATTACH',
+  'INTERCEPTOR_DEEP_DETACH',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {

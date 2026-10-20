@@ -13,12 +13,17 @@ export const STORAGE_KEYS = {
   youtubeEnhancer: 'youtubeEnhancer',
   whatsappPlus: 'whatsappPlus',
   saveImageAs: 'saveImageAs',
+  imageDownloader: 'imageDownloader',
   pip: 'pip',
   keyboardShortcuts: 'keyboardShortcuts',
   netMonitor: 'netMonitor',
   netMonitorLog: 'netMonitorLog',
   netMonitorHeartbeat: 'netMonitorHeartbeat',
   speedTestHistory: 'speedTestHistory',
+  interceptorRules: 'interceptorRules',
+  interceptorGroups: 'interceptorGroups',
+  interceptorLibrary: 'interceptorLibrary',
+  interceptorSettings: 'interceptorSettings',
   meta: 'meta',
 } as const
 

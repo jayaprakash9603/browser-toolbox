@@ -37,6 +37,7 @@ import { initShortcutsOnStartup, registerShortcuts } from './shortcuts'
 import { registerApiClientSendHandler } from './api-client-send'
 import { registerCaptureHandler } from './capture'
 import { registerHtmlBundleJobHandlers } from './htmlBundleJob'
+import { registerImageDownloadJobHandlers } from './imageDownloadJob'
 import { registerNetMonitor } from './netmon'
 import { buildMenuItems } from '../context-menu/menuTree'
 
@@ -150,6 +151,7 @@ chrome.commands.onCommand.addListener((command, tab) => {
 registerApiClientSendHandler()
 registerCaptureHandler()
 registerHtmlBundleJobHandlers()
+registerImageDownloadJobHandlers()
 registerAdblock()
 registerProtection()
 registerSitesYoutube()

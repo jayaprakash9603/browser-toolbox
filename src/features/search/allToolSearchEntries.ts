@@ -184,11 +184,16 @@ export const TOOL_SEARCH_ENTRIES: Record<string, ToolSearchEntry[]> = {
     { id: 'session', labelKey: 'storage.session', fallbackLabel: 'sessionStorage', params: { tab: 'session' } },
   ],
   'seo.toolkit': [
-    tab('checks', 'seo.tabChecks', 'Checks', 'checks'),
+    tab('overview', 'seo.tabOverview', 'Overview', 'overview'),
+    tab('content', 'seo.tabContent', 'Content', 'content'),
     tab('headings', 'seo.tabHeadings', 'Headings', 'headings'),
     tab('links', 'seo.tabLinks', 'Links', 'links'),
     tab('images', 'seo.tabImages', 'Images', 'images'),
-    tab('meta', 'seo.tabMeta', 'Meta', 'meta'),
+    tab('schema', 'seo.tabSchema', 'Schema', 'schema'),
+    tab('social', 'seo.tabSocial', 'Social', 'social'),
+    tab('performance', 'seo.tabPerformance', 'Speed', 'performance'),
+    tab('issues', 'seo.tabIssues', 'Issues', 'issues'),
+    tab('advanced', 'seo.tabAdvanced', 'Advanced', 'advanced'),
   ],
   'productivity.timer': [
     tab('countdown', 'timer.countdown', 'Countdown', 'countdown'),
@@ -201,6 +206,22 @@ export const TOOL_SEARCH_ENTRIES: Record<string, ToolSearchEntry[]> = {
     tab('convert', 'image.convert', 'Convert', 'convert'),
     { id: 'base64', labelKey: 'image.base64', fallbackLabel: 'Base64', params: { tab: 'base64' } },
     tab('info', 'image.info', 'Info', 'info'),
+  ],
+  'image.image-downloader': [
+    {
+      id: 'filters',
+      labelKey: 'imageDownloader.filters',
+      fallbackLabel: 'Filters',
+      keywords: ['filter images'],
+      params: {},
+    },
+    {
+      id: 'zip',
+      labelKey: 'imageDownloader.modeZip',
+      fallbackLabel: 'ZIP download',
+      keywords: ['zip', 'bulk'],
+      params: { mode: 'zip' },
+    },
   ],
   'files.file-toolkit': [
     { id: 'csv', labelKey: 'files.csv', fallbackLabel: 'CSV', params: { tab: 'csv' } },
