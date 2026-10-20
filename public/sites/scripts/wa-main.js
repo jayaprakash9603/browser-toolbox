@@ -1,4 +1,114 @@
 (function() {
+	//#region src/core/sites/whatsapp/chatExport.ts
+	function redactPhones(text) {
+		return text.replace(/(\+?\d[\d\s().-]{6,}\d)/g, "[number]");
+	}
+	function escapeHtml(s) {
+		return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+	}
+	function formatTime(ts, utc) {
+		const d = new Date(ts);
+		return utc ? d.toISOString() : d.toLocaleString();
+	}
+	function normalizeMessages(raw, opts, nameFor) {
+		const fromMs = opts.dateFrom ? Date.parse(opts.dateFrom) : NaN;
+		const toMs = opts.dateTo ? Date.parse(opts.dateTo) + 864e5 - 1 : NaN;
+		const out = [];
+		for (const m of raw) {
+			if (!m || typeof m !== "object") continue;
+			const row = m;
+			const fromMe = Boolean(row.fromMe);
+			if (opts.onlyMyMessages && !fromMe) continue;
+			if (opts.excludeMyMessages && fromMe) continue;
+			const t = Number(row.t ?? 0);
+			const timestampMs = t > 0xe8d4a51000 ? t : t * 1e3;
+			if (!Number.isNaN(fromMs) && timestampMs < fromMs) continue;
+			if (!Number.isNaN(toMs) && timestampMs > toMs) continue;
+			let body = String(row.body ?? row.caption ?? "");
+			const type = String(row.type ?? "chat");
+			if (!body && type !== "chat") body = `[${type}]`;
+			const author = String(row.author?.user ?? row.author ?? "");
+			const participant = opts.exportParticipantNames ? nameFor(author) : fromMe ? "Me" : "Them";
+			let mediaUrl = "";
+			if (opts.exportMedia && type !== "chat") {
+				const direct = String(row.directPath ?? row.deprecatedMms3Url ?? row.clientUrl ?? "");
+				if (direct) mediaUrl = opts.stableMedia ? direct : direct;
+			}
+			if (opts.redactPhoneNumbers) body = redactPhones(body);
+			out.push({
+				id: String(row.id?.id ?? row.id ?? `${timestampMs}-${out.length}`),
+				fromMe,
+				timestampMs,
+				body,
+				type,
+				participant,
+				mediaUrl
+			});
+		}
+		out.sort((a, b) => a.timestampMs - b.timestampMs);
+		return out;
+	}
+	function buildChatExportFile(chatTitle, messages, opts) {
+		const safe = chatTitle.replace(/[^\w.-]+/g, "_").slice(0, 60) || "chat";
+		const stamp = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+		if (opts.format === "json") {
+			const payload = {
+				...opts.exportChatName ? { chat: chatTitle } : {},
+				exportedAt: (/* @__PURE__ */ new Date()).toISOString(),
+				messages: messages.map((m) => ({
+					...m,
+					time: formatTime(m.timestampMs, opts.exportUtcTime)
+				}))
+			};
+			return {
+				filename: `whatsapp-${safe}-${stamp}.json`,
+				mime: "application/json",
+				content: JSON.stringify(payload, null, 2)
+			};
+		}
+		const rows = messages.map((m) => ({
+			time: formatTime(m.timestampMs, opts.exportUtcTime),
+			from: m.participant,
+			message: m.body,
+			type: m.type,
+			media: m.mediaUrl
+		}));
+		if (opts.format === "csv") {
+			const header = [
+				"time",
+				"from",
+				"message",
+				"type",
+				"media"
+			];
+			const lines = [header.join(","), ...rows.map((r) => header.map((k) => `"${String(r[k] ?? "").replace(/"/g, "\"\"")}"`).join(","))];
+			return {
+				filename: `whatsapp-${safe}-${stamp}.csv`,
+				mime: "text/csv;charset=utf-8",
+				content: `\ufeff${lines.join("\n")}`
+			};
+		}
+		const title = opts.exportChatName ? `<h1>${escapeHtml(chatTitle)}</h1>` : "";
+		const items = rows.map((r) => {
+			const media = r.media ? `<div><a href="${escapeHtml(r.media)}">media</a></div>` : "";
+			return `<div class="msg"><div class="meta">${escapeHtml(r.time)} · ${escapeHtml(r.from)}</div><div class="body">${escapeHtml(r.message)}</div>${media}</div>`;
+		}).join("\n");
+		const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(chatTitle)}</title>
+<style>body{font:14px system-ui,sans-serif;max-width:720px;margin:24px auto;padding:0 16px}
+.msg{margin:12px 0;padding:10px 12px;border-radius:8px;background:#f4f4f5}
+.meta{font-size:12px;color:#666;margin-bottom:4px}</style></head><body>${title}${items}</body></html>`;
+		if (opts.format === "excel") return {
+			filename: `whatsapp-${safe}-${stamp}.xls`,
+			mime: "application/vnd.ms-excel",
+			content: html
+		};
+		return {
+			filename: `whatsapp-${safe}-${stamp}.html`,
+			mime: "text/html;charset=utf-8",
+			content: html
+		};
+	}
+	//#endregion
 	//#region src/core/sites/whatsapp/constants.ts
 	var PAGE_CMD_KEY = "__toolboxWaCmd";
 	var PAGE_EVT_KEY = "__toolboxWaEvt";
@@ -149,6 +259,13 @@
 		{
 			id: "showSideLauncher",
 			section: "custom",
+			kind: "toggle",
+			impl: "script",
+			default: true
+		},
+		{
+			id: "btnExportChat",
+			section: "buttons",
 			kind: "toggle",
 			impl: "script",
 			default: true
@@ -363,6 +480,29 @@
 		if (cmd === "startChat" && payload && typeof payload === "object") {
 			const num = String(payload.number).replace(/\D/g, "");
 			if (num && wpp.chat?.openChatBottom) await wpp.chat.openChatBottom(`${num}@c.us`);
+		}
+		if (cmd === "exportChat" && payload && typeof payload === "object") {
+			const { reqId, options } = payload;
+			const chat = await call(wpp.chat?.getActiveChat);
+			const chatId = chat?.id?._serialized;
+			let file = null;
+			if (chatId && wpp.chat?.getMessages) {
+				const raw = await call(wpp.chat.getMessages, chatId, { count: 8e3 }) ?? await call(wpp.chat.getMessages, chatId) ?? [];
+				file = buildChatExportFile(chat?.formattedTitle ?? chat?.name ?? "Chat", normalizeMessages(raw, options, (author) => {
+					return raw.find((m) => {
+						const a = m.author;
+						return a?.user === author || String(a) === author;
+					})?.notifyName ?? author ?? "Unknown";
+				}), options);
+			}
+			window.postMessage({
+				[PAGE_EVT_KEY]: "exportChatResult",
+				payload: {
+					reqId,
+					file
+				}
+			}, location.origin || "*");
+			return;
 		}
 		if (cmd === "export" && payload && typeof payload === "object") {
 			const rows = await runQuery(wpp, String(payload.kind));

@@ -45,6 +45,22 @@ if (!guarded.__toolboxWaEnhancer) {
       if (msg?.type === 'WA_SEND_TEXT' && msg.chatId && msg.text) {
         postToMain('sendText', { chatId: msg.chatId, text: msg.text })
       }
+      if (msg?.type === 'WA_EXPORT_CHAT' && msg.options) {
+        const onResult = (payload: unknown) => {
+          window.removeEventListener('message', listener)
+          const p = payload as { file?: { filename: string; mime: string; content: string } | null }
+          sendResponse({ ok: true, file: p?.file ?? null })
+        }
+        const listener = (e: MessageEvent) => {
+          if (e.source !== window) return
+          const data = e.data as Record<string, unknown> | null
+          if (data && data[PAGE_EVT_KEY] === 'exportChatResult') onResult(data.payload)
+        }
+        window.addEventListener('message', listener)
+        postToMain('exportChat', { reqId: `panel-${Date.now()}`, options: msg.options })
+        setTimeout(() => sendResponse({ ok: false, file: null }), 60_000)
+        return true
+      }
       if (msg?.type === 'WA_EXPORT' && msg.kind) {
         const kind = String(msg.kind)
         const onResult = (event: string, payload: unknown) => {

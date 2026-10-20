@@ -10,6 +10,7 @@ export const WHATSAPP_FEATURES: WhatsappFeatureDef[] = [
   ...toggles('privacy', ['restoreDeletedMessages'], 'script'),
   { id: 'customChatBackground', section: 'custom', kind: 'toggle', impl: 'style', default: false },
   { id: 'showSideLauncher', section: 'custom', kind: 'toggle', impl: 'script', default: true },
+  { id: 'btnExportChat', section: 'buttons', kind: 'toggle', impl: 'script', default: true },
   ...toggles('buttons', ['btnStartChat', 'btnTranslate', 'btnQuickReply', 'btnAddTask'], 'script'),
 ]
 

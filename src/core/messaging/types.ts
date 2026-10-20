@@ -81,6 +81,7 @@ export type ExtensionMessage =
   | { type: 'WA_FIRE_WEBHOOK'; event: string; payload: unknown }
   | { type: 'WA_RUN_BROADCAST'; campaignId: string }
   | { type: 'WA_EXPORT'; kind: string }
+  | { type: 'WA_EXPORT_CHAT'; options: import('@/core/sites/whatsapp/chatExport').ChatExportOptions }
   | { type: 'WA_TRANSLATE'; text: string; target: string }
   | {
       type: 'OFFSCREEN_IMAGE_CONVERT'
@@ -146,6 +147,7 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'WA_FIRE_WEBHOOK',
   'WA_RUN_BROADCAST',
   'WA_EXPORT',
+  'WA_EXPORT_CHAT',
   'WA_TRANSLATE',
   'OFFSCREEN_IMAGE_CONVERT',
   'OFFSCREEN_IMAGE_RELEASE',

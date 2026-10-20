@@ -1,3 +1,8 @@
+import {
+  buildChatExportFile,
+  type ChatExportOptions,
+  normalizeMessages,
+} from '@/core/sites/whatsapp/chatExport'
 import { PAGE_CMD_KEY, PAGE_EVT_KEY } from '@/core/sites/whatsapp/constants'
 import { countryForNumber } from '@/core/sites/whatsapp/countries'
 
@@ -149,6 +154,33 @@ async function handleCmd(cmd: string, payload: unknown): Promise<void> {
   if (cmd === 'startChat' && payload && typeof payload === 'object') {
     const num = String((payload as { number: string }).number).replace(/\D/g, '')
     if (num && wpp.chat?.openChatBottom) await (wpp.chat.openChatBottom as (id: string) => Promise<unknown>)(`${num}@c.us`)
+  }
+
+  if (cmd === 'exportChat' && payload && typeof payload === 'object') {
+    const { reqId, options } = payload as { reqId: string; options: ChatExportOptions }
+    const chat = await call<ChatLike & { formattedTitle?: string }>(wpp.chat?.getActiveChat)
+    const chatId = chat?.id?._serialized
+    let file: { filename: string; mime: string; content: string } | null = null
+    if (chatId && wpp.chat?.getMessages) {
+      const raw =
+        (await call<unknown[]>(wpp.chat.getMessages, chatId, { count: 8000 })) ??
+        (await call<unknown[]>(wpp.chat.getMessages, chatId)) ??
+        []
+      const title = chat?.formattedTitle ?? chat?.name ?? 'Chat'
+      const normalized = normalizeMessages(raw, options, (author) => {
+        const hit = raw.find((m) => {
+          const a = (m as { author?: { user?: string } }).author
+          return a?.user === author || String(a) === author
+        }) as { notifyName?: string } | undefined
+        return hit?.notifyName ?? author ?? 'Unknown'
+      })
+      file = buildChatExportFile(title, normalized, options)
+    }
+    window.postMessage(
+      { [PAGE_EVT_KEY]: 'exportChatResult', payload: { reqId, file } },
+      location.origin || '*',
+    )
+    return
   }
 
   if (cmd === 'export' && payload && typeof payload === 'object') {

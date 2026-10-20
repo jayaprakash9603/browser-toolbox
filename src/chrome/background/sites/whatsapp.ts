@@ -129,6 +129,14 @@ export function registerSitesWhatsapp(): void {
     return { ok: true }
   })
 
+  registerMessageHandler('WA_EXPORT_CHAT', async (message) => {
+    if (message.type !== 'WA_EXPORT_CHAT') return null
+    const tabId = await getWhatsappTabId()
+    if (tabId == null) return { ok: false, error: 'no_tab' }
+    const res = await chrome.tabs.sendMessage(tabId, { type: 'WA_EXPORT_CHAT', options: message.options })
+    return res ?? { ok: false }
+  })
+
   registerMessageHandler('WA_EXPORT', async (message) => {
     if (message.type !== 'WA_EXPORT') return null
     const tabId = await getWhatsappTabId()

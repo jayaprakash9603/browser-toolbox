@@ -11,6 +11,7 @@ import {
   type WhatsappSection,
 } from '@/core/sites/whatsapp'
 
+import { openExportChatModal } from './exportChatModal'
 import { queryMain } from '../bridge'
 import {
   activeChatTitle,
@@ -737,10 +738,23 @@ function viewExport(): HTMLElement {
     toast(`Exported ${rows.length} rows`)
   }
 
+  const chatExportRow = el(
+    'button',
+    'tbx-d-card tbx-d-card--clickable',
+    el('span', 'tbx-d-export__icon', icon('download')),
+    el('div', 'tbx-d-card__main', el('div', 'tbx-d-card__title', 'Export chat'), el('div', 'tbx-d-card__body', 'Save the open chat as HTML, JSON, Excel, or CSV.')),
+    icon('chevron', 20),
+  )
+  chatExportRow.type = 'button'
+  chatExportRow.addEventListener('click', () => {
+    if (drawer) openExportChatModal(drawer, toast)
+  })
+
   return el(
     'div',
     'tbx-d-view',
     heading('Exporting', iconButton('download', 'Download CSV', () => void run())),
+    el('div', 'tbx-d-cards', chatExportRow),
     el(
       'div',
       'tbx-d-exports',

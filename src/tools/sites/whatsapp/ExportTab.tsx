@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 
 import { sendMessage } from '@/core/messaging'
 import { contactsToCsv } from '@/core/sites/whatsapp'
+import { ChatExportPanel } from '@/tools/sites/whatsapp/ChatExportPanel'
 import { Button } from '@/shared/components/ui/button'
 
 const kinds = [
@@ -32,6 +33,8 @@ export function ExportTab({ disabled }: { disabled: boolean }) {
   }
 
   return (
+    <div className="flex flex-col gap-3">
+      <ChatExportPanel disabled={disabled} />
     <div className="rounded-xl border bg-card p-3">
       <p className="mb-2 text-xs text-muted-foreground">Exports require an open, logged-in web.whatsapp.com tab.</p>
       <div className="flex flex-col gap-2">
@@ -41,6 +44,7 @@ export function ExportTab({ disabled }: { disabled: boolean }) {
           </Button>
         ))}
       </div>
+    </div>
     </div>
   )
 }

@@ -1043,6 +1043,53 @@ body.dark .tbx-d-pill--pending {
   margin-top: 4px;
 }
 
+.tbx-d-modal__box--export-chat {
+  max-width: 400px;
+  max-height: min(90vh, 640px);
+  overflow-y: auto;
+}
+.tbx-d-export-chat__hint {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: var(--d-sub);
+}
+.tbx-d-export-chat__formats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
+  margin-bottom: 14px;
+}
+.tbx-d-export-chat__radio,
+.tbx-d-export-chat__check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.tbx-d-export-chat__opts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.tbx-d-export-chat__dates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.tbx-d-export-chat__date-label {
+  width: 100%;
+  font-size: 13px;
+  color: var(--d-sub);
+}
+.tbx-d-export-chat-modal .tbx-d-form__actions {
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 /* stats */
 .tbx-d-stats {
   display: grid;

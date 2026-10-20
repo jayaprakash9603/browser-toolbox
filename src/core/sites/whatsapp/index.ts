@@ -20,6 +20,14 @@ export {
   sectionLabelKey,
 } from './features'
 export {
+  buildChatExportFile,
+  DEFAULT_CHAT_EXPORT_OPTIONS,
+  normalizeMessages,
+  type ChatExportFormat,
+  type ChatExportOptions,
+  type NormalizedChatMessage,
+} from './chatExport'
+export {
   applyTemplateVariables,
   contactsToCsv,
   countActiveFeatures,

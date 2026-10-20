@@ -1,5 +1,6 @@
 import { applyTemplateVariables, isFeatureOn, type WhatsappPlusState } from '@/core/sites/whatsapp'
 
+import { openExportChatModal } from './exportChatModal'
 import { postToMain } from '../bridge'
 import { activeChatTitle, insertIntoComposer, loadState, saveState, uid } from '../store'
 
@@ -11,6 +12,8 @@ const ICONS = {
   quickReply: 'M7 2v11h3v9l7-12h-4l4-8z',
   addTask: 'M14 10H3v2h11v-2zm0-4H3v2h11V6zm4 8v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM3 16h7v-2H3v2z',
   translate: 'm12.87 15.07-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7 1.62-4.33L19.12 17h-3.24z',
+  exportChat:
+    'M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5zM19 3h-4v2h4v4h2V5c0-1.1-.9-2-2-2z',
 } as const
 
 function svgIcon(path: string, size = 22): SVGSVGElement {
@@ -165,6 +168,12 @@ function injectHeaderButtons(state: WhatsappPlusState): void {
     )
   }
   if (isFeatureOn(v, 'btnQuickReply')) add(ICONS.quickReply, 'Quick replies', (btn) => openPopover(btn, 'Quick replies', quickReplyList()))
+  if (isFeatureOn(v, 'btnExportChat')) {
+    add(ICONS.exportChat, 'Export chat', () => {
+      const host = document.querySelector('#tbx-wa-drawer') ?? document.body
+      openExportChatModal(host as HTMLElement, pageToast)
+    })
+  }
   if (isFeatureOn(v, 'btnAddTask')) {
     add(ICONS.addTask, 'Add task', (btn) =>
       openPopover(btn, 'Add a task for this chat', inputForm('Follow up about…', 'Add', (t) => void addTask(t))),

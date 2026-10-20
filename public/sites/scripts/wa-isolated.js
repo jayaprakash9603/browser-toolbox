@@ -34,6 +34,29 @@
 			});
 		});
 	}
+	function exportChatMain(options, timeoutMs = 6e4) {
+		const reqId = `ec${Date.now()}_${++reqSeq}`;
+		return new Promise((resolve) => {
+			const finish = (file) => {
+				window.removeEventListener("message", listener);
+				clearTimeout(timer);
+				resolve(file);
+			};
+			const listener = (e) => {
+				if (e.source !== window) return;
+				const data = e.data;
+				if (!data || data["__toolboxWaEvt"] !== "exportChatResult") return;
+				const p = data.payload;
+				if (p?.reqId === reqId) finish(p.file ?? null);
+			};
+			const timer = setTimeout(() => finish(null), timeoutMs);
+			window.addEventListener("message", listener);
+			postToMain("exportChat", {
+				reqId,
+				options
+			});
+		});
+	}
 	//#endregion
 	//#region src/core/sites/whatsapp/features.ts
 	function toggles(section, ids, impl) {
@@ -69,6 +92,13 @@
 			impl: "script",
 			default: true
 		},
+		{
+			id: "btnExportChat",
+			section: "buttons",
+			kind: "toggle",
+			impl: "script",
+			default: true
+		},
 		...toggles("buttons", [
 			"btnStartChat",
 			"btnTranslate",
@@ -79,6 +109,21 @@
 	new Map(WHATSAPP_FEATURES.map((f) => [f.id, f]));
 	var CSS_FEATURE_IDS = WHATSAPP_FEATURES.filter((f) => f.impl === "css").map((f) => f.id);
 	WHATSAPP_FEATURES.filter((f) => f.impl === "script").map((f) => f.id);
+	//#endregion
+	//#region src/core/sites/whatsapp/chatExport.ts
+	var DEFAULT_CHAT_EXPORT_OPTIONS = {
+		format: "html",
+		exportChatName: true,
+		exportParticipantNames: false,
+		exportMedia: true,
+		stableMedia: false,
+		exportUtcTime: false,
+		redactPhoneNumbers: true,
+		onlyMyMessages: false,
+		excludeMyMessages: false,
+		dateFrom: "",
+		dateTo: ""
+	};
 	//#endregion
 	//#region src/core/sites/whatsapp/helpers.ts
 	function featureAttrName(id) {
@@ -162,6 +207,10 @@
 		btnAddTask: {
 			label: "Add task button",
 			description: "Create a task linked to the open chat."
+		},
+		btnExportChat: {
+			label: "Export chat button",
+			description: "Export the open chat to HTML, JSON, Excel, or CSV."
 		}
 	};
 	var WHATSAPP_SECTION_INFO = {
@@ -280,6 +329,141 @@
 		return true;
 	}
 	//#endregion
+	//#region src/chrome/content/sites/whatsapp/features/exportChatModal.ts
+	function downloadFile(filename, mime, content) {
+		const blob = new Blob([content], { type: mime });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+		setTimeout(() => URL.revokeObjectURL(url), 1e3);
+	}
+	function fieldCheckbox(label, checked, onChange) {
+		const row = document.createElement("label");
+		row.className = "tbx-d-export-chat__check";
+		const input = document.createElement("input");
+		input.type = "checkbox";
+		input.checked = checked;
+		input.addEventListener("change", () => onChange(input.checked));
+		const span = document.createElement("span");
+		span.textContent = label;
+		row.append(input, span);
+		return row;
+	}
+	function fieldRadio(name, value, label, checked, onPick) {
+		const row = document.createElement("label");
+		row.className = "tbx-d-export-chat__radio";
+		const input = document.createElement("input");
+		input.type = "radio";
+		input.name = name;
+		input.className = "tbx-d-radio";
+		input.value = value;
+		input.checked = checked;
+		input.addEventListener("change", () => {
+			if (input.checked) onPick();
+		});
+		const span = document.createElement("span");
+		span.textContent = label;
+		row.append(input, span);
+		return row;
+	}
+	function openExportChatModal(host, notify) {
+		host.querySelector(".tbx-d-export-chat-modal")?.remove();
+		const opts = { ...DEFAULT_CHAT_EXPORT_OPTIONS };
+		let busy = false;
+		const close = () => overlay.remove();
+		const overlay = document.createElement("div");
+		overlay.className = "tbx-d-modal tbx-d-export-chat-modal";
+		const box = document.createElement("div");
+		box.className = "tbx-d-modal__box tbx-d-modal__box--export-chat";
+		const title = document.createElement("h3");
+		title.className = "tbx-d-modal__title";
+		title.textContent = "Export chat";
+		const chatHint = document.createElement("p");
+		chatHint.className = "tbx-d-export-chat__hint";
+		chatHint.textContent = activeChatTitle() ? `Chat: ${activeChatTitle()}` : "Open a chat in WhatsApp first.";
+		const formats = document.createElement("div");
+		formats.className = "tbx-d-export-chat__formats";
+		for (const [value, label] of [
+			["html", "HTML"],
+			["json", "JSON"],
+			["excel", "Excel"],
+			["csv", "CSV"]
+		]) formats.appendChild(fieldRadio("tbx-exp-format", value, label, opts.format === value, () => {
+			opts.format = value;
+		}));
+		const optionsWrap = document.createElement("div");
+		optionsWrap.className = "tbx-d-export-chat__opts";
+		for (const [key, label] of [
+			["exportChatName", "Export chat name"],
+			["exportParticipantNames", "Export participant names"],
+			["exportMedia", "Export media"],
+			["stableMedia", "Stable media"],
+			["exportUtcTime", "Export UTC time"],
+			["redactPhoneNumbers", "Redact phone numbers"],
+			["onlyMyMessages", "Only my messages"],
+			["excludeMyMessages", "Exclude my messages"]
+		]) optionsWrap.appendChild(fieldCheckbox(label, Boolean(opts[key]), (v) => {
+			opts[key] = v;
+		}));
+		const dateRow = document.createElement("div");
+		dateRow.className = "tbx-d-export-chat__dates";
+		const from = document.createElement("input");
+		from.type = "date";
+		from.className = "tbx-d-input";
+		from.addEventListener("change", () => {
+			opts.dateFrom = from.value;
+		});
+		const to = document.createElement("input");
+		to.type = "date";
+		to.className = "tbx-d-input";
+		to.addEventListener("change", () => {
+			opts.dateTo = to.value;
+		});
+		const dateLabel = document.createElement("span");
+		dateLabel.className = "tbx-d-export-chat__date-label";
+		dateLabel.textContent = "Date range";
+		dateRow.append(dateLabel, from, document.createTextNode("–"), to);
+		const actions = document.createElement("div");
+		actions.className = "tbx-d-form__actions";
+		const cancel = document.createElement("button");
+		cancel.type = "button";
+		cancel.className = "tbx-d-btn tbx-d-btn--ghost";
+		cancel.textContent = "Cancel";
+		cancel.addEventListener("click", close);
+		const exportBtn = document.createElement("button");
+		exportBtn.type = "button";
+		exportBtn.className = "tbx-d-btn tbx-d-btn--primary";
+		exportBtn.textContent = "Export";
+		exportBtn.addEventListener("click", () => {
+			if (busy) return;
+			if (!activeChatTitle()) return notify("Open a chat first");
+			busy = true;
+			exportBtn.disabled = true;
+			notify("Exporting chat…");
+			exportChatMain(opts).then((file) => {
+				if (!file) return notify("Could not export (is WhatsApp fully loaded?)");
+				downloadFile(file.filename, file.mime, file.content);
+				notify("Chat exported");
+				close();
+			}).finally(() => {
+				busy = false;
+				exportBtn.disabled = false;
+			});
+		});
+		actions.append(cancel, exportBtn);
+		box.append(title, chatHint, formats, optionsWrap, dateRow, actions);
+		overlay.appendChild(box);
+		overlay.addEventListener("click", (e) => {
+			if (e.target === overlay) close();
+		});
+		host.appendChild(overlay);
+		exportBtn.focus();
+	}
+	//#endregion
 	//#region src/chrome/content/sites/whatsapp/features/buttons.ts
 	var observer = null;
 	var currentState = null;
@@ -287,7 +471,8 @@
 		startChat: "M19.005 3.175H4.674C3.642 3.175 3 3.789 3 4.821V21.02l3.544-3.514h12.461c1.033 0 2.064-1.06 2.064-2.093V4.821c-.001-1.032-1.032-1.646-2.064-1.646zm-4.989 9.869H7.041V11.1h6.975v1.944zm3-4H7.041V7.1h9.975v1.944z",
 		quickReply: "M7 2v11h3v9l7-12h-4l4-8z",
 		addTask: "M14 10H3v2h11v-2zm0-4H3v2h11V6zm4 8v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM3 16h7v-2H3v2z",
-		translate: "m12.87 15.07-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7 1.62-4.33L19.12 17h-3.24z"
+		translate: "m12.87 15.07-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7 1.62-4.33L19.12 17h-3.24z",
+		exportChat: "M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5zM19 3h-4v2h4v4h2V5c0-1.1-.9-2-2-2z"
 	};
 	function svgIcon(path, size = 22) {
 		const ns = "http://www.w3.org/2000/svg";
@@ -428,6 +613,9 @@
 			postToMain("startChat", { number: digits });
 		}, "tel")));
 		if (isFeatureOn(v, "btnQuickReply")) add(ICONS$1.quickReply, "Quick replies", (btn) => openPopover(btn, "Quick replies", quickReplyList()));
+		if (isFeatureOn(v, "btnExportChat")) add(ICONS$1.exportChat, "Export chat", () => {
+			openExportChatModal(document.querySelector("#tbx-wa-drawer") ?? document.body, pageToast);
+		});
 		if (isFeatureOn(v, "btnAddTask")) add(ICONS$1.addTask, "Add task", (btn) => openPopover(btn, "Add a task for this chat", inputForm("Follow up about…", "Add", (t) => void addTask(t))));
 		if (!wrap.childElementCount) return;
 		const actions = header.lastElementChild;
@@ -987,7 +1175,12 @@
 			downloadCsv(`whatsapp-${exportKind}-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.csv`, rows);
 			toast(`Exported ${rows.length} rows`);
 		};
-		return el("div", "tbx-d-view", heading("Exporting", iconButton("download", "Download CSV", () => void run())), el("div", "tbx-d-exports", contactRow, simple("groups", "group", "Groups"), simple("labels", "label", "Labels"), simple("countries", "flag", "Countries")), el("p", "tbx-d-hint", "Pick what to export, then tap the download icon to save a CSV file."));
+		const chatExportRow = el("button", "tbx-d-card tbx-d-card--clickable", el("span", "tbx-d-export__icon", icon("download")), el("div", "tbx-d-card__main", el("div", "tbx-d-card__title", "Export chat"), el("div", "tbx-d-card__body", "Save the open chat as HTML, JSON, Excel, or CSV.")), icon("chevron", 20));
+		chatExportRow.type = "button";
+		chatExportRow.addEventListener("click", () => {
+			if (drawer) openExportChatModal(drawer, toast);
+		});
+		return el("div", "tbx-d-view", heading("Exporting", iconButton("download", "Download CSV", () => void run())), el("div", "tbx-d-cards", chatExportRow), el("div", "tbx-d-exports", contactRow, simple("groups", "group", "Groups"), simple("labels", "label", "Labels"), simple("countries", "flag", "Countries")), el("p", "tbx-d-hint", "Pick what to export, then tap the download icon to save a CSV file."));
 	}
 	var STAT_LABELS = [
 		["chats", "Total chats"],
@@ -1370,6 +1563,30 @@
 					chatId: msg.chatId,
 					text: msg.text
 				});
+				if (msg?.type === "WA_EXPORT_CHAT" && msg.options) {
+					const onResult = (payload) => {
+						window.removeEventListener("message", listener);
+						sendResponse({
+							ok: true,
+							file: payload?.file ?? null
+						});
+					};
+					const listener = (e) => {
+						if (e.source !== window) return;
+						const data = e.data;
+						if (data && data["__toolboxWaEvt"] === "exportChatResult") onResult(data.payload);
+					};
+					window.addEventListener("message", listener);
+					postToMain("exportChat", {
+						reqId: `panel-${Date.now()}`,
+						options: msg.options
+					});
+					setTimeout(() => sendResponse({
+						ok: false,
+						file: null
+					}), 6e4);
+					return true;
+				}
 				if (msg?.type === "WA_EXPORT" && msg.kind) {
 					const kind = String(msg.kind);
 					const onResult = (event, payload) => {

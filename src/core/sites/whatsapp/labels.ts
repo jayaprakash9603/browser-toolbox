@@ -13,6 +13,7 @@ export const WHATSAPP_FEATURE_LABELS: Record<string, { label: string; descriptio
   btnTranslate: { label: 'Translate message button', description: 'Translate a message inline on hover.' },
   btnQuickReply: { label: 'Quick reply button', description: 'Insert a saved template from the chat header.' },
   btnAddTask: { label: 'Add task button', description: 'Create a task linked to the open chat.' },
+  btnExportChat: { label: 'Export chat button', description: 'Export the open chat to HTML, JSON, Excel, or CSV.' },
 }
 
 export const WHATSAPP_SECTION_INFO: Record<WhatsappSection, { label: string; description: string }> = {
