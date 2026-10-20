@@ -8,6 +8,8 @@ import {
 } from '@/core/interceptor'
 import { createLogger } from '@/core/logging'
 
+import { hitsWithActions, notifyTabRuleToast } from './ruleToast'
+
 const logger = createLogger('interceptor-netlog')
 
 type Pending = Partial<NetLogEntry> & { requestId: string; tabId: number }
@@ -59,12 +61,14 @@ async function annotateRules(entry: Pending): Promise<InterceptorRuleHit[]> {
     },
     state.groups,
   )
-  return matched.map((r) => ({
-    ruleId: r.id,
-    ruleName: r.name,
-    ruleType: r.type,
-    action: 'matched',
-  }))
+  return hitsWithActions(
+    matched.map((r) => ({
+      ruleId: r.id,
+      ruleName: r.name,
+      ruleType: r.type,
+      action: 'matched',
+    })),
+  )
 }
 
 function mergeRuleHits(
@@ -145,6 +149,7 @@ export async function initNetworkLog(): Promise<void> {
       void annotateRules(p).then((hits) => {
         p.ruleHits = mergeRuleHits(p.ruleHits, hits)
         p.appliedRuleIds = [...new Set([...(p.appliedRuleIds ?? []), ...hits.map((h) => h.ruleId)])]
+        void notifyTabRuleToast(details.tabId, p.url ?? details.url, hits)
       })
     },
     { urls: ['<all_urls>'] },
@@ -211,11 +216,17 @@ export async function initNetworkLog(): Promise<void> {
       durationMs: details.timeStamp - (p.startedAt ?? details.timeStamp),
       appliedRuleIds: ruleIds,
       ruleHits: mergedHits,
-      modified: ruleIds.length > 0 || Boolean(p.modified),
+      modified:
+        ruleIds.length > 0 ||
+        Boolean(p.modified) ||
+        (details as { error?: string }).error === 'net::ERR_BLOCKED_BY_CLIENT',
       fromPageScript: p.fromPageScript,
       error: (details as { error?: string }).error,
     }
     pushEntry(details.tabId, entry)
+    if (entry.error === 'net::ERR_BLOCKED_BY_CLIENT' && mergedHits.length) {
+      void notifyTabRuleToast(details.tabId, entry.url, mergedHits)
+    }
   }
 
   chrome.webRequest.onCompleted.addListener(

@@ -16,6 +16,7 @@ export interface NetworkRow {
   appliedRuleIds?: string[]
   effectiveUrl?: string
   ruleHits?: { ruleId: string; ruleName?: string; ruleType?: string; action?: string }[]
+  error?: string
   /** Lazily loads the response body (DevTools HAR or captured). */
   getBody?: () => Promise<string>
   raw: unknown
@@ -125,6 +126,7 @@ export function fromNetLog(entry: NetLogEntry): NetworkRow {
     appliedRuleIds: entry.appliedRuleIds,
     effectiveUrl: entry.effectiveUrl,
     ruleHits: entry.ruleHits,
+    error: entry.error,
     getBody: entry.responseBody != null ? async () => entry.responseBody ?? '' : undefined,
     raw: entry,
   }

@@ -79,10 +79,16 @@ function actionLabel(kind: string, ruleType: string): string {
   if (kind === 'request') return 'Request modified'
   if (kind === 'delay') return 'Request delayed'
   if (kind === 'userAgent') return 'User-Agent changed'
-  return ruleType
+  if (kind === 'blocked' || ruleType === 'cancel') return 'Request blocked'
+  return 'Rule applied'
 }
 
-function showRuleToast(rule: PageInterceptorRule, kind: string, url: string): void {
+function showRuleToastPayload(
+  url: string,
+  kind: string,
+  ruleName: string,
+  ruleType: string,
+): void {
   if (!showToast) return
   let stack = document.getElementById(TOAST_STACK)
   if (!stack) {
@@ -96,13 +102,19 @@ function showRuleToast(rule: PageInterceptorRule, kind: string, url: string): vo
   }
   const card = document.createElement('div')
   const short = url.length > 56 ? `${url.slice(0, 53)}…` : url
+  const accent = kind === 'blocked' || ruleType === 'cancel' ? '#ef4444' : '#3b82f6'
   card.setAttribute(
     'style',
-    'pointer-events:auto;padding:10px 12px;background:#0f172a;color:#f8fafc;font:12px/1.4 system-ui,sans-serif;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.35);border-left:4px solid #3b82f6',
+    `pointer-events:auto;padding:10px 12px;background:#0f172a;color:#f8fafc;font:12px/1.4 system-ui,sans-serif;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.35);border-left:4px solid ${accent}`,
   )
-  card.innerHTML = `<div style="font-weight:600;margin-bottom:4px">${actionLabel(kind, rule.type)}</div><div style="opacity:.9">${rule.name || rule.type}</div><div style="opacity:.65;margin-top:4px;word-break:break-all">${short}</div>`
+  const title = actionLabel(kind, ruleType)
+  card.innerHTML = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:${accent}">Rule applied</span></div><div style="font-weight:600">${title}</div><div style="opacity:.9">${ruleName || ruleType}</div><div style="opacity:.65;margin-top:4px;word-break:break-all">${short}</div>`
   stack.appendChild(card)
   window.setTimeout(() => card.remove(), 4500)
+}
+
+function showRuleToast(rule: PageInterceptorRule, kind: string, url: string): void {
+  showRuleToastPayload(url, kind, rule.name || rule.type, rule.type)
 }
 
 function relay(kind: string, rule: PageInterceptorRule, url: string, method: string, extra: Record<string, unknown>) {
@@ -267,7 +279,13 @@ installXhr()
 window.addEventListener('message', (event) => {
   if (event.source !== window) return
   const data = event.data as Record<string, unknown> | null
-  if (!data || data[PAGE_COMMAND_KEY] !== 'config') return
+  if (!data || typeof data[PAGE_COMMAND_KEY] !== 'string') return
+  if (data[PAGE_COMMAND_KEY] === 'toast') {
+    const p = data.payload as { ruleName?: string; ruleType?: string; kind?: string; url: string }
+    if (p?.url) showRuleToastPayload(p.url, p.kind ?? 'matched', p.ruleName ?? '', p.ruleType ?? '')
+    return
+  }
+  if (data[PAGE_COMMAND_KEY] !== 'config') return
   rules = (data.config as PageInterceptorRule[]) ?? []
   showToast = Boolean(data.showToast)
   flushQueue()

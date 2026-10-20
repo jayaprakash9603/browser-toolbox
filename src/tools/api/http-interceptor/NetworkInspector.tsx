@@ -25,6 +25,12 @@ import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/utils/cn'
 import type { NetLogEntry } from '@/core/interceptor'
+import {
+  formatStatusDisplay,
+  networkOutcome,
+  rowUrlClass,
+  statusCellClass,
+} from '@/features/interceptor/networkStatus'
 
 import { JsonTree } from './JsonTree'
 import { QuickRuleDialog, type QuickRuleRequest } from './QuickRuleDialog'
@@ -39,13 +45,6 @@ interface Props {
   onPreserveLogChange: (value: boolean) => void
   /** Toggle shown when deep intercept can be attached to the inspected tab. */
   deep?: { active: boolean; onToggle: () => void; error?: string | null }
-}
-
-function statusClass(status?: number): string {
-  if (!status) return 'text-muted-foreground'
-  if (status >= 500) return 'text-red-600'
-  if (status >= 400) return 'text-amber-600'
-  return ''
 }
 
 export function NetworkInspector({ rows, onClear, preserveLog, onPreserveLogChange, deep }: Props) {
@@ -157,30 +156,50 @@ export function NetworkInspector({ rows, onClear, preserveLog, onPreserveLogChan
               </tr>
             </thead>
             <tbody>
-              {visible.map((r) => (
+              {visible.map((r) => {
+                const raw = r.raw as NetLogEntry
+                const status = formatStatusDisplay({ status: r.status, error: r.error ?? raw?.error })
+                const outcome = status.outcome
+                const isRowSelected = selectedId === r.id
+                return (
                 <tr
                   key={r.id}
                   onClick={() => setSelectedId(r.id)}
                   className={cn(
                     'cursor-pointer border-b even:bg-muted/30 hover:bg-muted',
-                    selectedId === r.id && 'bg-primary text-primary-foreground even:bg-primary hover:bg-primary',
+                    isRowSelected && 'bg-primary text-primary-foreground even:bg-primary hover:bg-primary',
                   )}
                 >
-                  <td className="truncate px-2 py-1 font-mono" title={r.url}>
+                  <td
+                    className={cn(
+                      'truncate px-2 py-1 font-mono',
+                      !isRowSelected && rowUrlClass(outcome),
+                    )}
+                    title={r.url}
+                  >
                     {r.modified && <span className="mr-1 rounded bg-blue-600 px-1 text-[9px] text-white">RULE</span>}
                     {r.url}
                   </td>
-                  {!selected && (
+                  {!selectedId && (
                     <>
-                      <td className="px-2">{r.method}</td>
-                      <td className={cn('px-2', statusClass(r.status))}>{r.status ?? '…'}</td>
+                      <td className={cn('px-2', outcome !== 'ok' && 'text-red-600')}>{r.method}</td>
+                      <td
+                        className={cn(
+                          'px-2',
+                          isRowSelected && outcome !== 'ok'
+                            ? 'text-red-200'
+                            : statusCellClass(outcome, r.status),
+                        )}
+                      >
+                        {status.text}
+                      </td>
                       <td className="truncate px-2">{r.type}</td>
                       <td className="px-2">{formatSize(r.size)}</td>
                       <td className="px-2">{r.time != null ? `${r.time} ms` : '—'}</td>
                     </>
                   )}
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
           {visible.length === 0 && (
@@ -263,9 +282,30 @@ export function NetworkInspector({ rows, onClear, preserveLog, onPreserveLogChan
                     </Button>
                   </div>
                   <p>
-                    <b>Method:</b> {selected.method} &nbsp; <b>Status:</b> {selected.status ?? '—'} &nbsp;
-                    <b>Type:</b> {selected.type}
+                    <b>Method:</b> {selected.method} &nbsp;{' '}
+                    <b>Status:</b>{' '}
+                    <span
+                      className={cn(
+                        statusCellClass(
+                          networkOutcome(selected.error ?? (selected.raw as NetLogEntry)?.error),
+                          selected.status,
+                        ),
+                      )}
+                    >
+                      {
+                        formatStatusDisplay({
+                          status: selected.status,
+                          error: selected.error ?? (selected.raw as NetLogEntry)?.error,
+                        }).text
+                      }
+                    </span>{' '}
+                    &nbsp; <b>Type:</b> {selected.type}
                   </p>
+                  {(selected.error ?? (selected.raw as NetLogEntry)?.error) && (
+                    <p className="text-red-600">
+                      <b>Error:</b> {selected.error ?? (selected.raw as NetLogEntry)?.error}
+                    </p>
+                  )}
                   {selected.appliedRuleIds && selected.appliedRuleIds.length > 0 && (
                     <p>
                       <b>Rules matched:</b> {selected.appliedRuleIds.length}

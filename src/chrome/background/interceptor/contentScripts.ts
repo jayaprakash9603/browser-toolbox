@@ -4,6 +4,7 @@ import {
   INTERCEPTOR_PAGE_CONFIG_KEY,
   compilePageRules,
   getInterceptorState,
+  isRuleActive,
   needsPageInterceptor,
 } from '@/core/interceptor'
 import { createLogger } from '@/core/logging'
@@ -57,12 +58,37 @@ async function unregisterAll(): Promise<void> {
   }
 }
 
+function hasActiveRules(state: Awaited<ReturnType<typeof getInterceptorState>>): boolean {
+  if (state.settings.paused) return false
+  return state.rules.some((r) => isRuleActive(r, state.groups))
+}
+
 export async function syncInterceptorContentScripts(): Promise<void> {
   const state = await getInterceptorState()
   await unregisterAll()
-  if (!needsPageInterceptor(state.rules, state.settings.paused, state.groups)) return
+  const pageRules = needsPageInterceptor(state.rules, state.settings.paused, state.groups)
+  const toastBridge = state.settings.showPageToast && hasActiveRules(state)
+  if (!pageRules && !toastBridge) return
+  const base = { matches: ALL_URLS, runAt: 'document_start' as const }
+  const scripts: chrome.scripting.RegisteredContentScript[] = [
+    {
+      ...base,
+      id: CONTENT_SCRIPT_IDS.isolated,
+      js: [INTERCEPTOR_FILES.isolatedJs],
+      allFrames: true,
+    },
+  ]
+  if (pageRules) {
+    scripts.push({
+      ...base,
+      id: CONTENT_SCRIPT_IDS.main,
+      js: [INTERCEPTOR_FILES.mainJs],
+      allFrames: true,
+      world: 'MAIN',
+    })
+  }
   try {
-    await chrome.scripting.registerContentScripts(buildInterceptorContentScripts())
+    await chrome.scripting.registerContentScripts(scripts)
   } catch (error) {
     logger.warn('registerContentScripts failed', error)
   }
