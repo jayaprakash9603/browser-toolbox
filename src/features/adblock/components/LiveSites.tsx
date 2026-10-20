@@ -65,7 +65,7 @@ const LiveSiteRow = memo(function LiveSiteRow({
         type="button"
         onClick={() => focusTab(entry.tabId)}
         className={cn(
-          'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted',
+          'flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted',
           entry.tabId === activeTabId && 'bg-muted/60',
         )}
       >

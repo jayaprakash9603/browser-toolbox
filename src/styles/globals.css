@@ -375,6 +375,51 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Pointer on interactive controls (preflight often uses default on buttons). */
+a[href],
+summary,
+label[for],
+select:not(:disabled),
+input[type='button']:not(:disabled),
+input[type='submit']:not(:disabled),
+input[type='reset']:not(:disabled),
+input[type='file']:not(:disabled),
+input[type='range']:not(:disabled),
+input[type='color']:not(:disabled),
+button:not(:disabled),
+[role='button']:not([aria-disabled='true']),
+[role='link'],
+[role='menuitem'],
+[role='menuitemcheckbox'],
+[role='menuitemradio'],
+[role='tab']:not([aria-disabled='true']),
+[role='switch']:not([data-disabled]),
+[role='radio']:not([aria-disabled='true']),
+[role='checkbox']:not([aria-disabled='true']),
+[data-slot='button'],
+[data-slot='select-trigger'] {
+  cursor: pointer;
+}
+
+button:disabled,
+select:disabled,
+input:disabled,
+textarea:disabled,
+[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+input[type='text'],
+input[type='search'],
+input[type='email'],
+input[type='password'],
+input[type='url'],
+input[type='tel'],
+input[type='number'],
+textarea {
+  cursor: text;
+}
+
 .text-product-title {
   font-size: 1.25rem;
   font-weight: 600;
@@ -486,4 +531,25 @@ html.theme-transition *::after {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  .search-highlight {
+    animation: none !important;
+  }
+}
+
+@keyframes search-highlight-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--ring) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--ring) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.search-highlight {
+  animation: search-highlight-ring 1.5s ease-out;
+  border-radius: var(--radius, 0.5rem);
 }

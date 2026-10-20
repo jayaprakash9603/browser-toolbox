@@ -58,7 +58,7 @@ export function FeatureSection({
     <div className="rounded-xl border bg-card">
       <button
         type="button"
-        className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left"
+        className="flex w-full cursor-pointer items-center justify-between gap-2 px-3 py-2.5 text-left"
         onClick={() => setOpen((o) => !o)}
       >
         <span className="text-xs font-semibold">{t(sectionLabelKey(section))}</span>

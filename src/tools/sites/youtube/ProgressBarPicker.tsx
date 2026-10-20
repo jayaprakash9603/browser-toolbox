@@ -154,7 +154,7 @@ export function ProgressBarPicker({
       <div className="flex w-full items-center gap-2 px-3 py-2.5">
         <button
           type="button"
-          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+          className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left"
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
         >
@@ -209,7 +209,7 @@ export function ProgressBarPicker({
                 key={tab.id}
                 type="button"
                 disabled={!state.enabled}
-                className={`rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                className={`cursor-pointer rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors disabled:cursor-not-allowed ${
                   collection === tab.id ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-muted/50'
                 }`}
                 onClick={() => setCollection(tab.id)}
@@ -240,7 +240,7 @@ export function ProgressBarPicker({
                   key={galleryItemKey(item)}
                   type="button"
                   disabled={!state.enabled}
-                  className={`rounded-lg border p-2 text-left transition-shadow ${
+                  className={`cursor-pointer rounded-lg border p-2 text-left transition-shadow disabled:cursor-not-allowed ${
                     selected ? 'ring-2 ring-primary shadow-sm' : 'hover:bg-muted/40'
                   }`}
                   onClick={() => applyItem(item)}
@@ -288,7 +288,7 @@ export function ProgressBarPicker({
                     type="button"
                     disabled={!state.enabled}
                     title={t(asset.labelKey)}
-                    className={`flex size-9 items-center justify-center rounded-md border p-1 ${
+                    className={`flex size-9 cursor-pointer items-center justify-center rounded-md border p-1 disabled:cursor-not-allowed ${
                       active ? 'ring-2 ring-primary bg-muted' : 'hover:bg-muted/50'
                     }`}
                     onClick={() => onPatch({ progressScrubberImage: asset.dataUri, progressScrubberEmoji: '' })}
@@ -308,7 +308,7 @@ export function ProgressBarPicker({
                   key={emoji}
                   type="button"
                   disabled={!state.enabled}
-                  className={`flex size-8 items-center justify-center rounded-md border text-base ${
+                  className={`flex size-8 cursor-pointer items-center justify-center rounded-md border text-base disabled:cursor-not-allowed ${
                     scrubberEmoji === emoji ? 'ring-2 ring-primary bg-muted' : 'hover:bg-muted/50'
                   }`}
                   onClick={() => onPatch({ progressScrubberEmoji: emoji, progressScrubberImage: '' })}
@@ -320,7 +320,7 @@ export function ProgressBarPicker({
               <button
                 type="button"
                 disabled={!state.enabled || (!scrubberEmoji && !scrubberImage)}
-                className="rounded-md border px-2 text-[10px] text-muted-foreground hover:bg-muted/50"
+                className="cursor-pointer rounded-md border px-2 text-[10px] text-muted-foreground hover:bg-muted/50 disabled:cursor-not-allowed"
                 onClick={() => onPatch({ progressScrubberEmoji: '', progressScrubberImage: '' })}
               >
                 {t('sites.youtube.progress.scrubberClear')}
@@ -337,7 +337,7 @@ export function ProgressBarPicker({
 
           <button
             type="button"
-            className="flex w-full items-center justify-between text-[10px] font-medium text-muted-foreground"
+            className="flex w-full cursor-pointer items-center justify-between text-[10px] font-medium text-muted-foreground"
             onClick={() => setFineOpen((o) => !o)}
           >
             {t('sites.youtube.progress.fineTune')}
