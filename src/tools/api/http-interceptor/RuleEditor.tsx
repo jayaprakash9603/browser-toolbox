@@ -7,23 +7,11 @@ import { Input } from '@/shared/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
 import { Textarea } from '@/shared/components/ui/textarea'
 
+import { RULE_TYPE_LABELS } from '@/features/interceptor/ruleTypeMeta'
+
 import { SourceConditionField } from './SourceConditionField'
 
-export const RULE_TYPE_LABELS: Record<InterceptorRuleType, string> = {
-  redirect: 'Redirect Request',
-  replace: 'Replace Host / String',
-  queryParam: 'Query Params',
-  headers: 'Modify Headers',
-  userAgent: 'User-Agent',
-  cancel: 'Block / Cancel Request',
-  mockApi: 'Mock API Response',
-  mockGraphql: 'Mock GraphQL',
-  modifyResponse: 'Modify Response Body',
-  modifyRequestBody: 'Modify Request Body',
-  statusCode: 'Override Status Code',
-  delay: 'Delay Request',
-  insertScript: 'Insert Script',
-}
+export { RULE_TYPE_LABELS } from '@/features/interceptor/ruleTypeMeta'
 
 const METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']
 const UA_LABELS: Record<string, string> = {
@@ -81,6 +69,9 @@ export function convertRuleType(rule: InterceptorRule, type: InterceptorRuleType
 interface Props {
   rule: InterceptorRule
   onChange: (rule: InterceptorRule) => void
+  /** Hide name, type, and single source row (full-page editor owns those). */
+  actionsOnly?: boolean
+  readOnly?: boolean
 }
 
 function HeaderList({
@@ -140,23 +131,37 @@ function HeaderList({
   )
 }
 
-export function RuleEditor({ rule, onChange }: Props) {
+export function RuleEditor({ rule, onChange, actionsOnly, readOnly }: Props) {
   const patch = (next: Partial<InterceptorRule>) =>
     onChange({ ...rule, ...next, updatedAt: Date.now() } as InterceptorRule)
 
+  const disabled = readOnly
+
   return (
     <div className="flex flex-col gap-3">
-      <Input value={rule.name} onChange={(e) => patch({ name: e.target.value })} placeholder="Rule name" />
-      <Select value={rule.type} onValueChange={(v) => onChange(convertRuleType(rule, v as InterceptorRuleType))}>
-        <SelectTrigger><SelectValue /></SelectTrigger>
-        <SelectContent>
-          {(Object.keys(RULE_TYPE_LABELS) as InterceptorRuleType[]).map((t) => (
-            <SelectItem key={t} value={t}>{RULE_TYPE_LABELS[t]}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <SourceConditionField value={rule.source} onChange={(source) => patch({ source })} />
+      {!actionsOnly && (
+        <>
+          <Input
+            value={rule.name}
+            readOnly={disabled}
+            onChange={(e) => patch({ name: e.target.value })}
+            placeholder="Rule name"
+          />
+          <Select
+            value={rule.type}
+            disabled={disabled}
+            onValueChange={(v) => onChange(convertRuleType(rule, v as InterceptorRuleType))}
+          >
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {(Object.keys(RULE_TYPE_LABELS) as InterceptorRuleType[]).map((t) => (
+                <SelectItem key={t} value={t}>{RULE_TYPE_LABELS[t]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <SourceConditionField value={rule.source} onChange={(source) => patch({ source })} />
+        </>
+      )}
 
       {rule.type === 'redirect' && (
         <Input value={rule.destination} onChange={(e) => patch({ destination: e.target.value })} placeholder="Redirect to URL" />

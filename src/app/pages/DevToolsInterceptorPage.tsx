@@ -137,7 +137,7 @@ export default function DevToolsInterceptorPage() {
         )}
         {view === 'rules' && state && (
           <div className="h-full overflow-y-auto p-3">
-            <RulesTab state={state} onStateChange={setState} />
+            <RulesTab state={state} onStateChange={setState} embedded />
           </div>
         )}
         {view === 'settings' && state && (
