@@ -1,7 +1,7 @@
 const OFFSCREEN_PATH = 'offscreen.html'
 
-/** Features that need the offscreen page to stay open (e.g. the internet monitor's probe loop). */
-const keepers = new Set<string>()
+/** Each feature holds a lease while it needs the shared offscreen document. */
+const leases = new Set<string>()
 let creating: Promise<void> | null = null
 
 export async function hasOffscreenDocument(): Promise<boolean> {
@@ -26,13 +26,34 @@ export async function ensureOffscreenDocument(): Promise<void> {
   await creating
 }
 
-export function keepOffscreenAlive(feature: string, keep: boolean): void {
-  if (keep) keepers.add(feature)
-  else keepers.delete(feature)
+export async function acquireOffscreen(owner: string): Promise<void> {
+  leases.add(owner)
+  await ensureOffscreenDocument()
 }
 
-/** Closes the shared document unless another feature still depends on it. */
-export async function releaseOffscreenDocument(): Promise<void> {
-  if (keepers.size > 0 || !(await hasOffscreenDocument())) return
+export async function releaseOffscreen(owner: string): Promise<void> {
+  leases.delete(owner)
+  if (leases.size > 0 || !(await hasOffscreenDocument())) return
   await chrome.offscreen.closeDocument()
+}
+
+export function keepOffscreenAlive(feature: string, keep: boolean): void {
+  if (keep) void acquireOffscreen(feature)
+  else void releaseOffscreen(feature)
+}
+
+/** @deprecated Prefer acquireOffscreen/releaseOffscreen with a unique owner per job. */
+export async function releaseOffscreenDocument(): Promise<void> {
+  if (leases.size > 0 || !(await hasOffscreenDocument())) return
+  await chrome.offscreen.closeDocument()
+}
+
+/** Test helper: current lease owners. */
+export function offscreenLeaseOwners(): ReadonlySet<string> {
+  return leases
+}
+
+/** @internal Clears leases between vitest cases. */
+export function resetOffscreenLeasesForTests(): void {
+  leases.clear()
 }

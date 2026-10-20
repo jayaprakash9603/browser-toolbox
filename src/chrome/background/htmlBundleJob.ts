@@ -10,7 +10,7 @@ import { downloadWithName } from './downloadNames'
 import { registerMessageHandler } from '@/core/messaging'
 import type { ExtensionMessage, ExtensionResponse } from '@/core/messaging/types'
 
-import { ensureOffscreenDocument, releaseOffscreenDocument } from './offscreen'
+import { acquireOffscreen, releaseOffscreen } from './offscreen'
 
 const logger = createLogger('html-bundle-job')
 
@@ -55,6 +55,10 @@ async function request<T>(send: () => Promise<unknown>): Promise<T> {
   return response.data
 }
 
+function offscreenOwner(buildId: string): string {
+  return `html-bundle:${buildId}`
+}
+
 function releaseAfterDownload(downloadId: number, buildId: string) {
   const onChanged = (delta: chrome.downloads.DownloadDelta) => {
     if (delta.id !== downloadId) return
@@ -63,14 +67,14 @@ function releaseAfterDownload(downloadId: number, buildId: string) {
     chrome.downloads.onChanged.removeListener(onChanged)
     void chrome.runtime
       .sendMessage({ type: 'OFFSCREEN_BUNDLE_RELEASE', buildId })
-      .then(() => releaseOffscreenDocument())
+      .then(() => releaseOffscreen(offscreenOwner(buildId)))
       .catch(() => {})
   }
   chrome.downloads.onChanged.addListener(onChanged)
 }
 
 async function deliverBundle(job: HtmlBundleJob, chunkCount: number): Promise<void> {
-  await ensureOffscreenDocument()
+  await acquireOffscreen(offscreenOwner(job.id))
   for (let index = 0; index < chunkCount; index += 1) {
     const { base64 } = await request<{ base64: string }>(() =>
       chrome.tabs.sendMessage(job.tabId, { type: 'READ_HTML_BUNDLE_CHUNK', buildId: job.id, index }),

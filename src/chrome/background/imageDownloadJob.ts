@@ -16,7 +16,7 @@ import { createLogger } from '@/core/logging'
 import { registerMessageHandler } from '@/core/messaging'
 import type { ExtensionMessage, ExtensionResponse } from '@/core/messaging/types'
 
-import { ensureOffscreenDocument, releaseOffscreenDocument } from './offscreen'
+import { acquireOffscreen, releaseOffscreen } from './offscreen'
 
 const logger = createLogger('image-download-job')
 const FILE_CONCURRENCY = 3
@@ -107,6 +107,10 @@ async function fetchImageBytes(
   return base64ToBytes(payload.base64)
 }
 
+function offscreenOwner(jobId: string): string {
+  return `image-download:${jobId}`
+}
+
 function releaseAfterDownload(downloadId: number, buildId: string) {
   const onChanged = (delta: chrome.downloads.DownloadDelta) => {
     if (delta.id !== downloadId) return
@@ -115,14 +119,14 @@ function releaseAfterDownload(downloadId: number, buildId: string) {
     chrome.downloads.onChanged.removeListener(onChanged)
     void chrome.runtime
       .sendMessage({ type: 'OFFSCREEN_BUNDLE_RELEASE', buildId })
-      .then(() => releaseOffscreenDocument())
+      .then(() => releaseOffscreen(offscreenOwner(buildId)))
       .catch(() => {})
   }
   chrome.downloads.onChanged.addListener(onChanged)
 }
 
 async function downloadZipBlob(jobId: string, zipBytes: Uint8Array, fileName: string) {
-  await ensureOffscreenDocument()
+  await acquireOffscreen(offscreenOwner(jobId))
   const { url } = await request<{ url: string }>(() =>
     chrome.runtime.sendMessage({
       type: 'OFFSCREEN_ZIP_FROM_BYTES',

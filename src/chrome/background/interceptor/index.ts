@@ -8,7 +8,7 @@ import { createLogger } from '@/core/logging'
 import { registerMessageHandler } from '@/core/messaging'
 import type { ExtensionMessage } from '@/core/messaging/types'
 
-import { incrementTabRuleCount, resetAllBadges } from './badge'
+import { clearTabBadge, incrementTabRuleCount } from './badge'
 import { syncInterceptorContentScripts } from './contentScripts'
 import { attachDeepIntercept, detachDeepIntercept, registerDeepInterceptListener } from './deepIntercept'
 import { syncInterceptorDnrRules } from './dnr'
@@ -49,8 +49,8 @@ export function registerInterceptor(): void {
     if (keys.some((k) => k in changes)) void fullSync()
   })
 
-  chrome.tabs.onRemoved.addListener(() => {
-    resetAllBadges()
+  chrome.tabs.onRemoved.addListener((tabId) => {
+    clearTabBadge(tabId)
   })
 
   registerMessageHandler('INTERCEPTOR_SYNC', async () => {
