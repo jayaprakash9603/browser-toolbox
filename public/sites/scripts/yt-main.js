@@ -11,14 +11,44 @@
 	function getPlayer() {
 		return document.querySelector("#movie_player") ?? null;
 	}
+	var MIN_RATE = .0625;
+	var MAX_RATE = 16;
+	var QUALITY_LABELS = {
+		"144": "tiny",
+		"360": "medium",
+		"480": "large",
+		"720": "hd720",
+		"1080": "hd1080",
+		"1440": "hd1440",
+		"2160": "hd2160",
+		"4320": "highres"
+	};
+	/** Best-effort: asks the player for a quality; YouTube falls back if unavailable for the video. */
+	function applyQuality(value) {
+		const player = document.querySelector("#movie_player");
+		const q = QUALITY_LABELS[value];
+		if (!player || !q) return;
+		player.setPlaybackQualityRange?.(q, q);
+		player.setPlaybackQuality?.(q);
+	}
+	function setRate(player, rate) {
+		const next = Math.min(MAX_RATE, Math.max(MIN_RATE, rate));
+		const video = getVideo();
+		if (next <= 2 && player?.setPlaybackRate) player.setPlaybackRate(next);
+		else if (video) video.playbackRate = next;
+	}
+	function currentRate(player) {
+		return getVideo()?.playbackRate ?? player?.getPlaybackRate?.() ?? 1;
+	}
 	function applyPlayerSettings(payload) {
 		if (!payload) return;
 		const player = getPlayer();
 		const video = getVideo();
 		if (!player && !video) return;
-		const speed = Number(payload.defaultSpeed ?? 1);
-		if (player?.setPlaybackRate) player.setPlaybackRate(speed);
+		const speed = Math.min(MAX_RATE, Math.max(MIN_RATE, Number(payload.defaultSpeed ?? 1) || 1));
+		if (speed <= 2 && player?.setPlaybackRate) player.setPlaybackRate(speed);
 		else if (video) video.playbackRate = speed;
+		applyQuality(String(payload.defaultQuality ?? "auto"));
 		if (payload.disableAutoplay && video) video.autoplay = false;
 		if (payload.rememberVolume) {
 			const saved = localStorage.getItem("tbx-yt-volume");
@@ -62,15 +92,12 @@
 					player.setVolume(next);
 					localStorage.setItem("tbx-yt-volume", String(next));
 				}
-				if (p.speed && player?.setPlaybackRate && player.getPlaybackRate) {
-					const next = Math.min(4, Math.max(.25, player.getPlaybackRate() + (p.deltaY > 0 ? -.05 : .05)));
-					player.setPlaybackRate(next);
-				}
+				if (p.speed) setRate(player, currentRate(player) + (p.deltaY > 0 ? -.05 : .05));
 			}
 			if (cmd === "speedDelta" && payload && typeof payload === "object") {
 				const player = getPlayer();
 				const delta = Number(payload.delta);
-				if (player?.setPlaybackRate && player.getPlaybackRate) player.setPlaybackRate(Math.min(4, Math.max(.25, player.getPlaybackRate() + delta)));
+				if (Number.isFinite(delta)) setRate(player, currentRate(player) + delta);
 			}
 			if (cmd === "sponsorSegments" && Array.isArray(payload)) skipSponsor(payload);
 			window.postMessage({

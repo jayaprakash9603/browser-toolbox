@@ -205,6 +205,14 @@
 			default: "1",
 			options: [
 				{
+					value: "0.1",
+					labelKey: "sites.youtube.options.speed01"
+				},
+				{
+					value: "0.15",
+					labelKey: "sites.youtube.options.speed015"
+				},
+				{
 					value: "0.25",
 					labelKey: "sites.youtube.options.speed025"
 				},
@@ -235,6 +243,34 @@
 				{
 					value: "2",
 					labelKey: "sites.youtube.options.speed2"
+				},
+				{
+					value: "2.5",
+					labelKey: "sites.youtube.options.speed25"
+				},
+				{
+					value: "3",
+					labelKey: "sites.youtube.options.speed3"
+				},
+				{
+					value: "4",
+					labelKey: "sites.youtube.options.speed4"
+				},
+				{
+					value: "5",
+					labelKey: "sites.youtube.options.speed5"
+				},
+				{
+					value: "8",
+					labelKey: "sites.youtube.options.speed8"
+				},
+				{
+					value: "10",
+					labelKey: "sites.youtube.options.speed10"
+				},
+				{
+					value: "16",
+					labelKey: "sites.youtube.options.speed16"
 				}
 			]
 		},
@@ -289,6 +325,18 @@
 				{
 					value: "1080",
 					labelKey: "sites.youtube.options.quality1080"
+				},
+				{
+					value: "1440",
+					labelKey: "sites.youtube.options.quality1440"
+				},
+				{
+					value: "2160",
+					labelKey: "sites.youtube.options.quality2160"
+				},
+				{
+					value: "4320",
+					labelKey: "sites.youtube.options.quality4320"
 				}
 			],
 			bestEffort: true

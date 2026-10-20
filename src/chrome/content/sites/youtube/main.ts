@@ -17,14 +17,53 @@ function getPlayer(): { setPlaybackRate?(r: number): void; getPlaybackRate?(): n
   }) ?? null
 }
 
+const MIN_RATE = 0.0625
+const MAX_RATE = 16
+
+const QUALITY_LABELS: Record<string, string> = {
+  '144': 'tiny',
+  '360': 'medium',
+  '480': 'large',
+  '720': 'hd720',
+  '1080': 'hd1080',
+  '1440': 'hd1440',
+  '2160': 'hd2160',
+  '4320': 'highres',
+}
+
+/** Best-effort: asks the player for a quality; YouTube falls back if unavailable for the video. */
+function applyQuality(value: string): void {
+  const player = document.querySelector('#movie_player') as unknown as {
+    setPlaybackQualityRange?(min: string, max?: string): void
+    setPlaybackQuality?(q: string): void
+  } | null
+  const q = QUALITY_LABELS[value]
+  if (!player || !q) return
+  player.setPlaybackQualityRange?.(q, q)
+  player.setPlaybackQuality?.(q)
+}
+
+function setRate(player: ReturnType<typeof getPlayer>, rate: number): void {
+  const next = Math.min(MAX_RATE, Math.max(MIN_RATE, rate))
+  const video = getVideo()
+  if (next <= 2 && player?.setPlaybackRate) player.setPlaybackRate(next)
+  else if (video) video.playbackRate = next
+}
+
+function currentRate(player: ReturnType<typeof getPlayer>): number {
+  return getVideo()?.playbackRate ?? player?.getPlaybackRate?.() ?? 1
+}
+
 function applyPlayerSettings(payload: Record<string, unknown> | null): void {
   if (!payload) return
   const player = getPlayer()
   const video = getVideo()
   if (!player && !video) return
-  const speed = Number(payload.defaultSpeed ?? 1)
-  if (player?.setPlaybackRate) player.setPlaybackRate(speed)
+  // Browsers support 0.0625x–16x on <video>; YouTube's player API only accepts up to 2x.
+  const speed = Math.min(MAX_RATE, Math.max(MIN_RATE, Number(payload.defaultSpeed ?? 1) || 1))
+  if (speed <= 2 && player?.setPlaybackRate) player.setPlaybackRate(speed)
   else if (video) video.playbackRate = speed
+  applyQuality(String(payload.defaultQuality ?? 'auto'))
   if (payload.disableAutoplay && video) video.autoplay = false
   if (payload.rememberVolume) {
     const saved = localStorage.getItem('tbx-yt-volume')
@@ -72,17 +111,12 @@ if (!guarded.__toolboxSitesYtMain && window === window.top) {
         player.setVolume(next)
         localStorage.setItem('tbx-yt-volume', String(next))
       }
-      if (p.speed && player?.setPlaybackRate && player.getPlaybackRate) {
-        const next = Math.min(4, Math.max(0.25, player.getPlaybackRate() + (p.deltaY > 0 ? -0.05 : 0.05)))
-        player.setPlaybackRate(next)
-      }
+      if (p.speed) setRate(player, currentRate(player) + (p.deltaY > 0 ? -0.05 : 0.05))
     }
     if (cmd === 'speedDelta' && payload && typeof payload === 'object') {
       const player = getPlayer()
       const delta = Number((payload as { delta: number }).delta)
-      if (player?.setPlaybackRate && player.getPlaybackRate) {
-        player.setPlaybackRate(Math.min(4, Math.max(0.25, player.getPlaybackRate() + delta)))
-      }
+      if (Number.isFinite(delta)) setRate(player, currentRate(player) + delta)
     }
     if (cmd === 'sponsorSegments' && Array.isArray(payload)) skipSponsor(payload as { segment: [number, number] }[])
     window.postMessage({ [PAGE_EVT_KEY]: 'ack', payload: cmd }, location.origin || '*')

@@ -73,6 +73,18 @@ const base: Record<string, string> = {
   'sites.youtube.options.speed15': '1.5×',
   'sites.youtube.options.speed175': '1.75×',
   'sites.youtube.options.speed2': '2×',
+  'sites.youtube.options.speed01': '0.1× (very slow)',
+  'sites.youtube.options.speed015': '0.15×',
+  'sites.youtube.options.speed25': '2.5×',
+  'sites.youtube.options.speed3': '3×',
+  'sites.youtube.options.speed4': '4×',
+  'sites.youtube.options.speed5': '5×',
+  'sites.youtube.options.speed8': '8×',
+  'sites.youtube.options.speed10': '10×',
+  'sites.youtube.options.speed16': '16× (max)',
+  'sites.youtube.options.quality1440': '1440p (2K)',
+  'sites.youtube.options.quality2160': '2160p (4K)',
+  'sites.youtube.options.quality4320': '4320p (8K)',
 }
 
 for (const section of YOUTUBE_SECTIONS) {
