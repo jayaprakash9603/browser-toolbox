@@ -208,6 +208,26 @@ export async function enterFullPlayerPip(): Promise<FullPlayerPipResult> {
   observer.observe(pdoc.documentElement)
   nudge()
 
+  // Many players (Prime Video, Netflix, ...) reveal controls and handle shortcuts from listeners
+  // on the page's document/window, which never see input in the PiP window. Mirror it there.
+  const forward = (event: Event) => {
+    let clone: Event
+    if (event.type.startsWith('key')) {
+      // Focused controls inside the player handle their own keys.
+      if (event.target && container.contains(event.target as Node)) return
+      clone = new KeyboardEvent(event.type, event as KeyboardEvent)
+    } else if (event.type === 'wheel') {
+      clone = new WheelEvent(event.type, event as WheelEvent)
+    } else if (event.type.startsWith('pointer')) {
+      clone = new PointerEvent(event.type, event as PointerEvent)
+    } else {
+      clone = new MouseEvent(event.type, event as MouseEvent)
+    }
+    document.dispatchEvent(clone)
+  }
+  const forwardTypes = ['mousemove', 'pointermove', 'mouseover', 'mouseout', 'wheel', 'keydown', 'keyup']
+  for (const type of forwardTypes) pdoc.addEventListener(type, forward, { passive: true })
+
   const restoreStyle = (el: HTMLElement, value: string | null) => {
     if (value === null) el.removeAttribute('style')
     else el.setAttribute('style', value)
@@ -216,6 +236,7 @@ export async function enterFullPlayerPip(): Promise<FullPlayerPipResult> {
   pip.addEventListener('pagehide', () => {
     pip.removeEventListener('resize', nudge)
     observer.disconnect()
+    for (const type of forwardTypes) pdoc.removeEventListener(type, forward)
     restoreStyle(container, containerStyle)
     restoreStyle(video, videoStyle)
     if (placeholder.parentNode) placeholder.parentNode.replaceChild(container, placeholder)

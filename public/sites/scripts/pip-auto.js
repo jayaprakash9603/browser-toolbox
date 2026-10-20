@@ -165,6 +165,26 @@
 		const observer = new ResizeObserver(nudge);
 		observer.observe(pdoc.documentElement);
 		nudge();
+		const forward = (event) => {
+			let clone;
+			if (event.type.startsWith("key")) {
+				if (event.target && container.contains(event.target)) return;
+				clone = new KeyboardEvent(event.type, event);
+			} else if (event.type === "wheel") clone = new WheelEvent(event.type, event);
+			else if (event.type.startsWith("pointer")) clone = new PointerEvent(event.type, event);
+			else clone = new MouseEvent(event.type, event);
+			document.dispatchEvent(clone);
+		};
+		const forwardTypes = [
+			"mousemove",
+			"pointermove",
+			"mouseover",
+			"mouseout",
+			"wheel",
+			"keydown",
+			"keyup"
+		];
+		for (const type of forwardTypes) pdoc.addEventListener(type, forward, { passive: true });
 		const restoreStyle = (el, value) => {
 			if (value === null) el.removeAttribute("style");
 			else el.setAttribute("style", value);
@@ -172,6 +192,7 @@
 		pip.addEventListener("pagehide", () => {
 			pip.removeEventListener("resize", nudge);
 			observer.disconnect();
+			for (const type of forwardTypes) pdoc.removeEventListener(type, forward);
 			restoreStyle(container, containerStyle);
 			restoreStyle(video, videoStyle);
 			if (placeholder.parentNode) placeholder.parentNode.replaceChild(container, placeholder);
