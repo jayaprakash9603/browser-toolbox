@@ -28,3 +28,14 @@ export async function syncShortcutContentScripts(enabled: boolean): Promise<void
     logger.warn('registerContentScripts failed', error)
   }
 }
+
+/** Registered scripts only reach new page loads; tabs open before an install/reload need it injected. */
+export async function injectShortcutDispatcherIntoOpenTabs(): Promise<void> {
+  const tabs = await chrome.tabs.query({ url: ['http://*/*', 'https://*/*', 'file://*/*'] })
+  for (const tab of tabs) {
+    if (tab.id == null || tab.discarded) continue
+    void chrome.scripting
+      .executeScript({ target: { tabId: tab.id, allFrames: true }, files: [SHORTCUT_DISPATCHER_JS] })
+      .catch(() => undefined)
+  }
+}

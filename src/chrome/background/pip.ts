@@ -179,7 +179,8 @@ async function applyPipStateToOpenTabs(prev: PipState, next: PipState): Promise<
   const autoWas = prev.enabled && prev.autoPip
   const autoIs = next.enabled && next.autoPip
   const shutdown = prev.enabled && !next.enabled
-  if (!shutdown && autoWas === autoIs) return
+  const reenabled = !prev.enabled && next.enabled
+  if (!shutdown && !reenabled && autoWas === autoIs) return
 
   for (const tabId of await scriptableTabIds()) {
     const target = { tabId, allFrames: true }

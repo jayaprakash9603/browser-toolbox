@@ -3,7 +3,7 @@ import { registerMessageHandler } from '@/core/messaging'
 import { createLogger } from '@/core/logging'
 
 import { executeToolboxCommand } from './executeCommand'
-import { syncShortcutContentScripts } from './shortcutContentScripts'
+import { injectShortcutDispatcherIntoOpenTabs, syncShortcutContentScripts } from './shortcutContentScripts'
 
 const logger = createLogger('shortcuts')
 
@@ -29,4 +29,5 @@ export function registerShortcuts(): void {
 
 export async function initShortcutsOnStartup(): Promise<void> {
   await syncShortcutContentScripts(true)
+  await injectShortcutDispatcherIntoOpenTabs()
 }
