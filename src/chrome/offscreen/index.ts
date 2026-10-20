@@ -2,7 +2,7 @@ import { base64ToBytes } from '@/core/engines/htmlArchive'
 import type { ImageSaveFormat } from '@/core/imageConvert'
 import { isExtensionMessage } from '@/core/messaging/types'
 
-import { convertImageInOffscreen } from './imageConvert'
+import { convertImageInOffscreen, releaseImageUrl } from './imageConvert'
 
 const pendingParts = new Map<string, BlobPart[]>()
 const blobUrls = new Map<string, string>()
@@ -43,6 +43,11 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
           }),
         )
       return true
+    }
+    case 'OFFSCREEN_IMAGE_RELEASE': {
+      releaseImageUrl(raw.url)
+      sendResponse({ ok: true, data: { released: true } })
+      return false
     }
     default:
       return false

@@ -1,31 +1,22 @@
-import { bytesToBase64, base64ToBytes } from '@/core/engines/htmlArchive'
-import type { ImageSaveFormat } from '@/core/imageConvert'
+import { base64ToBytes } from '@/core/engines/htmlArchive'
+import { jpegToPdf, type ImageSaveFormat } from '@/core/imageConvert'
 
-type ConvertResult = {
-  base64: string
-  mime: string
-  width: number
-  height: number
-  forPdf?: boolean
-}
+const blobUrls = new Set<string>()
 
+/** Converts the image and returns a blob URL the service worker can hand to chrome.downloads. */
 export async function convertImageInOffscreen(
   base64: string,
   sourceMime: string,
   format: ImageSaveFormat,
   quality: number,
-): Promise<ConvertResult> {
+): Promise<{ url: string; mime: string }> {
   const bytes = base64ToBytes(base64)
-  const mime = sourceMime.toLowerCase()
+  const mime = sourceMime.toLowerCase().split(';')[0].trim()
 
-  if (format === 'gif' && mime.includes('gif')) {
-    return { base64, mime: 'image/gif', width: 0, height: 0 }
-  }
+  if (format === 'gif' && mime === 'image/gif') return toBlobUrl(bytes, 'image/gif')
 
-  const blob = new Blob([new Uint8Array(bytes)], { type: mime || 'application/octet-stream' })
-  const bitmap = await createImageBitmap(blob)
-  const width = bitmap.width
-  const height = bitmap.height
+  const bitmap = await decode(bytes, mime)
+  const { width, height } = bitmap
   const canvas = document.createElement('canvas')
   canvas.width = width
   canvas.height = height
@@ -36,30 +27,62 @@ export async function convertImageInOffscreen(
     ctx.fillRect(0, 0, width, height)
   }
   ctx.drawImage(bitmap, 0, 0)
-  bitmap.close()
+  if ('close' in bitmap) bitmap.close()
 
   if (format === 'gif') {
-    const { GIFEncoder, quantize } = await import('gifenc')
+    const { GIFEncoder, quantize, applyPalette } = await import('gifenc')
     const { data } = ctx.getImageData(0, 0, width, height)
-    const { palette, indices } = quantize(data, 256)
+    const palette = quantize(data, 256)
+    const index = applyPalette(data, palette)
     const gif = GIFEncoder()
-    gif.writeFrame(indices, width, height, { palette })
+    gif.writeFrame(index, width, height, { palette })
     gif.finish()
-    const out = gif.bytes()
-    return { base64: bytesToBase64(out), mime: 'image/gif', width, height }
+    return toBlobUrl(gif.bytes(), 'image/gif')
   }
 
-  const outMime =
-    format === 'jpg' || format === 'pdf' ? 'image/jpeg' : format === 'png' ? 'image/png' : 'image/webp'
-  const outBlob = await canvasToBlob(canvas, outMime, quality)
-  const outBytes = new Uint8Array(await outBlob.arrayBuffer())
-  return {
-    base64: bytesToBase64(outBytes),
-    mime: outMime,
-    width,
-    height,
-    forPdf: format === 'pdf',
+  if (format === 'pdf') {
+    const jpeg = new Uint8Array(await (await canvasToBlob(canvas, 'image/jpeg', quality)).arrayBuffer())
+    return toBlobUrl(jpegToPdf(jpeg, width, height), 'application/pdf')
   }
+
+  const outMime = format === 'jpg' ? 'image/jpeg' : format === 'png' ? 'image/png' : 'image/webp'
+  const blob = await canvasToBlob(canvas, outMime, quality)
+  return toBlobUrl(new Uint8Array(await blob.arrayBuffer()), outMime)
+}
+
+export function releaseImageUrl(url: string): void {
+  if (!blobUrls.delete(url)) return
+  URL.revokeObjectURL(url)
+}
+
+/** createImageBitmap rejects SVG; fall back to an <img> element for those. */
+async function decode(bytes: Uint8Array, mime: string): Promise<ImageBitmap | HTMLImageElement> {
+  const blob = new Blob([new Uint8Array(bytes)], { type: mime || 'application/octet-stream' })
+  try {
+    return await createImageBitmap(blob)
+  } catch {
+    const url = URL.createObjectURL(blob)
+    try {
+      const img = new Image()
+      img.decoding = 'async'
+      img.src = url
+      await img.decode()
+      if (!img.naturalWidth) throw new Error('Unsupported image')
+      if (!img.width) {
+        img.width = img.naturalWidth
+        img.height = img.naturalHeight
+      }
+      return img
+    } finally {
+      URL.revokeObjectURL(url)
+    }
+  }
+}
+
+function toBlobUrl(bytes: Uint8Array, mime: string): { url: string; mime: string } {
+  const url = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: mime }))
+  blobUrls.add(url)
+  return { url, mime }
 }
 
 function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob> {

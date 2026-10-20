@@ -89,6 +89,7 @@ export type ExtensionMessage =
       format: 'jpg' | 'png' | 'webp' | 'gif' | 'pdf'
       quality: number
     }
+  | { type: 'OFFSCREEN_IMAGE_RELEASE'; url: string }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
@@ -145,6 +146,7 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'WA_EXPORT',
   'WA_TRANSLATE',
   'OFFSCREEN_IMAGE_CONVERT',
+  'OFFSCREEN_IMAGE_RELEASE',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {

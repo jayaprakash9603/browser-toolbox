@@ -6,7 +6,6 @@ import {
   formatFromMenuId,
   getSaveImageAsState,
   imageSaveMenuId,
-  jpegToPdf,
   suggestFilename,
   type ImageSaveFormat,
 } from '@/core/imageConvert'
@@ -51,22 +50,17 @@ export async function handleImageConvertMenuClick(
 
   try {
     const { bytes, mime } = await fetchImageBytes(info.srcUrl, tab?.id)
-    const converted = await convertBytes(bytes, mime, format, state.quality)
-    let outBytes = converted.bytes
-    let outMime = converted.mime
-    if (format === 'pdf') {
-      outBytes = jpegToPdf(converted.bytes, converted.width, converted.height)
-      outMime = 'application/pdf'
-    }
+    const { url } = await convertBytes(bytes, mime, format, state.quality)
     const filename = suggestFilename(format, {
       pageTitle: tab?.title,
       imageUrl: info.srcUrl,
       pageUrl: info.pageUrl ?? tab?.url,
     })
-    await downloadBytes(outBytes, outMime, filename, state.askFilename)
+    await downloadConverted(url, filename, state.askFilename)
   } catch (error) {
     logger.warn('image convert failed', error)
-    void notify('Could not convert image', 'Downloading the original file instead.')
+    const reason = error instanceof Error ? error.message : String(error)
+    notify('Could not convert image', `${reason}. Downloading the original file instead.`)
     try {
       const filename = suggestFilename(format, {
         pageTitle: tab?.title,
@@ -76,7 +70,7 @@ export async function handleImageConvertMenuClick(
       await chrome.downloads.download({ url: info.srcUrl, filename, saveAs: state.askFilename })
     } catch (fallbackError) {
       logger.warn('fallback download failed', fallbackError)
-      void notify('Image download failed', 'Check page permissions or try another image.')
+      notify('Image download failed', 'Check page permissions or try another image.')
     }
   }
 }
@@ -143,15 +137,9 @@ async function convertBytes(
   sourceMime: string,
   format: ImageSaveFormat,
   quality: number,
-): Promise<{ bytes: Uint8Array; mime: string; width: number; height: number }> {
+): Promise<{ url: string; mime: string }> {
   await ensureOffscreenDocument()
-  const data = await request<{
-    base64: string
-    mime: string
-    width: number
-    height: number
-    forPdf?: boolean
-  }>(() =>
+  return request<{ url: string; mime: string }>(() =>
     chrome.runtime.sendMessage({
       type: 'OFFSCREEN_IMAGE_CONVERT',
       base64: bytesToBase64(bytes),
@@ -160,12 +148,6 @@ async function convertBytes(
       quality,
     }),
   )
-  return {
-    bytes: base64ToBytes(data.base64),
-    mime: data.mime,
-    width: data.width,
-    height: data.height,
-  }
 }
 
 async function ensureOffscreenDocument(): Promise<void> {
@@ -180,14 +162,24 @@ async function ensureOffscreenDocument(): Promise<void> {
   })
 }
 
-async function downloadBytes(bytes: Uint8Array, mime: string, filename: string, saveAs: boolean): Promise<void> {
-  const blob = new Blob([new Uint8Array(bytes)], { type: mime })
-  const url = URL.createObjectURL(blob)
+/** Service workers cannot create blob URLs, so the offscreen page owns them until the download ends. */
+async function downloadConverted(url: string, filename: string, saveAs: boolean): Promise<void> {
+  const release = () => void chrome.runtime.sendMessage({ type: 'OFFSCREEN_IMAGE_RELEASE', url }).catch(() => {})
+  let downloadId: number
   try {
-    await chrome.downloads.download({ url, filename, saveAs })
-  } finally {
-    setTimeout(() => URL.revokeObjectURL(url), 60_000)
+    downloadId = await chrome.downloads.download({ url, filename, saveAs, conflictAction: 'uniquify' })
+  } catch (error) {
+    release()
+    throw error
   }
+  const onChanged = (delta: chrome.downloads.DownloadDelta) => {
+    if (delta.id !== downloadId) return
+    const s = delta.state?.current
+    if (s !== 'complete' && s !== 'interrupted') return
+    chrome.downloads.onChanged.removeListener(onChanged)
+    release()
+  }
+  chrome.downloads.onChanged.addListener(onChanged)
 }
 
 async function request<T>(send: () => Promise<unknown>): Promise<T> {
