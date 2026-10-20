@@ -10,13 +10,18 @@ html[data-tbx-wa-blur-contact-names] [data-testid="conversation-info-header-chat
   filter: none;
 }
 
-html[data-tbx-wa-blur-contact-photos] img[src*="pps.whatsapp.net"],
-html[data-tbx-wa-blur-contact-photos] [data-testid="avatar"] img {
-  filter: blur(10px);
+html[data-tbx-wa-blur-contact-photos] #side img:not(.emoji):not([data-plain-text]),
+html[data-tbx-wa-blur-contact-photos] #pane-side img:not(.emoji):not([data-plain-text]),
+html[data-tbx-wa-blur-contact-photos] #main header img:not(.emoji):not([data-plain-text]),
+html[data-tbx-wa-blur-contact-photos] #app img[src*="pps.whatsapp.net"],
+html[data-tbx-wa-blur-contact-photos] #app [data-testid="avatar"] img,
+html[data-tbx-wa-blur-contact-photos] #app [data-testid="default-user"] {
+  filter: blur(8px);
   transition: filter 0.15s ease;
 }
-html[data-tbx-wa-blur-contact-photos] [data-testid="cell-frame-container"]:hover img,
-html[data-tbx-wa-blur-contact-photos] [data-testid="conversation-header"]:hover img {
+html[data-tbx-wa-blur-contact-photos] #pane-side [role="listitem"]:hover img,
+html[data-tbx-wa-blur-contact-photos] #pane-side [role="row"]:hover img,
+html[data-tbx-wa-blur-contact-photos] #main header:hover img {
   filter: none;
 }
 
