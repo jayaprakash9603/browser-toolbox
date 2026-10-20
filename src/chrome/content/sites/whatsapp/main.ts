@@ -172,22 +172,6 @@ async function handleCmd(cmd: string, payload: unknown): Promise<void> {
     if (msgId && react) await react(msgId, '👍')
   }
 
-  if (cmd === 'translateMessage' && payload && typeof payload === 'object') {
-    const text = String((payload as { text: string }).text)
-    const Translator = (window as Window & { Translator?: { create: (o: object) => Promise<{ translate: (t: string) => Promise<{ targetText: string }> }> } }).Translator
-    if (Translator && text) {
-      try {
-        const tr = await Translator.create({ sourceLanguage: 'auto', targetLanguage: 'en' })
-        const out = await tr.translate(text)
-        alert(out.targetText)
-      } catch {
-        alert('Translation not available in this browser.')
-      }
-    } else {
-      alert('Translation not available in this browser.')
-    }
-  }
-
   if (cmd === 'export' && payload && typeof payload === 'object') {
     const kind = String((payload as { kind: string }).kind)
     const rows = await runQuery(wpp, kind)

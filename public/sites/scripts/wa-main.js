@@ -457,20 +457,6 @@
 			const react = wpp.chat?.sendReactionToMessage;
 			if (msgId && react) await react(msgId, "👍");
 		}
-		if (cmd === "translateMessage" && payload && typeof payload === "object") {
-			const text = String(payload.text);
-			const Translator = window.Translator;
-			if (Translator && text) try {
-				const out = await (await Translator.create({
-					sourceLanguage: "auto",
-					targetLanguage: "en"
-				})).translate(text);
-				alert(out.targetText);
-			} catch {
-				alert("Translation not available in this browser.");
-			}
-			else alert("Translation not available in this browser.");
-		}
 		if (cmd === "export" && payload && typeof payload === "object") {
 			const rows = await runQuery(wpp, String(payload.kind));
 			window.postMessage({

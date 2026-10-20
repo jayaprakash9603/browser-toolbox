@@ -58,7 +58,7 @@ export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
   {
     id: 'whatsappPanel',
     labelKey: 'sites.whatsapp.settings.title',
-    fallbackLabel: 'WhatsApp Web Plus',
+    fallbackLabel: 'ChatBoost for WhatsApp',
     keywords: ['whatsapp', 'wa', 'sites'],
   },
   {

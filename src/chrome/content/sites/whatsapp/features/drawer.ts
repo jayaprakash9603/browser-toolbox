@@ -2,22 +2,27 @@ import {
   applyTemplateVariables,
   contactsToCsv,
   countActiveFeatures,
-  defaultWhatsappData,
-  defaultWhatsappValues,
   MAX_CHAT_BACKGROUND_BYTES,
   WHATSAPP_FEATURE_LABELS,
   WHATSAPP_FEATURES,
   WHATSAPP_SECTION_INFO,
   WHATSAPP_SECTIONS,
-  type WhatsappFeatureValue,
-  type WhatsappPlusData,
   type WhatsappPlusState,
   type WhatsappSection,
 } from '@/core/sites/whatsapp'
 
 import { queryMain } from '../bridge'
+import {
+  activeChatTitle,
+  insertIntoComposer,
+  loadState,
+  normalizeState,
+  saveState,
+  STORAGE_KEY,
+  uid,
+  type StatePatch,
+} from '../store'
 
-const STORAGE_KEY = 'whatsappPlus'
 const DRAWER_ID = 'tbx-wa-drawer'
 const OPEN_ATTR = 'data-tbx-wa-drawer-open'
 const BULK_EXCLUDED = new Set(['showSideLauncher'])
@@ -66,7 +71,7 @@ const ICONS = {
 } as const
 
 const VIEW_TITLES: Record<View, string> = {
-  home: 'WA Web Plus',
+  home: 'ChatBoost',
   enhancements: 'Enhancements',
   business: 'Business Tools',
   templates: 'Message Templates',
@@ -164,38 +169,37 @@ function input(placeholder: string, type = 'text'): HTMLInputElement {
   return i
 }
 
-function uid(): string {
-  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`
-}
-
-function normalize(raw: unknown): WhatsappPlusState {
-  const o = (raw && typeof raw === 'object' ? raw : {}) as Partial<WhatsappPlusState>
-  return {
-    enabled: o.enabled ?? false,
-    values: { ...defaultWhatsappValues(), ...o.values },
-    data: { ...defaultWhatsappData(), ...o.data },
-  }
-}
-
-async function loadState(): Promise<WhatsappPlusState> {
-  const r = await chrome.storage.local.get(STORAGE_KEY)
-  return normalize(r[STORAGE_KEY])
-}
-
-async function patchState(patch: {
-  enabled?: boolean
-  values?: Record<string, WhatsappFeatureValue>
-  data?: Partial<WhatsappPlusData>
-}): Promise<void> {
-  const cur = await loadState()
-  const next: WhatsappPlusState = {
-    enabled: patch.enabled ?? cur.enabled,
-    values: { ...cur.values, ...patch.values },
-    data: { ...cur.data, ...patch.data },
-  }
-  state = next
-  await chrome.storage.local.set({ [STORAGE_KEY]: next })
+async function patchState(patch: StatePatch): Promise<void> {
+  state = await saveState(patch)
   render('none')
+}
+
+function confirmDialog(title: string, message: string, okLabel: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (!drawer) return resolve(false)
+    const close = (result: boolean) => {
+      overlay.classList.add('is-closing')
+      setTimeout(() => overlay.remove(), 150)
+      resolve(result)
+    }
+    const ok = textButton(okLabel, () => close(true), 'danger')
+    const overlay = el(
+      'div',
+      'tbx-d-modal',
+      el(
+        'div',
+        'tbx-d-modal__box',
+        el('h3', 'tbx-d-modal__title', title),
+        el('p', 'tbx-d-modal__text', message),
+        el('div', 'tbx-d-form__actions', textButton('Cancel', () => close(false), 'ghost'), ok),
+      ),
+    )
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) close(false)
+    })
+    drawer.appendChild(overlay)
+    ok.focus()
+  })
 }
 
 function toast(message: string): void {
@@ -209,18 +213,6 @@ function toast(message: string): void {
 
 function openFullPanel(): void {
   void chrome.runtime.sendMessage({ type: 'WA_OPEN_PANEL' }).catch(() => {})
-}
-
-function activeChatTitle(): string {
-  return document.querySelector('#main header span[dir="auto"]')?.textContent?.trim() ?? ''
-}
-
-function insertIntoComposer(text: string): boolean {
-  const box = document.querySelector<HTMLElement>('#main footer [contenteditable="true"]')
-  if (!box) return false
-  box.focus()
-  document.execCommand('insertText', false, text)
-  return true
 }
 
 function downloadCsv(name: string, rows: Record<string, string>[]): void {
@@ -811,9 +803,10 @@ function viewMore(): HTMLElement {
         void patchState({ values: { showSideLauncher: false } })
         closeDrawer()
       }),
-      navRow('power', 'Turn off WA Web Plus', 'Disable every WA Web Plus feature on this site.', () => {
-        if (!confirm('Turn off WA Web Plus? You can turn it on again from Browser Toolbox.')) return
-        void patchState({ enabled: false })
+      navRow('power', 'Turn off ChatBoost', 'Disable every ChatBoost feature on this site.', () => {
+        void confirmDialog('Turn off ChatBoost?', 'You can turn it on again from Browser Toolbox.', 'Turn off').then((yes) => {
+          if (yes) void patchState({ enabled: false })
+        })
       }),
     ),
     el('p', 'tbx-d-hint', `Browser Toolbox v${chrome.runtime.getManifest().version}`),
@@ -869,7 +862,7 @@ function build(): HTMLElement {
   root.setAttribute('role', 'dialog')
   root.tabIndex = -1
 
-  const title = el('div', 'tbx-d-header__title', el('span', '', 'WA Web Plus'), el('sup', 'tbx-d-header__ver', 'Toolbox'))
+  const title = el('div', 'tbx-d-header__title', el('span', '', 'ChatBoost'), el('sup', 'tbx-d-header__ver', 'for WhatsApp'))
   title.addEventListener('click', () => {
     if (stack.length > 1) {
       stack = ['home']
@@ -897,7 +890,7 @@ function onKey(e: KeyboardEvent): void {
 
 function onStorage(changes: Record<string, chrome.storage.StorageChange>, area: string): void {
   if (area !== 'local' || !changes[STORAGE_KEY] || !drawer) return
-  const next = normalize(changes[STORAGE_KEY].newValue)
+  const next = normalizeState(changes[STORAGE_KEY].newValue)
   if (!next.enabled) {
     destroyDrawer()
     return

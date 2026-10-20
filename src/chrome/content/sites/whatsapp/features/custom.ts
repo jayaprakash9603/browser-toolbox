@@ -54,8 +54,8 @@ function createItem(anchor: HTMLElement): HTMLElement {
   const btn = document.createElement('button')
   btn.type = 'button'
   btn.className = 'tbx-wa-launcher'
-  btn.title = 'WA Web Plus'
-  btn.setAttribute('aria-label', 'WA Web Plus')
+  btn.title = 'ChatBoost'
+  btn.setAttribute('aria-label', 'ChatBoost')
   btn.innerHTML = PLUS_SVG
   btn.addEventListener('click', (e) => {
     e.stopPropagation()

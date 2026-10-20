@@ -137,6 +137,17 @@ export function registerSitesWhatsapp(): void {
     return res ?? { ok: false }
   })
 
+  registerMessageHandler('WA_TRANSLATE', async (message) => {
+    if (message.type !== 'WA_TRANSLATE') return null
+    const target = message.target || 'en'
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${encodeURIComponent(target)}&dt=t&q=${encodeURIComponent(message.text.slice(0, 4500))}`
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`translate ${res.status}`)
+    const json = (await res.json()) as [[string, string][] | null, unknown, string?]
+    const text = (json[0] ?? []).map((part) => part[0]).join('')
+    return { text, source: typeof json[2] === 'string' ? json[2] : '' }
+  })
+
   chrome.alarms.create('wa-schedule', { periodInMinutes: 1 })
   chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name !== 'wa-schedule') return

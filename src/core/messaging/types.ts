@@ -81,6 +81,7 @@ export type ExtensionMessage =
   | { type: 'WA_FIRE_WEBHOOK'; event: string; payload: unknown }
   | { type: 'WA_RUN_BROADCAST'; campaignId: string }
   | { type: 'WA_EXPORT'; kind: string }
+  | { type: 'WA_TRANSLATE'; text: string; target: string }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
@@ -135,6 +136,7 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'WA_FIRE_WEBHOOK',
   'WA_RUN_BROADCAST',
   'WA_EXPORT',
+  'WA_TRANSLATE',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {

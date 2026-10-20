@@ -17,7 +17,7 @@ export const WHATSAPP_FEATURE_LABELS: Record<string, { label: string; descriptio
   notifyTyping: { label: 'Notify about typing and recording activities', description: 'Get a notification when someone is typing.' },
   preventListJump: { label: 'Prevent chats list jumping on message submission', description: 'Keep the chat list scroll position.' },
   customChatBackground: { label: 'Set custom chat background image', description: 'Use your own wallpaper for conversations.' },
-  showSideLauncher: { label: 'Show WA Web Plus button in sidebar', description: 'Green plus button in the left navigation rail.' },
+  showSideLauncher: { label: 'Show ChatBoost button in sidebar', description: 'Green plus button in the left navigation rail.' },
   btnLike: { label: 'Like button', description: 'Quick 👍 reaction on message hover.' },
   btnPinChat: { label: 'Pin chat button', description: 'Pin the open chat from its header.' },
   btnStartChat: { label: 'Start new chat', description: 'Open a chat with any phone number.' },

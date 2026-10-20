@@ -30,7 +30,7 @@ import { UtilitiesTab } from './UtilitiesTab'
 
 const NS = 'sites.whatsapp'
 
-export default function WhatsappWebPlusTool() {
+export default function ChatBoostTool() {
   const { t } = useTranslation()
   const tool = useSitesTool('sites.whatsapp')
   const { state, patch } = useWhatsappSettings()
