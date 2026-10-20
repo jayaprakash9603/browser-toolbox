@@ -1,5 +1,8 @@
 import { base64ToBytes } from '@/core/engines/htmlArchive'
+import type { ImageSaveFormat } from '@/core/imageConvert'
 import { isExtensionMessage } from '@/core/messaging/types'
+
+import { convertImageInOffscreen } from './imageConvert'
 
 const pendingParts = new Map<string, BlobPart[]>()
 const blobUrls = new Map<string, string>()
@@ -29,6 +32,17 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
       pendingParts.delete(raw.buildId)
       sendResponse({ ok: true, data: { released: true } })
       return false
+    }
+    case 'OFFSCREEN_IMAGE_CONVERT': {
+      void convertImageInOffscreen(raw.base64, raw.sourceMime, raw.format as ImageSaveFormat, raw.quality)
+        .then((data) => sendResponse({ ok: true, data }))
+        .catch((error: unknown) =>
+          sendResponse({
+            ok: false,
+            error: error instanceof Error ? error.message : String(error),
+          }),
+        )
+      return true
     }
     default:
       return false

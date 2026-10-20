@@ -12,6 +12,7 @@ export const STORAGE_KEYS = {
   protectionRulesVersion: 'protectionRulesVersion',
   youtubeEnhancer: 'youtubeEnhancer',
   whatsappPlus: 'whatsappPlus',
+  saveImageAs: 'saveImageAs',
   meta: 'meta',
 } as const
 

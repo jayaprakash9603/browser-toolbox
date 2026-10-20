@@ -62,6 +62,12 @@ export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
     keywords: ['whatsapp', 'wa', 'sites'],
   },
   {
+    id: 'saveImageAsPanel',
+    labelKey: 'saveImageAs.settingsTitle',
+    fallbackLabel: 'Save Image As Type',
+    keywords: ['image', 'download', 'jpg', 'png', 'pdf', 'context menu'],
+  },
+  {
     id: 'clipboardHistory',
     labelKey: 'settings.clipboardHistory',
     fallbackLabel: 'Clipboard history',

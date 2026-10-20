@@ -5,6 +5,7 @@ const CHROME_UI_FALLBACKS: Record<string, string> = {
   actionTitle: 'Open Browser Toolbox',
   contextMenuOpen: 'Open Browser Toolbox',
   contextMenuPauseAdblock: 'Pause ad blocking on this site',
+  contextMenuSaveImageAs: 'Save image as',
 }
 
 export function getChromeMessage(messageName: string): string {

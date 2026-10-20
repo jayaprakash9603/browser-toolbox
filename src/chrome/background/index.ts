@@ -11,6 +11,13 @@ import { contentScriptBundlePath, ensureContentScriptInTab } from '@/chrome/cont
 import { registerAdblock, syncAdblockState } from './adblock'
 import { registerProtection, syncProtectionState } from './protection'
 import { registerSitesWhatsapp, registerSitesYoutube, syncYoutubeEnhancerState } from './sites'
+import {
+  bindImageConvertMenuRebuild,
+  buildImageConvertMenus,
+  handleImageConvertMenuClick,
+  isImageConvertMenuItem,
+  registerImageConvert,
+} from './imageConvert'
 import { registerApiClientSendHandler } from './api-client-send'
 import { registerCaptureHandler } from './capture'
 import { registerHtmlBundleJobHandlers } from './htmlBundleJob'
@@ -47,6 +54,7 @@ async function rebuildContextMenus() {
       ...(item.parentId ? { parentId: item.parentId } : {}),
     })
   }
+  await buildImageConvertMenus()
 }
 
 async function openPanelWithTool(
@@ -81,6 +89,10 @@ chrome.runtime.onStartup.addListener(() => {
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   const menuItemId = String(info.menuItemId)
+  if (isImageConvertMenuItem(menuItemId)) {
+    void handleImageConvertMenuClick(info, tab)
+    return
+  }
   if (menuItemId === 'toolbox.adblock.pause-site' && tab?.url) {
     const host = hostnameFromUrl(tab.url)
     if (host) void addAllowlistHost(host)
@@ -154,4 +166,6 @@ registerAdblock()
 registerProtection()
 registerSitesYoutube()
 registerSitesWhatsapp()
+bindImageConvertMenuRebuild(rebuildContextMenus)
+registerImageConvert()
 startMessageRouter()

@@ -22,5 +22,8 @@
   },
   "contextMenuPauseAdblock": {
     "message": "Pause ad blocking on this site"
+  },
+  "contextMenuSaveImageAs": {
+    "message": "Save image as"
   }
 }

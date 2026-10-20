@@ -82,6 +82,13 @@ export type ExtensionMessage =
   | { type: 'WA_RUN_BROADCAST'; campaignId: string }
   | { type: 'WA_EXPORT'; kind: string }
   | { type: 'WA_TRANSLATE'; text: string; target: string }
+  | {
+      type: 'OFFSCREEN_IMAGE_CONVERT'
+      base64: string
+      sourceMime: string
+      format: 'jpg' | 'png' | 'webp' | 'gif' | 'pdf'
+      quality: number
+    }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
@@ -137,6 +144,7 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'WA_RUN_BROADCAST',
   'WA_EXPORT',
   'WA_TRANSLATE',
+  'OFFSCREEN_IMAGE_CONVERT',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {
