@@ -45,7 +45,10 @@
 		".ytp-ad-skip-button",
 		".ytp-ad-skip-button-modern",
 		".ytp-skip-ad-button",
-		"button.ytp-ad-skip-button-modern"
+		"button.ytp-ad-skip-button-modern",
+		".ytp-ad-button-icon",
+		"button.ytp-ad-skip-button-slot",
+		".video-ads .ytp-ad-skip-button-container button"
 	];
 	//#endregion
 	//#region src/chrome/content/adblock/youtube/isolated.ts
@@ -57,6 +60,7 @@
 	var reportTimer = null;
 	var playerObserver = null;
 	var pollTimer = null;
+	var adPollTimer = null;
 	var saved = null;
 	var adActive = false;
 	function queueReport(count) {
@@ -89,7 +93,7 @@
 		return player.querySelector("video.html5-main-video, video");
 	}
 	function isAdPlaying(player) {
-		if (!YOUTUBE_AD_PLAYER_CLASSES.some((cls) => player.classList.contains(cls))) return false;
+		if (YOUTUBE_AD_PLAYER_CLASSES.some((cls) => player.classList.contains(cls))) return true;
 		return YOUTUBE_AD_UI_SELECTORS.some((selector) => player.querySelector(selector));
 	}
 	function clickSkip(player) {
@@ -150,9 +154,19 @@
 		checkPlayer();
 		stopPoll();
 	}
+	function startAdPoll() {
+		if (adPollTimer) return;
+		adPollTimer = setInterval(checkPlayer, 250);
+	}
+	function stopAdPoll() {
+		if (!adPollTimer) return;
+		clearInterval(adPollTimer);
+		adPollTimer = null;
+	}
 	function start() {
 		injectCss();
 		observePlayer();
+		startAdPoll();
 		if (!getPlayer()) pollTimer ??= setInterval(() => {
 			observePlayer();
 		}, 1e3);
@@ -162,13 +176,14 @@
 		playerObserver?.disconnect();
 		playerObserver = null;
 		stopPoll();
+		stopAdPoll();
 		const player = getPlayer();
 		restoreVideo(player ? getVideo(player) : null);
 		adActive = false;
 	}
 	function isEnabled(raw) {
 		const state = raw;
-		if (state?.enabled === false || state?.youtubeEnabled === false) return false;
+		if (state?.enabled === false || state?.youtubeEnabled === false || state?.lists?.youtube === false) return false;
 		const host = location.hostname.replace(/^www\./, "");
 		return !(state?.allowlist ?? []).some((entry) => host === entry || host.endsWith(`.${entry}`));
 	}

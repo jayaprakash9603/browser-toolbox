@@ -47,4 +47,7 @@ export const YOUTUBE_SKIP_BUTTON_SELECTORS = [
   '.ytp-ad-skip-button-modern',
   '.ytp-skip-ad-button',
   'button.ytp-ad-skip-button-modern',
+  '.ytp-ad-button-icon',
+  'button.ytp-ad-skip-button-slot',
+  '.video-ads .ytp-ad-skip-button-container button',
 ] as const

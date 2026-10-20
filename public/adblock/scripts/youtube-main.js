@@ -4,7 +4,12 @@
 		"adPlacements",
 		"adSlots",
 		"playerAds",
-		"adBreakHeartbeatParams"
+		"adBreakHeartbeatParams",
+		"adBreakServiceParams",
+		"adBreakDurationParams",
+		"adPlacement",
+		"adParams",
+		"playerLegacyDesktopWatchAdsRenderer"
 	];
 	var NESTED_KEYS = [
 		"playerResponse",
@@ -48,7 +53,7 @@
 		return isRecord(data.playerResponse) && YT_AD_KEYS.some((key) => key in data.playerResponse);
 	}
 	function pruneYoutubeResponseText(text) {
-		if (!/"(adPlacements|adSlots|playerAds|enforcementMessageViewModel)"/.test(text)) return {
+		if (!/"(adPlacements|adSlots|playerAds|adBreakHeartbeatParams|adPlacement|enforcementMessageViewModel)"/.test(text)) return {
 			text,
 			removed: 0
 		};
@@ -107,6 +112,26 @@
 			});
 		} });
 	}
+	function patchFetch() {
+		const original = window.fetch.bind(window);
+		window.fetch = ((input, init) => {
+			return original(input, init).then((response) => {
+				if (!isYoutubePlayerEndpoint(typeof input === "string" ? input : input instanceof URL ? input.href : input instanceof Request ? input.url : "") && !isYoutubePlayerEndpoint(response.url)) return response;
+				return new Proxy(response, { get(target, prop, receiver) {
+					if (prop === "json") return () => target.json().then((data) => {
+						if (hasYoutubeAdPayload(data)) reportPruned(pruneYoutubeAdsInPlace(data));
+						return data;
+					});
+					if (prop === "text") return () => target.text().then((text) => {
+						const pruned = pruneYoutubeResponseText(text);
+						reportPruned(pruned.removed);
+						return pruned.text;
+					});
+					return Reflect.get(target, prop, receiver);
+				} });
+			});
+		});
+	}
 	function patchXhr() {
 		const proto = XMLHttpRequest.prototype;
 		const textDesc = Object.getOwnPropertyDescriptor(proto, "responseText");
@@ -159,13 +184,20 @@
 			});
 		} catch {}
 	}
+	function pruneInlineGlobals() {
+		const win = window;
+		for (const key of ["ytInitialPlayerResponse", "ytInitialData"]) if (win[key]) reportPruned(pruneYoutubeAdsInPlace(win[key]));
+	}
 	var guarded = window;
 	if (!guarded.__toolboxYtMain) {
 		guarded.__toolboxYtMain = true;
 		patchJsonParse();
 		patchResponse();
+		patchFetch();
 		patchXhr();
 		trapGlobal("ytInitialPlayerResponse");
+		trapGlobal("ytInitialData");
+		pruneInlineGlobals();
 	}
 	//#endregion
 })();

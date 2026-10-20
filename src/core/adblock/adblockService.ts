@@ -81,9 +81,10 @@ export async function setYoutubeAdblockEnabled(on: boolean): Promise<AdblockStat
       lists: { ...current.lists, youtube: false },
     })
   }
+  const nextLists = { ...current.lists, youtube: true }
   return updateAdblockState({
-    enabled: current.enabled ? current.enabled : true,
+    enabled: true,
     youtubeEnabled: true,
-    lists: { ...current.lists, youtube: true },
+    lists: nextLists,
   })
 }

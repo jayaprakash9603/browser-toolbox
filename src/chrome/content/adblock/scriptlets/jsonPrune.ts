@@ -1,4 +1,14 @@
-const YT_AD_KEYS = ['adPlacements', 'adSlots', 'playerAds', 'adBreakHeartbeatParams'] as const
+const YT_AD_KEYS = [
+  'adPlacements',
+  'adSlots',
+  'playerAds',
+  'adBreakHeartbeatParams',
+  'adBreakServiceParams',
+  'adBreakDurationParams',
+  'adPlacement',
+  'adParams',
+  'playerLegacyDesktopWatchAdsRenderer',
+] as const
 const NESTED_KEYS = ['playerResponse', 'playerConfig', 'response'] as const
 const MAX_DEPTH = 4
 
@@ -53,7 +63,11 @@ export function hasYoutubeAdPayload(data: unknown): boolean {
 }
 
 export function pruneYoutubeResponseText(text: string): { text: string; removed: number } {
-  if (!/"(adPlacements|adSlots|playerAds|enforcementMessageViewModel)"/.test(text)) {
+  if (
+    !/"(adPlacements|adSlots|playerAds|adBreakHeartbeatParams|adPlacement|enforcementMessageViewModel)"/.test(
+      text,
+    )
+  ) {
     return { text, removed: 0 }
   }
   try {

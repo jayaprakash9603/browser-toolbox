@@ -16,6 +16,7 @@ let pendingBlocked = 0
 let reportTimer: ReturnType<typeof setTimeout> | null = null
 let playerObserver: MutationObserver | null = null
 let pollTimer: ReturnType<typeof setInterval> | null = null
+let adPollTimer: ReturnType<typeof setInterval> | null = null
 let saved: { muted: boolean; rate: number } | null = null
 let adActive = false
 
@@ -52,8 +53,7 @@ function getVideo(player: HTMLElement): HTMLVideoElement | null {
 }
 
 function isAdPlaying(player: HTMLElement): boolean {
-  const flagged = YOUTUBE_AD_PLAYER_CLASSES.some((cls) => player.classList.contains(cls))
-  if (!flagged) return false
+  if (YOUTUBE_AD_PLAYER_CLASSES.some((cls) => player.classList.contains(cls))) return true
   return YOUTUBE_AD_UI_SELECTORS.some((selector) => player.querySelector(selector))
 }
 
@@ -116,9 +116,21 @@ function observePlayer(): void {
   stopPoll()
 }
 
+function startAdPoll(): void {
+  if (adPollTimer) return
+  adPollTimer = setInterval(checkPlayer, 250)
+}
+
+function stopAdPoll(): void {
+  if (!adPollTimer) return
+  clearInterval(adPollTimer)
+  adPollTimer = null
+}
+
 function start(): void {
   injectCss()
   observePlayer()
+  startAdPoll()
   if (!getPlayer()) {
     pollTimer ??= setInterval(() => {
       observePlayer()
@@ -131,6 +143,7 @@ function stop(): void {
   playerObserver?.disconnect()
   playerObserver = null
   stopPoll()
+  stopAdPoll()
   const player = getPlayer()
   restoreVideo(player ? getVideo(player) : null)
   adActive = false
@@ -138,9 +151,11 @@ function stop(): void {
 
 function isEnabled(raw: unknown): boolean {
   const state = raw as
-    | { enabled?: boolean; youtubeEnabled?: boolean; allowlist?: string[] }
+    | { enabled?: boolean; youtubeEnabled?: boolean; lists?: { youtube?: boolean }; allowlist?: string[] }
     | undefined
-  if (state?.enabled === false || state?.youtubeEnabled === false) return false
+  if (state?.enabled === false || state?.youtubeEnabled === false || state?.lists?.youtube === false) {
+    return false
+  }
   const host = location.hostname.replace(/^www\./, '')
   return !(state?.allowlist ?? []).some((entry) => host === entry || host.endsWith(`.${entry}`))
 }

@@ -45,6 +45,12 @@ describe('YouTube json prune', () => {
     expect(hasYoutubeAdPayload({ videoDetails: {} })).toBe(false)
   })
 
+  it('removes extended ad payload keys', () => {
+    const input = { adPlacement: { x: 1 }, videoDetails: { videoId: 'z' } }
+    expect(pruneYoutubeAdsInPlace(input)).toBe(1)
+    expect(input).not.toHaveProperty('adPlacement')
+  })
+
   it('rewrites response text that carries ads', () => {
     const result = pruneYoutubeResponseText('{"playerAds":[1],"streamingData":{"a":1}}')
     expect(result.removed).toBe(1)

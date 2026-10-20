@@ -4,7 +4,7 @@ import { registerMessageHandler } from '@/core/messaging'
 import { createLogger } from '@/core/logging'
 
 import { syncAllowlistRules } from './allowlist'
-import { injectIntoOpenTabs, syncContentScripts } from './contentScripts'
+import { injectIntoOpenTabs, injectYoutubeOpenTabs, syncContentScripts } from './contentScripts'
 import { syncStaticRulesets } from './rulesets'
 import {
   configureBadge,
@@ -32,6 +32,7 @@ export function syncAdblockState(): Promise<void> {
       await syncContentScripts(state)
       await configureBadge(state.enabled)
       await injectIntoOpenTabs(state)
+      await injectYoutubeOpenTabs(state)
       logger.debug('synced', { enabled: state.enabled })
     })
     .catch((error) => logger.warn('sync failed', error))

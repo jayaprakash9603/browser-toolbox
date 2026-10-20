@@ -87,9 +87,12 @@ export function buildYoutubeHandRules(startId = 900_000) {
   const youtubeInitiators = ['youtube.com', 'youtube-nocookie.com']
   const domains = [
     'googleads.g.doubleclick.net',
+    'pubads.g.doubleclick.net',
+    'securepubads.g.doubleclick.net',
     'pagead2.googlesyndication.com',
     'googleadservices.com',
     'imasdk.googleapis.com',
+    'adservice.google.com',
   ]
   return domains.map((domain) => ({
     id: nextRuleId++,

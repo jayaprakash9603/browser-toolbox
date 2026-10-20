@@ -166,6 +166,31 @@ async function runPool(tabs: chrome.tabs.Tab[], state: AdblockState): Promise<vo
  * Registered scripts only run on future navigations, so tabs that were already
  * open (including background YouTube tabs) get the scripts injected once.
  */
+/** Re-inject YouTube ad scripts into open tabs (registered scripts only run on the next navigation). */
+export async function injectYoutubeOpenTabs(state: AdblockState): Promise<void> {
+  if (!state.enabled || !state.youtubeEnabled || !state.lists.youtube) return
+  const tabs = await chrome.tabs.query({
+    url: ['*://*.youtube.com/*', '*://youtube.com/*', '*://*.youtube-nocookie.com/*'],
+  })
+  for (const tab of tabs) {
+    if (tab.id == null || !tab.url || tab.discarded || isAllowlisted(state.allowlist, tab.url)) continue
+    const target = { tabId: tab.id, allFrames: true }
+    try {
+      await chrome.scripting.executeScript({
+        target,
+        files: [ADBLOCK_FILES.youtubeMainJs],
+        world: 'MAIN',
+      })
+      await chrome.scripting.executeScript({
+        target,
+        files: [ADBLOCK_FILES.youtubeIsolatedJs],
+      })
+    } catch (error) {
+      logger.debug('youtube inject skipped', tab.url, error)
+    }
+  }
+}
+
 export async function injectIntoOpenTabs(state: AdblockState): Promise<void> {
   const area = sessionArea()
   if (!state.enabled) {
