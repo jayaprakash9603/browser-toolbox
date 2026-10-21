@@ -9,7 +9,7 @@ import { registerMessageHandler } from '@/core/messaging'
 import type { ExtensionMessage } from '@/core/messaging/types'
 
 import { clearTabBadge, incrementTabRuleCount } from './badge'
-import { pushPageConfigToTab, syncInterceptorContentScripts } from './contentScripts'
+import { syncInterceptorContentScripts } from './contentScripts'
 import { attachDeepIntercept, detachDeepIntercept, registerDeepInterceptListener } from './deepIntercept'
 import { syncInterceptorDnrRules } from './dnr'
 import {
@@ -17,23 +17,24 @@ import {
   connectNetlogPort,
   getLogForTab,
   initNetworkLog,
+  invalidateCachedInterceptorState,
   mergePageEvent,
   refreshLogSize,
+  updateNetlogListeners,
 } from './networkLog'
 import { syncInterceptorUserScripts } from './userScripts'
 
 const logger = createLogger('interceptor')
 
 async function fullSync(): Promise<void> {
+  const state = await getInterceptorState()
   const errors = await syncInterceptorDnrRules()
   if (errors.length) logger.warn('DNR compile', errors)
-  await syncInterceptorContentScripts()
+  await syncInterceptorContentScripts(state)
   await syncInterceptorUserScripts()
-  await refreshLogSize()
-  const tabs = await chrome.tabs.query({})
-  for (const tab of tabs) {
-    if (tab.id != null) await pushPageConfigToTab(tab.id)
-  }
+  await refreshLogSize(state)
+  invalidateCachedInterceptorState(state)
+  await updateNetlogListeners(state)
 }
 
 export function registerInterceptor(): void {

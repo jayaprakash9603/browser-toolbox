@@ -29,17 +29,28 @@ export function useInterceptorState() {
   return { state, setState, patchSettings }
 }
 
+const NETLOG_UI_BATCH_MS = 250
+
 export function useInterceptorLog(tabId?: number) {
   const [entries, setEntries] = useState<NetLogEntry[]>([])
 
   useEffect(() => {
     let port: chrome.runtime.Port | undefined
+    const pending: NetLogEntry[] = []
+    let batchTimer: ReturnType<typeof setTimeout> | null = null
+    const flushBatch = () => {
+      batchTimer = null
+      if (!pending.length) return
+      const batch = pending.splice(0, pending.length)
+      setEntries((prev) => [...prev, ...batch].slice(-2000))
+    }
     const connect = () => {
       port = chrome.runtime.connect({ name: INTERCEPTOR_NETLOG_PORT })
       port.onMessage.addListener((msg: { type: string; entry: NetLogEntry }) => {
         if (msg.type === 'entry') {
           if (tabId == null || msg.entry.tabId === tabId) {
-            setEntries((prev) => [...prev, msg.entry].slice(-2000))
+            pending.push(msg.entry)
+            if (!batchTimer) batchTimer = setTimeout(flushBatch, NETLOG_UI_BATCH_MS)
           }
         }
       })
@@ -48,7 +59,10 @@ export function useInterceptorLog(tabId?: number) {
     void sendMessage<NetLogEntry[]>({ type: 'INTERCEPTOR_GET_LOG', tabId }).then((data) => {
       if (Array.isArray(data)) setEntries(data)
     })
-    return () => port?.disconnect()
+    return () => {
+      if (batchTimer) clearTimeout(batchTimer)
+      port?.disconnect()
+    }
   }, [tabId])
 
   const clear = useCallback(() => {
