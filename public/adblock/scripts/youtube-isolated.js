@@ -18,8 +18,6 @@
 		"ytd-engagement-panel-section-list-renderer[target-id=\"engagement-panel-ads\"]",
 		"ytd-merch-shelf-renderer",
 		"ytd-player-legacy-desktop-watch-ads-renderer",
-		"ytd-enforcement-message-view-model",
-		"tp-yt-paper-dialog:has(> ytd-enforcement-message-view-model)",
 		"#masthead-ad",
 		"#player-ads",
 		"#panels > ytd-engagement-panel-section-list-renderer[target-id=\"engagement-panel-ads\"]",
@@ -118,6 +116,7 @@
 	var playerObserver = null;
 	var pollTimer = null;
 	var adPollTimer = null;
+	var enforcementTimer = null;
 	var playerMutationTimer = null;
 	var saved = null;
 	var adActive = false;
@@ -160,9 +159,24 @@
 		video.playbackRate = saved.rate;
 		saved = null;
 	}
+	/**
+	* Hiding YouTube's ad-blocker notice with CSS leaves its modal backdrop over the page, which
+	* greys it out and swallows every click. Remove the dialog and backdrop together instead.
+	*/
+	function dismissEnforcementDialog() {
+		const notice = document.querySelector("ytd-enforcement-message-view-model");
+		if (!notice) return;
+		(notice.closest("tp-yt-paper-dialog") ?? notice).remove();
+		document.querySelectorAll("tp-yt-iron-overlay-backdrop").forEach((el) => el.remove());
+		document.body?.style.removeProperty("overflow");
+		document.documentElement.style.removeProperty("overflow");
+		const player = getPlayer();
+		const video = player ? getVideo(player) : null;
+		if (video?.paused && !video.ended) video.play().catch(() => void 0);
+	}
 	/** Fallback when an ad still slips through pruning: mute, fast-forward, skip. */
 	function checkPlayer() {
-		tryAutoSkipAd();
+		dismissEnforcementDialog();
 		const player = getPlayer();
 		if (!player) return;
 		const video = getVideo(player);
@@ -170,9 +184,11 @@
 			if (adActive) {
 				adActive = false;
 				restoreVideo(video);
+				stopAdPoll();
 			}
 			return;
 		}
+		startAdPoll();
 		if (!video) return;
 		if (!adActive) {
 			adActive = true;
@@ -234,7 +250,7 @@
 	function start() {
 		injectCss();
 		observePlayer();
-		startAdPoll();
+		enforcementTimer ??= setInterval(dismissEnforcementDialog, 1e3);
 		if (!getPlayer()) pollTimer ??= setInterval(() => {
 			observePlayer();
 		}, 1e3);
@@ -244,6 +260,8 @@
 		resetPlayerObserver();
 		stopPoll();
 		stopAdPoll();
+		if (enforcementTimer) clearInterval(enforcementTimer);
+		enforcementTimer = null;
 		const player = getPlayer();
 		restoreVideo(player ? getVideo(player) : null);
 		adActive = false;
@@ -277,7 +295,6 @@
 			if (!enabled) return;
 			resetPlayerObserver();
 			observePlayer();
-			tryAutoSkipAd();
 		});
 	}
 	//#endregion

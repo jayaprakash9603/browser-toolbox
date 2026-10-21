@@ -18,6 +18,7 @@ let reportTimer: ReturnType<typeof setTimeout> | null = null
 let playerObserver: MutationObserver | null = null
 let pollTimer: ReturnType<typeof setInterval> | null = null
 let adPollTimer: ReturnType<typeof setInterval> | null = null
+let enforcementTimer: ReturnType<typeof setInterval> | null = null
 let playerMutationTimer: ReturnType<typeof setTimeout> | null = null
 let saved: { muted: boolean; rate: number } | null = null
 let adActive = false
@@ -66,9 +67,25 @@ function restoreVideo(video: HTMLVideoElement | null): void {
   saved = null
 }
 
+/**
+ * Hiding YouTube's ad-blocker notice with CSS leaves its modal backdrop over the page, which
+ * greys it out and swallows every click. Remove the dialog and backdrop together instead.
+ */
+function dismissEnforcementDialog(): void {
+  const notice = document.querySelector('ytd-enforcement-message-view-model')
+  if (!notice) return
+  ;(notice.closest('tp-yt-paper-dialog') ?? notice).remove()
+  document.querySelectorAll('tp-yt-iron-overlay-backdrop').forEach((el) => el.remove())
+  document.body?.style.removeProperty('overflow')
+  document.documentElement.style.removeProperty('overflow')
+  const player = getPlayer()
+  const video = player ? getVideo(player) : null
+  if (video?.paused && !video.ended) void video.play().catch(() => undefined)
+}
+
 /** Fallback when an ad still slips through pruning: mute, fast-forward, skip. */
 function checkPlayer(): void {
-  tryAutoSkipAd()
+  dismissEnforcementDialog()
   const player = getPlayer()
   if (!player) return
   const video = getVideo(player)
@@ -76,9 +93,11 @@ function checkPlayer(): void {
     if (adActive) {
       adActive = false
       restoreVideo(video)
+      stopAdPoll()
     }
     return
   }
+  startAdPoll()
   if (!video) return
   if (!adActive) {
     adActive = true
@@ -143,7 +162,7 @@ function stopAdPoll(): void {
 function start(): void {
   injectCss()
   observePlayer()
-  startAdPoll()
+  enforcementTimer ??= setInterval(dismissEnforcementDialog, 1000)
   if (!getPlayer()) {
     pollTimer ??= setInterval(() => {
       observePlayer()
@@ -156,6 +175,8 @@ function stop(): void {
   resetPlayerObserver()
   stopPoll()
   stopAdPoll()
+  if (enforcementTimer) clearInterval(enforcementTimer)
+  enforcementTimer = null
   const player = getPlayer()
   restoreVideo(player ? getVideo(player) : null)
   adActive = false
@@ -201,6 +222,5 @@ if (!guarded.__toolboxYtIsolated && window === window.top) {
     if (!enabled) return
     resetPlayerObserver()
     observePlayer()
-    tryAutoSkipAd()
   })
 }

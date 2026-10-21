@@ -16,8 +16,6 @@ export const YOUTUBE_COSMETIC_SELECTORS = [
   'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"]',
   'ytd-merch-shelf-renderer',
   'ytd-player-legacy-desktop-watch-ads-renderer',
-  'ytd-enforcement-message-view-model',
-  'tp-yt-paper-dialog:has(> ytd-enforcement-message-view-model)',
   '#masthead-ad',
   '#player-ads',
   '#panels > ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"]',

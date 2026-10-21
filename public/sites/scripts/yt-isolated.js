@@ -1114,13 +1114,17 @@
 		if (!feedTileFiltersActive(ctx)) return;
 		scanTilesUnder(document, ctx);
 	}
+	var pendingFeedRoots = /* @__PURE__ */ new Set();
 	function scheduleFeedScan(ctx, roots) {
 		feedCtx = ctx;
-		if (roots?.length) for (const root of roots) scanTilesUnder(root, ctx);
+		roots?.forEach((root) => pendingFeedRoots.add(root));
 		if (feedScanTimer) return;
 		feedScanTimer = setTimeout(() => {
 			feedScanTimer = null;
-			if (feedCtx) scanFeeds(feedCtx);
+			const batch = [...pendingFeedRoots];
+			pendingFeedRoots.clear();
+			if (!feedCtx) return;
+			for (const root of batch) if (root instanceof Node && root.isConnected) scanTilesUnder(root, feedCtx);
 		}, FEED_DEBOUNCE_MS);
 	}
 	function feedObserveTarget() {
@@ -1157,6 +1161,7 @@
 			feedCtx = null;
 			if (feedScanTimer) clearTimeout(feedScanTimer);
 			feedScanTimer = null;
+			pendingFeedRoots.clear();
 			if (undoTimer) clearInterval(undoTimer);
 			undoTimer = null;
 			document.querySelectorAll(TILE_SELECTOR).forEach((el) => el.style.removeProperty("display"));
