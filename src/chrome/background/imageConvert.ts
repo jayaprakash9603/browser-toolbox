@@ -10,6 +10,7 @@ import {
   type ImageSaveFormat,
 } from '@/core/imageConvert'
 import { createLogger } from '@/core/logging'
+import { downloadWithName } from './downloadNames'
 import type { ExtensionResponse } from '@/core/messaging/types'
 
 const logger = createLogger('image-convert')
@@ -67,7 +68,7 @@ export async function handleImageConvertMenuClick(
         imageUrl: info.srcUrl,
         pageUrl: info.pageUrl ?? tab?.url,
       })
-      await chrome.downloads.download({ url: info.srcUrl, filename, saveAs: state.askFilename })
+      await downloadWithName({ url: info.srcUrl, filename, saveAs: state.askFilename })
     } catch (fallbackError) {
       logger.warn('fallback download failed', fallbackError)
       notify('Image download failed', 'Check page permissions or try another image.')
@@ -167,7 +168,7 @@ async function downloadConverted(url: string, filename: string, saveAs: boolean)
   const release = () => void chrome.runtime.sendMessage({ type: 'OFFSCREEN_IMAGE_RELEASE', url }).catch(() => {})
   let downloadId: number
   try {
-    downloadId = await chrome.downloads.download({ url, filename, saveAs, conflictAction: 'uniquify' })
+    downloadId = await downloadWithName({ url, filename, saveAs, conflictAction: 'uniquify' })
   } catch (error) {
     release()
     throw error

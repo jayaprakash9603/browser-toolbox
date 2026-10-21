@@ -7,6 +7,7 @@ import {
 } from '@/core/protection'
 import { createLogger } from '@/core/logging'
 
+import { takeRequestedName } from '../downloadNames'
 import { threatCategoryForHost } from './rules'
 
 const logger = createLogger('protection-downloads')
@@ -99,7 +100,10 @@ async function cancelQuietly(id: number): Promise<void> {
 }
 
 async function inspect(item: chrome.downloads.DownloadItem, suggest: Suggest): Promise<void> {
-  if (item.byExtensionId === chrome.runtime.id) return suggest()
+  if (item.byExtensionId === chrome.runtime.id) {
+    const filename = takeRequestedName(item.url)
+    return suggest(filename ? { filename, conflictAction: 'uniquify' } : undefined)
+  }
   const state = await getProtectionState()
   if (!state.enabled || !state.downloadGuard) return suggest()
 

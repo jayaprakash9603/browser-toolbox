@@ -6,6 +6,7 @@ import {
   type HtmlBundleJob,
 } from '@/core/htmlBundleJob'
 import { createLogger } from '@/core/logging'
+import { downloadWithName } from './downloadNames'
 import { registerMessageHandler } from '@/core/messaging'
 import type { ExtensionMessage, ExtensionResponse } from '@/core/messaging/types'
 
@@ -101,7 +102,7 @@ async function deliverBundle(job: HtmlBundleJob, chunkCount: number): Promise<vo
   const { url } = await request<{ url: string }>(() =>
     chrome.runtime.sendMessage({ type: 'OFFSCREEN_BUNDLE_FINALIZE', buildId: job.id }),
   )
-  const downloadId = await chrome.downloads.download({
+  const downloadId = await downloadWithName({
     url,
     filename: job.fileName,
     conflictAction: 'uniquify',
