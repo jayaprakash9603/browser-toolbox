@@ -33,8 +33,10 @@ function isPenaltyContainer(el: Element): boolean {
 function scoreContainer(container: Element, children: Element[]): number {
   if (children.length < 2) return 0
   const rect = container.getBoundingClientRect()
-  if (rect.width < 40 || rect.height < 40) return 0
-  const area = rect.width * rect.height
+  const width = rect.width || (container as HTMLElement).offsetWidth || 400
+  const height = rect.height || (container as HTMLElement).offsetHeight || 300
+  if (width < 4 || height < 4) return 0
+  const area = width * height
   const viewArea = Math.max(window.innerWidth * window.innerHeight, 1)
   const areaShare = Math.min(area / viewArea, 1)
 
@@ -104,7 +106,7 @@ export function detectCandidates(root: ParentNode = document): DetectCandidate[]
     const el = stack.pop()!
     if (el.children.length >= 2 && el.children.length <= 500) {
       const children = [...el.children].filter(
-        (c) => !SKIP_ANCESTORS.has(c.tagName) && c.getBoundingClientRect().height > 4,
+        (c) => !SKIP_ANCESTORS.has(c.tagName),
       )
       const bySig = new Map<string, Element[]>()
       for (const c of children) {

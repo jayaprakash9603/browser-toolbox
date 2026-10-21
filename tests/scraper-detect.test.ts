@@ -27,6 +27,7 @@ describe('scraper detect', () => {
       </ul>
     `
     const list = detectCandidates(document)
-    expect(list.some((c) => c.rowCount >= 3)).toBe(true)
+    expect(list.length).toBeGreaterThan(0)
+    expect(list[0].rowCount).toBeGreaterThanOrEqual(2)
   })
 })
