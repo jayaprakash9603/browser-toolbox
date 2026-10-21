@@ -7,6 +7,12 @@ import { buildHtmlBundleInPage, scanHtmlBundleFromDom } from './htmlBundle'
 import { scanImagesOnPage } from './scanImages'
 import { collectSeoData } from './seoCollect'
 import { applySeoHighlight, clearSeoHighlight } from './seoHighlight'
+import { collectTechStack } from './collectors/techStack'
+import { collectPageSvgs, svgToJsx } from './collectors/svgs'
+import { collectReadableText, setFontInspector, setWireframe } from './designModes'
+import { articleHtmlToMarkdown, selectionHtmlToMarkdown } from '@/core/text/htmlToMarkdown'
+
+import { handleScraperMessage } from './scraper/handlers'
 
 const BUNDLE_CHUNK_BYTES = 4 * 1024 * 1024
 const PROGRESS_INTERVAL_MS = 120
@@ -132,6 +138,36 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
     case 'GET_PAGE_INFO':
       sendResponse({ ok: true, data: collectPageInfo() })
       return false
+    case 'GET_TECH_STACK':
+      sendResponse({ ok: true, data: collectTechStack() })
+      return false
+    case 'GET_PAGE_SVGS':
+      sendResponse({ ok: true, data: collectPageSvgs() })
+      return false
+    case 'SVG_TO_JSX':
+      sendResponse({ ok: true, data: svgToJsx((raw as { markup: string }).markup) })
+      return false
+    case 'WIREFRAME_TOGGLE':
+      setWireframe((raw as { enabled: boolean }).enabled)
+      sendResponse({ ok: true, data: { enabled: (raw as { enabled: boolean }).enabled } })
+      return false
+    case 'FONT_INSPECTOR_TOGGLE':
+      setFontInspector((raw as { enabled: boolean }).enabled)
+      sendResponse({ ok: true, data: { enabled: (raw as { enabled: boolean }).enabled } })
+      return false
+    case 'GET_READABLE_TEXT':
+      sendResponse({ ok: true, data: { text: collectReadableText() } })
+      return false
+    case 'GET_MARKDOWN_FROM_PAGE': {
+      const mode = (raw as { mode: 'selection' | 'article' }).mode
+      sendResponse({
+        ok: true,
+        data: {
+          markdown: mode === 'selection' ? selectionHtmlToMarkdown() ?? '' : articleHtmlToMarkdown(),
+        },
+      })
+      return false
+    }
     case 'GET_SEO_DATA':
       sendResponse({ ok: true, data: collectSeoData() })
       return false
@@ -220,8 +256,11 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
       sendResponse({ ok: true, data: { base64: bytesToBase64(chunk) } })
       return false
     }
-    default:
+    default: {
+      const handled = handleScraperMessage(raw, sendResponse)
+      if (handled !== false) return handled as boolean
       return false
+    }
   }
 })
 

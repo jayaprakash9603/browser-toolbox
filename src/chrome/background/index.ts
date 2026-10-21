@@ -8,7 +8,13 @@ import { initStorage } from '@/core/storage'
 import { registerAdblock, syncAdblockState } from './adblock'
 import { enqueueContextMenuRebuild } from './contextMenus'
 import { registerProtection, syncProtectionState } from './protection'
-import { registerSitesWhatsapp, registerSitesYoutube, syncYoutubeEnhancerState } from './sites'
+import {
+  registerSitesInstagram,
+  registerSitesWhatsapp,
+  registerSitesYoutube,
+  syncInstagramEnhancerState,
+  syncYoutubeEnhancerState,
+} from './sites'
 import {
   bindChatPulseMenuRebuild,
   isChatPulseMenuItem,
@@ -36,6 +42,9 @@ import { registerHtmlBundleJobHandlers } from './htmlBundleJob'
 import { registerImageDownloadJobHandlers } from './imageDownloadJob'
 import { registerNetMonitor } from './netmon'
 import { registerInterceptor } from './interceptor'
+import { registerLinkChecker } from './web/linkChecker'
+import { registerScraperJobHandlers } from './scraper/job'
+import { registerRedirectTracer } from './web/redirectTracer'
 import { safeRegister, safeStartup } from './safeInit'
 
 const logger = createLogger('background')
@@ -67,6 +76,7 @@ chrome.runtime.onInstalled.addListener(() => {
   safeStartup('sidePanel', () => chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }))
   safeStartup('protection', () => syncProtectionState())
   safeStartup('youtube', () => syncYoutubeEnhancerState())
+  safeStartup('instagram', () => syncInstagramEnhancerState())
   safeStartup('pip', () => initPipOnStartup())
   safeStartup('shortcuts', () => initShortcutsOnStartup())
 })
@@ -76,6 +86,7 @@ chrome.runtime.onStartup.addListener(() => {
   safeStartup('adblock', () => syncAdblockState())
   safeStartup('protection', () => syncProtectionState())
   safeStartup('youtube', () => syncYoutubeEnhancerState())
+  safeStartup('instagram', () => syncInstagramEnhancerState())
   safeStartup('pip', () => initPipOnStartup())
   safeStartup('shortcuts', () => initShortcutsOnStartup())
 })
@@ -127,6 +138,7 @@ safeRegister('adblock', registerAdblock)
 safeRegister('protection', registerProtection)
 safeRegister('sitesYoutube', registerSitesYoutube)
 safeRegister('sitesWhatsapp', registerSitesWhatsapp)
+safeRegister('sitesInstagram', registerSitesInstagram)
 bindImageConvertMenuRebuild(rebuildMenus)
 bindPipMenuRebuild(rebuildMenus)
 bindChatPulseMenuRebuild(rebuildMenus)
@@ -136,4 +148,7 @@ safeRegister('pip', registerPip)
 safeRegister('shortcuts', registerShortcuts)
 safeRegister('netMonitor', registerNetMonitor)
 safeRegister('interceptor', registerInterceptor)
+safeRegister('redirectTracer', registerRedirectTracer)
+safeRegister('linkChecker', registerLinkChecker)
+safeRegister('scraper', registerScraperJobHandlers)
 startMessageRouter()

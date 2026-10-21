@@ -1,4 +1,4 @@
-import { MessageCircleIcon, PlaySquareIcon } from 'lucide-react'
+import { AtSignIcon, BriefcaseBusinessIcon, ImageIcon, MessageCircleIcon, PlaySquareIcon } from 'lucide-react'
 
 import { defineTool } from '@/core/registry/defineTool'
 
@@ -14,6 +14,42 @@ export const sitesTools = [
     route: '/tools/sites/youtube',
     capabilities: ['SIDE_PANEL', 'COMMAND', 'PAGE_ACCESS'],
     loader: () => import('@/tools/sites/youtube/Tool'),
+  }),
+  defineTool({
+    id: 'sites.instagram',
+    name: 'Instagram Control Panel',
+    description: 'Reels player controls, media download, caption formatter, and ghost story viewing on instagram.com',
+    category: 'sites',
+    icon: ImageIcon,
+    keywords: ['instagram', 'reels', 'stories', 'download', 'caption', 'inssist'],
+    aliases: ['ig tools', 'instagram enhancer'],
+    route: '/tools/sites/instagram',
+    capabilities: ['SIDE_PANEL', 'COMMAND', 'PAGE_ACCESS'],
+    loader: () => import('@/tools/sites/instagram/Tool'),
+  }),
+  defineTool({
+    id: 'sites.twitter',
+    name: 'X / Twitter Power Tools',
+    description: 'Advanced search operators and thread length counter for x.com',
+    category: 'sites',
+    icon: AtSignIcon,
+    keywords: ['twitter', 'x', 'search', 'min_faves', 'thread'],
+    aliases: ['twemex', 'twitter search'],
+    route: '/tools/sites/twitter',
+    capabilities: ['SIDE_PANEL', 'COMMAND'],
+    loader: () => import('@/tools/sites/twitter/Tool'),
+  }),
+  defineTool({
+    id: 'sites.linkedin',
+    name: 'LinkedIn Creator Tools',
+    description: 'Post preview cutoffs, Unicode styling, and quick profile CSV export',
+    category: 'sites',
+    icon: BriefcaseBusinessIcon,
+    keywords: ['linkedin', 'post', 'see more', 'unicode', 'recruiter'],
+    aliases: ['linkedin formatter', 'taplio'],
+    route: '/tools/sites/linkedin',
+    capabilities: ['SIDE_PANEL', 'COMMAND'],
+    loader: () => import('@/tools/sites/linkedin/Tool'),
   }),
   defineTool({
     id: 'sites.whatsapp',

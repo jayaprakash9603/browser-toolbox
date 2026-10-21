@@ -139,6 +139,39 @@ export type ExtensionMessage =
   | { type: 'INTERCEPTOR_SYNC' }
   | { type: 'INTERCEPTOR_DEEP_ATTACH'; tabId: number }
   | { type: 'INTERCEPTOR_DEEP_DETACH'; tabId: number }
+  | { type: 'GET_TECH_STACK' }
+  | { type: 'GET_PAGE_SVGS' }
+  | { type: 'SVG_TO_JSX'; markup: string }
+  | { type: 'WIREFRAME_TOGGLE'; enabled: boolean }
+  | { type: 'FONT_INSPECTOR_TOGGLE'; enabled: boolean }
+  | { type: 'GET_READABLE_TEXT' }
+  | { type: 'GET_MARKDOWN_FROM_PAGE'; mode: 'selection' | 'article' }
+  | { type: 'CHECK_HTTP_URLS'; items: { href: string; text: string }[] }
+  | { type: 'REDIRECT_TRACE_GET'; tabId?: number }
+  | { type: 'REDIRECT_TRACE_CLEAR'; tabId?: number }
+  | { type: 'SCRAPER_DETECT'; candidateIndex?: number }
+  | { type: 'SCRAPER_EXTRACT'; config: import('@/core/scraper').ScrapeConfig }
+  | { type: 'SCRAPER_HIGHLIGHT'; rowSelector: string; containerSelector?: string }
+  | { type: 'SCRAPER_CLEAR' }
+  | {
+      type: 'SCRAPER_PICK_START'
+      mode: import('@/core/scraper').ScraperPickMode
+      rowSelector?: string
+    }
+  | { type: 'SCRAPER_PICK_CANCEL' }
+  | { type: 'SCRAPER_SUGGEST_NEXT' }
+  | { type: 'SCRAPER_ROW_COUNT'; rowSelector: string }
+  | { type: 'SCRAPER_WAIT_DATA'; rowSelector: string; maxWaitMs: number }
+  | { type: 'SCRAPER_NEXT'; selector: string; rowSelector: string; maxWaitMs: number }
+  | { type: 'SCRAPER_SCROLL'; rowSelector: string; maxWaitMs: number }
+  | {
+      type: 'SCRAPER_JOB_START'
+      tabId: number
+      config: import('@/core/scraper').ScrapeConfig
+      rows?: import('@/core/scraper').ScrapeRow[]
+    }
+  | { type: 'SCRAPER_JOB_STOP'; tabId: number }
+  | { type: 'SCRAPER_JOB_GET'; tabId: number }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
@@ -220,6 +253,30 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'INTERCEPTOR_SYNC',
   'INTERCEPTOR_DEEP_ATTACH',
   'INTERCEPTOR_DEEP_DETACH',
+  'GET_TECH_STACK',
+  'GET_PAGE_SVGS',
+  'SVG_TO_JSX',
+  'WIREFRAME_TOGGLE',
+  'FONT_INSPECTOR_TOGGLE',
+  'GET_READABLE_TEXT',
+  'GET_MARKDOWN_FROM_PAGE',
+  'CHECK_HTTP_URLS',
+  'REDIRECT_TRACE_GET',
+  'REDIRECT_TRACE_CLEAR',
+  'SCRAPER_DETECT',
+  'SCRAPER_EXTRACT',
+  'SCRAPER_HIGHLIGHT',
+  'SCRAPER_CLEAR',
+  'SCRAPER_PICK_START',
+  'SCRAPER_PICK_CANCEL',
+  'SCRAPER_SUGGEST_NEXT',
+  'SCRAPER_ROW_COUNT',
+  'SCRAPER_WAIT_DATA',
+  'SCRAPER_NEXT',
+  'SCRAPER_SCROLL',
+  'SCRAPER_JOB_START',
+  'SCRAPER_JOB_STOP',
+  'SCRAPER_JOB_GET',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {

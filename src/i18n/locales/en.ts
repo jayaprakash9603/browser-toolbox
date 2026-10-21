@@ -3,6 +3,8 @@ import { interceptorStrings } from './interceptorEn'
 import { netmonStrings } from './netmonEn'
 import { speedtestStrings } from './speedtestEn'
 import { sitesWhatsappStrings } from './sitesWhatsappEn'
+import { consolidationStrings } from './consolidationEn'
+import { dataScraperStrings } from './dataScraperEn'
 import { sitesYoutubeStrings } from './sitesYoutubeEn'
 
 const en = {
@@ -1263,6 +1265,8 @@ const en = {
   ...netmonStrings,
   ...speedtestStrings,
   ...interceptorStrings,
+  ...consolidationStrings,
+  ...dataScraperStrings,
 } as const
 
 export default en

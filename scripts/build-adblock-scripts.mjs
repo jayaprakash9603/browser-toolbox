@@ -47,6 +47,7 @@ const sitesEntries = {
   'yt-main': 'src/chrome/content/sites/youtube/main.ts',
   'wa-isolated': 'src/chrome/content/sites/whatsapp/isolated.ts',
   'wa-main': 'src/chrome/content/sites/whatsapp/main.ts',
+  'ig-isolated': 'src/chrome/content/sites/instagram/isolated.ts',
   'pip-auto': 'src/chrome/content/pip/auto.ts',
 }
 

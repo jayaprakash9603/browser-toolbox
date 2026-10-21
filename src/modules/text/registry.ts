@@ -6,6 +6,7 @@ import {
   HashIcon,
   ReplaceIcon,
   TypeIcon,
+  Volume2Icon,
   WrapTextIcon,
 } from 'lucide-react'
 
@@ -185,6 +186,19 @@ export const textTools = [
     dependencies: ['diff', 'text'],
     status: 'active',
     loader: () => import('@/tools/text/text-diff/Tool'),
+  }),
+  defineTool({
+    id: 'text.read-aloud',
+    name: 'Read Aloud',
+    description: 'Listen to page text with built-in speech synthesis and adjustable speed.',
+    category: 'text',
+    icon: Volume2Icon,
+    keywords: ['read aloud', 'tts', 'speech', 'accessibility', 'listen'],
+    aliases: ['text to speech', 'speechify'],
+    route: '/tools/text/read-aloud',
+    capabilities: ['SIDE_PANEL', 'CONTENT_SCRIPT', 'PAGE_ACCESS'],
+    status: 'active',
+    loader: () => import('@/tools/text/read-aloud/Tool'),
   }),
   defineTool({
     id: 'text.dummy-data',

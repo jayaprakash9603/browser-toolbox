@@ -135,6 +135,11 @@ export const TOOL_SEARCH_ENTRIES: Record<string, ToolSearchEntry[]> = {
     focus('normalizeLineBreaks', 'text.normalizeLineBreaks', 'Normalize line breaks', 'normalizeLineBreaks'),
     focus('removeBlankLines', 'text.removeBlankLines', 'Remove blank lines', 'removeBlankLines'),
   ],
+  'data.data-scraper': [
+    { id: 'auto', labelKey: 'dataScraper.autoDetect', fallbackLabel: 'Auto-detect grid', params: {} },
+    { id: 'pick', labelKey: 'dataScraper.pickRows', fallbackLabel: 'Pick rows', params: {} },
+    { id: 'export', labelKey: 'dataScraper.title', fallbackLabel: 'Export CSV / Excel', params: {} },
+  ],
   'data.universal-converter': [
     { id: 'csv-json', labelKey: 'data.csvToJson', fallbackLabel: 'CSV to JSON', params: { from: 'csv', to: 'json' } },
     { id: 'json-csv', labelKey: 'data.jsonToCsv', fallbackLabel: 'JSON to CSV', params: { from: 'json', to: 'csv' } },
@@ -265,4 +270,24 @@ export const TOOL_SEARCH_ENTRIES: Record<string, ToolSearchEntry[]> = {
   ],
   'calculators.unit-converter': [],
   'calculators.base-converter': [],
+  'sites.instagram': [
+    { id: 'caption', labelKey: 'sites.instagram.caption.title', fallbackLabel: 'Caption formatter', params: { focus: 'caption' } },
+  ],
+  'sites.twitter': [
+    { id: 'search', labelKey: 'sites.twitter.search.title', fallbackLabel: 'Advanced search', params: {} },
+  ],
+  'sites.linkedin': [
+    { id: 'post', labelKey: 'sites.linkedin.post.title', fallbackLabel: 'Post preview', params: {} },
+  ],
+  'web.tech-stack': [{ id: 'scan', labelKey: 'web.techStack.empty', fallbackLabel: 'Scan page', params: {} }],
+  'web.redirect-tracer': [{ id: 'trace', labelKey: 'web.redirectTracer.empty', fallbackLabel: 'Redirect trace', params: {} }],
+  'web.link-checker': [{ id: 'check', labelKey: 'web.linkChecker.run', fallbackLabel: 'Check links', params: {} }],
+  'web.utm-builder': [{ id: 'build', labelKey: 'web.utm.base', fallbackLabel: 'UTM builder', params: {} }],
+  'web.copy-markdown': [{ id: 'article', labelKey: 'web.copyMarkdown.article', fallbackLabel: 'Copy article', params: {} }],
+  'design.font-inspector': [{ id: 'inspect', labelKey: 'design.fontInspector.title', fallbackLabel: 'Font inspector', params: {} }],
+  'design.responsive-viewer': [{ id: 'preview', labelKey: 'design.responsive.url', fallbackLabel: 'Responsive preview', params: {} }],
+  'design.svg-grabber': [{ id: 'grab', labelKey: 'design.svg.copySvg', fallbackLabel: 'SVG grabber', params: {} }],
+  'design.layout-wireframe': [{ id: 'wireframe', labelKey: 'design.wireframe.title', fallbackLabel: 'Wireframe', params: {} }],
+  'security.totp': [{ id: 'codes', labelKey: 'security.totp.add', fallbackLabel: 'TOTP codes', params: {} }],
+  'text.read-aloud': [{ id: 'speak', labelKey: 'text.readAloud.play', fallbackLabel: 'Read aloud', params: {} }],
 }

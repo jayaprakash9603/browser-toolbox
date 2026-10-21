@@ -1,0 +1,21 @@
+export const dataScraperStrings = {
+  'dataScraper.title': 'Data Scraper',
+  'dataScraper.subtitle':
+    'Auto-detect tables and lists, pick columns, crawl pages, and export CSV or Excel — all in your browser.',
+  'dataScraper.autoDetect': 'Auto-detect grid',
+  'dataScraper.tryAnother': 'Try another table',
+  'dataScraper.pickRows': 'Pick rows',
+  'dataScraper.addColumn': 'Add column',
+  'dataScraper.refresh': 'Refresh extract',
+  'dataScraper.rowSelector': 'Row selector',
+  'dataScraper.nextSelector': 'Next page selector',
+  'dataScraper.pagination': 'Pagination',
+  'dataScraper.modeNone': 'Single page',
+  'dataScraper.modeClick': 'Click next',
+  'dataScraper.modeScroll': 'Infinite scroll',
+  'dataScraper.startCrawl': 'Start crawl',
+  'dataScraper.stop': 'Stop',
+  'dataScraper.rows': 'rows',
+  'dataScraper.pages': 'pages',
+  'dataScraper.phase': 'Phase',
+} as const
