@@ -5,6 +5,7 @@ import { speedtestStrings } from './speedtestEn'
 import { sitesWhatsappStrings } from './sitesWhatsappEn'
 import { consolidationStrings } from './consolidationEn'
 import { dataScraperStrings } from './dataScraperEn'
+import { sitesInstagramStrings } from './sitesInstagramEn'
 import { sitesYoutubeStrings } from './sitesYoutubeEn'
 
 const en = {
@@ -1262,6 +1263,7 @@ const en = {
   ...imageDownloaderStrings,
   ...sitesYoutubeStrings,
   ...sitesWhatsappStrings,
+  ...sitesInstagramStrings,
   ...netmonStrings,
   ...speedtestStrings,
   ...interceptorStrings,

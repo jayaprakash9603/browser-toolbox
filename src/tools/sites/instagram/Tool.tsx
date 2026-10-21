@@ -94,7 +94,7 @@ export default function InstagramControlPanelTool() {
             </p>
             <Input
               className="mt-3 text-xs"
-              placeholder={t('common.search')}
+              placeholder={t('sites.instagram.search')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
