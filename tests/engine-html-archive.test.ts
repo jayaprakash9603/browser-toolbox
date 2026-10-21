@@ -11,6 +11,8 @@ import {
   isHtmlPageLink,
   relativeZipPath,
   safeZipPath,
+  enrichLinkLabelsWithPageTitles,
+  parseHtmlDocumentTitle,
   scanAnchorList,
   textEncoder,
   zipFileName,
@@ -119,6 +121,24 @@ describe('htmlArchive engine', () => {
     expect(lastPages).toBe(300)
     expect([...phases]).toEqual(['pages', 'assets', 'zip'])
     expect(Object.keys(unzipSync(result.zipBytes))).toHaveLength(301)
+  })
+
+  it('parses document title from html', () => {
+    expect(parseHtmlDocumentTitle('<html><title>  My Report  </title></html>')).toBe('My Report')
+    expect(parseHtmlDocumentTitle('<html><head></head></html>')).toBe('')
+  })
+
+  it('enriches link labels from linked page titles', async () => {
+    const base = 'https://ci.example.com/r/index.html'
+    const entries = scanAnchorList(
+      [{ href: 'report-a.html', label: 'anchor text' }],
+      base,
+      { htmlOnly: true, sameFolderOnly: true },
+    )
+    const enriched = await enrichLinkLabelsWithPageTitles(entries, async (url) =>
+      url.endsWith('report-a.html') ? '<title>Feature: Login</title>' : null,
+    )
+    expect(enriched[0].label).toBe('Feature: Login')
   })
 
   it('names zips after the page title like chrome save-as', () => {

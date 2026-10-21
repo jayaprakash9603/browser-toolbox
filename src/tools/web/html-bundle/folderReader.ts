@@ -3,9 +3,11 @@ import {
   basenameOf,
   buildHtmlArchive,
   DEFAULT_MAX_BYTES,
+  parseHtmlDocumentTitle,
   scanAnchorList,
   type HtmlBundleOutput,
   type HtmlBundleProgress,
+  type HtmlLinkCandidate,
 } from '@/core/engines/htmlArchive'
 
 export type FileIndex = Map<string, Uint8Array>
@@ -52,16 +54,26 @@ export function scanHtmlBundleFromFolderIndex(
   const currentPageFileName = basenameOf(pageUrl)
   const current = findFileByName(index, currentPageFileName)
   const html = current ? decode(current.bytes) : ''
-  const titleMatch = /<title[^>]*>([^<]*)<\/title>/i.exec(html)
-  const pageTitle = titleMatch?.[1]?.trim() || currentPageFileName
+  const pageTitle = parseHtmlDocumentTitle(html) || currentPageFileName
+  const entries = html ? scanAnchorList(extractAnchorsFromHtml(html), pageUrl, options) : []
 
   return {
     pageUrl,
     pageTitle,
-    entries: html
-      ? scanAnchorList(extractAnchorsFromHtml(html), pageUrl, options)
-      : [],
+    entries: enrichEntriesFromFolderIndex(entries, index),
   }
+}
+
+function enrichEntriesFromFolderIndex(
+  entries: HtmlLinkCandidate[],
+  index: FileIndex,
+): HtmlLinkCandidate[] {
+  return entries.map((entry) => {
+    const file = findFileByName(index, basenameOf(entry.resolvedUrl))
+    if (!file) return entry
+    const title = parseHtmlDocumentTitle(decode(file.bytes))
+    return title ? { ...entry, label: title } : entry
+  })
 }
 
 export async function pickReportFolder(options?: {

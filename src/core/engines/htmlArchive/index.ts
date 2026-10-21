@@ -122,6 +122,37 @@ export function dedupeAndSortLinks(candidates: HtmlLinkCandidate[]): HtmlLinkCan
   return [...map.values()].sort((a, b) => a.filename.localeCompare(b.filename))
 }
 
+/** Parses `<title>` from raw HTML (works without a live document). */
+export function parseHtmlDocumentTitle(html: string): string {
+  const match = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(html)
+  if (!match?.[1]) return ''
+  return match[1].replace(/\s+/g, ' ').trim().slice(0, 160)
+}
+
+/** Replaces anchor labels with each linked page's document title when HTML can be loaded. */
+export async function enrichLinkLabelsWithPageTitles(
+  entries: HtmlLinkCandidate[],
+  loadHtml: (resolvedUrl: string) => Promise<string | null>,
+  concurrency = 8,
+): Promise<HtmlLinkCandidate[]> {
+  if (entries.length === 0) return entries
+  const items = entries.map((entry) => ({ ...entry }))
+  let cursor = 0
+  async function worker() {
+    while (cursor < items.length) {
+      const index = cursor++
+      const entry = items[index]
+      const html = await loadHtml(entry.resolvedUrl)
+      if (!html) continue
+      const title = parseHtmlDocumentTitle(html)
+      if (title) entry.label = title
+    }
+  }
+  const workers = Math.min(concurrency, items.length)
+  await Promise.all(Array.from({ length: workers }, () => worker()))
+  return dedupeAndSortLinks(items)
+}
+
 const HTML_ASSET_ATTR_PATTERN =
   /<(link|script|img|source|video|audio|iframe|embed|input)\b[^>]*?\s(href|src|poster)\s*=\s*(["'])(.*?)\3/gi
 const HTML_REF_ATTR_PATTERN = /(\s(?:href|src|poster)\s*=\s*)(["'])(.*?)\2/gi

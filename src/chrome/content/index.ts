@@ -136,14 +136,18 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
       sendResponse({ ok: true, data: { pickerActive: isPickerActive() } })
       return false
     case 'SCAN_HTML_BUNDLE':
-      sendResponse({
-        ok: true,
-        data: scanHtmlBundleFromDom({
-          htmlOnly: raw.htmlOnly ?? true,
-          sameFolderOnly: raw.sameFolderOnly ?? true,
-        }),
+      void scanHtmlBundleFromDom({
+        htmlOnly: raw.htmlOnly ?? true,
+        sameFolderOnly: raw.sameFolderOnly ?? true,
       })
-      return false
+        .then((data) => sendResponse({ ok: true, data }))
+        .catch((error: unknown) =>
+          sendResponse({
+            ok: false,
+            error: error instanceof Error ? error.message : 'Could not scan HTML links.',
+          }),
+        )
+      return true
     case 'BUILD_HTML_BUNDLE': {
       const { buildId } = raw
       const controller = new AbortController()

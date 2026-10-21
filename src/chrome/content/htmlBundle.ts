@@ -1,7 +1,9 @@
 import {
+  basenameOf,
   buildHtmlArchive,
   DEFAULT_MAX_BYTES,
   DEFAULT_MAX_PAGES,
+  enrichLinkLabelsWithPageTitles,
   scanAnchorList,
   type HtmlBundleProgress,
   type HtmlLinkCandidate,
@@ -33,18 +35,31 @@ export interface BuildHtmlBundleResult {
   stats: BuildHtmlBundleStats
 }
 
-export function scanHtmlBundleFromDom(
+async function fetchLinkedHtml(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url, { credentials: 'include' })
+    if (!response.ok) return null
+    return await response.text()
+  } catch {
+    return null
+  }
+}
+
+export async function scanHtmlBundleFromDom(
   options: { htmlOnly: boolean; sameFolderOnly: boolean },
-): ScanHtmlBundleResult {
+): Promise<ScanHtmlBundleResult> {
   const pageUrl = window.location.href
   const anchors = [...document.querySelectorAll<HTMLAnchorElement>('a[href]')].map((anchor) => ({
     href: anchor.getAttribute('href') ?? '',
     label: (anchor.textContent ?? '').trim().slice(0, 160),
   }))
+  const scanned = scanAnchorList(anchors, pageUrl, options)
+  const entries = await enrichLinkLabelsWithPageTitles(scanned, fetchLinkedHtml)
+  const pageTitle = document.title.trim() || basenameOf(pageUrl)
   return {
     pageUrl,
-    pageTitle: document.title,
-    entries: scanAnchorList(anchors, pageUrl, options),
+    pageTitle,
+    entries,
   }
 }
 

@@ -46,6 +46,7 @@ import {
   cancelHtmlBundleJob,
   downloadZip,
   getActivePageMeta,
+  getDocumentTitleFromTab,
   isActiveTabContentScriptReady,
   loadPageLimit,
   savePageLimit,
@@ -328,8 +329,12 @@ export default function HtmlBundleTool() {
         const meta = await getActivePageMeta()
         const url = pageUrl || meta.url
         const pageCount = new Set([url.split('#')[0], ...selectedUrls]).size
+        const resolvedTitle =
+          pageTitle.trim() ||
+          (await getDocumentTitleFromTab(pageTabId ?? meta.tabId).catch(() => '')) ||
+          meta.title
         const fileName = zipFileName(
-          pageTitle || meta.title,
+          resolvedTitle,
           url,
           pageCount > 1 ? ` (${pageCount} pages)` : '',
         )
@@ -347,7 +352,7 @@ export default function HtmlBundleTool() {
         await startHtmlBundleJob({
           tabId: pageTabId ?? meta.tabId,
           pageUrl: url,
-          pageTitle: pageTitle || meta.title,
+          pageTitle: resolvedTitle,
           fileName,
           pageCount,
           request: {

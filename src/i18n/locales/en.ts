@@ -718,7 +718,7 @@ const en = {
   'htmlBundle.htmlOnly': 'HTML links only (.html)',
   'htmlBundle.sameFolderOnly': 'Same folder only',
   'htmlBundle.includeAssetsHint': 'Includes same-origin CSS, JS, and images for offline viewing.',
-  'htmlBundle.search': 'Filter by name or file…',
+  'htmlBundle.search': 'Filter by page title or file…',
   'htmlBundle.selectAll': 'Select all',
   'htmlBundle.selectAllMatches': 'Select all {{count}} matches',
   'htmlBundle.pageLimit': 'Max pages per ZIP',

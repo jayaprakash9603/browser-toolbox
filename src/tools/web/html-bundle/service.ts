@@ -148,6 +148,12 @@ export async function getActivePageMeta(): Promise<{ url: string; title: string;
   }
 }
 
+/** Reads `document.title` from the report tab (more accurate than `tab.title` for file:// reports). */
+export async function getDocumentTitleFromTab(tabId?: number): Promise<string> {
+  const info = await sendMessage<{ title: string }>({ type: 'GET_PAGE_INFO' }, tabId)
+  return info.title?.trim() ?? ''
+}
+
 export async function isActiveTabContentScriptReady(tabId?: number): Promise<boolean> {
   const tab = await resolveTargetTab(tabId).catch(() => undefined)
   if (!tab?.id || classifyTabUrl(tab.url)) return false
