@@ -608,15 +608,34 @@
 	//#region src/chrome/content/pip/auto.ts
 	/** Set by the background when PiP (or auto-PiP) is switched off while this page is open. */
 	var pipOff = () => window.__tbxPipOff === true;
-	function collectVideos(root, out) {
+	var videoCache = null;
+	function collectVideosShallow(root, out) {
 		root.querySelectorAll("video").forEach((v) => out.push(v));
+	}
+	function collectVideosDeep(root, out) {
+		collectVideosShallow(root, out);
 		root.querySelectorAll("*").forEach((el) => {
-			if (el.shadowRoot) collectVideos(el.shadowRoot, out);
+			if (el.shadowRoot) collectVideosDeep(el.shadowRoot, out);
 		});
 	}
+	function allVideos() {
+		const now = Date.now();
+		if (videoCache && now - videoCache.at < 1e3) return videoCache.videos;
+		const shallow = [];
+		collectVideosShallow(document, shallow);
+		const videos = shallow.length > 0 ? shallow : (() => {
+			const deep = [];
+			collectVideosDeep(document, deep);
+			return deep;
+		})();
+		videoCache = {
+			at: now,
+			videos
+		};
+		return videos;
+	}
 	function largestVideo(filter) {
-		const videos = [];
-		collectVideos(document, videos);
+		const videos = allVideos();
 		let best = null;
 		let bestArea = 0;
 		for (const v of videos) {
@@ -805,7 +824,19 @@
 		});
 		btn.addEventListener("mouseenter", () => window.clearTimeout(hideTimer));
 		btn.addEventListener("mouseleave", show);
-		document.addEventListener("mousemove", show, {
+		let moveRaf = 0;
+		let lastMoveAt = 0;
+		const onMove = () => {
+			if (moveRaf) return;
+			moveRaf = requestAnimationFrame(() => {
+				moveRaf = 0;
+				const now = Date.now();
+				if (now - lastMoveAt < 250) return;
+				lastMoveAt = now;
+				show();
+			});
+		};
+		document.addEventListener("mousemove", onMove, {
 			passive: true,
 			capture: true
 		});
@@ -886,7 +917,7 @@
 		installEmbedBridge();
 		installTopBridge();
 		document.addEventListener("playing", register, true);
-		window.setInterval(register, 4e3);
+		if (window === window.top) window.setInterval(register, 4e3);
 	}
 	//#endregion
 })();

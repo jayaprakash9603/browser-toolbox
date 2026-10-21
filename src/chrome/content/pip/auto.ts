@@ -6,16 +6,32 @@ type Guarded = Window & { __tbxPipAuto?: boolean; __tbxPipOff?: boolean; __tbxPi
 /** Set by the background when PiP (or auto-PiP) is switched off while this page is open. */
 const pipOff = () => (window as Guarded).__tbxPipOff === true
 
-function collectVideos(root: ParentNode, out: HTMLVideoElement[]): void {
+let videoCache: { at: number; videos: HTMLVideoElement[] } | null = null
+
+function collectVideosShallow(root: ParentNode, out: HTMLVideoElement[]): void {
   root.querySelectorAll('video').forEach((v) => out.push(v))
+}
+
+function collectVideosDeep(root: ParentNode, out: HTMLVideoElement[]): void {
+  collectVideosShallow(root, out)
   root.querySelectorAll('*').forEach((el) => {
-    if (el.shadowRoot) collectVideos(el.shadowRoot, out)
+    if (el.shadowRoot) collectVideosDeep(el.shadowRoot, out)
   })
 }
 
+function allVideos(): HTMLVideoElement[] {
+  const now = Date.now()
+  if (videoCache && now - videoCache.at < 1000) return videoCache.videos
+  const shallow: HTMLVideoElement[] = []
+  collectVideosShallow(document, shallow)
+  const videos =
+    shallow.length > 0 ? shallow : (() => { const deep: HTMLVideoElement[] = []; collectVideosDeep(document, deep); return deep })()
+  videoCache = { at: now, videos }
+  return videos
+}
+
 function largestVideo(filter: (v: HTMLVideoElement, r: DOMRect) => boolean): HTMLVideoElement | null {
-  const videos: HTMLVideoElement[] = []
-  collectVideos(document, videos)
+  const videos = allVideos()
   let best: HTMLVideoElement | null = null
   let bestArea = 0
   for (const v of videos) {
@@ -256,7 +272,20 @@ function installFrameButton(): void {
   })
   btn.addEventListener('mouseenter', () => window.clearTimeout(hideTimer))
   btn.addEventListener('mouseleave', show)
-  document.addEventListener('mousemove', show, { passive: true, capture: true })
+
+  let moveRaf = 0
+  let lastMoveAt = 0
+  const onMove = () => {
+    if (moveRaf) return
+    moveRaf = requestAnimationFrame(() => {
+      moveRaf = 0
+      const now = Date.now()
+      if (now - lastMoveAt < 250) return
+      lastMoveAt = now
+      show()
+    })
+  }
+  document.addEventListener('mousemove', onMove, { passive: true, capture: true })
   document.documentElement.appendChild(btn)
 }
 
@@ -340,5 +369,5 @@ if ('mediaSession' in navigator && !guarded.__tbxPipAuto) {
   installTopBridge()
   // Sites such as YouTube replace media-session handlers; keep ours registered.
   document.addEventListener('playing', register, true)
-  window.setInterval(register, 4000)
+  if (window === window.top) window.setInterval(register, 4000)
 }

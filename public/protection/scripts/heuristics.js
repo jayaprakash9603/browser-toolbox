@@ -226,12 +226,18 @@
 	*/
 	var OVERLAY_ID = "toolbox-protection-overlay";
 	var SCAM_RECHECK_MS = 2500;
+	var CHECK_COALESCE_MS = 2e3;
+	var OBSERVER_IDLE_MS = 3e4;
+	var SCAM_TEXT_SLICE = 12e3;
 	var GESTURE_THROTTLE_MS = 1500;
 	var IS_TOP = window.top === window;
 	var state = {};
 	var decided = false;
 	var observer = null;
 	var lastGestureSent = 0;
+	var checksScheduled = false;
+	var lastCheckRun = 0;
+	var observerStartedAt = 0;
 	function isActive() {
 		if (state.enabled === false) return false;
 		const host = location.hostname.replace(/^www\./, "");
@@ -384,7 +390,7 @@
 	}
 	function checkScamText() {
 		if (decided || state.scamGuard === false || !isActive()) return;
-		const text = document.body?.innerText ?? "";
+		const text = document.body?.textContent?.slice(0, SCAM_TEXT_SLICE) ?? "";
 		if (assessScamText(location.hostname, document.title, text).level === "high") flagTechScam();
 	}
 	function checkLookalike() {
@@ -402,14 +408,24 @@
 		observer?.disconnect();
 		observer = null;
 	}
+	function runChecks() {
+		lastCheckRun = Date.now();
+		checksScheduled = false;
+		checkScamText();
+		checkLookalike();
+		if (!decided && observer && Date.now() - observerStartedAt > OBSERVER_IDLE_MS) stopObserving();
+	}
 	function scheduleChecks() {
-		(typeof requestIdleCallback === "function" ? requestIdleCallback : (cb) => window.setTimeout(cb, 0))(() => {
-			checkScamText();
-			checkLookalike();
-		});
+		if (checksScheduled || decided) return;
+		const delay = Math.max(0, CHECK_COALESCE_MS - (Date.now() - lastCheckRun));
+		checksScheduled = true;
+		window.setTimeout(() => {
+			(typeof requestIdleCallback === "function" ? requestIdleCallback : (cb) => window.setTimeout(cb, 0))(runChecks);
+		}, delay);
 	}
 	function startTopFrameChecks() {
 		if (!IS_TOP || observer) return;
+		observerStartedAt = Date.now();
 		scheduleChecks();
 		window.setTimeout(checkScamText, SCAM_RECHECK_MS);
 		observer = new MutationObserver(() => {

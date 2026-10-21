@@ -13,6 +13,9 @@ type OverlayKind = 'lookalike' | 'lookalikeLow' | 'techscam' | 'clipboard'
 
 const OVERLAY_ID = 'toolbox-protection-overlay'
 const SCAM_RECHECK_MS = 2500
+const CHECK_COALESCE_MS = 2000
+const OBSERVER_IDLE_MS = 30_000
+const SCAM_TEXT_SLICE = 12_000
 const GESTURE_THROTTLE_MS = 1500
 const IS_TOP = window.top === window
 
@@ -20,6 +23,9 @@ let state: Partial<ProtectionState> = {}
 let decided = false
 let observer: MutationObserver | null = null
 let lastGestureSent = 0
+let checksScheduled = false
+let lastCheckRun = 0
+let observerStartedAt = 0
 
 function isActive(): boolean {
   if (state.enabled === false) return false
@@ -188,7 +194,7 @@ function flagTechScam(): void {
 
 function checkScamText(): void {
   if (decided || state.scamGuard === false || !isActive()) return
-  const text = document.body?.innerText ?? ''
+  const text = document.body?.textContent?.slice(0, SCAM_TEXT_SLICE) ?? ''
   if (assessScamText(location.hostname, document.title, text).level === 'high') flagTechScam()
 }
 
@@ -211,19 +217,31 @@ function stopObserving(): void {
   observer = null
 }
 
+function runChecks(): void {
+  lastCheckRun = Date.now()
+  checksScheduled = false
+  checkScamText()
+  checkLookalike()
+  if (!decided && observer && Date.now() - observerStartedAt > OBSERVER_IDLE_MS) stopObserving()
+}
+
 function scheduleChecks(): void {
-  const idle =
-    typeof requestIdleCallback === 'function'
-      ? requestIdleCallback
-      : (cb: () => void) => window.setTimeout(cb, 0)
-  idle(() => {
-    checkScamText()
-    checkLookalike()
-  })
+  if (checksScheduled || decided) return
+  const now = Date.now()
+  const delay = Math.max(0, CHECK_COALESCE_MS - (now - lastCheckRun))
+  checksScheduled = true
+  window.setTimeout(() => {
+    const idle =
+      typeof requestIdleCallback === 'function'
+        ? requestIdleCallback
+        : (cb: () => void) => window.setTimeout(cb, 0)
+    idle(runChecks)
+  }, delay)
 }
 
 function startTopFrameChecks(): void {
   if (!IS_TOP || observer) return
+  observerStartedAt = Date.now()
   scheduleChecks()
   window.setTimeout(checkScamText, SCAM_RECHECK_MS)
   observer = new MutationObserver(() => {
