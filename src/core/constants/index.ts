@@ -7,6 +7,10 @@ export const STORAGE_KEYS = {
   clipboardHistory: 'clipboardHistory',
   adblock: 'adblock',
   adblockTotals: 'adblockTotals',
+  /** Session-only live totals (not broadcast to content scripts). */
+  adblockTotalsLive: 'adblockTotalsLive',
+  /** Session mirror of redirect traces (background only). */
+  redirectTraceSession: 'redirectTraceSession',
   protection: 'protection',
   protectionStats: 'protectionStats',
   protectionRulesVersion: 'protectionRulesVersion',

@@ -56,9 +56,6 @@ function registerTabTracking(): void {
     if (info.status === 'complete' && !liveCounting) void reconcileNetworkCount(tabId)
   })
   chrome.tabs.onRemoved?.addListener((tabId) => void removeTab(tabId))
-  chrome.tabs.onActivated?.addListener(({ tabId }) => {
-    if (!liveCounting) void reconcileNetworkCount(tabId)
-  })
 }
 
 export function registerAdblock(): void {

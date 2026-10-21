@@ -16,6 +16,7 @@ import { set } from '@/core/storage'
 const logger = createLogger('adblock-stats')
 
 const FLUSH_DELAY_MS = 1000
+const LOCAL_TOTALS_PERSIST_MS = 30_000
 
 const tabStats = new Map<number, AdblockTabEntry>()
 let totals: AdblockTotals = emptyTotals()
@@ -24,13 +25,24 @@ let flushTimer: ReturnType<typeof setTimeout> | null = null
 let dirty = false
 let lastPersistedMapJson = ''
 let lastPersistedTotalsJson = ''
+let lastLocalTotalsPersist = 0
 let allowRuleIds: Map<string, Set<number>> | null = null
+
+function writeLiveTotalsSession(): void {
+  void chrome.storage.session.set({ [STORAGE_KEYS.adblockTotalsLive]: totals })
+}
+
+function persistTotalsToLocal(): void {
+  lastLocalTotalsPersist = Date.now()
+  void set(STORAGE_KEYS.adblockTotals, totals).catch((error) => logger.warn('persist totals failed', error))
+}
 
 function ensureLoaded(): Promise<void> {
   loadPromise ??= (async () => {
     const [stored, storedTotals] = await Promise.all([getAdblockTabStats(), getAdblockTotals()])
     for (const entry of Object.values(stored)) tabStats.set(entry.tabId, entry)
     totals = storedTotals
+    writeLiveTotalsSession()
   })().catch((error) => logger.warn('load stats failed', error))
   return loadPromise
 }
@@ -59,11 +71,18 @@ function scheduleFlush(): void {
     lastPersistedMapJson = mapJson
     lastPersistedTotalsJson = totalsJson
     dirty = false
-    void Promise.all([setAdblockTabStats(map), set(STORAGE_KEYS.adblockTotals, totals)]).catch(
-      (error) => logger.warn('flush stats failed', error),
-    )
+    writeLiveTotalsSession()
+    const now = Date.now()
+    const persistTotals =
+      lastLocalTotalsPersist === 0 || now - lastLocalTotalsPersist >= LOCAL_TOTALS_PERSIST_MS
+    void setAdblockTabStats(map).catch((error) => logger.warn('flush tab stats failed', error))
+    if (persistTotals) persistTotalsToLocal()
   }, FLUSH_DELAY_MS)
 }
+
+chrome.runtime.onSuspend?.addListener(() => {
+  if (dirty) persistTotalsToLocal()
+})
 
 function blankEntry(tabId: number, url = '', title = '', favIconUrl?: string): AdblockTabEntry {
   return {

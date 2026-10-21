@@ -40,13 +40,21 @@ export function useAdblockLive() {
 
   useEffect(() => {
     void getAdblockTabStats().then(setTabMap)
-    void getAdblockTotals().then(setTotals)
+    void chrome.storage.session.get(STORAGE_KEYS.adblockTotalsLive).then((session) => {
+      const live = session[STORAGE_KEYS.adblockTotalsLive] as AdblockTotals | undefined
+      if (live) setTotals(live)
+      else void getAdblockTotals().then(setTotals)
+    })
     void queryActiveTab().then(setActiveTab)
 
     const onStorage = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
       const tabChange = changes[TAB_STATS_SESSION_KEY]
       if (tabChange && (area === 'session' || area === 'local')) {
         setTabMap((tabChange.newValue as AdblockTabStatsMap | undefined) ?? {})
+      }
+      const liveTotalsChange = changes[STORAGE_KEYS.adblockTotalsLive]
+      if (area === 'session' && liveTotalsChange) {
+        setTotals((liveTotalsChange.newValue as AdblockTotals | undefined) ?? emptyTotals())
       }
       const totalsChange = changes[STORAGE_KEYS.adblockTotals]
       if (area === 'local' && totalsChange) {
