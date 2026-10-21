@@ -7,6 +7,8 @@ import {
 } from '@/core/interceptor'
 import { createLogger } from '@/core/logging'
 
+import { reconcileDynamicRules } from '../scriptRegistry'
+
 const logger = createLogger('interceptor-dnr')
 
 export async function syncInterceptorDnrRules(): Promise<string[]> {
@@ -16,15 +18,11 @@ export async function syncInterceptorDnrRules(): Promise<string[]> {
     INTERCEPTOR_RULE_ID_BASE,
     state.groups,
   )
-  const existing = await chrome.declarativeNetRequest.getDynamicRules()
-  const removeRuleIds = existing
-    .filter((rule) => isInterceptorRuleId(rule.id, INTERCEPTOR_RULE_ID_BASE, INTERCEPTOR_RULE_ID_MAX))
-    .map((rule) => rule.id)
   try {
-    await chrome.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds,
-      addRules: rules,
-    })
+    await reconcileDynamicRules(
+      (id) => isInterceptorRuleId(id, INTERCEPTOR_RULE_ID_BASE, INTERCEPTOR_RULE_ID_MAX),
+      rules,
+    )
   } catch (error) {
     logger.warn('updateDynamicRules failed', error)
     errors.push(error instanceof Error ? error.message : 'DNR sync failed')

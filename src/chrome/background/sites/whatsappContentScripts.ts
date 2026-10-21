@@ -6,7 +6,10 @@ import {
 } from '@/core/sites/whatsapp'
 import { createLogger } from '@/core/logging'
 
+import { reconcileContentScripts } from '../scriptRegistry'
+
 const logger = createLogger('sites-whatsapp-scripts')
+const OWNED_SCRIPT_IDS = Object.values(CONTENT_SCRIPT_IDS)
 
 export function buildWhatsappContentScripts(state: WhatsappPlusState): chrome.scripting.RegisteredContentScript[] {
   if (!state.enabled) return []
@@ -29,20 +32,10 @@ export function buildWhatsappContentScripts(state: WhatsappPlusState): chrome.sc
   ]
 }
 
-async function unregister(): Promise<void> {
-  try {
-    await chrome.scripting.unregisterContentScripts({ ids: Object.values(CONTENT_SCRIPT_IDS) })
-  } catch {
-    /* not registered */
-  }
-}
-
 export async function syncWhatsappContentScripts(state: WhatsappPlusState): Promise<void> {
-  await unregister()
   const scripts = buildWhatsappContentScripts(state)
-  if (!scripts.length) return
   try {
-    await chrome.scripting.registerContentScripts(scripts)
+    await reconcileContentScripts(OWNED_SCRIPT_IDS, scripts)
   } catch (error) {
     logger.warn('registerContentScripts failed', error)
   }

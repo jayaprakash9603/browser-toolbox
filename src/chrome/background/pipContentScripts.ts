@@ -1,6 +1,8 @@
 import { PIP_AUTO_SCRIPT_ID } from '@/core/pip'
 import { createLogger } from '@/core/logging'
 
+import { reconcileContentScripts } from './scriptRegistry'
+
 const logger = createLogger('pip-scripts')
 
 export const PIP_AUTO_JS = 'sites/scripts/pip-auto.js'
@@ -17,14 +19,9 @@ export function buildPipAutoContentScript(): chrome.scripting.RegisteredContentS
 }
 
 export async function syncPipAutoContentScript(enabled: boolean): Promise<void> {
+  const scripts = enabled ? [buildPipAutoContentScript()] : []
   try {
-    await chrome.scripting.unregisterContentScripts({ ids: [PIP_AUTO_SCRIPT_ID] })
-  } catch {
-    /* not registered */
-  }
-  if (!enabled) return
-  try {
-    await chrome.scripting.registerContentScripts([buildPipAutoContentScript()])
+    await reconcileContentScripts([PIP_AUTO_SCRIPT_ID], scripts)
   } catch (error) {
     logger.warn('registerContentScripts failed', error)
   }

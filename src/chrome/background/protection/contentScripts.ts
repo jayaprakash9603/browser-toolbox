@@ -1,7 +1,10 @@
 import { CONTENT_SCRIPT_IDS, PROTECTION_FILES, type ProtectionState } from '@/core/protection'
 import { createLogger } from '@/core/logging'
 
+import { reconcileContentScripts } from '../scriptRegistry'
+
 const logger = createLogger('protection-scripts')
+const OWNED_SCRIPT_IDS = Object.values(CONTENT_SCRIPT_IDS)
 
 const ALL_URLS = ['<all_urls>']
 
@@ -54,23 +57,10 @@ export function buildProtectionContentScripts(
   return scripts
 }
 
-async function unregisterAll(): Promise<void> {
-  const ours = new Set<string>(Object.values(CONTENT_SCRIPT_IDS))
-  try {
-    const registered = await chrome.scripting.getRegisteredContentScripts()
-    const ids = registered.map((script) => script.id).filter((id) => ours.has(id))
-    if (ids.length) await chrome.scripting.unregisterContentScripts({ ids })
-  } catch {
-    /* nothing registered */
-  }
-}
-
 export async function syncProtectionContentScripts(state: ProtectionState): Promise<void> {
-  await unregisterAll()
   const scripts = buildProtectionContentScripts(state)
-  if (!scripts.length) return
   try {
-    await chrome.scripting.registerContentScripts(scripts)
+    await reconcileContentScripts(OWNED_SCRIPT_IDS, scripts)
   } catch (error) {
     logger.warn('registerContentScripts failed', error)
   }

@@ -6,7 +6,10 @@ import {
 } from '@/core/sites/instagram'
 import { createLogger } from '@/core/logging'
 
+import { reconcileContentScripts } from '../scriptRegistry'
+
 const logger = createLogger('sites-instagram-scripts')
+const OWNED_SCRIPT_IDS = [CONTENT_SCRIPT_IDS.isolated]
 
 export function buildInstagramContentScripts(state: InstagramEnhancerState): chrome.scripting.RegisteredContentScript[] {
   if (!state.enabled) return []
@@ -21,20 +24,10 @@ export function buildInstagramContentScripts(state: InstagramEnhancerState): chr
   ]
 }
 
-async function unregister(): Promise<void> {
-  try {
-    await chrome.scripting.unregisterContentScripts({ ids: [CONTENT_SCRIPT_IDS.isolated] })
-  } catch {
-    /* not registered */
-  }
-}
-
 export async function syncInstagramContentScripts(state: InstagramEnhancerState): Promise<void> {
-  await unregister()
   const scripts = buildInstagramContentScripts(state)
-  if (!scripts.length) return
   try {
-    await chrome.scripting.registerContentScripts(scripts)
+    await reconcileContentScripts(OWNED_SCRIPT_IDS, scripts)
   } catch (error) {
     logger.warn('registerContentScripts failed', error)
   }

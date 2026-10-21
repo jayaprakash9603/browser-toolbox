@@ -8,7 +8,10 @@ import {
 } from '@/core/adblock'
 import { createLogger } from '@/core/logging'
 
+import { reconcileContentScripts } from '../scriptRegistry'
+
 const logger = createLogger('adblock-scripts')
+const OWNED_SCRIPT_IDS = Object.values(CONTENT_SCRIPT_IDS)
 
 const ALL_URLS = ['<all_urls>']
 const YOUTUBE_HOST_RE = /(^|\.)(youtube\.com|youtube-nocookie\.com)$/
@@ -89,27 +92,10 @@ export function buildContentScripts(state: AdblockState): chrome.scripting.Regis
   return scripts
 }
 
-async function unregisterAll(): Promise<void> {
-  try {
-    const registered = await chrome.scripting.getRegisteredContentScripts()
-    const ours = new Set<string>(Object.values(CONTENT_SCRIPT_IDS))
-    const ids = registered.map((script) => script.id).filter((id) => ours.has(id))
-    if (ids.length) await chrome.scripting.unregisterContentScripts({ ids })
-  } catch {
-    try {
-      await chrome.scripting.unregisterContentScripts({ ids: Object.values(CONTENT_SCRIPT_IDS) })
-    } catch {
-      /* nothing registered */
-    }
-  }
-}
-
 export async function syncContentScripts(state: AdblockState): Promise<void> {
-  await unregisterAll()
   const scripts = buildContentScripts(state)
-  if (!scripts.length) return
   try {
-    await chrome.scripting.registerContentScripts(scripts)
+    await reconcileContentScripts(OWNED_SCRIPT_IDS, scripts)
   } catch (error) {
     logger.warn('registerContentScripts failed', error)
   }

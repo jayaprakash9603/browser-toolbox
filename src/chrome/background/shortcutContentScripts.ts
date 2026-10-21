@@ -1,5 +1,7 @@
 import { createLogger } from '@/core/logging'
 
+import { reconcileContentScripts } from './scriptRegistry'
+
 const logger = createLogger('shortcut-scripts')
 
 export const SHORTCUT_DISPATCHER_SCRIPT_ID = 'toolbox-shortcuts'
@@ -16,14 +18,9 @@ export function buildShortcutDispatcherScript(): chrome.scripting.RegisteredCont
 }
 
 export async function syncShortcutContentScripts(enabled: boolean): Promise<void> {
+  const scripts = enabled ? [buildShortcutDispatcherScript()] : []
   try {
-    await chrome.scripting.unregisterContentScripts({ ids: [SHORTCUT_DISPATCHER_SCRIPT_ID] })
-  } catch {
-    /* not registered */
-  }
-  if (!enabled) return
-  try {
-    await chrome.scripting.registerContentScripts([buildShortcutDispatcherScript()])
+    await reconcileContentScripts([SHORTCUT_DISPATCHER_SCRIPT_ID], scripts)
   } catch (error) {
     logger.warn('registerContentScripts failed', error)
   }

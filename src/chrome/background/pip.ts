@@ -164,7 +164,6 @@ export function bindPipMenuRebuild(fn: () => Promise<void>): void {
 async function syncPipFeatureState(): Promise<void> {
   const state = await getPipState()
   await syncPipAutoContentScript(state.enabled && state.autoPip)
-  void rebuildContextMenus?.()
 }
 
 async function scriptableTabIds(): Promise<number[]> {
@@ -227,6 +226,7 @@ export function registerPip(): void {
     if (area !== 'local' || !changes.pip) return
     void applyPipStateToOpenTabs(toPipState(changes.pip.oldValue), toPipState(changes.pip.newValue))
     void syncPipFeatureState()
+    void rebuildContextMenus?.()
   })
 
   void syncPipFeatureState()

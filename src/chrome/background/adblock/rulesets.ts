@@ -20,11 +20,17 @@ export function enabledRulesetIds(state: AdblockState): string[] {
 }
 
 export async function syncStaticRulesets(state: AdblockState): Promise<void> {
-  const enable = enabledRulesetIds(state)
-  const disable = RULESET_IDS.map((id) => RULESET_MANIFEST_IDS[id]).filter(
-    (id) => !enable.includes(id),
-  )
+  const enable = enabledRulesetIds(state).sort()
+  const disable = RULESET_IDS.map((id) => RULESET_MANIFEST_IDS[id])
+    .filter((id) => !enable.includes(id))
+    .sort()
   try {
+    const getEnabled = chrome.declarativeNetRequest.getEnabledRulesets
+    if (typeof getEnabled === 'function') {
+      const current = await getEnabled()
+      const currentSorted = [...current].sort()
+      if (currentSorted.join('\n') === enable.join('\n')) return
+    }
     await chrome.declarativeNetRequest.updateEnabledRulesets({
       enableRulesetIds: enable,
       disableRulesetIds: disable,

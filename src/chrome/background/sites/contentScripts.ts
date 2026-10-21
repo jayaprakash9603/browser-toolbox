@@ -1,7 +1,10 @@
 import { CONTENT_SCRIPT_IDS, SITE_FILES, YOUTUBE_MATCHES, type YoutubeEnhancerState } from '@/core/sites/youtube'
 import { createLogger } from '@/core/logging'
 
+import { reconcileContentScripts } from '../scriptRegistry'
+
 const logger = createLogger('sites-youtube-scripts')
+const OWNED_SCRIPT_IDS = Object.values(CONTENT_SCRIPT_IDS)
 
 export function buildYoutubeContentScripts(state: YoutubeEnhancerState): chrome.scripting.RegisteredContentScript[] {
   if (!state.enabled) return []
@@ -24,20 +27,10 @@ export function buildYoutubeContentScripts(state: YoutubeEnhancerState): chrome.
   ]
 }
 
-async function unregister(): Promise<void> {
-  try {
-    await chrome.scripting.unregisterContentScripts({ ids: Object.values(CONTENT_SCRIPT_IDS) })
-  } catch {
-    /* not registered */
-  }
-}
-
 export async function syncYoutubeContentScripts(state: YoutubeEnhancerState): Promise<void> {
-  await unregister()
   const scripts = buildYoutubeContentScripts(state)
-  if (!scripts.length) return
   try {
-    await chrome.scripting.registerContentScripts(scripts)
+    await reconcileContentScripts(OWNED_SCRIPT_IDS, scripts)
   } catch (error) {
     logger.warn('registerContentScripts failed', error)
   }

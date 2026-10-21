@@ -2,6 +2,8 @@ import { ALLOWLIST_RULE_ID_BASE, ALLOWLIST_RULE_PRIORITY } from '@/core/adblock'
 import { normalizeHostname } from '@/core/adblock/hostname'
 import { createLogger } from '@/core/logging'
 
+import { reconcileDynamicRules } from '../scriptRegistry'
+
 const logger = createLogger('adblock-allowlist')
 
 export const ALLOWLIST_RULE_ID_MAX = ALLOWLIST_RULE_ID_BASE + 50_000
@@ -37,14 +39,9 @@ export function buildAllowlistRules(hosts: string[]): chrome.declarativeNetReque
 }
 
 export async function syncAllowlistRules(allowlist: string[]): Promise<void> {
-  const existing = await chrome.declarativeNetRequest.getDynamicRules()
-  const removeRuleIds = existing.filter((rule) => isAdblockAllowlistRuleId(rule.id)).map((rule) => rule.id)
   const addRules = buildAllowlistRules(allowlist)
   try {
-    await chrome.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds,
-      addRules,
-    })
+    await reconcileDynamicRules(isAdblockAllowlistRuleId, addRules)
   } catch (error) {
     logger.warn('updateDynamicRules failed', error)
   }
