@@ -1,6 +1,6 @@
 import * as React from 'react'
 import * as SelectPrimitive from '@radix-ui/react-select'
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
+import { CheckIcon, ChevronDownIcon } from 'lucide-react'
 
 import { cn } from '@/shared/utils/cn'
 
@@ -38,7 +38,7 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        'flex min-w-0 cursor-pointer items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-xs shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50 data-placeholder:text-muted-foreground [&_[data-slot=select-value]]:min-w-0 [&_[data-slot=select-value]]:truncate [&_svg]:pointer-events-none [&_svg]:size-3.5 [&_svg]:shrink-0',
+        'flex min-w-0 cursor-pointer items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-xs shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50 data-placeholder:text-muted-foreground [&_[data-slot=select-value]]:min-w-0 [&_[data-slot=select-value]]:truncate [&_svg]:pointer-events-none [&_svg]:size-3.5 [&_svg]:shrink-0',
         size === 'default' ? 'h-8' : 'h-6 px-2 text-[11px]',
         className,
       )}
@@ -56,6 +56,7 @@ function SelectContent({
   className,
   children,
   position = 'popper',
+  sideOffset = 4,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
   return (
@@ -63,22 +64,22 @@ function SelectContent({
       <SelectPrimitive.Content
         data-slot="select-content"
         position={position}
+        sideOffset={sideOffset}
         className={cn(
-          'relative z-50 max-h-64 min-w-32 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
-          position === 'popper' && 'data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1',
+          'relative z-50 max-h-[min(16rem,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md',
+          'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:duration-100 data-[state=open]:duration-100',
           className,
         )}
         {...props}
       >
-        <SelectPrimitive.ScrollUpButton className="flex cursor-default items-center justify-center py-1">
-          <ChevronUpIcon className="size-3.5" />
-        </SelectPrimitive.ScrollUpButton>
-        <SelectPrimitive.Viewport className="p-1">
+        <SelectPrimitive.Viewport
+          className={cn(
+            'max-h-[min(16rem,var(--radix-select-content-available-height))] overflow-y-auto overscroll-contain p-1 scroll-py-1',
+            position === 'popper' && 'w-full min-w-[var(--radix-select-trigger-width)]',
+          )}
+        >
           {children}
         </SelectPrimitive.Viewport>
-        <SelectPrimitive.ScrollDownButton className="flex cursor-default items-center justify-center py-1">
-          <ChevronDownIcon className="size-3.5" />
-        </SelectPrimitive.ScrollDownButton>
       </SelectPrimitive.Content>
     </SelectPrimitive.Portal>
   )
