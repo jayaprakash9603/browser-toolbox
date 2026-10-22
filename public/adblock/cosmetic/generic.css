@@ -42,10 +42,7 @@ DFP-AD{display:none!important}
 [class^="adDisplay-module"]{display:none!important}
 [class^="amp-ad-"]{display:none!important}
 [data-ad-cls]{display:none!important}
-[data-ad-manager-id]{display:none!important}
-[data-ad-module]{display:none!important}
 [data-ad-name]{display:none!important}
-[data-ad-width]{display:none!important}
 [data-asg-ins]{display:none!important}
 [data-block-type="ad"]{display:none!important}
 [data-cl-spot-id]{display:none!important}
@@ -361,7 +358,6 @@ a[href^="https://www.mrskin.com/account/"]{display:none!important}
 a[href^="https://www.mrskin.com/tour"]{display:none!important}
 a[href^="https://www.nutaku.net/signup/landing/"]{display:none!important}
 a[href^="https://www.onlineusershielder.com/"]{display:none!important}
-a[href^="https://www.sheetmusicplus.com/"][href*="?aff_id="]{display:none!important}
 a[href^="https://www.toprevenuegate.com/"]{display:none!important}
 a[href^="https://www8.smartadserver.com/"]{display:none!important}
 a[href^="https://zirdough.net/"]{display:none!important}
@@ -485,6 +481,60 @@ a[href*="/go.php?a_aid="]{display:none!important}
 [class^="div-gpt-ad"]:not([style^="width: 1px; height: 1px; position: absolute; left: -10000px; top: -"]){display:none!important}
 div[id^="div-gpt-"]:not([style^="width: 1px; height: 1px; position: absolute; left: -10000px; top: -"]):not([style="pointer-events: none; height: 1px; width: 0px; opacity: 0; visibility: hidden; position: fixed; bottom: 0px;"]){display:none!important}
 [id^="div-gpt-ad"]:not([style^="width: 1px; height: 1px; position: absolute; left: -10000px; top: -"]):not([style="pointer-events: none; height: 1px; width: 0px; opacity: 0; visibility: hidden; position: fixed; bottom: 0px;"]){display:none!important}
+[src^="//dombnrs.com/"]{display:none!important}
+div[style="top: 0px; left: 0px; width: 1287px; height: 500px; position: fixed; z-index: 2147483647;"]{display:none!important}
+div[style="position: fixed; inset: 0px; z-index: 2147483647; pointer-events: auto;"]{display:none!important}
+body > div[style$="z-index: 2147483647; top: 0px; left: 0px; position: fixed; display: block;"]{display:none!important}
+a[id][href="https://chpadblock.com/"][rel^="noopener noreferrer"]{display:none!important}
+a[id][href="https://hamrocsit.com"][rel^="noopener noreferrer"]{display:none!important}
+a[id][href="https://toolkitspro.com"][rel^="noopener noreferrer"]{display:none!important}
+body > div[style="position: fixed; inset: 0px; z-index: 2147483647; background: transparent; cursor: pointer;"]{display:none!important}
+body > a.visible[id][href][target="_blank"]{display:none!important}
+html[lang="tr"] #aa-wp + .fixed-footer .footer-ad-container{display:none!important}
+html[lang="tr"] #aa-wp .container-ads-adjustment{display:none!important}
+html[lang="tr"] #aa-wp .rnd-ads-adjustment{display:none!important}
+html[lang="tr"] > body.has-footer-ad.has-pageskin-desktop a.pageskin-click-left{display:none!important}
+html[lang="tr"] > body.has-footer-ad.has-pageskin-desktop a.pageskin-click-right{display:none!important}
+html[lang="tr"] > body.has-footer-ad.has-pageskin-desktop a.pageskin-desktop-wrapper{display:none!important}
+html[lang="vi"] .sspp-area{display:none!important}
+[href^="https://fireads.online/"]{display:none!important}
+[href^="//mellowads.com/"]{display:none!important}
+[href^="//cadsecs.com/"]{display:none!important}
+[href^="https://wap4dollar.com/ad/nonadult/serve.php"]{display:none!important}
+[href^="https://go.rdrjmp.com/"]{display:none!important}
+[href^="https://www.safestcontentgate.com/"]{display:none!important}
+div[id][style^="position: fixed; inset: 0px; z-index: 2147483647; background: black"][style*="opacity: 0.01"]{display:none!important}
+div[class$="player-promo-col"]{display:none!important}
+[href^="https://exi8ef83z9.com/"]{display:none!important}
+[href^="//taghaugh.com/"]{display:none!important}
+a[href*=".click/?z="][href*="&n"]{display:none!important}
+div#spot-holder.spot-holder[style="display: block;"]{display:none!important}
+[href^="https://join.enjoyx.com/track/"]{display:none!important}
+[href="https://clickaine.com"]{display:none!important}
+a[dontfo=""][style$="position: absolute; z-index: 2147483647;"]{display:none!important}
+[data-ad-module]:not([style$="left: -10000px !important; top: -1000px !important;"]):not(.adsbygoogle){display:none!important}
+[data-ad-width]:not([style$="left: -10000px !important; top: -1000px !important;"]):not(.adsbygoogle){display:none!important}
+[data-ad-manager-id]:not([style$="left: -10000px !important; top: -1000px !important;"]):not(.adsbygoogle){display:none!important}
+div[style^="z-index: 999999; background-image: url(\"data:image/gif;base64,"][style$="position: absolute;"]{display:none!important}
+a[onclick="openAuc();"]{display:none!important}
+[href="https://t.me/Russia_Vs_Ukraine_War3"]{display:none!important}
+div[style="position: fixed; display: block; width: 100%; height: 100%; inset: 0px; background-color: rgba(0, 0, 0, 0); z-index: 300000;"]{display:none!important}
+[style^="position: fixed; inset: 0px; z-index: 2147483647; background-color: transparent; pointer-events: auto; cursor: auto; margin: 0px; padding: 0px; display: block;"]{display:none!important}
+div[style^="position:fixed;inset:0px;z-index:2147483647;background:black;opacity:0.01"]{display:none!important}
+div[style^="position: fixed; inset: 0px; z-index: 2147483647; background: black; opacity: 0.01"]{display:none!important}
+iframe.lazyloaded[data-src^="https://rcm-fe.amazon-adsystem.com/"]{display:none!important}
+a[href^="https://go.awdeliverynet.com/"]{display:none!important}
+a[href^="https://track.cam4tracking.com/"]{display:none!important}
+figure.movie-detail-banner div[style="position: absolute; top: 0px; left: 0px; width: 100%; height: 100%; z-index: 999; cursor: pointer;"]{display:none!important}
+html[lang][style^="--main-bg-color"] > body:not([class]):not([id]) > div#container[style="visibility: visible;"] > div#banner[style="opacity:0"] ~ main:not([class]):not([id]) > div#message{display:none!important}
+[data-uri^="https://s3.amazonaws.com"]{display:none!important}
+[data-lnguri^="https://s3.amazonaws.com"]{display:none!important}
+a.poly-title[href^="https://www.polybuzz.ai/"]{display:none!important}
+a[href^="https://www.polybuzz.ai/"] img.responsive-image{display:none!important}
+button.btn[data-openuri*="/4/"]{display:none!important}
+img[width="728"][height="90"]{display:none!important}
+a.tdn[href^="https://landing.brazzersnetwork.com/"]{display:none!important}
+body > #mdl-register.modal.anm-e.regnow{display:none!important}
 div[style^="height:    250px; width:    300px;"]{display:none!important}
 div[style^="width:    160px; height:    600px; margin: 0px auto; min-width: 160px; min-height: 600px;"]{display:none!important}
 div[style^="width:    300px; height:    250px;"]{display:none!important}
@@ -496,6 +546,44 @@ amp-img[width="   300"]{display:none!important}
 amp-img[width="   336"]{display:none!important}
 div[id][class][style^="display"][style*="hidden"][style*="width:   "]{display:none!important}
 ins[id][style*="--gn-ov-ad-height"]{display:none!important}
+html[lang] > body.ishome > div.adult + main.main{display:none!important}
+body.user-clicked[style="cursor: auto;"] > #root > .app-container{display:none!important}
+body > .main-wrapper > .main-content > .intro > #checkbox-window{display:none!important}
+body.wp-singular > div[id$="-overlay"] > div[id$="-container"] > div[class*="-container"] > div[id$="-checkbox-window"]{display:none!important}
+div.card > div#cbRow.checkbox-row[onclick="startVerify()"]{display:none!important}
+html > #bw-cf-root{display:none!important}
+body > .page > #mainVerifyRow{display:none!important}
+body > .page > .verify-row{display:none!important}
+html.canvas > body.wp-singular + div[popover="manual"]{display:none!important}
+body > .content-wrapper > .cf-wrap{display:none!important}
+body > .cf-root{display:none!important}
+body > div.mw[role="main"] > .mc{display:none!important}
+html > #nochain-demo-frame:not(body){display:none!important}
+html > #nc-cover:not(body){display:none!important}
+html > #bw-rc-host{display:none!important}
+body[data-clipboard-code] > .main-wrapper{display:none!important}
+html > .cfmd-shadow-host{display:none!important}
+body > .cf-page-wrap{display:none!important}
+body > .main-wrapper > .main-content > .intro > .checkbox-window{display:none!important}
+html[data-page="macos-download"] > body[data-platform="macos"] > .app_wrap{display:none!important}
+html[lang] > body:not([class]):not([id]):not([style]) > div.background-container > div.container > div.captcha-box{display:none!important}
+html[lang] > body.startnew > div#sections > section#section_uname{display:none!important}
+html[lang] > body:not([style]) > div.captchaBody{display:none!important}
+html[lang] > body#body > * > div.cv-xwrapper > div.cvc > div.cv-inner{display:none!important}
+html[lang] > body#body > * > div.cvh.BlockClicksActivityBusy{display:none!important}
+html#html[sti][vic][lang] > body#allbody{display:none!important}
+html > body > div.container.m-p > #checkbox-window.checkbox-window{display:none!important}
+html[lang] > body:not([class]):not([id]):not([style]) > div.container > div.recaptcha-box{display:none!important}
+body > .security-container[style="opacity: 1; transform: translateY(0px);"]{display:none!important}
+html > body.hold-transition.theme-primary.bg-img[style^="background-image"][style*="wallpaperaccess.com"][style*="background-repeat"][style*="background-size"]{display:none!important}
+html > body > div.container > form#unsubscribe-form[onsubmit="submitUnsubscribeForm(event)"]{display:none!important}
+html > body > div.content > dl > dd.dd1 > div.min_sider > form#form1[action="unsubscribe.php"]{display:none!important}
+html > body.body > div.container > div.content > form > table.optoutForm{display:none!important}
+html[data-scrapbook-source][data-scrapbook-create][data-scrapbook-title] > body.no-js > div.main-wrapper[role="main"] > div.main-content{display:none!important}
+html > #__cf_challenge_host__{display:none!important}
+body > div[data-captcha-enable="true"] > div.cleanslate[id^="google-captcha-"] > div.captcha-box{display:none!important}
+body > div.captcha-container > div.captcha-card{display:none!important}
+body > .wrapper > .card-box > #step-1{display:none!important}
 [data-aqa="widget-conversation-starter"]{display:none!important}
 div.l > .acu.act{display:none!important}
 [name="bridged-flipcard-div"]{display:none!important}
@@ -1137,3 +1225,5 @@ div > #cnsh[style="display: block;"]{display:none!important}
 div[style="min-width: 750px;"] > .gb_wb{display:none!important}
 div > div + [aria-label="promo"][role="region"][data-ved]{display:none!important}
 div[style*="box-shadow: rgb(136, 136, 136) 0px 0px 12px; color: "]{display:none!important}
+[class~="mailpoet_form_popup_overlay"]{display:none!important}
+body div#notificationPopup.notificationPopupBlock{display:none!important}

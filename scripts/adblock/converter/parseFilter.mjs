@@ -37,19 +37,24 @@ const INLINE_CSP = {
 }
 
 const DOMAIN_RE = /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/
+const LABEL_RE = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/
 const IPV4_RE = /^(?:\d{1,3}\.){3}\d{1,3}$/
 
 /** uBO-only (procedural) pseudo-classes: these cannot go into a stylesheet. */
 export const PROCEDURAL_RE =
   /:(?:has-text|contains|matches-(?:attr|css|css-before|css-after|media|path|prop)|xpath|upward|remove(?:-attr|-class)?|style|watch-attr|min-text-length|others|-abp-|nth-ancestor|spath|shadow|if\(|if-not)/
 
-/** Lower-cases and punycodes a hostname; returns null when it is not a usable domain. */
-export function normalizeDomain(value) {
+/**
+ * Lower-cases and punycodes a hostname; returns null when it is not a usable domain.
+ * `allowTld` accepts a bare label (`to=com`), which DNR domain conditions support.
+ */
+export function normalizeDomain(value, allowTld = false) {
   if (typeof value !== 'string' || !value) return null
   let host = value.toLowerCase()
   if (/[^\x21-\x7e]/.test(host)) host = domainToASCII(host)
   if (!host) return null
-  return DOMAIN_RE.test(host) || IPV4_RE.test(host) ? host : null
+  if (DOMAIN_RE.test(host) || IPV4_RE.test(host)) return host
+  return allowTld && LABEL_RE.test(host) && !/^\d+$/.test(host) ? host : null
 }
 
 export function isValidDomain(value) {
@@ -192,15 +197,26 @@ function parseNetworkFilter(body, exception) {
   return { pattern, host, opts }
 }
 
+/**
+ * DNR has no entity (`site.*`) matching: a positive entity is dropped (the rule then covers
+ * fewer sites), but a negated one would widen the rule, so the whole filter is rejected.
+ */
 function splitDomains(value, out, excluded) {
+  let positives = 0
   for (const raw of value.split('|')) {
     if (!raw) continue
     const negated = raw.startsWith('~')
-    const host = normalizeDomain(negated ? raw.slice(1) : raw)
+    const name = negated ? raw.slice(1) : raw
+    if (!negated) positives++
+    if (isEntity(name)) {
+      if (negated) return false
+      continue
+    }
+    const host = normalizeDomain(name, true)
     if (!host) return false
     ;(negated ? excluded : out).push(host)
   }
-  return true
+  return positives === 0 || out.length > 0
 }
 
 function parseOptions(options) {
@@ -294,7 +310,7 @@ function parseOptions(options) {
  */
 export function toRegexFilter(source) {
   if (!source || source.length > 250) return null
-  if (/\(\?[=!<]|\\[1-9]|\(\?[a-z]*:|[^\\]\{\d{3,}/i.test(source)) return null
+  if (/\(\?[=!<]|\\[1-9]|[^\\]\{\d{3,}/.test(source)) return null
   if (/[^\x20-\x7e]/.test(source)) return null
   try {
     new RegExp(source)

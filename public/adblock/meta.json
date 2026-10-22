@@ -3,39 +3,92 @@
     {
       "id": "easylist",
       "ruleset": "ads",
-      "lines": 84196
+      "lines": 85194,
+      "includes": []
     },
     {
       "id": "easyprivacy",
       "ruleset": "privacy",
-      "lines": 57139
+      "lines": 57172,
+      "includes": []
     },
     {
       "id": "ublock-filters",
       "ruleset": "ads",
-      "lines": 10836
+      "lines": 41493,
+      "includes": [
+        "filters-general.txt",
+        "filters-2020.txt",
+        "filters-2021.txt",
+        "filters-2022.txt",
+        "filters-2023.txt",
+        "filters-2024.txt",
+        "filters-2025.txt",
+        "filters-2026.txt",
+        "ubo-link-shorteners.txt"
+      ]
     },
     {
       "id": "ublock-quick-fixes",
       "ruleset": "ads",
-      "lines": 706
+      "lines": 636,
+      "includes": []
+    },
+    {
+      "id": "ublock-badware",
+      "ruleset": "ads",
+      "lines": 7132,
+      "includes": []
+    },
+    {
+      "id": "ublock-privacy",
+      "ruleset": "privacy",
+      "lines": 3502,
+      "includes": [
+        "resource-abuse.txt"
+      ]
+    },
+    {
+      "id": "ublock-unbreak",
+      "ruleset": "ads",
+      "lines": 6020,
+      "includes": []
+    },
+    {
+      "id": "peter-lowe",
+      "ruleset": "ads",
+      "lines": 3593,
+      "includes": []
     },
     {
       "id": "fanboy-annoyance",
       "ruleset": "annoyances",
-      "lines": 50743
+      "lines": 50753,
+      "includes": []
+    },
+    {
+      "id": "ublock-annoyances-cookies",
+      "ruleset": "annoyances",
+      "lines": 5747,
+      "includes": []
+    },
+    {
+      "id": "ublock-annoyances-others",
+      "ruleset": "annoyances",
+      "lines": 8059,
+      "includes": []
     }
   ],
   "totals": {
-    "network": 117875,
-    "cosmetic": 71306,
-    "skipped": 14439,
-    "badfiltered": 0
+    "network": 133541,
+    "cosmetic": 77148,
+    "skipped": 58503,
+    "badfiltered": 109
   },
   "rulesets": {
-    "ads": 4986,
-    "privacy": 9201,
-    "annoyances": 3175,
+    "ads": 10708,
+    "privacy": 10136,
+    "annoyances": 3415,
     "youtube": 7
   },
   "rejected": {
@@ -44,11 +97,11 @@
     "annoyances": {}
   },
   "cosmetic": {
-    "highlyGeneric": 1139,
-    "keyedGeneric": 39892,
-    "specificHosts": 32281,
+    "highlyGeneric": 1229,
+    "keyedGeneric": 40014,
+    "specificHosts": 35334,
     "shards": 256,
     "genericShards": 256
   },
-  "generatedAt": "2026-10-22T17:09:45.219Z"
+  "generatedAt": "2026-10-22T17:18:07.250Z"
 }

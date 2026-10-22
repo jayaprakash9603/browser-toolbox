@@ -64,7 +64,7 @@ export function validateDnrRule(rule) {
   }
   for (const key of DOMAIN_KEYS) {
     if (condition[key] == null) continue
-    if (!nonEmptyArray(condition[key]) || !condition[key].every((d) => normalizeDomain(d) === d)) {
+    if (!nonEmptyArray(condition[key]) || !condition[key].every((d) => normalizeDomain(d, true) === d)) {
       return `bad ${key}`
     }
   }

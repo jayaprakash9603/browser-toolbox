@@ -103,6 +103,24 @@ describe('uBO network filter options', () => {
     expect(toRule('$third-party,script')).toBeNull()
   })
 
+  it('drops positive entity domains but rejects negated ones', () => {
+    expect(toRule('||cdn.example/ad.js$domain=site.example|vjav.*')!.condition.initiatorDomains).toEqual([
+      'site.example',
+    ])
+    expect(toRule('||cdn.example/ad.js$domain=vjav.*')).toBeNull()
+    expect(toRule('||cdn.example/ad.js$domain=~google.*')).toBeNull()
+    expect(toRule('.com/c/*?s1=$doc,to=com')!.condition.requestDomains).toEqual(['com'])
+  })
+
+  it('drops positive entity domains but rejects negated ones', () => {
+    expect(toRule('||cdn.example/ad.js$domain=site.example|vjav.*')!.condition.initiatorDomains).toEqual([
+      'site.example',
+    ])
+    expect(toRule('||cdn.example/ad.js$domain=vjav.*')).toBeNull()
+    expect(toRule('||cdn.example/ad.js$domain=~google.*')).toBeNull()
+    expect(toRule('.com/c/*?s1=$doc,to=com')!.condition.requestDomains).toEqual(['com'])
+  })
+
   it('punycodes internationalised domains', () => {
     expect(toRule('||bücher.example^')!.condition.requestDomains).toEqual(['xn--bcher-kva.example'])
   })

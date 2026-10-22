@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile as fsWriteFile } from 'node:fs/promises'
 import https from 'node:https'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -8,6 +8,7 @@ import { buildBloom } from './converter/bloom.mjs'
 import { createCosmeticCollector } from './converter/cosmetic.mjs'
 import { capRules, MAX_STATIC_RULES_PER_RULESET, RULESET_RULE_BUDGET } from './converter/limits.mjs'
 import { badfilterTarget, parseFilterLine } from './converter/parseFilter.mjs'
+import { preprocessList } from './converter/preprocess.mjs'
 import { resolveRedirect } from './converter/redirects.mjs'
 import { GENERIC_SHARD_COUNT, genericKeyShard, hostShard, SHARD_COUNT } from './converter/shard.mjs'
 import {
@@ -97,6 +98,18 @@ const BASE_GENERIC_SELECTORS = [
 
 const offline = process.argv.includes('--offline')
 
+/** Windows scanners and file watchers briefly lock freshly written files (UNKNOWN/EBUSY/EPERM). */
+async function writeFile(path, data) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fsWriteFile(path, data)
+    } catch (error) {
+      if (attempt >= 8 || !['UNKNOWN', 'EBUSY', 'EPERM', 'EACCES'].includes(error?.code)) throw error
+      await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1)))
+    }
+  }
+}
+
 function fetchText(url, redirects = 5) {
   return new Promise((resolve, reject) => {
     const req = https.get(url, { headers: { 'user-agent': 'browser-toolbox-adblock' } }, (res) => {
@@ -131,25 +144,37 @@ async function readJson(path, fallback) {
 }
 
 /** Download a list (and cache it), or fall back to the cached copy when offline or on error. */
-async function loadList(list) {
-  const cachePath = join(cacheDir, `${list.id}.txt`)
+async function loadText(id, url) {
+  const cachePath = join(cacheDir, `${id}.txt`)
   if (!offline) {
     try {
-      const text = await fetchText(list.url)
+      const text = await fetchText(url)
       await writeFile(cachePath, text)
       return text
     } catch (error) {
-      console.warn(`[adblock] download failed for ${list.id}:`, error instanceof Error ? error.message : error)
+      console.warn(`[adblock] download failed for ${id}:`, error instanceof Error ? error.message : error)
     }
   }
   try {
     const text = await readFile(cachePath, 'utf8')
-    console.log(`[adblock] using cached ${list.id}`)
+    console.log(`[adblock] using cached ${id}`)
     return text
   } catch {
-    console.warn(`[adblock] no cached copy of ${list.id}`)
+    console.warn(`[adblock] no cached copy of ${id}`)
     return null
   }
+}
+
+/** A list with its `!#include`d sibling files inlined and `!#if` blocks resolved for Chromium MV3. */
+async function loadList(list) {
+  const text = await loadText(list.id, list.url)
+  if (text == null) return null
+  const includes = []
+  const lines = await preprocessList(text, (name) => {
+    includes.push(name)
+    return loadText(`${list.id}--${name.replace(/\.txt$/, '')}`, new URL(name, list.url).toString())
+  })
+  return { lines, includes }
 }
 
 function assignIds(rules, start) {
@@ -200,8 +225,8 @@ async function main() {
 
   const texts = []
   for (const list of sources.lists) {
-    const text = await loadList(list)
-    if (text != null) texts.push({ list, lines: text.split('\n') })
+    const loaded = await loadList(list)
+    if (loaded) texts.push({ list, ...loaded })
   }
 
   // $badfilter cancels the filter it names, in any list (uBO semantics).
@@ -214,7 +239,7 @@ async function main() {
   }
   report.totals.badfiltered = 0
 
-  for (const { list, lines } of texts) {
+  for (const { list, lines, includes } of texts) {
     for (const line of lines) {
       if (badfilters.has(line.trim())) {
         report.totals.badfiltered++
@@ -239,7 +264,7 @@ async function main() {
       buckets[list.ruleset].push(rule)
       report.totals.network++
     }
-    report.lists.push({ id: list.id, ruleset: list.ruleset, lines: lines.length })
+    report.lists.push({ id: list.id, ruleset: list.ruleset, lines: lines.length, includes })
   }
 
   // Never overwrite shipped data with an empty result (no network and no cache).

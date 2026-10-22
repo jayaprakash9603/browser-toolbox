@@ -4,11 +4,11 @@
  * Default-enabled rulesets (ads + privacy + youtube) must stay under 30,000 together.
  */
 export const RULESET_RULE_BUDGET = {
-  ads: 10_000,
+  ads: 14_000,
   privacy: 15_000,
   annoyances: 4_900,
 }
-export const MAX_STATIC_RULES_PER_RULESET = 10_000
+export const MAX_STATIC_RULES_PER_RULESET = 14_000
 /** Highly generic selectors (no id/class key) are injected into every frame, so keep them few. */
 export const MAX_HIGHLY_GENERIC = 2500
 
