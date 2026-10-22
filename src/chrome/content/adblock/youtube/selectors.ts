@@ -27,18 +27,14 @@ export const YOUTUBE_COSMETIC_SELECTORS = [
   'ytm-promoted-sparkles-web-renderer',
   'ytm-companion-ad-renderer',
   'ad-slot-renderer',
+  // "Experiencing interruptions? Find out why." toast and snackbar (uBO quick fixes).
+  '#toast:has(> #text-container > yt-formatted-string#text.yt-notification-action-renderer)',
+  'tp-yt-paper-toast:has(a[href*="check_ad_blockers"])',
+  'yt-notification-action-renderer:has(a[href*="check_ad_blockers"])',
+  '.ytSnackbarContainerOpened:has(> .snackbarViewModelSwipeable > .snackbarViewModelEngagementBarWrapper .ytAttributedStringWhiteSpacePreWrap[style])',
 ] as const
 
 export const YOUTUBE_AD_PLAYER_CLASSES = ['ad-showing', 'ad-interrupting'] as const
-
-export const YOUTUBE_AD_UI_SELECTORS = [
-  '.ytp-ad-player-overlay',
-  '.ytp-ad-player-overlay-layout',
-  '.ytp-ad-text',
-  '.ytp-ad-preview-container',
-  '.ytp-ad-simple-ad-badge',
-  '.video-ads .ytp-ad-module > *',
-] as const
 
 export const YOUTUBE_SKIP_BUTTON_SELECTORS = [
   '.ytp-skip-ad-button',

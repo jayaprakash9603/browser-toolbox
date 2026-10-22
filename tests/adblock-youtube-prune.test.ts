@@ -8,19 +8,21 @@ import {
 } from '@/chrome/content/adblock/scriptlets/jsonPrune'
 
 describe('YouTube json prune', () => {
-  it('removes ad-related keys from player response', () => {
+  it('removes the ad schedule but keeps the fields YouTube checks for', () => {
     const input = {
       videoDetails: { videoId: 'abc' },
       adPlacements: [{ foo: 1 }],
       adSlots: [1, 2],
       playerAds: { test: true },
+      adBreakHeartbeatParams: 'x',
       playerConfig: { adSlots: [], latency: 1 },
     }
     const out = pruneYoutubePlayerJson(input)
     expect(out).toBe(input)
     expect(out).not.toHaveProperty('adPlacements')
     expect(out).not.toHaveProperty('adSlots')
-    expect(out).not.toHaveProperty('playerAds')
+    expect(out.playerAds).toEqual({ test: true })
+    expect(out.adBreakHeartbeatParams).toBe('x')
     expect(out.playerConfig).toEqual({ adSlots: [], latency: 1 })
     expect(out.videoDetails).toEqual({ videoId: 'abc' })
   })
@@ -53,15 +55,15 @@ describe('YouTube json prune', () => {
     expect(hasYoutubeAdPayload({ videoDetails: {} })).toBe(false)
   })
 
-  it('removes extended ad payload keys', () => {
-    const input = { adPlacement: { x: 1 }, videoDetails: { videoId: 'z' } }
-    expect(pruneYoutubeAdsInPlace(input)).toBe(1)
-    expect(input).not.toHaveProperty('adPlacement')
+  it('leaves playerAds-only responses alone', () => {
+    const text = '{"playerAds":[1],"streamingData":{"a":1}}'
+    expect(pruneYoutubeResponseText(text)).toEqual({ text, removed: 0 })
+    expect(hasYoutubeAdPayload({ playerAds: [1] })).toBe(false)
   })
 
-  it('rewrites response text that carries ads', () => {
-    const result = pruneYoutubeResponseText('{"playerAds":[1],"streamingData":{"a":1}}')
+  it('rewrites response text that carries an ad schedule', () => {
+    const result = pruneYoutubeResponseText('{"adPlacements":[1],"playerAds":[2],"streamingData":{"a":1}}')
     expect(result.removed).toBe(1)
-    expect(JSON.parse(result.text)).toEqual({ streamingData: { a: 1 } })
+    expect(JSON.parse(result.text)).toEqual({ playerAds: [2], streamingData: { a: 1 } })
   })
 })

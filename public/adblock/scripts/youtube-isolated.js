@@ -28,17 +28,13 @@
 		".ytd-companion-slot-renderer",
 		"ytm-promoted-sparkles-web-renderer",
 		"ytm-companion-ad-renderer",
-		"ad-slot-renderer"
+		"ad-slot-renderer",
+		"#toast:has(> #text-container > yt-formatted-string#text.yt-notification-action-renderer)",
+		"tp-yt-paper-toast:has(a[href*=\"check_ad_blockers\"])",
+		"yt-notification-action-renderer:has(a[href*=\"check_ad_blockers\"])",
+		".ytSnackbarContainerOpened:has(> .snackbarViewModelSwipeable > .snackbarViewModelEngagementBarWrapper .ytAttributedStringWhiteSpacePreWrap[style])"
 	];
 	var YOUTUBE_AD_PLAYER_CLASSES = ["ad-showing", "ad-interrupting"];
-	var YOUTUBE_AD_UI_SELECTORS = [
-		".ytp-ad-player-overlay",
-		".ytp-ad-player-overlay-layout",
-		".ytp-ad-text",
-		".ytp-ad-preview-container",
-		".ytp-ad-simple-ad-badge",
-		".video-ads .ytp-ad-module > *"
-	];
 	var YOUTUBE_SKIP_BUTTON_SELECTORS = [
 		".ytp-skip-ad-button",
 		".ytp-ad-skip-button:not(.ytp-ad-skip-button-disabled)",
@@ -149,9 +145,9 @@
 	function getVideo(player) {
 		return player.querySelector("video.html5-main-video, video");
 	}
+	/** Only the player's own ad state: leftover ad UI nodes stay in the DOM during normal playback. */
 	function isAdPlaying(player) {
-		if (YOUTUBE_AD_PLAYER_CLASSES.some((cls) => player.classList.contains(cls))) return true;
-		return YOUTUBE_AD_UI_SELECTORS.some((selector) => player.querySelector(selector));
+		return YOUTUBE_AD_PLAYER_CLASSES.some((cls) => player.classList.contains(cls));
 	}
 	function restoreVideo(video) {
 		if (!saved || !video) return;
@@ -174,7 +170,10 @@
 		const video = player ? getVideo(player) : null;
 		if (video?.paused && !video.ended) video.play().catch(() => void 0);
 	}
-	/** Fallback when an ad still slips through pruning: mute, fast-forward, skip. */
+	/**
+	* Fallback when an ad still slips through pruning: mute, fast-forward, skip. Never seek the
+	* <video>: server-stitched ads share it with the song, so seeking to its end skips the song.
+	*/
 	function checkPlayer() {
 		dismissEnforcementDialog();
 		const player = getPlayer();
@@ -200,11 +199,7 @@
 		}
 		video.muted = true;
 		if (video.playbackRate !== FAST_FORWARD_RATE) video.playbackRate = FAST_FORWARD_RATE;
-		if (tryAutoSkipAd()) return;
-		if (Number.isFinite(video.duration) && video.duration > 0 && video.duration < 600) {
-			const nearEnd = video.duration - .05;
-			if (video.currentTime < nearEnd) video.currentTime = nearEnd;
-		}
+		tryAutoSkipAd();
 	}
 	function stopPoll() {
 		if (!pollTimer) return;

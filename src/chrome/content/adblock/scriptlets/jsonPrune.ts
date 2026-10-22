@@ -1,14 +1,9 @@
-const YT_AD_KEYS = [
-  'adPlacements',
-  'adSlots',
-  'playerAds',
-  'adBreakHeartbeatParams',
-  'adBreakServiceParams',
-  'adBreakDurationParams',
-  'adPlacement',
-  'adParams',
-  'playerLegacyDesktopWatchAdsRenderer',
-] as const
+/**
+ * Only the ad schedule. YouTube checks that `playerAds`, the `adBreak*` params and the other ad
+ * fields are still present; stripping them is detected and answered with a forced buffering
+ * delay ("Experiencing interruptions?") or a stopped player. Same scope as uBO's quick fixes.
+ */
+const YT_AD_KEYS = ['adPlacements', 'adSlots'] as const
 /** Do not recurse into generic `response` — it appears on comment/browse APIs and is not player ads. */
 const NESTED_KEYS = ['playerResponse', 'playerConfig'] as const
 const MAX_DEPTH = 4
@@ -80,7 +75,7 @@ export function hasYoutubeAdPayload(data: unknown): boolean {
 
 export function pruneYoutubeResponseText(text: string): { text: string; removed: number } {
   if (
-    !/"(adPlacements|adSlots|playerAds|adBreakHeartbeatParams|adPlacement|enforcementMessageViewModel)"\s*:\s*(?!\[\s*\])(?!\{\s*\})/.test(
+    !/"(adPlacements|adSlots|enforcementMessageViewModel)"\s*:\s*(?!\[\s*\])(?!\{\s*\})/.test(
       text,
     )
   ) {

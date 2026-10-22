@@ -1,8 +1,4 @@
-import {
-  YOUTUBE_AD_PLAYER_CLASSES,
-  YOUTUBE_AD_UI_SELECTORS,
-  YOUTUBE_COSMETIC_SELECTORS,
-} from './selectors'
+import { YOUTUBE_AD_PLAYER_CLASSES, YOUTUBE_COSMETIC_SELECTORS } from './selectors'
 import { tryAutoSkipAd } from './skipAd'
 
 type GuardedWindow = Window & { __toolboxYtIsolated?: boolean }
@@ -55,9 +51,9 @@ function getVideo(player: HTMLElement): HTMLVideoElement | null {
   return player.querySelector<HTMLVideoElement>('video.html5-main-video, video')
 }
 
+/** Only the player's own ad state: leftover ad UI nodes stay in the DOM during normal playback. */
 function isAdPlaying(player: HTMLElement): boolean {
-  if (YOUTUBE_AD_PLAYER_CLASSES.some((cls) => player.classList.contains(cls))) return true
-  return YOUTUBE_AD_UI_SELECTORS.some((selector) => player.querySelector(selector))
+  return YOUTUBE_AD_PLAYER_CLASSES.some((cls) => player.classList.contains(cls))
 }
 
 function restoreVideo(video: HTMLVideoElement | null): void {
@@ -83,7 +79,10 @@ function dismissEnforcementDialog(): void {
   if (video?.paused && !video.ended) void video.play().catch(() => undefined)
 }
 
-/** Fallback when an ad still slips through pruning: mute, fast-forward, skip. */
+/**
+ * Fallback when an ad still slips through pruning: mute, fast-forward, skip. Never seek the
+ * <video>: server-stitched ads share it with the song, so seeking to its end skips the song.
+ */
 function checkPlayer(): void {
   dismissEnforcementDialog()
   const player = getPlayer()
@@ -106,11 +105,7 @@ function checkPlayer(): void {
   }
   video.muted = true
   if (video.playbackRate !== FAST_FORWARD_RATE) video.playbackRate = FAST_FORWARD_RATE
-  if (tryAutoSkipAd()) return
-  if (Number.isFinite(video.duration) && video.duration > 0 && video.duration < 600) {
-    const nearEnd = video.duration - 0.05
-    if (video.currentTime < nearEnd) video.currentTime = nearEnd
-  }
+  tryAutoSkipAd()
 }
 
 function stopPoll(): void {

@@ -5,6 +5,7 @@ import {
   pruneYoutubeResponseText,
 } from '../scriptlets/jsonPrune'
 
+import { installAbnormalityFilter, installPenaltyTimerBooster } from './antiDetect'
 import { tryAutoSkipAd } from './skipAd'
 
 type GuardedWindow = Window & { __toolboxAdblockYtMain?: boolean }
@@ -162,6 +163,8 @@ function startAutoSkip(): void {
 const guarded = window as GuardedWindow
 if (!guarded.__toolboxAdblockYtMain && window === window.top) {
   guarded.__toolboxAdblockYtMain = true
+  installPenaltyTimerBooster()
+  installAbnormalityFilter()
   patchJsonParse()
   patchResponse()
   patchXhr()
