@@ -29,6 +29,12 @@ async function captureVisiblePng(windowId: number): Promise<string> {
   if (wait > 0) await sleep(wait)
   try {
     return await chrome.tabs.captureVisibleTab(windowId, { format: 'png' })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    if (/activeTab|cannot be scripted|permission/i.test(message)) {
+      throw new Error('The browser does not allow capturing this page (browser and Web Store pages are protected).')
+    }
+    throw error
   } finally {
     lastCaptureAt = Date.now()
   }

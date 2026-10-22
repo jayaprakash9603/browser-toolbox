@@ -2,6 +2,7 @@ import { loadScreenshotSettings } from '@/core/screenshot/settings'
 import { captureViewerUrl } from '@/core/screenshot/viewerUrl'
 import type { ScreenshotMode, ScreenshotSession } from '@/core/screenshot/types'
 import { createLogger } from '@/core/logging'
+import { isRestrictedCaptureUrl } from '@/core/screenshot/restricted'
 
 import {
   captureElementFrame,
@@ -86,27 +87,42 @@ export async function startScreenshot(
       const settings = await loadScreenshotSettings()
       const tabs = await chrome.tabs.query({ windowId: tab.windowId })
       const originalId = tab.id
-      let i = 0
-      for (const t of tabs) {
-        if (t.id == null || !t.url?.startsWith('http')) continue
-        i++
-        options?.onProgress?.('all-tabs', i, tabs.length)
-        await chrome.tabs.update(t.id, { active: true })
-        await sleepMs(400)
-        const fresh = await chrome.tabs.get(t.id)
-        const frame =
-          settings.allTabsMode === 'entire'
-            ? await captureEntirePageFrame(fresh)
-            : await captureVisibleFrame(fresh)
-        frame.label = fresh.title ?? fresh.url ?? `Tab ${t.id}`
-        frames.push(frame)
-      }
-      if (originalId != null) {
-        try {
-          await chrome.tabs.update(originalId, { active: true })
-        } catch {
-          /* ignore */
+      const capturable = tabs.filter(
+        (t) => t.id != null && /^(https?|file):/i.test(t.url ?? '') && !isRestrictedCaptureUrl(t.url),
+      )
+      const skipped = tabs
+        .filter((t) => !capturable.includes(t) && t.url && !isOwnExtensionPage(t.url))
+        .map(tabLabel)
+      try {
+        for (let i = 0; i < capturable.length; i++) {
+          const t = capturable[i]
+          options?.onProgress?.('all-tabs', i + 1, capturable.length)
+          try {
+            await chrome.tabs.update(t.id!, { active: true })
+            await sleepMs(400)
+            const fresh = await chrome.tabs.get(t.id!)
+            const frame =
+              settings.allTabsMode === 'entire'
+                ? await captureEntirePageFrame(fresh)
+                : await captureVisibleFrame(fresh)
+            frame.label = tabLabel(fresh)
+            frames.push(frame)
+          } catch (error) {
+            logger.warn('all-tabs: skipped tab', t.url, error)
+            skipped.push(tabLabel(t))
+          }
         }
+      } finally {
+        if (originalId != null) {
+          await chrome.tabs.update(originalId, { active: true }).catch(() => undefined)
+        }
+      }
+      if (frames.length === 0) {
+        throw new Error('None of the tabs in this window can be captured (browser and Web Store pages are protected).')
+      }
+      if (skipped.length > 0) {
+        const notice = `Skipped ${skipped.length} tab${skipped.length === 1 ? '' : 's'} the browser doesn't allow capturing: ${skipped.join(', ')}`
+        for (const frame of frames) frame.notice = frame.notice ? `${frame.notice} ${notice}` : notice
       }
     } else {
       if (!tab?.id) throw new Error('No active tab.')
@@ -155,6 +171,14 @@ export async function startScreenshot(
     })
     return null
   }
+}
+
+function tabLabel(tab: chrome.tabs.Tab): string {
+  return tab.title || tab.url || `Tab ${tab.id}`
+}
+
+function isOwnExtensionPage(url: string): boolean {
+  return url.startsWith(chrome.runtime.getURL(''))
 }
 
 function sleepMs(ms: number): Promise<void> {
