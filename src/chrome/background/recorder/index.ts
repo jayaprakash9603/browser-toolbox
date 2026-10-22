@@ -80,34 +80,15 @@ function isNotInvokedError(error: unknown): boolean {
   return /not been invoked|activeTab/i.test(message)
 }
 
-interface CaptureRequest {
-  id: string
-  source: RecordingSource
-  settings: RecorderSettings
-  streamId: string
-  captureKind: 'tab' | 'desktop'
-  withAudio: boolean
-  /** Tab that gets the countdown and, for direct tab capture, the floating controls. */
-  tab?: chrome.tabs.Tab
-  showPill: boolean
-}
-
-async function beginCapture(req: CaptureRequest): Promise<void> {
-  const tabId = req.tab?.id != null && !isRestrictedCaptureUrl(req.tab.url) ? req.tab.id : undefined
-  await setSession(
-    createSession(req.id, req.source, 'offscreen', Date.now(), {
-      tabId: req.showPill ? tabId : undefined,
-      windowId: req.tab?.windowId,
-    }),
-  )
+async function startTabCapture(id: string, settings: RecorderSettings, tab: chrome.tabs.Tab, streamId: string) {
+  const tabId = tab.id!
+  await setSession(createSession(id, 'tab', 'offscreen', Date.now(), { tabId, windowId: tab.windowId }))
   try {
-    if (req.showPill && tabId != null) {
-      await chrome.scripting
-        .executeScript({ target: { tabId }, func: mountRecorderPill, args: [current!] })
-        .catch(() => undefined)
-    }
-    const countdownMs = req.settings.countdown ? COUNTDOWN_SECONDS * 1000 : 0
-    if (countdownMs && tabId != null) {
+    await chrome.scripting
+      .executeScript({ target: { tabId }, func: mountRecorderPill, args: [current!] })
+      .catch(() => undefined)
+    const countdownMs = settings.countdown ? COUNTDOWN_SECONDS * 1000 : 0
+    if (countdownMs) {
       await chrome.scripting
         .executeScript({ target: { tabId }, func: showRecorderCountdown, args: [COUNTDOWN_SECONDS] })
         .catch(() => undefined)
@@ -115,15 +96,12 @@ async function beginCapture(req: CaptureRequest): Promise<void> {
     await acquireOffscreen(OFFSCREEN_OWNER)
     const response = (await chrome.runtime.sendMessage({
       type: 'OFFSCREEN_RECORDER_START',
-      id: req.id,
-      streamId: req.streamId,
-      source: req.source,
-      captureKind: req.captureKind,
-      withAudio: req.withAudio,
-      settings: req.settings,
+      id,
+      streamId,
+      settings,
       delayMs: countdownMs ? countdownMs + 150 : 0,
     })) as { ok: boolean; error?: string } | undefined
-    if (!response?.ok) throw new Error(response?.error ?? 'Could not start recording.')
+    if (!response?.ok) throw new Error(response?.error ?? 'Could not start tab recording.')
   } catch (error) {
     await releaseOffscreen(OFFSCREEN_OWNER)
     await setSession(null)
@@ -131,70 +109,58 @@ async function beginCapture(req: CaptureRequest): Promise<void> {
   }
 }
 
-export type StartRecorderResult = { session: RecorderSession } | { needsPicker: true }
-
-export interface StartRecorderOptions {
-  tab?: chrome.tabs.Tab
-  desktopStreamId?: string
-  desktopAudio?: boolean
+/**
+ * Chrome only lets the page that opened the share picker consume its stream, so window and
+ * screen recordings run in a pinned extension tab. It opens the picker right away, then hands
+ * focus back to the tab the user came from.
+ */
+async function startPageCapture(id: string, source: RecordingSource, tab?: chrome.tabs.Tab) {
+  const returnTabId = tab?.id
+  const url = chrome.runtime.getURL(
+    `recorder.html?mode=record&id=${encodeURIComponent(id)}&source=${source}` +
+      (returnTabId != null ? `&returnTab=${returnTabId}` : ''),
+  )
+  const page = await chrome.tabs.create({ url, pinned: true, active: true, windowId: tab?.windowId })
+  await setSession(
+    createSession(id, source, 'page', Date.now(), { pageTabId: page.id, returnTabId, windowId: page.windowId }),
+  )
 }
 
-/**
- * Tab recordings use chrome.tabCapture when Chrome allows it. Otherwise (and for windows or the
- * whole screen) the caller first shows Chrome's native share picker and passes its stream ID.
- */
 export async function startRecorder(
   source: RecordingSource,
   settings: RecorderSettings,
-  options: StartRecorderOptions = {},
-): Promise<StartRecorderResult> {
+  tab?: chrome.tabs.Tab,
+): Promise<RecorderSession> {
   if (await getSession()) throw new Error('A recording is already running.')
   const id = crypto.randomUUID()
-  const tab = options.tab?.id != null ? options.tab : await activeTab()
+  const target = tab?.id != null ? tab : await activeTab()
 
-  if (options.desktopStreamId) {
-    await beginCapture({
-      id,
-      source,
-      settings,
-      streamId: options.desktopStreamId,
-      captureKind: 'desktop',
-      withAudio: Boolean(options.desktopAudio),
-      tab,
-      showPill: false,
-    })
-    return { session: current! }
+  if (source === 'tab' && target?.id != null) {
+    if (isRestrictedCaptureUrl(target.url)) {
+      throw new Error('Chrome does not allow recording this page. Switch to a normal website tab.')
+    }
+    try {
+      const streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: target.id })
+      await startTabCapture(id, settings, target, streamId)
+      return current!
+    } catch (error) {
+      if (!isNotInvokedError(error)) throw error
+      logger.debug('tabCapture not granted for this tab; using the share picker', error)
+    }
   }
-
-  if (source !== 'tab') return { needsPicker: true }
-  if (tab?.id == null) throw new Error('No active tab to record.')
-  if (isRestrictedCaptureUrl(tab.url)) {
-    throw new Error('Chrome does not allow recording this page. Switch to a normal website tab.')
-  }
-  let streamId: string
-  try {
-    streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: tab.id })
-  } catch (error) {
-    if (!isNotInvokedError(error)) throw error
-    logger.debug('tabCapture not granted for this tab; caller shows the share picker', error)
-    return { needsPicker: true }
-  }
-  await beginCapture({
-    id,
-    source,
-    settings,
-    streamId,
-    captureKind: 'tab',
-    withAudio: settings.tabAudio,
-    tab,
-    showPill: true,
-  })
-  return { session: current! }
+  await startPageCapture(id, source, target)
+  return current!
 }
 
 export async function stopRecorder(): Promise<void> {
   const session = await getSession()
   if (!session) return
+  if (session.host === 'page' && session.phase === 'pending') {
+    await setSession(null)
+    if (session.returnTabId != null) void chrome.tabs.update(session.returnTabId, { active: true }).catch(() => undefined)
+    if (session.pageTabId != null) void chrome.tabs.remove(session.pageTabId).catch(() => undefined)
+    return
+  }
   broadcastControl(session.id, 'stop')
 }
 
@@ -242,10 +208,7 @@ export async function toggleRecorderFromCommand(tab?: chrome.tabs.Tab): Promise<
     return
   }
   try {
-    const result = await startRecorder('tab', await loadRecorderSettings(), { tab })
-    if ('needsPicker' in result) {
-      throw new Error('Open Screen Recorder in the side panel to pick what to record.')
-    }
+    await startRecorder('tab', await loadRecorderSettings(), tab)
   } catch (error) {
     logger.warn('command start failed', error)
     void chrome.notifications.create({
@@ -261,7 +224,8 @@ async function onFinished(id: string, error?: string): Promise<void> {
   const session = await getSession()
   if (!session || session.id !== id) return
   await setSession(null)
-  await releaseOffscreen(OFFSCREEN_OWNER)
+  if (session.host === 'offscreen') await releaseOffscreen(OFFSCREEN_OWNER)
+  if (session.pageTabId != null) void chrome.tabs.remove(session.pageTabId).catch(() => undefined)
   if (error) logger.warn('recording finished with error', error)
   await chrome.tabs.create({ url: chrome.runtime.getURL(`recording.html?id=${encodeURIComponent(id)}`) })
 }
@@ -269,11 +233,7 @@ async function onFinished(id: string, error?: string): Promise<void> {
 export function registerRecorder(): void {
   registerMessageHandler('RECORDER_START', async (message, sender) => {
     if (message.type !== 'RECORDER_START') return null
-    return startRecorder(message.source, message.settings, {
-      tab: sender.tab,
-      desktopStreamId: message.desktopStreamId,
-      desktopAudio: message.desktopAudio,
-    })
+    return { session: await startRecorder(message.source, message.settings, sender.tab) }
   })
 
   registerMessageHandler('RECORDER_REQUEST_MIC', () => requestMicrophone())
@@ -329,7 +289,10 @@ export function registerRecorder(): void {
 
   chrome.tabs.onRemoved.addListener((tabId) => {
     void getSession().then((session) => {
-      if (session?.source === 'tab' && session.tabId === tabId) void stopRecorder()
+      if (!session) return
+      if (session.host === 'offscreen' && session.tabId === tabId) void stopRecorder()
+      // The recorder tab owns the MediaRecorder; closing it ends the session.
+      else if (session.host === 'page' && session.pageTabId === tabId) void setSession(null)
     })
   })
 }

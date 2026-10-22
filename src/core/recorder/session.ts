@@ -7,7 +7,7 @@ export function createSession(
   source: RecordingSource,
   host: RecorderHost,
   now: number,
-  extra: Pick<RecorderSession, 'tabId' | 'windowId'> = {},
+  extra: Pick<RecorderSession, 'tabId' | 'windowId' | 'pageTabId' | 'returnTabId'> = {},
 ): RecorderSession {
   return { id, source, host, phase: 'pending', createdAt: now, startedAt: 0, pausedMs: 0, pausedAt: 0, ...extra }
 }

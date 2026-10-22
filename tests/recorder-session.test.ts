@@ -21,7 +21,7 @@ describe('recorder session state', () => {
   })
 
   it('ignores invalid transitions', () => {
-    const pending = createSession('r2', 'screen', 'window', 0)
+    const pending = createSession('r2', 'screen', 'page', 0)
     expect(markPaused(pending, 1)).toBe(pending)
     expect(markResumed(pending, 1)).toBe(pending)
     const started = markStarted(pending, 1)

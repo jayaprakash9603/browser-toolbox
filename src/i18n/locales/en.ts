@@ -904,6 +904,8 @@ const en = {
   'recorder.recent': 'Recent recordings',
   'recorder.openLibrary': 'Open library',
   'recorder.empty': 'No recordings yet.',
+  'recorder.page.picking': 'Choose what to share in Chrome’s dialog.',
+  'recorder.page.keepOpen': 'Recording. Keep this pinned tab open until you stop.',
   'recorder.window.micTitle': 'Microphone access',
   'recorder.window.micHint': 'Allow the microphone once so recordings can include your voice.',
   'recorder.window.micAllow': 'Allow microphone',

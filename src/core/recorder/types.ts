@@ -9,7 +9,8 @@ export interface RecorderSettings {
   quality: RecorderQuality
 }
 
-export type RecorderHost = 'offscreen' | 'window'
+/** Tab capture runs in the offscreen document; window/screen capture in a pinned recorder tab. */
+export type RecorderHost = 'offscreen' | 'page'
 
 export type RecorderPhase = 'pending' | 'recording' | 'paused'
 
@@ -26,6 +27,10 @@ export interface RecorderSession {
   pausedAt: number
   tabId?: number
   windowId?: number
+  /** Recorder tab that owns the stream when host is 'page'. */
+  pageTabId?: number
+  /** Tab to bring back once the recorder tab has the stream. */
+  returnTabId?: number
 }
 
 export interface RecordingMeta {

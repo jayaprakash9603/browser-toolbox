@@ -188,9 +188,6 @@ export type ExtensionMessage =
       type: 'RECORDER_START'
       source: import('@/core/recorder/types').RecordingSource
       settings: import('@/core/recorder/types').RecorderSettings
-      /** Stream from Chrome's native share picker (chrome.desktopCapture). */
-      desktopStreamId?: string
-      desktopAudio?: boolean
     }
   | { type: 'RECORDER_REQUEST_MIC' }
   | { type: 'RECORDER_MIC_RESULT'; granted: boolean }
@@ -206,10 +203,6 @@ export type ExtensionMessage =
       type: 'OFFSCREEN_RECORDER_START'
       id: string
       streamId: string
-      source: import('@/core/recorder/types').RecordingSource
-      captureKind: 'tab' | 'desktop'
-      /** Desktop streams carry audio only when the user enabled it in the picker. */
-      withAudio: boolean
       settings: import('@/core/recorder/types').RecorderSettings
       /** Capture immediately (the stream ID expires quickly) but start recording after this delay. */
       delayMs?: number

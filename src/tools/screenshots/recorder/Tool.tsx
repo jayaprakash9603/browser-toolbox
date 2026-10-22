@@ -15,7 +15,6 @@ import type { ExtensionMessage, ExtensionResponse } from '@/core/messaging/types
 import { formatBytes, formatDuration } from '@/core/recorder/format'
 import { DEFAULT_RECORDER_SETTINGS, loadRecorderSettings, saveRecorderSettings } from '@/core/recorder/settings'
 import type { RecorderQuality, RecorderSession, RecorderSettings, RecordingSource } from '@/core/recorder/types'
-import { chooseDesktopSource } from '@/features/recorder/desktopPicker'
 import { microphonePermission, useRecorderSession, useRecordings } from '@/features/recorder/useRecorder'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
@@ -32,8 +31,6 @@ const SOURCES: { value: RecordingSource; icon: typeof MonitorIcon; labelKey: str
 ]
 
 const RECENT_LIMIT = 5
-
-type StartResult = { session: RecorderSession } | { needsPicker: true }
 
 async function request<T>(message: ExtensionMessage): Promise<ExtensionResponse<T>> {
   const response = (await chrome.runtime.sendMessage(message)) as ExtensionResponse<T> | undefined
@@ -94,18 +91,7 @@ export default function ScreenRecorderTool() {
           return
         }
       }
-      let response = await request<StartResult>({ type: 'RECORDER_START', source, settings })
-      if (response.ok && 'needsPicker' in response.data) {
-        const pick = await chooseDesktopSource(source)
-        if (!pick) return
-        response = await request<StartResult>({
-          type: 'RECORDER_START',
-          source,
-          settings,
-          desktopStreamId: pick.streamId,
-          desktopAudio: pick.audio && settings.tabAudio,
-        })
-      }
+      const response = await request<{ session: RecorderSession }>({ type: 'RECORDER_START', source, settings })
       if (!response.ok) setError(response.error)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))

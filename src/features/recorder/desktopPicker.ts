@@ -14,7 +14,7 @@ const SOURCES: Record<RecordingSource, `${chrome.desktopCapture.DesktopCaptureSo
 
 /**
  * Opens Chrome's native "Choose what to share" dialog. Resolves null when the user cancels.
- * The stream ID belongs to the extension origin, so the offscreen recorder can consume it.
+ * Only the calling document may pass the stream ID to getUserMedia.
  */
 export function chooseDesktopSource(source: RecordingSource): Promise<DesktopPick | null> {
   return new Promise((resolve) => {

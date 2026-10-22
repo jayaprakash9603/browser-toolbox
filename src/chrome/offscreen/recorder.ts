@@ -1,5 +1,5 @@
 import { videoConstraints } from '@/core/recorder/settings'
-import type { RecorderSettings, RecordingSource } from '@/core/recorder/types'
+import type { RecorderSettings } from '@/core/recorder/types'
 import { isExtensionMessage, type ExtensionMessage } from '@/core/messaging/types'
 import { startRecording, type ActiveRecording } from '@/features/recorder/engine'
 
@@ -13,17 +13,11 @@ function send(message: Record<string, unknown>): void {
   void chrome.runtime.sendMessage(message).catch(() => undefined)
 }
 
-/** Tab streams come from chrome.tabCapture, desktop streams from Chrome's native share picker. */
-async function captureSource(
-  streamId: string,
-  kind: StartMessage['captureKind'],
-  withAudio: boolean,
-  settings: RecorderSettings,
-): Promise<MediaStream> {
+async function captureTab(streamId: string, settings: RecorderSettings): Promise<MediaStream> {
   const { width, height } = videoConstraints(settings.quality)
-  const mandatory = { chromeMediaSource: kind, chromeMediaSourceId: streamId }
+  const mandatory = { chromeMediaSource: 'tab', chromeMediaSourceId: streamId }
   return navigator.mediaDevices.getUserMedia({
-    audio: withAudio ? ({ mandatory } as MediaTrackConstraints) : false,
+    audio: settings.tabAudio ? ({ mandatory } as MediaTrackConstraints) : false,
     video: { mandatory: { ...mandatory, maxWidth: width, maxHeight: height, maxFrameRate: 30 } } as MediaTrackConstraints,
   })
 }
@@ -49,19 +43,19 @@ async function finish(id: string, error?: string): Promise<void> {
   }
 }
 
-async function start(message: StartMessage, source: RecordingSource): Promise<void> {
+async function start(message: StartMessage): Promise<void> {
   if (active) throw new Error('A recording is already running.')
-  const { id, streamId, captureKind, withAudio, settings, delayMs = 0 } = message
-  const video = await captureSource(streamId, captureKind, withAudio, settings)
+  const { id, streamId, settings, delayMs = 0 } = message
+  const video = await captureTab(streamId, settings)
   const mic = settings.mic ? await captureMic() : null
   if (delayMs > 0) await new Promise((resolve) => setTimeout(resolve, delayMs))
   const recording = startRecording({
     id,
-    source,
+    source: 'tab',
     video,
     extraAudio: mic ? [mic] : [],
     // Tab capture mutes the tab for the user unless its audio is played back.
-    monitorAudio: captureKind === 'tab' && withAudio,
+    monitorAudio: settings.tabAudio,
     onEnded: () => void finish(id),
   })
   const heartbeat = setInterval(() => send({ type: 'RECORDER_HEARTBEAT', id }), HEARTBEAT_MS)
@@ -72,7 +66,7 @@ async function start(message: StartMessage, source: RecordingSource): Promise<vo
 chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
   if (!isExtensionMessage(raw)) return false
   if (raw.type === 'OFFSCREEN_RECORDER_START') {
-    start(raw, raw.source)
+    start(raw)
       .then(() => sendResponse({ ok: true, data: { started: true } }))
       .catch((error: unknown) =>
         sendResponse({ ok: false, error: error instanceof Error ? error.message : String(error) }),
