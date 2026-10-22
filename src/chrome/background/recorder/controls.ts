@@ -46,7 +46,7 @@ export function mountRecorderPill(initial: RecorderSession): void {
   let session: RecorderSession | null = initial
   const elapsed = (s: RecorderSession) => {
     if (s.phase === 'pending' || !s.startedAt) return 0
-    const end = s.phase === 'paused' ? s.pausedAt : Date.now()
+    const end = s.phase === 'paused' || s.phase === 'stopping' ? s.pausedAt : Date.now()
     return Math.max(0, end - s.startedAt - s.pausedMs)
   }
   const fmt = (ms: number) => {
@@ -55,10 +55,13 @@ export function mountRecorderPill(initial: RecorderSession): void {
   }
   const render = () => {
     if (!session) return
-    pill.classList.toggle('paused', session.phase === 'paused')
-    time.textContent = session.phase === 'pending' ? 'Starting' : fmt(elapsed(session))
+    const stopping = session.phase === 'stopping'
+    pill.classList.toggle('paused', session.phase === 'paused' || stopping)
+    time.textContent =
+      session.phase === 'pending' ? 'Starting' : stopping ? 'Saving' : fmt(elapsed(session))
     pauseBtn.textContent = session.phase === 'paused' ? 'Resume' : 'Pause'
-    pauseBtn.style.display = session.phase === 'pending' ? 'none' : ''
+    pauseBtn.style.display = session.phase === 'pending' || stopping ? 'none' : ''
+    stopBtn.style.display = stopping ? 'none' : ''
   }
   const timer = window.setInterval(render, 500)
   render()

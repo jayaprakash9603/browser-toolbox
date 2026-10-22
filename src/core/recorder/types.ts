@@ -12,7 +12,8 @@ export interface RecorderSettings {
 /** Tab capture runs in the offscreen document; window/screen capture in a pinned recorder tab. */
 export type RecorderHost = 'offscreen' | 'page'
 
-export type RecorderPhase = 'pending' | 'recording' | 'paused'
+/** 'stopping': the user pressed Stop and the file is being finalised. */
+export type RecorderPhase = 'pending' | 'recording' | 'paused' | 'stopping'
 
 export interface RecorderSession {
   id: string

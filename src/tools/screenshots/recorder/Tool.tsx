@@ -101,6 +101,7 @@ export default function ScreenRecorderTool() {
   }
 
   const paused = session?.phase === 'paused'
+  const stopping = session?.phase === 'stopping'
 
   return (
     <ToolPage tool={tool}>
@@ -108,11 +109,15 @@ export default function ScreenRecorderTool() {
         {session ? (
           <section className="flex flex-col items-center gap-3 rounded-lg border p-4">
             <p className="flex items-center gap-2 text-2xl font-semibold tabular-nums">
-              <span className={`size-3 rounded-full ${paused ? 'bg-amber-500' : 'animate-pulse bg-red-500'}`} />
+              <span
+                className={`size-3 rounded-full ${paused || stopping ? 'bg-amber-500' : 'animate-pulse bg-red-500'}`}
+              />
               {session.phase === 'pending' ? t('recorder.starting') : formatDuration(elapsed)}
             </p>
-            <p className="text-xs text-muted-foreground">{t(`recorder.source.${session.source}`)}</p>
-            <div className="flex gap-2">
+            <p className="text-xs text-muted-foreground">
+              {stopping ? t('recorder.saving') : t(`recorder.source.${session.source}`)}
+            </p>
+            <div className={`flex gap-2 ${stopping ? 'hidden' : ''}`}>
               {session.phase !== 'pending' && (
                 <Button
                   variant="outline"

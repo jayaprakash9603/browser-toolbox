@@ -27,8 +27,14 @@ export function markResumed(session: RecorderSession, now: number): RecorderSess
   return { ...session, phase: 'recording', pausedMs: session.pausedMs + (now - session.pausedAt), pausedAt: 0 }
 }
 
+export function markStopping(session: RecorderSession, now: number): RecorderSession {
+  if (session.phase === 'stopping') return session
+  return { ...session, phase: 'stopping', pausedAt: session.phase === 'paused' ? session.pausedAt : now }
+}
+
 export function elapsedMs(session: RecorderSession, now: number): number {
   if (session.phase === 'pending' || !session.startedAt) return 0
-  const end = session.phase === 'paused' ? session.pausedAt : now
+  const frozen = session.phase === 'paused' || session.phase === 'stopping'
+  const end = frozen ? session.pausedAt : now
   return Math.max(0, end - session.startedAt - session.pausedMs)
 }

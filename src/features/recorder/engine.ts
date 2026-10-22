@@ -38,37 +38,44 @@ function mixAudio(
   return { track: dest.stream.getAudioTracks()[0] ?? null, close: () => void ctx.close() }
 }
 
-async function thumbnailFor(blob: Blob): Promise<{ thumbnail?: string; width?: number; height?: number }> {
-  if (typeof document === 'undefined') return {}
-  const url = URL.createObjectURL(blob)
+type Snapshot = { thumbnail?: string; width?: number; height?: number }
+
+type ImageCaptureCtor = new (track: MediaStreamTrack) => { grabFrame(): Promise<ImageBitmap> }
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(blob)
+  })
+}
+
+/** Grabs a frame from the live track, so Stop never has to decode the finished file. */
+async function snapshotTrack(track: MediaStreamTrack | undefined): Promise<Snapshot> {
+  if (!track) return {}
+  const { width, height } = track.getSettings()
+  const Capture = (globalThis as { ImageCapture?: ImageCaptureCtor }).ImageCapture
+  if (!Capture || typeof OffscreenCanvas === 'undefined' || track.readyState !== 'live') return { width, height }
   try {
-    const video = document.createElement('video')
-    video.muted = true
-    video.src = url
-    await new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('thumbnail timeout')), 4000)
-      video.onloadeddata = () => {
-        clearTimeout(timer)
-        resolve()
-      }
-      video.onerror = () => {
-        clearTimeout(timer)
-        reject(new Error('thumbnail decode failed'))
-      }
-    })
-    const width = video.videoWidth
-    const height = video.videoHeight
-    const scale = Math.min(1, 320 / Math.max(1, width))
-    const canvas = document.createElement('canvas')
-    canvas.width = Math.round(width * scale)
-    canvas.height = Math.round(height * scale)
-    canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height)
-    return { thumbnail: canvas.toDataURL('image/jpeg', 0.7), width, height }
+    const bitmap = await new Capture(track).grabFrame()
+    const scale = Math.min(1, 320 / Math.max(1, bitmap.width))
+    const canvas = new OffscreenCanvas(Math.round(bitmap.width * scale), Math.round(bitmap.height * scale))
+    canvas.getContext('2d')?.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+    const size = { width: bitmap.width, height: bitmap.height }
+    bitmap.close()
+    const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.7 })
+    return { thumbnail: await blobToDataUrl(blob), ...size }
   } catch {
-    return {}
-  } finally {
-    URL.revokeObjectURL(url)
+    return { width, height }
   }
+}
+
+const THUMBNAIL_DELAY_MS = 1000
+const STOP_SNAPSHOT_TIMEOUT_MS = 500
+
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([promise, new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms))])
 }
 
 export function startRecording(options: StartRecordingOptions): ActiveRecording {
@@ -85,6 +92,11 @@ export function startRecording(options: StartRecordingOptions): ActiveRecording 
   let segmentStart = createdAt
   let accumulated = 0
   let stopping: Promise<RecordingMeta> | null = null
+  const videoTrack = video.getVideoTracks()[0]
+  let snapshot: Promise<Snapshot> | null = null
+  const snapshotTimer = setTimeout(() => {
+    snapshot ??= snapshotTrack(videoTrack)
+  }, THUMBNAIL_DELAY_MS)
 
   recorder.ondataavailable = (event) => {
     if (!event.data.size) return
@@ -111,7 +123,11 @@ export function startRecording(options: StartRecordingOptions): ActiveRecording 
       segmentStart = Date.now()
     },
     stop() {
-      stopping ??= new Promise<void>((resolve) => {
+      if (stopping) return stopping
+      clearTimeout(snapshotTimer)
+      // Very short recordings: grab the frame now, while the track is still live.
+      const frame = withTimeout((snapshot ??= snapshotTrack(videoTrack)), STOP_SNAPSHOT_TIMEOUT_MS, {})
+      stopping = new Promise<void>((resolve) => {
         if (recorder.state === 'inactive') {
           resolve()
           return
@@ -122,8 +138,6 @@ export function startRecording(options: StartRecordingOptions): ActiveRecording 
       }).then(async () => {
         stopTracks()
         await writes
-        const { getRecordingBlob } = await import('@/core/recorder/store')
-        const blob = await getRecordingBlob(id, mimeType)
         const meta: RecordingMeta = {
           id,
           name: defaultRecordingName(createdAt),
@@ -132,7 +146,7 @@ export function startRecording(options: StartRecordingOptions): ActiveRecording 
           createdAt,
           durationMs: accumulated,
           size,
-          ...(await thumbnailFor(blob)),
+          ...(await frame),
         }
         await saveMeta(meta)
         notifyRecordingsChanged()

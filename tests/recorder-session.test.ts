@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createSession, elapsedMs, markPaused, markResumed, markStarted } from '@/core/recorder/session'
+import { createSession, elapsedMs, markPaused, markResumed, markStarted, markStopping } from '@/core/recorder/session'
 
 describe('recorder session state', () => {
   it('tracks elapsed time across pause and resume', () => {
@@ -18,6 +18,16 @@ describe('recorder session state', () => {
     s = markResumed(s, 10_000)
     expect(s.phase).toBe('recording')
     expect(elapsedMs(s, 12_000)).toBe(5_000)
+  })
+
+  it('freezes the timer as soon as Stop is pressed', () => {
+    let s = markStarted(createSession('r3', 'screen', 'page', 0), 1_000)
+    s = markStopping(s, 6_000)
+    expect(s.phase).toBe('stopping')
+    expect(elapsedMs(s, 9_000)).toBe(5_000)
+
+    const paused = markStopping(markPaused(markStarted(createSession('r4', 'tab', 'offscreen', 0), 1_000), 3_000), 7_000)
+    expect(elapsedMs(paused, 9_000)).toBe(2_000)
   })
 
   it('ignores invalid transitions', () => {

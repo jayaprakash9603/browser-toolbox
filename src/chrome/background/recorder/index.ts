@@ -8,6 +8,7 @@ import {
   markPaused,
   markResumed,
   markStarted,
+  markStopping,
 } from '@/core/recorder/session'
 import { loadRecorderSettings } from '@/core/recorder/settings'
 import type { RecorderSession, RecorderSettings, RecordingSource } from '@/core/recorder/types'
@@ -45,6 +46,10 @@ async function updateBadge(session: RecorderSession | null): Promise<void> {
     }
     const paused = session.phase === 'paused'
     await chrome.action.setBadgeBackgroundColor({ color: paused ? '#f59e0b' : '#dc2626' })
+    if (session.phase === 'stopping') {
+      await chrome.action.setBadgeText({ text: '' })
+      return
+    }
     const text = session.phase === 'pending' ? 'REC' : badgeTime(elapsedMs(session, Date.now()))
     await chrome.action.setBadgeText({ text })
   } catch (error) {
@@ -161,6 +166,8 @@ export async function stopRecorder(): Promise<void> {
     if (session.pageTabId != null) void chrome.tabs.remove(session.pageTabId).catch(() => undefined)
     return
   }
+  if (session.phase === 'stopping') return
+  await setSession(markStopping(session, Date.now()))
   broadcastControl(session.id, 'stop')
 }
 
