@@ -202,31 +202,69 @@ export function selectPageAreaWithScroll(): Promise<AreaSelection | null> {
     box.style.cssText =
       'position:fixed;z-index:2147483647;border:2px solid #f97316;background:rgba(249,115,22,.18);display:none;pointer-events:none'
     const hint = document.createElement('div')
-    hint.textContent = 'Drag to capture · auto-scroll at edges · Esc to cancel'
+    hint.textContent = 'Drag to capture · scroll or hold at the edge to extend · Esc to cancel'
     hint.style.cssText =
       'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:2147483647;background:#111827;color:#fff;font:500 13px/1.2 system-ui,sans-serif;padding:8px 12px;border-radius:999px'
     document.documentElement.append(overlay, box, hint)
 
+    // The start point is kept in page coordinates so the selection keeps growing while the
+    // page scrolls underneath (edge auto-scroll or the mouse wheel).
     let start: { x: number; y: number } | null = null
+    let pointer = { x: 0, y: 0 }
     let scrollTimer: number | null = null
+    let scrollSpeed = 0
+
+    const docEl = document.documentElement
+    const pageWidth = () => Math.max(docEl.scrollWidth, document.body?.scrollWidth ?? 0)
+    const pageHeight = () => Math.max(docEl.scrollHeight, document.body?.scrollHeight ?? 0)
+    const clamp = (v: number, max: number) => Math.min(Math.max(v, 0), max)
+
+    const currentRect = () => {
+      if (!start) return null
+      const endX = clamp(pointer.x + window.scrollX, pageWidth())
+      const endY = clamp(pointer.y + window.scrollY, pageHeight())
+      return {
+        x: Math.min(start.x, endX),
+        y: Math.min(start.y, endY),
+        width: Math.abs(endX - start.x),
+        height: Math.abs(endY - start.y),
+      }
+    }
+
+    const drawBox = () => {
+      const rect = currentRect()
+      if (!rect) return
+      box.style.left = `${rect.x - window.scrollX}px`
+      box.style.top = `${rect.y - window.scrollY}px`
+      box.style.width = `${rect.width}px`
+      box.style.height = `${rect.height}px`
+    }
 
     const stopScroll = () => {
       if (scrollTimer != null) {
         window.clearInterval(scrollTimer)
         scrollTimer = null
       }
+      scrollSpeed = 0
     }
 
-    const maybeAutoScroll = (clientY: number) => {
+    const updateAutoScroll = () => {
       const edge = 48
-      const speed = 14
-      stopScroll()
-      if (clientY < edge) {
-        scrollTimer = window.setInterval(() => window.scrollBy(0, -speed), 16)
-      } else if (clientY > window.innerHeight - edge) {
-        scrollTimer = window.setInterval(() => window.scrollBy(0, speed), 16)
+      const h = window.innerHeight
+      let speed = 0
+      if (pointer.y < edge) speed = -Math.min(40, 8 + (edge - pointer.y) / 2)
+      else if (pointer.y > h - edge) speed = Math.min(40, 8 + (pointer.y - (h - edge)) / 2)
+      scrollSpeed = speed
+      if (speed === 0) stopScroll()
+      else if (scrollTimer == null) {
+        scrollTimer = window.setInterval(() => {
+          window.scrollBy(0, scrollSpeed)
+          drawBox()
+        }, 16)
       }
     }
+
+    const onScroll = () => drawBox()
 
     const cleanup = (value: AreaSelection | null) => {
       stopScroll()
@@ -234,6 +272,7 @@ export function selectPageAreaWithScroll(): Promise<AreaSelection | null> {
       box.remove()
       hint.remove()
       window.removeEventListener('keydown', onKey, true)
+      window.removeEventListener('scroll', onScroll, true)
       resolve(value)
     }
 
@@ -244,44 +283,36 @@ export function selectPageAreaWithScroll(): Promise<AreaSelection | null> {
       }
     }
 
-    overlay.addEventListener('mousedown', (event) => {
-      start = { x: event.clientX, y: event.clientY }
+    overlay.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0) return
+      event.preventDefault()
+      // Keeps receiving moves and the release even when the pointer leaves the window.
+      overlay.setPointerCapture(event.pointerId)
+      pointer = { x: event.clientX, y: event.clientY }
+      start = { x: event.clientX + window.scrollX, y: event.clientY + window.scrollY }
       box.style.display = 'block'
-      box.style.left = `${start.x}px`
-      box.style.top = `${start.y}px`
-      box.style.width = '0px'
-      box.style.height = '0px'
+      drawBox()
     })
-    overlay.addEventListener('mousemove', (event) => {
+    overlay.addEventListener('pointermove', (event) => {
       if (!start) return
-      maybeAutoScroll(event.clientY)
-      const x = Math.min(start.x, event.clientX)
-      const y = Math.min(start.y, event.clientY)
-      box.style.left = `${x}px`
-      box.style.top = `${y}px`
-      box.style.width = `${Math.abs(event.clientX - start.x)}px`
-      box.style.height = `${Math.abs(event.clientY - start.y)}px`
+      pointer = { x: event.clientX, y: event.clientY }
+      updateAutoScroll()
+      drawBox()
     })
-    overlay.addEventListener('mouseup', (event) => {
+    overlay.addEventListener('pointerup', (event) => {
       if (!start) return
+      pointer = { x: event.clientX, y: event.clientY }
       stopScroll()
-      const x = Math.min(start.x, event.clientX)
-      const y = Math.min(start.y, event.clientY)
-      const width = Math.abs(event.clientX - start.x)
-      const height = Math.abs(event.clientY - start.y)
+      const rect = currentRect()
+      start = null
       cleanup(
-        width < 8 || height < 8
+        !rect || rect.width < 8 || rect.height < 8
           ? null
-          : {
-              x: x + window.scrollX,
-              y: y + window.scrollY,
-              width,
-              height,
-              devicePixelRatio: window.devicePixelRatio || 1,
-            },
+          : { ...rect, devicePixelRatio: window.devicePixelRatio || 1 },
       )
     })
     window.addEventListener('keydown', onKey, true)
+    window.addEventListener('scroll', onScroll, true)
   })
 }
 

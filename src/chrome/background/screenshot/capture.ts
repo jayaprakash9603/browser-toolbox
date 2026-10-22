@@ -193,9 +193,11 @@ async function captureWindowRegion(
   const saved = await runInTab(tabId, readWindowScroll)
   const offsets = fullPageOffsets(area.height, viewport.height)
   const slices: CaptureSlice[] = []
+  await runInTab(tabId, disableSmoothScroll)
   try {
-    for (const localY of offsets) {
-      const reached = await runInTab(tabId, scrollWindowTo, [area.x, area.y + localY])
+    for (let i = 0; i < offsets.length; i++) {
+      if (i === 1 && settings.hideStickyHeaders) await runInTab(tabId, hideFixedStickyAfterFirst)
+      const reached = await runInTab(tabId, scrollWindowTo, [area.x, area.y + offsets[i]])
       await sleep(settings.scrollStepDelayMs)
       const dataUrl = await captureVisiblePng(windowId)
       slices.push({
@@ -206,6 +208,7 @@ async function captureWindowRegion(
       })
     }
   } finally {
+    await runInTab(tabId, restoreCapturePageState, [saved.y]).catch(() => undefined)
     await runInTab(tabId, scrollWindowTo, [saved.x, saved.y]).catch(() => undefined)
   }
   return {

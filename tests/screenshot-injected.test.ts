@@ -9,6 +9,7 @@ import {
   restoreCapturePageState,
   restoreToolboxUi,
   scrollCaptureTo,
+  selectPageAreaWithScroll,
 } from '@/core/engines/capture/pageCaptureScript'
 import { planSliceDraw } from '@/core/screenshot/export/canvas'
 
@@ -55,6 +56,36 @@ describe('injected capture functions', () => {
     toast.remove()
     style.remove()
     pageContent.remove()
+  })
+
+  it('keeps a selection anchored to the page while it scrolls', async () => {
+    let scrollY = 0
+    Object.defineProperty(window, 'scrollY', { configurable: true, get: () => scrollY })
+    Object.defineProperty(window, 'scrollX', { configurable: true, get: () => 0 })
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 })
+    Object.defineProperty(document.documentElement, 'scrollHeight', { configurable: true, value: 5000 })
+    Object.defineProperty(document.documentElement, 'scrollWidth', { configurable: true, value: 1200 })
+    HTMLElement.prototype.setPointerCapture = () => undefined
+
+    const selection = serialized(selectPageAreaWithScroll)()
+    const overlay = document.querySelector<HTMLElement>('[data-toolbox-capture="overlay"]')!
+    const fire = (type: string, x: number, y: number) =>
+      overlay.dispatchEvent(new MouseEvent(type, { clientX: x, clientY: y, button: 0, bubbles: true }))
+
+    fire('pointerdown', 100, 200)
+    scrollY = 1500
+    window.dispatchEvent(new Event('scroll'))
+    fire('pointermove', 400, 600)
+    fire('pointerup', 400, 600)
+
+    await expect(selection).resolves.toEqual({
+      x: 100,
+      y: 200,
+      width: 300,
+      height: 1900,
+      devicePixelRatio: 1,
+    })
+    expect(document.querySelector('[data-toolbox-capture="overlay"]')).toBeNull()
   })
 })
 
