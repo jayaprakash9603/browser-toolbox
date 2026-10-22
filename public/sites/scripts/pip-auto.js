@@ -106,6 +106,17 @@
 		const fit = pdoc.createElement("style");
 		fit.textContent = "html,body{margin:0!important;padding:0!important;width:100%!important;height:100%!important;background:#000!important;overflow:hidden!important}.html5-video-container{width:100%!important;height:100%!important}.ytp-chrome-bottom{width:calc(100% - 24px)!important;left:12px!important}.ytp-gradient-bottom,.ytp-gradient-top{width:100%!important}";
 		pdoc.head.appendChild(fit);
+		const openedAt = Date.now();
+		const openedSrc = video.currentSrc;
+		let mediaChangedAt = 0;
+		const markMediaChange = () => mediaChangedAt = Date.now();
+		const mediaChangeEvents = [
+			"ended",
+			"emptied",
+			"loadstart",
+			"abort"
+		];
+		for (const type of mediaChangeEvents) video.addEventListener(type, markMediaChange);
 		const chain = [];
 		for (let a = container.parentElement; a && a !== document.body && a !== document.documentElement; a = a.parentElement) chain.unshift(a);
 		let host = pdoc.body;
@@ -194,14 +205,17 @@
 			pip.removeEventListener("resize", nudge);
 			observer.disconnect();
 			for (const type of forwardTypes) pdoc.removeEventListener(type, forward);
+			for (const type of mediaChangeEvents) video.removeEventListener(type, markMediaChange);
 			restoreStyle(container, containerStyle);
 			restoreStyle(video, videoStyle);
 			if (placeholder.parentNode) placeholder.parentNode.replaceChild(container, placeholder);
 			else if (originalNext && originalNext.parentNode === originalParent) originalParent.insertBefore(container, originalNext);
 			else originalParent.appendChild(container);
 			const realVisibility = Object.getOwnPropertyDescriptor(Document.prototype, "visibilityState")?.get?.call(document);
+			const now = Date.now();
+			const closedByUser = now - openedAt > 2e3 && now - mediaChangedAt > 4e3 && video.currentSrc === openedSrc && !video.ended;
 			if (window.__tbxPipResume) window.setTimeout(() => void video.play().catch(() => void 0), 0);
-			else if (realVisibility === "hidden") video.pause();
+			else if (realVisibility === "hidden" && closedByUser) video.pause();
 			nudge();
 		});
 		return "entered";
@@ -589,18 +603,32 @@
 		};
 		pdoc.addEventListener("keydown", onKey);
 		poke();
+		const openedAt = Date.now();
+		const openedSrc = v.currentSrc;
+		let mediaChangedAt = 0;
+		const markMediaChange = () => mediaChangedAt = Date.now();
+		const mediaChangeEvents = [
+			"ended",
+			"emptied",
+			"loadstart",
+			"abort"
+		];
+		for (const type of mediaChangeEvents) v.addEventListener(type, markMediaChange);
 		pip.addEventListener("pagehide", () => {
 			window.clearInterval(timer);
 			window.clearTimeout(hideTimer);
 			for (const type of mediaEvents) v.removeEventListener(type, sync);
+			for (const type of mediaChangeEvents) v.removeEventListener(type, markMediaChange);
 			if (videoStyle === null) v.removeAttribute("style");
 			else v.setAttribute("style", videoStyle);
 			if (placeholder.parentNode) placeholder.parentNode.replaceChild(v, placeholder);
 			else if (originalNext && originalNext.parentNode === originalParent) originalParent.insertBefore(v, originalNext);
 			else originalParent.appendChild(v);
 			const realVisibility = Object.getOwnPropertyDescriptor(Document.prototype, "visibilityState")?.get?.call(document);
+			const now = Date.now();
+			const closedByUser = now - openedAt > 2e3 && now - mediaChangedAt > 4e3 && v.currentSrc === openedSrc && !v.ended;
 			if (window.__tbxPipResume) window.setTimeout(() => void v.play().catch(() => void 0), 0);
-			else if (realVisibility === "hidden") v.pause();
+			else if (realVisibility === "hidden" && closedByUser) v.pause();
 		});
 		return "entered";
 	}
@@ -721,9 +749,23 @@
 	async function enterNativePip(video) {
 		try {
 			await requestPipUnblocked(video);
+			const openedAt = Date.now();
+			const openedSrc = video.currentSrc;
+			let mediaChangedAt = 0;
+			const markMediaChange = () => mediaChangedAt = Date.now();
+			const mediaChangeEvents = [
+				"ended",
+				"emptied",
+				"loadstart",
+				"abort"
+			];
+			for (const type of mediaChangeEvents) video.addEventListener(type, markMediaChange);
 			video.addEventListener("leavepictureinpicture", () => {
+				for (const type of mediaChangeEvents) video.removeEventListener(type, markMediaChange);
+				const now = Date.now();
+				const closedByUser = now - openedAt > 2e3 && now - mediaChangedAt > 4e3 && video.currentSrc === openedSrc && !video.ended;
 				if (window.__tbxPipResume) video.play().catch(() => void 0);
-				else if (realVisibility() === "hidden") video.pause();
+				else if (realVisibility() === "hidden" && closedByUser) video.pause();
 			}, { once: true });
 		} catch {}
 	}

@@ -301,19 +301,31 @@ export async function enterStreamingPlayerPip(): Promise<StreamingPipResult> {
   pdoc.addEventListener('keydown', onKey)
   poke()
 
+  // The next episode loads into the same <video>; a close then is not the user stopping playback.
+  const openedAt = Date.now()
+  const openedSrc = v.currentSrc
+  let mediaChangedAt = 0
+  const markMediaChange = () => (mediaChangedAt = Date.now())
+  const mediaChangeEvents = ['ended', 'emptied', 'loadstart', 'abort']
+  for (const type of mediaChangeEvents) v.addEventListener(type, markMediaChange)
+
   pip.addEventListener('pagehide', () => {
     window.clearInterval(timer)
     window.clearTimeout(hideTimer)
     for (const type of mediaEvents) v.removeEventListener(type, sync)
+    for (const type of mediaChangeEvents) v.removeEventListener(type, markMediaChange)
     if (videoStyle === null) v.removeAttribute('style')
     else v.setAttribute('style', videoStyle)
     if (placeholder.parentNode) placeholder.parentNode.replaceChild(v, placeholder)
     else if (originalNext && originalNext.parentNode === originalParent) originalParent.insertBefore(v, originalNext)
     else originalParent.appendChild(v)
     const realVisibility = Object.getOwnPropertyDescriptor(Document.prototype, 'visibilityState')?.get?.call(document)
+    const now = Date.now()
+    const closedByUser =
+      now - openedAt > 2000 && now - mediaChangedAt > 4000 && v.currentSrc === openedSrc && !v.ended
     if ((window as unknown as { __tbxPipResume?: boolean }).__tbxPipResume) {
       window.setTimeout(() => void v.play().catch(() => undefined), 0)
-    } else if (realVisibility === 'hidden') {
+    } else if (realVisibility === 'hidden' && closedByUser) {
       v.pause()
     }
   })

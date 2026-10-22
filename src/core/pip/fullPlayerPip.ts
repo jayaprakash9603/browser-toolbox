@@ -135,6 +135,15 @@ export async function enterFullPlayerPip(): Promise<FullPlayerPipResult> {
     '.ytp-gradient-bottom,.ytp-gradient-top{width:100%!important}'
   pdoc.head.appendChild(fit)
 
+  // Playlists and autoplay load the next item into the same <video>; the window may close then
+  // without the user asking, and pausing would stop the next song.
+  const openedAt = Date.now()
+  const openedSrc = video.currentSrc
+  let mediaChangedAt = 0
+  const markMediaChange = () => (mediaChangedAt = Date.now())
+  const mediaChangeEvents = ['ended', 'emptied', 'loadstart', 'abort']
+  for (const type of mediaChangeEvents) video.addEventListener(type, markMediaChange)
+
   // Recreate the container's ancestor chain (tag, classes, attributes) as empty shells so the
   // site's descendant selectors (e.g. ".page .player .controls") still match in the new window.
   const chain: Element[] = []
@@ -240,6 +249,7 @@ export async function enterFullPlayerPip(): Promise<FullPlayerPipResult> {
     pip.removeEventListener('resize', nudge)
     observer.disconnect()
     for (const type of forwardTypes) pdoc.removeEventListener(type, forward)
+    for (const type of mediaChangeEvents) video.removeEventListener(type, markMediaChange)
     restoreStyle(container, containerStyle)
     restoreStyle(video, videoStyle)
     if (placeholder.parentNode) placeholder.parentNode.replaceChild(container, placeholder)
@@ -250,9 +260,12 @@ export async function enterFullPlayerPip(): Promise<FullPlayerPipResult> {
     // Real visibility: the auto-PiP script may report 'visible' to the page while in PiP.
     // Closed because the feature was switched off: keep playing in the page.
     const realVisibility = Object.getOwnPropertyDescriptor(Document.prototype, 'visibilityState')?.get?.call(document)
+    const now = Date.now()
+    const closedByUser =
+      now - openedAt > 2000 && now - mediaChangedAt > 4000 && video.currentSrc === openedSrc && !video.ended
     if ((window as unknown as { __tbxPipResume?: boolean }).__tbxPipResume) {
       window.setTimeout(() => void video.play().catch(() => undefined), 0)
-    } else if (realVisibility === 'hidden') {
+    } else if (realVisibility === 'hidden' && closedByUser) {
       video.pause()
     }
     nudge()

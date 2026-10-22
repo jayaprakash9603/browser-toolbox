@@ -138,11 +138,23 @@ async function requestPipUnblocked(video: HTMLVideoElement): Promise<void> {
 async function enterNativePip(video: HTMLVideoElement): Promise<void> {
   try {
     await requestPipUnblocked(video)
+    // Playlists load the next item into the same <video> and the page may leave PiP then;
+    // only a close the user made should stop playback.
+    const openedAt = Date.now()
+    const openedSrc = video.currentSrc
+    let mediaChangedAt = 0
+    const markMediaChange = () => (mediaChangedAt = Date.now())
+    const mediaChangeEvents = ['ended', 'emptied', 'loadstart', 'abort']
+    for (const type of mediaChangeEvents) video.addEventListener(type, markMediaChange)
     video.addEventListener(
       'leavepictureinpicture',
       () => {
+        for (const type of mediaChangeEvents) video.removeEventListener(type, markMediaChange)
+        const now = Date.now()
+        const closedByUser =
+          now - openedAt > 2000 && now - mediaChangedAt > 4000 && video.currentSrc === openedSrc && !video.ended
         if ((window as Guarded).__tbxPipResume) void video.play().catch(() => undefined)
-        else if (realVisibility() === 'hidden') video.pause()
+        else if (realVisibility() === 'hidden' && closedByUser) video.pause()
       },
       { once: true },
     )
