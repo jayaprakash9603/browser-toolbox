@@ -17,6 +17,7 @@ import { CaptureEditorApp } from '@/features/captureEditor/CaptureEditorApp'
 import { sendMessage } from '@/core/messaging/messageService'
 import type { ScreenshotMode } from '@/core/screenshot/types'
 import { listScreenshotHistory, type ScreenshotHistoryEntry } from '@/core/screenshot/history'
+import { LongTaskProgress } from '@/shared/components/LongTaskProgress'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
 import { Textarea } from '@/shared/components/ui/textarea'
@@ -47,6 +48,7 @@ function CaptureLauncher() {
   useFocusTarget()
   const [urls, setUrls] = useState('')
   const [busy, setBusy] = useState(false)
+  const [busySince, setBusySince] = useState<number | undefined>()
   const [history, setHistory] = useState<ScreenshotHistoryEntry[]>([])
 
   useEffect(() => {
@@ -55,6 +57,7 @@ function CaptureLauncher() {
 
   const start = async (mode: ScreenshotMode, batchUrls?: string[]) => {
     setBusy(true)
+    setBusySince(Date.now())
     try {
       await sendMessage({
         type: 'SCREENSHOT_START',
@@ -63,12 +66,25 @@ function CaptureLauncher() {
       })
     } finally {
       setBusy(false)
+      setBusySince(undefined)
     }
   }
 
   return (
     <ToolPage tool={tool}>
       <div className="flex flex-col gap-4">
+        <LongTaskProgress
+          active={busy}
+          title={t('capture.progress.title')}
+          percent={null}
+          detail={t('capture.progress.detail')}
+          detailKey="capture"
+          startedAt={busySince}
+          centerIcon={CameraIcon}
+          flyingIcons={[UnfoldVerticalIcon, FrameIcon, CameraIcon]}
+          layout="compact"
+          hint={t('capture.progress.hint')}
+        />
         <p className="text-sm text-muted-foreground">{t('capture.launcher.hint')}</p>
         <div className="grid gap-2 sm:grid-cols-2">
           {MODES.map(({ mode, commandId, icon: Icon, labelKey }) => (

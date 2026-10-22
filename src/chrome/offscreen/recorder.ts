@@ -41,10 +41,11 @@ async function finish(id: string, error?: string): Promise<void> {
   }
 }
 
-async function start(id: string, streamId: string, settings: RecorderSettings): Promise<void> {
+async function start(id: string, streamId: string, settings: RecorderSettings, delayMs = 0): Promise<void> {
   if (active) throw new Error('A recording is already running.')
   const video = await captureTab(streamId, settings)
   const mic = settings.mic ? await captureMic() : null
+  if (delayMs > 0) await new Promise((resolve) => setTimeout(resolve, delayMs))
   const recording = startRecording({
     id,
     source: 'tab',
@@ -61,7 +62,7 @@ async function start(id: string, streamId: string, settings: RecorderSettings): 
 chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
   if (!isExtensionMessage(raw)) return false
   if (raw.type === 'OFFSCREEN_RECORDER_START') {
-    start(raw.id, raw.streamId, raw.settings)
+    start(raw.id, raw.streamId, raw.settings, raw.delayMs)
       .then(() => sendResponse({ ok: true, data: { started: true } }))
       .catch((error: unknown) =>
         sendResponse({ ok: false, error: error instanceof Error ? error.message : String(error) }),

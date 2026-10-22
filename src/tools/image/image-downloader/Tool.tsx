@@ -23,6 +23,7 @@ import {
 import { useImageDownloadJob } from '@/features/image-download-job/useImageDownloadJob'
 import { useImageDownloaderSettings } from '@/features/image/useImageDownloaderSettings'
 import { CopyButton } from '@/shared/components/CopyButton'
+import { LongTaskProgress } from '@/shared/components/LongTaskProgress'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
@@ -376,34 +377,24 @@ export default function ImageDownloaderTool() {
         </div>
 
         {jobRunning && progress && (
-          <div className="rounded-md border p-2 text-xs">
-            <div className="mb-1 flex items-center justify-between">
-              <span>{t('imageDownloader.downloading')}</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="xs"
-                onClick={() => job && void cancelImageDownloadJob(job.id)}
-              >
-                {t('common.cancel')}
-              </Button>
-            </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full bg-primary transition-[width] motion-reduce:transition-none"
-                style={{
-                  width: `${progress.total ? Math.round((progress.done / progress.total) * 100) : 0}%`,
-                }}
-              />
-            </div>
-            <p className="mt-1 text-muted-foreground">
-              {t('imageDownloader.progress', {
-                done: progress.done,
-                failed: progress.failed,
-                total: progress.total,
-              })}
-            </p>
-          </div>
+          <LongTaskProgress
+            active
+            title={t('imageDownloader.downloading')}
+            percent={
+              progress.total ? Math.round((progress.done / progress.total) * 100) : null
+            }
+            detail={t('imageDownloader.progress', {
+              done: progress.done,
+              failed: progress.failed,
+              total: progress.total,
+            })}
+            detailKey={`${progress.done}-${progress.total}`}
+            startedAt={job?.startedAt}
+            centerIcon={DownloadIcon}
+            flyingIcons={[ImagesIcon]}
+            layout="compact"
+            onCancel={() => job && void cancelImageDownloadJob(job.id)}
+          />
         )}
 
         {job?.status === 'done' && job.failedUrls.length > 0 && (

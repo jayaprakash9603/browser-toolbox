@@ -69,7 +69,11 @@ async function activeTab(): Promise<chrome.tabs.Tab | undefined> {
   return tab
 }
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+/** tabCapture only works after the user invoked the extension on that tab (action click or manifest command). */
+function isNotInvokedError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error)
+  return /not been invoked|activeTab/i.test(message)
+}
 
 async function startTabRecording(id: string, settings: RecorderSettings, tab?: chrome.tabs.Tab): Promise<void> {
   const target = tab?.id != null ? tab : await activeTab()
@@ -78,24 +82,35 @@ async function startTabRecording(id: string, settings: RecorderSettings, tab?: c
     throw new Error('Chrome does not allow recording this page. Switch to a normal website tab.')
   }
   const tabId = target.id
+
+  let streamId: string
+  try {
+    streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: tabId })
+  } catch (error) {
+    if (!isNotInvokedError(error)) throw error
+    logger.debug('tabCapture not granted for this tab; using the share picker', error)
+    await startWindowRecording(id, 'tab')
+    return
+  }
+
   await setSession(createSession(id, 'tab', 'offscreen', Date.now(), { tabId, windowId: target.windowId }))
   try {
     await chrome.scripting
       .executeScript({ target: { tabId }, func: mountRecorderPill, args: [current!] })
       .catch(() => undefined)
-    if (settings.countdown) {
+    const countdownMs = settings.countdown ? COUNTDOWN_SECONDS * 1000 : 0
+    if (countdownMs) {
       await chrome.scripting
         .executeScript({ target: { tabId }, func: showRecorderCountdown, args: [COUNTDOWN_SECONDS] })
         .catch(() => undefined)
-      await delay(COUNTDOWN_SECONDS * 1000)
     }
-    const streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: tabId })
     await acquireOffscreen(OFFSCREEN_OWNER)
     const response = (await chrome.runtime.sendMessage({
       type: 'OFFSCREEN_RECORDER_START',
       id,
       streamId,
       settings,
+      delayMs: countdownMs ? countdownMs + 150 : 0,
     })) as { ok: boolean; error?: string } | undefined
     if (!response?.ok) throw new Error(response?.error ?? 'Could not start tab recording.')
   } catch (error) {

@@ -201,6 +201,8 @@ export type ExtensionMessage =
       id: string
       streamId: string
       settings: import('@/core/recorder/types').RecorderSettings
+      /** Capture immediately (the stream ID expires quickly) but start recording after this delay. */
+      delayMs?: number
     }
   | { type: 'RECORDER_STATE'; session: import('@/core/recorder/types').RecorderSession | null }
 

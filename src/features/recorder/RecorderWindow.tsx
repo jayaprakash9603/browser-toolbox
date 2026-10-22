@@ -16,6 +16,18 @@ type Stage = 'idle' | 'countdown' | 'recording' | 'saving' | 'error'
 const COUNTDOWN_SECONDS = 3
 const HEARTBEAT_MS = 1000
 
+const SURFACE: Record<RecordingSource, 'browser' | 'window' | 'monitor'> = {
+  tab: 'browser',
+  window: 'window',
+  screen: 'monitor',
+}
+
+const TITLE_KEY: Record<RecordingSource, string> = {
+  tab: 'recorder.window.tabTitle',
+  window: 'recorder.window.windowTitle',
+  screen: 'recorder.window.screenTitle',
+}
+
 function send(message: Record<string, unknown>): void {
   void chrome.runtime.sendMessage(message).catch(() => undefined)
 }
@@ -102,7 +114,7 @@ function DisplayRecorder({ id, source }: { id: string; source: RecordingSource }
     try {
       display = await navigator.mediaDevices.getDisplayMedia({
         video: {
-          displaySurface: source === 'screen' ? 'monitor' : 'window',
+          displaySurface: SURFACE[source],
           width: { ideal: width },
           height: { ideal: height },
           frameRate: { ideal: 30 },
@@ -153,10 +165,10 @@ function DisplayRecorder({ id, source }: { id: string; source: RecordingSource }
       <MonitorIcon className="size-10 text-primary" />
       {stage === 'idle' && (
         <>
-          <h1 className="text-lg font-semibold">
-            {t(source === 'screen' ? 'recorder.window.screenTitle' : 'recorder.window.windowTitle')}
-          </h1>
-          <p className="text-sm text-muted-foreground">{t('recorder.window.pickHint')}</p>
+          <h1 className="text-lg font-semibold">{t(TITLE_KEY[source])}</h1>
+          <p className="text-sm text-muted-foreground">
+            {t(source === 'tab' ? 'recorder.window.tabHint' : 'recorder.window.pickHint')}
+          </p>
           <div className="flex gap-2">
             <Button onClick={() => void begin()}>{t('recorder.window.choose')}</Button>
             <Button variant="outline" onClick={() => send({ type: 'RECORDER_STOP' })}>
