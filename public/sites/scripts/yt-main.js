@@ -49,7 +49,7 @@
 		if (speed <= 2 && player?.setPlaybackRate) player.setPlaybackRate(speed);
 		else if (video) video.playbackRate = speed;
 		applyQuality(String(payload.defaultQuality ?? "auto"));
-		if (payload.disableAutoplay && video) video.autoplay = false;
+		if ((payload.disableAutoplay === true || payload.disableAutoplay === "true") && video) video.autoplay = false;
 		if (payload.rememberVolume) {
 			const saved = localStorage.getItem("tbx-yt-volume");
 			if (saved && player?.setVolume) player.setVolume(Number(saved));
