@@ -38,6 +38,9 @@
   "commandTogglePip": {
     "message": "Toggle Picture-in-Picture for the current tab"
   },
+  "commandToggleRecording": {
+    "message": "Start or stop recording the current tab"
+  },
   "contextMenuOpen": {
     "message": "Open Browser Toolbox"
   },

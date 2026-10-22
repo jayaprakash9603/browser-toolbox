@@ -81,6 +81,15 @@ export const TOOLBOX_COMMANDS: ToolboxCommandDef[] = [
     opensPanel: false,
     toolId: 'browser.picture-in-picture',
   },
+  {
+    id: 'toggle-recording',
+    titleKey: 'shortcuts.commands.toggleRecording',
+    descriptionMessage: '__MSG_commandToggleRecording__',
+    scope: 'global',
+    binding: { default: 'Alt+Shift+R', mac: 'Alt+Shift+R' },
+    opensPanel: false,
+    toolId: 'screenshots.recorder',
+  },
 ]
 
 export const GLOBAL_TOOLBOX_COMMANDS = TOOLBOX_COMMANDS.filter((c) => c.scope === 'global')

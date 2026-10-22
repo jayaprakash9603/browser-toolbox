@@ -39,6 +39,7 @@ import { initShortcutsOnStartup, registerShortcuts } from './shortcuts'
 import { registerApiClientSendHandler } from './api-client-send'
 import { registerCaptureHandler } from './capture'
 import { registerScreenshotHandlers } from './screenshot'
+import { registerRecorder } from './recorder'
 import { registerHtmlBundleJobHandlers } from './htmlBundleJob'
 import { registerImageDownloadJobHandlers } from './imageDownloadJob'
 import { registerNetMonitor } from './netmon'
@@ -144,6 +145,7 @@ const rebuildMenus = () => enqueueContextMenuRebuild()
 safeRegister('apiClientSend', registerApiClientSendHandler)
 safeRegister('capture', registerCaptureHandler)
 safeRegister('screenshot', registerScreenshotHandlers)
+safeRegister('recorder', registerRecorder)
 safeRegister('htmlBundleJob', registerHtmlBundleJobHandlers)
 safeRegister('imageDownloadJob', registerImageDownloadJobHandlers)
 safeRegister('adblock', registerAdblock)

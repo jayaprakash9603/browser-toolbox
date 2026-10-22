@@ -4,6 +4,7 @@ export const MANIFEST_COMMAND_IDS = [
   'pick-element',
   'capture-screenshot',
   'toggle-pip',
+  'toggle-recording',
 ] as const
 
 const DESCRIPTIONS: Record<(typeof MANIFEST_COMMAND_IDS)[number], string> = {
@@ -11,6 +12,7 @@ const DESCRIPTIONS: Record<(typeof MANIFEST_COMMAND_IDS)[number], string> = {
   'pick-element': '__MSG_commandPickElement__',
   'capture-screenshot': '__MSG_commandCaptureScreenshot__',
   'toggle-pip': '__MSG_commandTogglePip__',
+  'toggle-recording': '__MSG_commandToggleRecording__',
 }
 
 /** Manifest command entries (no suggested_key — shortcuts are managed in extension settings). */

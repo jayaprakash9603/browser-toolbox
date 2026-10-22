@@ -7,6 +7,7 @@ function buildManifestCommands(): Record<string, { description: string }> {
     'pick-element': { description: '__MSG_commandPickElement__' },
     'capture-screenshot': { description: '__MSG_commandCaptureScreenshot__' },
     'toggle-pip': { description: '__MSG_commandTogglePip__' },
+    'toggle-recording': { description: '__MSG_commandToggleRecording__' },
   }
 }
 
@@ -50,6 +51,7 @@ export default defineManifest({
     'tabs',
     'downloads',
     'offscreen',
+    'tabCapture',
     'declarativeNetRequest',
     'declarativeNetRequestFeedback',
     'alarms',

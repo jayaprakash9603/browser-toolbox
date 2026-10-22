@@ -25,6 +25,11 @@ export async function executeToolboxCommand(command: string, tab?: chrome.tabs.T
     await togglePipInTab(tab)
     return
   }
+  if (command === 'toggle-recording') {
+    const { toggleRecorderFromCommand } = await import('./recorder')
+    await toggleRecorderFromCommand(tab)
+    return
+  }
 
   const def = getToolboxCommand(command)
   const opensPanel = def?.opensPanel ?? command !== 'toggle-pip'
