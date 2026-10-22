@@ -52,7 +52,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
   const [paletteMounted, setPaletteMounted] = useState(false)
   const mainRef = useRef<HTMLElement>(null)
   const reduceMotion = useReducedMotion()
-  const { resolvePanelCommand } = usePanelShortcuts()
+  const { resolvePanelCommand, forwardGlobalShortcut } = usePanelShortcuts()
   const searchShortcutLabel = useShortcutDisplay('panel-search')
 
   useEffect(() => {
@@ -73,12 +73,14 @@ export function AppShell({ children }: { children?: ReactNode }) {
         event.preventDefault()
         if (isHomePath(path)) requestFocusHomeSearch()
         else openPalette()
+      } else if (!panelCommand && forwardGlobalShortcut(event)) {
+        event.preventDefault()
       }
       if (event.key === 'Escape') setPaletteOpen(false)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [path, resolvePanelCommand])
+  }, [path, resolvePanelCommand, forwardGlobalShortcut])
 
   const tool = useMemo(() => toolRegistry.getAll().find((entry) => entry.route === path), [path])
 

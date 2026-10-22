@@ -42,8 +42,20 @@ function normalizeKeyToken(token: string): string {
   return token.length ? token[0].toUpperCase() + token.slice(1).toLowerCase() : ''
 }
 
+/**
+ * Shift/Alt change `event.key` ("!" for Shift+1, "¡" for Alt+1 on macOS), so letters and digits
+ * are read from the physical key. Keep in sync with public/sites/scripts/shortcut-dispatcher.js.
+ */
+export function keyFromKeyboardEvent(event: Pick<KeyboardEvent, 'key' | 'code'>): string {
+  const code = event.code ?? ''
+  if (/^Key[A-Z]$/.test(code)) return code.slice(3)
+  if (/^Digit\d$/.test(code)) return code.slice(5)
+  if (/^Numpad\d$/.test(code)) return code.slice(6)
+  return event.key
+}
+
 export function keyModifiersFromKeyboardEvent(event: KeyboardEvent): KeyModifiers {
-  const key = normalizeKeyToken(event.key)
+  const key = normalizeKeyToken(keyFromKeyboardEvent(event))
   return {
     key,
     ctrl: event.ctrlKey,
@@ -91,7 +103,7 @@ export function acceleratorFromKeyboardEvent(event: KeyboardEvent, mac = isMacPl
   if (event.repeat) return null
   const key = event.key
   if (!key || key === 'Control' || key === 'Shift' || key === 'Alt' || key === 'Meta') return null
-  const normalized = normalizeKeyToken(key)
+  const normalized = normalizeKeyToken(keyFromKeyboardEvent(event))
   if (!normalized) return null
   const parts: string[] = []
   if (mac) {

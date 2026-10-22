@@ -65,10 +65,15 @@ function listAll(db: IDBDatabase): Promise<ScreenshotHistoryEntry[]> {
 }
 
 export async function listScreenshotHistory(): Promise<ScreenshotHistoryEntry[]> {
-  const db = await openDb()
-  const rows = await listAll(db)
-  db.close()
-  return rows.sort((a, b) => b.createdAt - a.createdAt).slice(0, MAX_ENTRIES)
+  if (typeof indexedDB === 'undefined') return []
+  try {
+    const db = await openDb()
+    const rows = await listAll(db)
+    db.close()
+    return rows.sort((a, b) => b.createdAt - a.createdAt).slice(0, MAX_ENTRIES)
+  } catch {
+    return []
+  }
 }
 
 export async function deleteScreenshotHistory(id: string): Promise<void> {

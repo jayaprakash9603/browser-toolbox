@@ -22,9 +22,19 @@
     return key[0].toUpperCase() + key.slice(1).toLowerCase()
   }
 
+  // Shift/Alt change event.key ("!" for Shift+1, "¡" for Alt+1 on macOS), so letters and digits
+  // are read from the physical key instead.
+  function keyFromEvent(event) {
+    const code = event.code || ''
+    if (/^Key[A-Z]$/.test(code)) return code.slice(3)
+    if (/^Digit\d$/.test(code)) return code.slice(5)
+    if (/^Numpad\d$/.test(code)) return code.slice(6)
+    return event.key
+  }
+
   function modifiersFromEvent(event) {
     return {
-      key: normalizeKey(event.code && /^Key[A-Z]$/.test(event.code) ? event.code.slice(3) : event.key),
+      key: normalizeKey(keyFromEvent(event)),
       ctrl: event.ctrlKey,
       alt: event.altKey,
       shift: event.shiftKey,

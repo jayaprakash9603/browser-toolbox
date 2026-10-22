@@ -3,6 +3,8 @@ import {
   collectPageMeta,
   disableSmoothScroll,
   hideFixedStickyAfterFirst,
+  hideToolboxUi,
+  restoreToolboxUi,
   pickElementRect,
   prepareEntireCaptureScrollTarget,
   restoreCapturePageState,
@@ -71,6 +73,16 @@ async function canScriptTab(tabId: number, url?: string): Promise<boolean> {
   }
 }
 
+/** Keeps the extension's own overlays out of the image while `capture` runs. */
+async function withToolboxUiHidden<T>(tabId: number, capture: () => Promise<T>): Promise<T> {
+  await runInTab(tabId, hideToolboxUi).catch(() => undefined)
+  try {
+    return await capture()
+  } finally {
+    await runInTab(tabId, restoreToolboxUi).catch(() => undefined)
+  }
+}
+
 function readViewport(): { width: number; height: number; dpr: number } {
   return {
     width: window.innerWidth,
@@ -93,7 +105,11 @@ export async function captureVisibleFrame(
   notice?: string,
 ): Promise<ScreenshotFrame> {
   if (tab.windowId == null) throw new Error('No window for tab.')
-  const dataUrl = await captureVisiblePng(tab.windowId)
+  const windowId = tab.windowId
+  const dataUrl =
+    tab.id != null
+      ? await withToolboxUiHidden(tab.id, () => captureVisiblePng(windowId))
+      : await captureVisiblePng(windowId)
   return { dataUrl, pageInfo: pageInfoFromTab(tab), notice }
 }
 
@@ -103,11 +119,19 @@ export async function captureEntirePageFrame(tab: chrome.tabs.Tab): Promise<Scre
   if (!(await canScriptTab(tabId, tab.url))) {
     return captureVisibleFrame(tab, 'This page only allows a visible capture.')
   }
-  const settings = await loadScreenshotSettings()
-
   const target = await runInTab(tabId, prepareEntireCaptureScrollTarget)
   if (!target) return captureVisibleFrame(tab, 'Could not measure the page; captured the visible part.')
 
+  return withToolboxUiHidden(tabId, () => scrollAndCaptureTarget(tab, target))
+}
+
+async function scrollAndCaptureTarget(
+  tab: chrome.tabs.Tab,
+  target: Awaited<ReturnType<typeof prepareEntireCaptureScrollTarget>>,
+): Promise<ScreenshotFrame> {
+  const tabId = tab.id!
+  const windowId = tab.windowId!
+  const settings = await loadScreenshotSettings()
   await runInTab(tabId, disableSmoothScroll)
   const view: CaptureRect = target.clip ?? {
     x: 0,
@@ -123,7 +147,7 @@ export async function captureEntirePageFrame(tab: chrome.tabs.Tab): Promise<Scre
       if (i === 1 && settings.hideStickyHeaders) await runInTab(tabId, hideFixedStickyAfterFirst)
       const reached = await runInTab(tabId, scrollCaptureTo, [offsets[i]])
       await sleep(settings.scrollStepDelayMs)
-      const dataUrl = await captureVisiblePng(tab.windowId)
+      const dataUrl = await captureVisiblePng(windowId)
       slices.push({ dataUrl, scrollY: reached ?? offsets[i], view })
     }
 
@@ -195,7 +219,7 @@ export async function captureSelectionFrame(tab: chrome.tabs.Tab): Promise<Scree
   }
   const area = await runInTab(tab.id, selectPageAreaWithScroll)
   if (!area) return null
-  return captureWindowRegion(tab, area)
+  return withToolboxUiHidden(tab.id, () => captureWindowRegion(tab, area))
 }
 
 export async function captureElementFrame(tab: chrome.tabs.Tab): Promise<ScreenshotFrame | null> {
@@ -205,5 +229,5 @@ export async function captureElementFrame(tab: chrome.tabs.Tab): Promise<Screens
   }
   const area = await runInTab(tab.id, pickElementRect)
   if (!area) return null
-  return captureWindowRegion(tab, area)
+  return withToolboxUiHidden(tab.id, () => captureWindowRegion(tab, area))
 }

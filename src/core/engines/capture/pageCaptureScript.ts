@@ -74,6 +74,32 @@ export function scrollCaptureTo(y: number): number {
   return window.scrollY
 }
 
+/** Hides toolbox overlays (capture menu, pickers, toasts, recorder pill) and waits for a repaint. */
+export function hideToolboxUi(): Promise<number> {
+  const selector =
+    '[id^="toolbox-"], [id^="tbx-"], .tbx-wa-toast, .tbx-wa-popover, [data-toolbox-capture]'
+  let hidden = 0
+  document.querySelectorAll<HTMLElement>(selector).forEach((el) => {
+    if (/^(STYLE|LINK|SCRIPT|META)$/.test(el.tagName)) return
+    if (el.hasAttribute('data-tbx-capture-ui-hidden')) return
+    el.setAttribute('data-tbx-capture-ui-hidden', el.style.getPropertyValue('visibility'))
+    el.style.setProperty('visibility', 'hidden', 'important')
+    hidden++
+  })
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => resolve(hidden), 30)))
+  })
+}
+
+export function restoreToolboxUi(): void {
+  document.querySelectorAll<HTMLElement>('[data-tbx-capture-ui-hidden]').forEach((el) => {
+    const previous = el.getAttribute('data-tbx-capture-ui-hidden')
+    if (previous) el.style.setProperty('visibility', previous)
+    else el.style.removeProperty('visibility')
+    el.removeAttribute('data-tbx-capture-ui-hidden')
+  })
+}
+
 export function disableSmoothScroll(): void {
   const style = document.getElementById('tbx-capture-smooth-off')
   if (style) return

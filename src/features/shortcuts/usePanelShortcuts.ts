@@ -30,5 +30,17 @@ export function usePanelShortcuts() {
     [state],
   )
 
-  return { state, resolvePanelCommand }
+  /** Page content scripts don't run in toolbox pages, so global shortcuts are forwarded from here. */
+  const forwardGlobalShortcut = useCallback(
+    (event: KeyboardEvent): boolean => {
+      if (!state || event.repeat) return false
+      const modifiers = keyModifiersFromKeyboardEvent(event)
+      if (!findCommandForKeyEvent(modifiers, state, 'global')) return false
+      void chrome.runtime.sendMessage({ type: 'SHORTCUT_KEY_EVENT', modifiers }).catch(() => undefined)
+      return true
+    },
+    [state],
+  )
+
+  return { state, resolvePanelCommand, forwardGlobalShortcut }
 }

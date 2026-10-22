@@ -77,6 +77,7 @@ export function classifyTabUrl(url?: string): TabMessagingError['code'] | null {
   const lower = url.toLowerCase()
   if (
     lower.startsWith('chrome://') ||
+    lower.startsWith('chrome-extension://') ||
     lower.startsWith('chrome-untrusted://') ||
     lower.startsWith('edge://') ||
     lower.startsWith('devtools://') ||
@@ -86,6 +87,30 @@ export function classifyTabUrl(url?: string): TabMessagingError['code'] | null {
     return 'RESTRICTED_PAGE'
   }
   return null
+}
+
+function isScrapeableWebUrl(url?: string): boolean {
+  if (!url) return false
+  const lower = url.toLowerCase()
+  if (classifyTabUrl(url)) return false
+  return lower.startsWith('http://') || lower.startsWith('https://') || lower.startsWith('file:')
+}
+
+/** Active page tab to run tools against (skips extension UI / chrome system pages). */
+export async function getActiveWebTab(): Promise<chrome.tabs.Tab | undefined> {
+  const windows = await chrome.windows.getAll({ populate: true, windowTypes: ['normal'] })
+  const focused = windows.find((w) => w.focused) ?? windows[0]
+  const activeInFocused = focused?.tabs?.find((t) => t.active && isScrapeableWebUrl(t.url))
+  if (activeInFocused?.id != null) return activeInFocused
+
+  for (const win of windows) {
+    const active = win.tabs?.find((t) => t.active && isScrapeableWebUrl(t.url))
+    if (active?.id != null) return active
+  }
+
+  const webTabs = await chrome.tabs.query({ url: ['http://*/*', 'https://*/*', 'file://*/*'] })
+  webTabs.sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0))
+  return webTabs.find((t) => isScrapeableWebUrl(t.url))
 }
 
 export function isFileUrlTab(url?: string): boolean {

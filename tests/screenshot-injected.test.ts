@@ -4,8 +4,10 @@ import {
   collectPageMeta,
   disableSmoothScroll,
   hideFixedStickyAfterFirst,
+  hideToolboxUi,
   prepareEntireCaptureScrollTarget,
   restoreCapturePageState,
+  restoreToolboxUi,
   scrollCaptureTo,
 } from '@/core/engines/capture/pageCaptureScript'
 import { planSliceDraw } from '@/core/screenshot/export/canvas'
@@ -25,6 +27,34 @@ describe('injected capture functions', () => {
     expect(() => serialized(hideFixedStickyAfterFirst)()).not.toThrow()
     expect(() => serialized(restoreCapturePageState)(0)).not.toThrow()
     expect(serialized(collectPageMeta)().links).toEqual([])
+  })
+
+  it('hides toolbox overlays during capture and restores them', async () => {
+    const menu = document.createElement('div')
+    menu.id = 'tbx-screenshot-menu-host'
+    const toast = document.createElement('div')
+    toast.id = 'tbx-interceptor-toasts'
+    toast.style.visibility = 'visible'
+    const style = document.createElement('style')
+    style.id = 'toolbox-adblock-cosmetic'
+    const pageContent = document.createElement('p')
+    document.body.append(menu, toast, style, pageContent)
+
+    const hidden = await serialized(hideToolboxUi)()
+
+    expect(hidden).toBe(2)
+    expect(menu.style.visibility).toBe('hidden')
+    expect(toast.style.visibility).toBe('hidden')
+    expect(style.style.visibility).toBe('')
+    expect(pageContent.style.visibility).toBe('')
+
+    serialized(restoreToolboxUi)()
+    expect(menu.style.visibility).toBe('')
+    expect(toast.style.visibility).toBe('visible')
+    menu.remove()
+    toast.remove()
+    style.remove()
+    pageContent.remove()
   })
 })
 
