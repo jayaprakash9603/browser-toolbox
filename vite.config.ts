@@ -46,11 +46,7 @@ export default defineVitestConfig({
   build: {
     modulePreload: false,
     rollupOptions: {
-      input: {
-        offscreen: 'offscreen.html',
-        blocked: 'blocked.html',
-        'capture-editor': 'capture-editor.html',
-      },
+      input: { offscreen: 'offscreen.html', blocked: 'blocked.html' },
     },
   },
   optimizeDeps: {

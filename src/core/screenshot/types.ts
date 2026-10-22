@@ -30,14 +30,30 @@ export interface TextRun {
   fontSize: number
 }
 
+export interface CaptureRect {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+/**
+ * One captureVisibleTab image. `scrollX`/`scrollY` are the content offsets that were actually
+ * reached; `view` is where the scrolled content sits in the screenshot (CSS px), defaulting to
+ * the whole image.
+ */
 export interface CaptureSlice {
   dataUrl: string
   scrollY: number
+  scrollX?: number
+  view?: CaptureRect
 }
 
 export interface ScreenshotFrame {
   dataUrl?: string
   slices?: CaptureSlice[]
+  /** Content-space rectangle (CSS px) the slices are stitched into. */
+  region?: CaptureRect
   stitchHeight?: number
   devicePixelRatio?: number
   width?: number

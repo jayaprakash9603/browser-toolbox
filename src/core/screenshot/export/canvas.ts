@@ -1,6 +1,12 @@
 import type { Annotation } from '@/core/engines/capture'
 import { drawAnnotations } from '@/core/engines/capture'
-import type { LinkRect, TextRun } from '@/core/screenshot/types'
+import type {
+  CaptureRect,
+  CaptureSlice,
+  LinkRect,
+  ScreenshotFrame,
+  TextRun,
+} from '@/core/screenshot/types'
 import { tileHeights } from '@/core/screenshot/slicePlan'
 
 export async function dataUrlToCanvas(dataUrl: string): Promise<HTMLCanvasElement> {
@@ -14,15 +20,72 @@ export async function dataUrlToCanvas(dataUrl: string): Promise<HTMLCanvasElemen
   return canvas
 }
 
-export async function stitchSlicesToCanvas(
-  slices: { dataUrl: string; scrollY: number }[],
-  totalCssHeight: number,
-  devicePixelRatio: number,
-): Promise<HTMLCanvasElement> {
-  const { stitchCaptures } = await import('@/core/engines/capture')
-  const result = await stitchCaptures(slices, totalCssHeight, devicePixelRatio)
-  if (!result.ok) throw new Error(result.error)
-  return dataUrlToCanvas(result.value.dataUrl)
+/** Chrome refuses to allocate canvases taller than this. */
+const MAX_CANVAS_HEIGHT = 32000
+
+export interface SliceDraw {
+  sx: number
+  sy: number
+  width: number
+  height: number
+  dx: number
+  dy: number
+}
+
+/** Pixel copy for one slice: the part of `region` it shows, in image and output coordinates. */
+export function planSliceDraw(
+  slice: CaptureSlice,
+  region: CaptureRect,
+  imageCss: { width: number; height: number },
+  dpr: number,
+): SliceDraw | null {
+  const view = slice.view ?? { x: 0, y: 0, width: imageCss.width, height: imageCss.height }
+  const contentX = slice.scrollX ?? 0
+  const contentY = slice.scrollY
+  const left = Math.max(region.x, contentX)
+  const top = Math.max(region.y, contentY)
+  const right = Math.min(region.x + region.width, contentX + view.width)
+  const bottom = Math.min(region.y + region.height, contentY + view.height)
+  if (right <= left || bottom <= top) return null
+  return {
+    sx: Math.round((left - contentX + view.x) * dpr),
+    sy: Math.round((top - contentY + view.y) * dpr),
+    width: Math.round((right - left) * dpr),
+    height: Math.round((bottom - top) * dpr),
+    dx: Math.round((left - region.x) * dpr),
+    dy: Math.round((top - region.y) * dpr),
+  }
+}
+
+export async function stitchFrameToCanvas(frame: ScreenshotFrame): Promise<HTMLCanvasElement> {
+  const slices = frame.slices ?? []
+  if (slices.length === 0) throw new Error('Nothing was captured.')
+  const images = await Promise.all(slices.map((slice) => loadImage(slice.dataUrl)))
+  const dpr = frame.devicePixelRatio || 1
+  const first = { width: images[0].naturalWidth / dpr, height: images[0].naturalHeight / dpr }
+  const region = frame.region ?? {
+    x: 0,
+    y: 0,
+    width: slices[0].view?.width ?? first.width,
+    height: frame.stitchHeight ?? first.height,
+  }
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(region.width * dpr))
+  canvas.height = Math.max(1, Math.min(Math.round(region.height * dpr), MAX_CANVAS_HEIGHT))
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Canvas unavailable')
+  slices.forEach((slice, index) => {
+    const img = images[index]
+    const draw = planSliceDraw(
+      slice,
+      region,
+      { width: img.naturalWidth / dpr, height: img.naturalHeight / dpr },
+      dpr,
+    )
+    if (!draw) return
+    ctx.drawImage(img, draw.sx, draw.sy, draw.width, draw.height, draw.dx, draw.dy, draw.width, draw.height)
+  })
+  return canvas
 }
 
 export function applyAnnotations(canvas: HTMLCanvasElement, annotations: Annotation[]): void {

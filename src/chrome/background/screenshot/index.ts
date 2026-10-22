@@ -2,6 +2,8 @@ import { registerMessageHandler } from '@/core/messaging'
 import type { ScreenshotMode } from '@/core/screenshot/types'
 import { createLogger } from '@/core/logging'
 
+import { captureViewerUrl } from '@/core/screenshot/viewerUrl'
+
 import { getSession } from './session'
 import { openScreenshotCaptureMenu } from './menu'
 import { startScreenshot } from './start'
@@ -60,10 +62,12 @@ export function registerScreenshotHandlers(): void {
   registerMessageHandler('SCREENSHOT_MENU_ACTION', async (message) => {
     if (message.type !== 'SCREENSHOT_MENU_ACTION') return
     if (message.action === 'history' || message.action === 'options') {
-      const url = chrome.runtime.getURL(
-        `capture-editor.html?${message.action === 'history' ? 'history=1' : 'options=1'}`,
-      )
-      await chrome.tabs.create({ url })
+      await chrome.tabs.create({
+        url: captureViewerUrl({
+          history: message.action === 'history',
+          options: message.action === 'options',
+        }),
+      })
     }
   })
 }

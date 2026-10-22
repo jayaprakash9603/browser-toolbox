@@ -1,4 +1,5 @@
 import { loadScreenshotSettings } from '@/core/screenshot/settings'
+import { captureViewerUrl } from '@/core/screenshot/viewerUrl'
 import type { ScreenshotMode, ScreenshotSession } from '@/core/screenshot/types'
 import { createLogger } from '@/core/logging'
 
@@ -19,8 +20,7 @@ function newSessionId(): string {
 export type ProgressCallback = (phase: string, current: number, total: number) => void
 
 async function openEditorForSession(sessionId: string): Promise<void> {
-  const url = chrome.runtime.getURL(`capture-editor.html?session=${encodeURIComponent(sessionId)}`)
-  await chrome.tabs.create({ url })
+  await chrome.tabs.create({ url: captureViewerUrl({ session: sessionId }) })
 }
 
 async function runAfterCapture(sessionId: string, dataUrl?: string): Promise<void> {

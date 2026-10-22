@@ -5,6 +5,7 @@ import { SearchIcon, SettingsIcon } from 'lucide-react'
 
 import { LEGACY_TOOL_ROUTES } from '@/app/legacyToolRoutes'
 import { Link, useRouter } from '@/app/router'
+import { isCaptureViewerSearch } from '@/core/screenshot/viewerUrl'
 import { getToolComponent } from '@/app/toolComponents'
 import { toolRegistry } from '@/core/registry'
 import { trackRecentTool } from '@/features/recent-tools/recentToolsService'
@@ -46,7 +47,7 @@ function scheduleIdle(callback: () => void): void {
 
 export function AppShell({ children }: { children?: ReactNode }) {
   const { t } = useTranslation()
-  const { path } = useRouter()
+  const { path, search } = useRouter()
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [paletteMounted, setPaletteMounted] = useState(false)
   const mainRef = useRef<HTMLElement>(null)
@@ -91,7 +92,9 @@ export function AppShell({ children }: { children?: ReactNode }) {
 
   const content = renderRoute(path)
   // The DevTools Interceptor panel is a standalone network tool: no toolbox navigation chrome.
-  const chromeless = path === '/devtools/interceptor'
+  const captureFullPage =
+    path === '/tools/screenshots/capture' && isCaptureViewerSearch(search)
+  const chromeless = path === '/devtools/interceptor' || captureFullPage
 
   return (
     <div className="flex h-full flex-col overflow-x-clip bg-background">

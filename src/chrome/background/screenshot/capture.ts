@@ -3,19 +3,46 @@ import {
   collectPageMeta,
   disableSmoothScroll,
   hideFixedStickyAfterFirst,
+  pickElementRect,
   prepareEntireCaptureScrollTarget,
   restoreCapturePageState,
   scrollCaptureTo,
   selectPageAreaWithScroll,
-  pickElementRect,
 } from '@/core/engines/capture/pageCaptureScript'
 import { CAPTURE_THROTTLE_MS, sleep } from '@/core/screenshot/slicePlan'
 import { isRestrictedCaptureUrl } from '@/core/screenshot/restricted'
-import type { CaptureSlice, PageInfo, ScreenshotFrame } from '@/core/screenshot/types'
+import type {
+  CaptureRect,
+  CaptureSlice,
+  PageInfo,
+  ScreenshotFrame,
+} from '@/core/screenshot/types'
 import { loadScreenshotSettings } from '@/core/screenshot/settings'
 
+let lastCaptureAt = 0
+
+/** captureVisibleTab is rate-limited (MAX_CAPTURE_VISIBLE_TAB_CALLS_PER_SECOND = 2). */
 async function captureVisiblePng(windowId: number): Promise<string> {
-  return chrome.tabs.captureVisibleTab(windowId, { format: 'png' })
+  const wait = CAPTURE_THROTTLE_MS - (Date.now() - lastCaptureAt)
+  if (wait > 0) await sleep(wait)
+  try {
+    return await chrome.tabs.captureVisibleTab(windowId, { format: 'png' })
+  } finally {
+    lastCaptureAt = Date.now()
+  }
+}
+
+async function runInTab<Args extends unknown[], Result>(
+  tabId: number,
+  func: (...args: Args) => Result,
+  args?: Args,
+): Promise<Awaited<Result>> {
+  const [injection] = await chrome.scripting.executeScript({
+    target: { tabId },
+    func,
+    args: (args ?? []) as Args,
+  } as chrome.scripting.ScriptInjection<Args, Result>)
+  return injection?.result as Awaited<Result>
 }
 
 function pageInfoFromTab(tab: chrome.tabs.Tab): PageInfo {
@@ -28,7 +55,7 @@ function pageInfoFromTab(tab: chrome.tabs.Tab): PageInfo {
   }
   return {
     url,
-    title: tab.title ?? domain ?? 'Page',
+    title: tab.title || domain || 'Page',
     domain,
     capturedAt: Date.now(),
   }
@@ -37,14 +64,28 @@ function pageInfoFromTab(tab: chrome.tabs.Tab): PageInfo {
 async function canScriptTab(tabId: number, url?: string): Promise<boolean> {
   if (isRestrictedCaptureUrl(url)) return false
   try {
-    await chrome.scripting.executeScript({
-      target: { tabId },
-      func: () => true,
-    })
+    await runInTab(tabId, () => true)
     return true
   } catch {
     return false
   }
+}
+
+function readViewport(): { width: number; height: number; dpr: number } {
+  return {
+    width: window.innerWidth,
+    height: window.innerHeight,
+    dpr: window.devicePixelRatio || 1,
+  }
+}
+
+function scrollWindowTo(x: number, y: number): { x: number; y: number } {
+  window.scrollTo(x, y)
+  return { x: window.scrollX, y: window.scrollY }
+}
+
+function readWindowScroll(): { x: number; y: number } {
+  return { x: window.scrollX, y: window.scrollY }
 }
 
 export async function captureVisibleFrame(
@@ -53,165 +94,116 @@ export async function captureVisibleFrame(
 ): Promise<ScreenshotFrame> {
   if (tab.windowId == null) throw new Error('No window for tab.')
   const dataUrl = await captureVisiblePng(tab.windowId)
-  return {
-    dataUrl,
-    pageInfo: pageInfoFromTab(tab),
-    notice,
-  }
+  return { dataUrl, pageInfo: pageInfoFromTab(tab), notice }
 }
 
 export async function captureEntirePageFrame(tab: chrome.tabs.Tab): Promise<ScreenshotFrame> {
-  const settings = await loadScreenshotSettings()
   if (tab.id == null || tab.windowId == null) throw new Error('Invalid tab.')
-
-  const scriptable = await canScriptTab(tab.id, tab.url)
-  if (!scriptable) {
+  const tabId = tab.id
+  if (!(await canScriptTab(tabId, tab.url))) {
     return captureVisibleFrame(tab, 'This page only allows a visible capture.')
   }
+  const settings = await loadScreenshotSettings()
 
-  const [metricsResult] = await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: prepareEntireCaptureScrollTarget,
-  })
-  const metrics = metricsResult?.result
-  if (!metrics) throw new Error('Could not read page metrics.')
+  const target = await runInTab(tabId, prepareEntireCaptureScrollTarget)
+  if (!target) return captureVisibleFrame(tab, 'Could not measure the page; captured the visible part.')
 
-  await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: disableSmoothScroll,
-  })
-
-  const savedScrollY = metrics.scrollY
-  const offsets = fullPageOffsets(metrics.scrollHeight, metrics.viewportHeight)
+  await runInTab(tabId, disableSmoothScroll)
+  const view: CaptureRect = target.clip ?? {
+    x: 0,
+    y: 0,
+    width: target.viewportWidth,
+    height: target.viewportHeight,
+  }
+  const offsets = fullPageOffsets(target.scrollHeight, view.height)
   const slices: CaptureSlice[] = []
 
   try {
     for (let i = 0; i < offsets.length; i++) {
-      if (i > 0 && settings.hideStickyHeaders) {
-        await chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          func: hideFixedStickyAfterFirst,
-        })
-      }
-      const offset = offsets[i]
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: scrollCaptureTo,
-        args: [offset],
-      })
+      if (i === 1 && settings.hideStickyHeaders) await runInTab(tabId, hideFixedStickyAfterFirst)
+      const reached = await runInTab(tabId, scrollCaptureTo, [offsets[i]])
       await sleep(settings.scrollStepDelayMs)
-      if (i > 0) await sleep(CAPTURE_THROTTLE_MS)
       const dataUrl = await captureVisiblePng(tab.windowId)
-      const [scrolled] = await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: scrollCaptureTo,
-        args: [offset],
-      })
-      slices.push({ dataUrl, scrollY: scrolled?.result ?? offset })
+      slices.push({ dataUrl, scrollY: reached ?? offsets[i], view })
     }
 
-    const [collected] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: collectPageMeta,
-    })
-    const meta = collected?.result as {
-      links: ScreenshotFrame['links']
-      textRuns: ScreenshotFrame['textRuns']
+    let meta: Awaited<ReturnType<typeof collectPageMeta>> | undefined
+    if (target.scrollTarget === 'window') {
+      try {
+        meta = await runInTab(tabId, collectPageMeta)
+      } catch {
+        meta = undefined
+      }
     }
 
     return {
       slices,
-      stitchHeight: metrics.scrollHeight,
-      devicePixelRatio: metrics.devicePixelRatio,
+      region: { x: 0, y: 0, width: view.width, height: target.scrollHeight },
+      stitchHeight: target.scrollHeight,
+      devicePixelRatio: target.devicePixelRatio,
       pageInfo: pageInfoFromTab(tab),
       links: meta?.links,
       textRuns: meta?.textRuns,
     }
   } finally {
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: restoreCapturePageState,
-      args: [savedScrollY],
-    })
+    await runInTab(tabId, restoreCapturePageState, [target.scrollY]).catch(() => undefined)
+  }
+}
+
+/** Scrolls the window over a page-space rectangle and captures every viewport it spans. */
+async function captureWindowRegion(
+  tab: chrome.tabs.Tab,
+  area: CaptureRect & { devicePixelRatio: number },
+  notice?: string,
+): Promise<ScreenshotFrame> {
+  const tabId = tab.id!
+  const windowId = tab.windowId!
+  const settings = await loadScreenshotSettings()
+  const viewport = await runInTab(tabId, readViewport)
+  const saved = await runInTab(tabId, readWindowScroll)
+  const offsets = fullPageOffsets(area.height, viewport.height)
+  const slices: CaptureSlice[] = []
+  try {
+    for (const localY of offsets) {
+      const reached = await runInTab(tabId, scrollWindowTo, [area.x, area.y + localY])
+      await sleep(settings.scrollStepDelayMs)
+      const dataUrl = await captureVisiblePng(windowId)
+      slices.push({
+        dataUrl,
+        scrollX: reached.x,
+        scrollY: reached.y,
+        view: { x: 0, y: 0, width: viewport.width, height: viewport.height },
+      })
+    }
+  } finally {
+    await runInTab(tabId, scrollWindowTo, [saved.x, saved.y]).catch(() => undefined)
+  }
+  return {
+    slices,
+    region: { x: area.x, y: area.y, width: area.width, height: area.height },
+    stitchHeight: area.height,
+    devicePixelRatio: area.devicePixelRatio,
+    pageInfo: pageInfoFromTab(tab),
+    notice,
   }
 }
 
 export async function captureSelectionFrame(tab: chrome.tabs.Tab): Promise<ScreenshotFrame | null> {
   if (tab.id == null || tab.windowId == null) throw new Error('Invalid tab.')
-  const scriptable = await canScriptTab(tab.id, tab.url)
-  if (!scriptable) {
+  if (!(await canScriptTab(tab.id, tab.url))) {
     return captureVisibleFrame(tab, 'Selection requires a normal web page; captured visible area.')
   }
-
-  const [picked] = await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: selectPageAreaWithScroll,
-  })
-  const area = picked?.result
+  const area = await runInTab(tab.id, selectPageAreaWithScroll)
   if (!area) return null
-
-  const settings = await loadScreenshotSettings()
-  const [viewportH] = await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: () => window.innerHeight,
-  })
-  const vh = (viewportH?.result as number) || 800
-
-  const scrollYs = fullPageOffsets(area.height, Math.min(vh, area.height))
-  const slices: CaptureSlice[] = []
-
-  for (let i = 0; i < scrollYs.length; i++) {
-    const localY = scrollYs[i]
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: (pageY: number, pageX: number) => {
-        window.scrollTo(pageX, pageY)
-      },
-      args: [area.y + localY, area.x],
-    })
-    await sleep(settings.scrollStepDelayMs)
-    if (i > 0) await sleep(CAPTURE_THROTTLE_MS)
-    const dataUrl = await captureVisiblePng(tab.windowId)
-    slices.push({ dataUrl, scrollY: localY })
-  }
-
-  return {
-    slices,
-    stitchHeight: area.height,
-    devicePixelRatio: area.devicePixelRatio,
-    pageInfo: pageInfoFromTab(tab),
-  }
+  return captureWindowRegion(tab, area)
 }
 
 export async function captureElementFrame(tab: chrome.tabs.Tab): Promise<ScreenshotFrame | null> {
   if (tab.id == null || tab.windowId == null) throw new Error('Invalid tab.')
-  const scriptable = await canScriptTab(tab.id, tab.url)
-  if (!scriptable) {
+  if (!(await canScriptTab(tab.id, tab.url))) {
     return captureVisibleFrame(tab, 'Element pick requires a normal web page; captured visible area.')
   }
-
-  const [picked] = await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: pickElementRect,
-  })
-  const area = picked?.result
+  const area = await runInTab(tab.id, pickElementRect)
   if (!area) return null
-
-  await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: (top: number, left: number) => {
-      window.scrollTo(left, top)
-    },
-    args: [Math.max(0, area.y - 40), Math.max(0, area.x - 40)],
-  })
-  await sleep(200)
-  const dataUrl = await captureVisiblePng(tab.windowId)
-
-  return {
-    dataUrl,
-    stitchHeight: area.height,
-    devicePixelRatio: area.devicePixelRatio,
-    pageInfo: pageInfoFromTab(tab),
-    notice: 'Element capture — adjust crop in editor if needed.',
-  }
+  return captureWindowRegion(tab, area)
 }

@@ -5,93 +5,70 @@ export interface ScrollTargetMetrics extends PageCaptureMetrics {
   elementSelector?: string
 }
 
-export function findLargestScrollable(): HTMLElement | null {
-  const candidates: HTMLElement[] = [document.documentElement, document.body]
-  document.querySelectorAll<HTMLElement>('div, main, section, article').forEach((el) => {
-    const style = getComputedStyle(el)
-    const overflowY = style.overflowY
-    if (
-      (overflowY === 'auto' || overflowY === 'scroll') &&
-      el.scrollHeight > el.clientHeight + 8
-    ) {
-      candidates.push(el)
-    }
-  })
-  let best: HTMLElement | null = null
-  let bestArea = 0
-  for (const el of candidates) {
-    const area = el.clientWidth * el.scrollHeight
-    if (area > bestArea) {
-      bestArea = area
-      best = el
-    }
-  }
-  if (best && best !== document.documentElement && best !== document.body) return best
-  const docScroll = Math.max(document.documentElement.scrollHeight, document.body?.scrollHeight ?? 0)
-  if (docScroll > window.innerHeight + 8) return null
-  return best
+export interface EntireCaptureTarget extends ScrollTargetMetrics {
+  /** Viewport rect (CSS px) of the inner scroller; absent when the document scrolls. */
+  clip?: { x: number; y: number; width: number; height: number }
 }
 
-export function readScrollTargetMetrics(): ScrollTargetMetrics {
+// Functions below are injected with chrome.scripting.executeScript, which serializes only the
+// function body: they must not reference any other module-level binding.
+
+export function prepareEntireCaptureScrollTarget(): EntireCaptureTarget {
+  const store = window as unknown as Record<string, HTMLElement | null>
   const dpr = window.devicePixelRatio || 1
-  const bound = getScrollElement()
-  if (bound) {
-    return {
-      scrollTarget: 'element',
-      elementSelector: '',
-      scrollHeight: bound.scrollHeight,
-      viewportWidth: bound.clientWidth,
-      viewportHeight: bound.clientHeight,
-      scrollY: bound.scrollTop,
-      devicePixelRatio: dpr,
-    }
+  const root = document.documentElement
+  const body = document.body
+  const docHeight = Math.max(root.scrollHeight, body?.scrollHeight ?? 0, root.clientHeight)
+  const windowMetrics: EntireCaptureTarget = {
+    scrollTarget: 'window',
+    scrollHeight: docHeight,
+    viewportWidth: window.innerWidth,
+    viewportHeight: window.innerHeight,
+    scrollY: window.scrollY,
+    devicePixelRatio: dpr,
   }
-  const target = findLargestScrollable()
-  if (!target || target === document.documentElement || target === document.body) {
-    const root = document.documentElement
-    const body = document.body
-    return {
-      scrollTarget: 'window',
-      scrollHeight: Math.max(root.scrollHeight, body?.scrollHeight ?? 0, root.clientHeight),
-      viewportWidth: window.innerWidth,
-      viewportHeight: window.innerHeight,
-      scrollY: window.scrollY,
-      devicePixelRatio: dpr,
+  store.__tbxCaptureScrollEl = null
+  if (docHeight > window.innerHeight + 8) return windowMetrics
+
+  let best: HTMLElement | null = null
+  let bestArea = 0
+  document.querySelectorAll<HTMLElement>('div, main, section, article').forEach((el) => {
+    const overflowY = getComputedStyle(el).overflowY
+    if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight + 8) {
+      const area = el.clientWidth * el.clientHeight
+      if (area > bestArea) {
+        bestArea = area
+        best = el
+      }
     }
-  }
+  })
+  const target = best as HTMLElement | null
+  if (!target) return windowMetrics
+  store.__tbxCaptureScrollEl = target
+  const rect = target.getBoundingClientRect()
+  const top = Math.max(0, rect.top)
+  const left = Math.max(0, rect.left)
   return {
     scrollTarget: 'element',
-    elementSelector: '',
     scrollHeight: target.scrollHeight,
     viewportWidth: target.clientWidth,
     viewportHeight: target.clientHeight,
     scrollY: target.scrollTop,
     devicePixelRatio: dpr,
+    clip: {
+      x: left,
+      y: top,
+      width: Math.min(target.clientWidth, window.innerWidth - left),
+      height: Math.min(target.clientHeight, window.innerHeight - top),
+    },
   }
-}
-
-const SCROLL_KEY = '__tbxCaptureScrollEl'
-
-function getScrollElement(): HTMLElement | null {
-  return (window as unknown as Record<string, HTMLElement | null>)[SCROLL_KEY] ?? null
-}
-
-export function prepareEntireCaptureScrollTarget(): ScrollTargetMetrics {
-  const target = findLargestScrollable()
-  const w = window as unknown as Record<string, HTMLElement | null>
-  if (target && target !== document.documentElement && target !== document.body) {
-    w[SCROLL_KEY] = target
-  } else {
-    w[SCROLL_KEY] = null
-  }
-  return readScrollTargetMetrics()
 }
 
 export function scrollCaptureTo(y: number): number {
-  const scrollElement = getScrollElement()
-  if (scrollElement) {
-    scrollElement.scrollTop = y
-    return scrollElement.scrollTop
+  const el = (window as unknown as Record<string, HTMLElement | null>).__tbxCaptureScrollEl
+  if (el) {
+    el.scrollTop = y
+    return el.scrollTop
   }
   window.scrollTo(0, y)
   return window.scrollY
@@ -124,17 +101,22 @@ export function hideFixedStickyAfterFirst(): void {
 }
 
 export function restoreCapturePageState(savedScrollY: number): void {
-  scrollCaptureTo(savedScrollY)
+  const store = window as unknown as Record<string, HTMLElement | null>
+  const el = store.__tbxCaptureScrollEl
+  if (el) el.scrollTop = savedScrollY
+  else window.scrollTo(0, savedScrollY)
   document.getElementById('tbx-capture-smooth-off')?.remove()
   document.getElementById('tbx-capture-hide-sticky')?.remove()
   document.querySelectorAll('[data-tbx-capture-sticky-hidden]').forEach((node) => {
     node.removeAttribute('data-tbx-capture-sticky-hidden')
   })
-  const w = window as unknown as Record<string, HTMLElement | null>
-  w[SCROLL_KEY] = null
+  store.__tbxCaptureScrollEl = null
 }
 
-export function collectLinkRects(): { href: string; x: number; y: number; width: number; height: number }[] {
+export function collectPageMeta(): {
+  links: { href: string; x: number; y: number; width: number; height: number }[]
+  textRuns: { text: string; x: number; y: number; width: number; height: number; fontSize: number }[]
+} {
   const links: { href: string; x: number; y: number; width: number; height: number }[] = []
   document.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((a) => {
     const href = a.href
@@ -149,25 +131,7 @@ export function collectLinkRects(): { href: string; x: number; y: number; width:
       height: rect.height,
     })
   })
-  return links
-}
-
-export function collectPageMeta(): {
-  links: ReturnType<typeof collectLinkRects>
-  textRuns: ReturnType<typeof collectTextRuns>
-} {
-  return { links: collectLinkRects(), textRuns: collectTextRuns() }
-}
-
-export function collectTextRuns(): {
-  text: string
-  x: number
-  y: number
-  width: number
-  height: number
-  fontSize: number
-}[] {
-  const runs: {
+  const textRuns: {
     text: string
     x: number
     y: number
@@ -175,29 +139,31 @@ export function collectTextRuns(): {
     height: number
     fontSize: number
   }[] = []
-  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
-  let node: Node | null
-  while ((node = walker.nextNode())) {
-    const text = node.textContent?.trim()
-    if (!text) continue
-    const parent = node.parentElement
-    if (!parent) continue
-    const style = getComputedStyle(parent)
-    if (style.visibility === 'hidden' || style.display === 'none') continue
-    const range = document.createRange()
-    range.selectNodeContents(node)
-    const rect = range.getBoundingClientRect()
-    if (rect.width < 2 || rect.height < 2) continue
-    runs.push({
-      text,
-      x: rect.left + window.scrollX,
-      y: rect.top + window.scrollY,
-      width: rect.width,
-      height: rect.height,
-      fontSize: parseFloat(style.fontSize) || 12,
-    })
+  if (document.body) {
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+    let node: Node | null
+    while ((node = walker.nextNode()) && textRuns.length < 5000) {
+      const text = node.textContent?.trim()
+      if (!text) continue
+      const parent = node.parentElement
+      if (!parent) continue
+      const style = getComputedStyle(parent)
+      if (style.visibility === 'hidden' || style.display === 'none') continue
+      const range = document.createRange()
+      range.selectNodeContents(node)
+      const rect = range.getBoundingClientRect()
+      if (rect.width < 2 || rect.height < 2) continue
+      textRuns.push({
+        text,
+        x: rect.left + window.scrollX,
+        y: rect.top + window.scrollY,
+        width: rect.width,
+        height: rect.height,
+        fontSize: parseFloat(style.fontSize) || 12,
+      })
+    }
   }
-  return runs
+  return { links, textRuns }
 }
 
 export function selectPageAreaWithScroll(): Promise<AreaSelection | null> {

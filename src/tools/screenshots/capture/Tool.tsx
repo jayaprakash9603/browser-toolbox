@@ -10,7 +10,10 @@ import {
   UnfoldVerticalIcon,
 } from 'lucide-react'
 
+import { useRouter } from '@/app/router'
 import { getToolboxCommand } from '@/core/commands'
+import { captureViewerUrl, isCaptureViewerSearch } from '@/core/screenshot/viewerUrl'
+import { CaptureEditorApp } from '@/features/captureEditor/CaptureEditorApp'
 import { sendMessage } from '@/core/messaging/messageService'
 import type { ScreenshotMode } from '@/core/screenshot/types'
 import { listScreenshotHistory, type ScreenshotHistoryEntry } from '@/core/screenshot/history'
@@ -38,7 +41,7 @@ function shortcutLabel(commandId: string): string {
   return def?.binding.default ?? ''
 }
 
-export default function CaptureTool() {
+function CaptureLauncher() {
   const { t } = useTranslation()
   const tool = useCaptureTool('screenshots.capture')
   useFocusTarget()
@@ -89,9 +92,7 @@ export default function CaptureTool() {
             variant="outline"
             className="h-auto justify-start gap-2 py-3"
             disabled={busy}
-            onClick={() =>
-              void sendMessage({ type: 'SCREENSHOT_MENU_OPEN' })
-            }
+            onClick={() => void sendMessage({ type: 'SCREENSHOT_MENU_OPEN' })}
           >
             <ListIcon className="size-4" />
             <span className="flex flex-col items-start text-left">
@@ -137,9 +138,7 @@ export default function CaptureTool() {
               size="xs"
               variant="ghost"
               onClick={() => {
-                void chrome.tabs.create({
-                  url: chrome.runtime.getURL('capture-editor.html?history=1'),
-                })
+                void chrome.tabs.create({ url: captureViewerUrl({ history: true }) })
               }}
             >
               {t('capture.launcher.historyOpen')}
@@ -166,4 +165,12 @@ export default function CaptureTool() {
       </div>
     </ToolPage>
   )
+}
+
+export default function CaptureTool() {
+  const { search } = useRouter()
+  if (isCaptureViewerSearch(search)) {
+    return <CaptureEditorApp search={search} />
+  }
+  return <CaptureLauncher />
 }

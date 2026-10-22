@@ -7,7 +7,7 @@ import {
   applyAnnotations,
   dataUrlToCanvas,
   stampPageInfo,
-  stitchSlicesToCanvas,
+  stitchFrameToCanvas,
 } from '@/core/screenshot/export/canvas'
 import {
   buildExportFilename,
@@ -30,6 +30,7 @@ import {
   listScreenshotHistory,
   type ScreenshotHistoryEntry,
 } from '@/core/screenshot/history'
+import { useRouter } from '@/app/router'
 import { Button } from '@/shared/components/ui/button'
 
 const TOOLS: { id: AnnotationTool; label: string }[] = [
@@ -44,8 +45,8 @@ const TOOLS: { id: AnnotationTool; label: string }[] = [
 
 async function frameToCanvas(frame: ScreenshotFrame, settings: ScreenshotSettings): Promise<HTMLCanvasElement> {
   let canvas: HTMLCanvasElement
-  if (frame.slices && frame.stitchHeight != null && frame.devicePixelRatio) {
-    canvas = await stitchSlicesToCanvas(frame.slices, frame.stitchHeight, frame.devicePixelRatio)
+  if (frame.slices?.length) {
+    canvas = await stitchFrameToCanvas(frame)
   } else if (frame.dataUrl) {
     canvas = await dataUrlToCanvas(frame.dataUrl)
   } else {
@@ -57,8 +58,12 @@ async function frameToCanvas(frame: ScreenshotFrame, settings: ScreenshotSetting
   return canvas
 }
 
-export function CaptureEditorApp() {
-  const params = useMemo(() => new URLSearchParams(window.location.search), [])
+export function CaptureEditorApp({ search = '' }: { search?: string }) {
+  const { navigate } = useRouter()
+  const params = useMemo(
+    () => new URLSearchParams(search.startsWith('?') ? search.slice(1) : search),
+    [search],
+  )
   const sessionId = params.get('session')
   const showHistory = params.get('history') === '1'
   const showOptions = params.get('options') === '1'
@@ -469,7 +474,7 @@ export function CaptureEditorApp() {
           className="w-full"
           variant="ghost"
           onClick={() => {
-            window.location.href = chrome.runtime.getURL('capture-editor.html?options=1')
+            navigate('/tools/screenshots/capture?options=1')
           }}
         >
           Options
