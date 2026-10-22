@@ -292,10 +292,14 @@ async function main() {
   for (const [host, selectors] of Object.entries(built.specificExceptions)) {
     shards[hostShard(host)].exceptions[host] = selectors
   }
+  const controlHosts = { generichide: [], elemhide: [], specifichide: [] }
   for (const [host, list] of Object.entries(built.controls)) {
     const shard = shards[hostShard(host)]
     ;(shard.controls ??= {})[host] = list
+    for (const control of list) controlHosts[control]?.push(host)
   }
+  // The background reads this to keep the always-on generic CSS off $generichide/$elemhide sites.
+  await writeFile(join(cosmeticDir, 'controls.json'), `${JSON.stringify(controlHosts)}\n`)
   await Promise.all(
     shards.map((shard, index) => writeFile(join(shardDir, `${index}.json`), `${JSON.stringify(shard)}\n`)),
   )

@@ -17,12 +17,39 @@ const ALL_URLS = ['<all_urls>']
 const YOUTUBE_HOST_RE = /(^|\.)(youtube\.com|youtube-nocookie\.com)$/
 const INJECT_CONCURRENCY = 4
 
+/** Hosts whose filters switch generic hiding off (`$generichide`) or all hiding (`$elemhide`). */
+export interface CosmeticControls {
+  generichide: string[]
+  elemhide: string[]
+}
+
+const NO_CONTROLS: CosmeticControls = { generichide: [], elemhide: [] }
+let controlsPromise: Promise<CosmeticControls> | null = null
+
+function loadCosmeticControls(): Promise<CosmeticControls> {
+  controlsPromise ??= fetch(chrome.runtime.getURL(ADBLOCK_FILES.cosmeticControls))
+    .then((res) => res.json() as Promise<Partial<CosmeticControls>>)
+    .then((data) => ({ generichide: data.generichide ?? [], elemhide: data.elemhide ?? [] }))
+    .catch(() => NO_CONTROLS)
+  return controlsPromise
+}
+
+function hostPatterns(hosts: string[]): string[] {
+  return hosts.flatMap((host) => {
+    const bare = host.replace(/^www\./, '')
+    return [`*://${bare}/*`, `*://*.${bare}/*`]
+  })
+}
+
 function allowlistExcludePatterns(allowlist: string[]): string[] | undefined {
   if (!allowlist.length) return undefined
   return allowlist.map((host) => `*://*.${host.replace(/^www\./, '')}/*`)
 }
 
-export function buildContentScripts(state: AdblockState): chrome.scripting.RegisteredContentScript[] {
+export function buildContentScripts(
+  state: AdblockState,
+  controls: CosmeticControls = NO_CONTROLS,
+): chrome.scripting.RegisteredContentScript[] {
   if (!state.enabled) return []
   const excludeMatches = allowlistExcludePatterns(state.allowlist)
   const base = { excludeMatches, runAt: 'document_start' as const, allFrames: true }
@@ -32,8 +59,16 @@ export function buildContentScripts(state: AdblockState): chrome.scripting.Regis
     scripts.push({
       ...base,
       id: CONTENT_SCRIPT_IDS.cosmetic,
-      css: [ADBLOCK_FILES.genericCss],
       js: [ADBLOCK_FILES.cosmeticJs],
+      matches: ALL_URLS,
+    })
+    const noGeneric = hostPatterns([...controls.generichide, ...controls.elemhide])
+    const cssExcludes = [...(excludeMatches ?? []), ...noGeneric]
+    scripts.push({
+      ...base,
+      excludeMatches: cssExcludes.length ? cssExcludes : undefined,
+      id: CONTENT_SCRIPT_IDS.genericCss,
+      css: [ADBLOCK_FILES.genericCss],
       matches: ALL_URLS,
     })
   }
@@ -93,7 +128,7 @@ export function buildContentScripts(state: AdblockState): chrome.scripting.Regis
 }
 
 export async function syncContentScripts(state: AdblockState): Promise<void> {
-  const scripts = buildContentScripts(state)
+  const scripts = buildContentScripts(state, state.cosmeticEnabled ? await loadCosmeticControls() : NO_CONTROLS)
   try {
     await reconcileContentScripts(OWNED_SCRIPT_IDS, scripts)
   } catch (error) {
@@ -109,11 +144,13 @@ async function injectOneTab(tab: chrome.tabs.Tab, state: AdblockState): Promise<
   if (tab.id == null || !tab.url || tab.discarded || isAllowlisted(state.allowlist, tab.url)) return
   const target = { tabId: tab.id, allFrames: true }
   try {
-    const files: string[] = [ADBLOCK_FILES.genericCss]
+    const controls = await loadCosmeticControls()
+    const noGeneric = isAllowlisted([...controls.generichide, ...controls.elemhide], tab.url)
+    const files: string[] = noGeneric ? [] : [ADBLOCK_FILES.genericCss]
     if (state.cookieBanners) files.push(ADBLOCK_FILES.cookiesCss)
     if (state.distractions) files.push(ADBLOCK_FILES.distractionsCss)
     if (state.cosmeticEnabled) {
-      await chrome.scripting.insertCSS({ target, files })
+      if (files.length) await chrome.scripting.insertCSS({ target, files })
       await chrome.scripting.executeScript({ target, files: [ADBLOCK_FILES.cosmeticJs] })
     }
     if (state.cookieBanners) {

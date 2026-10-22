@@ -20,6 +20,17 @@ export function hostShard(host: string): number {
   return hashShard(host, SHARD_COUNT)
 }
 
+/** The host and its parent domains, plus uBO entity forms (`google.*`, `google.co.*`). */
+export function hostCandidates(host: string): string[] {
+  const parts = host.split('.')
+  const out: string[] = []
+  for (let i = 0; i < parts.length - 1; i++) out.push(parts.slice(i).join('.'))
+  for (let i = 0; i < parts.length - 1; i++) {
+    for (let j = i + 1; j < parts.length; j++) out.push(`${parts.slice(i, j).join('.')}.*`)
+  }
+  return out
+}
+
 /** `key` is `#id` or `.class`, exactly as it appears on the element (unescaped). */
 export function genericKeyShard(key: string): number {
   return hashShard(key, GENERIC_SHARD_COUNT)

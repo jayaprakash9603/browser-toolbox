@@ -49,6 +49,7 @@ export function emptyTotals(): AdblockTotals {
 
 export const CONTENT_SCRIPT_IDS = {
   cosmetic: 'adblock-cosmetic',
+  genericCss: 'adblock-generic-css',
   cookies: 'adblock-cookies',
   distractions: 'adblock-distractions',
   notifications: 'adblock-notifications',
@@ -65,6 +66,7 @@ export const YOUTUBE_MATCHES = [
 
 export const ADBLOCK_FILES = {
   genericCss: 'adblock/cosmetic/generic.css',
+  cosmeticControls: 'adblock/cosmetic/controls.json',
   cookiesCss: 'adblock/cosmetic/cookies.css',
   distractionsCss: 'adblock/cosmetic/distractions.css',
   cosmeticJs: 'adblock/scripts/cosmetic.js',

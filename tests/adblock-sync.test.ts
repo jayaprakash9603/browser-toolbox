@@ -34,10 +34,32 @@ describe('adblock background sync', () => {
   it('registers cosmetic and YouTube scripts, excluding allowlisted hosts', () => {
     const scripts = buildContentScripts({ ...DEFAULT_ADBLOCK_STATE, allowlist: ['example.com'] })
     const ids = scripts.map((s) => s.id)
-    expect(ids).toEqual(['adblock-cosmetic', 'adblock-popups', 'adblock-yt-main', 'adblock-yt-isolated'])
-    expect(scripts[0].css).toEqual(['adblock/cosmetic/generic.css'])
+    expect(ids).toEqual([
+      'adblock-cosmetic',
+      'adblock-generic-css',
+      'adblock-popups',
+      'adblock-yt-main',
+      'adblock-yt-isolated',
+    ])
     expect(scripts[0].excludeMatches).toEqual(['*://*.example.com/*'])
+    expect(scripts[1].css).toEqual(['adblock/cosmetic/generic.css'])
+    expect(scripts[1].excludeMatches).toEqual(['*://*.example.com/*'])
     expect(scripts.find((s) => s.id === 'adblock-yt-main')?.world).toBe('MAIN')
+  })
+
+  it('keeps the always-on generic CSS off $generichide and $elemhide sites', () => {
+    const scripts = buildContentScripts(DEFAULT_ADBLOCK_STATE, {
+      generichide: ['news.example'],
+      elemhide: ['shop.example'],
+    })
+    const css = scripts.find((s) => s.id === 'adblock-generic-css')
+    expect(css?.excludeMatches).toEqual([
+      '*://news.example/*',
+      '*://*.news.example/*',
+      '*://shop.example/*',
+      '*://*.shop.example/*',
+    ])
+    expect(scripts.find((s) => s.id === 'adblock-cosmetic')?.excludeMatches).toBeUndefined()
   })
 
   it('runs the pop-up blocker in every frame of the page world, and can be turned off', () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { bloomHas, parseBloom } from '@/core/adblock/bloom'
-import { genericKeyShard as genericKeyShardTs, GENERIC_SHARD_COUNT } from '@/core/adblock/shard'
+import { genericKeyShard as genericKeyShardTs, GENERIC_SHARD_COUNT, hostCandidates } from '@/core/adblock/shard'
 
 // @ts-expect-error build-time converter modules are plain ESM
 import { buildBloom } from '../scripts/adblock/converter/bloom.mjs'
@@ -36,6 +36,35 @@ describe('generic cosmetic keys', () => {
     expect(built.keyed['#gone']).toBeUndefined()
     expect(built.highlyGenericCss).toContain('[data-ad]{display:none!important}')
     expect(built.highlyGenericCss).toContain('ins.adsbygoogle{display:none!important}')
+  })
+})
+
+describe('site cosmetic lookup', () => {
+  it('looks up parent domains and uBO entities', () => {
+    expect(hostCandidates('news.google.co.uk')).toEqual([
+      'news.google.co.uk',
+      'google.co.uk',
+      'co.uk',
+      'news.*',
+      'news.google.*',
+      'news.google.co.*',
+      'google.*',
+      'google.co.*',
+      'co.*',
+    ])
+  })
+
+  it('turns ~domain negations into per-host exceptions', () => {
+    const collector = createCosmeticCollector()
+    collector.add({ kind: 'cosmetic', domains: [], excludedDomains: ['safe.example'], selector: '.promo' })
+    collector.add({ kind: 'cosmetic', domains: ['a.example'], excludedDomains: ['b.a.example'], selector: '.x' })
+    collector.addControl({ kind: 'cosmetic-control', control: 'generichide', hosts: ['news.example'] })
+    const built = collector.build()
+    expect(built.keyed['.promo']).toEqual(['.promo'])
+    expect(built.specificExceptions['safe.example']).toEqual(['.promo'])
+    expect(built.specific['a.example']).toEqual(['.x'])
+    expect(built.specificExceptions['b.a.example']).toEqual(['.x'])
+    expect(built.controls['news.example']).toEqual(['generichide'])
   })
 })
 

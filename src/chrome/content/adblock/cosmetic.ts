@@ -1,5 +1,5 @@
 import { bloomHas, parseBloom, type BloomFilter } from '@/core/adblock/bloom'
-import { genericKeyShard, hostShard } from '@/core/adblock/shard'
+import { genericKeyShard, hostCandidates, hostShard } from '@/core/adblock/shard'
 
 type GuardedWindow = Window & { __toolboxCosmetic?: boolean }
 
@@ -14,6 +14,7 @@ interface StoredState {
 interface SpecificCosmeticFile {
   specific: Record<string, string[]>
   exceptions: Record<string, string[]>
+  controls?: Record<string, string[]>
 }
 
 const STYLE_ID = 'toolbox-adblock-cosmetic'
@@ -27,13 +28,6 @@ const counted = new WeakSet<Element>()
 
 function siteHost(): string {
   return location.hostname.replace(/^www\./, '').toLowerCase()
-}
-
-function hostCandidates(host: string): string[] {
-  const parts = host.split('.')
-  const out: string[] = []
-  for (let i = 0; i < parts.length - 1; i++) out.push(parts.slice(i).join('.'))
-  return out
 }
 
 function isAllowlisted(host: string, allowlist: string[]): boolean {
@@ -57,19 +51,32 @@ async function loadShard(index: number): Promise<SpecificCosmeticFile> {
   }
 }
 
-async function buildSpecificCss(host: string): Promise<{ css: string; exceptions: Set<string> }> {
+interface SiteCosmetics {
+  css: string
+  exceptions: Set<string>
+  generichide: boolean
+  elemhide: boolean
+}
+
+async function buildSpecificCss(host: string): Promise<SiteCosmetics> {
   const candidates = hostCandidates(host)
   // Only the few shards that can hold this host (or its parents) are downloaded.
   const shardIds = [...new Set(candidates.map(hostShard))]
   const shards = await Promise.all(shardIds.map(loadShard))
+  const controls = new Set(candidates.flatMap((h) => shards.flatMap((s) => s.controls?.[h] ?? [])))
+  const elemhide = controls.has('elemhide')
+  const generichide = elemhide || controls.has('generichide')
   const specific = (h: string) => shards.flatMap((s) => s.specific[h] ?? [])
   const exceptionList = (h: string) => shards.flatMap((s) => s.exceptions[h] ?? [])
   const exceptions = new Set(candidates.flatMap(exceptionList))
+  if (elemhide || controls.has('specifichide')) {
+    return { css: '', exceptions, generichide, elemhide }
+  }
   const selectors = [...new Set(candidates.flatMap(specific))].filter((s) => !exceptions.has(s))
   // One rule per selector: an unsupported selector then only drops its own rule.
   const hide = selectors.map((s) => `${s}{display:none!important}`)
   const unhide = [...exceptions].map((s) => `${s}{display:revert!important}`)
-  return { css: [...hide, ...unhide].join('\n'), exceptions }
+  return { css: [...hide, ...unhide].join('\n'), exceptions, generichide, elemhide }
 }
 
 /**
@@ -332,6 +339,8 @@ async function activate(): Promise<void> {
     ;(document.head ?? document.documentElement).appendChild(style)
   }
   style.textContent = specific.css
+  // Generic hiding (keyed selectors and the inline ad-frame sweep) is off on $generichide sites.
+  if (specific.generichide) return
 
   observer ??= new MutationObserver(onMutations)
   observer.observe(document.documentElement, {
