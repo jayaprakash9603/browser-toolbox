@@ -8,7 +8,7 @@ import { createLogger } from '@/core/logging'
 
 const logger = createLogger('adblock-rulesets')
 
-function isRulesetOn(state: AdblockState, id: RulesetId): boolean {
+export function isRulesetOn(state: AdblockState, id: RulesetId): boolean {
   if (id === 'annoyances') return state.cookieBanners
   if (id === 'youtube') return state.youtubeEnabled && state.lists.youtube
   return state.lists[id]

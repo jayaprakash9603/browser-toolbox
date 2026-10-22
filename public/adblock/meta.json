@@ -82,7 +82,7 @@
   "totals": {
     "network": 133541,
     "cosmetic": 77148,
-    "skipped": 58503,
+    "skipped": 44414,
     "badfiltered": 109
   },
   "rulesets": {
@@ -90,6 +90,20 @@
     "privacy": 10136,
     "annoyances": 3415,
     "youtube": 7
+  },
+  "scriptlets": {
+    "filters": 14054,
+    "exceptions": 35,
+    "hosts": 29576,
+    "shardBytes": 3666839,
+    "bloomBytes": 40140,
+    "disabledHosts": 0,
+    "rejected": {
+      "unsupported": 395,
+      "frame-context": 110,
+      "bad-hosts": 3,
+      "too-long": 7
+    }
   },
   "rejected": {
     "ads": {},
@@ -103,5 +117,5 @@
     "shards": 256,
     "genericShards": 256
   },
-  "generatedAt": "2026-10-22T17:18:07.250Z"
+  "generatedAt": "2026-10-22T17:48:01.427Z"
 }

@@ -10,6 +10,7 @@ import { capRules, MAX_STATIC_RULES_PER_RULESET, RULESET_RULE_BUDGET } from './c
 import { badfilterTarget, parseFilterLine } from './converter/parseFilter.mjs'
 import { preprocessList } from './converter/preprocess.mjs'
 import { resolveRedirect } from './converter/redirects.mjs'
+import { createScriptletCollector, parseScriptletFilter, SCRIPTLET_RULESETS } from './converter/scriptlets.mjs'
 import { GENERIC_SHARD_COUNT, genericKeyShard, hostShard, SHARD_COUNT } from './converter/shard.mjs'
 import {
   buildYoutubeHandRules,
@@ -25,7 +26,20 @@ const rulesetDir = join(outDir, 'rulesets')
 const cosmeticDir = join(outDir, 'cosmetic')
 const shardDir = join(cosmeticDir, 'specific')
 const genericDir = join(cosmeticDir, 'generic')
+const scriptletDir = join(outDir, 'scriptlets')
 const cacheDir = join(__dirname, '.cache')
+
+/** uBO only runs `trusted-*` scriptlets from its own lists. */
+const isTrustedList = (list) => list.id.startsWith('ublock-')
+/** A false positive only costs one small shard read, so the inline filter can stay compact. */
+const SCRIPTLET_BLOOM_FP = 0.02
+
+/** Every non-empty subset, in list order: `ads`, `ads-privacy`, ... */
+function rulesetCombos(names) {
+  const out = []
+  for (let mask = 1; mask < 1 << names.length; mask++) out.push(names.filter((_, i) => mask & (1 << i)))
+  return out
+}
 
 const RULESET_ID_START = { ads: 1000, privacy: 20_000, annoyances: 40_000 }
 
@@ -221,7 +235,9 @@ async function main() {
 
   const buckets = { ads: [], privacy: [], annoyances: [] }
   const cosmetic = createCosmeticCollector()
-  const report = { lists: [], totals: { network: 0, cosmetic: 0, skipped: 0 }, rulesets: {} }
+  const scriptlets = createScriptletCollector()
+  const report = { lists: [], totals: { network: 0, cosmetic: 0, skipped: 0 }, rulesets: {}, scriptlets: {} }
+  const scriptletRejects = {}
 
   const texts = []
   for (const list of sources.lists) {
@@ -243,6 +259,14 @@ async function main() {
     for (const line of lines) {
       if (badfilters.has(line.trim())) {
         report.totals.badfiltered++
+        continue
+      }
+      const scriptlet = parseScriptletFilter(line, { trusted: isTrustedList(list) })
+      if (scriptlet) {
+        if (scriptlet.invalid) {
+          scriptletRejects[scriptlet.invalid] = (scriptletRejects[scriptlet.invalid] ?? 0) + 1
+          report.totals.skipped++
+        } else scriptlets.add(scriptlet, list.ruleset)
         continue
       }
       const parsed = parseFilterLine(line)
@@ -328,6 +352,40 @@ async function main() {
   await Promise.all(
     shards.map((shard, index) => writeFile(join(shardDir, `${index}.json`), `${JSON.stringify(shard)}\n`)),
   )
+
+  // Scriptlets: an inline bloom of every listed host (read by the isolated-world bootstrap on each
+  // page), host-sharded entries fetched only on a bloom hit, and one tiny file per ruleset combo.
+  const scriptletBuild = scriptlets.build()
+  await rm(scriptletDir, { recursive: true, force: true })
+  await mkdir(join(scriptletDir, 'data'), { recursive: true })
+  await mkdir(join(scriptletDir, 'cfg'), { recursive: true })
+  const scriptletShards = Array.from({ length: SHARD_COUNT }, () => ({}))
+  for (const [host, entries] of scriptletBuild.byHost) scriptletShards[hostShard(host)][host] = entries
+  let scriptletBytes = 0
+  await Promise.all(
+    scriptletShards.map((shard, index) => {
+      const json = `${JSON.stringify(shard)}\n`
+      scriptletBytes += json.length
+      return writeFile(join(scriptletDir, 'data', `${index}.json`), json)
+    }),
+  )
+  const bloom = buildBloom([...scriptletBuild.byHost.keys()], SCRIPTLET_BLOOM_FP)
+  const view = new DataView(bloom.buffer)
+  const bloomData = { m: view.getUint32(0, true), k: view.getUint32(4, true), bits: Buffer.from(bloom.subarray(8)).toString('base64') }
+  await writeFile(join(scriptletDir, 'bloom.js'), `self.tbxScriptletBloom=${JSON.stringify(bloomData)};\n`)
+  for (const combo of rulesetCombos(SCRIPTLET_RULESETS)) {
+    const indexes = combo.map((name) => SCRIPTLET_RULESETS.indexOf(name))
+    await writeFile(join(scriptletDir, 'cfg', `${combo.join('-')}.js`), `self.tbxScriptletRulesets=${JSON.stringify(indexes)};\n`)
+  }
+  report.scriptlets = {
+    ...scriptletBuild.counts,
+    hosts: scriptletBuild.byHost.size,
+    shardBytes: scriptletBytes,
+    bloomBytes: bloomData.bits.length,
+    disabledHosts: scriptletBuild.disabledHosts.length,
+    rejected: scriptletRejects,
+  }
+  console.log('[adblock] scriptlets', report.scriptlets)
 
   const allowIds = {}
   for (const name of ['ads', 'privacy', 'annoyances', 'youtube']) {

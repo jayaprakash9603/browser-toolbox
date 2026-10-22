@@ -54,6 +54,8 @@ export const CONTENT_SCRIPT_IDS = {
   distractions: 'adblock-distractions',
   notifications: 'adblock-notifications',
   popups: 'adblock-popups',
+  scriptletsIsolated: 'adblock-scriptlets-isolated',
+  scriptletsMain: 'adblock-scriptlets-main',
   youtubeMain: 'adblock-yt-main',
   youtubeIsolated: 'adblock-yt-isolated',
 } as const
@@ -67,6 +69,10 @@ export const YOUTUBE_MATCHES = [
 export const ADBLOCK_FILES = {
   genericCss: 'adblock/cosmetic/generic.css',
   cosmeticControls: 'adblock/cosmetic/controls.json',
+  scriptletBloomJs: 'adblock/scriptlets/bloom.js',
+  scriptletCfgDir: 'adblock/scriptlets/cfg',
+  scriptletsIsolatedJs: 'adblock/scripts/scriptlets-isolated.js',
+  scriptletsMainJs: 'adblock/scripts/scriptlets-main.js',
   cookiesCss: 'adblock/cosmetic/cookies.css',
   distractionsCss: 'adblock/cosmetic/distractions.css',
   cosmeticJs: 'adblock/scripts/cosmetic.js',

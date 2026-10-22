@@ -38,6 +38,8 @@ describe('adblock background sync', () => {
       'adblock-cosmetic',
       'adblock-generic-css',
       'adblock-popups',
+      'adblock-scriptlets-isolated',
+      'adblock-scriptlets-main',
       'adblock-yt-main',
       'adblock-yt-isolated',
     ])

@@ -9,9 +9,12 @@ import {
 import { createLogger } from '@/core/logging'
 
 import { reconcileContentScripts } from '../scriptRegistry'
+import { isRulesetOn } from './rulesets'
 
 const logger = createLogger('adblock-scripts')
 const OWNED_SCRIPT_IDS = Object.values(CONTENT_SCRIPT_IDS)
+/** Same order as SCRIPTLET_RULESETS in the list build: it names the generated cfg files. */
+const SCRIPTLET_RULESETS = ['ads', 'privacy', 'annoyances'] as const
 
 const ALL_URLS = ['<all_urls>']
 const YOUTUBE_HOST_RE = /(^|\.)(youtube\.com|youtube-nocookie\.com)$/
@@ -103,6 +106,28 @@ export function buildContentScripts(
       ...base,
       id: CONTENT_SCRIPT_IDS.popups,
       js: [ADBLOCK_FILES.popupsJs],
+      matches: ALL_URLS,
+      world: 'MAIN',
+    })
+  }
+  const scriptletLists = SCRIPTLET_RULESETS.filter((id) => isRulesetOn(state, id))
+  if (scriptletLists.length) {
+    // Two registrations on every page instead of one per host: Chrome copies each script's match
+    // patterns into every renderer, and tens of thousands of host patterns cost ~13 MB per tab.
+    scripts.push({
+      ...base,
+      id: CONTENT_SCRIPT_IDS.scriptletsIsolated,
+      js: [
+        `${ADBLOCK_FILES.scriptletCfgDir}/${scriptletLists.join('-')}.js`,
+        ADBLOCK_FILES.scriptletBloomJs,
+        ADBLOCK_FILES.scriptletsIsolatedJs,
+      ],
+      matches: ALL_URLS,
+    })
+    scripts.push({
+      ...base,
+      id: CONTENT_SCRIPT_IDS.scriptletsMain,
+      js: [ADBLOCK_FILES.scriptletsMainJs],
       matches: ALL_URLS,
       world: 'MAIN',
     })

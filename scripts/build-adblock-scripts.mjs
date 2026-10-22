@@ -8,6 +8,8 @@ const adblockEntries = {
   'cookies-reject': 'src/chrome/content/adblock/cookies-reject.ts',
   'notifications-main': 'src/chrome/content/adblock/notifications-main.ts',
   'popups-main': 'src/chrome/content/adblock/popups-main.ts',
+  'scriptlets-isolated': 'src/chrome/content/adblock/scriptlets/isolated.ts',
+  'scriptlets-main': 'src/chrome/content/adblock/scriptlets/main.ts',
   'youtube-main': 'src/chrome/content/adblock/youtube/main.ts',
   'youtube-isolated': 'src/chrome/content/adblock/youtube/isolated.ts',
 }
