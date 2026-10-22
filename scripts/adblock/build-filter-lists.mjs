@@ -4,10 +4,11 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { buildCoreRules } from './core-hosts.mjs'
+import { buildBloom } from './converter/bloom.mjs'
 import { createCosmeticCollector } from './converter/cosmetic.mjs'
 import { capRules, MAX_STATIC_RULES_PER_RULESET, RULESET_RULE_BUDGET } from './converter/limits.mjs'
 import { parseFilterLine } from './converter/parseFilter.mjs'
-import { hostShard, SHARD_COUNT } from './converter/shard.mjs'
+import { GENERIC_SHARD_COUNT, genericKeyShard, hostShard, SHARD_COUNT } from './converter/shard.mjs'
 import {
   buildYoutubeHandRules,
   mergeDomainRules,
@@ -20,6 +21,7 @@ const outDir = join(root, 'public/adblock')
 const rulesetDir = join(outDir, 'rulesets')
 const cosmeticDir = join(outDir, 'cosmetic')
 const shardDir = join(cosmeticDir, 'specific')
+const genericDir = join(cosmeticDir, 'generic')
 const cacheDir = join(__dirname, '.cache')
 
 const RULESET_ID_START = { ads: 1000, privacy: 20_000, annoyances: 40_000 }
@@ -223,17 +225,31 @@ async function main() {
   }
 
   const youtubeRules = buildYoutubeHandRules()
-  await writeFile(join(rulesetDir, 'youtube.json'), `${JSON.stringify(youtubeRules, null, 2)}\n`)
+  const youtubePath = join(rulesetDir, 'youtube.json')
+  if (JSON.stringify(await readJson(youtubePath, null)) !== JSON.stringify(youtubeRules)) {
+    await writeFile(youtubePath, `${JSON.stringify(youtubeRules, null, 2)}\n`)
+  }
   report.rulesets.youtube = youtubeRules.length
 
-  const built = cosmetic.build()
-  const baseCss = BASE_GENERIC_SELECTORS.map((s) => `${s}{display:none!important}`).join('\n')
-  await writeFile(
-    join(cosmeticDir, 'generic.css'),
-    `${[baseCss, built.genericCss].filter(Boolean).join('\n')}\n`,
+  const built = cosmetic.build(BASE_GENERIC_SELECTORS)
+  await writeFile(join(cosmeticDir, 'generic.css'), `${built.highlyGenericCss}\n`)
+
+  await rm(genericDir, { recursive: true, force: true })
+  await mkdir(genericDir, { recursive: true })
+  const genericShards = Array.from({ length: GENERIC_SHARD_COUNT }, () => ({}))
+  for (const [key, selectors] of Object.entries(built.keyed)) {
+    genericShards[genericKeyShard(key)][key] = selectors
+  }
+  await Promise.all(
+    genericShards.map((shard, index) =>
+      writeFile(join(genericDir, `${index}.json`), `${JSON.stringify(shard)}\n`),
+    ),
   )
+  await writeFile(join(genericDir, 'keys.bloom'), buildBloom(Object.keys(built.keyed)))
 
   await rm(join(cosmeticDir, 'specific.json'), { force: true })
+  await rm(shardDir, { recursive: true, force: true })
+  await mkdir(shardDir, { recursive: true })
   const shards = Array.from({ length: SHARD_COUNT }, () => ({ specific: {}, exceptions: {} }))
   for (const [host, selectors] of Object.entries(built.specific)) {
     shards[hostShard(host)].specific[host] = selectors
@@ -259,7 +275,7 @@ async function main() {
     `${JSON.stringify(
       {
         ...report,
-        cosmetic: { ...built.counts, shards: SHARD_COUNT },
+        cosmetic: { ...built.counts, shards: SHARD_COUNT, genericShards: GENERIC_SHARD_COUNT },
         generatedAt: new Date().toISOString(),
       },
       null,

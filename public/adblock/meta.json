@@ -35,12 +35,14 @@
     "ads": 4529,
     "privacy": 9153,
     "annoyances": 3147,
-    "youtube": 4
+    "youtube": 7
   },
   "cosmetic": {
-    "generic": 8000,
+    "highlyGeneric": 1126,
+    "keyedGeneric": 39892,
     "specificHosts": 32009,
-    "shards": 64
+    "shards": 256,
+    "genericShards": 256
   },
-  "generatedAt": "2026-10-19T17:05:59.488Z"
+  "generatedAt": "2026-10-22T16:45:36.959Z"
 }

@@ -9,7 +9,8 @@ export const RULESET_RULE_BUDGET = {
   annoyances: 4_900,
 }
 export const MAX_STATIC_RULES_PER_RULESET = 10_000
-export const MAX_COSMETIC_GENERIC = 8000
+/** Highly generic selectors (no id/class key) are injected into every frame, so keep them few. */
+export const MAX_HIGHLY_GENERIC = 2500
 
 export function capRules(rules, max) {
   if (rules.length <= max) return { rules, dropped: 0 }

@@ -1,4 +1,5 @@
-import { hostShard } from '@/core/adblock/shard'
+import { bloomHas, parseBloom, type BloomFilter } from '@/core/adblock/bloom'
+import { genericKeyShard, hostShard } from '@/core/adblock/shard'
 
 type GuardedWindow = Window & { __toolboxCosmetic?: boolean }
 
@@ -16,14 +17,12 @@ interface SpecificCosmeticFile {
 }
 
 const STYLE_ID = 'toolbox-adblock-cosmetic'
-const COUNT_THROTTLE_MS = 2500
-const SELECTOR_CHUNK = 150
+const GENERIC_STYLE_CLASS = 'toolbox-adblock-generic'
+const GENERIC_FLUSH_MS = 60
 const IS_TOP = window.top === window
 
 let active = false
-let selectorChunks: string[] = []
 let observer: MutationObserver | null = null
-let countTimer: ReturnType<typeof setTimeout> | null = null
 const counted = new WeakSet<Element>()
 
 function siteHost(): string {
@@ -49,46 +48,6 @@ function shouldRun(state: StoredState | undefined): boolean {
   return !isAllowlisted(siteHost(), state?.allowlist ?? [])
 }
 
-async function fetchText(path: string): Promise<string> {
-  try {
-    return await (await fetch(chrome.runtime.getURL(path))).text()
-  } catch {
-    return ''
-  }
-}
-
-function selectorsFromCss(css: string): string[] {
-  const out: string[] = []
-  for (const line of css.split('\n')) {
-    const end = line.lastIndexOf('{')
-    if (end > 0) out.push(line.slice(0, end).trim())
-  }
-  return out
-}
-
-function isValidSelector(selector: string): boolean {
-  try {
-    document.createDocumentFragment().querySelector(selector)
-    return true
-  } catch {
-    return false
-  }
-}
-
-function buildChunks(selectors: string[]): string[] {
-  const chunks: string[] = []
-  for (let i = 0; i < selectors.length; i += SELECTOR_CHUNK) {
-    const slice = selectors.slice(i, i + SELECTOR_CHUNK)
-    const joined = slice.join(',')
-    if (isValidSelector(joined)) chunks.push(joined)
-    else {
-      const valid = slice.filter(isValidSelector)
-      if (valid.length) chunks.push(valid.join(','))
-    }
-  }
-  return chunks
-}
-
 async function loadShard(index: number): Promise<SpecificCosmeticFile> {
   try {
     const res = await fetch(chrome.runtime.getURL(`adblock/cosmetic/specific/${index}.json`))
@@ -98,7 +57,7 @@ async function loadShard(index: number): Promise<SpecificCosmeticFile> {
   }
 }
 
-async function buildSpecificCss(host: string): Promise<{ css: string; selectors: string[] }> {
+async function buildSpecificCss(host: string): Promise<{ css: string; exceptions: Set<string> }> {
   const candidates = hostCandidates(host)
   // Only the few shards that can hold this host (or its parents) are downloaded.
   const shardIds = [...new Set(candidates.map(hostShard))]
@@ -107,9 +66,134 @@ async function buildSpecificCss(host: string): Promise<{ css: string; selectors:
   const exceptionList = (h: string) => shards.flatMap((s) => s.exceptions[h] ?? [])
   const exceptions = new Set(candidates.flatMap(exceptionList))
   const selectors = [...new Set(candidates.flatMap(specific))].filter((s) => !exceptions.has(s))
+  // One rule per selector: an unsupported selector then only drops its own rule.
   const hide = selectors.map((s) => `${s}{display:none!important}`)
   const unhide = [...exceptions].map((s) => `${s}{display:revert!important}`)
-  return { css: [...hide, ...unhide].join('\n'), selectors }
+  return { css: [...hide, ...unhide].join('\n'), exceptions }
+}
+
+/**
+ * uBO Lite-style generic cosmetic filtering: selectors that start with `#id` / `.class` are
+ * injected only once an element carrying that id/class shows up, instead of shipping tens of
+ * thousands of rules into every frame. A bloom filter keeps lookups for unknown keys local.
+ */
+const generic = {
+  bloom: null as Promise<BloomFilter | null> | null,
+  shards: new Map<number, Promise<Record<string, string[]>>>(),
+  seen: new Set<string>(),
+  injected: new Set<string>(),
+  exceptions: new Set<string>(),
+  queue: [] as Element[],
+  timer: null as ReturnType<typeof setTimeout> | null,
+}
+
+function loadBloom(): Promise<BloomFilter | null> {
+  generic.bloom ??= fetch(chrome.runtime.getURL('adblock/cosmetic/generic/keys.bloom'))
+    .then((res) => res.arrayBuffer())
+    .then(parseBloom)
+    .catch(() => null)
+  return generic.bloom
+}
+
+function loadGenericShard(index: number): Promise<Record<string, string[]>> {
+  let shard = generic.shards.get(index)
+  if (!shard) {
+    shard = fetch(chrome.runtime.getURL(`adblock/cosmetic/generic/${index}.json`))
+      .then((res) => res.json() as Promise<Record<string, string[]>>)
+      .catch(() => ({}))
+    generic.shards.set(index, shard)
+  }
+  return shard
+}
+
+function collectKeys(el: Element, out: string[]): void {
+  const id = el.id
+  if (id && typeof id === 'string') out.push(`#${id}`)
+  const list = el.classList
+  for (let i = 0; i < list.length; i++) out.push(`.${list[i]}`)
+}
+
+function countMatches(selectors: string[]): void {
+  let fresh = 0
+  for (const selector of selectors) {
+    try {
+      for (const el of document.querySelectorAll(selector)) {
+        if (counted.has(el)) continue
+        counted.add(el)
+        fresh++
+      }
+    } catch {
+      /* selector unsupported by this browser */
+    }
+  }
+  report(fresh)
+}
+
+async function flushGeneric(): Promise<void> {
+  generic.timer = null
+  if (!active) return
+  const nodes = generic.queue
+  generic.queue = []
+  const keys: string[] = []
+  for (const node of nodes) {
+    if (!node.isConnected) continue
+    collectKeys(node, keys)
+    for (const child of node.querySelectorAll('[id],[class]')) collectKeys(child, keys)
+  }
+  const bloom = await loadBloom()
+  if (!bloom || !active) return
+  const byShard = new Map<number, string[]>()
+  for (const key of keys) {
+    if (generic.seen.has(key)) continue
+    generic.seen.add(key)
+    if (!bloomHas(bloom, key)) continue
+    const index = genericKeyShard(key)
+    const list = byShard.get(index)
+    if (list) list.push(key)
+    else byShard.set(index, [key])
+  }
+  if (!byShard.size) return
+  const fresh: string[] = []
+  await Promise.all(
+    [...byShard].map(async ([index, shardKeys]) => {
+      const shard = await loadGenericShard(index)
+      for (const key of shardKeys) {
+        for (const selector of shard[key] ?? []) {
+          if (generic.injected.has(selector) || generic.exceptions.has(selector)) continue
+          generic.injected.add(selector)
+          fresh.push(selector)
+        }
+      }
+    }),
+  )
+  if (!fresh.length || !active) return
+  const style = document.createElement('style')
+  style.className = GENERIC_STYLE_CLASS
+  style.textContent = fresh.map((s) => `${s}{display:none!important}`).join('\n')
+  ;(document.head ?? document.documentElement).appendChild(style)
+  if (IS_TOP && document.visibilityState === 'visible') scheduleIdle(() => countMatches(fresh))
+}
+
+function queueGeneric(node: Element): void {
+  generic.queue.push(node)
+  generic.timer ??= setTimeout(() => void flushGeneric(), GENERIC_FLUSH_MS)
+}
+
+function onMutations(records: MutationRecord[]): void {
+  for (const record of records) {
+    if (record.type === 'attributes') {
+      if (record.target instanceof Element) generic.queue.push(record.target)
+      continue
+    }
+    for (const node of record.addedNodes) {
+      if (node.nodeType === 1) generic.queue.push(node as Element)
+    }
+  }
+  if (generic.queue.length) generic.timer ??= setTimeout(() => void flushGeneric(), GENERIC_FLUSH_MS)
+  if (IS_TOP) {
+    scheduleSweep()
+    if (location.hash === '#google_vignette') clearVignette()
+  }
 }
 
 function report(hidden: number): void {
@@ -121,48 +205,12 @@ function report(hidden: number): void {
   }
 }
 
-let countChunkIndex = 0
-let countFresh = 0
-
 const scheduleIdle =
   typeof requestIdleCallback === 'function'
     ? requestIdleCallback
     : (cb: (deadline: IdleDeadline) => void) => {
         window.setTimeout(() => cb({ timeRemaining: () => 50 } as IdleDeadline), 0)
       }
-
-function runCountIdle(deadline: IdleDeadline): void {
-  if (!active || document.visibilityState !== 'visible') return
-  while (countChunkIndex < selectorChunks.length) {
-    const chunk = selectorChunks[countChunkIndex]
-    for (const el of document.querySelectorAll(chunk)) {
-      if (counted.has(el)) continue
-      counted.add(el)
-      countFresh++
-    }
-    countChunkIndex++
-    if (deadline.timeRemaining() < 8) {
-      scheduleIdle(runCountIdle)
-      return
-    }
-  }
-  report(countFresh)
-  countFresh = 0
-  countChunkIndex = 0
-}
-
-function countHidden(): void {
-  countTimer = null
-  if (!active || document.visibilityState !== 'visible') return
-  countFresh = 0
-  countChunkIndex = 0
-  scheduleIdle(runCountIdle)
-}
-
-function scheduleCount(): void {
-  if (document.visibilityState !== 'visible') return
-  if (!countTimer) countTimer = setTimeout(countHidden, COUNT_THROTTLE_MS)
-}
 
 /** Google's full-page "vignette" interstitial leaves a hash and a scroll lock behind. */
 function clearVignette(): void {
@@ -268,9 +316,15 @@ function listenForPopupReports(): void {
   })
 }
 
-async function activate(state: StoredState | undefined): Promise<void> {
-  const host = siteHost()
-  const specific = await buildSpecificCss(host)
+let listenersAdded = false
+
+async function activate(): Promise<void> {
+  if (active) return
+  active = true
+  void loadBloom()
+  const specific = await buildSpecificCss(siteHost())
+  if (!active) return
+  generic.exceptions = specific.exceptions
   let style = document.getElementById(STYLE_ID) as HTMLStyleElement | null
   if (!style) {
     style = document.createElement('style')
@@ -278,24 +332,20 @@ async function activate(state: StoredState | undefined): Promise<void> {
     ;(document.head ?? document.documentElement).appendChild(style)
   }
   style.textContent = specific.css
-  active = true
 
-  if (!IS_TOP) return
-  const extraFiles = ['adblock/cosmetic/generic.css']
-  if (state?.cookieBanners) extraFiles.push('adblock/cosmetic/cookies.css')
-  if (state?.distractions) extraFiles.push('adblock/cosmetic/distractions.css')
-  const generic = (await Promise.all(extraFiles.map(fetchText))).flatMap(selectorsFromCss)
-  selectorChunks = buildChunks([...specific.selectors, ...generic])
-
-  observer ??= new MutationObserver(() => {
-    scheduleCount()
-    scheduleSweep()
-    if (location.hash === '#google_vignette') clearVignette()
+  observer ??= new MutationObserver(onMutations)
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class', 'id'],
   })
+  queueGeneric(document.documentElement)
+
+  if (!IS_TOP || listenersAdded) return
+  listenersAdded = true
   const start = () => {
-    observer?.observe(document.documentElement, { childList: true, subtree: true })
     clearVignette()
-    scheduleCount()
     scheduleSweep()
   }
   if (document.readyState === 'loading') {
@@ -303,26 +353,27 @@ async function activate(state: StoredState | undefined): Promise<void> {
   } else start()
   window.addEventListener('hashchange', clearVignette)
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      scheduleCount()
-      scheduleSweep()
-    }
+    if (active && document.visibilityState === 'visible') scheduleSweep()
   })
 }
 
 function deactivate(): void {
   active = false
   document.getElementById(STYLE_ID)?.remove()
+  for (const el of document.querySelectorAll(`style.${GENERIC_STYLE_CLASS}`)) el.remove()
+  generic.seen.clear()
+  generic.injected.clear()
+  generic.queue = []
   observer?.disconnect()
   observer = null
-  if (countTimer) clearTimeout(countTimer)
-  countTimer = null
+  if (generic.timer) clearTimeout(generic.timer)
+  generic.timer = null
   if (sweepTimer) clearTimeout(sweepTimer)
   sweepTimer = null
 }
 
 function apply(state: StoredState | undefined): void {
-  if (shouldRun(state)) void activate(state)
+  if (shouldRun(state)) void activate()
   else deactivate()
 }
 
