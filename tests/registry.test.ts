@@ -7,7 +7,7 @@ describe('tool registry', () => {
   registerModules()
 
   it('registers all tools across enabled categories', () => {
-    expect(toolRegistry.getAll()).toHaveLength(64)
+    expect(toolRegistry.getAll()).toHaveLength(80)
   })
 
   it('rejects duplicate tool ids', () => {

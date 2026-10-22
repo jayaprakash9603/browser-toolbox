@@ -1,4 +1,9 @@
-import { ensureContentScriptInTab, getActiveBrowserTab } from '@/chrome/contentScriptClient'
+import {
+  TabMessagingError,
+  classifyTabUrl,
+  ensureContentScriptInTab,
+  getActiveWebTab,
+} from '@/chrome/contentScriptClient'
 import type {
   DetectCandidate,
   ScrapeConfig,
@@ -8,20 +13,51 @@ import type {
 } from '@/core/scraper'
 import { sendMessage } from '@/core/messaging'
 
-async function tabMessage<T>(tabId: number, message: object): Promise<T> {
-  await ensureContentScriptInTab(tabId)
-  const res = (await chrome.tabs.sendMessage(tabId, message)) as {
-    ok: boolean
-    data?: T
-    error?: string
+function friendlyTabError(error: unknown): string {
+  if (error instanceof TabMessagingError) {
+    switch (error.code) {
+      case 'RESTRICTED_PAGE':
+        return 'Open a normal website tab, click it once, then run Auto-detect again. (Extension and browser system pages cannot be scraped.)'
+      case 'FILE_URL_ACCESS':
+        return 'Enable “Allow access to file URLs” for this extension in chrome://extensions, then reload the file page.'
+      case 'INJECT_FAILED':
+        return `Could not attach to this page: ${error.message}`
+      case 'CONTENT_SCRIPT_UNAVAILABLE':
+        return 'Could not reach the page script. Reload the tab and try again.'
+      case 'NO_TAB':
+        return 'No browser tab found. Open a website first.'
+      default:
+        return error.message
+    }
   }
-  if (!res?.ok) throw new Error(res?.error ?? 'Page script unavailable.')
-  return res.data as T
+  if (error instanceof Error) return error.message
+  return 'Something went wrong talking to the page.'
+}
+
+async function tabMessage<T>(tabId: number, message: object): Promise<T> {
+  try {
+    await ensureContentScriptInTab(tabId)
+    const res = (await chrome.tabs.sendMessage(tabId, message)) as {
+      ok: boolean
+      data?: T
+      error?: string
+    }
+    if (!res?.ok) throw new Error(res?.error ?? 'Page script did not respond. Reload the tab and try again.')
+    return res.data as T
+  } catch (error) {
+    throw new Error(friendlyTabError(error))
+  }
 }
 
 export async function resolveScraperTab(): Promise<{ tabId: number; url: string }> {
-  const tab = await getActiveBrowserTab()
-  if (tab?.id == null) throw new Error('No active tab.')
+  const tab = await getActiveWebTab()
+  if (tab?.id == null) {
+    throw new Error('No website tab found. Open the page you want to scrape, click it, then try again.')
+  }
+  const blocked = classifyTabUrl(tab.url)
+  if (blocked) {
+    throw new Error(friendlyTabError(new TabMessagingError(blocked)))
+  }
   return { tabId: tab.id, url: tab.url ?? '' }
 }
 

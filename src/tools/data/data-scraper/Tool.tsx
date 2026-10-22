@@ -76,7 +76,11 @@ export default function DataScraperTool() {
     try {
       const { tabId: id, url } = await resolveScraperTab()
       const blocked = classifyTabUrl(url)
-      if (blocked) throw new Error('This page cannot be scraped (restricted URL).')
+      if (blocked) {
+        throw new Error(
+          'Open a normal website tab, click it once, then run Auto-detect again. (Extension and browser system pages cannot be scraped.)',
+        )
+      }
       setTabId(id)
       try {
         setHost(new URL(url).hostname)

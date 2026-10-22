@@ -49,9 +49,21 @@ describe('command registry', () => {
       'open-command-palette',
       'pick-element',
       'capture-screenshot',
+      'capture-entire',
+      'capture-visible',
+      'capture-selection',
+      'capture-element',
+      'capture-menu',
       'toggle-pip',
+      'toggle-recording',
     ])
-    expect([...MANIFEST_COMMAND_IDS]).toEqual(GLOBAL_TOOLBOX_COMMANDS.map((c) => c.id))
+    expect([...MANIFEST_COMMAND_IDS]).toEqual([
+      'open-command-palette',
+      'pick-element',
+      'capture-screenshot',
+      'toggle-pip',
+      'toggle-recording',
+    ])
     expect(TOOLBOX_COMMANDS.length).toBeGreaterThanOrEqual(5)
   })
 })

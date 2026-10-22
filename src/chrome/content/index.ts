@@ -256,11 +256,20 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
       sendResponse({ ok: true, data: { base64: bytesToBase64(chunk) } })
       return false
     }
-    default: {
-      const handled = handleScraperMessage(raw, sendResponse)
-      if (handled !== false) return handled as boolean
+    case 'SCRAPER_DETECT':
+    case 'SCRAPER_EXTRACT':
+    case 'SCRAPER_HIGHLIGHT':
+    case 'SCRAPER_CLEAR':
+    case 'SCRAPER_PICK_START':
+    case 'SCRAPER_PICK_CANCEL':
+    case 'SCRAPER_SUGGEST_NEXT':
+    case 'SCRAPER_ROW_COUNT':
+    case 'SCRAPER_WAIT_DATA':
+    case 'SCRAPER_NEXT':
+    case 'SCRAPER_SCROLL':
+      return handleScraperMessage(raw, sendResponse) === true
+    default:
       return false
-    }
   }
 })
 

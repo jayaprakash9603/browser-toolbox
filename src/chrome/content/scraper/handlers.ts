@@ -20,18 +20,29 @@ export function handleScraperMessage(
 ): boolean | void {
   switch (raw.type) {
     case 'SCRAPER_DETECT': {
-      const index = (raw as { candidateIndex?: number }).candidateIndex ?? 0
-      const candidate = detectAtIndex(index)
-      if (!candidate) {
-        sendResponse({ ok: false, error: 'No repeating table or list found on this page.' })
-        return false
+      try {
+        const index = (raw as { candidateIndex?: number }).candidateIndex ?? 0
+        const candidate = detectAtIndex(index)
+        if (!candidate) {
+          sendResponse({
+            ok: false,
+            error:
+              'No repeating table or list found. Try Pick rows on one item, or scroll so more results load.',
+          })
+          return false
+        }
+        const total = detectCandidates().length
+        highlightRows(candidate.rowSelector, candidate.containerSelector)
+        sendResponse({
+          ok: true,
+          data: { candidate, candidateIndex: index, candidateCount: total },
+        })
+      } catch (e) {
+        sendResponse({
+          ok: false,
+          error: e instanceof Error ? e.message : 'Auto-detect failed on this page.',
+        })
       }
-      const total = detectCandidates().length
-      highlightRows(candidate.rowSelector, candidate.containerSelector)
-      sendResponse({
-        ok: true,
-        data: { candidate, candidateIndex: index, candidateCount: total },
-      })
       return false
     }
     case 'SCRAPER_EXTRACT': {
