@@ -26,14 +26,29 @@ export function createCosmeticCollector() {
     map.get(domain).add(selector)
   }
 
+  const controls = new Map()
+
   return {
     add(filter) {
       const target = filter.kind === 'cosmetic' ? specific : specificExceptions
+      const excluded = filter.excludedDomains ?? []
+      // `~sub.example.com` inside a hiding filter means "not there": a per-host exception.
+      if (filter.kind === 'cosmetic') {
+        for (const domain of excluded) addTo(specificExceptions, domain, filter.selector)
+      }
       if (filter.domains.length === 0) {
+        if (filter.kind === 'cosmetic-exception' && excluded.length) return
         ;(filter.kind === 'cosmetic' ? generic : genericExceptions).add(filter.selector)
         return
       }
       for (const domain of filter.domains) addTo(target, domain, filter.selector)
+    },
+    /** `@@||host^$generichide` / `$elemhide` / `$specifichide`. */
+    addControl(filter) {
+      for (const host of filter.hosts) {
+        if (!controls.has(host)) controls.set(host, new Set())
+        controls.get(host).add(filter.control)
+      }
     },
     /** `baseSelectors` are always-on generic selectors that do not come from a list. */
     build(baseSelectors = []) {
@@ -54,11 +69,14 @@ export function createCosmeticCollector() {
       for (const [host, selectors] of specific) specificObj[host] = [...selectors]
       const exceptionsObj = {}
       for (const [host, selectors] of specificExceptions) exceptionsObj[host] = [...selectors]
+      const controlsObj = {}
+      for (const [host, set] of controls) controlsObj[host] = [...set]
       return {
         highlyGenericCss: highly.map((s) => `${s}{display:none!important}`).join('\n'),
         keyed,
         specific: specificObj,
         specificExceptions: exceptionsObj,
+        controls: controlsObj,
         counts: {
           highlyGeneric: highly.length,
           keyedGeneric: keyedCount,

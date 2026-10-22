@@ -4,25 +4,147 @@ export function resetRuleIdCounter(start = 1) {
   nextRuleId = start
 }
 
-export function networkFilterToDnrRule(filter, ruleIdStart) {
+/**
+ * Static rule priorities, all below the user allowlist (100). On a tie DNR prefers
+ * allow > block > redirect > modifyHeaders, so a $removeparam (1) never un-blocks a request,
+ * a $redirect (2) replaces a plain block, exceptions (3) beat both, and $important (4/6)
+ * beats ordinary exceptions the way it does in uBO.
+ */
+export const PRIORITY = {
+  block: 1,
+  removeparam: 1,
+  csp: 1,
+  redirect: 2,
+  allow: 3,
+  importantBlock: 4,
+  importantRedirect: 5,
+  importantAllow: 6,
+}
+
+const ALL_TYPES_BUT_MAIN = [
+  'sub_frame',
+  'stylesheet',
+  'script',
+  'image',
+  'font',
+  'object',
+  'xmlhttprequest',
+  'ping',
+  'media',
+  'websocket',
+  'webtransport',
+  'webbundle',
+  'other',
+]
+
+/**
+ * Pass `resolveRedirect(name)` to map uBO redirect resource names onto packaged files; an
+ * unknown resource falls back to a plain block, which is what the filter asks for anyway.
+ */
+export function networkFilterToDnrRule(filter, ruleIdStart, resolveRedirect = () => null) {
   if (ruleIdStart != null) nextRuleId = ruleIdStart
   const { host, opts, exception } = filter
-  if (!host || (host.type !== 'domain' && host.type !== 'url')) return null
+  if (!host) return null
 
-  const condition = host.type === 'domain' ? { requestDomains: [host.value] } : { urlFilter: host.value }
+  const condition = {}
+  if (host.type === 'domain') condition.requestDomains = [host.value]
+  else if (host.type === 'url') condition.urlFilter = host.value
+  else if (host.type === 'regex') condition.regexFilter = host.value
+  else if (host.type !== 'any') return null
+  if ((host.type === 'url' || host.type === 'regex') && opts.matchCase) condition.isUrlFilterCaseSensitive = true
 
   if (opts.thirdParty === true) condition.domainType = 'thirdParty'
   if (opts.thirdParty === false) condition.domainType = 'firstParty'
-  if (opts.domains.length) condition.initiatorDomains = opts.domains
-  if (opts.excludedDomains.length) condition.excludedInitiatorDomains = opts.excludedDomains
-  if (opts.resourceTypes.length) condition.resourceTypes = [...new Set(opts.resourceTypes)]
-
-  return {
-    id: nextRuleId++,
-    priority: exception ? 2 : 1,
-    action: exception ? { type: 'allow' } : { type: 'block' },
-    condition,
+  if (opts.domains.length) condition.initiatorDomains = [...new Set(opts.domains)]
+  if (opts.excludedDomains.length) condition.excludedInitiatorDomains = [...new Set(opts.excludedDomains)]
+  if (opts.requestDomains.length) {
+    condition.requestDomains = [...new Set([...(condition.requestDomains ?? []), ...opts.requestDomains])]
   }
+  if (opts.excludedRequestDomains.length) {
+    condition.excludedRequestDomains = [...new Set(opts.excludedRequestDomains)]
+  }
+  if (opts.methods.length) condition.requestMethods = [...new Set(opts.methods)]
+  if (opts.excludedMethods.length) condition.excludedRequestMethods = [...new Set(opts.excludedMethods)]
+
+  const types = new Set(opts.resourceTypes)
+  if (opts.document) types.add('main_frame')
+  if (types.size) condition.resourceTypes = [...types]
+  if (opts.excludedResourceTypes.length) {
+    if (types.size) {
+      condition.resourceTypes = condition.resourceTypes.filter((t) => !opts.excludedResourceTypes.includes(t))
+      if (!condition.resourceTypes.length) return null
+    } else {
+      condition.excludedResourceTypes = [...new Set(opts.excludedResourceTypes)]
+    }
+  }
+
+  /**
+   * For a document request uBO's `domain=` names the page itself, while DNR's initiator is
+   * whoever started the navigation, so the domains move to the request side.
+   */
+  const documentScoped = () => {
+    if (condition.requestDomains || !condition.initiatorDomains) return
+    condition.requestDomains = condition.initiatorDomains
+    delete condition.initiatorDomains
+    if (condition.excludedInitiatorDomains) {
+      condition.excludedRequestDomains = [
+        ...new Set([...(condition.excludedRequestDomains ?? []), ...condition.excludedInitiatorDomains]),
+      ]
+      delete condition.excludedInitiatorDomains
+    }
+  }
+  const rule = (priority, action) => ({ id: nextRuleId++, priority, action, condition })
+  const defaultTypes = (types) => {
+    if (condition.resourceTypes) return
+    const excluded = condition.excludedResourceTypes ?? []
+    delete condition.excludedResourceTypes
+    condition.resourceTypes = types.filter((t) => !excluded.includes(t))
+  }
+
+  if (exception) {
+    // Exceptions to $csp/$redirect/$removeparam only switch off that modifier in uBO; an allow
+    // rule would unblock the whole request, so they are not converted.
+    if (opts.csp || opts.redirect || opts.removeparam) return null
+    if (opts.document && host.type === 'domain' && !opts.resourceTypes.length) {
+      condition.resourceTypes = ['main_frame', 'sub_frame']
+      return rule(opts.important ? PRIORITY.importantAllow : PRIORITY.allow, { type: 'allowAllRequests' })
+    }
+    return rule(opts.important ? PRIORITY.importantAllow : PRIORITY.allow, { type: 'allow' })
+  }
+
+  if (opts.removeparam) {
+    defaultTypes(['main_frame', 'sub_frame', 'xmlhttprequest'])
+    if (!condition.resourceTypes.length) return null
+    return rule(PRIORITY.removeparam, {
+      type: 'redirect',
+      redirect: { transform: { queryTransform: { removeParams: [opts.removeparam] } } },
+    })
+  }
+
+  if (opts.csp) {
+    defaultTypes(['main_frame', 'sub_frame'])
+    if (!condition.resourceTypes.length) return null
+    documentScoped()
+    return rule(PRIORITY.csp, {
+      type: 'modifyHeaders',
+      responseHeaders: [{ header: 'content-security-policy', operation: 'append', value: opts.csp }],
+    })
+  }
+
+  if (opts.redirect) {
+    const path = resolveRedirect(opts.redirect)
+    if (path) {
+      defaultTypes(ALL_TYPES_BUT_MAIN)
+      if (!condition.resourceTypes.length) return null
+      return rule(opts.important ? PRIORITY.importantRedirect : PRIORITY.redirect, {
+        type: 'redirect',
+        redirect: { extensionPath: path },
+      })
+    }
+  }
+
+  if (opts.document && condition.resourceTypes.length === 1) documentScoped()
+  return rule(opts.important ? PRIORITY.importantBlock : PRIORITY.block, { type: 'block' })
 }
 
 const MERGE_CHUNK = 500
@@ -33,7 +155,7 @@ function stableKey(rule, others) {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([k, v]) => [k, Array.isArray(v) ? [...v].sort() : v]),
   )
-  return `${rule.action.type}|${rule.priority}|${JSON.stringify(sorted)}`
+  return `${JSON.stringify(rule.action)}|${rule.priority}|${JSON.stringify(sorted)}`
 }
 
 /**
@@ -48,7 +170,12 @@ export function mergeDomainRules(rules) {
   const rest = []
   for (const rule of rules) {
     const { requestDomains, ...others } = rule.condition
-    if (!requestDomains || requestDomains.length !== 1 || rule.condition.urlFilter) {
+    if (
+      !requestDomains ||
+      requestDomains.length !== 1 ||
+      rule.condition.urlFilter ||
+      rule.condition.regexFilter
+    ) {
       rest.push(rule)
       continue
     }

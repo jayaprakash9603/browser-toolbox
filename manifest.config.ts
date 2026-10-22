@@ -78,6 +78,7 @@ export default defineManifest({
         'adblock/cosmetic/*',
         'adblock/cosmetic/specific/*',
         'adblock/cosmetic/generic/*',
+        'adblock/redirects/*',
         'blocked.html',
         'protection/threats.json',
         'protection/scripts/*',

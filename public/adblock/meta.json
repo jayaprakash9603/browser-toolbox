@@ -27,22 +27,28 @@
     }
   ],
   "totals": {
-    "network": 116750,
-    "cosmetic": 70241,
-    "skipped": 16629
+    "network": 117875,
+    "cosmetic": 71306,
+    "skipped": 14439,
+    "badfiltered": 0
   },
   "rulesets": {
-    "ads": 4529,
-    "privacy": 9153,
-    "annoyances": 3147,
+    "ads": 4986,
+    "privacy": 9201,
+    "annoyances": 3175,
     "youtube": 7
   },
+  "rejected": {
+    "ads": {},
+    "privacy": {},
+    "annoyances": {}
+  },
   "cosmetic": {
-    "highlyGeneric": 1126,
+    "highlyGeneric": 1139,
     "keyedGeneric": 39892,
-    "specificHosts": 32009,
+    "specificHosts": 32281,
     "shards": 256,
     "genericShards": 256
   },
-  "generatedAt": "2026-10-22T16:45:36.959Z"
+  "generatedAt": "2026-10-22T17:03:41.704Z"
 }

@@ -7,13 +7,15 @@ import { buildCoreRules } from './core-hosts.mjs'
 import { buildBloom } from './converter/bloom.mjs'
 import { createCosmeticCollector } from './converter/cosmetic.mjs'
 import { capRules, MAX_STATIC_RULES_PER_RULESET, RULESET_RULE_BUDGET } from './converter/limits.mjs'
-import { parseFilterLine } from './converter/parseFilter.mjs'
+import { badfilterTarget, parseFilterLine } from './converter/parseFilter.mjs'
+import { resolveRedirect } from './converter/redirects.mjs'
 import { GENERIC_SHARD_COUNT, genericKeyShard, hostShard, SHARD_COUNT } from './converter/shard.mjs'
 import {
   buildYoutubeHandRules,
   mergeDomainRules,
   networkFilterToDnrRule,
 } from './converter/toDnrRule.mjs'
+import { validateRuleset } from './converter/validate.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = join(__dirname, '../..')
@@ -155,27 +157,35 @@ function assignIds(rules, start) {
 }
 
 function buildRuleset(name, rules, coreRules) {
-  const allows = rules.filter((rule) => rule.action.type === 'allow')
-  const blocks = rules.filter((rule) => rule.action.type === 'block')
-  const { merged: mergedAllows, rest: restAllows } = mergeDomainRules(allows)
-  const { merged: mergedBlocks, rest: restBlocks } = mergeDomainRules(blocks)
+  const byType = (...types) => rules.filter((rule) => types.includes(rule.action.type))
+  const { merged: mergedAllows, rest: restAllows } = mergeDomainRules(byType('allow', 'allowAllRequests'))
+  const { merged: mergedBlocks, rest: restBlocks } = mergeDomainRules(byType('block'))
+  const { merged: mergedRedirects, rest: restRedirects } = mergeDomainRules(byType('redirect'))
+  const headers = byType('modifyHeaders')
 
   const seen = new Set()
   const unique = (list) =>
     list.filter((rule) => {
-      const key = `${rule.action.type}:${rule.priority}:${JSON.stringify(rule.condition)}`
+      const key = `${JSON.stringify(rule.action)}:${rule.priority}:${JSON.stringify(rule.condition)}`
       if (seen.has(key)) return false
       seen.add(key)
       return true
     })
 
-  // Order matters because of the cap: exceptions, curated hosts, merged hosts, then path rules.
-  const ordered = unique([...mergedAllows, ...restAllows, ...coreRules, ...mergedBlocks, ...restBlocks])
-  const { rules: capped, dropped } = capRules(
-    ordered,
-    RULESET_RULE_BUDGET[name] ?? MAX_STATIC_RULES_PER_RULESET,
-  )
-  return { rules: assignIds(capped, RULESET_ID_START[name]), dropped, input: rules.length }
+  // Order matters because of the cap: exceptions, curated hosts, merged hosts, path rules, then modifiers.
+  const ordered = unique([
+    ...mergedAllows,
+    ...restAllows,
+    ...coreRules,
+    ...mergedBlocks,
+    ...restBlocks,
+    ...mergedRedirects,
+    ...restRedirects,
+    ...headers,
+  ])
+  const { rules: valid, rejected } = validateRuleset(assignIds(ordered, 1))
+  const { rules: capped, dropped } = capRules(valid, RULESET_RULE_BUDGET[name] ?? MAX_STATIC_RULES_PER_RULESET)
+  return { rules: assignIds(capped, RULESET_ID_START[name]), dropped, rejected, input: rules.length }
 }
 
 async function main() {
@@ -188,18 +198,40 @@ async function main() {
   const cosmetic = createCosmeticCollector()
   const report = { lists: [], totals: { network: 0, cosmetic: 0, skipped: 0 }, rulesets: {} }
 
+  const texts = []
   for (const list of sources.lists) {
     const text = await loadList(list)
-    if (text == null) continue
-    const lines = text.split('\n')
+    if (text != null) texts.push({ list, lines: text.split('\n') })
+  }
+
+  // $badfilter cancels the filter it names, in any list (uBO semantics).
+  const badfilters = new Set()
+  for (const { lines } of texts) {
     for (const line of lines) {
+      const target = badfilterTarget(line)
+      if (target) badfilters.add(target)
+    }
+  }
+  report.totals.badfiltered = 0
+
+  for (const { list, lines } of texts) {
+    for (const line of lines) {
+      if (badfilters.has(line.trim())) {
+        report.totals.badfiltered++
+        continue
+      }
       const parsed = parseFilterLine(line)
       if (parsed.kind === 'cosmetic' || parsed.kind === 'cosmetic-exception') {
         cosmetic.add(parsed)
         report.totals.cosmetic++
         continue
       }
-      const rule = parsed.kind === 'network' ? networkFilterToDnrRule(parsed, 1) : null
+      if (parsed.kind === 'cosmetic-control') {
+        cosmetic.addControl(parsed)
+        report.totals.cosmetic++
+        continue
+      }
+      const rule = parsed.kind === 'network' ? networkFilterToDnrRule(parsed, 1, resolveRedirect) : null
       if (!rule || !buckets[list.ruleset]) {
         report.totals.skipped++
         continue
@@ -218,10 +250,13 @@ async function main() {
 
   for (const name of Object.keys(buckets)) {
     const core = name === 'ads' ? buildCoreRules() : []
-    const { rules, dropped, input } = buildRuleset(name, buckets[name], core)
+    const { rules, dropped, rejected, input } = buildRuleset(name, buckets[name], core)
     await writeFile(join(rulesetDir, `${name}.json`), `${JSON.stringify(rules)}\n`)
     report.rulesets[name] = rules.length
-    console.log(`[adblock] ruleset ${name}: ${rules.length} rules from ${input} filters (dropped ${dropped})`)
+    report.rejected = { ...report.rejected, [name]: rejected }
+    console.log(
+      `[adblock] ruleset ${name}: ${rules.length} rules from ${input} filters (dropped ${dropped}, invalid ${JSON.stringify(rejected)})`,
+    )
   }
 
   const youtubeRules = buildYoutubeHandRules()
@@ -257,6 +292,10 @@ async function main() {
   for (const [host, selectors] of Object.entries(built.specificExceptions)) {
     shards[hostShard(host)].exceptions[host] = selectors
   }
+  for (const [host, list] of Object.entries(built.controls)) {
+    const shard = shards[hostShard(host)]
+    ;(shard.controls ??= {})[host] = list
+  }
   await Promise.all(
     shards.map((shard, index) => writeFile(join(shardDir, `${index}.json`), `${JSON.stringify(shard)}\n`)),
   )
@@ -264,8 +303,13 @@ async function main() {
   const allowIds = {}
   for (const name of ['ads', 'privacy', 'annoyances', 'youtube']) {
     const rules = await readJson(join(rulesetDir, `${name}.json`), [])
+    // Rules that do not stop a request: they must not count as "blocked" in the stats.
     allowIds[`ruleset-${name}`] = rules
-      .filter((rule) => rule.action?.type !== 'block')
+      .filter((rule) => {
+        const type = rule.action?.type
+        if (type === 'block') return false
+        return type !== 'redirect' || rule.action.redirect?.extensionPath == null
+      })
       .map((rule) => rule.id)
   }
   await writeFile(join(outDir, 'allow-ids.json'), `${JSON.stringify(allowIds)}\n`)

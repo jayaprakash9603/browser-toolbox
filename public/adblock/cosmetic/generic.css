@@ -483,6 +483,19 @@ a[href^="http://www.poweredbyliquidfire.mobi/"]{display:none!important}
 [href^="https://klsdee.com/"]{display:none!important}
 a[href*="/go.php?a_aid="]{display:none!important}
 [class^="div-gpt-ad"]:not([style^="width: 1px; height: 1px; position: absolute; left: -10000px; top: -"]){display:none!important}
+div[id^="div-gpt-"]:not([style^="width: 1px; height: 1px; position: absolute; left: -10000px; top: -"]):not([style="pointer-events: none; height: 1px; width: 0px; opacity: 0; visibility: hidden; position: fixed; bottom: 0px;"]){display:none!important}
+[id^="div-gpt-ad"]:not([style^="width: 1px; height: 1px; position: absolute; left: -10000px; top: -"]):not([style="pointer-events: none; height: 1px; width: 0px; opacity: 0; visibility: hidden; position: fixed; bottom: 0px;"]){display:none!important}
+div[style^="height:    250px; width:    300px;"]{display:none!important}
+div[style^="width:    160px; height:    600px; margin: 0px auto; min-width: 160px; min-height: 600px;"]{display:none!important}
+div[style^="width:    300px; height:    250px;"]{display:none!important}
+img[height="   250"][width="   300"]{display:none!important}
+img[height="   90"][width="   728"]{display:none!important}
+ins[style$="height:    90px; width:    728px;"]{display:none!important}
+amp-img[height="   120"]{display:none!important}
+amp-img[width="   300"]{display:none!important}
+amp-img[width="   336"]{display:none!important}
+div[id][class][style^="display"][style*="hidden"][style*="width:   "]{display:none!important}
+ins[id][style*="--gn-ov-ad-height"]{display:none!important}
 [data-aqa="widget-conversation-starter"]{display:none!important}
 div.l > .acu.act{display:none!important}
 [name="bridged-flipcard-div"]{display:none!important}
