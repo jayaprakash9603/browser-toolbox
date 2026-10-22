@@ -11,9 +11,11 @@ import {
 } from 'lucide-react'
 
 import { sendMessage } from '@/core/messaging/messageService'
+import type { ExtensionMessage, ExtensionResponse } from '@/core/messaging/types'
 import { formatBytes, formatDuration } from '@/core/recorder/format'
 import { DEFAULT_RECORDER_SETTINGS, loadRecorderSettings, saveRecorderSettings } from '@/core/recorder/settings'
-import type { RecorderQuality, RecorderSettings, RecordingSource } from '@/core/recorder/types'
+import type { RecorderQuality, RecorderSession, RecorderSettings, RecordingSource } from '@/core/recorder/types'
+import { chooseDesktopSource } from '@/features/recorder/desktopPicker'
 import { microphonePermission, useRecorderSession, useRecordings } from '@/features/recorder/useRecorder'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
@@ -30,6 +32,13 @@ const SOURCES: { value: RecordingSource; icon: typeof MonitorIcon; labelKey: str
 ]
 
 const RECENT_LIMIT = 5
+
+type StartResult = { session: RecorderSession } | { needsPicker: true }
+
+async function request<T>(message: ExtensionMessage): Promise<ExtensionResponse<T>> {
+  const response = (await chrome.runtime.sendMessage(message)) as ExtensionResponse<T> | undefined
+  return response ?? { ok: false, error: 'The extension did not respond. Reload it and try again.' }
+}
 
 function openUrl(path: string) {
   void chrome.tabs.create({ url: chrome.runtime.getURL(path) })
@@ -76,23 +85,28 @@ export default function ScreenRecorderTool() {
 
   const start = async () => {
     setError('')
-    if (settings.mic && (await microphonePermission()) !== 'granted') {
-      void chrome.windows.create({
-        url: chrome.runtime.getURL('recorder.html?mode=permission'),
-        type: 'popup',
-        width: 420,
-        height: 360,
-      })
-      setError(t('recorder.micNeeded'))
-      return
-    }
     setBusy(true)
     try {
-      const response = (await chrome.runtime.sendMessage({ type: 'RECORDER_START', source, settings })) as
-        | { ok: true }
-        | { ok: false; error: string }
-        | undefined
-      if (response && !response.ok) setError(response.error)
+      if (settings.mic && (await microphonePermission()) !== 'granted') {
+        const mic = await request<{ granted: boolean; fallback?: boolean }>({ type: 'RECORDER_REQUEST_MIC' })
+        if (!mic.ok || !mic.data.granted) {
+          setError(t(mic.ok && mic.data.fallback ? 'recorder.micNeeded' : 'recorder.micBlocked'))
+          return
+        }
+      }
+      let response = await request<StartResult>({ type: 'RECORDER_START', source, settings })
+      if (response.ok && 'needsPicker' in response.data) {
+        const pick = await chooseDesktopSource(source)
+        if (!pick) return
+        response = await request<StartResult>({
+          type: 'RECORDER_START',
+          source,
+          settings,
+          desktopStreamId: pick.streamId,
+          desktopAudio: pick.audio && settings.tabAudio,
+        })
+      }
+      if (!response.ok) setError(response.error)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     } finally {

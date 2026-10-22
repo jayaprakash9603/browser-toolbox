@@ -896,19 +896,14 @@ const en = {
   'recorder.cancel': 'Cancel',
   'recorder.saving': 'Saving recording…',
   'recorder.hint':
-    'Recordings stay on this device. Stop from here, the floating control on the page, or the Start/stop recording shortcut.',
-  'recorder.micNeeded': 'Allow microphone access in the window that opened, then press Start again.',
+    'Chrome asks what to share and, the first time, for microphone access. Recordings stay on this device.',
+  'recorder.micNeeded':
+    'Chrome cannot ask for the microphone on this page. Allow it in the window that opened, then press Start again.',
+  'recorder.micBlocked':
+    'Microphone access was not allowed. Allow it when Chrome asks, or turn off Microphone to record without it.',
   'recorder.recent': 'Recent recordings',
   'recorder.openLibrary': 'Open library',
   'recorder.empty': 'No recordings yet.',
-  'recorder.window.screenTitle': 'Record your screen',
-  'recorder.window.windowTitle': 'Record a window',
-  'recorder.window.tabTitle': 'Record a tab',
-  'recorder.window.tabHint':
-    'Pick the tab to record from the "Chrome Tab" list. To skip this step next time, click the extension icon on that tab first.',
-  'recorder.window.pickHint': 'Chrome will ask what to share. This window minimizes once recording starts.',
-  'recorder.window.choose': 'Choose what to share',
-  'recorder.window.keepOpen': 'Keep this window open (it can stay minimized) until you stop.',
   'recorder.window.micTitle': 'Microphone access',
   'recorder.window.micHint': 'Allow the microphone once so recordings can include your voice.',
   'recorder.window.micAllow': 'Allow microphone',
