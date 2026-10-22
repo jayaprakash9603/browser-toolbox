@@ -202,13 +202,6 @@
 			count
 		}, "*");
 	}
-	function patchJsonParse() {
-		JSON.parse = new Proxy(JSON.parse, { apply(target, thisArg, args) {
-			const result = Reflect.apply(target, thisArg, args);
-			if (hasYoutubeAdPayload(result)) reportPruned(pruneYoutubeAdsInPlace(result));
-			return result;
-		} });
-	}
 	function patchResponse() {
 		const proto = Response.prototype;
 		proto.json = new Proxy(proto.json, { apply(target, thisArg, args) {
@@ -327,7 +320,6 @@
 		guarded.__toolboxAdblockYtMain = true;
 		installPenaltyTimerBooster();
 		installAbnormalityFilter();
-		patchJsonParse();
 		patchResponse();
 		patchXhr();
 		trapGlobal("ytInitialPlayerResponse");

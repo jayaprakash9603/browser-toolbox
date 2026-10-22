@@ -18,16 +18,6 @@ function reportPruned(count: number): void {
   if (count > 0) window.postMessage({ source: MESSAGE_SOURCE, type: 'yt-pruned', count }, '*')
 }
 
-function patchJsonParse(): void {
-  JSON.parse = new Proxy(JSON.parse, {
-    apply(target, thisArg, args: Parameters<typeof JSON.parse>) {
-      const result: unknown = Reflect.apply(target, thisArg, args)
-      if (hasYoutubeAdPayload(result)) reportPruned(pruneYoutubeAdsInPlace(result))
-      return result
-    },
-  })
-}
-
 function patchResponse(): void {
   const proto = Response.prototype
   proto.json = new Proxy(proto.json, {
@@ -165,7 +155,7 @@ if (!guarded.__toolboxAdblockYtMain && window === window.top) {
   guarded.__toolboxAdblockYtMain = true
   installPenaltyTimerBooster()
   installAbnormalityFilter()
-  patchJsonParse()
+  // No global JSON.parse hook: on Chromium uBO prunes only player responses, which these cover.
   patchResponse()
   patchXhr()
   trapGlobal('ytInitialPlayerResponse')
