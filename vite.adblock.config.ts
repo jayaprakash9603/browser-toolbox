@@ -17,7 +17,8 @@ export default defineConfig(({ mode }) => ({
         inlineDynamicImports: true,
       },
     },
-    minify: false,
+    // These run in every matching frame, so smaller bundles mean less parse/compile work per page.
+    minify: true,
     sourcemap: false,
   },
 }))
