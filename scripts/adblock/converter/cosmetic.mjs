@@ -27,8 +27,22 @@ export function createCosmeticCollector() {
   }
 
   const controls = new Map()
+  /** host → Map(raw filter → compiled), and host → raw filters an exception cancels. */
+  const procedural = new Map()
+  const proceduralExceptions = new Map()
 
   return {
+    /** Compiled procedural / `:style()` filters, matched against the raw text by exceptions. */
+    addProcedural(filter) {
+      const exceptions = filter.kind === 'procedural' ? filter.excludedDomains : filter.domains
+      for (const domain of exceptions) addTo(proceduralExceptions, domain, filter.raw)
+      if (filter.kind !== 'procedural') return
+      const value = filter.compiled.css !== undefined ? { css: filter.compiled.css } : filter.compiled.task
+      for (const domain of filter.domains) {
+        if (!procedural.has(domain)) procedural.set(domain, new Map())
+        procedural.get(domain).set(filter.raw, value)
+      }
+    },
     add(filter) {
       const target = filter.kind === 'cosmetic' ? specific : specificExceptions
       const excluded = filter.excludedDomains ?? []
@@ -71,16 +85,30 @@ export function createCosmeticCollector() {
       for (const [host, selectors] of specificExceptions) exceptionsObj[host] = [...selectors]
       const controlsObj = {}
       for (const [host, set] of controls) controlsObj[host] = [...set]
+      const proceduralObj = {}
+      let proceduralCount = 0
+      for (const [host, filters] of procedural) {
+        const own = proceduralExceptions.get(host)
+        const live = [...filters].filter(([raw]) => !own?.has(raw))
+        if (!live.length) continue
+        proceduralObj[host] = live
+        proceduralCount += live.length
+      }
+      const proceduralExceptionsObj = {}
+      for (const [host, set] of proceduralExceptions) proceduralExceptionsObj[host] = [...set]
       return {
         highlyGenericCss: highly.map((s) => `${s}{display:none!important}`).join('\n'),
         keyed,
         specific: specificObj,
         specificExceptions: exceptionsObj,
         controls: controlsObj,
+        procedural: proceduralObj,
+        proceduralExceptions: proceduralExceptionsObj,
         counts: {
           highlyGeneric: highly.length,
           keyedGeneric: keyedCount,
           specificHosts: Object.keys(specificObj).length,
+          procedural: proceduralCount,
         },
       }
     },

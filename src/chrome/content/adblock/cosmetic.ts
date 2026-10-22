@@ -1,6 +1,8 @@
 import { bloomHas, parseBloom, type BloomFilter } from '@/core/adblock/bloom'
 import { genericKeyShard, hostCandidates, hostShard } from '@/core/adblock/shard'
 
+import type { ProceduralTask } from './procedural'
+
 type GuardedWindow = Window & { __toolboxCosmetic?: boolean }
 
 interface StoredState {
@@ -11,10 +13,14 @@ interface StoredState {
   allowlist?: string[]
 }
 
+type ProceduralEntry = [raw: string, compiled: ProceduralTask | { css: string }]
+
 interface SpecificCosmeticFile {
   specific: Record<string, string[]>
   exceptions: Record<string, string[]>
   controls?: Record<string, string[]>
+  procedural?: Record<string, ProceduralEntry[]>
+  proceduralExceptions?: Record<string, string[]>
 }
 
 const STYLE_ID = 'toolbox-adblock-cosmetic'
@@ -56,6 +62,7 @@ interface SiteCosmetics {
   exceptions: Set<string>
   generichide: boolean
   elemhide: boolean
+  procedural: ProceduralTask[]
 }
 
 async function buildSpecificCss(host: string): Promise<SiteCosmetics> {
@@ -70,13 +77,44 @@ async function buildSpecificCss(host: string): Promise<SiteCosmetics> {
   const exceptionList = (h: string) => shards.flatMap((s) => s.exceptions[h] ?? [])
   const exceptions = new Set(candidates.flatMap(exceptionList))
   if (elemhide || controls.has('specifichide')) {
-    return { css: '', exceptions, generichide, elemhide }
+    return { css: '', exceptions, generichide, elemhide, procedural: [] }
   }
   const selectors = [...new Set(candidates.flatMap(specific))].filter((s) => !exceptions.has(s))
   // One rule per selector: an unsupported selector then only drops its own rule.
   const hide = selectors.map((s) => `${s}{display:none!important}`)
   const unhide = [...exceptions].map((s) => `${s}{display:revert!important}`)
-  return { css: [...hide, ...unhide].join('\n'), exceptions, generichide, elemhide }
+  const procExceptions = new Set(
+    candidates.flatMap((h) => shards.flatMap((s) => s.proceduralExceptions?.[h] ?? [])),
+  )
+  const styles: string[] = []
+  const procedural: ProceduralTask[] = []
+  const seen = new Set<string>()
+  for (const h of candidates) {
+    for (const shard of shards) {
+      for (const [raw, compiled] of shard.procedural?.[h] ?? []) {
+        if (seen.has(raw) || procExceptions.has(raw)) continue
+        seen.add(raw)
+        if ('css' in compiled) styles.push(compiled.css)
+        else procedural.push(compiled)
+      }
+    }
+  }
+  return { css: [...hide, ...unhide, ...styles].join('\n'), exceptions, generichide, elemhide, procedural }
+}
+
+let stopProcedural: (() => void) | null = null
+
+/** The procedural engine is its own module, fetched only on sites that have such filters. */
+async function startProceduralFilters(tasks: ProceduralTask[]): Promise<void> {
+  if (!tasks.length || stopProcedural) return
+  try {
+    const url = chrome.runtime.getURL('adblock/scripts/procedural.js')
+    const engine = (await import(/* @vite-ignore */ url)) as typeof import('./procedural')
+    if (!active || stopProcedural) return
+    stopProcedural = engine.startProcedural(tasks, { report })
+  } catch {
+    /* extension reloaded or module blocked */
+  }
 }
 
 /**
@@ -339,6 +377,7 @@ async function activate(): Promise<void> {
     ;(document.head ?? document.documentElement).appendChild(style)
   }
   style.textContent = specific.css
+  void startProceduralFilters(specific.procedural)
   // Generic hiding (keyed selectors and the inline ad-frame sweep) is off on $generichide sites.
   if (specific.generichide) return
 
@@ -368,6 +407,8 @@ async function activate(): Promise<void> {
 
 function deactivate(): void {
   active = false
+  stopProcedural?.()
+  stopProcedural = null
   document.getElementById(STYLE_ID)?.remove()
   for (const el of document.querySelectorAll(`style.${GENERIC_STYLE_CLASS}`)) el.remove()
   generic.seen.clear()

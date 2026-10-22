@@ -21,7 +21,7 @@ const protectionEntries = {
   'guard-notify': 'src/chrome/content/protection/guard-notify.ts',
 }
 
-async function buildEntry(name, entry, outDir) {
+async function buildEntry(name, entry, outDir, format = 'iife') {
   await build({
     configFile: resolve(root, 'vite.adblock.config.ts'),
     mode: name,
@@ -30,8 +30,9 @@ async function buildEntry(name, entry, outDir) {
       emptyOutDir: name === 'cosmetic',
       rollupOptions: {
         input: resolve(root, entry),
+        preserveEntrySignatures: format === 'es' ? 'exports-only' : false,
         output: {
-          format: 'iife',
+          format,
           entryFileNames: `${name}.js`,
           inlineDynamicImports: true,
         },
@@ -44,6 +45,8 @@ async function buildEntry(name, entry, outDir) {
 for (const [name, entry] of Object.entries(adblockEntries)) {
   await buildEntry(name, entry, 'public/adblock/scripts')
 }
+// Imported on demand by cosmetic.js, so it is an ES module rather than a content script.
+await buildEntry('procedural', 'src/chrome/content/adblock/procedural.ts', 'public/adblock/scripts', 'es')
 const sitesEntries = {
   'yt-isolated': 'src/chrome/content/sites/youtube/isolated.ts',
   'yt-main': 'src/chrome/content/sites/youtube/main.ts',

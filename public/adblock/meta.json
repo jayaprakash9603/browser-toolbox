@@ -81,8 +81,8 @@
   ],
   "totals": {
     "network": 133541,
-    "cosmetic": 77148,
-    "skipped": 44414,
+    "cosmetic": 79878,
+    "skipped": 41684,
     "badfiltered": 109
   },
   "rulesets": {
@@ -113,9 +113,10 @@
   "cosmetic": {
     "highlyGeneric": 1229,
     "keyedGeneric": 40014,
-    "specificHosts": 35334,
+    "specificHosts": 35337,
+    "procedural": 4471,
     "shards": 256,
     "genericShards": 256
   },
-  "generatedAt": "2026-10-22T17:48:01.427Z"
+  "generatedAt": "2026-10-22T18:09:50.209Z"
 }

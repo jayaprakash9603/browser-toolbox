@@ -1,5 +1,7 @@
 import { domainToASCII } from 'node:url'
 
+import { compileProceduralFilter, hasProcedural } from './procedural.mjs'
+
 const TYPE_MAP = {
   script: 'script',
   image: 'image',
@@ -42,7 +44,7 @@ const IPV4_RE = /^(?:\d{1,3}\.){3}\d{1,3}$/
 
 /** uBO-only (procedural) pseudo-classes: these cannot go into a stylesheet. */
 export const PROCEDURAL_RE =
-  /:(?:has-text|contains|matches-(?:attr|css|css-before|css-after|media|path|prop)|xpath|upward|remove(?:-attr|-class)?|style|watch-attr|min-text-length|others|-abp-|nth-ancestor|spath|shadow|if\(|if-not)/
+  /(?<!\\):(?:has-text|contains|matches-(?:attr|css|css-before|css-after|media|path|prop)|xpath|upward|remove(?:-attr|-class)?|style|watch-attr|min-text-length|others|-abp-[a-z-]+|nth-ancestor|spath|shadow|if|if-not)\(/
 
 /**
  * Lower-cases and punycodes a hostname; returns null when it is not a usable domain.
@@ -122,27 +124,33 @@ export function parseFilterLine(line) {
   const trimmed = line.trim()
   if (!trimmed || trimmed.startsWith('!') || trimmed.startsWith('[')) return { kind: 'skip' }
 
-  if (/#[$?%]#|#@[$?%]#|##\+js|#@#\+js|##\^|#@#\^/.test(trimmed)) return { kind: 'skip' }
+  if (/#[$%]#|#@[$%]#|##\+js|#@#\+js|##\^|#@#\^/.test(trimmed)) return { kind: 'skip' }
 
-  const exceptionMarker = '#@#'
-  const hideMarker = '##'
-  const markerIndex = trimmed.indexOf(exceptionMarker)
-  const hideIndex = trimmed.indexOf(hideMarker)
-
-  if (markerIndex !== -1 || hideIndex !== -1) {
-    const isException = markerIndex !== -1
-    const idx = isException ? markerIndex : hideIndex
-    const marker = isException ? exceptionMarker : hideMarker
-    const domainPart = trimmed.slice(0, idx).trim()
-    const selector = trimmed.slice(idx + marker.length).trim()
-    if (!isSafeSelector(selector)) return { kind: 'skip' }
+  const cosmetic = /^([^#]*)#(@?)(\??)#(.+)$/.exec(trimmed)
+  if (cosmetic) {
+    const [, rawDomains, at, forced, body] = cosmetic
+    const isException = at === '@'
+    const domainPart = rawDomains.trim()
+    const selector = body.trim()
     const { domains, excluded } = parseCosmeticDomains(domainPart)
     if (domainPart && !domains.length && !excluded.length) return { kind: 'skip' }
+    if (isSafeSelector(selector)) {
+      return { kind: isException ? 'cosmetic-exception' : 'cosmetic', domains, excludedDomains: excluded, selector }
+    }
+    // Procedural filters cost page-side work, so like uBO Lite only host-specific ones are kept.
+    if ((!forced && !hasProcedural(selector)) || !domains.length) return { kind: 'skip' }
+    const compiled = compileProceduralFilter(selector)
+    if (!compiled) return { kind: 'skip' }
+    if (compiled.hide) {
+      const kind = isException ? 'cosmetic-exception' : 'cosmetic'
+      return { kind, domains, excludedDomains: excluded, selector: compiled.hide }
+    }
     return {
-      kind: isException ? 'cosmetic-exception' : 'cosmetic',
+      kind: isException ? 'procedural-exception' : 'procedural',
       domains,
       excludedDomains: excluded,
-      selector,
+      raw: selector,
+      compiled,
     }
   }
 

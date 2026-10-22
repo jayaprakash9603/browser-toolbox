@@ -275,6 +275,11 @@ async function main() {
         report.totals.cosmetic++
         continue
       }
+      if (parsed.kind === 'procedural' || parsed.kind === 'procedural-exception') {
+        cosmetic.addProcedural(parsed)
+        report.totals.cosmetic++
+        continue
+      }
       if (parsed.kind === 'cosmetic-control') {
         cosmetic.addControl(parsed)
         report.totals.cosmetic++
@@ -340,6 +345,12 @@ async function main() {
   }
   for (const [host, selectors] of Object.entries(built.specificExceptions)) {
     shards[hostShard(host)].exceptions[host] = selectors
+  }
+  for (const [host, filters] of Object.entries(built.procedural)) {
+    ;(shards[hostShard(host)].procedural ??= {})[host] = filters
+  }
+  for (const [host, raws] of Object.entries(built.proceduralExceptions)) {
+    ;(shards[hostShard(host)].proceduralExceptions ??= {})[host] = raws
   }
   const controlHosts = { generichide: [], elemhide: [], specifichide: [] }
   for (const [host, list] of Object.entries(built.controls)) {
