@@ -4,6 +4,7 @@ import { isExtensionMessage } from '@/core/messaging/types'
 
 import { convertImageInOffscreen, releaseImageUrl } from './imageConvert'
 import './netmon'
+import './recorder'
 
 const pendingParts = new Map<string, BlobPart[]>()
 const blobUrls = new Map<string, string>()

@@ -17,8 +17,13 @@ export async function ensureOffscreenDocument(): Promise<void> {
   creating ??= chrome.offscreen
     .createDocument({
       url: OFFSCREEN_PATH,
-      reasons: [chrome.offscreen.Reason.BLOBS],
-      justification: 'Build downloads locally and run the internet connection monitor.',
+      reasons: [
+        chrome.offscreen.Reason.BLOBS,
+        chrome.offscreen.Reason.USER_MEDIA,
+        chrome.offscreen.Reason.AUDIO_PLAYBACK,
+      ],
+      justification:
+        'Build downloads locally, run the internet connection monitor, and record the current tab.',
     })
     .finally(() => {
       creating = null

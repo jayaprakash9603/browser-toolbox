@@ -183,6 +183,26 @@ export type ExtensionMessage =
       total: number
     }
   | { type: 'SCREENSHOT_MENU_ACTION'; action: 'history' | 'options' }
+  | {
+      type: 'RECORDER_START'
+      source: import('@/core/recorder/types').RecordingSource
+      settings: import('@/core/recorder/types').RecorderSettings
+    }
+  | { type: 'RECORDER_PAUSE' }
+  | { type: 'RECORDER_RESUME' }
+  | { type: 'RECORDER_STOP' }
+  | { type: 'RECORDER_STATUS' }
+  | { type: 'RECORDER_STARTED'; id: string }
+  | { type: 'RECORDER_HEARTBEAT'; id: string }
+  | { type: 'RECORDER_FINISHED'; id: string; error?: string }
+  | { type: 'RECORDER_CONTROL'; id: string; action: 'pause' | 'resume' | 'stop' }
+  | {
+      type: 'OFFSCREEN_RECORDER_START'
+      id: string
+      streamId: string
+      settings: import('@/core/recorder/types').RecorderSettings
+    }
+  | { type: 'RECORDER_STATE'; session: import('@/core/recorder/types').RecorderSession | null }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
@@ -294,6 +314,17 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'SCREENSHOT_BATCH_URLS',
   'SCREENSHOT_PROGRESS',
   'SCREENSHOT_MENU_ACTION',
+  'RECORDER_START',
+  'RECORDER_PAUSE',
+  'RECORDER_RESUME',
+  'RECORDER_STOP',
+  'RECORDER_STATUS',
+  'RECORDER_STARTED',
+  'RECORDER_HEARTBEAT',
+  'RECORDER_FINISHED',
+  'RECORDER_CONTROL',
+  'OFFSCREEN_RECORDER_START',
+  'RECORDER_STATE',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {
