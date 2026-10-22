@@ -10,6 +10,7 @@ import {
   restoreCapturePageState,
   scrollCaptureTo,
   selectPageAreaWithScroll,
+  type SelectionCaptureResult,
 } from '@/core/engines/capture/pageCaptureScript'
 import { CAPTURE_THROTTLE_MS, sleep } from '@/core/screenshot/slicePlan'
 import { isRestrictedCaptureUrl } from '@/core/screenshot/restricted'
@@ -221,14 +222,51 @@ async function captureWindowRegion(
   }
 }
 
+export async function captureSelectionVisibleSlice(tab: chrome.tabs.Tab): Promise<CaptureSlice | null> {
+  if (tab.id == null || tab.windowId == null) return null
+  const tabId = tab.id
+  const windowId = tab.windowId
+  const viewport = await runInTab(tabId, readViewport)
+  const scroll = await runInTab(tabId, readWindowScroll)
+  const dataUrl = await withToolboxUiHidden(tabId, () => captureVisiblePng(windowId))
+  return {
+    dataUrl,
+    scrollX: scroll.x,
+    scrollY: scroll.y,
+    view: { x: 0, y: 0, width: viewport.width, height: viewport.height },
+  }
+}
+
+async function frameFromLiveSelection(
+  tab: chrome.tabs.Tab,
+  result: SelectionCaptureResult,
+  notice?: string,
+): Promise<ScreenshotFrame> {
+  const tabId = tab.id!
+  await runInTab(tabId, scrollWindowTo, [result.savedScrollX, result.savedScrollY]).catch(() => undefined)
+  const slices = [...result.slices].sort((a, b) => a.scrollY - b.scrollY)
+  const area = result
+  return {
+    slices,
+    region: { x: area.x, y: area.y, width: area.width, height: area.height },
+    stitchHeight: area.height,
+    devicePixelRatio: area.devicePixelRatio,
+    pageInfo: pageInfoFromTab(tab),
+    notice,
+  }
+}
+
 export async function captureSelectionFrame(tab: chrome.tabs.Tab): Promise<ScreenshotFrame | null> {
   if (tab.id == null || tab.windowId == null) throw new Error('Invalid tab.')
   if (!(await canScriptTab(tab.id, tab.url))) {
     return captureVisibleFrame(tab, 'Selection requires a normal web page; captured visible area.')
   }
-  const area = await runInTab(tab.id, selectPageAreaWithScroll)
-  if (!area) return null
-  return withToolboxUiHidden(tab.id, () => captureWindowRegion(tab, area))
+  const result = await runInTab(tab.id, selectPageAreaWithScroll)
+  if (!result) return null
+  if (result.slices.length > 0) {
+    return withToolboxUiHidden(tab.id, () => frameFromLiveSelection(tab, result))
+  }
+  return withToolboxUiHidden(tab.id, () => captureWindowRegion(tab, result))
 }
 
 export async function captureElementFrame(tab: chrome.tabs.Tab): Promise<ScreenshotFrame | null> {

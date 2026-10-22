@@ -78,12 +78,15 @@ describe('injected capture functions', () => {
     fire('pointermove', 400, 600)
     fire('pointerup', 400, 600)
 
-    await expect(selection).resolves.toEqual({
+    await expect(selection).resolves.toMatchObject({
       x: 100,
       y: 200,
       width: 300,
       height: 1900,
       devicePixelRatio: 1,
+      slices: [],
+      savedScrollX: 0,
+      savedScrollY: 1500,
     })
     expect(document.querySelector('[data-toolbox-capture="overlay"]')).toBeNull()
   })

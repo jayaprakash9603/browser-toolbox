@@ -7,6 +7,7 @@ import { getActiveWebTab } from '@/chrome/contentScriptClient'
 
 import { getSession } from './session'
 import { openScreenshotCaptureMenu } from './menu'
+import { captureSelectionVisibleSlice } from './capture'
 import { startScreenshot } from './start'
 
 const logger = createLogger('screenshot-handlers')
@@ -58,6 +59,13 @@ export function registerScreenshotHandlers(): void {
     const tab = await targetTab(sender)
     const id = await startScreenshot('batch-urls', tab, { urls: message.urls })
     return { sessionId: id }
+  })
+
+  registerMessageHandler('SCREENSHOT_SELECTION_SLICE', async (_message, sender) => {
+    const tab = sender.tab
+    if (!tab?.id) return { slice: null }
+    const slice = await captureSelectionVisibleSlice(tab)
+    return { slice }
   })
 
   registerMessageHandler('SCREENSHOT_MENU_ACTION', async (message) => {

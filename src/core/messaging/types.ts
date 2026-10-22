@@ -183,6 +183,7 @@ export type ExtensionMessage =
       total: number
     }
   | { type: 'SCREENSHOT_MENU_ACTION'; action: 'history' | 'options' }
+  | { type: 'SCREENSHOT_SELECTION_SLICE' }
   | {
       type: 'RECORDER_START'
       source: import('@/core/recorder/types').RecordingSource
@@ -325,6 +326,7 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'SCREENSHOT_BATCH_URLS',
   'SCREENSHOT_PROGRESS',
   'SCREENSHOT_MENU_ACTION',
+  'SCREENSHOT_SELECTION_SLICE',
   'RECORDER_START',
   'RECORDER_REQUEST_MIC',
   'RECORDER_MIC_RESULT',
