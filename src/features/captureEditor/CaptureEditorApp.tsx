@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowUpRightIcon,
@@ -94,6 +95,37 @@ async function frameToCanvas(frame: ScreenshotFrame, settings: ScreenshotSetting
   return canvas
 }
 
+type CaptureExportJob = {
+  anchor: 'image' | 'pdf' | 'zip'
+  detailKey: string
+  detail: string
+  percent: number | null
+  startedAt: number
+}
+
+function CaptureExportProgress({ exportJob, t }: { exportJob: CaptureExportJob; t: TFunction }) {
+  const centerIcon =
+    exportJob.anchor === 'pdf'
+      ? FileTextIcon
+      : exportJob.anchor === 'zip'
+        ? FolderArchiveIcon
+        : DownloadIcon
+  return (
+    <LongTaskProgress
+      active
+      title={t('capture.export.title')}
+      percent={exportJob.percent}
+      detail={exportJob.detail}
+      detailKey={exportJob.detailKey}
+      startedAt={exportJob.startedAt}
+      centerIcon={centerIcon}
+      flyingIcons={[FileTextIcon, FolderArchiveIcon]}
+      layout="compact"
+      hint={t('capture.export.hint')}
+    />
+  )
+}
+
 function CenteredMessage({ children, destructive }: { children: string; destructive?: boolean }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-6">
@@ -123,12 +155,7 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
-  const [busyStartedAt, setBusyStartedAt] = useState<number | undefined>()
-  const [taskProgress, setTaskProgress] = useState<{
-    detailKey: string
-    detail: string
-    percent: number | null
-  } | null>(null)
+  const [exportJob, setExportJob] = useState<CaptureExportJob | null>(null)
   const [status, setStatus] = useState<string | null>(null)
   const [settings, setSettings] = useState<ScreenshotSettings>(DEFAULT_SCREENSHOT_SETTINGS)
   const [format, setFormat] = useState<ImageFormat>(DEFAULT_SCREENSHOT_SETTINGS.defaultFormat)
@@ -223,10 +250,30 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
     setAnnotations(next)
   }
 
-  const runAction = async (label: string, action: () => Promise<void>) => {
-    setBusy(true)
-    setBusyStartedAt(Date.now())
+  const runQuickAction = async (label: string, action: () => Promise<void>) => {
     setStatus(null)
+    try {
+      await action()
+      setStatus(label)
+    } catch (cause) {
+      setStatus(cause instanceof Error ? cause.message : 'Something went wrong.')
+    }
+  }
+
+  const runExport = async (
+    label: string,
+    anchor: 'image' | 'pdf' | 'zip',
+    action: () => Promise<void>,
+  ) => {
+    setBusy(true)
+    setStatus(null)
+    setExportJob({
+      anchor,
+      detailKey: 'start',
+      detail: t('capture.export.encode'),
+      percent: null,
+      startedAt: Date.now(),
+    })
     try {
       await action()
       setStatus(label)
@@ -234,19 +281,24 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
       setStatus(cause instanceof Error ? cause.message : 'Something went wrong.')
     } finally {
       setBusy(false)
-      setBusyStartedAt(undefined)
-      setTaskProgress(null)
+      setExportJob(null)
     }
   }
 
-  const save = async (saveFormat: ImageFormat) => {
+  const save = async (saveFormat: ImageFormat, anchor: 'image' | 'pdf') => {
     const view = canvasRef.current
     if (!view || !frame) return
-    setTaskProgress({
-      detailKey: 'encode',
-      detail: t('capture.export.encode'),
-      percent: 30,
-    })
+    setExportJob((job) =>
+      job
+        ? {
+            ...job,
+            anchor,
+            detailKey: 'encode',
+            detail: t('capture.export.encode'),
+            percent: 30,
+          }
+        : job,
+    )
     const blob = await exportCanvas(view, saveFormat, {
       jpegQuality: settings.jpegQuality,
       pdfSplit,
@@ -254,11 +306,17 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
       textRuns: frame.textRuns,
     })
     const ext = saveFormat === 'jpeg' ? 'jpg' : saveFormat
-    setTaskProgress({
-      detailKey: 'save',
-      detail: t('capture.export.save'),
-      percent: 85,
-    })
+    setExportJob((job) =>
+      job
+        ? {
+            ...job,
+            anchor,
+            detailKey: 'save',
+            detail: t('capture.export.save'),
+            percent: 85,
+          }
+        : job,
+    )
     await downloadBlobInExtension(blob, buildExportFilename(settings.filenameTemplate, frame.pageInfo, ext))
     await addScreenshotHistory({
       id: `hist_${Date.now()}`,
@@ -277,22 +335,34 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
     const total = session.frames.length
     for (let index = 0; index < session.frames.length; index++) {
       const item = session.frames[index]
-      setTaskProgress({
-        detailKey: `frame-${index}`,
-        detail: t('capture.export.zip'),
-        percent: Math.round(((index + 0.5) / total) * 70),
-      })
+      setExportJob((job) =>
+        job
+          ? {
+              ...job,
+              anchor: 'zip',
+              detailKey: `frame-${index}`,
+              detail: t('capture.export.zip'),
+              percent: Math.round(((index + 0.5) / total) * 70),
+            }
+          : job,
+      )
       const canvas = await frameToCanvas(item, settings)
       files.push({
         name: buildExportFilename(settings.filenameTemplate, item.pageInfo, 'png'),
         blob: await exportCanvas(canvas, 'png'),
       })
     }
-    setTaskProgress({
-      detailKey: 'zip-save',
-      detail: t('capture.export.save'),
-      percent: 90,
-    })
+    setExportJob((job) =>
+      job
+        ? {
+            ...job,
+            anchor: 'zip',
+            detailKey: 'zip-save',
+            detail: t('capture.export.save'),
+            percent: 90,
+          }
+        : job,
+    )
     await downloadBlobInExtension(await zipBlobs(files), 'captures.zip')
   }
 
@@ -322,7 +392,7 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
         redo()
       } else if (key === 's') {
         event.preventDefault()
-        void runAction('Saved', () => save(format))
+        void runExport('Saved', 'image', () => save(format, 'image'))
       }
     }
     window.addEventListener('keydown', onKey)
@@ -346,20 +416,7 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
   }
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-4 sm:p-8">
-        <LongTaskProgress
-          active
-          className="w-full max-w-md"
-          title={t('capture.loading.title')}
-          percent={null}
-          detail={t('capture.loading.detail')}
-          detailKey="load"
-          centerIcon={DownloadIcon}
-          layout="auto"
-        />
-      </div>
-    )
+    return <CenteredMessage>Loading capture…</CenteredMessage>
   }
   if (error || !session || !frame) return <CenteredMessage destructive>{error ?? 'Nothing to show.'}</CenteredMessage>
 
@@ -445,20 +502,7 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
             <AlertDescription>{frame.notice}</AlertDescription>
           </Alert>
         )}
-        <div className="relative min-h-0 flex-1 overflow-auto p-6">
-          <LongTaskProgress
-            active={busy}
-            title={t('capture.export.title')}
-            percent={taskProgress?.percent ?? null}
-            detail={taskProgress?.detail ?? t('longTask.working')}
-            detailKey={taskProgress?.detailKey ?? 'busy'}
-            startedAt={busyStartedAt}
-            centerIcon={DownloadIcon}
-            flyingIcons={[FileTextIcon, FolderArchiveIcon]}
-            layout="expanded"
-            hint={taskProgress ? t('capture.export.hint') : undefined}
-            className="absolute inset-x-4 top-4 z-10 mx-auto hidden max-w-lg shadow-md lg:block"
-          />
+        <div className="min-h-0 flex-1 overflow-auto p-6">
           <canvas
             ref={canvasRef}
             className="mx-auto block cursor-crosshair rounded-md border bg-background shadow-sm"
@@ -536,19 +580,6 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
             </Tooltip>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <LongTaskProgress
-              active={busy}
-              title={t('capture.export.title')}
-              percent={taskProgress?.percent ?? null}
-              detail={taskProgress?.detail ?? t('longTask.working')}
-              detailKey={taskProgress?.detailKey ?? 'busy'}
-              startedAt={busyStartedAt}
-              centerIcon={DownloadIcon}
-              flyingIcons={[FileTextIcon, FolderArchiveIcon]}
-              layout="auto"
-              hint={taskProgress ? t('capture.export.hint') : undefined}
-              className="lg:hidden"
-            />
             <div className="flex flex-col gap-2">
               <Label htmlFor="capture-image-format">Save as image</Label>
               <div className="flex gap-2">
@@ -564,10 +595,17 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button className="flex-1" disabled={busy} onClick={() => void runAction('Saved', () => save(format))}>
+                <Button
+                  className="flex-1"
+                  disabled={busy}
+                  onClick={() => void runExport('Saved', 'image', () => save(format, 'image'))}
+                >
                   <DownloadIcon /> Save image
                 </Button>
               </div>
+              {exportJob?.anchor === 'image' && (
+                <CaptureExportProgress exportJob={exportJob} t={t} />
+              )}
             </div>
             <Separator />
             <div className="flex flex-col gap-2">
@@ -587,33 +625,36 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
                   variant="outline"
                   className="flex-1"
                   disabled={busy}
-                  onClick={() => void runAction('PDF saved', () => save('pdf'))}
+                  onClick={() => void runExport('PDF saved', 'pdf', () => save('pdf', 'pdf'))}
                 >
                   <FileTextIcon /> Save PDF
                 </Button>
               </div>
+              {exportJob?.anchor === 'pdf' && (
+                <CaptureExportProgress exportJob={exportJob} t={t} />
+              )}
             </div>
             <Separator />
             <Button
               variant="outline"
               disabled={busy}
               onClick={() =>
-                void runAction('Copied to clipboard', async () => {
+                void runQuickAction('Copied to clipboard', async () => {
                   if (canvasRef.current) await copyCanvasToClipboard(canvasRef.current)
                 })
               }
             >
               <ClipboardCopyIcon /> Copy to clipboard
             </Button>
-            <Button variant="outline" disabled={busy} onClick={() => void runAction('Print dialog opened', print)}>
+            <Button variant="outline" disabled={busy} onClick={() => void runQuickAction('Print dialog opened', print)}>
               <PrinterIcon /> Print
             </Button>
             <Button
               variant="outline"
               disabled={busy}
               onClick={() =>
-                void runAction('Saved — attach it in the Gmail draft', async () => {
-                  await save(format)
+                void runExport('Saved — attach it in the Gmail draft', 'image', async () => {
+                  await save(format, 'image')
                   openEmailHandoff(frame.pageInfo)
                 })
               }
@@ -621,9 +662,16 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
               <MailIcon /> Email with Gmail
             </Button>
             {session.frames.length > 1 && (
-              <Button variant="secondary" disabled={busy} onClick={() => void runAction('ZIP saved', saveAllAsZip)}>
+              <Button
+                variant="secondary"
+                disabled={busy}
+                onClick={() => void runExport('ZIP saved', 'zip', saveAllAsZip)}
+              >
                 <FolderArchiveIcon /> Save all as ZIP
               </Button>
+            )}
+            {exportJob?.anchor === 'zip' && (
+              <CaptureExportProgress exportJob={exportJob} t={t} />
             )}
             {status && (
               <p role="status" className="text-xs text-muted-foreground">
