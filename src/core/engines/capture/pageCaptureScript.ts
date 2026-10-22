@@ -205,6 +205,14 @@ export function collectPageMeta(): {
   return { links, textRuns }
 }
 
+/** Background router returns `{ ok, data: { slice } }`; must stay self-contained for executeScript. */
+export function unwrapSelectionSliceResponse(raw: unknown): SelectionLiveSlice | null {
+  if (!raw || typeof raw !== 'object') return null
+  const envelope = raw as { ok?: boolean; data?: { slice?: SelectionLiveSlice | null }; slice?: SelectionLiveSlice }
+  if (envelope.ok && envelope.data) return envelope.data.slice ?? null
+  return envelope.slice ?? null
+}
+
 export function selectPageAreaWithScroll(): Promise<SelectionCaptureResult | null> {
   return new Promise((resolve) => {
     const overlay = document.createElement('div')
@@ -306,10 +314,8 @@ export function selectPageAreaWithScroll(): Promise<SelectionCaptureResult | nul
       hideChrome()
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
       try {
-        const response = (await runtime.sendMessage({ type: 'SCREENSHOT_SELECTION_SLICE' })) as {
-          slice?: SelectionLiveSlice | null
-        }
-        const slice = response?.slice
+        const raw = await runtime.sendMessage({ type: 'SCREENSHOT_SELECTION_SLICE' })
+        const slice = unwrapSelectionSliceResponse(raw)
         if (slice?.dataUrl) {
           const key = sliceKey(slice.scrollX, slice.scrollY)
           if (!seenKeys.has(key)) {

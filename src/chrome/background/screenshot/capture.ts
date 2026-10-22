@@ -237,6 +237,16 @@ export async function captureSelectionVisibleSlice(tab: chrome.tabs.Tab): Promis
   }
 }
 
+export function selectionSlicesCoverRegion(
+  slices: CaptureSlice[],
+  region: CaptureRect,
+  viewportHeight: number,
+): boolean {
+  if (slices.length === 0 || viewportHeight <= 0) return false
+  const needed = fullPageOffsets(region.height, viewportHeight).map((localY) => region.y + localY)
+  return needed.every((targetY) => slices.some((s) => Math.abs(s.scrollY - targetY) < 8))
+}
+
 async function frameFromLiveSelection(
   tab: chrome.tabs.Tab,
   result: SelectionCaptureResult,
@@ -263,7 +273,9 @@ export async function captureSelectionFrame(tab: chrome.tabs.Tab): Promise<Scree
   }
   const result = await runInTab(tab.id, selectPageAreaWithScroll)
   if (!result) return null
-  if (result.slices.length > 0) {
+  const viewport = await runInTab(tab.id, readViewport)
+  const useLiveSlices = selectionSlicesCoverRegion(result.slices, result, viewport.height)
+  if (useLiveSlices) {
     return withToolboxUiHidden(tab.id, () => frameFromLiveSelection(tab, result))
   }
   return withToolboxUiHidden(tab.id, () => captureWindowRegion(tab, result))

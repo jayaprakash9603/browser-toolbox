@@ -10,6 +10,7 @@ import {
   restoreToolboxUi,
   scrollCaptureTo,
   selectPageAreaWithScroll,
+  unwrapSelectionSliceResponse,
 } from '@/core/engines/capture/pageCaptureScript'
 import { planSliceDraw } from '@/core/screenshot/export/canvas'
 
@@ -56,6 +57,18 @@ describe('injected capture functions', () => {
     toast.remove()
     style.remove()
     pageContent.remove()
+  })
+
+  it('unwraps selection slice responses from the background router', () => {
+    const slice = {
+      dataUrl: 'data:image/png;base64,abc',
+      scrollX: 0,
+      scrollY: 120,
+      view: { x: 0, y: 0, width: 800, height: 600 },
+    }
+    expect(unwrapSelectionSliceResponse({ ok: true, data: { slice } })).toEqual(slice)
+    expect(unwrapSelectionSliceResponse({ slice })).toEqual(slice)
+    expect(unwrapSelectionSliceResponse(null)).toBeNull()
   })
 
   it('keeps a selection anchored to the page while it scrolls', async () => {
