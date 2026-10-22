@@ -5,6 +5,7 @@ import {
   ClipboardXIcon,
   CpuIcon,
   DownloadIcon,
+  ExternalLinkIcon,
   FishIcon,
   PhoneOffIcon,
   ScanEyeIcon,
@@ -99,6 +100,7 @@ export function GuardToggles({
     { key: 'scamGuard', icon: PhoneOffIcon },
     { key: 'clipboardGuard', icon: ClipboardXIcon },
     { key: 'downloadGuard', icon: DownloadIcon },
+    { key: 'openedTabGuard', icon: ExternalLinkIcon },
     { key: 'notificationGuard', icon: BellOffIcon },
   ]
   return <ToggleList rows={rows} state={state} disabled={disabled} onPatch={onPatch} />

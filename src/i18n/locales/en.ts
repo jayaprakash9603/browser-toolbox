@@ -225,6 +225,9 @@ const en = {
   'protection.toggle.downloadGuard': 'Download guard',
   'protection.toggle.downloadGuardDescription':
     'Cancels downloads from dangerous sites and asks before keeping programs that start without a click.',
+  'protection.toggle.openedTabGuard': 'Opened-tab redirect guard',
+  'protection.toggle.openedTabGuardDescription':
+    'When a site opens one of its own pages in a new tab, stops that tab from later switching to a different site unless you clicked there.',
   'protection.toggle.notificationGuard': 'Notification spam guard',
   'protection.toggle.notificationGuardDescription':
     'Silently denies notification requests made before you interact with the page.',
@@ -245,6 +248,15 @@ const en = {
   'protection.category.clipboard': 'Clipboard hijack',
   'protection.category.notification': 'Notification spam',
   'protection.category.download': 'Download',
+  'protection.category.redirect': 'Opened-tab redirect',
+  'protection.redirect.title': 'Redirect stopped',
+  'protection.redirect.reason':
+    'A tab opened by {{opener}} tried to switch to a different site on its own, without a click from you.',
+  'protection.redirect.tipSafe': 'Genuine sites rarely send a tab they opened to another site minutes later.',
+  'protection.redirect.tipProceed': 'Continue only if you expected to go to this site.',
+  'protection.redirect.openerLabel': 'Opened by',
+  'protection.redirect.close': 'Close this tab',
+  'protection.redirect.proceed': 'Continue to this site',
   'protection.download.badgeBlocked': 'Blocked',
   'protection.download.badgeHeld': 'On hold',
   'protection.download.blockedTitle': 'Dangerous download stopped',

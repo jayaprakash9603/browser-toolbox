@@ -40,6 +40,14 @@ export {
   isSafeToBlock,
   proceedOnceRuleId,
 } from './rules'
+export { siteOfUrl } from './domain'
+export {
+  allowSite,
+  OPENED_TAB_GESTURE_MS,
+  openedTabRecord,
+  shouldBlockOpenedTabNavigation,
+} from './openedTabs'
+export type { OpenedTabRecord } from './openedTabs'
 export { THREAT_CATEGORIES, THREAT_LIST_CATEGORIES } from './types'
 export type {
   ProtectionBlockedCounts,

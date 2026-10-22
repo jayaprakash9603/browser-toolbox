@@ -265,7 +265,8 @@ function onPageSignal(event: MessageEvent): void {
 }
 
 function onGesture(event: Event): void {
-  if (!event.isTrusted || state.downloadGuard === false || state.enabled === false) return
+  if (!event.isTrusted || state.enabled === false) return
+  if (state.downloadGuard === false && state.openedTabGuard === false) return
   const now = Date.now()
   if (now - lastGestureSent < GESTURE_THROTTLE_MS) return
   lastGestureSent = now

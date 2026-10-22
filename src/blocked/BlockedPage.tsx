@@ -27,8 +27,69 @@ function parseBlockedContext(): { category: ListCategory; targetUrl: string; hos
 }
 
 export function BlockedPage() {
-  const isDownload = new URLSearchParams(window.location.search).get('mode') === 'download'
-  return isDownload ? <DownloadPrompt /> : <BlockedSitePage />
+  const mode = new URLSearchParams(window.location.search).get('mode')
+  if (mode === 'download') return <DownloadPrompt />
+  if (mode === 'redirect') return <RedirectBlockedPage />
+  return <BlockedSitePage />
+}
+
+function RedirectBlockedPage() {
+  const { t } = useTranslation()
+  const ctx = useMemo(() => parseBlockedContext(), [])
+  const opener = new URLSearchParams(window.location.search).get('opener') ?? ''
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    document.title = t('protection.redirect.title')
+  }, [t])
+
+  return (
+    <ProtectionInterstitial
+      icon={ShieldAlertIcon}
+      tone="danger"
+      badge={t('protection.category.redirect')}
+      title={t('protection.redirect.title')}
+      description={t('protection.redirect.reason', { opener })}
+      tips={[t('protection.redirect.tipSafe'), t('protection.redirect.tipProceed')]}
+      details={
+        <>
+          <DetailRow label={t('protection.redirect.openerLabel')} value={opener} />
+          <DetailRow label={t('protection.blocked.addressLabel')} value={ctx.host} />
+        </>
+      }
+      actions={
+        <>
+          <Button
+            type="button"
+            className="w-full"
+            onClick={() => {
+              void chrome.tabs.getCurrent().then((tab) => {
+                if (tab?.id != null) void chrome.tabs.remove(tab.id)
+                else window.close()
+              })
+            }}
+          >
+            {t('protection.redirect.close')}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            disabled={busy}
+            onClick={() => {
+              setBusy(true)
+              void (async () => {
+                await sendMessage({ type: 'PROTECTION_ALLOW_OPENED_TAB', url: ctx.targetUrl })
+                window.location.replace(ctx.targetUrl)
+              })()
+            }}
+          >
+            {t('protection.redirect.proceed')}
+          </Button>
+        </>
+      }
+    />
+  )
 }
 
 function BlockedSitePage() {

@@ -1,3 +1,7 @@
+import { registrableDomain } from './domain'
+
+export { registrableDomain }
+
 export type RiskLevel = 'none' | 'low' | 'high'
 
 export interface PageSignals {
@@ -13,24 +17,6 @@ export interface RiskVerdict {
   reason?: string
   brand?: string
 }
-
-const MULTI_PART_SUFFIXES = new Set([
-  'co.uk',
-  'org.uk',
-  'ac.uk',
-  'gov.uk',
-  'com.au',
-  'net.au',
-  'org.au',
-  'co.in',
-  'com.br',
-  'com.mx',
-  'co.jp',
-  'co.kr',
-  'com.tr',
-  'com.sg',
-  'com.hk',
-])
 
 /** Brand label -> official registrable domains (not exhaustive; reduces false positives). */
 export const BRAND_OFFICIAL: Record<string, string[]> = {
@@ -57,22 +43,6 @@ export const BRAND_OFFICIAL: Record<string, string[]> = {
   paytm: ['paytm.com'],
   chase: ['chase.com'],
   bankofamerica: ['bankofamerica.com'],
-}
-
-export function registrableDomain(host: string): string {
-  const h = host.replace(/^www\./, '').toLowerCase()
-  const parts = h.split('.')
-  if (parts.length < 2) return h
-  for (const suffix of MULTI_PART_SUFFIXES) {
-    const suffixParts = suffix.split('.')
-    if (parts.length > suffixParts.length) {
-      const tail = parts.slice(-suffixParts.length).join('.')
-      if (tail === suffix) {
-        return parts.slice(-(suffixParts.length + 1)).join('.')
-      }
-    }
-  }
-  return parts.slice(-2).join('.')
 }
 
 function levenshtein(a: string, b: string): number {

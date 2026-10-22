@@ -67,6 +67,7 @@ export const DEFAULT_PROTECTION_STATE: ProtectionState = {
   clipboardGuard: true,
   notificationGuard: true,
   downloadGuard: true,
+  openedTabGuard: true,
   trusted: [],
 }
 

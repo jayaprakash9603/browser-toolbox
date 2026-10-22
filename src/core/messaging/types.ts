@@ -85,6 +85,7 @@ export type ExtensionMessage =
   | { type: 'PROTECTION_RESET_STATS' }
   | { type: 'PROTECTION_GESTURE'; host?: string }
   | { type: 'PROTECTION_DOWNLOAD_DECISION'; id: number; keep: boolean }
+  | { type: 'PROTECTION_ALLOW_OPENED_TAB'; url: string }
   | { type: 'YT_SPONSOR_SEGMENTS'; videoId: string; categories: string[] }
   | { type: 'YT_DISLIKES'; videoId: string }
   | { type: 'YT_DOWNLOAD_TRANSCRIPT'; videoId: string }
@@ -256,6 +257,7 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'PROTECTION_RESET_STATS',
   'PROTECTION_GESTURE',
   'PROTECTION_DOWNLOAD_DECISION',
+  'PROTECTION_ALLOW_OPENED_TAB',
   'YT_SPONSOR_SEGMENTS',
   'YT_DISLIKES',
   'YT_DOWNLOAD_TRANSCRIPT',

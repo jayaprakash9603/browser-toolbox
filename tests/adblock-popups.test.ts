@@ -65,6 +65,17 @@ describe('pop-up blocker (page world)', () => {
     expect(nativeOpen).not.toHaveBeenCalled()
   })
 
+  it('lets the page open its own site a while after an interaction, once', async () => {
+    nativeOpen.mockClear()
+    await new Promise((resolve) => setTimeout(resolve, 800))
+    userClick(document.body)
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+    window.open(`${location.origin}/report`)
+    expect(nativeOpen).toHaveBeenCalledTimes(1)
+    window.open(`${location.origin}/second`)
+    expect(nativeOpen).toHaveBeenCalledTimes(1)
+  })
+
   it('always lets sign-in providers open', () => {
     window.open('https://accounts.google.com/o/oauth2/auth')
     expect(nativeOpen).toHaveBeenCalledTimes(1)

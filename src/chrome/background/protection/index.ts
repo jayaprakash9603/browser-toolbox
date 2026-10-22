@@ -12,6 +12,7 @@ import { createLogger } from '@/core/logging'
 
 import { syncProtectionContentScripts } from './contentScripts'
 import { decideDownload, recordGesture, registerDownloadGuard } from './downloads'
+import { allowOpenedTabSite, recordTabGesture, registerOpenedTabGuard } from './openedTabs'
 import { invalidateThreatsCache, syncProtectionRules } from './rules'
 import { allowProceedOnce } from './trusted'
 
@@ -69,7 +70,15 @@ export function registerProtection(): void {
   registerMessageHandler('PROTECTION_GESTURE', (_message, sender) => {
     // trust the sender's real URL, not the host claimed in the message
     recordGesture([sender.url, sender.tab?.url])
+    recordTabGesture(sender.tab?.id)
     return null
+  })
+
+  registerMessageHandler('PROTECTION_ALLOW_OPENED_TAB', async (message, sender) => {
+    if (message.type !== 'PROTECTION_ALLOW_OPENED_TAB') return null
+    if (!sender.url?.startsWith(chrome.runtime.getURL(''))) return null
+    await allowOpenedTabSite(sender.tab?.id, message.url)
+    return { ok: true }
   })
 
   registerMessageHandler('PROTECTION_DOWNLOAD_DECISION', async (message, sender) => {
@@ -80,5 +89,6 @@ export function registerProtection(): void {
   })
 
   registerDownloadGuard()
+  registerOpenedTabGuard()
   void syncProtectionState()
 }

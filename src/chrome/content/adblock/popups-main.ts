@@ -6,12 +6,19 @@
  * turns the first click anywhere into an ad. We only let a new window open when it is the direct
  * result of a real click on a real control, one window per click.
  */
+import { siteOfUrl } from '@/core/protection/domain'
+
 type GuardedWindow = Window & { __toolboxPopups?: boolean }
 
 const MESSAGE_KEY = '__toolboxAdblock'
 const CLICK_WINDOW_MS = 1200
 const GESTURE_MERGE_MS = 700
 const OVERLAY_COVERAGE = 0.6
+/**
+ * Sites often open their own pages (another subdomain, a report, a checkout step) after an
+ * async fetch, well after the click. Same-site windows get this longer grace period.
+ */
+const SAME_SITE_WINDOW_MS = 10_000
 
 /** Sign-in and payment pop-ups legitimately open outside a user gesture (after an async token fetch). */
 const TRUSTED_POPUP_HOSTS =
@@ -27,6 +34,9 @@ interface ClickRecord {
 }
 
 let lastClick: ClickRecord = { target: null, time: 0, consumed: true }
+/** Last trusted click or key press anywhere, and whether a same-site window already used it. */
+let lastInteraction = 0
+let sameSiteUsed = true
 
 function report(): void {
   try {
@@ -74,10 +84,17 @@ function isRealControl(el: Element | null): boolean {
   }
 }
 
+function recordInteraction(event: Event): void {
+  if (!event.isTrusted) return
+  lastInteraction = Date.now()
+  sameSiteUsed = false
+}
+
 function recordClick(event: Event): void {
   if (!event.isTrusted) return
   const target = event.target instanceof Element ? event.target : null
   const now = Date.now()
+  recordInteraction(event)
   // pointerdown, mousedown and click are one gesture: it may open at most one window.
   if (target === lastClick.target && now - lastClick.time < GESTURE_MERGE_MS) {
     lastClick.time = now
@@ -107,12 +124,23 @@ function userActivationActive(): boolean {
 /** Decides whether a new window may open right now, consuming the click if so. */
 function allowNewWindow(url: URL | null): boolean {
   if (isTrustedPopupUrl(url)) return true
-  const fresh = !lastClick.consumed && Date.now() - lastClick.time <= CLICK_WINDOW_MS
+  const now = Date.now()
+  const fresh = !lastClick.consumed && now - lastClick.time <= CLICK_WINDOW_MS
   if (fresh && userActivationActive() && isRealControl(lastClick.target)) {
     lastClick.consumed = true
     return true
   }
+  if (isSameSite(url) && !sameSiteUsed && now - lastInteraction <= SAME_SITE_WINDOW_MS) {
+    sameSiteUsed = true
+    return true
+  }
   return false
+}
+
+function isSameSite(url: URL | null): boolean {
+  if (!url) return false
+  const here = siteOfUrl(location.href)
+  return here !== null && here === siteOfUrl(url.href)
 }
 
 function stubWindow(): Window {
@@ -210,6 +238,7 @@ function install(): void {
   for (const type of ['pointerdown', 'mousedown', 'touchstart', 'click'] as const) {
     window.addEventListener(type, recordClick, true)
   }
+  window.addEventListener('keydown', recordInteraction, true)
   window.addEventListener('click', onCaptureClick, true)
 }
 

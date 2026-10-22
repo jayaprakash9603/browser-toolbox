@@ -9,6 +9,7 @@ export const THREAT_CATEGORIES = [
   'clipboard',
   'notification',
   'download',
+  'redirect',
 ] as const
 
 export type ThreatCategory = (typeof THREAT_CATEGORIES)[number]
@@ -29,6 +30,8 @@ export interface ProtectionState {
   notificationGuard: boolean
   /** Cancel downloads from known-bad hosts and ask before automatic executable downloads. */
   downloadGuard: boolean
+  /** Stop a tab a site opened from later switching to a different site on its own. */
+  openedTabGuard: boolean
   trusted: string[]
 }
 
