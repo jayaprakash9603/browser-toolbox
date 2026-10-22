@@ -39,7 +39,10 @@ function injectCss(): void {
   if (document.getElementById(STYLE_ID)) return
   const style = document.createElement('style')
   style.id = STYLE_ID
-  style.textContent = `${YOUTUBE_COSMETIC_SELECTORS.join(',\n')}{display:none!important}`
+  style.textContent =
+    `${YOUTUBE_COSMETIC_SELECTORS.join(',\n')}{display:none!important}\n` +
+    // Hide the picture of an ad that still plays while it is being skipped.
+    '#movie_player.ad-showing video.html5-main-video{opacity:0!important}'
   ;(document.head ?? document.documentElement).appendChild(style)
 }
 

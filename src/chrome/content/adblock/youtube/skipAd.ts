@@ -44,6 +44,39 @@ export function forceClick(el: HTMLElement): void {
   }
 }
 
+export interface YoutubePlayerApi extends HTMLElement {
+  getStatsForNerds?: () => { debug_info?: string } | undefined
+  getProgressState?: () => { current?: number; duration?: number } | undefined
+  getPlayerResponse?: () => { videoDetails?: { lengthSeconds?: string | number } } | undefined
+  seekTo?: (seconds: number, allowSeekAhead?: boolean) => void
+}
+
+/**
+ * Jump to the end of the ad that is playing (MAIN world, needs the player API).
+ * Server-stitched ads share the <video> with the song, so they are skipped through the player
+ * (whose progress state then describes the ad), exactly like uBO. A separate ad video is
+ * seeked only when its length differs from the song's, so the song itself is never skipped.
+ */
+export function skipAdPlayback(player: YoutubePlayerApi): 'ssap' | 'client' | null {
+  if (!player.classList.contains('ad-showing')) return null
+  const debug = player.getStatsForNerds?.()?.debug_info ?? ''
+  if (debug.startsWith('SSAP, AD')) {
+    const progress = player.getProgressState?.()
+    const duration = Number(progress?.duration)
+    if (!(duration > 0) || Number(progress?.current) >= duration - 0.25) return null
+    player.seekTo?.(duration, true)
+    return 'ssap'
+  }
+  const video = player.querySelector<HTMLVideoElement>('video.html5-main-video, video')
+  const songLength = Number(player.getPlayerResponse?.()?.videoDetails?.lengthSeconds)
+  if (!video || !Number.isFinite(video.duration) || video.duration <= 0) return null
+  if (!(songLength > 0) || Math.abs(video.duration - songLength) <= 2) return null
+  const end = video.duration - 0.1
+  if (video.currentTime >= end) return null
+  video.currentTime = end
+  return 'client'
+}
+
 /** Click “Skip ad” in the page context (MAIN world). Returns true if a click was attempted. */
 export function tryAutoSkipAd(): boolean {
   const button = findSkipButton()

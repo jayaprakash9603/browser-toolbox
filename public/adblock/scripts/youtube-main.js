@@ -184,6 +184,30 @@
 			"click"
 		]) el.dispatchEvent(new MouseEvent(type, opts));
 	}
+	/**
+	* Jump to the end of the ad that is playing (MAIN world, needs the player API).
+	* Server-stitched ads share the <video> with the song, so they are skipped through the player
+	* (whose progress state then describes the ad), exactly like uBO. A separate ad video is
+	* seeked only when its length differs from the song's, so the song itself is never skipped.
+	*/
+	function skipAdPlayback(player) {
+		if (!player.classList.contains("ad-showing")) return null;
+		if ((player.getStatsForNerds?.()?.debug_info ?? "").startsWith("SSAP, AD")) {
+			const progress = player.getProgressState?.();
+			const duration = Number(progress?.duration);
+			if (!(duration > 0) || Number(progress?.current) >= duration - .25) return null;
+			player.seekTo?.(duration, true);
+			return "ssap";
+		}
+		const video = player.querySelector("video.html5-main-video, video");
+		const songLength = Number(player.getPlayerResponse?.()?.videoDetails?.lengthSeconds);
+		if (!video || !Number.isFinite(video.duration) || video.duration <= 0) return null;
+		if (!(songLength > 0) || Math.abs(video.duration - songLength) <= 2) return null;
+		const end = video.duration - .1;
+		if (video.currentTime >= end) return null;
+		video.currentTime = end;
+		return "client";
+	}
 	/** Click “Skip ad” in the page context (MAIN world). Returns true if a click was attempted. */
 	function tryAutoSkipAd() {
 		const button = findSkipButton();
@@ -304,7 +328,8 @@
 		window.setInterval(() => {
 			const player = document.querySelector("#movie_player");
 			if (!player) return;
-			if (player.classList.contains("ad-showing") || player.classList.contains("ad-interrupting") || Boolean(player.querySelector(".ytp-ad-player-overlay, .ytp-ad-module"))) tryAutoSkipAd();
+			if (!(player.classList.contains("ad-showing") || player.classList.contains("ad-interrupting") || Boolean(player.querySelector(".ytp-ad-player-overlay, .ytp-ad-module")))) return;
+			if (!tryAutoSkipAd()) skipAdPlayback(player);
 		}, SKIP_POLL_MS);
 		window.setInterval(attachSkipObserver, 2e3);
 		document.addEventListener("yt-navigate-finish", () => {

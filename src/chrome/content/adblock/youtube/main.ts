@@ -6,7 +6,7 @@ import {
 } from '../scriptlets/jsonPrune'
 
 import { installAbnormalityFilter, installPenaltyTimerBooster } from './antiDetect'
-import { tryAutoSkipAd } from './skipAd'
+import { skipAdPlayback, tryAutoSkipAd, type YoutubePlayerApi } from './skipAd'
 
 type GuardedWindow = Window & { __toolboxAdblockYtMain?: boolean }
 
@@ -138,7 +138,8 @@ function startAutoSkip(): void {
       player.classList.contains('ad-showing') ||
       player.classList.contains('ad-interrupting') ||
       Boolean(player.querySelector('.ytp-ad-player-overlay, .ytp-ad-module'))
-    if (adLikely) tryAutoSkipAd()
+    if (!adLikely) return
+    if (!tryAutoSkipAd()) skipAdPlayback(player as YoutubePlayerApi)
   }, SKIP_POLL_MS)
   window.setInterval(attachSkipObserver, 2000)
   document.addEventListener('yt-navigate-finish', () => {

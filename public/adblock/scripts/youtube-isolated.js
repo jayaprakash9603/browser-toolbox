@@ -136,7 +136,7 @@
 		if (document.getElementById(STYLE_ID)) return;
 		const style = document.createElement("style");
 		style.id = STYLE_ID;
-		style.textContent = `${YOUTUBE_COSMETIC_SELECTORS.join(",\n")}{display:none!important}`;
+		style.textContent = `${YOUTUBE_COSMETIC_SELECTORS.join(",\n")}{display:none!important}\n#movie_player.ad-showing video.html5-main-video{opacity:0!important}`;
 		(document.head ?? document.documentElement).appendChild(style);
 	}
 	function getPlayer() {
