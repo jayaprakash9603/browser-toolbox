@@ -172,6 +172,17 @@ export type ExtensionMessage =
     }
   | { type: 'SCRAPER_JOB_STOP'; tabId: number }
   | { type: 'SCRAPER_JOB_GET'; tabId: number }
+  | { type: 'SCREENSHOT_START'; mode: import('@/core/screenshot/types').ScreenshotMode; urls?: string[] }
+  | { type: 'SCREENSHOT_GET_SESSION'; sessionId: string }
+  | { type: 'SCREENSHOT_MENU_OPEN' }
+  | { type: 'SCREENSHOT_BATCH_URLS'; urls: string[] }
+  | {
+      type: 'SCREENSHOT_PROGRESS'
+      phase: string
+      current: number
+      total: number
+    }
+  | { type: 'SCREENSHOT_MENU_ACTION'; action: 'history' | 'options' }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
@@ -277,6 +288,12 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'SCRAPER_JOB_START',
   'SCRAPER_JOB_STOP',
   'SCRAPER_JOB_GET',
+  'SCREENSHOT_START',
+  'SCREENSHOT_GET_SESSION',
+  'SCREENSHOT_MENU_OPEN',
+  'SCREENSHOT_BATCH_URLS',
+  'SCREENSHOT_PROGRESS',
+  'SCREENSHOT_MENU_ACTION',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {

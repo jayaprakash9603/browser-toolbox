@@ -1,9 +1,11 @@
+import { getToolboxCommand } from '@/core/commands'
 import { stashPayload } from '@/core/payloads'
 import { createLogger } from '@/core/logging'
-
 import { contentScriptBundlePath, ensureContentScriptInTab } from '@/chrome/contentScriptClient'
 
 import { togglePipInTab } from './pip'
+import { openScreenshotCaptureMenu } from './screenshot/menu'
+import { modeFromCommand, startScreenshot } from './screenshot/start'
 
 const logger = createLogger('commands')
 
@@ -24,7 +26,10 @@ export async function executeToolboxCommand(command: string, tab?: chrome.tabs.T
     return
   }
 
-  if (command !== 'toggle-pip' && tab?.windowId != null) {
+  const def = getToolboxCommand(command)
+  const opensPanel = def?.opensPanel ?? command !== 'toggle-pip'
+
+  if (opensPanel && tab?.windowId != null) {
     try {
       await chrome.sidePanel.open({ windowId: tab.windowId })
     } catch (error) {
@@ -51,8 +56,23 @@ export async function executeToolboxCommand(command: string, tab?: chrome.tabs.T
       break
     }
     case 'capture-screenshot':
-      await stashPayload({ toolId: 'screenshots.capture', pageUrl: tab?.url })
+    case 'capture-entire':
+    case 'capture-visible':
+    case 'capture-selection':
+    case 'capture-element': {
+      const mode = modeFromCommand(command)
+      if (mode) await startScreenshot(mode, tab)
       break
+    }
+    case 'capture-menu': {
+      if (tab?.id != null) {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: openScreenshotCaptureMenu,
+        })
+      }
+      break
+    }
     default:
       logger.debug('unknown command', command)
   }

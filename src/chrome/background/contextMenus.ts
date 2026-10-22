@@ -6,6 +6,7 @@ import { buildMenuItems } from '../context-menu/menuTree'
 import { buildImageConvertMenus } from './imageConvert'
 import { buildPipMenus } from './pip'
 import { buildChatPulseMenus } from './sites/whatsappAnalytics'
+import { buildScreenshotMenus } from './screenshot/contextMenus'
 
 const logger = createLogger('context-menus')
 
@@ -48,6 +49,11 @@ async function rebuildContextMenusOnce(): Promise<void> {
     { name: 'pip', run: buildPipMenus },
     { name: 'chatPulse', run: buildChatPulseMenus },
   ]
+  try {
+    buildScreenshotMenus(createContextMenu)
+  } catch (error) {
+    logger.warn('screenshot menu build failed', error)
+  }
   for (const { name, run } of builders) {
     try {
       await run()

@@ -38,6 +38,7 @@ import {
 import { initShortcutsOnStartup, registerShortcuts } from './shortcuts'
 import { registerApiClientSendHandler } from './api-client-send'
 import { registerCaptureHandler } from './capture'
+import { registerScreenshotHandlers } from './screenshot'
 import { registerHtmlBundleJobHandlers } from './htmlBundleJob'
 import { registerImageDownloadJobHandlers } from './imageDownloadJob'
 import { registerNetMonitor } from './netmon'
@@ -110,6 +111,16 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     if (host) void addAllowlistHost(host)
     return
   }
+  if (menuItemId.startsWith('toolbox.screenshot.')) {
+    void import('./screenshot/contextMenus').then(({ screenshotModeFromMenuAction }) => {
+      const mode = screenshotModeFromMenuAction(menuItemId)
+      if (!mode) return
+      void import('./screenshot/start').then(({ startScreenshot }) => {
+        void startScreenshot(mode as import('@/core/screenshot/types').ScreenshotMode, tab)
+      })
+    })
+    return
+  }
   if (menuItemId === 'toolbox.open' || menuItemId.startsWith('toolbox.open.')) {
     if (tab?.windowId != null) void chrome.sidePanel.open({ windowId: tab.windowId })
     return
@@ -132,6 +143,7 @@ const rebuildMenus = () => enqueueContextMenuRebuild()
 
 safeRegister('apiClientSend', registerApiClientSendHandler)
 safeRegister('capture', registerCaptureHandler)
+safeRegister('screenshot', registerScreenshotHandlers)
 safeRegister('htmlBundleJob', registerHtmlBundleJobHandlers)
 safeRegister('imageDownloadJob', registerImageDownloadJobHandlers)
 safeRegister('adblock', registerAdblock)

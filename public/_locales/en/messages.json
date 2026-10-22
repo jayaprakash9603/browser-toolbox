@@ -15,7 +15,25 @@
     "message": "Pick an element on the current page"
   },
   "commandCaptureScreenshot": {
-    "message": "Capture a screenshot"
+    "message": "Capture entire page"
+  },
+  "commandCaptureEntire": {
+    "message": "Capture entire page"
+  },
+  "commandCaptureVisible": {
+    "message": "Capture visible part"
+  },
+  "commandCaptureSelection": {
+    "message": "Capture selection"
+  },
+  "commandCaptureElement": {
+    "message": "Capture element"
+  },
+  "commandCaptureMenu": {
+    "message": "Open capture menu"
+  },
+  "contextMenuScreenshot": {
+    "message": "Capture"
   },
   "commandTogglePip": {
     "message": "Toggle Picture-in-Picture for the current tab"
