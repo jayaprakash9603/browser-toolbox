@@ -34,11 +34,54 @@ const tabsTriggerVariants = cva(
   },
 )
 
-function measureActiveTab(list: HTMLElement | null) {
-  if (!list) return { left: 0, width: 0 }
-  const active = list.querySelector<HTMLElement>('[role="tab"][data-state="active"]')
-  if (!active) return { left: 0, width: 0 }
-  return { left: active.offsetLeft, width: active.offsetWidth }
+const UNDERLINE_PX = 2
+const EDGE_FADE_PX = 20
+const SCROLL_PADDING_PX = 24
+
+type UnderlineBox = { left: number; top: number; width: number }
+type Edges = { start: boolean; end: boolean }
+
+function activeTab(list: HTMLElement): HTMLElement | null {
+  return list.querySelector<HTMLElement>('[role="tab"][data-state="active"]')
+}
+
+/** Position inside the list's scrollable content, so wrapped rows and scrolled lists line up. */
+function measureActiveTab(list: HTMLElement | null): UnderlineBox {
+  const active = list && activeTab(list)
+  if (!list || !active) return { left: 0, top: 0, width: 0 }
+  const l = list.getBoundingClientRect()
+  const a = active.getBoundingClientRect()
+  return {
+    left: a.left - l.left + list.scrollLeft,
+    top: a.bottom - l.top + list.scrollTop - UNDERLINE_PX,
+    width: a.width,
+  }
+}
+
+function measureEdges(list: HTMLElement | null): Edges {
+  if (!list || list.scrollWidth <= list.clientWidth + 1) return { start: false, end: false }
+  return {
+    start: list.scrollLeft > 1,
+    end: list.scrollLeft + list.clientWidth < list.scrollWidth - 1,
+  }
+}
+
+function edgeMask({ start, end }: Edges): string | undefined {
+  if (!start && !end) return undefined
+  const from = start ? `transparent, #000 ${EDGE_FADE_PX}px` : '#000, #000'
+  const to = end ? `#000 calc(100% - ${EDGE_FADE_PX}px), transparent` : '#000, #000'
+  return `linear-gradient(to right, ${from}, ${to})`
+}
+
+function scrollActiveIntoView(list: HTMLElement | null, smooth: boolean) {
+  const active = list && activeTab(list)
+  if (!list || !active || list.scrollWidth <= list.clientWidth) return
+  const l = list.getBoundingClientRect()
+  const a = active.getBoundingClientRect()
+  let delta = 0
+  if (a.left < l.left + SCROLL_PADDING_PX) delta = a.left - l.left - SCROLL_PADDING_PX
+  else if (a.right > l.right - SCROLL_PADDING_PX) delta = a.right - l.right + SCROLL_PADDING_PX
+  if (delta) list.scrollTo({ left: list.scrollLeft + delta, behavior: smooth ? 'smooth' : 'auto' })
 }
 
 function Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Root>) {
@@ -48,67 +91,73 @@ function Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive
 function TabsList({
   className,
   variant = 'underline',
+  children,
+  style,
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.List> & VariantProps<typeof tabsListVariants>) {
   const resolved = variant ?? 'underline'
   const listRef = React.useRef<HTMLDivElement>(null)
-  const [underline, setUnderline] = React.useState({ left: 0, width: 0 })
+  const [underline, setUnderline] = React.useState<UnderlineBox>({ left: 0, top: 0, width: 0 })
+  const [edges, setEdges] = React.useState<Edges>({ start: false, end: false })
   const reduceMotion = useReducedMotion()
 
-  const syncUnderline = React.useCallback(() => {
-    if (resolved !== 'underline') return
-    setUnderline(measureActiveTab(listRef.current))
+  const sync = React.useCallback(() => {
+    const node = listRef.current
+    setEdges((prev) => {
+      const next = measureEdges(node)
+      return next.start === prev.start && next.end === prev.end ? prev : next
+    })
+    if (resolved === 'underline') setUnderline(measureActiveTab(node))
   }, [resolved])
 
   React.useLayoutEffect(() => {
-    if (resolved !== 'underline') return
-    syncUnderline()
     const node = listRef.current
     if (!node) return
+    scrollActiveIntoView(node, false)
+    sync()
 
-    const observer = new MutationObserver(syncUnderline)
-    observer.observe(node, {
-      attributes: true,
-      subtree: true,
-      attributeFilter: ['data-state'],
-      childList: true,
+    const observer = new MutationObserver(() => {
+      scrollActiveIntoView(node, !reduceMotion)
+      sync()
     })
+    observer.observe(node, { attributes: true, subtree: true, attributeFilter: ['data-state'], childList: true })
 
-    const resizeObserver = new ResizeObserver(syncUnderline)
+    const resizeObserver = new ResizeObserver(sync)
     resizeObserver.observe(node)
-    for (const tab of node.querySelectorAll('[role="tab"]')) {
-      resizeObserver.observe(tab)
-    }
+    for (const tab of node.querySelectorAll('[role="tab"]')) resizeObserver.observe(tab)
 
-    window.addEventListener('resize', syncUnderline)
+    node.addEventListener('scroll', sync, { passive: true })
+    window.addEventListener('resize', sync)
     return () => {
       observer.disconnect()
       resizeObserver.disconnect()
-      window.removeEventListener('resize', syncUnderline)
+      node.removeEventListener('scroll', sync)
+      window.removeEventListener('resize', sync)
     }
-  }, [resolved, syncUnderline])
+  }, [sync, reduceMotion])
+
+  const mask = edgeMask(edges)
 
   return (
     <TabsVariantContext.Provider value={resolved}>
-      <div className={cn('relative w-fit max-w-full', resolved === 'underline' && 'border-b border-border')}>
+      <div className={cn('w-fit max-w-full', resolved === 'underline' && 'border-b border-border')}>
         <TabsPrimitive.List
           ref={listRef}
-          className={cn(tabsListVariants({ variant: resolved }), className)}
+          className={cn(tabsListVariants({ variant: resolved }), 'relative max-w-full', className)}
+          style={mask ? { ...style, maskImage: mask, WebkitMaskImage: mask } : style}
           {...props}
-        />
-        {resolved === 'underline' && underline.width > 0 && (
-          <motion.div
-            aria-hidden
-            className="pointer-events-none absolute bottom-0 left-0 z-20 h-0.5 bg-primary"
-            initial={false}
-            animate={{ left: underline.left, width: underline.width }}
-            transition={
-              reduceMotion
-                ? { duration: 0 }
-                : { type: 'spring', stiffness: 400, damping: 40 }
-            }
-          />
-        )}
+        >
+          {children}
+          {resolved === 'underline' && underline.width > 0 && (
+            <motion.span
+              aria-hidden
+              className="pointer-events-none absolute top-0 left-0 z-20 h-0.5 rounded-full bg-primary"
+              initial={false}
+              animate={{ left: underline.left, top: underline.top, width: underline.width }}
+              transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 400, damping: 40 }}
+            />
+          )}
+        </TabsPrimitive.List>
       </div>
     </TabsVariantContext.Provider>
   )

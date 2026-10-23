@@ -366,7 +366,8 @@ html[data-density='comfortable'] {
 }
 
 @utility scrollbar-none {
-  scrollbar-width: none;
+  /* the unlayered `*` rule above outranks layered utilities */
+  scrollbar-width: none !important;
 
   &::-webkit-scrollbar {
     display: none;

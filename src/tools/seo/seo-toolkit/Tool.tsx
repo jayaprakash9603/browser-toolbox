@@ -34,6 +34,21 @@ const TAB_IDS = [
   'advanced',
 ] as const
 
+type TabId = (typeof TAB_IDS)[number]
+
+const TAB_LABELS: Record<TabId, string> = {
+  overview: 'seo.tabOverview',
+  content: 'seo.tabContent',
+  headings: 'seo.tabHeadings',
+  links: 'seo.tabLinks',
+  images: 'seo.tabImages',
+  schema: 'seo.tabSchema',
+  social: 'seo.tabSocial',
+  performance: 'seo.tabPerformance',
+  issues: 'seo.tabIssues',
+  advanced: 'seo.tabAdvanced',
+}
+
 export default function SeoToolkitTool() {
   const { t } = useTranslation()
   const tool = useSeoTool('seo.toolkit')
@@ -90,18 +105,18 @@ export default function SeoToolkitTool() {
             </div>
           </div>
 
-          <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-            <TabsList className="flex h-auto w-full flex-wrap justify-start gap-0.5">
-              <TabsTrigger value="overview" className="text-[10px]">{t('seo.tabOverview')}</TabsTrigger>
-              <TabsTrigger value="content" className="text-[10px]">{t('seo.tabContent')}</TabsTrigger>
-              <TabsTrigger value="headings" className="text-[10px]">{t('seo.tabHeadings')}</TabsTrigger>
-              <TabsTrigger value="links" className="text-[10px]">{t('seo.tabLinks')}</TabsTrigger>
-              <TabsTrigger value="images" className="text-[10px]">{t('seo.tabImages')}</TabsTrigger>
-              <TabsTrigger value="schema" className="text-[10px]">{t('seo.tabSchema')}</TabsTrigger>
-              <TabsTrigger value="social" className="text-[10px]">{t('seo.tabSocial')}</TabsTrigger>
-              <TabsTrigger value="performance" className="text-[10px]">{t('seo.tabPerformance')}</TabsTrigger>
-              <TabsTrigger value="issues" className="text-[10px]">{t('seo.tabIssues')}</TabsTrigger>
-              <TabsTrigger value="advanced" className="text-[10px]">{t('seo.tabAdvanced')}</TabsTrigger>
+          <Tabs value={tab} onValueChange={(v) => setTab(v as TabId)}>
+            <TabsList className="scrollbar-none w-full justify-start overflow-x-auto overscroll-x-contain">
+              {TAB_IDS.map((id) => (
+                <TabsTrigger
+                  key={id}
+                  value={id}
+                  className="shrink-0 px-2.5 text-xs"
+                  count={id === 'issues' && issueCount > 0 ? issueCount : undefined}
+                >
+                  {t(TAB_LABELS[id])}
+                </TabsTrigger>
+              ))}
             </TabsList>
 
             <TabsContent value="overview" className="mt-2">
