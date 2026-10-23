@@ -3,9 +3,11 @@ import { isEntity, normalizeDomain } from './parseFilter.mjs'
 
 const SCRIPTLET_RE = /^([^#]*)#(@?)#\+js\((.*)\)$/
 const MAX_ARGS_LENGTH = 2048
+/** uBO's own lists carry long inline-script rewrites (YouTube's serverContract rpnt is ~3.4 KB). */
+const MAX_TRUSTED_ARGS_LENGTH = 8192
 
 /** Order matters: shard entries store the ruleset as an index into this list. */
-export const SCRIPTLET_RULESETS = ['ads', 'privacy', 'annoyances']
+export const SCRIPTLET_RULESETS = ['ads', 'privacy', 'annoyances', 'youtube']
 
 /** uBO argument syntax: comma separated, `\,` escapes a comma, an argument may be quoted. */
 export function splitScriptletArgs(body) {
@@ -68,7 +70,7 @@ export function parseScriptletFilter(line, { trusted = false } = {}) {
   if (trimmed.startsWith('!') || trimmed.startsWith('[')) return null
   const m = SCRIPTLET_RE.exec(trimmed)
   if (!m) return null
-  if (m[3].length > MAX_ARGS_LENGTH) return { invalid: 'too-long' }
+  if (m[3].length > (trusted ? MAX_TRUSTED_ARGS_LENGTH : MAX_ARGS_LENGTH)) return { invalid: 'too-long' }
   // `host>>` targets frames embedded by host; a frame only knows its own hostname here.
   if (m[1].includes('>>')) return { invalid: 'frame-context' }
   const exception = m[2] === '@'
@@ -85,10 +87,12 @@ export function parseScriptletFilter(line, { trusted = false } = {}) {
 }
 
 /**
- * YouTube belongs to the dedicated YouTube module (and its on/off setting). List scriptlets there
- * add a second set of detectable player patches, which brings back playback interruptions.
+ * YouTube ad scriptlets follow the YouTube ad-blocking setting rather than the general ads list,
+ * so they are filed under their own ruleset.
  */
-const OWN_YOUTUBE_RE = /(^|\.)youtube(-nocookie)?\.(com|\*)$/
+const YOUTUBE_HOST_RE = /(^|\.)youtube(-nocookie|kids)?\.(com|\*)$/
+const YOUTUBE_RULESET = SCRIPTLET_RULESETS.indexOf('youtube')
+const ADS_RULESET = SCRIPTLET_RULESETS.indexOf('ads')
 
 const scriptletKey = (name, args) => `${name}\u0000${JSON.stringify(args)}`
 
@@ -148,11 +152,12 @@ export function createScriptletCollector() {
       const index = SCRIPTLET_RULESETS.indexOf(ruleset)
       for (const entry of entries.values()) {
         const excluded = [...entry.excluded].sort()
-        const record = excluded.length ? [index, entry.name, entry.args, excluded] : [index, entry.name, entry.args]
+        const recordFor = (i) => (excluded.length ? [i, entry.name, entry.args, excluded] : [i, entry.name, entry.args])
+        const record = recordFor(index)
+        const youtubeRecord = index === ADS_RULESET ? recordFor(YOUTUBE_RULESET) : record
         for (const host of entry.hosts) {
-          if (OWN_YOUTUBE_RE.test(host)) continue
           if (!byHost.has(host)) byHost.set(host, [])
-          byHost.get(host).push(record)
+          byHost.get(host).push(YOUTUBE_HOST_RE.test(host) ? youtubeRecord : record)
         }
       }
     }

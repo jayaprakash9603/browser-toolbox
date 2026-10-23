@@ -1,69 +1,19 @@
-import { YOUTUBE_AD_PLAYER_CLASSES, YOUTUBE_COSMETIC_SELECTORS } from './selectors'
-import { tryAutoSkipAd } from './skipAd'
+import { YOUTUBE_COSMETIC_SELECTORS } from './selectors'
 
 type GuardedWindow = Window & { __toolboxYtIsolated?: boolean }
 
 const STYLE_ID = 'toolbox-adblock-youtube'
-const REPORT_DELAY_MS = 1500
-const FAST_FORWARD_RATE = 16
-const AD_POLL_MS = 200
+const ENFORCEMENT_POLL_MS = 1000
 
 let enabled = false
-let pendingBlocked = 0
-let reportTimer: ReturnType<typeof setTimeout> | null = null
-let playerObserver: MutationObserver | null = null
-let pollTimer: ReturnType<typeof setInterval> | null = null
-let adPollTimer: ReturnType<typeof setInterval> | null = null
 let enforcementTimer: ReturnType<typeof setInterval> | null = null
-let playerMutationTimer: ReturnType<typeof setTimeout> | null = null
-let saved: { muted: boolean; rate: number } | null = null
-let adActive = false
-
-function queueReport(count: number): void {
-  if (count <= 0) return
-  pendingBlocked += count
-  if (reportTimer) return
-  reportTimer = setTimeout(() => {
-    reportTimer = null
-    const youtube = pendingBlocked
-    pendingBlocked = 0
-    try {
-      void chrome.runtime.sendMessage({ type: 'ADBLOCK_COSMETIC_REPORT', youtube }).catch(() => {})
-    } catch {
-      /* extension reloaded */
-    }
-  }, REPORT_DELAY_MS)
-}
 
 function injectCss(): void {
   if (document.getElementById(STYLE_ID)) return
   const style = document.createElement('style')
   style.id = STYLE_ID
-  style.textContent =
-    `${YOUTUBE_COSMETIC_SELECTORS.join(',\n')}{display:none!important}\n` +
-    // Hide the picture of an ad that still plays while it is being skipped.
-    '#movie_player.ad-showing video.html5-main-video{opacity:0!important}'
+  style.textContent = `${YOUTUBE_COSMETIC_SELECTORS.join(',\n')}{display:none!important}`
   ;(document.head ?? document.documentElement).appendChild(style)
-}
-
-function getPlayer(): HTMLElement | null {
-  return document.querySelector<HTMLElement>('#movie_player, .html5-video-player')
-}
-
-function getVideo(player: HTMLElement): HTMLVideoElement | null {
-  return player.querySelector<HTMLVideoElement>('video.html5-main-video, video')
-}
-
-/** Only the player's own ad state: leftover ad UI nodes stay in the DOM during normal playback. */
-function isAdPlaying(player: HTMLElement): boolean {
-  return YOUTUBE_AD_PLAYER_CLASSES.some((cls) => player.classList.contains(cls))
-}
-
-function restoreVideo(video: HTMLVideoElement | null): void {
-  if (!saved || !video) return
-  video.muted = saved.muted
-  video.playbackRate = saved.rate
-  saved = null
 }
 
 /**
@@ -77,107 +27,20 @@ function dismissEnforcementDialog(): void {
   document.querySelectorAll('tp-yt-iron-overlay-backdrop').forEach((el) => el.remove())
   document.body?.style.removeProperty('overflow')
   document.documentElement.style.removeProperty('overflow')
-  const player = getPlayer()
-  const video = player ? getVideo(player) : null
+  const video = document.querySelector<HTMLVideoElement>('#movie_player video.html5-main-video')
   if (video?.paused && !video.ended) void video.play().catch(() => undefined)
-}
-
-/**
- * Fallback when an ad still slips through pruning: mute, fast-forward, skip. Never seek the
- * <video>: server-stitched ads share it with the song, so seeking to its end skips the song.
- */
-function checkPlayer(): void {
-  dismissEnforcementDialog()
-  const player = getPlayer()
-  if (!player) return
-  const video = getVideo(player)
-  if (!isAdPlaying(player)) {
-    if (adActive) {
-      adActive = false
-      restoreVideo(video)
-      stopAdPoll()
-    }
-    return
-  }
-  startAdPoll()
-  if (!video) return
-  if (!adActive) {
-    adActive = true
-    saved = { muted: video.muted, rate: video.playbackRate || 1 }
-    queueReport(1)
-  }
-  video.muted = true
-  if (video.playbackRate !== FAST_FORWARD_RATE) video.playbackRate = FAST_FORWARD_RATE
-  tryAutoSkipAd()
-}
-
-function stopPoll(): void {
-  if (!pollTimer) return
-  clearInterval(pollTimer)
-  pollTimer = null
-}
-
-function resetPlayerObserver(): void {
-  playerObserver?.disconnect()
-  playerObserver = null
-  if (playerMutationTimer) clearTimeout(playerMutationTimer)
-  playerMutationTimer = null
-}
-
-function observePlayer(): void {
-  const player = getPlayer()
-  if (!player) return
-  if (!playerObserver) {
-    playerObserver = new MutationObserver(() => {
-      if (playerMutationTimer) return
-      playerMutationTimer = setTimeout(() => {
-        playerMutationTimer = null
-        checkPlayer()
-      }, 50)
-    })
-    playerObserver.observe(player, {
-      subtree: true,
-      childList: true,
-      attributes: true,
-      attributeFilter: ['class', 'aria-disabled'],
-    })
-  }
-  checkPlayer()
-  stopPoll()
-}
-
-function startAdPoll(): void {
-  if (adPollTimer) return
-  adPollTimer = setInterval(checkPlayer, AD_POLL_MS)
-}
-
-function stopAdPoll(): void {
-  if (!adPollTimer) return
-  clearInterval(adPollTimer)
-  adPollTimer = null
 }
 
 function start(): void {
   injectCss()
-  observePlayer()
-  enforcementTimer ??= setInterval(dismissEnforcementDialog, 1000)
-  if (!getPlayer()) {
-    pollTimer ??= setInterval(() => {
-      observePlayer()
-    }, 1000)
-  }
+  dismissEnforcementDialog()
+  enforcementTimer ??= setInterval(dismissEnforcementDialog, ENFORCEMENT_POLL_MS)
 }
 
 function stop(): void {
   document.getElementById(STYLE_ID)?.remove()
-  resetPlayerObserver()
-  stopPoll()
-  stopAdPoll()
   if (enforcementTimer) clearInterval(enforcementTimer)
   enforcementTimer = null
-  const player = getPlayer()
-  restoreVideo(player ? getVideo(player) : null)
-  adActive = false
 }
 
 function isEnabled(raw: unknown): boolean {
@@ -202,23 +65,8 @@ function applyState(raw: unknown): void {
 const guarded = window as GuardedWindow
 if (!guarded.__toolboxYtIsolated && window === window.top) {
   guarded.__toolboxYtIsolated = true
-
-  window.addEventListener('message', (event: MessageEvent) => {
-    if (event.source !== window || !enabled) return
-    const data = event.data as { source?: string; type?: string; count?: number } | null
-    if (data?.source === 'toolbox-adblock' && data.type === 'yt-pruned') {
-      queueReport(Number(data.count) > 0 ? 1 : 0)
-    }
-  })
-
   chrome.storage.local.get('adblock', (result) => applyState(result.adblock))
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local' && changes.adblock) applyState(changes.adblock.newValue)
-  })
-
-  document.addEventListener('yt-navigate-finish', () => {
-    if (!enabled) return
-    resetPlayerObserver()
-    observePlayer()
   })
 }

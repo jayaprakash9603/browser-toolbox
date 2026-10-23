@@ -1,3 +1,7 @@
+/**
+ * Not `#player-ads`: uBO explicitly un-hides it (`youtube.com#@##player-ads`) because YouTube
+ * treats a hidden companion slot as an ad blocker.
+ */
 export const YOUTUBE_COSMETIC_SELECTORS = [
   'ytd-ad-slot-renderer',
   'ytd-banner-promo-renderer',
@@ -15,15 +19,12 @@ export const YOUTUBE_COSMETIC_SELECTORS = [
   'ytd-rich-section-renderer:has(ytd-statement-banner-renderer)',
   'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"]',
   'ytd-merch-shelf-renderer',
-  'ytd-player-legacy-desktop-watch-ads-renderer',
   '#masthead-ad',
-  '#player-ads',
   '#panels > ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"]',
   '.ytp-ad-overlay-slot',
   '.ytp-ad-overlay-container',
   '.ytp-ad-image-overlay',
   '.ytp-suggested-action-badge',
-  '.ytd-companion-slot-renderer',
   'ytm-promoted-sparkles-web-renderer',
   'ytm-companion-ad-renderer',
   'ad-slot-renderer',
@@ -32,19 +33,4 @@ export const YOUTUBE_COSMETIC_SELECTORS = [
   'tp-yt-paper-toast:has(a[href*="check_ad_blockers"])',
   'yt-notification-action-renderer:has(a[href*="check_ad_blockers"])',
   '.ytSnackbarContainerOpened:has(> .snackbarViewModelSwipeable > .snackbarViewModelEngagementBarWrapper .ytAttributedStringWhiteSpacePreWrap[style])',
-] as const
-
-export const YOUTUBE_AD_PLAYER_CLASSES = ['ad-showing', 'ad-interrupting'] as const
-
-export const YOUTUBE_SKIP_BUTTON_SELECTORS = [
-  '.ytp-skip-ad-button',
-  '.ytp-ad-skip-button:not(.ytp-ad-skip-button-disabled)',
-  '.ytp-ad-skip-button-modern:not(.ytp-ad-skip-button-disabled)',
-  '.ytp-ad-skip-button-container:not(.ytp-ad-skip-button-disabled) .ytp-ad-skip-button',
-  '.ytp-ad-skip-button-container:not(.ytp-ad-skip-button-disabled) button',
-  'button.ytp-ad-skip-button-modern',
-  '.ytp-ad-skip-button-slot:not(.ytp-ad-skip-button-disabled) .ytp-ad-button-icon',
-  'button.ytp-ad-skip-button-slot',
-  '.video-ads .ytp-ad-skip-button-container button',
-  '.ytp-ad-skip-button-modern .ytp-ad-button-icon',
 ] as const

@@ -4,6 +4,8 @@
  * the MAIN-world page script, and the list build uses SCRIPTLETS to validate filters.
  */
 
+import { createJsonPath } from './jsonpath.mjs'
+
 function setConstant(h, chain, rawValue, ...rest) {
   if (!chain) return
   const parsed = h.constant(rawValue)
@@ -284,46 +286,101 @@ function noEval(h) {
   h.wrapApply(h.win, 'eval', () => undefined)
 }
 
-function nodeNameMatcher(h, nodeName) {
-  const value = String(nodeName ?? '').toLowerCase()
-  if (/^\/.+\/[a-z]*$/.test(value)) {
-    const p = h.pattern(value)
-    return (name) => p.test(name)
+/**
+ * Rewrites the text of matching nodes (inline scripts included, before they run) as uBO's
+ * replace-node-text does: existing nodes first, then added ones until the DOM is interactive
+ * (or `quitAfter` ms later), unless `stay`. Varargs: `includes`/`condition`, `excludes`,
+ * `sedCount`, `stay`, `quitAfter`.
+ */
+function replaceNodeTextFn(h, nodeName = '', needle = '', replacement = '', ...rest) {
+  const reNodeName = h.toRegex(nodeName, 'i', true)
+  const rePattern = h.toRegex(needle, 'gms')
+  const opts = h.extras(rest)
+  const includes = opts.includes || opts.condition
+  const reIncludes = includes ? h.toRegex(includes, 'ms') : null
+  const reExcludes = opts.excludes ? h.toRegex(opts.excludes, 'ms') : null
+  let sedCount = /^\d+$/.test(opts.sedCount ?? '') ? Number(opts.sedCount) : Number.MAX_SAFE_INTEGER
+  const handleNode = (node) => {
+    const before = node.textContent
+    if (reIncludes) {
+      reIncludes.lastIndex = 0
+      if (!reIncludes.test(before)) return
+    }
+    if (reExcludes) {
+      reExcludes.lastIndex = 0
+      if (reExcludes.test(before)) return
+    }
+    rePattern.lastIndex = 0
+    if (!rePattern.test(before)) return
+    rePattern.lastIndex = 0
+    const after = needle !== '' ? before.replace(rePattern, replacement) : replacement
+    try {
+      node.textContent = node.nodeName === 'SCRIPT' ? h.scriptText(after) : after
+    } catch {
+      return
+    }
+    sedCount -= 1
   }
-  return (name) => name === value
+  const handleTree = (root) => {
+    const walker = h.doc.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT)
+    const self = h.doc.currentScript
+    for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+      if (node === self) continue
+      if (reNodeName.test(node.nodeName)) handleNode(node)
+      else if (node.nodeName === 'TEMPLATE') handleTree(node.content)
+      else continue
+      if (sedCount === 0) break
+    }
+  }
+  if (h.doc.documentElement) handleTree(h.doc.documentElement)
+  const stay = Boolean(opts.stay)
+  if ((sedCount === 0 && !stay) || typeof MutationObserver !== 'function') return
+  let observer = null
+  const handleMutations = (records) => {
+    for (const record of records) {
+      for (const node of record.addedNodes) {
+        if (reNodeName.test(node.nodeName)) handleNode(node)
+        else if (node.nodeName === 'TEMPLATE') handleTree(node.content)
+        else continue
+        if (sedCount === 0) {
+          observer.disconnect()
+          return
+        }
+      }
+    }
+  }
+  const stop = () => {
+    const pending = observer.takeRecords()
+    observer.disconnect()
+    handleMutations(pending)
+  }
+  observer = new MutationObserver(handleMutations)
+  observer.observe(h.doc, { childList: true, subtree: true })
+  if (stay) return
+  const quit = () => {
+    const ms = Number.parseInt(opts.quitAfter ?? '', 10)
+    if (ms > 0) setTimeout(stop, ms)
+    else stop()
+  }
+  if (h.doc.readyState !== 'loading') quit()
+  else {
+    const onState = () => {
+      if (h.doc.readyState === 'loading') return
+      h.doc.removeEventListener('readystatechange', onState)
+      quit()
+    }
+    h.doc.addEventListener('readystatechange', onState)
+  }
 }
 
-function removeNodeText(h, nodeName, needle, ...rest) {
-  if (!nodeName || !needle) return
-  const nameOk = nodeNameMatcher(h, nodeName)
-  const needleP = h.pattern(needle)
-  h.observeNodes((node) => {
-    if (!nameOk(node.nodeName.toLowerCase())) return
-    if (!needleP.test(node.textContent)) return
-    if (node.nodeType === 1) node.textContent = ''
-    node.remove()
-  }, h.extras(rest).quitAfter)
+function removeNodeText(h, nodeName, includes, ...rest) {
+  if (!nodeName || !includes) return
+  replaceNodeTextFn(h, nodeName, '', '', 'includes', includes, ...rest)
 }
 
 function replaceNodeText(h, nodeName, needle, replacement, ...rest) {
-  if (!nodeName || !needle) return
-  const nameOk = nodeNameMatcher(h, nodeName)
-  const needleP = h.pattern(needle, 'gms')
-  if (!needleP.re) return
-  const opts = h.extras(rest)
-  const condition = h.pattern(opts.condition)
-  const replace = (node) => {
-    const before = node.textContent
-    if (!condition.test(before)) return
-    needleP.re.lastIndex = 0
-    const after = before.replace(needleP.re, replacement ?? '')
-    if (after !== before) node.textContent = after
-  }
-  h.observeNodes((node) => {
-    if (!nameOk(node.nodeName.toLowerCase())) return
-    if (node.nodeType === 1 && node.localName !== 'script' && node.localName !== 'style') return
-    replace(node)
-  }, opts.quitAfter)
+  if (!nodeName) return
+  replaceNodeTextFn(h, nodeName, needle, replacement ?? '', ...rest)
 }
 
 function removeAttr(h, rawAttrs, selector, behavior) {
@@ -483,87 +540,242 @@ function jsonPrune(h, rawPrune, rawNeedles, stackNeedle) {
   if (!rawPrune) return
   const prune = h.jsonPruner(rawPrune, rawNeedles)
   const stackP = stackNeedle ? h.pattern(stackNeedle) : null
-  const maybePrune = (data) => {
+  h.wrapApply(JSON, 'parse', (target, thisArg, args) => {
+    const data = h.apply(target, thisArg, args)
     if (stackP && !stackP.test(h.stackText())) return data
     prune(data)
     return data
-  }
-  h.wrapApply(JSON, 'parse', (target, thisArg, args) => maybePrune(h.apply(target, thisArg, args)))
-  h.wrapApply(Response.prototype, 'json', (target, thisArg, args) =>
-    h.apply(target, thisArg, args).then(maybePrune),
+  })
+}
+
+/**
+ * Proxies `fetch` so matching responses (`propsToMatch`, implicit key `url`) can be rewritten.
+ * `edit(responseBefore)` resolves to a replacement Response, or to undefined to keep the original.
+ */
+function wrapFetchResponse(h, propsToMatch, edit) {
+  const matcher = h.propsMatcher(propsToMatch)
+  h.wrapApply(h.win, 'fetch', (target, thisArg, args) => {
+    const pending = h.apply(target, thisArg, args)
+    if (!matcher.empty && !matcher.test(h.fetchDetails(args[0], args[1]))) return pending
+    return pending
+      .then((before) =>
+        edit(before).then(
+          (after) => after || before,
+          () => before,
+        ),
+      )
+      .catch(() => pending)
+  })
+}
+
+function jsonFetchEdit(h, propsToMatch, editObject) {
+  wrapFetchResponse(h, propsToMatch, (before) =>
+    before
+      .clone()
+      .json()
+      .then((data) => {
+        if (typeof data !== 'object' || data === null) return undefined
+        const after = editObject(data)
+        if (after === undefined) return undefined
+        const init = { status: before.status, statusText: before.statusText, headers: before.headers }
+        return h.withResponseMeta(h.native.Response_json(after, init), before)
+      }),
   )
 }
 
 function jsonPruneFetchResponse(h, rawPrune, rawNeedles, ...rest) {
   if (!rawPrune) return
   const prune = h.jsonPruner(rawPrune, rawNeedles)
-  const matcher = h.propsMatcher(h.extras(rest).propsToMatch)
-  h.wrapApply(h.win, 'fetch', (target, thisArg, args) => {
-    const [resource, init] = args
-    const details = {
-      url: resource instanceof Request ? resource.url : String(resource),
-      method: (init && init.method) || (resource instanceof Request ? resource.method : 'GET'),
+  jsonFetchEdit(h, h.extras(rest).propsToMatch, (data) => (prune(data) ? data : undefined))
+}
+
+/**
+ * Swaps in an `XMLHttpRequest` subclass whose `response`/`responseText` pass matching requests'
+ * bodies through `transform(text|object)`; results are cached per response length.
+ */
+function wrapXhrResponse(h, propsToMatch, transform) {
+  const matcher = h.propsMatcher(propsToMatch)
+  const tracked = new WeakMap()
+  const Base = h.win.XMLHttpRequest
+  if (typeof Base !== 'function') return
+  h.win.XMLHttpRequest = class extends Base {
+    open(method, url, ...args) {
+      const details = { method, url }
+      if (matcher.empty || matcher.test(details)) tracked.set(this, details)
+      else tracked.delete(this)
+      return super.open(method, url, ...args)
     }
-    const pending = h.apply(target, thisArg, args)
-    if (!matcher.empty && !matcher.test(details)) return pending
-    return pending.then((response) =>
-      response
-        .clone()
-        .json()
-        .then((data) => {
-          if (!prune(data)) return response
-          const pruned = new Response(JSON.stringify(data), {
-            status: response.status,
-            statusText: response.statusText,
-            headers: response.headers,
-          })
-          h.defineProperty(pruned, 'url', { value: response.url })
-          h.defineProperty(pruned, 'type', { value: response.type })
-          return pruned
-        })
-        .catch(() => response),
-    )
-  })
+    get response() {
+      const inner = super.response
+      const details = tracked.get(this)
+      if (details === undefined) return inner
+      const length = typeof inner === 'string' ? inner.length : undefined
+      if (details.lastLength !== length) {
+        details.response = undefined
+        details.lastLength = length
+      }
+      if (details.response !== undefined) return details.response
+      let outer = inner
+      try {
+        outer = transform(inner)
+      } catch {
+        /* leave the body alone */
+      }
+      details.response = outer
+      return outer
+    }
+    get responseText() {
+      const response = this.response
+      return typeof response === 'string' ? response : super.responseText
+    }
+  }
 }
 
 function jsonPruneXhrResponse(h, rawPrune, rawNeedles, ...rest) {
   if (!rawPrune) return
   const prune = h.jsonPruner(rawPrune, rawNeedles)
-  const matcher = h.propsMatcher(h.extras(rest).propsToMatch)
-  const proto = XMLHttpRequest.prototype
-  const tracked = new WeakMap()
-  h.wrapApply(proto, 'open', (target, xhr, args) => {
-    const details = { method: String(args[0]), url: String(args[1]) }
-    if (matcher.empty || matcher.test(details)) tracked.set(xhr, { done: false, value: undefined })
-    else tracked.delete(xhr)
-    return h.apply(target, xhr, args)
+  wrapXhrResponse(h, h.extras(rest).propsToMatch, (inner) => {
+    let data = inner
+    if (typeof inner === 'string') {
+      try {
+        data = h.native.JSON_parse(inner)
+      } catch {
+        return inner
+      }
+    }
+    if (typeof data !== 'object' || data === null || !prune(data)) return inner
+    return typeof inner === 'string' ? h.native.JSON_stringify(data) : data
   })
-  for (const prop of ['response', 'responseText']) {
-    const desc = h.getOwnPropertyDescriptor(proto, prop)
-    if (!desc || !desc.get) continue
-    const nativeGet = desc.get
-    h.defineProperty(proto, prop, {
-      ...desc,
-      get() {
-        const value = h.apply(nativeGet, this, [])
-        const state = tracked.get(this)
-        if (!state || this.readyState !== 4) return value
-        if (state.done) return state[prop] ?? value
-        state.done = true
-        let out = value
-        try {
-          if (typeof value === 'string') {
-            const data = JSON.parse(value)
-            if (prune(data)) out = JSON.stringify(data)
-          } else if (h.isObject(value)) prune(value)
-        } catch {
-          /* not JSON */
-        }
-        state[prop] = out
-        return out
-      },
-    })
+}
+
+function replaceResponseRegex(h, pattern, rest) {
+  const opts = h.extras(rest)
+  return {
+    re: h.toRegex(pattern === '*' ? '.*' : pattern),
+    includes: opts.includes ? h.toRegex(opts.includes) : null,
   }
+}
+
+function trustedReplaceFetchResponse(h, pattern = '', replacement = '', propsToMatch = '', ...rest) {
+  if (pattern === '') return
+  const { re, includes } = replaceResponseRegex(h, pattern, rest)
+  wrapFetchResponse(h, propsToMatch, (before) =>
+    before
+      .clone()
+      .text()
+      .then((textBefore) => {
+        if (includes && !includes.test(textBefore)) return undefined
+        const textAfter = textBefore.replace(re, replacement)
+        if (textAfter === textBefore) return undefined
+        const init = { status: before.status, statusText: before.statusText, headers: before.headers }
+        return h.withResponseMeta(new Response(textAfter, init), before)
+      }),
+  )
+}
+
+function trustedReplaceXhrResponse(h, pattern = '', replacement = '', propsToMatch = '', ...rest) {
+  const { re, includes } = replaceResponseRegex(h, pattern, rest)
+  wrapXhrResponse(h, propsToMatch, (inner) => {
+    if (typeof inner !== 'string') return inner
+    if (includes && !includes.test(inner)) return inner
+    return inner.replace(re, replacement)
+  })
+}
+
+/** A uBO JSONPath query; assignments are only honoured from trusted (uBO-owned) lists. */
+function jsonPathFor(h, jsonq) {
+  const jsonp = createJsonPath(jsonq)
+  if (!jsonp.valid || (jsonp.value !== undefined && !h.trusted)) return null
+  return jsonp
+}
+
+function editInboundObject(h, propChain = '', argPosRaw = '', jsonq = '') {
+  if (!propChain) return
+  const jsonp = jsonPathFor(h, jsonq)
+  if (!jsonp) return
+  const argPos = Number.parseInt(argPosRaw, 10)
+  if (Number.isNaN(argPos)) return
+  const target = h.resolveChain(propChain)
+  if (!target) return
+  h.wrapApply(target.owner, target.prop, (fn, thisArg, args) => {
+    const i = argPos >= 0 ? argPos : args.length + argPos
+    if (i >= 0 && i < args.length) {
+      let clone
+      try {
+        clone = h.native.JSON_parse(h.native.JSON_stringify(args[i]))
+      } catch {
+        /* not serialisable */
+      }
+      if (typeof clone === 'object' && clone !== null) {
+        const after = jsonp.apply(clone)
+        if (after) args[i] = after
+      }
+    }
+    return h.apply(fn, thisArg, args)
+  })
+}
+
+function editOutboundObject(h, propChain = '', jsonq = '') {
+  if (!propChain) return
+  const jsonp = jsonPathFor(h, jsonq)
+  const target = jsonp && h.resolveChain(propChain)
+  if (!target) return
+  h.wrapApply(target.owner, target.prop, (fn, thisArg, args) => {
+    const obj = h.apply(fn, thisArg, args)
+    const after = jsonp.apply(obj)
+    return after === undefined ? obj : after
+  })
+}
+
+function jsonEdit(h, jsonq = '', ...rest) {
+  const jsonp = jsonPathFor(h, jsonq)
+  if (!jsonp) return
+  const matches = h.extras(rest).matches
+  const needle = matches ? h.pattern(matches) : null
+  h.wrapApply(JSON, 'parse', (fn, thisArg, args) => {
+    const obj = h.apply(fn, thisArg, args)
+    if (needle && !needle.test(args[0])) return obj
+    const after = jsonp.apply(obj)
+    return after === undefined ? obj : after
+  })
+}
+
+function jsonEditFetchResponse(h, jsonq = '', ...rest) {
+  const jsonp = jsonPathFor(h, jsonq)
+  if (!jsonp) return
+  jsonFetchEdit(h, h.extras(rest).propsToMatch, (data) => jsonp.apply(data))
+}
+
+/**
+ * Stops pages from fetching pristine natives (`fetch`, `JSON.parse`, ...) out of a fresh
+ * same-origin iframe: after `methodPath` inserts one, its `targetProp` is ours again.
+ */
+function trustedPreventDomBypass(h, methodPath = '', targetProp = '') {
+  if (!methodPath) return
+  const target = h.resolveChain(methodPath)
+  if (!target) return
+  h.wrapApply(target.owner, target.prop, (fn, thisArg, args) => {
+    const elems = args.filter((e) => e instanceof HTMLElement)
+    const result = h.apply(fn, thisArg, args)
+    for (const elem of elems) {
+      try {
+        const it = elem.contentWindow
+        if (`${it}` !== '[object Window]') continue
+        const href = it.location.href
+        if (href !== 'about:blank' && href !== h.win.location.href) continue
+        if (targetProp === '') {
+          h.defineProperty(elem, 'contentWindow', { value: h.win })
+          continue
+        }
+        const mine = h.resolveChain(targetProp)
+        const theirs = h.resolveChain(targetProp, it)
+        if (mine && theirs) theirs.owner[theirs.prop] = mine.owner[mine.prop]
+      } catch {
+        /* cross-origin frame */
+      }
+    }
+    return result
+  })
 }
 
 function hrefSanitizer(h, selector, source = '') {
@@ -823,6 +1035,21 @@ export const SCRIPTLETS = {
   'json-prune': { fn: jsonPrune },
   'json-prune-fetch-response': { fn: jsonPruneFetchResponse },
   'json-prune-xhr-response': { fn: jsonPruneXhrResponse },
+  'trusted-replace-fetch-response': {
+    fn: trustedReplaceFetchResponse,
+    trusted: true,
+    aliases: ['trusted-rpfr'],
+  },
+  'trusted-replace-xhr-response': { fn: trustedReplaceXhrResponse, trusted: true },
+  'edit-inbound-object': { fn: editInboundObject },
+  'trusted-edit-inbound-object': { fn: editInboundObject, trusted: true },
+  'edit-outbound-object': { fn: editOutboundObject },
+  'trusted-edit-outbound-object': { fn: editOutboundObject, trusted: true },
+  'json-edit': { fn: jsonEdit },
+  'trusted-json-edit': { fn: jsonEdit, trusted: true },
+  'json-edit-fetch-response': { fn: jsonEditFetchResponse },
+  'trusted-json-edit-fetch-response': { fn: jsonEditFetchResponse, trusted: true },
+  'trusted-prevent-dom-bypass': { fn: trustedPreventDomBypass, trusted: true },
   'href-sanitizer': { fn: hrefSanitizer },
   nowebrtc: { fn: noWebrtc },
   'refresh-defuser': { fn: refreshDefuser },

@@ -40,13 +40,12 @@ describe('adblock background sync', () => {
       'adblock-popups',
       'adblock-scriptlets-isolated',
       'adblock-scriptlets-main',
-      'adblock-yt-main',
       'adblock-yt-isolated',
     ])
     expect(scripts[0].excludeMatches).toEqual(['*://*.example.com/*'])
     expect(scripts[1].css).toEqual(['adblock/cosmetic/generic.css'])
     expect(scripts[1].excludeMatches).toEqual(['*://*.example.com/*'])
-    expect(scripts.find((s) => s.id === 'adblock-yt-main')?.world).toBe('MAIN')
+    expect(scripts.find((s) => s.id === 'adblock-yt-isolated')?.world).toBeUndefined()
   })
 
   it('keeps the always-on generic CSS off $generichide and $elemhide sites', () => {

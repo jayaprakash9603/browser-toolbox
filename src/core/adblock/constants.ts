@@ -56,6 +56,7 @@ export const CONTENT_SCRIPT_IDS = {
   popups: 'adblock-popups',
   scriptletsIsolated: 'adblock-scriptlets-isolated',
   scriptletsMain: 'adblock-scriptlets-main',
+  /** Retired; kept so registrations from older versions get unregistered. */
   youtubeMain: 'adblock-yt-main',
   youtubeIsolated: 'adblock-yt-isolated',
 } as const
@@ -79,6 +80,5 @@ export const ADBLOCK_FILES = {
   cookiesRejectJs: 'adblock/scripts/cookies-reject.js',
   notificationsJs: 'adblock/scripts/notifications-main.js',
   popupsJs: 'adblock/scripts/popups-main.js',
-  youtubeMainJs: 'adblock/scripts/youtube-main.js',
   youtubeIsolatedJs: 'adblock/scripts/youtube-isolated.js',
 } as const

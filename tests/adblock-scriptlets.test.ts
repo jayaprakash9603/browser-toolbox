@@ -11,10 +11,11 @@ import { buildBloom } from '../scripts/adblock/converter/bloom.mjs'
 // @ts-expect-error build-time converter modules are plain ESM
 import { createScriptletCollector, parseScriptletFilter, splitScriptletArgs } from '../scripts/adblock/converter/scriptlets.mjs'
 import { makeHelpers } from '../scripts/adblock/scriptlets/helpers.mjs'
+import { createJsonPath } from '../scripts/adblock/scriptlets/jsonpath.mjs'
 import { canonicalScriptletName, SCRIPTLETS } from '../scripts/adblock/scriptlets/library.mjs'
 
 function run(name: string, ...args: string[]): void {
-  const spec = SCRIPTLETS[name]
+  const spec = SCRIPTLETS[canonicalScriptletName(name) ?? name]
   spec.fn(makeHelpers(Boolean(spec.trusted)), ...args)
 }
 
@@ -44,13 +45,21 @@ function compile(lines: string[], ruleset = 'ads') {
 
 const originals = {
   parse: JSON.parse,
+  stringify: JSON.stringify,
   setTimeout: window.setTimeout,
   open: window.open,
+  fetch: window.fetch,
+  xhr: window.XMLHttpRequest,
+  appendChild: Node.prototype.appendChild,
   addEventListener: EventTarget.prototype.addEventListener,
 }
 
 afterEach(() => {
   JSON.parse = originals.parse
+  JSON.stringify = originals.stringify
+  window.fetch = originals.fetch
+  window.XMLHttpRequest = originals.xhr
+  Node.prototype.appendChild = originals.appendChild
   window.setTimeout = originals.setTimeout
   window.open = originals.open
   EventTarget.prototype.addEventListener = originals.addEventListener
@@ -101,14 +110,76 @@ describe('scriptlet filter parsing', () => {
     expect(parseScriptletFilter('a.com##.ad')).toBeNull()
     expect(parseScriptletFilter('a.com#@#+js()')).toMatchObject({ exception: true, all: true, hosts: ['a.com'] })
   })
+
+  it('accepts long inline-script rewrites from trusted lists only', () => {
+    const line = `www.youtube.com##+js(rpnt, script, /x/, ${'y'.repeat(3400)}, sedCount, 1)`
+    expect(parseScriptletFilter(line, { trusted: true })).toMatchObject({ name: 'trusted-replace-node-text' })
+    expect(parseScriptletFilter(line.replace('rpnt', 'rmnt'))).toEqual({ invalid: 'too-long' })
+  })
+
+  it('supports the scriptlets uBO uses on YouTube', () => {
+    for (const name of [
+      'trusted-replace-xhr-response',
+      'trusted-rpfr',
+      'trusted-edit-inbound-object',
+      'json-edit-fetch-response',
+      'trusted-prevent-dom-bypass',
+    ]) {
+      expect(canonicalScriptletName(name), name).not.toBeNull()
+    }
+  })
+})
+
+describe('uBO JSONPath', () => {
+  const edit = (query: string, data: unknown) => createJsonPath(query).apply(data)
+
+  it('merges into filtered owners only', () => {
+    const query = '[?.attestationRequest][?.context.client.userAgent*="channel"].context.client[?.clientName=="WEB"]+={"clientScreen":"CHANNEL"}'
+    const body = { attestationRequest: {}, context: { client: { userAgent: 'x channel', clientName: 'WEB' } } }
+    expect(edit(query, body)).toMatchObject({ context: { client: { clientScreen: 'CHANNEL' } } })
+    expect(edit(query, { context: { client: { userAgent: 'channel', clientName: 'WEB' } } })).toBeUndefined()
+    const other = { attestationRequest: {}, context: { client: { userAgent: 'channel', clientName: 'MWEB' } } }
+    expect(edit(query, other)).toBeUndefined()
+  })
+
+  it('assigns with ${now} and repl()', () => {
+    const now = edit('[?.a][?.ua=/chan|lact/].ctx.lact="${now}"', { a: 1, ua: 'lact', ctx: { lact: '1' } }) as {
+      ctx: { lact: string }
+    }
+    expect(Number(now.ctx.lact)).toBeGreaterThan(1e12)
+    expect(edit('.ctx.lact="${now}"', { ctx: {} })).toBeUndefined()
+    const repl = '.ref=repl({"regex":"(?:#reloadxhr)?$","replacement":"#reloadxhr"})'
+    expect(edit(repl, { ref: 'https://y/watch' })).toEqual({ ref: 'https://y/watch#reloadxhr' })
+    expect(edit(repl, { ref: 'https://y/watch#reloadxhr' })).toEqual({ ref: 'https://y/watch#reloadxhr' })
+  })
+
+  it('deletes recursive filter matches, splicing arrays', () => {
+    const data = { a: { itemSectionRenderer: { contents: [{ adSlotRenderer: 1 }, { video: 1 }, { adSlotRenderer: 2 }] } } }
+    expect(edit('..itemSectionRenderer.contents.*[?.adSlotRenderer]', data)).toEqual({
+      a: { itemSectionRenderer: { contents: [{ video: 1 }] } },
+    })
+  })
+
+  it('rejects malformed queries and keys by index', () => {
+    expect(createJsonPath('a.[').valid).toBe(false)
+    expect(createJsonPath('.a=notjson').valid).toBe(false)
+    expect(createJsonPath('ad').valid).toBe(false)
+    expect(edit('.list[-1]', { list: [1, 2, 3] })).toEqual({ list: [1, 2] })
+    expect(edit("['x','y']", { x: 1, y: 2, z: 3 })).toEqual({ z: 3 })
+  })
 })
 
 describe('scriptlet selection for a page', () => {
-  it('leaves YouTube to the dedicated YouTube module', () => {
-    const { byHost } = compile([
-      'youtube.com,www.youtube.com,m.youtube.com,music.youtube.com,youtube-nocookie.com,youtube.*,a.com##+js(set, ytInitialPlayerResponse.playerAds, undefined)',
+  it('files YouTube ad scriptlets under the YouTube ruleset', () => {
+    const { bloom, load } = compile([
+      'www.youtube.com,youtube.*,a.com##+js(set, ytInitialPlayerResponse.playerAds, undefined)',
     ])
-    expect([...byHost.keys()]).toEqual(['a.com'])
+    const call = [['set-constant', ['ytInitialPlayerResponse.playerAds', 'undefined']]]
+    expect(selectScriptlets('www.youtube.com', bloom, [0, 1], load)).toEqual([])
+    expect(selectScriptlets('www.youtube.com', bloom, [3], load)).toEqual(call)
+    expect(selectScriptlets('a.com', bloom, [0], load)).toEqual(call)
+    const annoyances = compile(['www.youtube.com##+js(trusted-click-element, #consent)'], 'annoyances')
+    expect(selectScriptlets('www.youtube.com', annoyances.bloom, [2], annoyances.load)).toHaveLength(1)
   })
 
   it('reads no shard for hosts outside the lists', () => {
@@ -174,6 +245,16 @@ describe('scriptlets at runtime', () => {
     w.adsConfig.enabled = true
     expect(w.adsConfig.enabled).toBe(false)
     expect(typeof w.detector).toBe('function')
+  })
+
+  it('set-constant keeps every trap when several share a root', () => {
+    for (const key of ['playerAds', 'adPlacements', 'adSlots']) run('set', `adsConfig.${key}`, 'undefined')
+    const w = window as unknown as { adsConfig: Record<string, unknown> }
+    w.adsConfig = { playerAds: 1, adPlacements: [1], adSlots: [2], videoDetails: {} }
+    expect(w.adsConfig.playerAds).toBeUndefined()
+    expect(w.adsConfig.adPlacements).toBeUndefined()
+    expect(w.adsConfig.adSlots).toBeUndefined()
+    expect(w.adsConfig.videoDetails).toEqual({})
   })
 
   it('set-constant refuses arbitrary values unless trusted', () => {
@@ -257,13 +338,126 @@ describe('scriptlets at runtime', () => {
   })
 })
 
+describe('YouTube scriptlets at runtime', () => {
+  const playerJson = '{"playabilityStatus":{"status":"OK"},"adPlacements":[{"x":1}],"adSlots":[1],"videoDetails":{}}'
+  const stubFetch = (body: string) => {
+    const fetchStub = vi.fn(() => Promise.resolve(new Response(body, { status: 200 })))
+    window.fetch = fetchStub as unknown as typeof window.fetch
+    return fetchStub
+  }
+
+  it('json-prune removes whole array items with [-]', () => {
+    run('json-prune', 'entries.[-].command.reelWatchEndpoint.adClientParams.isAd')
+    const parsed = JSON.parse(
+      '{"entries":[{"command":{"reelWatchEndpoint":{"adClientParams":{"isAd":true}}}},{"command":{"reelWatchEndpoint":{}}}]}',
+    )
+    expect(parsed).toEqual({ entries: [{ command: { reelWatchEndpoint: {} } }] })
+  })
+
+  it('json-prune-fetch-response prunes matching requests only', async () => {
+    stubFetch(playerJson)
+    run('json-prune-fetch-response', 'adPlacements adSlots', '', 'propsToMatch', String.raw`/\/player(\?|$)/`)
+    const pruned = await (await window.fetch('https://www.youtube.com/youtubei/v1/player?key=1')).json()
+    expect(pruned).toEqual({ playabilityStatus: { status: 'OK' }, videoDetails: {} })
+    const untouched = await (await window.fetch('https://www.youtube.com/youtubei/v1/next')).json()
+    expect(untouched.adSlots).toEqual([1])
+  })
+
+  it('trusted-replace-fetch-response rewrites the body text', async () => {
+    stubFetch(playerJson)
+    run('trusted-rpfr', '"adPlacements"', '"no_ads"', 'player?')
+    const text = await (await window.fetch(new Request('https://www.youtube.com/youtubei/v1/player?x'))).text()
+    expect(text).toContain('"no_ads":[{"x":1}]')
+    expect(text).not.toContain('adPlacements')
+  })
+
+  it('trusted-replace-xhr-response rewrites responseText and response alike', () => {
+    class FakeXhr {
+      url = ''
+      open(_method: string, url: string) {
+        this.url = url
+      }
+      get response() {
+        return playerJson
+      }
+      get responseText() {
+        return playerJson
+      }
+    }
+    window.XMLHttpRequest = FakeXhr as unknown as typeof XMLHttpRequest
+    run('trusted-replace-xhr-response', String.raw`/"adPlacements.*?("adSlots"|"adBreakHeartbeatParams")/gms`, '$1', String.raw`/\/player(?:\?.+)?$/`)
+    const xhr = new window.XMLHttpRequest()
+    xhr.open('POST', 'https://www.youtube.com/youtubei/v1/player?key=1')
+    expect(xhr.responseText).toBe('{"playabilityStatus":{"status":"OK"},"adSlots":[1],"videoDetails":{}}')
+    expect(xhr.response).toBe(xhr.responseText)
+    const other = new window.XMLHttpRequest()
+    other.open('GET', 'https://www.youtube.com/next')
+    expect(other.responseText).toBe(playerJson)
+  })
+
+  it('trusted-edit-inbound-object edits a copy of the argument', () => {
+    run(
+      'trusted-edit-inbound-object',
+      'JSON.stringify',
+      '0',
+      '[?.attestationRequest][?.context.client.userAgent*="yahi"]+={"params":"YAHI"}',
+    )
+    const body = { attestationRequest: {}, context: { client: { userAgent: 'yahi' } } }
+    expect(JSON.parse(JSON.stringify(body)).params).toBe('YAHI')
+    expect(body).not.toHaveProperty('params')
+    expect(JSON.stringify({ a: 1 })).toBe('{"a":1}')
+  })
+
+  it('edit-inbound-object may only delete when untrusted', () => {
+    run('edit-inbound-object', 'JSON.stringify', '0', '.a=1')
+    expect(JSON.stringify({ a: 2 })).toBe('{"a":2}')
+    run('edit-inbound-object', 'JSON.stringify', '0', '.ad')
+    expect(JSON.stringify({ ad: 1, b: 2 })).toBe('{"b":2}')
+  })
+
+  it('rpnt rewrites matching inline scripts with includes, excludes and sedCount', async () => {
+    run('trusted-rpnt', 'script', '/(\\(function serverContract\\(\\))/', 'window.tbxPatched=1;$1', 'sedCount', '1', 'excludes', 'MutationObserver', 'condition', '/serverContract/', 'stay', '1')
+    const skipped = document.createElement('script')
+    skipped.textContent = '(function serverContract(){ new MutationObserver })'
+    const target = document.createElement('script')
+    target.textContent = '(function serverContract(){})'
+    const after = document.createElement('script')
+    after.textContent = '(function serverContract(){})'
+    document.body.append(skipped, target)
+    await Promise.resolve()
+    document.body.append(after)
+    await Promise.resolve()
+    expect(skipped.textContent).not.toContain('tbxPatched')
+    expect(target.textContent).toBe('window.tbxPatched=1;(function serverContract(){})')
+    expect(after.textContent).toBe('(function serverContract(){})')
+  })
+
+  it('rmnt empties matching scripts', async () => {
+    run('rmnt', 'script', 'window,"fetch"', 'stay', '1')
+    const el = document.createElement('script')
+    el.textContent = 'void (window,"fetch")'
+    document.body.append(el)
+    await Promise.resolve()
+    expect(el.textContent).toBe('')
+  })
+
+  it('trusted-prevent-dom-bypass hands same-origin iframes our patched natives', () => {
+    const patched = vi.fn()
+    window.fetch = patched as unknown as typeof window.fetch
+    run('trusted-prevent-dom-bypass', 'Node.prototype.appendChild', 'fetch')
+    const frame = document.createElement('iframe')
+    document.body.appendChild(frame)
+    expect((frame.contentWindow as Window & typeof globalThis).fetch).toBe(patched)
+  })
+})
+
 describe('scriptlet registration', () => {
   it('registers the bootstrap and runner on every page with the enabled lists', () => {
     const scripts = buildContentScripts({ ...DEFAULT_ADBLOCK_STATE, allowlist: ['shop.com'] })
     const isolated = scripts.find((s) => s.id === 'adblock-scriptlets-isolated')
     const main = scripts.find((s) => s.id === 'adblock-scriptlets-main')
     expect(isolated).toMatchObject({
-      js: ['adblock/scriptlets/cfg/ads-privacy.js', 'adblock/scriptlets/bloom.js', 'adblock/scripts/scriptlets-isolated.js'],
+      js: ['adblock/scriptlets/cfg/ads-privacy-youtube.js', 'adblock/scriptlets/bloom.js', 'adblock/scripts/scriptlets-isolated.js'],
       matches: ['<all_urls>'],
       excludeMatches: ['*://*.shop.com/*'],
       runAt: 'document_start',
@@ -274,9 +468,16 @@ describe('scriptlet registration', () => {
 
     const withAnnoyances = buildContentScripts({ ...DEFAULT_ADBLOCK_STATE, cookieBanners: true })
     expect(withAnnoyances.find((s) => s.id === 'adblock-scriptlets-isolated')?.js?.[0]).toBe(
-      'adblock/scriptlets/cfg/ads-privacy-annoyances.js',
+      'adblock/scriptlets/cfg/ads-privacy-annoyances-youtube.js',
     )
-    const none = buildContentScripts({ ...DEFAULT_ADBLOCK_STATE, lists: { ...DEFAULT_ADBLOCK_STATE.lists, ads: false, privacy: false } })
+    const noYoutube = buildContentScripts({ ...DEFAULT_ADBLOCK_STATE, youtubeEnabled: false })
+    expect(noYoutube.find((s) => s.id === 'adblock-scriptlets-isolated')?.js?.[0]).toBe('adblock/scriptlets/cfg/ads-privacy.js')
+    const none = buildContentScripts({
+      ...DEFAULT_ADBLOCK_STATE,
+      youtubeEnabled: false,
+      lists: { ...DEFAULT_ADBLOCK_STATE.lists, ads: false, privacy: false },
+    })
     expect(none.some((s) => s.id.startsWith('adblock-scriptlets'))).toBe(false)
+    expect(none.some((s) => s.id === 'adblock-yt-main')).toBe(false)
   })
 })

@@ -14,7 +14,7 @@ import { isRulesetOn } from './rulesets'
 const logger = createLogger('adblock-scripts')
 const OWNED_SCRIPT_IDS = Object.values(CONTENT_SCRIPT_IDS)
 /** Same order as SCRIPTLET_RULESETS in the list build: it names the generated cfg files. */
-const SCRIPTLET_RULESETS = ['ads', 'privacy', 'annoyances'] as const
+const SCRIPTLET_RULESETS = ['ads', 'privacy', 'annoyances', 'youtube'] as const
 
 const ALL_URLS = ['<all_urls>']
 const YOUTUBE_HOST_RE = /(^|\.)(youtube\.com|youtube-nocookie\.com)$/
@@ -133,14 +133,8 @@ export function buildContentScripts(
     })
   }
   if (state.youtubeEnabled && state.lists.youtube) {
-    scripts.push({
-      ...base,
-      allFrames: false,
-      id: CONTENT_SCRIPT_IDS.youtubeMain,
-      js: [ADBLOCK_FILES.youtubeMainJs],
-      matches: YOUTUBE_MATCHES,
-      world: 'MAIN',
-    })
+    // Ad removal on YouTube is uBO's list scriptlets (the `youtube` scriptlet ruleset); this only
+    // hides leftover ad slots.
     scripts.push({
       ...base,
       allFrames: false,
@@ -189,11 +183,6 @@ async function injectOneTab(tab: chrome.tabs.Tab, state: AdblockState): Promise<
       const ytTarget = { tabId: tab.id, allFrames: false }
       await chrome.scripting.executeScript({
         target: ytTarget,
-        files: [ADBLOCK_FILES.youtubeMainJs],
-        world: 'MAIN',
-      })
-      await chrome.scripting.executeScript({
-        target: ytTarget,
         files: [ADBLOCK_FILES.youtubeIsolatedJs],
       })
     }
@@ -227,11 +216,6 @@ export async function injectYoutubeOpenTabs(state: AdblockState): Promise<void> 
     if (tab.id == null || !tab.url || tab.discarded || isAllowlisted(state.allowlist, tab.url)) continue
     const target = { tabId: tab.id, allFrames: false }
     try {
-      await chrome.scripting.executeScript({
-        target,
-        files: [ADBLOCK_FILES.youtubeMainJs],
-        world: 'MAIN',
-      })
       await chrome.scripting.executeScript({
         target,
         files: [ADBLOCK_FILES.youtubeIsolatedJs],
