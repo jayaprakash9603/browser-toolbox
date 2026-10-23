@@ -181,7 +181,7 @@ Engines: `src/core/engines/` (`json`, `xml`, `yaml`, `sql`, `regex`, `id`, `date
 | Files | File Toolkit | `/tools/files/file-toolkit` |
 | Generators | QR Code Toolkit | `/tools/generators/qr-toolkit` |
 | SEO | SEO Toolkit | `/tools/seo/toolkit` |
-| Productivity | Notes, Timer, Tab Manager | `/tools/productivity/*` |
+| Productivity | Notes, Timer, Tab Manager, Form Autofill (beta) | `/tools/productivity/*` |
 | Privacy | Ad Blocker | `/tools/privacy/ad-blocker` |
 | Browser | Browser Toolkit | `/tools/browser/toolkit` |
 | Storage | Storage Inspector | `/tools/storage/inspector` (local + session storage) |

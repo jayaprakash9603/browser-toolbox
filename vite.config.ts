@@ -6,7 +6,7 @@ import { crx } from '@crxjs/vite-plugin'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import type { Plugin } from 'vite'
-import { defineConfig as defineVitestConfig } from 'vitest/config'
+import { configDefaults, defineConfig as defineVitestConfig } from 'vitest/config'
 import manifest from './manifest.config.ts'
 
 const postmanLiteDist = fileURLToPath(new URL('./node_modules/postman-lite/dist', import.meta.url))
@@ -61,6 +61,7 @@ export default defineVitestConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./tests/setup.ts'],
+    exclude: [...configDefaults.exclude, 'universal-form-autofill/**'],
     css: false,
     pool: 'threads',
   },

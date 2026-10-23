@@ -9,6 +9,18 @@ bun run dev
 
 Load `dist/` via `chrome://extensions` → *Load unpacked*. Vite rebuilds on change; reload the extension card after manifest changes.
 
+### Form Autofill package
+
+The Form Autofill tool comes from `@universal-form-autofill/sdk`, linked from `universal-form-autofill/release/sdk`. That folder is its own git repository and is ignored here, like `postman-lite`, so `npm install` fails until the package has been built:
+
+```bash
+cd universal-form-autofill
+pnpm install
+pnpm build:package
+```
+
+`dev` and `build` run `npm run autofill:assets`, which copies the package's page runtime into `public/form-autofill/` (also ignored). Rebuild the package and rerun that script after changing anything in `universal-form-autofill/`.
+
 ## Add a new tool
 
 1. Create `src/tools/<category>/<tool-name>/logic.ts` — pure functions, no Chrome APIs.

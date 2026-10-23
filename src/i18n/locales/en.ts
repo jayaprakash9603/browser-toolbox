@@ -40,6 +40,8 @@ const en = {
   'common.unfavorite': 'Unfavorite',
   'common.addToFavorites': 'Add to favorites',
   'common.removeFromFavorites': 'Remove from favorites',
+  'common.scrollTabsLeft': 'Scroll tabs left',
+  'common.scrollTabsRight': 'Scroll tabs right',
   'common.search': 'Search',
   'common.searchPlaceholder': 'Search…',
   'common.output': 'Output',
@@ -1179,6 +1181,9 @@ const en = {
   'tools.productivity.tab-manager.name': 'Tab Manager',
   'tools.productivity.tab-manager.description':
     'Search, close duplicates, and copy URLs of open tabs.',
+  'tools.productivity.form-autofill.name': 'Form Autofill',
+  'tools.productivity.form-autofill.description':
+    'Review and fill web forms from your saved answers.',
   'tools.privacy.web-protection.name': 'Web Protection',
   'tools.privacy.web-protection.description':
     'Block phishing, malware and scams. Detects fake login pages before you enter a password.',

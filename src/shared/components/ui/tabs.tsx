@@ -1,8 +1,11 @@
 import * as React from 'react'
 import * as TabsPrimitive from '@radix-ui/react-tabs'
 import { cva, type VariantProps } from 'class-variance-authority'
+import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
+import { useTranslation } from 'react-i18next'
 
+import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/utils/cn'
 
 type TabsVariant = 'pill' | 'underline'
@@ -35,7 +38,6 @@ const tabsTriggerVariants = cva(
 )
 
 const UNDERLINE_PX = 2
-const EDGE_FADE_PX = 20
 const SCROLL_PADDING_PX = 24
 
 type UnderlineBox = { left: number; top: number; width: number }
@@ -66,11 +68,8 @@ function measureEdges(list: HTMLElement | null): Edges {
   }
 }
 
-function edgeMask({ start, end }: Edges): string | undefined {
-  if (!start && !end) return undefined
-  const from = start ? `transparent, #000 ${EDGE_FADE_PX}px` : '#000, #000'
-  const to = end ? `#000 calc(100% - ${EDGE_FADE_PX}px), transparent` : '#000, #000'
-  return `linear-gradient(to right, ${from}, ${to})`
+function listOverflows(list: HTMLElement | null): boolean {
+  return !!list && list.scrollWidth > list.clientWidth + 1
 }
 
 function scrollActiveIntoView(list: HTMLElement | null, smooth: boolean) {
@@ -84,6 +83,11 @@ function scrollActiveIntoView(list: HTMLElement | null, smooth: boolean) {
   if (delta) list.scrollTo({ left: list.scrollLeft + delta, behavior: smooth ? 'smooth' : 'auto' })
 }
 
+function scrollTabsBy(list: HTMLElement, direction: -1 | 1, smooth: boolean) {
+  const step = Math.max(96, Math.round(list.clientWidth * 0.72))
+  list.scrollBy({ left: direction * step, behavior: smooth ? 'smooth' : 'auto' })
+}
+
 function Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Root>) {
   return <TabsPrimitive.Root className={cn('flex flex-col gap-3', className)} {...props} />
 }
@@ -91,18 +95,27 @@ function Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive
 function TabsList({
   className,
   variant = 'underline',
+  scrollButtons = 'auto',
   children,
   style,
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.List> & VariantProps<typeof tabsListVariants>) {
+}: React.ComponentProps<typeof TabsPrimitive.List> &
+  VariantProps<typeof tabsListVariants> & {
+    /** Chevron controls when tabs overflow; use false for wrapped tab rows. */
+    scrollButtons?: boolean | 'auto'
+  }) {
+  const { t } = useTranslation()
   const resolved = variant ?? 'underline'
   const listRef = React.useRef<HTMLDivElement>(null)
   const [underline, setUnderline] = React.useState<UnderlineBox>({ left: 0, top: 0, width: 0 })
   const [edges, setEdges] = React.useState<Edges>({ start: false, end: false })
+  const [overflowing, setOverflowing] = React.useState(false)
   const reduceMotion = useReducedMotion()
+  const showScrollButtons = scrollButtons === true || (scrollButtons === 'auto' && overflowing)
 
   const sync = React.useCallback(() => {
     const node = listRef.current
+    setOverflowing(listOverflows(node))
     setEdges((prev) => {
       const next = measureEdges(node)
       return next.start === prev.start && next.end === prev.end ? prev : next
@@ -136,15 +149,45 @@ function TabsList({
     }
   }, [sync, reduceMotion])
 
-  const mask = edgeMask(edges)
+  const scroll = (direction: -1 | 1) => {
+    const node = listRef.current
+    if (!node) return
+    scrollTabsBy(node, direction, !reduceMotion)
+  }
 
   return (
     <TabsVariantContext.Provider value={resolved}>
-      <div className={cn('w-fit max-w-full', resolved === 'underline' && 'border-b border-border')}>
+      <div
+        className={cn(
+          'flex w-full max-w-full items-stretch',
+          resolved === 'underline' && 'border-b border-border',
+          !showScrollButtons && 'w-fit',
+        )}
+      >
+        {showScrollButtons && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            className="my-auto shrink-0 rounded-md text-muted-foreground disabled:opacity-25"
+            disabled={!edges.start}
+            aria-label={t('common.scrollTabsLeft')}
+            onClick={() => scroll(-1)}
+          >
+            <ChevronLeftIcon aria-hidden />
+          </Button>
+        )}
         <TabsPrimitive.List
           ref={listRef}
-          className={cn(tabsListVariants({ variant: resolved }), 'relative max-w-full', className)}
-          style={mask ? { ...style, maskImage: mask, WebkitMaskImage: mask } : style}
+          className={cn(
+            tabsListVariants({ variant: resolved }),
+            'relative',
+            showScrollButtons
+              ? 'min-w-0 flex-1 overflow-x-auto overscroll-x-contain scrollbar-none'
+              : 'max-w-full',
+            className,
+          )}
+          style={style}
           {...props}
         >
           {children}
@@ -158,6 +201,19 @@ function TabsList({
             />
           )}
         </TabsPrimitive.List>
+        {showScrollButtons && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            className="my-auto shrink-0 rounded-md text-muted-foreground disabled:opacity-25"
+            disabled={!edges.end}
+            aria-label={t('common.scrollTabsRight')}
+            onClick={() => scroll(1)}
+          >
+            <ChevronRightIcon aria-hidden />
+          </Button>
+        )}
       </div>
     </TabsVariantContext.Provider>
   )
@@ -186,7 +242,7 @@ function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPr
   return (
     <TabsPrimitive.Content
       className={cn(
-        'min-h-0 flex-1 outline-none focus-visible:ring-2 focus-visible:ring-ring/40 rounded-md data-[state=active]:flex data-[state=active]:flex-col',
+        'min-h-0 flex-1 outline-none rounded-md data-[state=active]:flex data-[state=active]:flex-col',
         className,
       )}
       {...props}

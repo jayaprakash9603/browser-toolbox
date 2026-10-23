@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Universal Form Autofill lives in its own git repository; its injectable runtime is copied at build time
+/universal-form-autofill/
+/public/form-autofill/
+
 # Downloaded ad-blocker filter list cache (npm run adblock:lists)
 scripts/adblock/.cache
 scripts/protection/.cache

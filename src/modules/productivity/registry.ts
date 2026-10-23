@@ -1,4 +1,4 @@
-import { NotebookPenIcon, TimerIcon, LayoutGridIcon } from 'lucide-react'
+import { NotebookPenIcon, TimerIcon, LayoutGridIcon, TextCursorInputIcon } from 'lucide-react'
 
 import { defineTool } from '@/core/registry'
 
@@ -41,5 +41,18 @@ export const productivityTools = [
     capabilities: ['SIDE_PANEL', 'COMMAND'],
     status: 'active',
     loader: () => import('@/tools/productivity/tab-manager/Tool'),
+  }),
+  defineTool({
+    id: 'productivity.form-autofill',
+    name: 'Form Autofill',
+    description: 'Review and fill web forms from your saved answers.',
+    category: 'productivity',
+    icon: TextCursorInputIcon,
+    keywords: ['autofill', 'form', 'fill', 'job application', 'profile', 'answers'],
+    aliases: ['form autofill', 'autofill forms', 'fill form', 'job application autofill'],
+    route: '/tools/productivity/form-autofill',
+    capabilities: ['SIDE_PANEL', 'CONTENT_SCRIPT', 'PAGE_ACCESS', 'STORAGE'],
+    status: 'beta',
+    loader: () => import('@/tools/productivity/form-autofill/Tool'),
   }),
 ]

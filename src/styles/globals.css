@@ -27,6 +27,7 @@
   --warning: #d97706;
   --danger: #dc2626;
   --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
   --border: #e2e8f0;
   --input: #cbd5e1;
   --ring: #4f46e5;
@@ -115,6 +116,8 @@ html[data-density='comfortable'] {
   --muted-foreground: #a1a1aa;
   --accent: #2a3133;
   --accent-foreground: #f8fafc;
+  --destructive: #f87171;
+  --destructive-foreground: #0a0a0a;
   --border: #2a3133;
   --input: #1c2022;
   --ring: #818cf8;

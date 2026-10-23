@@ -3,7 +3,7 @@ import { EditorView } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
 
 export const editorShellClass =
-  'overflow-hidden rounded-lg border border-input bg-background shadow-xs transition-[border-color,box-shadow] duration-150 hover:border-foreground/20 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/30'
+  'overflow-hidden rounded-lg border border-input bg-background shadow-xs transition-[border-color] duration-150 hover:border-foreground/20 has-[:focus-visible]:border-ring/60'
 
 export function isEditorDarkMode() {
   return document.documentElement.classList.contains('dark')

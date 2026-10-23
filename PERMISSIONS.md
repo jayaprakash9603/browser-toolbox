@@ -24,6 +24,7 @@ The extension requests the minimum set required for the implemented features. Ea
 - `cookies`, `bookmarks`, `sessions`, `alarms` — these will be added only when a feature needs them and after an explicit user action.
 - Required HTTP(S) host permissions — HTTP(S) access is declared as optional and is not granted by default.
 - The page-tools content script bundle uses a non-routable manifest match pattern so Chrome does not auto-inject it on real pages; the background service worker injects it with `scripting.executeScript` when you use page tools or the element picker.
+- Form Autofill needs no extra permissions. It injects its own runtime (`form-autofill/content-script.js`) with `scripting.executeScript` only into the tab its panel is open on, and talks to it on a separate `ufa/v1` message channel. It never submits forms, never fills passwords, one-time codes or payment fields, and keeps saved answers in `chrome.storage.local` under keys prefixed `browser_toolbox_autofill`.
 - Ad-blocker cosmetic and YouTube scripts are registered with `chrome.scripting.registerContentScripts` only while ad blocking is enabled in Settings. Filter lists are bundled under `public/adblock/` (rebuild with `npm run adblock:lists`); the extension does not download remote filter code at runtime.
 - `clipboardRead` is never used to exfiltrate data: clipboard contents are processed locally and stored only on-device, with a disable switch, size limit and clear-all in Settings.
 
