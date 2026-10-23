@@ -84,6 +84,12 @@ export function parseScriptletFilter(line, { trusted = false } = {}) {
   return { exception, name, args, hosts, excluded }
 }
 
+/**
+ * YouTube belongs to the dedicated YouTube module (and its on/off setting). List scriptlets there
+ * add a second set of detectable player patches, which brings back playback interruptions.
+ */
+const OWN_YOUTUBE_RE = /(^|\.)youtube(-nocookie)?\.(com|\*)$/
+
 const scriptletKey = (name, args) => `${name}\u0000${JSON.stringify(args)}`
 
 export function createScriptletCollector() {
@@ -144,6 +150,7 @@ export function createScriptletCollector() {
         const excluded = [...entry.excluded].sort()
         const record = excluded.length ? [index, entry.name, entry.args, excluded] : [index, entry.name, entry.args]
         for (const host of entry.hosts) {
+          if (OWN_YOUTUBE_RE.test(host)) continue
           if (!byHost.has(host)) byHost.set(host, [])
           byHost.get(host).push(record)
         }

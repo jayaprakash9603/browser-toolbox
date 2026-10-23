@@ -104,6 +104,13 @@ describe('scriptlet filter parsing', () => {
 })
 
 describe('scriptlet selection for a page', () => {
+  it('leaves YouTube to the dedicated YouTube module', () => {
+    const { byHost } = compile([
+      'youtube.com,www.youtube.com,m.youtube.com,music.youtube.com,youtube-nocookie.com,youtube.*,a.com##+js(set, ytInitialPlayerResponse.playerAds, undefined)',
+    ])
+    expect([...byHost.keys()]).toEqual(['a.com'])
+  })
+
   it('reads no shard for hosts outside the lists', () => {
     const { bloom, load, loads } = compile(['a.com##+js(aopr, x)'])
     expect(selectScriptlets('unlisted.org', bloom, [0], load)).toEqual([])
