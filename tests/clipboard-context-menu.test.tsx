@@ -4,6 +4,7 @@ import { I18nextProvider } from 'react-i18next'
 import { describe, expect, it, vi } from 'vitest'
 
 import i18n from '@/i18n'
+import { TooltipProvider } from '@/shared/components/ui/tooltip'
 import { HistoryItem } from '@/tools/clipboard/_HistoryItem'
 
 describe('clipboard history item', () => {
@@ -19,7 +20,9 @@ describe('clipboard history item', () => {
 
     render(
       <I18nextProvider i18n={i18n}>
-        <HistoryItem entry={entry} onChanged={vi.fn()} />
+        <TooltipProvider>
+          <HistoryItem entry={entry} onChanged={vi.fn()} />
+        </TooltipProvider>
       </I18nextProvider>,
     )
 
@@ -31,20 +34,25 @@ describe('clipboard history item', () => {
 
   it('expands the full clipboard text', async () => {
     const user = userEvent.setup()
-    const text = Array.from({ length: 12 }, (_, index) => `line ${index} of a long clipboard entry`).join('\n')
+    const text = Array.from(
+      { length: 12 },
+      (_, index) => `line ${index} of a long clipboard entry`,
+    ).join('\n')
     render(
       <I18nextProvider i18n={i18n}>
-        <HistoryItem
-          entry={{
-            id: 'entry-2',
-            text,
-            createdAt: Date.now(),
-            pinned: false,
-            charCount: text.length,
-            wordCount: 40,
-          }}
-          onChanged={vi.fn()}
-        />
+        <TooltipProvider>
+          <HistoryItem
+            entry={{
+              id: 'entry-2',
+              text,
+              createdAt: Date.now(),
+              pinned: false,
+              charCount: text.length,
+              wordCount: 40,
+            }}
+            onChanged={vi.fn()}
+          />
+        </TooltipProvider>
       </I18nextProvider>,
     )
 

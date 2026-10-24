@@ -81,6 +81,12 @@ export async function deleteEntry(id: string): Promise<void> {
   await saveHistory((await getHistory()).filter((entry) => entry.id !== id))
 }
 
+export async function restoreEntry(entry: ClipboardEntry): Promise<void> {
+  const rest = (await getHistory()).filter((item) => item.id !== entry.id && item.text !== entry.text)
+  await saveHistory([entry, ...rest].sort((a, b) => b.createdAt - a.createdAt))
+  eventBus.emit('CLIPBOARD_UPDATED', { entryId: entry.id })
+}
+
 export async function clearHistory(includePinned = false): Promise<void> {
   if (includePinned) {
     await remove(STORAGE_KEYS.clipboardHistory)

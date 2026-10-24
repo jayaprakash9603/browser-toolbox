@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { getHistory, type ClipboardEntry } from '@/core/clipboard'
+import { STORAGE_KEYS } from '@/core/constants'
 import { eventBus } from '@/core/events'
 
 export function useClipboardHistory() {
@@ -17,9 +18,14 @@ export function useClipboardHistory() {
       if (live) setEntries(list)
     })
     const off = eventBus.on('CLIPBOARD_UPDATED', () => void refresh())
+    const onStorage = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
+      if (area === 'local' && STORAGE_KEYS.clipboardHistory in changes) void refresh()
+    }
+    chrome.storage.onChanged.addListener(onStorage)
     return () => {
       live = false
       off()
+      chrome.storage.onChanged.removeListener(onStorage)
     }
   }, [refresh])
 
