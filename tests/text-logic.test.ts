@@ -9,6 +9,7 @@ import {
   countMatches,
   DEFAULT_WHITESPACE_OPTIONS,
   formatReadingTime,
+  buildDummyText,
   generateDummyText,
   generateLorem,
   removeDuplicateLines,
@@ -200,6 +201,25 @@ describe('lorem ipsum', () => {
     expect(generateDummyText('paragraphs', 3, 'random').split('\n\n')).toHaveLength(3)
     expect(generateDummyText('sentences', 2, 'random')).toMatch(/\. /)
     expect(generateDummyText('words', 0, 'random')).toBe('')
+  })
+
+  it('builds formatted and structured dummy data', () => {
+    const html = buildDummyText({ mode: 'lines', count: 2, variant: 'lorem', format: 'html', lineKind: 'names' })
+    expect(html).toContain('<ul>')
+    expect(html).toContain('<li>')
+
+    const json = buildDummyText({ mode: 'lines', count: 2, variant: 'random', format: 'json', lineKind: 'emails' })
+    const emails = JSON.parse(json) as string[]
+    expect(emails).toHaveLength(2)
+    expect(emails[0]).toMatch(/@/)
+
+    const withOpening = buildDummyText({
+      mode: 'paragraphs',
+      count: 1,
+      variant: 'lorem',
+      startWithLorem: true,
+    })
+    expect(withOpening.startsWith('Lorem ipsum dolor sit amet')).toBe(true)
   })
 })
 

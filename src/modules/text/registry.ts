@@ -203,7 +203,8 @@ export const textTools = [
   defineTool({
     id: 'text.dummy-data',
     name: 'Dummy Data',
-    description: 'Generate lorem ipsum or random placeholder text.',
+    description:
+      'Generate lorem ipsum, random text, names, emails, and UUIDs with HTML, Markdown, or JSON export.',
     category: 'text',
     icon: TypeIcon,
     keywords: ['lorem', 'ipsum', 'placeholder', 'dummy', 'random', 'generate', 'text'],
