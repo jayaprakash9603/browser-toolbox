@@ -52,6 +52,7 @@ const sitesEntries = {
   'wa-isolated': 'src/chrome/content/sites/whatsapp/isolated.ts',
   'wa-main': 'src/chrome/content/sites/whatsapp/main.ts',
   'ig-isolated': 'src/chrome/content/sites/instagram/isolated.ts',
+  'ig-main': 'src/chrome/content/sites/instagram/main.ts',
   'pip-auto': 'src/chrome/content/pip/auto.ts',
 }
 

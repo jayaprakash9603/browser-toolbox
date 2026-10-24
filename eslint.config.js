@@ -7,7 +7,16 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'coverage', 'universal-form-autofill', 'public/form-autofill']),
+  globalIgnores([
+    'dist',
+    'coverage',
+    'universal-form-autofill',
+    'website',
+    'public/form-autofill',
+    'public/react-devtools/**',
+    'vendor/react-devtools/**',
+    'scripts/react-devtools/.cache/**',
+  ]),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

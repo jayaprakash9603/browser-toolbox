@@ -1,23 +1,139 @@
-[data-tbx-ig-active] video {
-  cursor: pointer;
+#tbx-ig-overlay {
+  visibility: visible !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-.tbx-ig-download {
+#tbx-ig-overlay .tbx-ig-frame {
+  position: fixed;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+#tbx-ig-overlay .tbx-ig-actions {
   position: absolute;
-  right: 8px;
-  bottom: 8px;
-  z-index: 5;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#tbx-ig-overlay .tbx-ig-btn {
+  pointer-events: auto;
+  box-sizing: border-box;
   width: 32px;
   height: 32px;
-  border: none;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.65);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
   color: #fff;
-  font-size: 16px;
-  line-height: 1;
+  background: rgba(38, 38, 38, 0.72);
   cursor: pointer;
+  transition: background-color 150ms ease-out, transform 150ms ease-out;
 }
 
-.tbx-ig-download:hover {
-  background: rgba(0, 0, 0, 0.85);
+#tbx-ig-overlay .tbx-ig-btn:hover {
+  background: rgba(38, 38, 38, 0.92);
+}
+
+#tbx-ig-overlay .tbx-ig-btn:active {
+  transform: scale(0.92);
+}
+
+#tbx-ig-overlay .tbx-ig-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+#tbx-ig-overlay .tbx-ig-btn[aria-busy='true'] {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+#tbx-ig-overlay .tbx-ig-btn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+#tbx-ig-overlay .tbx-ig-chip {
+  box-sizing: border-box;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  color: #fff;
+  background: rgba(38, 38, 38, 0.72);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+#tbx-ig-overlay .tbx-ig-seek {
+  pointer-events: auto;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 16px;
+  display: flex;
+  align-items: flex-end;
+  cursor: pointer;
+  touch-action: none;
+}
+
+#tbx-ig-overlay .tbx-ig-track {
+  position: relative;
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.35);
+  transition: height 120ms ease-out;
+}
+
+#tbx-ig-overlay .tbx-ig-seek:hover .tbx-ig-track,
+#tbx-ig-overlay .tbx-ig-seek[data-dragging] .tbx-ig-track,
+#tbx-ig-overlay .tbx-ig-seek:focus-visible .tbx-ig-track {
+  height: 5px;
+}
+
+#tbx-ig-overlay .tbx-ig-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 100%;
+  background: #fff;
+  transform-origin: left center;
+}
+
+#tbx-ig-overlay .tbx-ig-time {
+  position: absolute;
+  left: 12px;
+  bottom: 14px;
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+#tbx-ig-overlay .tbx-ig-seek:hover .tbx-ig-time,
+#tbx-ig-overlay .tbx-ig-seek[data-dragging] .tbx-ig-time,
+#tbx-ig-overlay .tbx-ig-seek:focus-visible .tbx-ig-time {
+  opacity: 1;
+}
+
+#tbx-ig-overlay .tbx-ig-seek:focus-visible {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #tbx-ig-overlay .tbx-ig-btn,
+  #tbx-ig-overlay .tbx-ig-track,
+  #tbx-ig-overlay .tbx-ig-time {
+    transition: none;
+  }
 }

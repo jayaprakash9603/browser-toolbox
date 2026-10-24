@@ -1,11 +1,11 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
 
 import { crx } from '@crxjs/vite-plugin'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import type { Plugin } from 'vite'
+import { searchForWorkspaceRoot, type Plugin } from 'vite'
 import { configDefaults, defineConfig as defineVitestConfig } from 'vitest/config'
 import manifest from './manifest.config.ts'
 
@@ -38,7 +38,7 @@ export default defineVitestConfig({
     dedupe: ['react', 'react-dom'],
     alias: [
       { find: 'postman-lite/core', replacement: `${postmanLiteDist}/core.js` },
-      { find: 'postman-lite/style.css', replacement: `${postmanLiteDist}/style.css` },
+      { find: /^postman-lite\/style\.css(\?.*)?$/, replacement: `${postmanLiteDist}/style.css$1` },
       { find: /^postman-lite$/, replacement: `${postmanLiteDist}/index.js` },
       { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
     ],
@@ -51,7 +51,15 @@ export default defineVitestConfig({
         blocked: 'blocked.html',
         recorder: 'recorder.html',
         recording: 'recording.html',
+        'react-devtools-panel': 'react-devtools-panel.html',
       },
+    },
+  },
+  server: {
+    fs: {
+      // postman-lite may be linked from outside the workspace, and Vite refuses `?inline`
+      // reads of files outside the allow list.
+      allow: [searchForWorkspaceRoot(process.cwd()), realpathSync(postmanLiteDist)],
     },
   },
   optimizeDeps: {
@@ -61,7 +69,7 @@ export default defineVitestConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./tests/setup.ts'],
-    exclude: [...configDefaults.exclude, 'universal-form-autofill/**'],
+    exclude: [...configDefaults.exclude, 'universal-form-autofill/**', 'website/**'],
     css: false,
     pool: 'threads',
   },

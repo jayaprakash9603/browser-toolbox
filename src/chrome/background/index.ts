@@ -50,6 +50,7 @@ import { registerRedirectTracer } from './web/redirectTracer'
 import { safeRegister, safeStartup } from './safeInit'
 import { initClipboardCapture, registerClipboardCapture } from './clipboardCapture'
 import { registerTimer } from './timer'
+import { registerReactDevtools, syncReactDevtoolsState } from './reactDevtools'
 
 const logger = createLogger('background')
 
@@ -86,6 +87,7 @@ chrome.runtime.onInstalled.addListener(() => {
   safeStartup('pip', () => initPipOnStartup())
   safeStartup('shortcuts', () => initShortcutsOnStartup())
   safeStartup('clipboardCapture', () => initClipboardCapture())
+  safeStartup('reactDevtools', () => syncReactDevtoolsState())
 })
 
 chrome.runtime.onStartup.addListener(() => {
@@ -97,6 +99,7 @@ chrome.runtime.onStartup.addListener(() => {
   safeStartup('pip', () => initPipOnStartup())
   safeStartup('shortcuts', () => initShortcutsOnStartup())
   safeStartup('clipboardCapture', () => initClipboardCapture())
+  safeStartup('reactDevtools', () => syncReactDevtoolsState())
 })
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
@@ -173,4 +176,5 @@ safeRegister('linkChecker', registerLinkChecker)
 safeRegister('scraper', registerScraperJobHandlers)
 safeRegister('clipboardCapture', registerClipboardCapture)
 safeRegister('timer', registerTimer)
+safeRegister('reactDevtools', registerReactDevtools)
 startMessageRouter()

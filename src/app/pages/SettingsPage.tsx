@@ -43,6 +43,7 @@ import { ProtectionSettingsSection } from '@/app/pages/settings/ProtectionSettin
 import { KeyboardShortcutsSettingsCard } from '@/app/pages/settings/KeyboardShortcutsSettingsCard'
 import { NetMonitorSettingsSection } from '@/app/pages/settings/NetMonitorSettingsSection'
 import { PipSettingsSection } from '@/app/pages/settings/PipSettingsSection'
+import { ReactDevtoolsSettingsSection } from '@/app/pages/settings/ReactDevtoolsSettingsSection'
 import { SaveImageAsSettingsSection } from '@/app/pages/settings/SaveImageAsSettingsSection'
 import { SitesSettingsSection } from '@/app/pages/settings/SitesSettingsSection'
 import { SettingsGroup, SettingsRow } from '@/app/pages/settings/ui'
@@ -193,6 +194,7 @@ export default function SettingsPage() {
           <KeyboardShortcutsSettingsCard />
           <SaveImageAsSettingsSection />
           <PipSettingsSection />
+          <ReactDevtoolsSettingsSection />
           <NetMonitorSettingsSection />
         </SettingsGroup>
 

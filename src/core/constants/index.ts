@@ -31,6 +31,7 @@ export const STORAGE_KEYS = {
   interceptorGroups: 'interceptorGroups',
   interceptorLibrary: 'interceptorLibrary',
   interceptorSettings: 'interceptorSettings',
+  reactDevtools: 'reactDevtools',
   meta: 'meta',
 } as const
 

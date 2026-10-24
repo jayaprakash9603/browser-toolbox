@@ -144,7 +144,7 @@ export default function JsonToolkitTool() {
     <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col overflow-hidden">
       <Tabs value={tab} onValueChange={(v) => setTab(v as JsonTab)} className="min-h-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <TabsList className="scrollbar-none max-w-full overflow-x-auto">
+          <TabsList className="max-w-full justify-start">
             <TabsTrigger value="format">{t('dev.tabFormat')}</TabsTrigger>
             <TabsTrigger value="validate">{t('dev.tabValidate')}</TabsTrigger>
             <TabsTrigger value="tree">{t('dev.tabTree')}</TabsTrigger>

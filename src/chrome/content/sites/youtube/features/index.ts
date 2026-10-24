@@ -36,6 +36,8 @@ let stillWatchingObserver: MutationObserver | null = null
 let stillScanTimer: ReturnType<typeof setTimeout> | null = null
 let wheelBound = false
 let keyBound = false
+let wheelOptions: { volume: boolean; speed: boolean } | null = null
+let sponsorRequest = 0
 let navHandler: (() => void) | null = null
 
 const FEED_DEBOUNCE_MS = 120
@@ -189,70 +191,68 @@ reg('redirectShorts', {
   },
 })
 
+function onPlayerWheel(e: WheelEvent): void {
+  if (!wheelOptions) return
+  const player = document.querySelector('#movie_player')
+  if (!player?.contains(e.target as Node)) return
+  e.preventDefault()
+  postToMain('wheel', { deltaY: e.deltaY, ...wheelOptions })
+}
+
+function onSpeedKey(e: KeyboardEvent): void {
+  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+  if (e.key === '<' || e.key === ',') postToMain('speedDelta', { delta: -0.25 })
+  if (e.key === '>' || e.key === '.') postToMain('speedDelta', { delta: 0.25 })
+}
+
 reg('player', {
   start(ctx) {
     const v = values(ctx)
-    const playerActive =
-      v.defaultSpeed !== '1' ||
-      v.defaultQuality !== 'auto' ||
-      isFeatureOn(v, 'disableAutoplay') ||
-      isFeatureOn(v, 'disableAmbient') ||
-      isFeatureOn(v, 'alwaysOriginalAudio') ||
-      isFeatureOn(v, 'rememberVolume') ||
-      isFeatureOn(v, 'loopButton') ||
-      isFeatureOn(v, 'alwaysTheater') ||
-      isFeatureOn(v, 'wheelVolume') ||
-      isFeatureOn(v, 'wheelSpeed') ||
-      isFeatureOn(v, 'speedHotkeys') ||
-      isFeatureOn(v, 'shortsStopLoop')
-    if (!playerActive) return
+    // Always sent: values back at their defaults tell the page to undo what was applied earlier.
     postToMain('applyPlayer', {
       defaultSpeed: v.defaultSpeed,
       defaultQuality: v.defaultQuality,
-      disableAutoplay: v.disableAutoplay,
-      disableAmbient: v.disableAmbient,
-      alwaysOriginalAudio: v.alwaysOriginalAudio,
-      rememberVolume: v.rememberVolume,
-      loopButton: v.loopButton,
-      alwaysTheater: v.alwaysTheater,
+      disableAutoplay: isFeatureOn(v, 'disableAutoplay'),
+      rememberVolume: isFeatureOn(v, 'rememberVolume'),
+      alwaysTheater: isFeatureOn(v, 'alwaysTheater'),
     })
     if (isFeatureOn(v, 'wheelVolume') || isFeatureOn(v, 'wheelSpeed')) {
+      wheelOptions = { volume: isFeatureOn(v, 'wheelVolume'), speed: isFeatureOn(v, 'wheelSpeed') }
       if (!wheelBound) {
         wheelBound = true
-        document.addEventListener(
-          'wheel',
-          (e) => {
-            const player = document.querySelector('#movie_player')
-            if (!player?.contains(e.target as Node)) return
-            e.preventDefault()
-            postToMain('wheel', {
-              deltaY: e.deltaY,
-              volume: isFeatureOn(v, 'wheelVolume'),
-              speed: isFeatureOn(v, 'wheelSpeed'),
-            })
-          },
-          { passive: false },
-        )
+        document.addEventListener('wheel', onPlayerWheel, { passive: false })
       }
     }
     if (isFeatureOn(v, 'speedHotkeys') && !keyBound) {
       keyBound = true
-      document.addEventListener('keydown', (e) => {
-        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-        if (e.key === '<' || e.key === ',') postToMain('speedDelta', { delta: -0.25 })
-        if (e.key === '>' || e.key === '.') postToMain('speedDelta', { delta: 0.25 })
-      })
+      document.addEventListener('keydown', onSpeedKey)
     }
     if (isFeatureOn(v, 'shortsStopLoop')) {
       document.querySelectorAll('video').forEach((video) => {
+        if (!video.loop) return
         video.loop = false
+        video.dataset.tbxYtLoop = '1'
       })
     }
   },
   stop() {
-    postToMain('applyPlayer', null)
+    wheelOptions = null
+    if (wheelBound) document.removeEventListener('wheel', onPlayerWheel)
+    wheelBound = false
+    if (keyBound) document.removeEventListener('keydown', onSpeedKey)
+    keyBound = false
+    document.querySelectorAll<HTMLVideoElement>('video[data-tbx-yt-loop]').forEach((video) => {
+      video.loop = true
+      delete video.dataset.tbxYtLoop
+    })
   },
 })
+
+/** Undoes speed, quality, theater and autoplay changes made on the page. */
+export function resetPlayer(): void {
+  postToMain('applyPlayer', null)
+  postToMain('clearSponsor', null)
+}
 
 function dismissStillWatching(): void {
   for (const el of document.querySelectorAll('yt-confirm-dialog-renderer, tp-yt-paper-dialog')) {
@@ -289,6 +289,7 @@ reg('sponsor', {
     if (!isFeatureOn(values(ctx), 'sponsorBlock')) return
     const videoId = new URLSearchParams(location.search).get('v')
     if (!videoId) return
+    const request = ++sponsorRequest
     void chrome.runtime
       .sendMessage({
         type: 'YT_SPONSOR_SEGMENTS',
@@ -297,11 +298,14 @@ reg('sponsor', {
       })
       .then((res: { ok?: boolean; data?: { segments?: unknown } } | undefined) => {
         const segments = res && 'ok' in res && res.ok ? res.data?.segments : undefined
-        if (segments) postToMain('sponsorSegments', segments)
+        if (segments && request === sponsorRequest) postToMain('sponsorSegments', segments)
       })
       .catch(() => {})
   },
-  stop() {},
+  stop() {
+    sponsorRequest++
+    postToMain('clearSponsor', null)
+  },
 })
 
 reg('dislikes', {

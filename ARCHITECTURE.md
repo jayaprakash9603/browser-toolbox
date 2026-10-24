@@ -25,7 +25,7 @@ tests/
 | Side panel (primary UI) | `index.html` → `src/main.tsx` | Implemented |
 | Background service worker | `src/chrome/background/index.ts` | Implemented (menus, commands, message router) |
 | Context menus | `src/chrome/context-menu/` | Manager scaffold; "Open toolbox" item live |
-| DevTools page | `devtools.html` → `src/chrome/devtools/` | Toolbox + **Interceptor** panels (`#/devtools`, `#/devtools/interceptor`) |
+| DevTools page | `devtools.html` → `src/chrome/devtools/` | Toolbox + **Interceptor** panels; **React DevTools** (Components / Profiler / Suspense + Elements & Sources sidebars) via vendored `public/react-devtools/build` |
 | Content scripts | `src/chrome/content/` | Page-tools bridge (on-demand inject) + ad-blocker scripts (`public/adblock/scripts`, registered when enabled) + HTTP Interceptor (`public/interceptor/scripts`, registered when page-level rules exist) |
 
 Message flow targets `SIDE PANEL ↔ BACKGROUND ↔ CONTENT SCRIPT ↔ PAGE` and `DEVTOOLS ↔ BACKGROUND ↔ SIDE PANEL`, using the discriminated-union `ExtensionMessage` contract in `core/messaging/types.ts`. Components never call `chrome.*` directly; they go through services in `core/`.

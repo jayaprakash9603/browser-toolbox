@@ -1,58 +1,66 @@
 import { defaultTheme, type ApiClientTheme, type ApiClientThemeTokens } from 'postman-lite'
 
 import type { ThemeMode } from '@/features/settings/settingsService'
+import { DEFAULT_PALETTE, type PaletteId } from '@/shared/lib/theme/palettes'
+import { TOOLBOX_PALETTE_BRANDS, TOOLBOX_SURFACES } from '@/shared/lib/theme/toolboxColors'
 
 const TOOLBOX_THEME_ID = 'browser-toolbox'
+const TOOLBOX_RADIUS = '0.625rem'
+const TOOLBOX_FONT = "'Inter Variable', Inter, ui-sans-serif, system-ui, 'Segoe UI', sans-serif"
 
-/** HSL channels matching Browser Toolbox light tokens (coral primary, neutral surfaces). */
-const TOOLBOX_LIGHT: Partial<ApiClientThemeTokens> = {
-  background: '0 0% 97.6%',
-  foreground: '0 0% 9%',
-  card: '0 0% 100%',
-  cardForeground: '0 0% 9%',
-  popover: '0 0% 100%',
-  popoverForeground: '0 0% 9%',
-  primary: '18 78% 48%',
-  primaryForeground: '0 0% 100%',
-  secondary: '0 0% 94.5%',
-  secondaryForeground: '0 0% 15%',
-  muted: '0 0% 94.5%',
-  mutedForeground: '0 0% 45%',
-  accent: '0 0% 93%',
-  accentForeground: '0 0% 9%',
-  border: '0 0% 90%',
-  input: '0 0% 83%',
-  ring: '18 78% 48%',
+type Scheme = 'light' | 'dark'
+type BrandToken = 'primary' | 'primaryForeground' | 'ring'
+type ColorToken = Exclude<keyof ApiClientThemeTokens, 'radius' | 'fontFamily'>
+type SurfaceTokens = Record<Exclude<ColorToken, BrandToken>, string>
+type BrandTokens = Record<BrandToken, string>
+
+// postman-lite writes its tokens onto <html> while it is mounted, so the toolbox colours cannot be
+// read back from the page; the shared hex tables must cover every postman-lite colour token.
+const SURFACES: Record<Scheme, SurfaceTokens> = TOOLBOX_SURFACES
+const BRANDS: Record<PaletteId, Record<Scheme, BrandTokens>> = TOOLBOX_PALETTE_BRANDS
+
+export { TOOLBOX_PALETTE_BRANDS, TOOLBOX_SURFACES }
+
+/** `#38bdf8` → `198.4 93.2% 59.6%`, the channel format postman-lite feeds to `hsl()`. */
+export function hexToHslChannels(hex: string): string {
+  const digits = hex.replace('#', '')
+  const full = digits.length === 3 ? [...digits].map((digit) => digit + digit).join('') : digits
+  const [r, g, b] = [0, 2, 4].map((offset) => parseInt(full.slice(offset, offset + 2), 16) / 255)
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  const lightness = (max + min) / 2
+  let hue = 0
+  let saturation = 0
+  if (max !== min) {
+    const delta = max - min
+    saturation = lightness > 0.5 ? delta / (2 - max - min) : delta / (max + min)
+    if (max === r) hue = (g - b) / delta + (g < b ? 6 : 0)
+    else if (max === g) hue = (b - r) / delta + 2
+    else hue = (r - g) / delta + 4
+    hue *= 60
+  }
+  const round = (value: number) => Math.round(value * 10) / 10
+  return `${round(hue)} ${round(saturation * 100)}% ${round(lightness * 100)}%`
 }
 
-/** HSL channels matching Browser Toolbox dark tokens. */
-const TOOLBOX_DARK: Partial<ApiClientThemeTokens> = {
-  background: '0 0% 4%',
-  foreground: '0 0% 96%',
-  card: '0 0% 9%',
-  cardForeground: '0 0% 96%',
-  popover: '0 0% 9%',
-  popoverForeground: '0 0% 96%',
-  primary: '22 82% 62%',
-  primaryForeground: '0 0% 8%',
-  secondary: '0 0% 13%',
-  secondaryForeground: '0 0% 96%',
-  muted: '0 0% 12.5%',
-  mutedForeground: '0 0% 64%',
-  accent: '0 0% 16%',
-  accentForeground: '0 0% 96%',
-  border: '0 0% 20%',
-  input: '0 0% 25%',
-  ring: '22 82% 62%',
+function toolboxTokens(scheme: Scheme, palette: PaletteId): ApiClientThemeTokens {
+  const colors = { ...SURFACES[scheme], ...BRANDS[palette][scheme] }
+  const channels = Object.fromEntries(
+    Object.entries(colors).map(([token, hex]) => [token, hexToHslChannels(hex)]),
+  ) as Record<ColorToken, string>
+  return { ...defaultTheme[scheme], ...channels, radius: TOOLBOX_RADIUS, fontFamily: TOOLBOX_FONT }
 }
 
-export function buildApiClientTheme(themeMode: ThemeMode): ApiClientTheme {
+export function buildApiClientTheme(
+  themeMode: ThemeMode,
+  palette: PaletteId = DEFAULT_PALETTE,
+): ApiClientTheme {
   return {
     ...defaultTheme,
     id: TOOLBOX_THEME_ID,
     mode: themeMode,
-    light: { ...defaultTheme.light, ...TOOLBOX_LIGHT },
-    dark: { ...defaultTheme.dark, ...TOOLBOX_DARK },
+    light: toolboxTokens('light', palette),
+    dark: toolboxTokens('dark', palette),
   }
 }
 

@@ -8,7 +8,7 @@ import {
   type YoutubeEnhancerState,
 } from '@/core/sites/youtube'
 
-import { onYoutubeNavigate, startScriptFeatures, stopScriptFeatures } from './features'
+import { onYoutubeNavigate, resetPlayer, startScriptFeatures, stopScriptFeatures } from './features'
 
 const STYLE_LINK_ID = 'toolbox-yt-css'
 const ACTIVE_ATTR = 'data-tbx-yt-active'
@@ -130,6 +130,7 @@ export function applyYoutubeEnhancer(state: YoutubeEnhancerState): void {
 
 export function stopAll(): void {
   stopScriptFeatures()
+  resetPlayer()
   const root = document.documentElement
   for (const attr of [...root.attributes]) {
     if (attr.name.startsWith('data-tbx-yt-')) root.removeAttribute(attr.name)

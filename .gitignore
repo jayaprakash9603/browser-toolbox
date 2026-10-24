@@ -16,9 +16,14 @@ dist-ssr
 /universal-form-autofill/
 /public/form-autofill/
 
+# Marketing website is a standalone Next.js app kept out of this repository
+/website/
+
 # Downloaded ad-blocker filter list cache (npm run adblock:lists)
 scripts/adblock/.cache
 scripts/protection/.cache
+scripts/react-devtools/.cache
+scripts/react-devtools/build-log.txt
 
 # Editor directories and files
 .vscode/*

@@ -19,7 +19,7 @@ export const productivityTools = [
   defineTool({
     id: 'productivity.timer',
     name: 'Timer',
-    description: 'Countdown, stopwatch and Pomodoro timer.',
+    description: 'Countdown, stopwatch and Pomodoro. Keeps running when the panel is closed.',
     category: 'productivity',
     icon: TimerIcon,
     keywords: ['timer', 'countdown', 'stopwatch', 'pomodoro', 'focus'],

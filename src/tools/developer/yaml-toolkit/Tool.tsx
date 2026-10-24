@@ -68,7 +68,7 @@ export default function YamlToolkitTool() {
     <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col overflow-hidden">
       <Tabs value={tab} onValueChange={(v) => setTab(v as YamlTab)} className="min-h-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <TabsList className="scrollbar-none max-w-full overflow-x-auto">
+          <TabsList className="max-w-full justify-start">
             <TabsTrigger value="validate">{t('dev.tabValidate')}</TabsTrigger>
             <TabsTrigger value="convert">YAML → JSON</TabsTrigger>
             <TabsTrigger value="fromJson">JSON → YAML</TabsTrigger>

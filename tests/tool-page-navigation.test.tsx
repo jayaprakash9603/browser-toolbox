@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { I18nextProvider } from 'react-i18next'
 import { describe, expect, it } from 'vitest'
 
@@ -39,5 +39,29 @@ describe('tool page back navigation', () => {
     )
 
     expect(screen.getByRole('link', { name: 'Back' })).toHaveAttribute('href', '#/categories/text')
+  })
+})
+
+describe('tool page info', () => {
+  it('keeps the description behind the info button', async () => {
+    const tool = toolRegistry.get('text.analyzer')!
+    render(
+      <TooltipProvider>
+        <I18nextProvider i18n={i18n}>
+          <ToolPage tool={tool}>
+            <div />
+          </ToolPage>
+        </I18nextProvider>
+      </TooltipProvider>,
+    )
+    const description = i18n.t(`tools.${tool.id}.description`, {
+      defaultValue: tool.description,
+    })
+    expect(screen.queryByText(description)).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /^About / }))
+    expect(await screen.findByText(description)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Copy link to tool' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Open in new tab' })).toBeInTheDocument()
   })
 })

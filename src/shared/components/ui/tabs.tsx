@@ -96,6 +96,7 @@ function TabsList({
   className,
   variant = 'underline',
   scrollButtons = 'auto',
+  fullWidth = false,
   children,
   style,
   ...props
@@ -103,6 +104,8 @@ function TabsList({
   VariantProps<typeof tabsListVariants> & {
     /** Chevron controls when tabs overflow; use false for wrapped tab rows. */
     scrollButtons?: boolean | 'auto'
+    /** Stretch the tab row to the container so each tab is the same width. */
+    fullWidth?: boolean
   }) {
   const { t } = useTranslation()
   const resolved = variant ?? 'underline'
@@ -161,7 +164,8 @@ function TabsList({
         className={cn(
           'flex w-full max-w-full items-stretch',
           resolved === 'underline' && 'border-b border-border',
-          !showScrollButtons && 'w-fit',
+          !showScrollButtons && !fullWidth && 'w-fit',
+          fullWidth && 'w-full',
         )}
       >
         {showScrollButtons && (

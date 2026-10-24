@@ -29,7 +29,7 @@ export function FileDropzone({
       {...handlers}
       className={cn(
         'group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[var(--radius-lg)] border border-dashed bg-muted/20 px-4 py-8 text-center transition-colors duration-150',
-        'hover:border-primary/40 hover:bg-primary/5 focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/40',
+        'hover:border-primary/40 hover:bg-primary/5 focus-within:has-[:focus-visible]:border-primary focus-within:has-[:focus-visible]:ring-2 focus-within:has-[:focus-visible]:ring-ring/40',
         active && 'border-primary bg-primary/10',
       )}
     >

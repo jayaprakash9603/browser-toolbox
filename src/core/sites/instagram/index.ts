@@ -15,6 +15,7 @@ export {
   SITE_FILES,
 } from './constants'
 export { countActiveFeatures, isFeatureOn, playbackRate } from './helpers'
+export { isVideoFileUrl, pickVideoUrl } from './mediaUrl'
 export {
   DEFAULT_INSTAGRAM_ENHANCER_STATE,
   defaultInstagramValues,

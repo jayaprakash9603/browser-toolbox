@@ -54,25 +54,114 @@ function currentRate(player: ReturnType<typeof getPlayer>): number {
   return getVideo()?.playbackRate ?? player?.getPlaybackRate?.() ?? 1
 }
 
-function applyPlayerSettings(payload: Record<string, unknown> | null): void {
-  if (!payload) return
+// Session flags survive a page reload, so a speed or theater mode we set earlier can still be undone.
+const APPLIED_SPEED_KEY = 'tbx-yt-applied-speed'
+const APPLIED_THEATER_KEY = 'tbx-yt-applied-theater'
+const APPLIED_QUALITY_KEY = 'tbx-yt-applied-quality'
+let autoplayChanged = false
+
+function sessionFlag(key: string): string | null {
+  try {
+    return sessionStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function setSessionFlag(key: string, value: string | null): void {
+  try {
+    if (value == null) sessionStorage.removeItem(key)
+    else sessionStorage.setItem(key, value)
+  } catch {
+    /* storage can be blocked */
+  }
+}
+
+function forceRate(rate: number): void {
   const player = getPlayer()
   const video = getVideo()
-  if (!player && !video) return
-  // Browsers support 0.0625x–16x on <video>; YouTube's player API only accepts up to 2x.
-  const speed = Math.min(MAX_RATE, Math.max(MIN_RATE, Number(payload.defaultSpeed ?? 1) || 1))
-  if (speed <= 2 && player?.setPlaybackRate) player.setPlaybackRate(speed)
-  else if (video) video.playbackRate = speed
-  applyQuality(String(payload.defaultQuality ?? 'auto'))
-  const autoplayOff = payload.disableAutoplay === true || payload.disableAutoplay === 'true'
-  if (autoplayOff && video) video.autoplay = false
-  if (payload.rememberVolume) {
+  if (rate <= 2) player?.setPlaybackRate?.(rate)
+  if (video && Math.abs(video.playbackRate - rate) > 0.001) video.playbackRate = rate
+}
+
+function isTheater(): boolean {
+  return document.querySelector('ytd-watch-flexy')?.hasAttribute('theater') ?? false
+}
+
+function clickSizeButton(): void {
+  document.querySelector<HTMLElement>('.ytp-size-button')?.click()
+}
+
+function applySpeed(value: unknown): void {
+  const speed = Math.min(MAX_RATE, Math.max(MIN_RATE, Number(value ?? 1) || 1))
+  if (Math.abs(speed - 1) > 0.001) {
+    forceRate(speed)
+    setSessionFlag(APPLIED_SPEED_KEY, String(speed))
+  } else if (sessionFlag(APPLIED_SPEED_KEY)) {
+    forceRate(1)
+    setSessionFlag(APPLIED_SPEED_KEY, null)
+  }
+}
+
+function applyQualityChoice(value: unknown): void {
+  const choice = String(value ?? 'auto')
+  if (choice !== 'auto' && QUALITY_LABELS[choice]) {
+    applyQuality(choice)
+    setSessionFlag(APPLIED_QUALITY_KEY, choice)
+    return
+  }
+  if (!sessionFlag(APPLIED_QUALITY_KEY)) return
+  const player = document.querySelector('#movie_player') as unknown as {
+    setPlaybackQualityRange?(min: string, max?: string): void
+    setPlaybackQuality?(q: string): void
+  } | null
+  player?.setPlaybackQualityRange?.('auto', 'auto')
+  player?.setPlaybackQuality?.('auto')
+  setSessionFlag(APPLIED_QUALITY_KEY, null)
+}
+
+function applyAutoplay(off: boolean): void {
+  const video = getVideo()
+  if (!video) return
+  if (off) {
+    if (video.autoplay) {
+      video.autoplay = false
+      autoplayChanged = true
+    }
+  } else if (autoplayChanged) {
+    video.autoplay = true
+    autoplayChanged = false
+  }
+}
+
+function applyTheater(on: boolean): void {
+  if (on) {
+    if (!isTheater()) clickSizeButton()
+    setSessionFlag(APPLIED_THEATER_KEY, '1')
+  } else if (sessionFlag(APPLIED_THEATER_KEY)) {
+    if (isTheater()) clickSizeButton()
+    setSessionFlag(APPLIED_THEATER_KEY, null)
+  }
+}
+
+/** Applies the panel's player values. Values at their default undo only what this script set. */
+function applyPlayerSettings(payload: Record<string, unknown> | null): void {
+  const values = payload ?? {}
+  applySpeed(values.defaultSpeed)
+  applyQualityChoice(values.defaultQuality)
+  applyAutoplay(values.disableAutoplay === true || values.disableAutoplay === 'true')
+  applyTheater(values.alwaysTheater === true)
+  if (values.rememberVolume) {
+    const player = getPlayer()
     const saved = localStorage.getItem('tbx-yt-volume')
     if (saved && player?.setVolume) player.setVolume(Number(saved))
   }
-  if (payload.alwaysTheater) {
-    document.querySelector<HTMLElement>('.ytp-size-button')?.click()
-  }
+}
+
+function clearSponsor(): void {
+  const video = getVideo()
+  if (video && sponsorTimeHandler) video.removeEventListener('timeupdate', sponsorTimeHandler)
+  sponsorTimeHandler = null
 }
 
 function skipSponsor(segments: { segment: [number, number] }[]): void {
@@ -120,6 +209,7 @@ if (!guarded.__toolboxSitesYtMain && window === window.top) {
       if (Number.isFinite(delta)) setRate(player, currentRate(player) + delta)
     }
     if (cmd === 'sponsorSegments' && Array.isArray(payload)) skipSponsor(payload as { segment: [number, number] }[])
+    if (cmd === 'clearSponsor') clearSponsor()
     window.postMessage({ [PAGE_EVT_KEY]: 'ack', payload: cmd }, location.origin || '*')
   })
 }

@@ -8,7 +8,7 @@ import {
 
 function labelFor(id: string): string {
   const labels: Record<string, string> = {
-    videoControls: 'Video controls',
+    videoControls: 'Seek bar',
     playbackSpeed: 'Playback speed',
     pictureInPicture: 'Picture-in-Picture',
     mediaDownload: 'Media download button',
@@ -19,10 +19,10 @@ function labelFor(id: string): string {
 
 function descriptionFor(id: string): string {
   const descriptions: Record<string, string> = {
-    videoControls: 'Show seek bar and native controls on Reels videos.',
-    playbackSpeed: 'Default speed for Instagram videos.',
-    pictureInPicture: 'Double-click video to toggle PiP.',
-    mediaDownload: 'Floating download on videos.',
+    videoControls: 'Thin progress bar along the bottom of each video. Click or drag to jump.',
+    playbackSpeed: 'Keeps Instagram videos playing at this speed. 1× leaves them untouched.',
+    pictureInPicture: 'Picture-in-Picture button at the top right of each video.',
+    mediaDownload: 'Download button at the top right of each video.',
     ghostStories: 'Block story “seen” beacons (does not hide UI).',
   }
   return descriptions[id] ?? ''

@@ -90,6 +90,7 @@ export default defineManifest({
         'sites/vendor/*',
         'interceptor/scripts/*',
         'recorder.html',
+        'react-devtools/build/*',
       ],
     },
   ],

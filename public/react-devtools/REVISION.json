@@ -1,0 +1,18 @@
+{
+  "sha": "1d34f91dfde6bba84d08b683aaba164c7194dacb",
+  "devtoolsVersion": "8.0.0",
+  "builtAt": "2026-10-24T12:12:21.050Z",
+  "artifacts": [
+    "backendManager.js",
+    "fallbackEvalContext.js",
+    "fileFetcher.js",
+    "hookSettingsInjector.js",
+    "installHook.js",
+    "main.js",
+    "panel.js",
+    "parseSourceAndMetadata.worker.worker.js",
+    "prepareInjection.js",
+    "proxy.js",
+    "react_devtools_backend_compact.js"
+  ]
+}

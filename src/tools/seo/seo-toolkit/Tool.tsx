@@ -106,7 +106,7 @@ export default function SeoToolkitTool() {
           </div>
 
           <Tabs value={tab} onValueChange={(v) => setTab(v as TabId)}>
-            <TabsList className="scrollbar-none w-full justify-start overflow-x-auto overscroll-x-contain">
+            <TabsList className="w-full justify-start">
               {TAB_IDS.map((id) => (
                 <TabsTrigger
                   key={id}

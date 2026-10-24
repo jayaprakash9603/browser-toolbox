@@ -1,8 +1,30 @@
-import { BracesIcon, CodeIcon, FileJsonIcon, HashIcon, RegexIcon, DatabaseIcon } from 'lucide-react'
+import {
+  AtomIcon,
+  BracesIcon,
+  CodeIcon,
+  FileJsonIcon,
+  HashIcon,
+  RegexIcon,
+  DatabaseIcon,
+} from 'lucide-react'
 
 import { defineTool } from '@/core/registry'
 
 export const developerTools = [
+  defineTool({
+    id: 'developer.react-devtools',
+    name: 'React DevTools',
+    description: 'Inspect and profile React apps from Chrome DevTools with toolbox styling.',
+    category: 'developer',
+    icon: AtomIcon,
+    keywords: ['react', 'devtools', 'components', 'profiler', 'debug', 'inspect', 'hooks'],
+    aliases: ['react developer tools', 'react inspector', 'react profiler'],
+    route: '/tools/developer/react-devtools',
+    capabilities: ['SIDE_PANEL', 'DEVTOOLS', 'PAGE_ACCESS'],
+    toolkitGroup: 'developer',
+    status: 'beta',
+    loader: () => import('@/tools/developer/react-devtools/Tool'),
+  }),
   defineTool({
     id: 'developer.json-toolkit',
     name: 'JSON Toolkit',

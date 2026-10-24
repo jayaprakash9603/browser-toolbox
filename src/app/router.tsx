@@ -9,6 +9,7 @@ import {
 } from 'react'
 
 import { eventBus } from '@/core/events'
+import { PENDING_ROUTE_KEY } from '@/core/timer/model'
 import { cn } from '@/shared/utils/cn'
 
 interface RouterContextValue {
@@ -46,8 +47,23 @@ export function RouterProvider({ children }: { children: ReactNode }) {
         if (tool) window.location.hash = tool.route
       })
     })
+    const applyPendingRoute = (route: unknown) => {
+      if (typeof route !== 'string' || !route.startsWith('/tools/')) return
+      window.location.hash = route
+      void Promise.resolve(chrome.storage.session.remove(PENDING_ROUTE_KEY)).catch(() => undefined)
+    }
+    const onPendingRoute = (changes: { [key: string]: chrome.storage.StorageChange }, area: string) => {
+      if (area === 'session' && changes[PENDING_ROUTE_KEY]) applyPendingRoute(changes[PENDING_ROUTE_KEY].newValue)
+    }
+    if (chrome.storage?.session) {
+      void chrome.storage.session.get(PENDING_ROUTE_KEY).then((stored) => {
+        applyPendingRoute(stored[PENDING_ROUTE_KEY])
+      })
+      chrome.storage.onChanged.addListener(onPendingRoute)
+    }
     return () => {
       window.removeEventListener('hashchange', onHashChange)
+      chrome.storage?.onChanged.removeListener(onPendingRoute)
       off()
     }
   }, [])

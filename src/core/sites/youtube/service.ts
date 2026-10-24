@@ -53,7 +53,13 @@ export function countActiveFeatures(state: YoutubeEnhancerState): number {
     if (f.kind === 'select' && v !== f.default) n++
     if (f.kind === 'color' && v !== f.default) n++
     if (f.kind === 'text' && typeof v === 'string' && v.trim()) n++
-    if (f.kind === 'multiselect' && Array.isArray(v) && v.length) n++
+    if (f.kind === 'multiselect' && Array.isArray(v) && !sameSet(v, f.default)) n++
   }
   return n
+}
+
+function sameSet(value: unknown[], fallback: unknown): boolean {
+  const base = Array.isArray(fallback) ? fallback.map(String) : []
+  const next = new Set(value.map(String))
+  return next.size === new Set(base).size && base.every((item) => next.has(item))
 }

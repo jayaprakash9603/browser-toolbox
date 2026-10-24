@@ -11,6 +11,8 @@
     "adblock:audit": "node scripts/adblock/audit-coverage.mjs",
     "protection:lists": "node scripts/protection/build-threat-lists.mjs",
     "adblock:scripts": "node scripts/build-adblock-scripts.mjs",
+    "react-devtools:vendor": "node scripts/react-devtools/vendor.mjs",
+    "react-devtools:ensure": "node scripts/react-devtools/ensure-vendored.mjs",
     "build:world-map": "node scripts/build-world-map.mjs",
     "build": "node scripts/copy-postman-sandbox.mjs && node scripts/copy-wa-vendor.mjs && npm run autofill:assets && npm run build:world-map && npm run adblock:scripts && tsc -b && vite build && node scripts/check-startup-budget.mjs",
     "lint": "eslint .",
