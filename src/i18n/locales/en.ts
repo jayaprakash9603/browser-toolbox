@@ -4,6 +4,7 @@ import { netmonStrings } from './netmonEn'
 import { notesStrings } from './notesEn'
 import { speedtestStrings } from './speedtestEn'
 import { tabManagerStrings } from './tabManagerEn'
+import { datetimeStrings } from './datetimeEn'
 import { browserToolkitStrings } from './browserToolkitEn'
 import { sitesWhatsappStrings } from './sitesWhatsappEn'
 import { consolidationStrings } from './consolidationEn'
@@ -1023,7 +1024,8 @@ const en = {
   'tools.calculators.base-converter.description':
     'Convert between binary, octal, decimal and hexadecimal with bit view.',
   'tools.datetime.toolkit.name': 'Date & Time Toolkit',
-  'tools.datetime.toolkit.description': 'Date calculator, timezone converter and cron parser.',
+  'tools.datetime.toolkit.description':
+    'Convert timestamps, calculate dates, compare time zones and preview cron schedules.',
   'tools.generators.qr-toolkit.name': 'QR Code Toolkit',
   'tools.generators.qr-toolkit.description':
     'Generate QR codes for text, URLs, Wi-Fi, email, phone and contacts; decode from images.',
@@ -1386,6 +1388,7 @@ const en = {
   ...dataScraperStrings,
   ...notesStrings,
   ...tabManagerStrings,
+  ...datetimeStrings,
 } as const
 
 export default en

@@ -6,7 +6,8 @@ export const datetimeTools = [
   defineTool({
     id: 'datetime.toolkit',
     name: 'Date & Time Toolkit',
-    description: 'Unix timestamps, date calculator, timezone converter and cron parser.',
+    description:
+      'Convert timestamps, calculate dates, compare time zones and preview cron schedules.',
     category: 'datetime',
     icon: CalendarClockIcon,
     keywords: [
@@ -20,6 +21,10 @@ export const datetimeTools = [
       'timestamp',
       'unix',
       'epoch',
+      'world clock',
+      'business days',
+      'iso week',
+      'next run',
     ],
     aliases: [
       'date calculator',

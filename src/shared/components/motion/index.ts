@@ -1,5 +1,6 @@
 export { AnimatedCard } from './AnimatedCard'
 export { FadeIn } from './FadeIn'
+export { RollingText } from './RollingText'
 export { ScaleIn } from './ScaleIn'
 export { SlideUp } from './SlideUp'
 export { StaggerChildren, StaggerItem } from './StaggerChildren'
