@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import * as TabsPrimitive from '@radix-ui/react-tabs'
 
 import { ToolPage } from '@/shared/components/ToolPage'
@@ -22,13 +22,20 @@ function toMode(tab: (typeof TAB_VALUES)[number]): Mode {
   return (LEGACY_TABS as readonly string[]).includes(tab) ? 'view' : (tab as Mode)
 }
 
-const PANEL_CLASS = 'mt-0 flex flex-col gap-3 data-[state=inactive]:hidden'
-
 export default function FileToolkitTool() {
   const tool = useFileTool('files.file-toolkit')
   const [tab, setTab] = useDeepLinkTab('tab', TAB_VALUES, 'convert')
   const [queue, setQueue] = useState<QueueItem[]>([])
   const mode = toMode(tab)
+  const [visited, setVisited] = useState<ReadonlySet<Mode>>(() => new Set([mode]))
+  if (!visited.has(mode)) setVisited(new Set(visited).add(mode))
+
+  // Panels mount on first visit and then stay mounted so queued files and settings survive tab switches.
+  const panel = (value: Mode, content: ReactNode) => (
+    <TabsContent value={value} forceMount className="mt-0 flex flex-col gap-3 data-[state=inactive]:hidden">
+      {visited.has(value) && content}
+    </TabsContent>
+  )
 
   return (
     <ToolPage tool={tool}>
@@ -40,29 +47,20 @@ export default function FileToolkitTool() {
         <ToolkitHero mode={mode} />
         <ModeTiles value={mode} />
 
-        <TabsContent value="convert" forceMount className={PANEL_CLASS}>
-          <ConvertPanel queue={queue} onQueueChange={setQueue} />
-        </TabsContent>
-        <TabsContent value="write" forceMount className={PANEL_CLASS}>
-          <WritePanel />
-        </TabsContent>
-        <TabsContent value="pdf" forceMount className={PANEL_CLASS}>
-          <ImagesPdfPanel />
-        </TabsContent>
-        <TabsContent value="archive" forceMount className={PANEL_CLASS}>
-          <ArchivePanel />
-        </TabsContent>
-        <TabsContent value="inspect" forceMount className={PANEL_CLASS}>
-          <InspectPanel />
-        </TabsContent>
-        <TabsContent value="view" forceMount className={PANEL_CLASS}>
+        {panel('convert', <ConvertPanel queue={queue} onQueueChange={setQueue} />)}
+        {panel('write', <WritePanel />)}
+        {panel('pdf', <ImagesPdfPanel />)}
+        {panel('archive', <ArchivePanel />)}
+        {panel('inspect', <InspectPanel />)}
+        {panel(
+          'view',
           <ViewPanel
             onConvert={(file) => {
               setQueue((current) => [...current, ...toQueueItems([file])])
               setTab('convert')
             }}
-          />
-        </TabsContent>
+          />,
+        )}
       </TabsPrimitive.Root>
     </ToolPage>
   )

@@ -42,7 +42,7 @@ interface PreviewDialogProps {
 function SizeDelta({ before, after }: { before: number; after: number }) {
   if (before <= 0) return null
   const change = (after - before) / before
-  if (Math.abs(change) < 0.005) return null
+  if (Math.abs(change) < 0.005 || change > 1) return null
   const smaller = change < 0
   return (
     <span
@@ -155,8 +155,8 @@ export function PreviewDialog({ artifacts, index, onIndexChange, zipName = 'file
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <DialogPrimitive.Title className="sr-only">{t('fileui.previewTitle', { name })}</DialogPrimitive.Title>
                     <label className="group flex min-w-0 items-center rounded-md border border-transparent px-1 transition-colors focus-within:border-ring hover:border-input">
-                      <span className="sr-only">{t('fileui.fileName')}</span>
                       <input
+                        aria-label={t('fileui.fileName')}
                         value={stem}
                         onChange={(event) => rename(event.target.value)}
                         spellCheck={false}
