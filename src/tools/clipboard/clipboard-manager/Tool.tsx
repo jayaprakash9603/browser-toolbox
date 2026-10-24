@@ -128,6 +128,16 @@ export default function ClipboardManagerTool() {
   const [mountedAt] = useState(() => Date.now())
   const undoTimer = useRef<number | undefined>(undefined)
   const listRef = useRef<HTMLUListElement>(null)
+  const topSentinelRef = useRef<HTMLSpanElement>(null)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const sentinel = topSentinelRef.current
+    if (!sentinel || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(([entry]) => setScrolled(!entry.isIntersecting))
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [])
 
   const live = settings?.clipboardHistoryEnabled ?? true
   const newest = entries.reduce((max, entry) => Math.max(max, entry.createdAt), 0)
@@ -259,8 +269,20 @@ export default function ClipboardManagerTool() {
       backTo="/"
       actions={entries.length > 0 && <ClearHistoryButton onChanged={refresh} />}
     >
-      <div className="flex min-h-full flex-col" onKeyDown={onKeyDown}>
-        <div className="sticky top-0 z-10 -mx-[var(--density-page-pad)] -mt-[var(--density-page-pad)] flex flex-col gap-2 bg-background/90 px-[var(--density-page-pad)] pt-[var(--density-page-pad)] pb-2 backdrop-blur-md">
+      <div className="relative flex min-h-full flex-col" onKeyDown={onKeyDown}>
+        <span
+          ref={topSentinelRef}
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-px"
+        />
+        <div
+          className={cn(
+            'sticky top-0 z-10 -mx-[var(--density-page-pad)] -mt-[var(--density-page-pad)] flex flex-col gap-2 border-b bg-background px-[var(--density-page-pad)] pt-[var(--density-page-pad)] pb-2.5 transition-[border-color,box-shadow] duration-200',
+            scrolled
+              ? 'border-border shadow-[0_6px_12px_-10px_rgb(0_0_0/0.25)]'
+              : 'border-transparent',
+          )}
+        >
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
             <LiveDot live={live} pulseKey={live && capturedLive ? newest : null} />
             <span className="font-medium text-foreground/80">
@@ -315,7 +337,7 @@ export default function ClipboardManagerTool() {
             className="py-14"
           />
         ) : (
-          <ul ref={listRef} className="flex flex-col gap-2 pt-1 pb-3">
+          <ul ref={listRef} className="flex flex-col gap-2 pt-3 pb-3">
             <AnimatePresence initial mode="popLayout">
               {rows.map((row) =>
                 row.type === 'header' ? (
