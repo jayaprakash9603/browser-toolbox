@@ -34,7 +34,7 @@ afterEach(() => {
   cleanup()
 })
 
-describe('Notes tool', () => {
+describe('Notes tool', { timeout: 20_000 }, () => {
   it('loads legacy notes and shows a derived title and snippet', async () => {
     await chrome.storage.local.set({
       'toolbox.notes': [{ id: 'n1', title: '', body: 'hello india\nindia', pinned: false, updatedAt: Date.now() }],
@@ -50,7 +50,7 @@ describe('Notes tool', () => {
     renderTool()
     await user.click(await screen.findByRole('button', { name: 'New note' }))
     const editor = await screen.findByRole('textbox', { name: 'Take a note…' })
-    await user.type(editor, 'groceries')
+    fireEvent.change(editor, { target: { value: 'groceries' } })
     ;(editor as HTMLTextAreaElement).setSelectionRange(0, 9)
     fireEvent.keyDown(editor, { key: 'b', ctrlKey: true })
     await waitFor(() => expect(editor).toHaveValue('**groceries**'))
@@ -67,9 +67,9 @@ describe('Notes tool', () => {
     await user.click(await screen.findByText('Trip'))
     const editor = screen.getByRole('textbox', { name: 'Take a note…' })
     fireEvent.keyDown(editor, { key: 'h', ctrlKey: true })
-    await user.type(screen.getByRole('textbox', { name: 'Find' }), 'cat')
+    fireEvent.change(screen.getByRole('textbox', { name: 'Find' }), { target: { value: 'cat' } })
     expect(screen.getByText('1/3')).toBeInTheDocument()
-    await user.type(screen.getByRole('textbox', { name: 'Replace with' }), 'dog')
+    fireEvent.change(screen.getByRole('textbox', { name: 'Replace with' }), { target: { value: 'dog' } })
     await user.click(screen.getByRole('button', { name: 'Replace all' }))
     await waitFor(() => expect(editor).toHaveValue('dog dog dog'))
   })

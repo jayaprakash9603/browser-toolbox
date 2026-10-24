@@ -74,7 +74,8 @@ async function noteToPdf(note: Note, title: string): Promise<Blob> {
   write(formatTimestamp(new Date(note.updatedAt)), 9, 'normal', 10)
   doc.setTextColor(20)
   const raw = note.body.replace(/\r\n?/g, '\n').split('\n')
-  const plain = markdownToPlain(note.body).split('\n')
+  // The built-in PDF fonts only cover WinAnsi, which has no ballot-box glyphs.
+  const plain = markdownToPlain(note.body).replace(/☐/g, '[ ]').replace(/☑/g, '[x]').split('\n')
   let p = 0
   for (const line of raw) {
     if (/^\s*```/.test(line)) continue

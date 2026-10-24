@@ -263,7 +263,7 @@ export default function NotesTool() {
         <div className="flex min-h-0 flex-1 gap-3">
           <aside
             className={cn(
-              'min-h-0 w-full flex-col gap-2 @[620px]:flex @[620px]:w-60 @[620px]:shrink-0',
+              'min-h-0 w-full flex-col gap-2 @[620px]:flex @[620px]:w-64 @[620px]:shrink-0',
               active ? 'hidden' : 'flex',
             )}
           >
@@ -303,15 +303,15 @@ export default function NotesTool() {
                     disabled={!notes.length}
                     onSelect={() => run(() => exportAllAsZip(sortNotes(notes, prefs.sort), fallbackTitle))}
                   >
-                    <ArchiveIcon />
+                    <ArchiveIcon className="size-4" />
                     {t('notes.exportAllZip')}
                   </DropdownMenuItem>
                   <DropdownMenuItem disabled={!notes.length} onSelect={() => run(() => exportBackup(notes))}>
-                    <DownloadIcon />
+                    <DownloadIcon className="size-4" />
                     {t('notes.backup')}
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => fileRef.current?.click()}>
-                    <UploadIcon />
+                    <UploadIcon className="size-4" />
                     {t('notes.import')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -467,27 +467,27 @@ export default function NotesTool() {
                       <DropdownMenuItem
                         onSelect={() => run(() => copyNote(active, fallbackTitle, false), t('notes.copiedText'))}
                       >
-                        <CopyIcon />
+                        <CopyIcon className="size-4" />
                         {t('notes.copyText')}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onSelect={() => run(() => copyNote(active, fallbackTitle, true), t('notes.copiedFormatted'))}
                       >
-                        <CopyIcon />
+                        <CopyIcon className="size-4" />
                         {t('notes.copyFormatted')}
                       </DropdownMenuItem>
                       <DropdownMenuItem onSelect={() => printNote(active, fallbackTitle)}>
-                        <PrinterIcon />
+                        <PrinterIcon className="size-4" />
                         {t('notes.print')}
                         <span className="ml-auto text-xs text-muted-foreground">Ctrl+P</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem onSelect={saveNow}>
-                        <SaveIcon />
+                        <SaveIcon className="size-4" />
                         {t('notes.saveNow')}
                         <span className="ml-auto text-xs text-muted-foreground">Ctrl+S</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem onSelect={() => duplicate(active)}>
-                        <CopyPlusIcon />
+                        <CopyPlusIcon className="size-4" />
                         {t('notes.duplicate')}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
@@ -501,7 +501,7 @@ export default function NotesTool() {
                         onSelect={() => requestDelete(active.id)}
                         className="text-destructive focus:text-destructive"
                       >
-                        <Trash2Icon />
+                        <Trash2Icon className="size-4" />
                         {t('notes.delete')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
