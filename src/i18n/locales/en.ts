@@ -3,6 +3,7 @@ import { interceptorStrings } from './interceptorEn'
 import { netmonStrings } from './netmonEn'
 import { notesStrings } from './notesEn'
 import { speedtestStrings } from './speedtestEn'
+import { tabManagerStrings } from './tabManagerEn'
 import { browserToolkitStrings } from './browserToolkitEn'
 import { sitesWhatsappStrings } from './sitesWhatsappEn'
 import { consolidationStrings } from './consolidationEn'
@@ -1206,7 +1207,7 @@ const en = {
   'tools.productivity.timer.description': 'Countdown, stopwatch and Pomodoro timer.',
   'tools.productivity.tab-manager.name': 'Tab Manager',
   'tools.productivity.tab-manager.description':
-    'Search, close duplicates, and copy URLs of open tabs.',
+    'Find, group, pin, mute, sleep, close and export your open tabs.',
   'tools.productivity.form-autofill.name': 'Form Autofill',
   'tools.productivity.form-autofill.description':
     'Review and fill web forms from your saved answers.',
@@ -1314,11 +1315,6 @@ const en = {
   'timer.done': "Time's up!",
   'timer.pomoWork': 'Focus (25 min)',
   'timer.pomoBreak': 'Break (5 min)',
-  'tabs.search': 'Search tabs…',
-  'tabs.loadError': 'Could not read tabs.',
-  'tabs.closeDupes': 'Close {{count}} duplicates',
-  'tabs.copyUrls': 'Copy URLs',
-  'tabs.close': 'Close tab',
   'browser.copyUrl': 'Copy URL',
   'browser.copyTitle': 'Copy title',
   'browser.copyTitleUrl': 'Copy title + URL',
@@ -1389,6 +1385,7 @@ const en = {
   ...consolidationStrings,
   ...dataScraperStrings,
   ...notesStrings,
+  ...tabManagerStrings,
 } as const
 
 export default en
