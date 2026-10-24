@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, render, renderHook, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nextProvider } from 'react-i18next'
@@ -7,6 +7,7 @@ import i18n from '@/i18n'
 import { registerModules } from '@/modules'
 import { TooltipProvider } from '@/shared/components/ui/tooltip'
 import ReadAloudTool from '@/tools/text/read-aloud/Tool'
+import { useVoices } from '@/tools/text/read-aloud/useSpeechReader'
 
 vi.mock('@/tools/web/tabMessaging', () => ({
   sendToActiveTab: vi.fn(async (message: { scope?: string }) =>
@@ -42,15 +43,14 @@ class FakeUtterance {
 }
 
 const spoken: FakeUtterance[] = []
+let voiceList: SpeechSynthesisVoice[] = []
 const synth = {
   speak: vi.fn((utterance: FakeUtterance) => spoken.push(utterance)),
   cancel: vi.fn(),
   pause: vi.fn(),
   resume: vi.fn(),
   paused: false,
-  getVoices: vi.fn(() => [
-    { voiceURI: 'en', name: 'Test English', lang: 'en-US', localService: true, default: true },
-  ]),
+  getVoices: vi.fn(() => voiceList),
   addEventListener: vi.fn(),
   removeEventListener: vi.fn(),
 }
@@ -71,6 +71,7 @@ function renderTool() {
 
 beforeEach(() => {
   spoken.length = 0
+  voiceList = [{ voiceURI: 'en', name: 'Test English', lang: 'en-US', localService: true, default: true }]
   vi.clearAllMocks()
   Object.defineProperty(globalThis, 'SpeechSynthesisUtterance', { configurable: true, writable: true, value: FakeUtterance })
   Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: synth })
@@ -83,6 +84,16 @@ afterEach(() => {
 })
 
 describe('Read Aloud', () => {
+  it('picks up voices after Chromium returns an empty list first', async () => {
+    voiceList = []
+    const { result, unmount } = renderHook(() => useVoices())
+    expect(result.current).toEqual([])
+    voiceList = [{ voiceURI: 'en', name: 'Late English', lang: 'en-US', localService: true, default: true }]
+    await waitFor(() => expect(result.current).toHaveLength(1))
+    expect(result.current[0].name).toBe('Late English')
+    unmount()
+  })
+
   it('loads the page as separate, clickable sentences', async () => {
     renderTool()
     expect(await screen.findByRole('button', { name: 'Interest earns interest.' })).toBeInTheDocument()

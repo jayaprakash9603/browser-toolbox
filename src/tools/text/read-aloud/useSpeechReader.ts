@@ -13,21 +13,80 @@ export interface VoiceSettings {
 }
 
 const RESTART_DELAY_MS = 300
+const VOICE_POLL_MS = 120
+const VOICE_POLL_MAX_MS = 10_000
 
 export function getSpeechSynthesis(): SpeechSynthesis | undefined {
   if (typeof window === 'undefined' || typeof SpeechSynthesisUtterance === 'undefined') return undefined
   return window.speechSynthesis ?? undefined
 }
 
+export function readSpeechVoices(synth: SpeechSynthesis): SpeechSynthesisVoice[] {
+  return synth.getVoices()
+}
+
+function voicesEqual(a: SpeechSynthesisVoice[], b: SpeechSynthesisVoice[]): boolean {
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i].voiceURI !== b[i].voiceURI) return false
+  }
+  return true
+}
+
+/** Chromium often returns no voices until the engine is nudged (common in extension side panels). */
+export function primeSpeechSynthesis(synth: SpeechSynthesis): void {
+  try {
+    if (synth.paused) synth.resume()
+    const utterance = new SpeechSynthesisUtterance('')
+    utterance.volume = 0
+    synth.speak(utterance)
+    synth.cancel()
+  } catch {
+    // Warm-up is best-effort; polling still applies whatever voices appear later.
+  }
+}
+
 export function useVoices(): SpeechSynthesisVoice[] {
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>(() => getSpeechSynthesis()?.getVoices() ?? [])
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>(() => {
+    const synth = getSpeechSynthesis()
+    return synth ? readSpeechVoices(synth) : []
+  })
 
   useEffect(() => {
     const synth = getSpeechSynthesis()
     if (!synth) return
-    const load = () => setVoices(synth.getVoices())
-    synth.addEventListener('voiceschanged', load)
-    return () => synth.removeEventListener('voiceschanged', load)
+
+    let stopped = false
+    const apply = () => {
+      if (stopped) return
+      const next = readSpeechVoices(synth)
+      setVoices((prev) => (voicesEqual(prev, next) ? prev : next))
+    }
+
+    primeSpeechSynthesis(synth)
+    apply()
+
+    synth.addEventListener('voiceschanged', apply)
+
+    const started = Date.now()
+    const poll = window.setInterval(() => {
+      apply()
+      if (readSpeechVoices(synth).length > 0 || Date.now() - started >= VOICE_POLL_MAX_MS) {
+        window.clearInterval(poll)
+      }
+    }, VOICE_POLL_MS)
+
+    const onWake = () => apply()
+    window.addEventListener('focus', onWake)
+    document.addEventListener('visibilitychange', onWake)
+
+    return () => {
+      stopped = true
+      window.clearInterval(poll)
+      synth.removeEventListener('voiceschanged', apply)
+      window.removeEventListener('focus', onWake)
+      document.removeEventListener('visibilitychange', onWake)
+    }
   }, [])
 
   return voices

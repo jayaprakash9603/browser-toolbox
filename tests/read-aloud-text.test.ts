@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { extractReadablePage, extractSelection, pickContentRoot, textToBlocks } from '@/core/text/readablePage'
 import {
@@ -14,6 +14,7 @@ import {
   voiceLabel,
   wordAt,
 } from '@/tools/text/read-aloud/speechText'
+import { primeSpeechSynthesis, readSpeechVoices } from '@/tools/text/read-aloud/useSpeechReader'
 
 const filler = 'Saving early lets every deposit earn returns on previous returns. '.repeat(6)
 
@@ -144,6 +145,39 @@ describe('speech text', () => {
     expect(wordAt('Read this aloud', 5)).toEqual({ start: 5, end: 9 })
     expect(wordAt('Read this aloud', 5, 4)).toEqual({ start: 5, end: 9 })
     expect(wordAt('Read', 10)).toBeNull()
+  })
+})
+
+describe('speech synthesis voice loading', () => {
+  it('primes the engine and reads voices from getVoices', () => {
+    class Utterance {
+      volume = 1
+      text: string
+      constructor(text: string) {
+        this.text = text
+      }
+    }
+    vi.stubGlobal('SpeechSynthesisUtterance', Utterance)
+
+    const calls: string[] = []
+    const synth = {
+      paused: true,
+      resume: () => {
+        calls.push('resume')
+      },
+      speak: () => {
+        calls.push('speak')
+      },
+      cancel: () => {
+        calls.push('cancel')
+      },
+      getVoices: () => [{ voiceURI: 'v1', name: 'One', lang: 'en-US', localService: true, default: true }],
+    } as unknown as SpeechSynthesis
+
+    primeSpeechSynthesis(synth)
+    expect(calls).toEqual(['resume', 'speak', 'cancel'])
+    expect(readSpeechVoices(synth)).toHaveLength(1)
+    vi.unstubAllGlobals()
   })
 })
 
