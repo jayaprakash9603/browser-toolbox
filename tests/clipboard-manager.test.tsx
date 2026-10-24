@@ -56,7 +56,7 @@ describe('Clipboard Manager', () => {
     renderTool()
     const headings = await screen.findAllByRole('heading', { level: 2 })
     expect(headings.map((heading) => heading.textContent)).toEqual(['Pinned', 'Today', 'Earlier'])
-    expect(screen.getByText('4 items')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /All/ })).toHaveTextContent('4')
   })
 
   it('filters by kind and search text', async () => {
