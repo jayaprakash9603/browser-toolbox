@@ -233,6 +233,7 @@ export function searchAll(query: string): SearchItem[] {
       }
 
       let score = scoreMatch(scoreHaystack, name, aliases, tokens, q)
+      if (score <= 0 && item.kind !== 'option') return { item, score: 0 }
       if (item.kind === 'tool') score += 5
       if (item.kind === 'option') {
         score += 35
