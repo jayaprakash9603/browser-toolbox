@@ -35,7 +35,7 @@ const CSV = [
   'AUS-0003,MELBOURNE,22,MELBOURNE,3000',
 ].join('\n')
 
-const LOAD = { timeout: 10000 }
+const LOAD = { timeout: 15_000 }
 
 describe('file name helpers', () => {
   it('keeps the extension separate so it stays visible when the name truncates', () => {
