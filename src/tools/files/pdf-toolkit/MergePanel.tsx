@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { ArrowDownIcon, ArrowUpIcon, CombineIcon, FilePlus2Icon, GripVerticalIcon, LoaderCircleIcon, Trash2Icon, XIcon } from 'lucide-react'
+import { ArrowDownIcon, ArrowUpIcon, CircleAlertIcon, CombineIcon, FilePlus2Icon, GripVerticalIcon, LoaderCircleIcon, Trash2Icon, XIcon } from 'lucide-react'
 
 import { formatBytes } from '@/core/engines/image'
 import { assemblePdf, type PageSpec, type PdfSource } from '@/core/engines/pdf/edit'
@@ -49,6 +49,49 @@ function pagesFor(item: Extract<MergeItem, { kind: 'pdf' }>) {
 
 const ACCEPT = 'application/pdf,.pdf,image/png,image/jpeg,image/webp,image/gif,image/bmp,image/avif,image/svg+xml'
 
+type SkipReason = 'locked' | 'unsupported' | 'unreadable'
+
+type SkippedFile = { name: string; reason: SkipReason }
+
+const SKIP_REASON = {
+  locked: 'pdf.merge.reasonLocked',
+  unsupported: 'pdf.merge.reasonUnsupported',
+  unreadable: 'pdf.merge.reasonUnreadable',
+} as const
+
+/** Files a drop could not add, with the name and the reason on separate lines so a long name stays readable. */
+function SkippedNotice({ files, onDismiss }: { files: SkippedFile[]; onDismiss: () => void }) {
+  const { t } = useTranslation()
+  return (
+    <div role="alert" className="flex flex-col gap-2 rounded-xl border border-destructive/40 bg-destructive/5 p-2.5 text-destructive">
+      <div className="flex items-center gap-2">
+        <CircleAlertIcon className="size-4 shrink-0" aria-hidden />
+        <p className="min-w-0 flex-1 text-[13px] font-semibold">{t('pdf.merge.skippedTitle', { count: files.length })}</p>
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          onClick={onDismiss}
+          aria-label={t('pdf.merge.dismissSkipped')}
+          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+        >
+          <XIcon />
+        </Button>
+      </div>
+      <ul className="flex max-h-44 flex-col gap-1.5 overflow-y-auto">
+        {files.map((file, index) => (
+          <li key={`${file.name}:${index}`} className="flex min-w-0 flex-col gap-0.5 rounded-lg border border-destructive/15 bg-background/80 px-2.5 py-1.5">
+            <span className="text-xs font-medium break-all text-foreground" title={file.name}>
+              {file.name}
+            </span>
+            <span className="text-xs font-medium">{t(SKIP_REASON[file.reason])}</span>
+          </li>
+        ))}
+      </ul>
+      {files.some((file) => file.reason === 'locked') && <p className="text-xs leading-5">{t('pdf.merge.skippedLockedHint')}</p>}
+    </div>
+  )
+}
+
 export function MergePanel() {
   const { t } = useTranslation()
   const reduce = useReducedMotion()
@@ -58,7 +101,7 @@ export function MergePanel() {
   const [dragId, setDragId] = useState<string | null>(null)
   const [overId, setOverId] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
-  const [skipped, setSkipped] = useState<string | null>(null)
+  const [skipped, setSkipped] = useState<SkippedFile[]>([])
   const { busy, error, run } = useTask()
   const latest = useRef(items)
   useEffect(() => {
@@ -77,7 +120,7 @@ export function MergePanel() {
 
   const addFiles = async (files: File[]) => {
     setAdding(true)
-    const failed: string[] = []
+    const failed: SkippedFile[] = []
     const added: MergeItem[] = []
     for (const file of files) {
       try {
@@ -91,13 +134,13 @@ export function MergePanel() {
           const image = await toEmbeddableImage(file)
           added.push({ id: crypto.randomUUID(), kind: 'image', name: file.name, size: file.size, range: '', image, url: URL.createObjectURL(file) })
         } else {
-          failed.push(file.name)
+          failed.push({ name: file.name, reason: 'unsupported' })
         }
       } catch (cause) {
-        failed.push(cause instanceof PdfPasswordError ? t('pdf.merge.lockedName', { name: file.name }) : file.name)
+        failed.push({ name: file.name, reason: cause instanceof PdfPasswordError ? 'locked' : 'unreadable' })
       }
     }
-    setSkipped(failed.length ? t('pdf.merge.skipped', { names: failed.join(', ') }) : null)
+    setSkipped(failed)
     setItems((current) => [...current, ...added])
     setAdding(false)
   }
@@ -132,7 +175,7 @@ export function MergePanel() {
   const clear = () => {
     for (const item of items) disposeItem(item)
     setItems([])
-    setSkipped(null)
+    setSkipped([])
   }
 
   const move = (from: number, to: number) =>
@@ -220,7 +263,7 @@ export function MergePanel() {
             {t('pdf.merge.reading')}
           </p>
         )}
-        {skipped && <PanelError message={skipped} />}
+        {skipped.length > 0 && <SkippedNotice files={skipped} onDismiss={() => setSkipped([])} />}
       </div>
     )
   }
@@ -347,7 +390,7 @@ export function MergePanel() {
             </Button>
           )}
         </div>
-        {skipped && <PanelError message={skipped} />}
+        {skipped.length > 0 && <SkippedNotice files={skipped} onDismiss={() => setSkipped([])} />}
       </PanelSection>
 
       <PanelSection title={t('pdf.merge.output')} icon={<FilePlus2Icon />}>

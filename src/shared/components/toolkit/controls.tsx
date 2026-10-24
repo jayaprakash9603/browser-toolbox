@@ -74,9 +74,9 @@ export function OptionSwitch({
 
 export function PanelError({ message }: { message: string }) {
   return (
-    <p role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+    <p role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs leading-5 text-destructive">
       <CircleAlertIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-      {message}
+      <span className="min-w-0 break-words">{message}</span>
     </p>
   )
 }
