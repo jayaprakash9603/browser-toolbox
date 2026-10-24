@@ -3,6 +3,7 @@ import { interceptorStrings } from './interceptorEn'
 import { netmonStrings } from './netmonEn'
 import { notesStrings } from './notesEn'
 import { speedtestStrings } from './speedtestEn'
+import { browserToolkitStrings } from './browserToolkitEn'
 import { sitesWhatsappStrings } from './sitesWhatsappEn'
 import { consolidationStrings } from './consolidationEn'
 import { dataScraperStrings } from './dataScraperEn'
@@ -1218,7 +1219,7 @@ const en = {
     'Block ads and trackers on websites and YouTube with per-site controls.',
   'tools.browser.toolkit.name': 'Browser Toolkit',
   'tools.browser.toolkit.description':
-    'Copy page URL/title, reload, hard-reload and duplicate the tab.',
+    'Copy links in any format, control the tab, and zoom, edit, print or screenshot the page.',
   'tools.storage.inspector.name': 'Storage Inspector',
   'tools.storage.inspector.description':
     'Inspect localStorage and sessionStorage of the current page.',
@@ -1384,6 +1385,7 @@ const en = {
   ...sitesInstagramStrings,
   ...netmonStrings,
   ...speedtestStrings,
+  ...browserToolkitStrings,
   ...interceptorStrings,
   ...consolidationStrings,
   ...dataScraperStrings,
