@@ -13,7 +13,7 @@ export function IssuesTab({ report }: { report: SeoReport }) {
 
   if (issues.length === 0) {
     return (
-      <p className="rounded border border-green-500/40 bg-green-500/5 p-2 text-[11px] text-green-700 dark:text-green-400">
+      <p className="rounded-lg border border-green-500/40 bg-green-500/5 p-3 text-center text-[11px] text-green-700 dark:text-green-400">
         {t('seo.noIssues')}
       </p>
     )
