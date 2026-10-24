@@ -20,7 +20,7 @@ import {
 import { get, set } from '@/core/storage'
 
 import { ensureOffscreenDocument, keepOffscreenAlive } from '../offscreen'
-import { showToolbarStatus } from './toolbarIcon'
+import { showToolbarStatus } from '../toolbarIcon'
 
 const logger = createLogger('netmon')
 const ALARM = 'netmon-keepalive'

@@ -43,6 +43,7 @@ import { registerRecorder } from './recorder'
 import { registerHtmlBundleJobHandlers } from './htmlBundleJob'
 import { registerImageDownloadJobHandlers } from './imageDownloadJob'
 import { registerNetMonitor } from './netmon'
+import { registerToolbarIcon } from './toolbarIcon'
 import { registerInterceptor } from './interceptor'
 import { registerLinkChecker } from './web/linkChecker'
 import { registerScraperJobHandlers } from './scraper/job'
@@ -169,6 +170,7 @@ safeRegister('chatPulseMenuSync', registerChatPulseMenuSync)
 safeRegister('imageConvert', registerImageConvert)
 safeRegister('pip', registerPip)
 safeRegister('shortcuts', registerShortcuts)
+safeRegister('toolbarIcon', registerToolbarIcon)
 safeRegister('netMonitor', registerNetMonitor)
 safeRegister('interceptor', registerInterceptor)
 safeRegister('redirectTracer', registerRedirectTracer)
