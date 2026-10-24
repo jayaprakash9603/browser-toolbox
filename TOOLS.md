@@ -29,7 +29,7 @@ See [ROADMAP.md](./ROADMAP.md) for what is planned next.
 | **15. Element inspector / selectors** | **Shipped** | QA toolkits + shared picker/selector engine. |
 | **16–18. Responsive, rulers, measurement** | **Deferred** | Phase 5. |
 | **19. Productivity (tabs, bookmarks)** | **Partial** | Notes, timer, tab search/duplicates/URLs. No bookmark manager or tab groups yet. |
-| **20. Notes** | **Shipped** | Local markdown notes with search/pin. |
+| **20. Notes** | **Shipped** | Notepad/Sticky Notes-style editor: formatting toolbar + shortcuts, checklists, colors, find/replace, go to line, zoom, word wrap, preview, status bar; export TXT/MD/HTML/Word/PDF/ZIP/JSON, import, print. |
 | **21. AI utilities** | **Out of scope** | Optional future module; off by default. |
 | **22. Generators** | **Partial** | Test data, passwords, UUIDs, QR, lorem — not full fake-identity suite. |
 | **23. Data format converters** | **Shipped** | `data.universal-converter` + JSON toolkit converts. |

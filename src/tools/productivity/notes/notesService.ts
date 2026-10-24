@@ -1,43 +1,91 @@
 import { get, set } from '@/core/storage'
 
+export const NOTE_COLORS = ['default', 'yellow', 'green', 'pink', 'purple', 'blue', 'gray', 'charcoal'] as const
+export type NoteColor = (typeof NOTE_COLORS)[number]
+
 export interface Note {
   id: string
   title: string
   body: string
   pinned: boolean
+  color: NoteColor
+  createdAt: number
   updatedAt: number
 }
 
+export type NotesSort = 'modified' | 'created' | 'title'
+export type NotesFont = 'sans' | 'serif' | 'mono'
+
+export interface NotesPrefs {
+  sort: NotesSort
+  wordWrap: boolean
+  spellcheck: boolean
+  font: NotesFont
+  zoom: number
+  statusBar: boolean
+  confirmDelete: boolean
+}
+
+export const DEFAULT_PREFS: NotesPrefs = {
+  sort: 'modified',
+  wordWrap: true,
+  spellcheck: true,
+  font: 'sans',
+  zoom: 100,
+  statusBar: true,
+  confirmDelete: true,
+}
+
+export const ZOOM_MIN = 50
+export const ZOOM_MAX = 300
+
 const KEY = 'toolbox.notes'
+const PREFS_KEY = 'toolbox.notes.prefs'
+
+export function normalizeNote(raw: Partial<Note>): Note {
+  const updatedAt = typeof raw.updatedAt === 'number' ? raw.updatedAt : Date.now()
+  return {
+    id: typeof raw.id === 'string' && raw.id ? raw.id : crypto.randomUUID(),
+    title: typeof raw.title === 'string' ? raw.title : '',
+    body: typeof raw.body === 'string' ? raw.body : '',
+    pinned: raw.pinned === true,
+    color: NOTE_COLORS.includes(raw.color as NoteColor) ? (raw.color as NoteColor) : 'default',
+    createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : updatedAt,
+    updatedAt,
+  }
+}
+
+export function createNote(partial: Partial<Note> = {}): Note {
+  const now = Date.now()
+  return normalizeNote({ createdAt: now, updatedAt: now, ...partial, id: crypto.randomUUID() })
+}
 
 export async function getNotes(): Promise<Note[]> {
-  const stored = await get<Note[]>(KEY)
-  return Array.isArray(stored) ? stored : []
+  const stored = await get<Partial<Note>[]>(KEY)
+  return Array.isArray(stored) ? stored.map(normalizeNote) : []
 }
 
 export async function saveAllNotes(notes: Note[]): Promise<void> {
   await set(KEY, notes)
 }
 
-export async function saveNote(partial: Pick<Note, 'title' | 'body'>): Promise<Note> {
-  const notes = await getNotes()
-  const note: Note = {
-    id: crypto.randomUUID(),
-    title: partial.title,
-    body: partial.body,
-    pinned: false,
-    updatedAt: Date.now(),
-  }
-  await saveAllNotes([note, ...notes])
-  return note
+export async function getPrefs(): Promise<NotesPrefs> {
+  const stored = await get<Partial<NotesPrefs>>(PREFS_KEY)
+  const prefs = { ...DEFAULT_PREFS, ...(stored ?? {}) }
+  prefs.zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Number(prefs.zoom) || 100))
+  return prefs
 }
 
-export async function togglePin(id: string): Promise<void> {
-  const notes = await getNotes()
-  await saveAllNotes(notes.map((n) => (n.id === id ? { ...n, pinned: !n.pinned } : n)))
+export async function savePrefs(prefs: NotesPrefs): Promise<void> {
+  await set(PREFS_KEY, prefs)
 }
 
-export async function deleteNote(id: string): Promise<void> {
-  const notes = await getNotes()
-  await saveAllNotes(notes.filter((n) => n.id !== id))
+export function sortNotes(notes: Note[], sort: NotesSort): Note[] {
+  return [...notes].sort((a, b) => {
+    const pin = Number(b.pinned) - Number(a.pinned)
+    if (pin) return pin
+    if (sort === 'created') return b.createdAt - a.createdAt
+    if (sort === 'title') return (a.title || a.body).localeCompare(b.title || b.body, undefined, { sensitivity: 'base' })
+    return b.updatedAt - a.updatedAt
+  })
 }

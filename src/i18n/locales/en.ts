@@ -1,6 +1,7 @@
 import { imageDownloaderStrings } from './imageDownloaderEn'
 import { interceptorStrings } from './interceptorEn'
 import { netmonStrings } from './netmonEn'
+import { notesStrings } from './notesEn'
 import { speedtestStrings } from './speedtestEn'
 import { sitesWhatsappStrings } from './sitesWhatsappEn'
 import { consolidationStrings } from './consolidationEn'
@@ -1199,7 +1200,8 @@ const en = {
   'tools.seo.toolkit.description':
     'Detailed on-page SEO audit: indexability, content, links, images, schema, hreflang, social and PageSpeed.',
   'tools.productivity.notes.name': 'Notes',
-  'tools.productivity.notes.description': 'Local markdown notes with search and pinning.',
+  'tools.productivity.notes.description':
+    'Notepad-style notes with formatting, colors, find & replace and export.',
   'tools.productivity.timer.name': 'Timer',
   'tools.productivity.timer.description': 'Countdown, stopwatch and Pomodoro timer.',
   'tools.productivity.tab-manager.name': 'Tab Manager',
@@ -1303,13 +1305,6 @@ const en = {
   'seo.refresh': 'Refresh analysis',
   'seo.exportJson': 'Export checks',
   'seo.issueCount': '{{count}} issues',
-  'notes.untitled': 'Untitled',
-  'notes.search': 'Search notes…',
-  'notes.new': 'New note',
-  'notes.empty': 'No notes yet.',
-  'notes.title': 'Title',
-  'notes.body': 'Write a note…',
-  'notes.select': 'Select or create a note.',
   'timer.countdown': 'Countdown',
   'timer.stopwatch': 'Stopwatch',
   'timer.minutes': 'Minutes',
@@ -1392,6 +1387,7 @@ const en = {
   ...interceptorStrings,
   ...consolidationStrings,
   ...dataScraperStrings,
+  ...notesStrings,
 } as const
 
 export default en
