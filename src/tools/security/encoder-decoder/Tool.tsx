@@ -7,10 +7,10 @@ import { ArrowDownUpIcon } from 'lucide-react'
 import { decode, encode, type EncodingKind } from '@/core/engines/encoding'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
+import { TextPaneGrid } from '@/shared/components/TextPaneGrid'
 import { Button } from '@/shared/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
-import { JsonErrorView } from '@/tools/developer/_shared'
-import { ToolActions } from '@/tools/text/_shared'
+import { OutputPane } from '@/tools/developer/_shared'
 import { useSecurityTool } from '../_shared'
 
 const KINDS: { id: EncodingKind; label: string }[] = [
@@ -38,69 +38,73 @@ export default function EncoderDecoderTool() {
   }, [input, kind, direction])
 
   const output = result?.ok ? result.value : ''
+  const showOutput = input.length > 0
 
   return (
-    <ToolPage tool={tool} contentClassName="overflow-hidden">
+    <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col overflow-hidden">
       <div className="flex min-h-0 flex-1 flex-col gap-3">
-        <Tabs value={kind} onValueChange={(v) => setKind(v as EncodingKind)}>
-          <TabsList className="flex-wrap">
-            {KINDS.map((k) => (
-              <TabsTrigger key={k.id} value={k.id}>
-                {k.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-        <div className="flex gap-1.5">
-          <Button
-            size="sm"
-            variant={direction === 'encode' ? 'secondary' : 'outline'}
-            onClick={() => setDirection('encode')}
-          >
-            {t('security.encode')}
-          </Button>
-          <Button
-            size="sm"
-            variant={direction === 'decode' ? 'secondary' : 'outline'}
-            onClick={() => setDirection('decode')}
-          >
-            {t('security.decode')}
-          </Button>
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            onClick={() => {
-              if (output) {
-                setInput(output)
-                setDirection(direction === 'encode' ? 'decode' : 'encode')
-              }
-            }}
-            disabled={!output}
-            aria-label={t('security.swap')}
-            title={t('security.swap')}
-          >
-            <ArrowDownUpIcon />
-          </Button>
-        </div>
-        <TextEditor
-          value={input}
-          onChange={setInput}
-          placeholder={t('security.inputPlaceholder')}
-          ariaLabel={t('security.input')}
-          minRows={5}
-        />
-        {result && !result.ok && <JsonErrorView message={result.error} />}
-        {output && (
-          <div className="flex min-h-0 flex-1 flex-col">
-            <div className="mb-1 flex shrink-0 items-center justify-between">
-              <span className="text-xs font-medium">{t('text.output')}</span>
-              <ToolActions value={output} onClear={() => setInput('')} />
-            </div>
-            <pre className="scrollbar-both min-h-0 flex-1 overflow-auto rounded-lg border bg-muted/30 p-3 font-mono text-xs leading-relaxed">
-              {output}
-            </pre>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <Tabs value={kind} onValueChange={(v) => setKind(v as EncodingKind)}>
+            <TabsList className="flex-wrap">
+              {KINDS.map((k) => (
+                <TabsTrigger key={k.id} value={k.id}>
+                  {k.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+          <div className="flex gap-1.5">
+            <Button
+              size="sm"
+              variant={direction === 'encode' ? 'secondary' : 'outline'}
+              onClick={() => setDirection('encode')}
+            >
+              {t('security.encode')}
+            </Button>
+            <Button
+              size="sm"
+              variant={direction === 'decode' ? 'secondary' : 'outline'}
+              onClick={() => setDirection('decode')}
+            >
+              {t('security.decode')}
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              onClick={() => {
+                if (output) {
+                  setInput(output)
+                  setDirection(direction === 'encode' ? 'decode' : 'encode')
+                }
+              }}
+              disabled={!output}
+              aria-label={t('security.swap')}
+              title={t('security.swap')}
+            >
+              <ArrowDownUpIcon />
+            </Button>
           </div>
-        )}
+        </div>
+
+        <TextPaneGrid split={showOutput}>
+          <TextEditor
+            value={input}
+            onChange={setInput}
+            placeholder={t('security.inputPlaceholder')}
+            ariaLabel={t('security.input')}
+            label={t('common.input')}
+            fill
+          />
+          {showOutput && (
+            <OutputPane
+              value={output}
+              error={result && !result.ok ? result.error : null}
+              label={t('text.output')}
+              onClear={() => setInput('')}
+              fill
+            />
+          )}
+        </TextPaneGrid>
       </div>
     </ToolPage>
   )
