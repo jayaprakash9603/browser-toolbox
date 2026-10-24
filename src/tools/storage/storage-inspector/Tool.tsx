@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { CopyButton } from '@/shared/components/CopyButton'
 import { useStorageTool } from '../_shared'
 import type { StorageSnapshot } from '@/chrome/content/index'
+import { loadStorageSnapshot } from './loadSnapshot'
 
 export default function StorageInspectorTool() {
   const { t } = useTranslation()
@@ -21,20 +22,9 @@ export default function StorageInspectorTool() {
   const [query, setQuery] = useState('')
   const [loaded, setLoaded] = useState(false)
 
-  const load = async (): Promise<StorageSnapshot | null> => {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-    if (tab?.id == null) return null
-    try {
-      const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_STORAGE_SNAPSHOT' })
-      return (response?.data ?? response) as StorageSnapshot
-    } catch {
-      return null
-    }
-  }
-
   useEffect(() => {
     let live = true
-    void load()
+    void loadStorageSnapshot()
       .then((value) => {
         if (live) setSnapshot(value)
       })
@@ -47,7 +37,7 @@ export default function StorageInspectorTool() {
   }, [])
 
   const refresh = () => {
-    void load().then(setSnapshot)
+    void loadStorageSnapshot().then(setSnapshot)
   }
 
   const filter = (record: Record<string, string>) => {
