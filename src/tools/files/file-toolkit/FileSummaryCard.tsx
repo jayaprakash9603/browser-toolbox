@@ -1,31 +1,25 @@
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { RefreshCwIcon, XIcon, type LucideIcon } from 'lucide-react'
+import { RefreshCwIcon, XIcon } from 'lucide-react'
 
 import { formatBytes } from '@/core/engines/image'
+import { FileGlyph, useFileDrop } from '@/shared/components/files'
 import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip'
 import { cn } from '@/shared/utils/cn'
-import { useFileDrop } from './useFileDrop'
 import { splitFileName, type LoadedFile } from './fileKinds'
 
 interface FileSummaryCardProps {
   file: LoadedFile
-  icon: LucideIcon
-  accept: string
+  accept?: string
   stats: string[]
   onReplace: (files: File[]) => void
   onRemove: () => void
+  actions?: ReactNode
 }
 
-export function FileSummaryCard({
-  file,
-  icon: Icon,
-  accept,
-  stats,
-  onReplace,
-  onRemove,
-}: FileSummaryCardProps) {
+export function FileSummaryCard({ file, accept, stats, onReplace, onRemove, actions }: FileSummaryCardProps) {
   const { t } = useTranslation()
   const { active, handlers } = useFileDrop(onReplace)
   const { base, extension } = splitFileName(file.name)
@@ -35,16 +29,11 @@ export function FileSummaryCard({
     <div
       {...handlers}
       className={cn(
-        'flex items-center gap-3 rounded-[var(--radius-lg)] border bg-card p-3 shadow-xs transition-colors duration-150',
+        'flex items-center gap-3 rounded-2xl border bg-card p-3 shadow-xs transition-colors duration-150',
         active && 'border-primary bg-primary/5',
       )}
     >
-      <span
-        className="flex size-10 shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/10 text-primary"
-        aria-hidden
-      >
-        <Icon className="size-5" />
-      </span>
+      <FileGlyph extension={extension || 'txt'} className="h-11" />
 
       <div className="min-w-0 flex-1">
         <Tooltip>
@@ -78,6 +67,7 @@ export function FileSummaryCard({
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
+        {actions}
         <Button asChild variant="outline" size="xs" className="cursor-pointer focus-within:ring-2 focus-within:ring-ring/40">
           <label>
             <RefreshCwIcon aria-hidden />

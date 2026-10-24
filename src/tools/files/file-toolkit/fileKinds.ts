@@ -1,8 +1,5 @@
 import { detectDelimiter } from '@/core/engines/csv'
 
-export type TextFileKind = 'csv' | 'json' | 'text'
-export type FileTab = TextFileKind | 'pdf'
-
 export interface LoadedFile {
   name: string
   size: number
@@ -10,40 +7,10 @@ export interface LoadedFile {
   content: string
 }
 
-const EXTENSIONS: Record<TextFileKind, string[]> = {
-  csv: ['.csv', '.tsv'],
-  json: ['.json', '.geojson', '.jsonl'],
-  text: ['.txt', '.md', '.log', '.xml', '.yaml', '.yml', '.ini', '.env', '.sql'],
-}
-
-export function acceptFor(kind: TextFileKind): string {
-  return EXTENSIONS[kind].join(',')
-}
-
-export function acceptLabel(kind: TextFileKind): string {
-  return EXTENSIONS[kind].map((ext) => ext.slice(1).toUpperCase()).join(', ')
-}
-
-function extensionOf(name: string): string {
-  const dot = name.lastIndexOf('.')
-  return dot >= 0 ? name.slice(dot).toLowerCase() : ''
-}
-
-export function detectFileKind(file: Pick<File, 'name' | 'type'>): TextFileKind | null {
-  const ext = extensionOf(file.name)
-  for (const kind of Object.keys(EXTENSIONS) as TextFileKind[]) {
-    if (EXTENSIONS[kind].includes(ext)) return kind
-  }
-  if (file.type === 'text/csv' || file.type === 'text/tab-separated-values') return 'csv'
-  if (file.type === 'application/json') return 'json'
-  if (file.type.startsWith('text/')) return 'text'
-  return null
-}
-
 export function splitFileName(name: string): { base: string; extension: string } {
-  const ext = extensionOf(name)
-  return ext && ext.length < name.length
-    ? { base: name.slice(0, -ext.length), extension: ext.slice(1).toUpperCase() }
+  const dot = name.lastIndexOf('.')
+  return dot > 0 && dot < name.length - 1
+    ? { base: name.slice(0, dot), extension: name.slice(dot + 1).toUpperCase() }
     : { base: name, extension: '' }
 }
 
