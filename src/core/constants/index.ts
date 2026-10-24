@@ -33,6 +33,8 @@ export const STORAGE_KEYS = {
   interceptorLibrary: 'interceptorLibrary',
   interceptorSettings: 'interceptorSettings',
   reactDevtools: 'reactDevtools',
+  /** Resolved light/dark state of the UI; the service worker can't evaluate `prefers-color-scheme` itself. */
+  uiDark: 'uiDark',
   meta: 'meta',
 } as const
 
