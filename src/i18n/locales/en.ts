@@ -1,6 +1,7 @@
 import { fileToolkitStrings } from './fileToolkitEn'
 import { imageDownloaderStrings } from './imageDownloaderEn'
 import { imageLinksStrings } from './imageLinksEn'
+import { pdfToolkitStrings } from './pdfToolkitEn'
 import { interceptorStrings } from './interceptorEn'
 import { netmonStrings } from './netmonEn'
 import { notesStrings } from './notesEn'
@@ -1434,6 +1435,7 @@ const en = {
   'files.rowNumber': 'Row',
   'files.emptyCsv': 'This file has a header row but no data rows.',
   ...fileToolkitStrings,
+  ...pdfToolkitStrings,
   ...imageDownloaderStrings,
   ...imageLinksStrings,
   ...sitesYoutubeStrings,

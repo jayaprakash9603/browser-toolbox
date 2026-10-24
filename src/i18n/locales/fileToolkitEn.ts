@@ -30,6 +30,9 @@ export const fileToolkitStrings = {
   'fileui.entries_other': '{{count}} files',
   'fileui.binary': 'Binary file, so there is no visual preview.',
   'fileui.binaryOpen': 'The first bytes are shown below.',
+  'fileui.pdfLoading': 'Rendering pages…',
+  'fileui.pdfLocked': 'This PDF is password protected, so it cannot be previewed here. The download is not affected.',
+  'fileui.pdfFailed': 'This PDF could not be rendered. The download is not affected.',
   'fileui.lossyGlyphs':
     'Some characters (such as emoji or non-Latin scripts) are not in the built-in PDF fonts and were replaced. Word, HTML or RTF keep them.',
 

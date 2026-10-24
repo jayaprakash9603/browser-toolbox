@@ -18,6 +18,8 @@ export type ArtifactPreview =
   | { kind: 'text'; text: string; language: EditorLanguage; rows?: string[][] }
   | { kind: 'table'; rows: string[][] }
   | { kind: 'archive'; entries: ArchiveEntryInfo[] }
+  /** A finished PDF rendered with PDF.js; `password` opens an encrypted file. */
+  | { kind: 'pdfFile'; password?: string }
   | { kind: 'binary' }
 
 /** A generated file held in memory until the user previews and saves it. */
@@ -136,6 +138,7 @@ export async function artifactFromBytes(
     const size = await imageSize(blob)
     if (size) return createArtifact({ name, blob, format, preview: { kind: 'image', ...size }, ...extra })
   }
+  if (mime === 'application/pdf') return createArtifact({ name, blob, format: 'PDF', preview: { kind: 'pdfFile' }, ...extra })
   if (bytes.length <= TEXT_PREVIEW_LIMIT && textHead(bytes) !== null) {
     const text = new TextDecoder().decode(bytes)
     return createArtifact({ name, blob, format, preview: { kind: 'text', text, language: languageFor(name) }, ...extra })

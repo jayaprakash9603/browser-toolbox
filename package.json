@@ -23,6 +23,7 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@cantoo/pdf-lib": "^2.11.1",
     "@codemirror/commands": "^6.11.1",
     "@codemirror/lang-css": "^6.3.1",
     "@codemirror/lang-html": "^6.4.12",
@@ -69,6 +70,7 @@
     "lucide-react": "^1.52.0",
     "md5": "^2.3.0",
     "motion": "^14.0.0",
+    "pdfjs-dist": "^6.4.299",
     "postman-lite": "file:../postman-lite",
     "qrcode": "^1.5.4",
     "react": "^19.2.8",

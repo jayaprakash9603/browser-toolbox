@@ -4,6 +4,7 @@ import { FileQuestionIcon, TriangleAlertIcon } from 'lucide-react'
 
 import { formatBytes } from '@/core/engines/image'
 import { hexRows, type HexRow } from '@/core/engines/files/inspect'
+import { PdfFilePreview } from '@/shared/components/pdf/PdfFilePreview'
 import { TextEditor } from '@/shared/components/TextEditor'
 import { Segmented } from '@/shared/components/ui/segmented'
 import { cn } from '@/shared/utils/cn'
@@ -250,6 +251,7 @@ export function ArtifactPreview({ artifact }: { artifact: FileArtifact }) {
       {preview.kind === 'text' && <TextPreview text={preview.text} language={preview.language} rows={preview.rows} />}
       {preview.kind === 'table' && <TablePreview rows={preview.rows} />}
       {preview.kind === 'archive' && <ArchivePreview entries={preview.entries} total={artifact.blob.size} />}
+      {preview.kind === 'pdfFile' && <PdfFilePreview blob={artifact.blob} password={preview.password} />}
       {preview.kind === 'binary' && <BinaryPreview blob={artifact.blob} />}
     </div>
   )

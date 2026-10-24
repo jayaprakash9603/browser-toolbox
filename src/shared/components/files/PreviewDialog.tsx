@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
@@ -37,6 +37,8 @@ interface PreviewDialogProps {
   onIndexChange: (index: number | null) => void
   /** File name for "Download all"; the button only shows with two or more files. */
   zipName?: string
+  /** Extra footer buttons for the artifact on screen, placed before the download buttons. */
+  actions?: (artifact: FileArtifact) => ReactNode
 }
 
 function SizeDelta({ before, after }: { before: number; after: number }) {
@@ -58,7 +60,7 @@ function SizeDelta({ before, after }: { before: number; after: number }) {
 }
 
 /** Shared "look before you save" dialog: rename, flip through results, then download. */
-export function PreviewDialog({ artifacts, index, onIndexChange, zipName = 'files.zip' }: PreviewDialogProps) {
+export function PreviewDialog({ artifacts, index, onIndexChange, zipName = 'files.zip', actions }: PreviewDialogProps) {
   const { t } = useTranslation()
   const reduce = useReducedMotion()
   const [names, setNames] = useState<Record<string, string>>({})
@@ -228,6 +230,7 @@ export function PreviewDialog({ artifacts, index, onIndexChange, zipName = 'file
                     <ExternalLinkIcon aria-hidden />
                     {t('fileui.openTab')}
                   </Button>
+                  {actions?.(artifact)}
                   {count > 1 && (
                     <Button variant="outline" size="sm" onClick={() => void downloadAll()} disabled={zipping}>
                       {zipping ? (
