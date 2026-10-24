@@ -57,6 +57,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
   useEffect(() => {
     scheduleIdle(() => {
       void import('@/features/command-palette/CommandPalette')
+      void import('@/features/search/searchIndex').then((m) => m.warmSearchIndex())
     })
   }, [])
 

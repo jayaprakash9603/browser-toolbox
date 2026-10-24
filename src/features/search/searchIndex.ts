@@ -26,7 +26,18 @@ export interface SearchItem {
   toolId?: string
 }
 
+/** A search item with every lowercase string it is matched against, built once per index. */
+interface IndexedItem {
+  item: SearchItem
+  haystack: string
+  parentHaystack: string
+  name: string
+  nameLower: string
+  aliases: string[]
+}
+
 let cachedLang: string | null = null
+let cachedIndex: IndexedItem[] | null = null
 let cachedItems: SearchItem[] | null = null
 let cachedToolCount = -1
 
@@ -116,52 +127,87 @@ function buildOptionItem(
   }
 }
 
-function buildSettingItems(): SearchItem[] {
+function indexed(item: SearchItem, haystack: string, aliases: string[], parentHaystack = ''): IndexedItem {
+  return {
+    item,
+    haystack,
+    parentHaystack,
+    name: item.title,
+    nameLower: item.title.toLowerCase(),
+    aliases,
+  }
+}
+
+function buildSettingItems(): IndexedItem[] {
+  const breadcrumb = translate('settings.title', 'Settings')
   return SETTINGS_SEARCH_ENTRIES.map((entry) => {
     const title = translate(entry.labelKey, entry.fallbackLabel)
-    return {
+    const item: SearchItem = {
       id: `setting:${entry.id}`,
       kind: 'setting',
       title,
-      breadcrumb: translate('settings.title', 'Settings'),
+      breadcrumb,
       route: settingsSearchRoute(entry.id),
       icon: SETTINGS_SEARCH_ICON,
     }
+    const haystack = [title, ...(entry.keywords ?? []), ...(entry.aliases ?? [])].join(' ').toLowerCase()
+    return indexed(item, haystack, entry.aliases ?? [])
   })
 }
 
-export function getAllSearchItems(): SearchItem[] {
+function getSearchIndex(): IndexedItem[] {
   ensureRegistryReady()
   const lang = i18n.language
   const toolCount = toolRegistry.getAll().length
-  if (cachedLang === lang && cachedItems && cachedToolCount === toolCount && toolCount > 0) {
-    return cachedItems
+  if (cachedLang === lang && cachedIndex && cachedToolCount === toolCount && toolCount > 0) {
+    return cachedIndex
   }
 
   const t = i18n.t.bind(i18n)
-  const items: SearchItem[] = []
+  const index: IndexedItem[] = []
 
   for (const tool of toolRegistry.getAll()) {
     if ((tool.status ?? 'active') === 'disabled') continue
-    items.push(buildToolItem(tool, t))
+    const toolText = toolHaystack(tool, t)
+    index.push(indexed(buildToolItem(tool, t), toolText, [...(tool.aliases ?? []), ...tool.keywords]))
 
     for (const entry of getSearchEntriesForTool(tool)) {
-      items.push(buildOptionItem(tool, entry, t))
+      const item = buildOptionItem(tool, entry, t)
+      index.push(
+        indexed(
+          item,
+          entryHaystack(tool, entry, item.title, t),
+          [...(entry.aliases ?? []), ...(entry.keywords ?? [])],
+          toolText,
+        ),
+      )
     }
   }
 
-  items.push(...buildSettingItems())
+  index.push(...buildSettingItems())
 
   if (toolCount > 0) {
     cachedLang = lang
-    cachedItems = items
+    cachedIndex = index
+    cachedItems = index.map((row) => row.item)
     cachedToolCount = toolCount
   }
-  return items
+  return index
+}
+
+export function getAllSearchItems(): SearchItem[] {
+  const index = getSearchIndex()
+  return cachedIndex === index && cachedItems ? cachedItems : index.map((row) => row.item)
+}
+
+/** Builds the index ahead of the first keystroke so typing never pays for it. */
+export function warmSearchIndex() {
+  getSearchIndex()
 }
 
 export function invalidateSearchIndex() {
   cachedLang = null
+  cachedIndex = null
   cachedItems = null
   cachedToolCount = -1
 }
@@ -185,68 +231,32 @@ export function searchAll(query: string): SearchItem[] {
   if (!q) return []
 
   const tokens = q.split(/\s+/).filter(Boolean)
-  const t = i18n.t.bind(i18n)
+  const scored: { item: SearchItem; score: number }[] = []
 
-  const scored = getAllSearchItems()
-    .map((item) => {
-      let haystack = ''
-      let name = item.title
-      let aliases: string[] = []
+  for (const row of getSearchIndex()) {
+    const { item, haystack, name, nameLower: label, aliases } = row
+    const allTokensHit = tokens.every((token) => haystack.includes(token))
 
-      if (item.kind === 'tool') {
-        const tool = toolRegistry.get(item.toolId!)
-        if (!tool) return { item, score: 0 }
-        haystack = toolHaystack(tool, t)
-        name = item.title
-        aliases = [...(tool.aliases ?? []), ...tool.keywords]
-        if (tokens.length > 1 && !tokens.every((token) => haystack.includes(token))) {
-          return { item, score: 0 }
-        }
-      } else if (item.kind === 'option' && item.toolId) {
-        const tool = toolRegistry.get(item.toolId)
-        if (!tool) return { item, score: 0 }
-        const entryId = item.id.split(':').slice(1).join(':')
-        const entry = getSearchEntriesForTool(tool).find((e) => e.id === entryId)
-        if (!entry) return { item, score: 0 }
-        const optionLabel = translate(entry.labelKey, entry.fallbackLabel)
-        haystack = entryHaystack(tool, entry, optionLabel, t)
-        const parentHaystack = toolHaystack(tool, t)
-        if (!optionMatchesTokens(haystack, parentHaystack, optionLabel, tokens)) {
-          return { item, score: 0 }
-        }
-        name = optionLabel
-        aliases = [...(entry.aliases ?? []), ...(entry.keywords ?? [])]
-      } else if (item.kind === 'setting') {
-        const entry = SETTINGS_SEARCH_ENTRIES.find((e) => item.id === `setting:${e.id}`)
-        if (!entry) return { item, score: 0 }
-        name = translate(entry.labelKey, entry.fallbackLabel)
-        haystack = [name, ...(entry.keywords ?? []), ...(entry.aliases ?? [])].join(' ').toLowerCase()
-        aliases = entry.aliases ?? []
-      }
+    if (item.kind === 'tool') {
+      if (!allTokensHit) continue
+    } else if (item.kind === 'option') {
+      if (!allTokensHit && !optionMatchesTokens(haystack, row.parentHaystack, name, tokens)) continue
+    }
 
-      let scoreHaystack = haystack
-      if (item.kind === 'option') {
-        const label = name.toLowerCase()
-        if (!tokens.every((token) => haystack.includes(token))) {
-          scoreHaystack = `${haystack} ${label}`
-        }
-      }
-
-      let score = scoreMatch(scoreHaystack, name, aliases, tokens, q)
-      if (score <= 0 && item.kind !== 'option') return { item, score: 0 }
-      if (item.kind === 'tool') score += 5
-      if (item.kind === 'option') {
-        score += 35
-        const label = name.toLowerCase()
-        const labelHits = tokens.filter((token) => label.includes(token)).length
-        score += labelHits * 20
-        if (tokens.length >= 2 && labelHits === tokens.length) score += 50
-        if (aliases.some((alias) => alias.toLowerCase() === q)) score += 80
-      }
-      if (item.kind === 'setting') score += 30
-      return { item, score }
-    })
-    .filter((row) => row.score > 0)
+    const scoreHaystack = item.kind === 'option' && !allTokensHit ? `${haystack} ${label}` : haystack
+    let score = scoreMatch(scoreHaystack, name, aliases, tokens, q)
+    if (score <= 0 && item.kind !== 'option') continue
+    if (item.kind === 'tool') score += 5
+    if (item.kind === 'option') {
+      score += 35
+      const labelHits = tokens.filter((token) => label.includes(token)).length
+      score += labelHits * 20
+      if (tokens.length >= 2 && labelHits === tokens.length) score += 50
+      if (aliases.some((alias) => alias.toLowerCase() === q)) score += 80
+    }
+    if (item.kind === 'setting') score += 30
+    if (score > 0) scored.push({ item, score })
+  }
 
   scored.sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score

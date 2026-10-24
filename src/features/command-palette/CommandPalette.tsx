@@ -1,4 +1,14 @@
-import { useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from 'react'
+import {
+  memo,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentType,
+  type ReactNode,
+} from 'react'
 import { createPortal } from 'react-dom'
 import { Command } from 'cmdk'
 import {
@@ -28,6 +38,8 @@ interface CommandPaletteProps {
 type Tool = ReturnType<typeof toolRegistry.getAll>[number]
 
 const MAX_RECENT = 4
+const MAX_OPTION_RESULTS = 40
+const MAX_SETTING_RESULTS = 10
 const SUGGESTIONS = ['json', 'color', 'timer', 'screenshot', 'regex']
 const GROUP_CLASS =
   '[&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1.5 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:uppercase first:[&_[cmdk-group-heading]]:pt-1'
@@ -70,17 +82,27 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     [tools],
   )
 
-  const trimmed = query.trim()
-  const searchResults = trimmed ? searchAll(trimmed) : []
-  const optionItems = searchResults.filter((item) => item.kind === 'option')
-  const settingItems = searchResults.filter((item) => item.kind === 'setting')
-  const toolItems = toolsVisibleForQuery(
-    searchResults.filter((item) => item.kind === 'tool'),
-    optionItems.length,
-    trimmed,
-  )
+  // Results and highlights must read `deferredQuery`, never `query`, or every keystroke re-renders the list.
+  const deferredQuery = useDeferredValue(query)
+  const trimmed = deferredQuery.trim()
+  const results = useMemo(() => {
+    const searchResults = trimmed ? searchAll(trimmed) : []
+    const options = searchResults.filter((item) => item.kind === 'option')
+    const settings = searchResults.filter((item) => item.kind === 'setting')
+    const toolMatches = toolsVisibleForQuery(
+      searchResults.filter((item) => item.kind === 'tool'),
+      options.length,
+      trimmed,
+    )
+    return {
+      tools: toolMatches,
+      options: options.slice(0, MAX_OPTION_RESULTS),
+      settings: settings.slice(0, MAX_SETTING_RESULTS),
+      total: toolMatches.length + options.length + settings.length,
+    }
+  }, [trimmed])
+  const { tools: toolItems, options: optionItems, settings: settingItems, total: resultCount } = results
   const searching = trimmed.length > 0
-  const resultCount = toolItems.length + optionItems.length + settingItems.length
 
   useEffect(() => {
     if (!open) return
@@ -93,11 +115,14 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
   const close = () => onOpenChange(false)
 
-  const select = (route: string) => {
-    returnFocusRef.current = null
-    onOpenChange(false)
-    navigate(route)
-  }
+  const select = useCallback(
+    (route: string) => {
+      returnFocusRef.current = null
+      onOpenChange(false)
+      navigate(route)
+    },
+    [navigate, onOpenChange],
+  )
 
   const afterClose = () => {
     setQuery('')
@@ -123,55 +148,6 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
           transition: { duration: 0.14, ease: [0.4, 0, 1, 1] },
         },
       }
-
-  let itemIndex = 0
-  const nextIndex = () => itemIndex++
-
-  const renderTool = (tool: Tool, group: string) => {
-    const name = getToolName(tool, t)
-    const category = t(`categories.${tool.category}.name`, { defaultValue: tool.category })
-    const value = `${group}:${tool.id} ${name} ${category}`
-    return (
-      <PaletteItem
-        key={`${group}-${tool.id}`}
-        value={value}
-        active={selected === value}
-        icon={tool.icon}
-        title={<HighlightedText text={name} query={query} />}
-        meta={<HighlightedText text={category} query={query} />}
-        index={nextIndex()}
-        stagger={!searching}
-        reduce={!!reduce}
-        onSelect={() => select(tool.route)}
-      />
-    )
-  }
-
-  const renderSearchGroup = (heading: string, items: SearchItem[]) =>
-    items.length > 0 && (
-      <Command.Group heading={heading} className={GROUP_CLASS}>
-        {items.map((item) => {
-          const value = `${item.title} ${item.breadcrumb} ${item.id}`
-          return (
-            <PaletteItem
-              key={item.id}
-              value={value}
-              active={selected === value}
-              icon={item.icon}
-              title={<HighlightedText text={item.title} query={query} />}
-              subtitle={
-                item.kind !== 'tool' ? <HighlightedText text={item.breadcrumb} query={query} /> : undefined
-              }
-              meta={item.kind === 'tool' ? <span className="truncate">{item.breadcrumb}</span> : undefined}
-              index={nextIndex()}
-              stagger={false}
-              reduce={!!reduce}
-              onSelect={() => select(item.route)}
-            />
-          )
-        })}
-      </Command.Group>
-    )
 
   return createPortal(
     <AnimatePresence onExitComplete={afterClose}>
@@ -284,29 +260,18 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                       }}
                     />
                   </Command.Empty>
-                  {searching ? (
-                    <>
-                      {renderSearchGroup(t('palette.allTools'), toolItems)}
-                      {renderSearchGroup(t('palette.options', { defaultValue: 'Options' }), optionItems)}
-                      {renderSearchGroup(t('palette.settings', { defaultValue: 'Settings' }), settingItems)}
-                    </>
-                  ) : (
-                    <>
-                      {recentTools.length > 0 && (
-                        <Command.Group heading={t('palette.recent')} className={GROUP_CLASS}>
-                          {recentTools.map((tool) => renderTool(tool, 'recent'))}
-                        </Command.Group>
-                      )}
-                      {favoriteTools.length > 0 && (
-                        <Command.Group heading={t('palette.favorites')} className={GROUP_CLASS}>
-                          {favoriteTools.map((tool) => renderTool(tool, 'favorite'))}
-                        </Command.Group>
-                      )}
-                      <Command.Group heading={t('palette.allTools')} className={GROUP_CLASS}>
-                        {defaultTools.map((tool) => renderTool(tool, 'all'))}
-                      </Command.Group>
-                    </>
-                  )}
+                  <PaletteResults
+                    query={trimmed}
+                    selected={selected}
+                    reduce={!!reduce}
+                    toolItems={toolItems}
+                    optionItems={optionItems}
+                    settingItems={settingItems}
+                    recentTools={recentTools}
+                    favoriteTools={favoriteTools}
+                    defaultTools={defaultTools}
+                    onSelect={select}
+                  />
                 </Command.List>
 
                 <div className="flex items-center gap-3 border-t bg-muted/30 px-3.5 py-2 text-[11px] text-muted-foreground">
@@ -326,6 +291,111 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     document.body,
   )
 }
+
+interface PaletteResultsProps {
+  query: string
+  selected: string
+  reduce: boolean
+  toolItems: SearchItem[]
+  optionItems: SearchItem[]
+  settingItems: SearchItem[]
+  recentTools: Tool[]
+  favoriteTools: Tool[]
+  defaultTools: Tool[]
+  onSelect: (route: string) => void
+}
+
+const PaletteResults = memo(function PaletteResults({
+  query,
+  selected,
+  reduce,
+  toolItems,
+  optionItems,
+  settingItems,
+  recentTools,
+  favoriteTools,
+  defaultTools,
+  onSelect,
+}: PaletteResultsProps) {
+  const { t } = useTranslation()
+  const searching = query.length > 0
+  let itemIndex = 0
+  const nextIndex = () => itemIndex++
+
+  const renderTool = (tool: Tool, group: string) => {
+    const name = getToolName(tool, t)
+    const category = t(`categories.${tool.category}.name`, { defaultValue: tool.category })
+    const value = `${group}:${tool.id} ${name} ${category}`
+    return (
+      <PaletteItem
+        key={`${group}-${tool.id}`}
+        value={value}
+        active={selected === value}
+        icon={tool.icon}
+        title={name}
+        meta={category}
+        index={nextIndex()}
+        stagger
+        reduce={reduce}
+        onSelect={() => onSelect(tool.route)}
+      />
+    )
+  }
+
+  const renderSearchGroup = (heading: string, items: SearchItem[]) =>
+    items.length > 0 && (
+      <Command.Group heading={heading} className={GROUP_CLASS}>
+        {items.map((item) => {
+          const value = `${item.title} ${item.breadcrumb} ${item.id}`
+          return (
+            <PaletteItem
+              key={item.id}
+              value={value}
+              active={selected === value}
+              icon={item.icon}
+              title={<HighlightedText text={item.title} query={query} />}
+              subtitle={
+                item.kind !== 'tool' ? <HighlightedText text={item.breadcrumb} query={query} /> : undefined
+              }
+              meta={item.kind === 'tool' ? <span className="truncate">{item.breadcrumb}</span> : undefined}
+              index={nextIndex()}
+              stagger={false}
+              reduce={reduce}
+              onSelect={() => onSelect(item.route)}
+            />
+          )
+        })}
+      </Command.Group>
+    )
+
+  if (searching) {
+    return (
+      <>
+        {renderSearchGroup(t('palette.allTools'), toolItems)}
+        {renderSearchGroup(t('palette.options', { defaultValue: 'Options' }), optionItems)}
+        {renderSearchGroup(t('palette.settings', { defaultValue: 'Settings' }), settingItems)}
+      </>
+    )
+  }
+
+  return (
+    <>
+      {recentTools.length > 0 && (
+        <Command.Group heading={t('palette.recent')} className={GROUP_CLASS}>
+          {recentTools.map((tool) => renderTool(tool, 'recent'))}
+        </Command.Group>
+      )}
+      {favoriteTools.length > 0 && (
+        <Command.Group heading={t('palette.favorites')} className={GROUP_CLASS}>
+          {favoriteTools.map((tool) => renderTool(tool, 'favorite'))}
+        </Command.Group>
+      )}
+      <Command.Group heading={t('palette.allTools')} className={GROUP_CLASS}>
+        {defaultTools.map((tool) => renderTool(tool, 'all'))}
+      </Command.Group>
+    </>
+  )
+})
 
 function PaletteItem({
   value,
