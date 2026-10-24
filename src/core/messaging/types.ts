@@ -161,7 +161,7 @@ export type ExtensionMessage =
   | { type: 'SVG_TO_JSX'; markup: string }
   | { type: 'WIREFRAME_TOGGLE'; enabled: boolean }
   | { type: 'FONT_INSPECTOR_TOGGLE'; enabled: boolean }
-  | { type: 'GET_READABLE_TEXT' }
+  | { type: 'GET_READABLE_TEXT'; scope?: 'page' | 'selection' }
   | { type: 'GET_MARKDOWN_FROM_PAGE'; mode: 'selection' | 'article' }
   | { type: 'CHECK_HTTP_URLS'; items: { href: string; text: string }[] }
   | { type: 'REDIRECT_TRACE_GET'; tabId?: number }

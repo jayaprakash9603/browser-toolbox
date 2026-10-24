@@ -54,9 +54,3 @@ export function setFontInspector(enabled: boolean): void {
   }
   document.addEventListener('mousemove', fontMoveHandler, true)
 }
-
-export function collectReadableText(): string {
-  const article = document.querySelector('article')
-  const root = article ?? document.body
-  return (root.textContent ?? '').replace(/\s+/g, ' ').trim()
-}

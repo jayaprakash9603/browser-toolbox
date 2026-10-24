@@ -9,8 +9,9 @@ import { collectSeoData } from './seoCollect'
 import { applySeoHighlight, clearSeoHighlight } from './seoHighlight'
 import { collectTechStack } from './collectors/techStack'
 import { collectPageSvgs, svgToJsx } from './collectors/svgs'
-import { collectReadableText, setFontInspector, setWireframe } from './designModes'
+import { setFontInspector, setWireframe } from './designModes'
 import { articleHtmlToMarkdown, selectionHtmlToMarkdown } from '@/core/text/htmlToMarkdown'
+import { extractReadablePage, extractSelection } from '@/core/text/readablePage'
 
 import { handleScraperMessage } from './scraper/handlers'
 
@@ -155,9 +156,11 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
       setFontInspector((raw as { enabled: boolean }).enabled)
       sendResponse({ ok: true, data: { enabled: (raw as { enabled: boolean }).enabled } })
       return false
-    case 'GET_READABLE_TEXT':
-      sendResponse({ ok: true, data: { text: collectReadableText() } })
+    case 'GET_READABLE_TEXT': {
+      const scope = (raw as { scope?: 'page' | 'selection' }).scope
+      sendResponse({ ok: true, data: scope === 'selection' ? extractSelection(document) : extractReadablePage(document) })
       return false
+    }
     case 'GET_MARKDOWN_FROM_PAGE': {
       const mode = (raw as { mode: 'selection' | 'article' }).mode
       sendResponse({
