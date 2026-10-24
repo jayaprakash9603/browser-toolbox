@@ -164,6 +164,8 @@ export type ExtensionMessage =
   | { type: 'GET_READABLE_TEXT'; scope?: 'page' | 'selection' }
   | { type: 'GET_MARKDOWN_FROM_PAGE'; mode: 'selection' | 'article' }
   | { type: 'CHECK_HTTP_URLS'; items: { href: string; text: string }[] }
+  | { type: 'GET_PAGE_LINKS' }
+  | { type: 'LOCATE_PAGE_LINK'; index: number; href: string }
   | { type: 'REDIRECT_TRACE_GET'; tabId?: number }
   | { type: 'REDIRECT_TRACE_CLEAR'; tabId?: number }
   | { type: 'SCRAPER_DETECT'; candidateIndex?: number }
@@ -322,6 +324,8 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'GET_READABLE_TEXT',
   'GET_MARKDOWN_FROM_PAGE',
   'CHECK_HTTP_URLS',
+  'GET_PAGE_LINKS',
+  'LOCATE_PAGE_LINK',
   'REDIRECT_TRACE_GET',
   'REDIRECT_TRACE_CLEAR',
   'SCRAPER_DETECT',

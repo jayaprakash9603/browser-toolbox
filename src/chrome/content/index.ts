@@ -9,6 +9,7 @@ import { collectSeoData } from './seoCollect'
 import { applySeoHighlight, clearSeoHighlight } from './seoHighlight'
 import { collectTechStack } from './collectors/techStack'
 import { collectPageSvgs, svgToJsx } from './collectors/svgs'
+import { collectPageLinks, locatePageLink } from './collectors/links'
 import { setFontInspector, setWireframe } from './designModes'
 import { articleHtmlToMarkdown, selectionHtmlToMarkdown } from '@/core/text/htmlToMarkdown'
 import { extractReadablePage, extractSelection } from '@/core/text/readablePage'
@@ -139,6 +140,14 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
     case 'GET_PAGE_INFO':
       sendResponse({ ok: true, data: collectPageInfo() })
       return false
+    case 'GET_PAGE_LINKS':
+      sendResponse({ ok: true, data: collectPageLinks() })
+      return false
+    case 'LOCATE_PAGE_LINK': {
+      const { index, href } = raw as { index: number; href: string }
+      sendResponse({ ok: true, data: locatePageLink(index, href) })
+      return false
+    }
     case 'GET_TECH_STACK':
       sendResponse({ ok: true, data: collectTechStack() })
       return false
