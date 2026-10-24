@@ -1,4 +1,5 @@
 export * from './engine'
+export * from './network'
 export * from './service'
 export * from './stats'
 export type * from './types'

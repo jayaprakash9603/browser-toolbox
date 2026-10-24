@@ -5,6 +5,9 @@ import {
   CheckIcon,
   GlobeIcon,
   InfoIcon,
+  LoaderCircleIcon,
+  LocateFixedIcon,
+  MapPinIcon,
   RotateCcwIcon,
   ServerIcon,
   SquareIcon,
@@ -16,9 +19,17 @@ import {
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useTranslation } from 'react-i18next'
 
-import { formatMbps, speedRating, type SpeedPhase, type SpeedServer } from '@/core/speedtest'
+import {
+  formatMbps,
+  formatPlace,
+  mergeServer,
+  speedRating,
+  type SpeedPhase,
+  type SpeedServer,
+} from '@/core/speedtest'
 import { SpeedGauge } from '@/features/speedtest/components/SpeedGauge'
 import { SPEED_DOWN, SPEED_UP, phaseColor } from '@/features/speedtest/style'
+import { useConnectionInfo, usePreciseLocation } from '@/features/speedtest/useNetworkInfo'
 import { useSpeedHistory, useSpeedTest, type SpeedTestState } from '@/features/speedtest/useSpeedTest'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
@@ -245,27 +256,100 @@ function PhaseStepper({ phase, progress }: { phase: SpeedPhase; progress: number
 }
 
 function ServerFacts({ server }: { server: SpeedServer | null }) {
-  const { t } = useTranslation()
-  const location = server ? [server.city, server.country].filter(Boolean).join(', ') : ''
+  const { t, i18n } = useTranslation()
+  const connection = useConnectionInfo()
+  const precise = usePreciseLocation(i18n.language)
+  const info = mergeServer(connection.info, server)
+  const serverPlace = [info.city, info.country].filter(Boolean).join(', ')
+  const pending = connection.loading && !server
+  const placeholder = pending ? t('speedtest.server.looking') : '—'
+  const approxPlace = formatPlace({ city: info.clientCity, region: info.clientRegion, country: info.clientCountry })
+  const isp = info.isp ? `${info.isp}${info.asn ? ` · AS${info.asn}` : ''}` : info.asn ? `AS${info.asn}` : undefined
+
   return (
-    <dl className="relative mt-4 grid grid-cols-1 gap-2 @[520px]:grid-cols-3">
+    <dl className="relative mt-4 grid grid-cols-1 gap-2 @[520px]:grid-cols-2">
       <Fact icon={ServerIcon} label={t('speedtest.server.label')}>
-        <span className="truncate font-sans font-medium" title={location || undefined}>
-          {server
-            ? `${t('speedtest.server.cloudflare')}${server.colo ? ` ${server.colo}` : ''}${location ? ` · ${location}` : ''}`
+        <span className="truncate font-sans font-medium" title={serverPlace || undefined}>
+          {info.colo
+            ? `${t('speedtest.server.cloudflare')} ${info.colo}${serverPlace ? ` · ${serverPlace}` : ''}`
             : `${t('speedtest.server.cloudflare')} · ${t('speedtest.server.pending')}`}
         </span>
       </Fact>
       <Fact icon={WifiIcon} label={t('speedtest.server.provider')}>
-        <span className="truncate font-sans font-medium" title={server?.isp}>
-          {server?.isp ?? '—'}
+        <span className={cn('truncate font-sans font-medium', !isp && 'text-muted-foreground')} title={isp}>
+          {isp ?? placeholder}
         </span>
       </Fact>
       <Fact icon={GlobeIcon} label={t('speedtest.server.ip')}>
-        <span className="truncate" title={server?.ip}>
-          {server?.ip ?? '—'}
+        <span className={cn('truncate', !info.ip && 'font-sans font-medium text-muted-foreground')} title={info.ip}>
+          {info.ip ?? placeholder}
         </span>
       </Fact>
+      <Fact icon={MapPinIcon} label={t('speedtest.location.label')}>
+        <LocationValue precise={precise} approxPlace={approxPlace} placeholder={placeholder} />
+      </Fact>
     </dl>
+  )
+}
+
+function LocationValue({
+  precise,
+  approxPlace,
+  placeholder,
+}: {
+  precise: ReturnType<typeof usePreciseLocation>
+  approxPlace: string
+  placeholder: string
+}) {
+  const { t } = useTranslation()
+  const { status, location, locate } = precise
+
+  if (status === 'ready' && location) {
+    const coords = `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`
+    const place = formatPlace(location.place) || coords
+    return (
+      <span
+        className="flex min-w-0 items-center gap-1.5 font-sans font-medium"
+        title={t('speedtest.location.preciseTitle', { coords, accuracy: Math.round(location.accuracy) })}
+      >
+        <LocateFixedIcon className="size-3.5 shrink-0 text-[var(--netmon-online)]" aria-hidden />
+        <span className="truncate">{place}</span>
+      </span>
+    )
+  }
+
+  const hint =
+    status === 'denied'
+      ? t('speedtest.location.denied')
+      : status === 'unavailable'
+        ? t('speedtest.location.unavailable')
+        : null
+
+  return (
+    <span className="flex w-full min-w-0 items-center gap-2 font-sans font-medium">
+      <span
+        className={cn('min-w-0 flex-1 truncate', !approxPlace && 'text-muted-foreground')}
+        title={hint ?? (approxPlace ? t('speedtest.location.approxTitle') : undefined)}
+      >
+        {approxPlace ? t('speedtest.location.approx', { place: approxPlace }) : placeholder}
+      </span>
+      {status !== 'denied' && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 shrink-0 gap-1 px-1.5 text-[11px]"
+          disabled={status === 'locating'}
+          onClick={() => void locate()}
+          title={hint ?? t('speedtest.location.useTitle')}
+        >
+          {status === 'locating' ? (
+            <LoaderCircleIcon className="size-3 animate-spin" aria-hidden />
+          ) : (
+            <LocateFixedIcon className="size-3" aria-hidden />
+          )}
+          {status === 'unavailable' ? t('speedtest.location.retry') : t('speedtest.location.use')}
+        </Button>
+      )}
+    </span>
   )
 }

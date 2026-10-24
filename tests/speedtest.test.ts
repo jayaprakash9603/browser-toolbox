@@ -2,9 +2,12 @@ import { describe, expect, it, vi } from 'vitest'
 
 import {
   finalMbps,
+  formatPlace,
   gaugeFraction,
   jitter,
+  lookupConnection,
   median,
+  mergeServer,
   runSpeedTest,
   serverTimingMs,
   speedRating,
@@ -100,18 +103,29 @@ describe('runSpeedTest', () => {
     let clock = 0
     const fetchImpl = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
-      if (url.endsWith('/meta')) {
+      if (url.startsWith('https://ipwho.is/')) {
+        expect(url).toBe('https://ipwho.is/1.2.3.4')
         return Response.json({
-          colo: { iata: 'BOM', city: 'Mumbai', cca2: 'IN' },
+          success: true,
+          ip: '1.2.3.4',
           city: 'Pune',
-          country: 'IN',
-          clientIp: '1.2.3.4',
-          asOrganization: 'ISP',
+          region: 'Maharashtra',
+          country: 'India',
+          connection: { asn: 132770, isp: 'Example ISP' },
         })
       }
       if (url.includes('bytes=0&')) {
         clock += 30
-        return new Response('', { headers: { 'server-timing': 'cfRequestDuration;dur=10' } })
+        return new Response('', {
+          headers: {
+            'server-timing': 'cfRequestDuration;dur=10',
+            'cf-meta-ip': '1.2.3.4',
+            colo: 'BOM',
+            asn: '132770',
+            city: 'Pune',
+            country: 'IN',
+          },
+        })
       }
       return streamResponse(1000, 50_000, init?.signal)
     }) as unknown as typeof fetch
@@ -132,7 +146,15 @@ describe('runSpeedTest', () => {
 
     expect(result.pingMs).toBeGreaterThanOrEqual(20)
     expect(result.pingMs).toBeLessThan(28)
-    expect(result.server).toMatchObject({ colo: 'BOM', city: 'Mumbai', ip: '1.2.3.4', isp: 'ISP' })
+    expect(result.server).toMatchObject({
+      colo: 'BOM',
+      ip: '1.2.3.4',
+      isp: 'Example ISP',
+      asn: 132770,
+      clientCity: 'Pune',
+      clientRegion: 'Maharashtra',
+      clientCountry: 'India',
+    })
     expect(result.downloadMbps).toBeGreaterThan(0)
     expect(result.uploadMbps).toBeGreaterThan(0)
     expect(result.downloadBytes).toBeGreaterThan(0)
@@ -152,5 +174,28 @@ describe('runSpeedTest', () => {
       return Response.json({})
     }) as unknown as typeof fetch
     await expect(runSpeedTest({ fetchImpl, signal: controller.signal })).rejects.toMatchObject({ name: 'AbortError' })
+  })
+})
+
+describe('network info', () => {
+  it('returns an empty result when the ISP lookup fails', async () => {
+    const fetchImpl = vi.fn(async () => {
+      throw new TypeError('offline')
+    }) as unknown as typeof fetch
+    await expect(lookupConnection('1.2.3.4', { fetchImpl })).resolves.toEqual({})
+  })
+
+  it('merges partial results without dropping known fields', () => {
+    expect(mergeServer({ ip: '1.2.3.4', isp: 'A' }, { isp: undefined, colo: 'BOM' })).toEqual({
+      ip: '1.2.3.4',
+      isp: 'A',
+      colo: 'BOM',
+    })
+  })
+
+  it('formats place names without repeats', () => {
+    expect(formatPlace({ city: 'Singapore', region: 'Singapore', country: 'Singapore' })).toBe('Singapore')
+    expect(formatPlace({ city: 'Pune', country: 'India' })).toBe('Pune, India')
+    expect(formatPlace(null)).toBe('')
   })
 })

@@ -31,6 +31,17 @@ export const speedtestStrings = {
   'speedtest.server.ip': 'Your IP',
   'speedtest.server.cloudflare': 'Cloudflare',
   'speedtest.server.pending': 'Nearest edge',
+  'speedtest.server.looking': 'Looking up…',
+
+  'speedtest.location.label': 'Location',
+  'speedtest.location.approx': '{{place}} (approx.)',
+  'speedtest.location.approxTitle': 'Estimated from your IP address. Allow location for a precise result.',
+  'speedtest.location.use': 'Use precise',
+  'speedtest.location.retry': 'Retry',
+  'speedtest.location.useTitle': 'Ask the browser for your device location',
+  'speedtest.location.preciseTitle': 'Device location {{coords}} (±{{accuracy}} m)',
+  'speedtest.location.denied': 'Location access is blocked. Showing an estimate from your IP address.',
+  'speedtest.location.unavailable': 'Could not get your device location.',
 
   'speedtest.rating.slow': 'Slow — basic browsing only',
   'speedtest.rating.ok': 'OK — fine for HD video',

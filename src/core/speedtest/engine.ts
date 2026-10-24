@@ -1,3 +1,4 @@
+import { lookupConnection, mergeServer } from './network'
 import { finalMbps, jitter, median, serverTimingMs, windowMbps } from './stats'
 import type { SpeedServer, SpeedTestResult, SpeedUpdate, ThroughputPoint } from './types'
 
@@ -41,20 +42,27 @@ function wait(ms: number, signal?: AbortSignal): Promise<void> {
   })
 }
 
-async function fetchServer(fetchImpl: typeof fetch, signal?: AbortSignal): Promise<SpeedServer> {
+/**
+ * `/meta` rejects cross-origin callers with 403, so the edge and client details are read from the
+ * headers Cloudflare attaches to every `__down` response instead.
+ */
+async function fetchEdge(fetchImpl: typeof fetch, signal?: AbortSignal): Promise<SpeedServer> {
   try {
-    const res = await fetchImpl(`${SPEEDTEST_BASE}/meta`, { cache: 'no-store', credentials: 'omit', signal })
-    const meta = (await res.json()) as Record<string, unknown>
-    const str = (obj: Record<string, unknown>, k: string) => (typeof obj[k] === 'string' ? (obj[k] as string) : undefined)
-    // Top-level city/country describe the client; the serving data center is nested under `colo`.
-    const colo = meta.colo && typeof meta.colo === 'object' ? (meta.colo as Record<string, unknown>) : {}
-    return {
-      colo: str(colo, 'iata') ?? str(meta, 'colo'),
-      city: str(colo, 'city'),
-      country: str(colo, 'cca2'),
-      ip: str(meta, 'clientIp'),
-      isp: str(meta, 'asOrganization'),
-    }
+    const res = await fetchImpl(`${SPEEDTEST_BASE}/__down?bytes=0&r=${bust()}`, {
+      cache: 'no-store',
+      credentials: 'omit',
+      signal,
+    })
+    await res.arrayBuffer()
+    const h = (name: string) => res.headers.get(`cf-meta-${name}`) ?? res.headers.get(name) ?? undefined
+    const asn = Number(h('asn'))
+    return mergeServer({
+      colo: h('colo'),
+      ip: h('ip'),
+      asn: Number.isFinite(asn) && asn > 0 ? asn : undefined,
+      clientCity: h('city'),
+      clientCountry: h('country'),
+    })
   } catch (error) {
     if (signal?.aborted) throw abortError()
     void error
@@ -219,8 +227,15 @@ export async function runSpeedTest(options: SpeedTestOptions = {}): Promise<Spee
   }
 
   o.onUpdate?.({ type: 'phase', phase: 'latency' })
-  const server = await fetchServer(o.fetchImpl, o.signal)
+  let server = await fetchEdge(o.fetchImpl, o.signal)
   o.onUpdate?.({ type: 'server', server })
+  // The ISP lookup runs alongside the measurements so a slow lookup never delays the test.
+  const lookup = lookupConnection(server.ip, { signal: o.signal, fetchImpl: o.fetchImpl })
+    .then((extra) => {
+      server = mergeServer(server, extra)
+      if (!o.signal?.aborted) o.onUpdate?.({ type: 'server', server })
+    })
+    .catch(() => undefined)
   const latency = await measureLatency(o)
 
   o.onUpdate?.({ type: 'phase', phase: 'download' })
@@ -231,6 +246,7 @@ export async function runSpeedTest(options: SpeedTestOptions = {}): Promise<Spee
   const upload = await measureUpload(o)
   o.onUpdate?.({ type: 'final', phase: 'upload', mbps: upload.mbps })
 
+  await Promise.race([lookup, wait(3_000, o.signal)])
   o.onUpdate?.({ type: 'phase', phase: 'done' })
   return {
     at: Date.now(),

@@ -6,6 +6,10 @@ export interface SpeedServer {
   country?: string
   ip?: string
   isp?: string
+  asn?: number
+  clientCity?: string
+  clientRegion?: string
+  clientCountry?: string
 }
 
 export interface SpeedTestResult {
