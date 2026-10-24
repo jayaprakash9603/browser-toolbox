@@ -31,6 +31,7 @@ export async function startImageDownloadJob(input: {
   subfolder: string
   filenameTemplate: string
   zipFileName?: string
+  zipExtraFiles?: { name: string; text: string }[]
   items: { url: string }[]
 }): Promise<{ jobId: string }> {
   const data = await sendMessage<{ jobId: string }>({

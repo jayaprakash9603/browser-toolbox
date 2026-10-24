@@ -21,6 +21,7 @@ export const STORAGE_KEYS = {
   totpAccounts: 'totpAccounts',
   saveImageAs: 'saveImageAs',
   imageDownloader: 'imageDownloader',
+  imageLinks: 'imageLinks',
   pip: 'pip',
   keyboardShortcuts: 'keyboardShortcuts',
   netMonitor: 'netMonitor',

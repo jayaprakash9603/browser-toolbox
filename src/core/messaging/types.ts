@@ -27,6 +27,8 @@ export type ExtensionMessage =
       subfolder: string
       filenameTemplate: string
       zipFileName?: string
+      /** Text files (e.g. a links manifest) added to the ZIP root; ignored in files mode. */
+      zipExtraFiles?: { name: string; text: string }[]
       items: { url: string }[]
     }
   | { type: 'CANCEL_IMAGE_DOWNLOAD_JOB'; jobId: string }

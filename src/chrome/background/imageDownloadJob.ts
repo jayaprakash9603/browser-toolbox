@@ -253,7 +253,7 @@ async function runZipJob(
     return
   }
 
-  const zipBytes = buildImagesZip(entries, message.filenameTemplate)
+  const zipBytes = buildImagesZip(entries, message.filenameTemplate, message.zipExtraFiles)
   const zipName =
     message.zipFileName?.trim() ||
     `images-${new Date().toISOString().slice(0, 10)}.zip`

@@ -41,11 +41,12 @@ export const webTools = [
   defineTool({
     id: 'web.image-links',
     name: 'Image Links',
-    description: 'Extract image URLs, dimensions and alt text from the page.',
+    description:
+      'Preview every image on the page, audit alt text, export the list, and download images or a ZIP.',
     category: 'web',
     icon: ImageIcon,
-    keywords: ['images', 'extract', 'alt', 'dimensions', 'urls'],
-    aliases: ['extract images', 'page images', 'image urls', 'image alt'],
+    keywords: ['images', 'extract', 'alt', 'dimensions', 'urls', 'preview', 'zip', 'download', 'csv', 'export'],
+    aliases: ['extract images', 'page images', 'image urls', 'image alt', 'export images', 'images zip'],
     route: '/tools/web/image-links',
     capabilities: ['SIDE_PANEL', 'CONTENT_SCRIPT', 'PAGE_ACCESS'],
     contextSurfaces: ['PAGE', 'IMAGE'],
