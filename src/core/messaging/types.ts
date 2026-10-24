@@ -7,6 +7,8 @@ export type ExtensionMessage =
   | { type: 'OPEN_TOOL'; toolId: string }
   | { type: 'OPEN_COMMAND_PALETTE' }
   | { type: 'CLIPBOARD_CAPTURE_REQUEST' }
+  | { type: 'CLIPBOARD_WATCH'; active: boolean }
+  | { type: 'CLIPBOARD_CAPTURED'; text: string }
   | { type: 'CONTEXT_MENU_ACTION'; actionId: string; selectionText?: string }
   | { type: 'PICK_ELEMENT_START' }
   | { type: 'PICK_ELEMENT_CANCEL' }
@@ -99,7 +101,10 @@ export type ExtensionMessage =
   | { type: 'WA_FIRE_WEBHOOK'; event: string; payload: unknown }
   | { type: 'WA_RUN_BROADCAST'; campaignId: string }
   | { type: 'WA_EXPORT'; kind: string }
-  | { type: 'WA_EXPORT_CHAT'; options: import('@/core/sites/whatsapp/chatExport').ChatExportOptions }
+  | {
+      type: 'WA_EXPORT_CHAT'
+      options: import('@/core/sites/whatsapp/chatExport').ChatExportOptions
+    }
   | { type: 'WA_OPEN_ANALYTICS' }
   | { type: 'WA_TRANSLATE'; text: string; target: string }
   | {
@@ -127,9 +132,20 @@ export type ExtensionMessage =
       pingUrl: string
       showIp: boolean
     }
-  | { type: 'NETMON_OFFSCREEN_SOUND'; sound: import('@/core/netmon/types').NetSoundId; volume: number }
-  | { type: 'SHORTCUT_KEY_EVENT'; modifiers: { key: string; ctrl: boolean; alt: boolean; shift: boolean; meta: boolean } }
-  | { type: 'INTERCEPTOR_PAGE_EVENT'; tabId?: number; event: import('@/core/interceptor').InterceptorPageEvent }
+  | {
+      type: 'NETMON_OFFSCREEN_SOUND'
+      sound: import('@/core/netmon/types').NetSoundId
+      volume: number
+    }
+  | {
+      type: 'SHORTCUT_KEY_EVENT'
+      modifiers: { key: string; ctrl: boolean; alt: boolean; shift: boolean; meta: boolean }
+    }
+  | {
+      type: 'INTERCEPTOR_PAGE_EVENT'
+      tabId?: number
+      event: import('@/core/interceptor').InterceptorPageEvent
+    }
   | { type: 'INTERCEPTOR_GET_LOG'; tabId?: number }
   | { type: 'INTERCEPTOR_CLEAR_LOG'; tabId?: number }
   | {
@@ -173,7 +189,11 @@ export type ExtensionMessage =
     }
   | { type: 'SCRAPER_JOB_STOP'; tabId: number }
   | { type: 'SCRAPER_JOB_GET'; tabId: number }
-  | { type: 'SCREENSHOT_START'; mode: import('@/core/screenshot/types').ScreenshotMode; urls?: string[] }
+  | {
+      type: 'SCREENSHOT_START'
+      mode: import('@/core/screenshot/types').ScreenshotMode
+      urls?: string[]
+    }
   | { type: 'SCREENSHOT_GET_SESSION'; sessionId: string }
   | { type: 'SCREENSHOT_MENU_OPEN' }
   | { type: 'SCREENSHOT_BATCH_URLS'; urls: string[] }
@@ -209,6 +229,7 @@ export type ExtensionMessage =
       delayMs?: number
     }
   | { type: 'RECORDER_STATE'; session: import('@/core/recorder/types').RecorderSession | null }
+  | { type: 'TIMER_RECONCILE' }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
@@ -221,6 +242,8 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'OPEN_TOOL',
   'OPEN_COMMAND_PALETTE',
   'CLIPBOARD_CAPTURE_REQUEST',
+  'CLIPBOARD_WATCH',
+  'CLIPBOARD_CAPTURED',
   'CONTEXT_MENU_ACTION',
   'PICK_ELEMENT_START',
   'PICK_ELEMENT_CANCEL',
@@ -335,6 +358,7 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'RECORDER_CONTROL',
   'OFFSCREEN_RECORDER_START',
   'RECORDER_STATE',
+  'TIMER_RECONCILE',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {

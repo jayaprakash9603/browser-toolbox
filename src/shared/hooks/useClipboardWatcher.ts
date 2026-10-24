@@ -1,61 +1,37 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 
-import { addClipboardEntry, readClipboardText } from '@/core/clipboard'
-import { eventBus } from '@/core/events'
-import { getSettings } from '@/features/settings/settingsService'
-
-const POLL_MS = 450
+import { addClipboardEntry } from '@/core/clipboard'
+import { readCopySelection } from '@/core/clipboard/readCopySelection'
 
 /**
- * While the clipboard manager is visible, watch the system clipboard and append new
- * copies immediately (settings: record text copied while the panel is open).
+ * Records copies while the Clipboard Manager is on screen.
+ * Page copies arrive through the content script (no polling). Copies made inside
+ * the panel are read from the selection here, because the async clipboard read
+ * stalls for seconds when the side panel is not focused.
  */
 export function useClipboardWatcher(active = true): void {
-  const lastText = useRef<string | null>(null)
-
   useEffect(() => {
     if (!active) return
-    let cancelled = false
-    let timer: number | undefined
 
-    const captureIfNew = async () => {
-      if (cancelled) return
-      const settings = await getSettings()
-      if (!settings.clipboardHistoryEnabled) return
-      let text: string
-      try {
-        text = await readClipboardText()
-      } catch {
-        return
-      }
-      if (!text.trim() || text === lastText.current) return
-      lastText.current = text
-      await addClipboardEntry(text)
+    void chrome.runtime
+      .sendMessage({ type: 'CLIPBOARD_WATCH', active: true })
+      .catch(() => undefined)
+
+    const onEdit = (event: ClipboardEvent) => {
+      const custom = event.clipboardData?.getData('text/plain')
+      const text = custom || (event.defaultPrevented ? '' : readCopySelection(document))
+      if (!text.trim()) return
+      void addClipboardEntry(text)
     }
-
-    const start = () => {
-      void captureIfNew()
-      timer = window.setInterval(() => void captureIfNew(), POLL_MS)
-    }
-
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') void captureIfNew()
-    }
-
-    start()
-    document.addEventListener('visibilitychange', onVisible)
-    window.addEventListener('focus', onVisible)
-
-    const offClear = eventBus.on('CLEAR_DATA', ({ scope }) => {
-      if (scope === 'clipboardHistory' || scope === 'all') lastText.current = null
-    })
+    document.addEventListener('copy', onEdit)
+    document.addEventListener('cut', onEdit)
 
     return () => {
-      cancelled = true
-      if (timer !== undefined) clearInterval(timer)
-      document.removeEventListener('visibilitychange', onVisible)
-      window.removeEventListener('focus', onVisible)
-      offClear()
+      document.removeEventListener('copy', onEdit)
+      document.removeEventListener('cut', onEdit)
+      void chrome.runtime
+        .sendMessage({ type: 'CLIPBOARD_WATCH', active: false })
+        .catch(() => undefined)
     }
   }, [active])
 }

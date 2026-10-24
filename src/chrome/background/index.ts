@@ -48,6 +48,8 @@ import { registerLinkChecker } from './web/linkChecker'
 import { registerScraperJobHandlers } from './scraper/job'
 import { registerRedirectTracer } from './web/redirectTracer'
 import { safeRegister, safeStartup } from './safeInit'
+import { initClipboardCapture, registerClipboardCapture } from './clipboardCapture'
+import { registerTimer } from './timer'
 
 const logger = createLogger('background')
 
@@ -75,12 +77,15 @@ async function openPanelWithTool(
 chrome.runtime.onInstalled.addListener(() => {
   logger.info('installed')
   safeStartup('initStorage', () => initStorage().then(() => enqueueContextMenuRebuild()))
-  safeStartup('sidePanel', () => chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }))
+  safeStartup('sidePanel', () =>
+    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }),
+  )
   safeStartup('protection', () => syncProtectionState())
   safeStartup('youtube', () => syncYoutubeEnhancerState())
   safeStartup('instagram', () => syncInstagramEnhancerState())
   safeStartup('pip', () => initPipOnStartup())
   safeStartup('shortcuts', () => initShortcutsOnStartup())
+  safeStartup('clipboardCapture', () => initClipboardCapture())
 })
 
 chrome.runtime.onStartup.addListener(() => {
@@ -91,6 +96,7 @@ chrome.runtime.onStartup.addListener(() => {
   safeStartup('instagram', () => syncInstagramEnhancerState())
   safeStartup('pip', () => initPipOnStartup())
   safeStartup('shortcuts', () => initShortcutsOnStartup())
+  safeStartup('clipboardCapture', () => initClipboardCapture())
 })
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
@@ -165,4 +171,6 @@ safeRegister('interceptor', registerInterceptor)
 safeRegister('redirectTracer', registerRedirectTracer)
 safeRegister('linkChecker', registerLinkChecker)
 safeRegister('scraper', registerScraperJobHandlers)
+safeRegister('clipboardCapture', registerClipboardCapture)
+safeRegister('timer', registerTimer)
 startMessageRouter()

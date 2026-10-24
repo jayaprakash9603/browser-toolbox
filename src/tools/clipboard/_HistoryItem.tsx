@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next'
 
 import {
   clearHistory,
+  addClipboardEntry,
   deleteEntry,
   pasteClipboardEntry,
   pinEntry,
@@ -135,6 +136,7 @@ export const HistoryItem = memo(function HistoryItem({
 
   const copy = async () => {
     await writeClipboardText(entry.text)
+    await addClipboardEntry(entry.text)
     flash('copied')
   }
 
