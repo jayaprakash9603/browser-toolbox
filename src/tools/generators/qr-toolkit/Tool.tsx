@@ -1,272 +1,158 @@
 import { useEffect, useState } from 'react'
-
-import { useDeepLinkParam, useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
-import { QrCodeIcon, ScanLineIcon } from 'lucide-react'
+import { PenLineIcon, QrCodeIcon, ScanLineIcon } from 'lucide-react'
 
-import {
-  buildContactPayload,
-  buildEmailPayload,
-  buildPhonePayload,
-  buildWifiPayload,
-  decodeQrFromImage,
-  generateQrDataUrl,
-  normalizeQrInput,
-  type QrPreset,
-} from '@/core/engines/qrcode'
+import { createQrMatrix, type ParsedQrContent, type QrMatrix, type QrPreset } from '@/core/engines/qrcode'
+import { useDeepLinkParam, useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
+import { useDebounce } from '@/shared/hooks/useDebounce'
 import { ToolPage } from '@/shared/components/ToolPage'
-import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
+import { SectionCard } from '@/shared/components/ValueCard'
+import { SlideUp } from '@/shared/components/motion'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/shared/components/ui/select'
-import { JsonErrorView } from '@/tools/developer/_shared'
-import { downloadDataUrl } from '@/core/engines/capture'
-import { fileToDataUrl, loadImageFromDataUrl } from '@/core/engines/image'
-import { useGeneratorTool } from '../_shared'
 
-const PRESETS: QrPreset[] = ['text', 'url', 'wifi', 'email', 'phone', 'contact']
+import { useGeneratorTool } from '../_shared'
+import { ContentFields, PresetPicker } from './ContentFields'
+import { DecodePanel } from './DecodePanel'
+import { DesignPanel } from './DesignPanel'
+import { QrStage } from './QrStage'
+import {
+  EMPTY_FORM,
+  PRESETS,
+  buildQrPayload,
+  loadStyle,
+  parsedToForm,
+  saveStyle,
+  type QrForm,
+  type QrStyle,
+} from './qrModel'
+
+const RESHAPE_KEYS: (keyof QrStyle)[] = ['moduleShape', 'eyeShape', 'margin']
 
 export default function QrToolkitTool() {
   const { t } = useTranslation()
   const tool = useGeneratorTool('generators.qr-toolkit')
   const [mode, setMode] = useDeepLinkTab('tab', ['generate', 'decode'] as const, 'generate')
   const [preset, setPreset] = useDeepLinkParam('preset', PRESETS, 'text')
-  const [text, setText] = useState('')
-  const [ssid, setSsid] = useState('')
-  const [password, setPassword] = useState('')
-  const [encryption, setEncryption] = useState<'WPA' | 'WEP' | 'nopass'>('WPA')
-  const [emailTo, setEmailTo] = useState('')
-  const [emailSubject, setEmailSubject] = useState('')
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [qr, setQr] = useState<string | null>(null)
+  const [form, setForm] = useState<QrForm>(EMPTY_FORM)
+  const [style, setStyle] = useState<QrStyle>(loadStyle)
+  const [logo, setLogo] = useState<string | null>(null)
+  const [generated, setGenerated] = useState<{ payload: string; matrix: QrMatrix } | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [decoded, setDecoded] = useState<string | null>(null)
+  const [revealKey, setRevealKey] = useState(0)
 
-  const buildPayload = (): string => {
-    switch (preset) {
-      case 'wifi':
-        return buildWifiPayload({ ssid, password, encryption })
-      case 'email':
-        return buildEmailPayload({ to: emailTo, subject: emailSubject })
-      case 'phone':
-        return buildPhonePayload(text)
-      case 'contact':
-        return buildContactPayload({ firstName, lastName, phone: text })
-      case 'url':
-        return normalizeQrInput(text)
-      default:
-        return text
-    }
-  }
+  const payload = useDebounce(buildQrPayload(preset, form), 220)
+
+  useEffect(() => {
+    saveStyle(style)
+  }, [style])
 
   useEffect(() => {
     let live = true
-    const payload = mode === 'generate' ? buildPayload() : ''
-    if (!payload.trim() && preset !== 'wifi') {
+    if (!payload) {
       Promise.resolve().then(() => {
-        if (live) setQr(null)
+        if (!live) return
+        setGenerated(null)
+        setError(null)
       })
       return () => {
         live = false
       }
     }
-    void generateQrDataUrl(payload).then((result) => {
+    void createQrMatrix(payload, style.ecl).then((result) => {
       if (!live) return
       if (result.ok) {
-        setQr(result.value)
+        setGenerated({ payload, matrix: result.value })
         setError(null)
+        setRevealKey((key) => key + 1)
       } else {
-        setQr(null)
+        setGenerated(null)
         setError(result.error)
       }
     })
     return () => {
       live = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, preset, text, ssid, password, encryption, emailTo, emailSubject, firstName, lastName])
+  }, [payload, style.ecl])
 
-  const decodeFile = async (file: File | null) => {
-    if (!file) return
-    setError(null)
-    const dataUrl = await fileToDataUrl(file)
-    const img = await loadImageFromDataUrl(dataUrl)
-    const canvas = document.createElement('canvas')
-    canvas.width = img.naturalWidth
-    canvas.height = img.naturalHeight
-    const ctx = canvas.getContext('2d')
-    if (!ctx) {
-      setError('Canvas unavailable.')
-      return
-    }
-    ctx.drawImage(img, 0, 0)
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-    const result = await decodeQrFromImage({
-      data: imageData.data,
-      width: canvas.width,
-      height: canvas.height,
-    })
-    if (result.ok) setDecoded(result.value)
-    else setError(result.error)
+  const updateStyle = (patch: Partial<QrStyle>) => {
+    setStyle((current) => ({ ...current, ...patch }))
+    if (RESHAPE_KEYS.some((key) => key in patch)) setRevealKey((key) => key + 1)
+  }
+
+  const updateLogo = (next: string | null) => {
+    setLogo(next)
+    if (next) setStyle((current) => ({ ...current, ecl: 'H' }))
+    else setRevealKey((key) => key + 1)
+  }
+
+  const editDecoded = (parsed: ParsedQrContent) => {
+    setForm((current) => ({ ...current, ...parsedToForm(parsed) }))
+    setPreset(parsed.kind)
+    setMode('generate')
   }
 
   return (
     <ToolPage tool={tool}>
-      <div className="flex flex-col gap-3">
-        <Tabs
-          value={mode}
-          onValueChange={(v) => {
-            setMode(v as typeof mode)
-            setError(null)
-            setDecoded(null)
-          }}
-        >
-          <TabsList>
-            <TabsTrigger value="generate">
-              <QrCodeIcon className="size-3.5" /> {t('qr.generate')}
-            </TabsTrigger>
-            <TabsTrigger value="decode">
-              <ScanLineIcon className="size-3.5" /> {t('qr.decode')}
-            </TabsTrigger>
-          </TabsList>
+      <Tabs value={mode} onValueChange={(value) => setMode(value as typeof mode)} className="gap-3">
+        <TabsList>
+          <TabsTrigger value="generate">
+            <QrCodeIcon aria-hidden />
+            {t('qr.generate')}
+          </TabsTrigger>
+          <TabsTrigger value="decode">
+            <ScanLineIcon aria-hidden />
+            {t('qr.decode')}
+          </TabsTrigger>
+        </TabsList>
 
-        <TabsContent value="generate" className="mt-0 flex flex-col gap-2 data-[state=inactive]:hidden">
-          <Select value={preset} onValueChange={(v) => setPreset(v as QrPreset)}>
-            <SelectTrigger aria-label={t('qr.type')}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PRESETS.map((p) => (
-                <SelectItem key={p} value={p}>
-                  {t(`qr.preset.${p}`)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {(preset === 'text' || preset === 'url' || preset === 'phone') && (
-            <Input
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder={
-                preset === 'url'
-                  ? 'https://example.com'
-                  : preset === 'phone'
-                    ? '+15551234567'
-                    : t('qr.textPlaceholder')
-              }
-              aria-label={t('qr.content')}
-              className="font-mono"
-            />
-          )}
-          {preset === 'wifi' && (
-            <>
-              <Input
-                value={ssid}
-                onChange={(e) => setSsid(e.target.value)}
-                placeholder="SSID"
-                aria-label="SSID"
-              />
-              <Input
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={t('qr.password')}
-                aria-label={t('qr.password')}
-              />
-              <Select
-                value={encryption}
-                onValueChange={(v) => setEncryption(v as typeof encryption)}
+        <TabsContent value="generate" className="mt-0">
+          <div className="@container">
+            <div className="grid grid-cols-1 gap-3 @2xl:grid-cols-[minmax(0,1fr)_minmax(0,19rem)] @2xl:items-start">
+              <SlideUp className="min-w-0 @2xl:col-start-1 @2xl:row-start-1">
+                <SectionCard
+                  icon={PenLineIcon}
+                  title={t('qrk.contentTitle')}
+                  description={t(`qrk.presetHint.${preset}`)}
+                  bodyClassName="flex flex-col gap-4"
+                >
+                  <PresetPicker value={preset} onChange={(next: QrPreset) => setPreset(next)} />
+                  <ContentFields
+                    preset={preset}
+                    form={form}
+                    onChange={(patch) => setForm((current) => ({ ...current, ...patch }))}
+                  />
+                </SectionCard>
+              </SlideUp>
+
+              <SlideUp
+                delay={0.06}
+                className="min-w-0 @2xl:sticky @2xl:top-0 @2xl:col-start-2 @2xl:row-span-2 @2xl:row-start-1"
               >
-                <SelectTrigger aria-label={t('qr.encryption')}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="WPA">WPA/WPA2</SelectItem>
-                  <SelectItem value="WEP">WEP</SelectItem>
-                  <SelectItem value="nopass">{t('qr.open')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </>
-          )}
-          {preset === 'email' && (
-            <>
-              <Input
-                value={emailTo}
-                onChange={(e) => setEmailTo(e.target.value)}
-                placeholder="name@example.com"
-                aria-label={t('qr.emailTo')}
-              />
-              <Input
-                value={emailSubject}
-                onChange={(e) => setEmailSubject(e.target.value)}
-                placeholder={t('qr.subject')}
-                aria-label={t('qr.subject')}
-              />
-            </>
-          )}
-          {preset === 'contact' && (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <Input
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder={t('qr.firstName')}
-                  aria-label={t('qr.firstName')}
+                <QrStage
+                  payload={generated?.payload ?? ''}
+                  matrix={generated?.matrix ?? null}
+                  error={error}
+                  style={style}
+                  logo={logo}
+                  revealKey={revealKey}
+                  fileStem={`qr-${preset}`}
+                  onUseHighCorrection={() => updateStyle({ ecl: 'H' })}
                 />
-                <Input
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder={t('qr.lastName')}
-                  aria-label={t('qr.lastName')}
-                />
-              </div>
-              <Input
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder={t('qr.phone')}
-                aria-label={t('qr.phone')}
-              />
-            </>
-          )}
-          {error && <JsonErrorView message={error} />}
-          {qr && (
-            <div className="flex flex-col items-center gap-2 rounded-md border p-3">
-              <img src={qr} alt={t('qr.preview')} className="size-48 rounded" />
-              <Button size="sm" onClick={() => downloadDataUrl(qr, `qr-${Date.now()}.png`)}>
-                {t('capture.download')}
-              </Button>
+              </SlideUp>
+
+              <SlideUp delay={0.12} className="min-w-0 @2xl:col-start-1 @2xl:row-start-2">
+                <DesignPanel style={style} onChange={updateStyle} logo={logo} onLogo={updateLogo} />
+              </SlideUp>
             </div>
-          )}
+          </div>
         </TabsContent>
 
-        <TabsContent value="decode" className="mt-0 flex flex-col gap-2 data-[state=inactive]:hidden">
-          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-6 text-xs text-muted-foreground hover:bg-accent/40">
-            <ScanLineIcon className="size-4" />
-            {t('qr.uploadImage')}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => void decodeFile(e.target.files?.[0] ?? null)}
-              aria-label={t('qr.uploadImage')}
-            />
-          </label>
-          {error && <JsonErrorView message={error} />}
-          {decoded && (
-            <div className="rounded-md border bg-muted/40 p-2">
-              <p className="text-[11px] text-muted-foreground">{t('qr.decoded')}</p>
-              <code className="break-all font-mono text-[11px]">{decoded}</code>
-            </div>
-          )}
+        <TabsContent value="decode" className="mt-0">
+          <SlideUp>
+            <DecodePanel onEdit={editDecoded} />
+          </SlideUp>
         </TabsContent>
-        </Tabs>
-      </div>
+      </Tabs>
     </ToolPage>
   )
 }

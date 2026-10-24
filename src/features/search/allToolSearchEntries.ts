@@ -163,7 +163,7 @@ export const TOOL_SEARCH_ENTRIES: Record<string, ToolSearchEntry[]> = {
   'generators.qr-toolkit': [
     tab('generate', 'qr.generate', 'Generate', 'generate'),
     tab('decode', 'qr.decode', 'Decode', 'decode'),
-    ...(['text', 'url', 'wifi', 'email', 'phone', 'contact'] as const).map((preset) => ({
+    ...(['text', 'url', 'wifi', 'email', 'phone', 'sms', 'contact', 'geo', 'event'] as const).map((preset) => ({
       id: `preset-${preset}`,
       labelKey: `qr.preset.${preset}`,
       fallbackLabel: preset,

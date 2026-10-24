@@ -5,6 +5,7 @@ import { notesStrings } from './notesEn'
 import { speedtestStrings } from './speedtestEn'
 import { tabManagerStrings } from './tabManagerEn'
 import { datetimeStrings } from './datetimeEn'
+import { qrToolkitStrings } from './qrToolkitEn'
 import { browserToolkitStrings } from './browserToolkitEn'
 import { sitesWhatsappStrings } from './sitesWhatsappEn'
 import { consolidationStrings } from './consolidationEn'
@@ -1432,6 +1433,7 @@ const en = {
   ...notesStrings,
   ...tabManagerStrings,
   ...datetimeStrings,
+  ...qrToolkitStrings,
 } as const
 
 export default en
