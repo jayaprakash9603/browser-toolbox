@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { InboxIcon } from 'lucide-react'
 
@@ -8,11 +7,10 @@ import { AllToolsCategories } from '@/app/pages/home/AllToolsCategories'
 import { BottomTip } from '@/app/pages/home/BottomTip'
 import { BundleJobBanner } from '@/app/pages/home/BundleJobBanner'
 import { FavoritesSection } from '@/app/pages/home/FavoritesSection'
-import { GlobalSearch } from '@/app/pages/home/GlobalSearch'
-import { HeroCard } from '@/app/pages/home/HeroCard'
 import { PopularTools } from '@/app/pages/home/PopularTools'
 import { QuickActions } from '@/app/pages/home/QuickActions'
 import { RecentSection } from '@/app/pages/home/RecentSection'
+import { WelcomeStrip } from '@/app/pages/home/WelcomeStrip'
 import { BackButton } from '@/shared/components/BackButton'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { ToolCardGrid } from '@/shared/components/ToolCardGrid'
@@ -25,22 +23,8 @@ interface HomePageProps {
 
 export default function HomePage({ section }: HomePageProps) {
   const { t } = useTranslation()
-  const [searchCompact, setSearchCompact] = useState(false)
-  const sentinelRef = useRef<HTMLDivElement>(null)
   const { favorites, isLoading: favoritesLoading } = useFavorites()
   const { recent, isLoading: recentLoading } = useRecentTools()
-
-  useEffect(() => {
-    if (section) return
-    const node = sentinelRef.current
-    if (!node) return
-    const observer = new IntersectionObserver(
-      ([entry]) => setSearchCompact(!entry.isIntersecting),
-      { root: null, threshold: 0, rootMargin: '-52px 0px 0px 0px' },
-    )
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [section])
 
   const loading =
     section === 'favorites'
@@ -85,12 +69,10 @@ export default function HomePage({ section }: HomePageProps) {
 
   return (
     <div className="@container flex h-full min-w-0 flex-col overflow-x-clip">
-      <GlobalSearch compact={searchCompact} />
       <div className="scrollbar-styled min-h-0 flex-1 overflow-y-auto overflow-x-clip px-3 pb-6 @[360px]:px-4">
-        <div ref={sentinelRef} className="h-px w-full" aria-hidden />
-        <div className="pt-3">
+        <div className="mx-auto max-w-3xl pt-3">
           <BundleJobBanner />
-          <HeroCard />
+          <WelcomeStrip favoriteCount={favorites.length} />
           <QuickActions />
           <RecentSection />
           <FavoritesSection />

@@ -46,7 +46,7 @@ export function useActiveTab() {
         const next = toActiveTab(active)
         setTab(next)
         setReady(true)
-        if (next) setZoom(await chrome.tabs.getZoom(next.id).catch(() => 1))
+        if (next) setZoom((await chrome.tabs.getZoom?.(next.id).catch(() => 1)) ?? 1)
       }),
     [],
   )
@@ -63,15 +63,15 @@ export function useActiveTab() {
     const onFocus = (windowId: number) => {
       if (windowId !== chrome.windows.WINDOW_ID_NONE) void refresh()
     }
-    chrome.tabs.onActivated.addListener(onActivated)
-    chrome.tabs.onUpdated.addListener(onUpdated)
-    chrome.tabs.onZoomChange.addListener(onZoom)
-    chrome.windows.onFocusChanged.addListener(onFocus)
+    chrome.tabs.onActivated?.addListener(onActivated)
+    chrome.tabs.onUpdated?.addListener(onUpdated)
+    chrome.tabs.onZoomChange?.addListener(onZoom)
+    chrome.windows?.onFocusChanged?.addListener(onFocus)
     return () => {
-      chrome.tabs.onActivated.removeListener(onActivated)
-      chrome.tabs.onUpdated.removeListener(onUpdated)
-      chrome.tabs.onZoomChange.removeListener(onZoom)
-      chrome.windows.onFocusChanged.removeListener(onFocus)
+      chrome.tabs.onActivated?.removeListener(onActivated)
+      chrome.tabs.onUpdated?.removeListener(onUpdated)
+      chrome.tabs.onZoomChange?.removeListener(onZoom)
+      chrome.windows?.onFocusChanged?.removeListener(onFocus)
     }
   }, [refresh])
 

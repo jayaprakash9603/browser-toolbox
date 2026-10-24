@@ -12,26 +12,20 @@ interface SectionHeaderProps {
 
 export function SectionHeader({ title, icon: Icon, action, count }: SectionHeaderProps) {
   return (
-    <div className="mb-2.5 flex items-center justify-between gap-2">
-      <div className="flex min-w-0 items-center gap-2">
-        {Icon && (
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Icon className="size-4" aria-hidden />
+    <div className="mb-2 flex min-h-7 items-center justify-between gap-2">
+      <h2 className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+        {Icon && <Icon className="size-3.5 shrink-0 text-primary" aria-hidden />}
+        <span className="truncate">{title}</span>
+        {count !== undefined && count > 0 && (
+          <span className="rounded-full bg-muted px-1.5 text-[10px] font-semibold tracking-normal text-muted-foreground tabular-nums">
+            {count}
           </span>
         )}
-        <h2 className="text-section-title flex items-center gap-1.5">
-          {title}
-          {count !== undefined && (
-            <span className="rounded-full bg-muted px-1.5 text-[11px] font-medium text-muted-foreground tabular-nums">
-              {count}
-            </span>
-          )}
-        </h2>
-      </div>
+      </h2>
       {action && (
         <Link
           to={action.to}
-          className="flex shrink-0 items-center gap-0.5 rounded-md px-1.5 py-1 text-xs font-medium text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex min-h-7 shrink-0 items-center gap-0.5 rounded-md px-1.5 text-xs font-medium text-primary outline-none transition-colors hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring"
         >
           {action.label}
           <ChevronRightIcon className="size-3.5" aria-hidden />

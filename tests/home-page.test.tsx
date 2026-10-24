@@ -2,16 +2,17 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { ThemeApplicator } from '@/app/providers/ThemeApplicator'
+import HomePage from '@/app/pages/HomePage'
 import {
+  getGreetingKey,
+  getHomePopularTools,
   getPopularTools,
   getQuickActionTools,
   QUICK_ACTION_IDS,
 } from '@/app/pages/home/homeConfig'
 import { RouterProvider } from '@/app/router'
-import { GlobalSearch } from '@/app/pages/home/GlobalSearch'
 import { categoryRegistry, toolRegistry } from '@/core/registry'
 import { reorderFavorites } from '@/features/favorites/favoritesService'
-import { TOOLBOX_FOCUS_HOME_SEARCH } from '@/features/search/searchFocus'
 import { updateSettings } from '@/features/settings/settingsService'
 import { TooltipProvider } from '@/shared/components/ui/tooltip'
 import { registerModules } from '@/modules'
@@ -36,33 +37,43 @@ describe('homeConfig', () => {
   })
 })
 
-describe('GlobalSearch', () => {
-  it('focuses the search field when the home search shortcut event fires', async () => {
-    render(
-      <TooltipProvider>
-        <GlobalSearch />
-      </TooltipProvider>,
-    )
-    const input = screen.getByRole('combobox')
-    window.dispatchEvent(new CustomEvent(TOOLBOX_FOCUS_HOME_SEARCH))
-    await waitFor(() => expect(input).toHaveFocus())
+describe('home landing helpers', () => {
+  it('never repeats quick actions inside popular tools', () => {
+    const quick = new Set<string>(QUICK_ACTION_IDS)
+    const popular = getHomePopularTools()
+    expect(popular.length).toBeGreaterThan(0)
+    popular.forEach((tool) => expect(quick.has(tool.id)).toBe(false))
   })
 
-  it('supports keyboard navigation in results', async () => {
+  it('picks a greeting for the time of day', () => {
+    expect(getGreetingKey(8)).toBe('home.greeting.morning')
+    expect(getGreetingKey(14)).toBe('home.greeting.afternoon')
+    expect(getGreetingKey(21)).toBe('home.greeting.evening')
+    expect(getGreetingKey(2)).toBe('home.greeting.evening')
+  })
+})
+
+describe('HomePage landing', () => {
+  it('renders the compact welcome strip and sections without a search box', async () => {
     window.location.hash = '#/'
     render(
       <TooltipProvider>
         <RouterProvider>
-          <GlobalSearch />
+          <HomePage />
         </RouterProvider>
       </TooltipProvider>,
     )
-    const input = screen.getByRole('combobox')
-    fireEvent.change(input, { target: { value: 'json toolkit' } })
-    await waitFor(() => expect(screen.getAllByRole('option').length).toBeGreaterThan(0))
-    fireEvent.keyDown(input, { key: 'Enter' })
-    expect(window.location.hash).toMatch(/json-toolkit|json/)
-  })
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument())
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(screen.getByText('Quick actions')).toBeInTheDocument()
+    expect(screen.getByText('Browse by category')).toBeInTheDocument()
+    expect(document.getElementById('all-tools')).not.toBeNull()
+
+    const tip = screen.getByRole('button', { name: 'Next tip' })
+    const before = tip.parentElement?.textContent
+    fireEvent.click(tip)
+    expect(tip.parentElement?.textContent).not.toBe(before)
+  }, 20_000)
 })
 
 describe('favorites reorder', () => {

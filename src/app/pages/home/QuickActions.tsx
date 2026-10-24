@@ -1,54 +1,54 @@
+import { ZapIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Link } from '@/app/router'
-import { getQuickActionTools } from '@/app/pages/home/homeConfig'
+import type { ToolDefinition } from '@/core/registry'
+import { getQuickActionTools, tileColor } from '@/app/pages/home/homeConfig'
 import { SectionHeader } from '@/app/pages/home/SectionHeader'
 import { SlideUp } from '@/shared/components/motion'
 import { useToolLabels } from '@/shared/hooks/useToolLabels'
-import { cn } from '@/shared/utils/cn'
 
-const TILE_VARS = ['var(--tile-1)', 'var(--tile-2)', 'var(--tile-3)', 'var(--tile-4)'] as const
-
-export function QuickActions({ delay = 0.11 }: { delay?: number }) {
+export function QuickActions({ delay = 0.06 }: { delay?: number }) {
   const { t } = useTranslation()
   const tools = getQuickActionTools()
 
   return (
-    <SlideUp delay={delay} className="mb-5">
-      <SectionHeader title={t('home.quickActions')} />
-      <div className="grid grid-cols-2 gap-2">
+    <SlideUp delay={delay} className="mb-[var(--density-section-gap)]">
+      <SectionHeader title={t('home.quickActions')} icon={ZapIcon} />
+      <ul className="grid grid-cols-4 gap-1 rounded-2xl border bg-card p-1.5 shadow-[var(--shadow-card)]">
         {tools.map((tool, index) => (
-          <QuickActionTile key={tool.id} tool={tool} tileColor={TILE_VARS[index % TILE_VARS.length]} />
+          <li key={tool.id} className="min-w-0">
+            <QuickActionTile tool={tool} color={tileColor(index)} />
+          </li>
         ))}
-      </div>
+      </ul>
     </SlideUp>
   )
 }
 
-function QuickActionTile({
-  tool,
-  tileColor,
-}: {
-  tool: ReturnType<typeof getQuickActionTools>[number]
-  tileColor: string
-}) {
+function QuickActionTile({ tool, color }: { tool: ToolDefinition; color: string }) {
   const Icon = tool.icon
-  const { name } = useToolLabels(tool)
+  const { name, description } = useToolLabels(tool)
+  const preload = () => {
+    void tool.loader()
+  }
   return (
     <Link
       to={tool.route}
-      className={cn(
-        'flex min-h-11 items-center gap-2.5 rounded-xl border bg-card p-2.5 shadow-[var(--shadow-card)] outline-none transition-[transform,box-shadow] duration-150',
-        'hover:shadow-[var(--shadow-card-hover)] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring',
-      )}
+      title={description}
+      onPointerEnter={preload}
+      onFocus={preload}
+      className="group flex min-h-11 flex-col items-center gap-1.5 rounded-xl px-1 py-2 text-center outline-none transition-colors duration-150 hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.97]"
     >
       <span
-        className="flex size-9 shrink-0 items-center justify-center rounded-lg text-white"
-        style={{ backgroundColor: tileColor }}
+        className="flex size-10 items-center justify-center rounded-xl text-white shadow-sm transition-transform duration-150 group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
+        style={{
+          background: `linear-gradient(145deg, ${color}, color-mix(in srgb, ${color} 70%, black))`,
+        }}
       >
-        <Icon className="size-4" aria-hidden />
+        <Icon className="size-[18px]" aria-hidden />
       </span>
-      <span className="text-tool-name line-clamp-2">{name}</span>
+      <span className="line-clamp-2 w-full text-[11px] leading-tight font-medium">{name}</span>
     </Link>
   )
 }

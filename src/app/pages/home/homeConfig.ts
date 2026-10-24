@@ -36,3 +36,23 @@ export function getQuickActionTools() {
 export function getPopularTools() {
   return resolveHomeTools(POPULAR_TOOL_IDS)
 }
+
+/** Popular tools minus the ones already pinned as quick actions, so the home page never repeats a tool. */
+export function getHomePopularTools() {
+  const quick = new Set<string>(QUICK_ACTION_IDS)
+  return getPopularTools().filter((tool) => !quick.has(tool.id))
+}
+
+export const TILE_VARS = ['var(--tile-1)', 'var(--tile-2)', 'var(--tile-3)', 'var(--tile-4)'] as const
+
+export function tileColor(index: number) {
+  return TILE_VARS[index % TILE_VARS.length]
+}
+
+export type GreetingKey = 'home.greeting.morning' | 'home.greeting.afternoon' | 'home.greeting.evening'
+
+export function getGreetingKey(hour = new Date().getHours()): GreetingKey {
+  if (hour >= 5 && hour < 12) return 'home.greeting.morning'
+  if (hour >= 12 && hour < 18) return 'home.greeting.afternoon'
+  return 'home.greeting.evening'
+}

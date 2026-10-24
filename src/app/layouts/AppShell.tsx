@@ -10,7 +10,6 @@ import { getToolComponent } from '@/app/toolComponents'
 import { toolRegistry } from '@/core/registry'
 import { trackRecentTool } from '@/features/recent-tools/recentToolsService'
 import { NetStatusIndicator } from '@/features/netmon/components/NetStatusIndicator'
-import { requestFocusHomeSearch } from '@/features/search/searchFocus'
 import {
   AppLoadingSkeleton,
   type AppLoadingSkeletonVariant,
@@ -71,8 +70,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
       const panelCommand = resolvePanelCommand(event)
       if (panelCommand === 'panel-search') {
         event.preventDefault()
-        if (isHomePath(path)) requestFocusHomeSearch()
-        else openPalette()
+        openPalette()
       } else if (!panelCommand && forwardGlobalShortcut(event)) {
         event.preventDefault()
       }
@@ -80,7 +78,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [path, resolvePanelCommand, forwardGlobalShortcut])
+  }, [resolvePanelCommand, forwardGlobalShortcut])
 
   const tool = useMemo(() => toolRegistry.getAll().find((entry) => entry.route === path), [path])
 
@@ -118,12 +116,9 @@ export function AppShell({ children }: { children?: ReactNode }) {
                 variant="outline"
                 size="sm"
                 className="h-[var(--density-control-h)] gap-1.5 px-2 font-normal text-muted-foreground"
-                aria-label={isHomePath(path) ? t('nav.focusSearch') : t('nav.openCommandPalette')}
+                aria-label={t('nav.openCommandPalette')}
                 aria-keyshortcuts="Control+K Meta+K"
-                onClick={() => {
-                  if (isHomePath(path)) requestFocusHomeSearch()
-                  else openPalette()
-                }}
+                onClick={openPalette}
               >
                 <SearchIcon className="size-4" />
                 <kbd className="rounded border bg-muted px-1.5 font-sans text-[10px] leading-5 font-medium">
@@ -131,9 +126,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
                 </kbd>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
-              {isHomePath(path) ? t('nav.focusSearch') : t('nav.commandPalette')}
-            </TooltipContent>
+            <TooltipContent>{t('nav.commandPalette')}</TooltipContent>
           </Tooltip>
           {isHomePath(path) && <NetStatusIndicator />}
           <ThemeToggle />
