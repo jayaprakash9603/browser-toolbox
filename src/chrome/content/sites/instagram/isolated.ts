@@ -1,5 +1,6 @@
-import type { InstagramEnhancerState } from '@/core/sites/instagram'
+import type { InstagramEnhancerState } from '@/core/sites/instagram/types'
 import { applyInstagramEnhancer, stopAll } from './manager'
+import { startReelStage } from './reelStage'
 
 type Guarded = Window & { __toolboxIgEnhancer?: boolean }
 
@@ -23,6 +24,7 @@ const guarded = window as Guarded
 if (!guarded.__toolboxIgEnhancer) {
   guarded.__toolboxIgEnhancer = true
   if (window === window.top) {
+    startReelStage()
     chrome.storage.local.get('instagramEnhancer', (result) => apply(result.instagramEnhancer))
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area === 'local' && changes.instagramEnhancer) apply(changes.instagramEnhancer.newValue)

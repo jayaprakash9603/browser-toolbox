@@ -251,10 +251,15 @@ function position(): void {
   const col = listColumn()
   const launcher = document.getElementById('tbx-wa-launcher')
   const railRight = launcher ? launcher.getBoundingClientRect().right : 64
-  const left = col ? col.left : railRight
   const top = col ? col.top : 0
-  const width = col ? col.width : Math.min(440, Math.max(340, window.innerWidth * 0.3))
   const height = col ? col.height : window.innerHeight
+  // A column wider than half the window is the whole app, not the chat list. Covering it
+  // hides the conversation behind an empty dark panel.
+  const maxWidth = Math.min(480, Math.round(window.innerWidth * 0.46))
+  const fallback = Math.min(440, Math.max(340, window.innerWidth * 0.3))
+  const columnFits = col != null && col.width <= maxWidth
+  const width = columnFits && col ? Math.min(maxWidth, col.width) : Math.min(maxWidth, fallback)
+  const left = columnFits && col ? col.left : railRight
   Object.assign(drawer.style, {
     left: `${Math.round(left)}px`,
     top: `${Math.round(top)}px`,
