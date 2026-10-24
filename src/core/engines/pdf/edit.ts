@@ -18,14 +18,20 @@ import {
 } from '@cantoo/pdf-lib'
 
 import {
+  arrowBarbs,
   displaySize,
+  ellipseCurves,
+  lineEnds,
   localToPdf,
   normalizeRotation,
   numberAnchor,
   pageNumberLabel,
+  toPdfPoint,
   watermarkAnchors,
+  type LineDirection,
   type NumberPosition,
   type PageBox,
+  type Point,
 } from './geometry'
 
 export interface PdfSource {
@@ -325,6 +331,34 @@ export type EditItem =
   | { kind: 'image'; page: number; u: number; v: number; w: number; h: number; bytes: Uint8Array; format: 'png' | 'jpg' }
   | { kind: 'rect'; page: number; u: number; v: number; w: number; h: number; color: string; opacity: number }
   | { kind: 'check'; page: number; u: number; v: number; w: number; h: number; color: string }
+  | {
+      kind: 'shape'
+      page: number
+      u: number
+      v: number
+      w: number
+      h: number
+      shape: ShapeKind
+      stroke: string
+      /** Stroke width in points. */
+      width: number
+      fill?: string
+      direction?: LineDirection
+    }
+  | {
+      kind: 'ink'
+      page: number
+      u: number
+      v: number
+      w: number
+      h: number
+      /** x, y pairs as fractions of the item's box. */
+      points: number[]
+      color: string
+      width: number
+    }
+
+export type ShapeKind = 'rect' | 'ellipse' | 'line' | 'arrow'
 
 export type FormValues = Record<string, string | boolean>
 
@@ -459,6 +493,47 @@ export async function editPdf(source: PdfSource, options: EditOptions): Promise<
         }
         break
       }
+      case 'shape':
+      case 'ink': {
+        const width = item.w * display.width
+        const height = item.h * display.height
+        // Local points have y growing downward from the item's top-left corner.
+        const map = (point: Point) => localToPdf(box, left + point.x, top - point.y)
+        const at = (point: Point) => {
+          const mapped = map(point)
+          return `${mapped.x} ${-mapped.y}`
+        }
+        let path = ''
+        if (item.kind === 'ink') {
+          for (let index = 0; index + 1 < item.points.length; index += 2) {
+            path += `${index ? ' L ' : 'M '}${at({ x: item.points[index] * width, y: item.points[index + 1] * height })}`
+          }
+        } else if (item.shape === 'rect') {
+          path = `M ${at({ x: 0, y: 0 })} L ${at({ x: width, y: 0 })} L ${at({ x: width, y: height })} L ${at({ x: 0, y: height })} Z`
+        } else if (item.shape === 'ellipse') {
+          const { start, curves } = ellipseCurves(width, height)
+          path = `M ${at(start)} ${curves.map(([c1, c2, end]) => `C ${at(c1)} ${at(c2)} ${at(end)}`).join(' ')} Z`
+        } else {
+          const [from, to] = lineEnds(item.direction ?? 0, width, height)
+          path = `M ${at(from)} L ${at(to)}`
+          if (item.shape === 'arrow') {
+            const [a, b] = arrowBarbs(from, to, Math.max(6, item.width * 4))
+            path += ` M ${at(a)} L ${at(to)} L ${at(b)}`
+          }
+        }
+        if (!path) break
+        const stroke = item.kind === 'ink' ? item.color : item.stroke
+        const fill = item.kind === 'shape' && item.fill && (item.shape === 'rect' || item.shape === 'ellipse') ? hexToRgb(item.fill) : undefined
+        page.drawSvgPath(path, {
+          x: 0,
+          y: 0,
+          color: fill,
+          borderColor: hexToRgb(stroke),
+          borderWidth: item.width,
+          borderLineCap: LineCapStyle.Round,
+        })
+        break
+      }
     }
   }
 
@@ -554,4 +629,159 @@ export async function unlockPdf(source: PdfSource): Promise<Uint8Array> {
 export async function isPdfEncrypted(bytes: Uint8Array): Promise<boolean> {
   const doc = await PDFDocument.load(bytes, { ignoreEncryption: true, updateMetadata: false })
   return doc.isEncrypted
+}
+
+// ---------------------------------------------------------------------------
+// Page edits done in place, so forms, links and bookmarks survive
+// ---------------------------------------------------------------------------
+
+export async function removePages(source: PdfSource, indices: number[]): Promise<Uint8Array> {
+  const doc = await loadPdf(source)
+  const count = doc.getPageCount()
+  const unique = [...new Set(indices)].filter((index) => index >= 0 && index < count).sort((a, b) => b - a)
+  if (unique.length >= count) throw new Error('A PDF needs at least one page')
+  for (const index of unique) doc.removePage(index)
+  return savePdf(doc)
+}
+
+/** Clockwise quarter turns to add, by zero-based page index. */
+export async function rotatePages(source: PdfSource, turns: Record<number, number>): Promise<Uint8Array> {
+  const doc = await loadPdf(source)
+  doc.getPages().forEach((page, index) => {
+    const turn = turns[index]
+    if (turn) page.setRotation(degrees(normalizeRotation(page.getRotation().angle + turn * 90)))
+  })
+  return savePdf(doc)
+}
+
+/** A visible area as fractions of the displayed page, from its top-left corner. */
+export interface CropRect {
+  u: number
+  v: number
+  w: number
+  h: number
+}
+
+/** Sets the crop box of each page that has a rectangle; `null` leaves a page alone. */
+export async function cropPdf(source: PdfSource, crops: (CropRect | null)[]): Promise<Uint8Array> {
+  const doc = await loadPdf(source)
+  doc.getPages().forEach((page, index) => {
+    const crop = crops[index]
+    if (!crop) return
+    const box = pageBox(page)
+    const corners = [
+      toPdfPoint(box, crop.u, crop.v),
+      toPdfPoint(box, crop.u + crop.w, crop.v + crop.h),
+    ]
+    const x = Math.min(corners[0].x, corners[1].x)
+    const y = Math.min(corners[0].y, corners[1].y)
+    const width = Math.abs(corners[1].x - corners[0].x)
+    const height = Math.abs(corners[1].y - corners[0].y)
+    if (width < 1 || height < 1) return
+    page.setCropBox(x, y, width, height)
+    page.setTrimBox(x, y, width, height)
+  })
+  return savePdf(doc)
+}
+
+// ---------------------------------------------------------------------------
+// Creating form fields
+// ---------------------------------------------------------------------------
+
+export type NewFieldType = 'text' | 'multiline' | 'checkbox' | 'dropdown' | 'signature'
+
+export interface NewField {
+  type: NewFieldType
+  name: string
+  page: number
+  u: number
+  v: number
+  w: number
+  h: number
+  options?: string[]
+  required?: boolean
+  fontSize?: number
+}
+
+function uniqueName(taken: Set<string>, wanted: string): string {
+  const base = wanted.trim().replace(/[.\s]+/g, '_') || 'field'
+  let name = base
+  for (let suffix = 2; taken.has(name); suffix += 1) name = `${base}_${suffix}`
+  taken.add(name)
+  return name
+}
+
+/** Adds fillable fields; signature fields become text fields labelled for a typed signature. */
+export async function addFormFields(source: PdfSource, fields: NewField[]): Promise<Uint8Array> {
+  const doc = await loadPdf(source)
+  const form = doc.getForm()
+  const pages = doc.getPages()
+  const font = await doc.embedFont(StandardFonts.Helvetica)
+  const taken = new Set(form.getFields().map((field) => field.getName()))
+  for (const field of fields) {
+    const page = pages[field.page]
+    if (!page) continue
+    const box = pageBox(page)
+    const a = toPdfPoint(box, field.u, field.v)
+    const b = toPdfPoint(box, field.u + field.w, field.v + field.h)
+    const rect = {
+      x: Math.min(a.x, b.x),
+      y: Math.min(a.y, b.y),
+      width: Math.abs(b.x - a.x),
+      height: Math.abs(b.y - a.y),
+      font,
+      borderColor: rgb(0.55, 0.6, 0.7),
+      borderWidth: 0.75,
+      backgroundColor: rgb(0.94, 0.96, 1),
+      rotate: degrees(box.rotation),
+    }
+    const name = uniqueName(taken, field.name)
+    switch (field.type) {
+      case 'text':
+      case 'multiline':
+      case 'signature': {
+        const text = form.createTextField(name)
+        if (field.type === 'multiline') text.enableMultiline()
+        text.addToPage(page, rect)
+        text.setFontSize(field.fontSize ?? (field.type === 'multiline' ? 10 : 0))
+        if (field.required) text.enableRequired()
+        break
+      }
+      case 'checkbox': {
+        const box = form.createCheckBox(name)
+        box.addToPage(page, rect)
+        if (field.required) box.enableRequired()
+        break
+      }
+      case 'dropdown': {
+        const dropdown = form.createDropdown(name)
+        const options = (field.options ?? []).map((option) => option.trim()).filter(Boolean)
+        if (options.length) dropdown.addOptions(options)
+        dropdown.addToPage(page, rect)
+        if (field.required) dropdown.enableRequired()
+        break
+      }
+    }
+  }
+  return savePdf(doc)
+}
+
+// ---------------------------------------------------------------------------
+// Repair
+// ---------------------------------------------------------------------------
+
+/**
+ * Re-reads every object without trusting the cross-reference table and writes a
+ * clean file. Throws when the structure is too damaged to parse.
+ */
+export async function rebuildPdf(bytes: Uint8Array, password?: string): Promise<Uint8Array> {
+  const doc = await PDFDocument.load(bytes, {
+    password,
+    ignoreEncryption: password === undefined,
+    throwOnInvalidObject: false,
+    updateMetadata: false,
+  })
+  if (doc.isEncrypted && password === undefined) throw new EncryptedPDFError()
+  if (doc.getPageCount() === 0) throw new Error('No pages could be recovered')
+  return doc.save({ useObjectStreams: true })
 }

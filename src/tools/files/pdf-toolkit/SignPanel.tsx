@@ -7,7 +7,14 @@ import {
   CheckIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  CircleIcon,
   CopyPlusIcon,
+  FlipHorizontal2Icon,
+  MinusIcon,
+  MoveUpRightIcon,
+  PencilIcon,
+  RectangleHorizontalIcon,
+  EraserIcon,
   FileCheck2Icon,
   HighlighterIcon,
   ImagePlusIcon,
@@ -15,7 +22,6 @@ import {
   MousePointer2Icon,
   PlusIcon,
   SignatureIcon,
-  SquareIcon,
   TextCursorInputIcon,
   Trash2Icon,
   TypeIcon,
@@ -26,91 +32,94 @@ import { editPdf, readPdfFormFields, type FontKey, type FormFieldInfo, type Form
 import { ActionBar, OptionField, OptionSelect, OptionSwitch, PanelError, PanelSection } from '@/shared/components/toolkit'
 import { PdfPageImage } from '@/shared/components/pdf'
 import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
 import { Slider } from '@/shared/components/ui/slider'
 import { Switch } from '@/shared/components/ui/switch'
 import { Textarea } from '@/shared/components/ui/textarea'
 import { cn } from '@/shared/utils/cn'
 import { Swatches } from './common'
-import { EditorPage } from './EditorPage'
-import { clamp, toEditItems, type PendingImage, type Placed, type PlaceTool } from './placed'
+import { EditorPage, type DraggedBox } from './EditorPage'
+import { FormFields } from './FormFields'
+import { clamp, itemLabelKey, SHAPE_FOR_TOOL, toEditItems, type PendingImage, type Placed, type PlaceTool } from './placed'
 import { bytesToObjectUrl, toEmbeddableImage } from './raster'
 import { pdfArtifact, sourceOf, stemOf, useOpenPdf, usePdfSession } from './session'
 import { SignatureDialog } from './SignatureDialog'
 import { dataUrlToBytes, loadSignatures, storeSignatures, type SavedSignature } from './signatures'
 import { useTask } from './useTask'
 
-const TOOLS: { value: PlaceTool; icon: ReactNode }[] = [
-  { value: 'select', icon: <MousePointer2Icon /> },
-  { value: 'signature', icon: <SignatureIcon /> },
-  { value: 'text', icon: <TypeIcon /> },
-  { value: 'date', icon: <CalendarDaysIcon /> },
-  { value: 'check', icon: <CheckIcon /> },
-  { value: 'highlight', icon: <HighlighterIcon /> },
-  { value: 'cover', icon: <SquareIcon /> },
-  { value: 'image', icon: <ImagePlusIcon /> },
-]
+type Variant = 'sign' | 'edit'
+
+const TOOL_ICONS: Record<PlaceTool, ReactNode> = {
+  select: <MousePointer2Icon />,
+  signature: <SignatureIcon />,
+  text: <TypeIcon />,
+  date: <CalendarDaysIcon />,
+  check: <CheckIcon />,
+  highlight: <HighlighterIcon />,
+  cover: <EraserIcon />,
+  image: <ImagePlusIcon />,
+  box: <RectangleHorizontalIcon />,
+  ellipse: <CircleIcon />,
+  line: <MinusIcon />,
+  arrow: <MoveUpRightIcon />,
+  draw: <PencilIcon />,
+}
+
+const VARIANT_TOOLS: Record<Variant, PlaceTool[]> = {
+  sign: ['select', 'signature', 'text', 'date', 'check', 'image'],
+  edit: ['select', 'text', 'image', 'draw', 'box', 'ellipse', 'line', 'arrow', 'highlight', 'cover'],
+}
+
+const STROKES = ['#dc2626', '#1d4ed8', '#111827', '#16a34a'] as const
+const STROKE_WIDTHS = ['1', '2', '3', '5', '8'] as const
 
 const TEXT_COLORS = ['#111827', '#1d4ed8', '#b91c1c', '#047857'] as const
 const HIGHLIGHTS = ['#facc15', '#4ade80', '#60a5fa', '#f472b6'] as const
 const COVERS = ['#ffffff', '#000000'] as const
 const FONT_SIZES = ['8', '10', '12', '14', '16', '20', '24', '32'] as const
 
-function FormFields({ fields, values, onChange }: { fields: FormFieldInfo[]; values: FormValues; onChange: (values: FormValues) => void }) {
+const FILLS = ['#fde68a', '#bfdbfe', '#bbf7d0', '#ffffff'] as const
+
+function PenControls({
+  stroke,
+  width,
+  fill,
+  onChange,
+}: {
+  stroke: string
+  width: number
+  /** `undefined` hides the fill option for shapes that cannot be filled. */
+  fill?: string | null
+  onChange: (patch: { stroke?: string; width?: number; fill?: string | null }) => void
+}) {
   const { t } = useTranslation()
-  const set = (name: string, value: string | boolean) => onChange({ ...values, [name]: value })
   return (
-    <div className="grid gap-2.5 @[560px]:grid-cols-2">
-      {fields.map((field) => {
-        const value = values[field.name] ?? field.value
-        const label = field.name.replace(/[._]/g, ' ')
-        if (field.type === 'checkbox') {
-          return <OptionSwitch key={field.name} label={label} checked={value === true} onChange={(next) => set(field.name, next)} disabled={field.readOnly} />
-        }
-        if ((field.type === 'dropdown' || field.type === 'radio' || field.type === 'list') && field.options.length) {
-          return (
-            <OptionField key={field.name} label={label}>
-              <Select value={typeof value === 'string' && value ? value : undefined} onValueChange={(next) => set(field.name, next)} disabled={field.readOnly}>
-                <SelectTrigger className="w-full" aria-label={label}>
-                  <SelectValue placeholder={t('pdf.sign.choose')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {field.options.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </OptionField>
-          )
-        }
-        if (field.type === 'text') {
-          return (
-            <OptionField key={field.name} label={label} className={field.multiline ? '@[560px]:col-span-2' : undefined}>
-              {field.multiline ? (
-                <Textarea value={String(value)} onChange={(event) => set(field.name, event.target.value)} disabled={field.readOnly} rows={3} aria-label={label} />
-              ) : (
-                <Input value={String(value)} onChange={(event) => set(field.name, event.target.value)} disabled={field.readOnly} className="h-8" aria-label={label} />
-              )}
-            </OptionField>
-          )
-        }
-        return null
-      })}
-    </div>
+    <>
+      <Swatches label={t('pdf.sign.color')} colors={STROKES} value={stroke} onChange={(color) => onChange({ stroke: color })} />
+      <OptionSelect
+        label={t('pdf.edit.thickness')}
+        value={(STROKE_WIDTHS.find((value) => Number(value) === width) ?? '2') as (typeof STROKE_WIDTHS)[number]}
+        onChange={(value) => onChange({ width: Number(value) })}
+        options={STROKE_WIDTHS.map((value) => ({ value, label: `${value} pt` }))}
+      />
+      {fill !== undefined && (
+        <>
+          <OptionSwitch label={t('pdf.edit.fill')} checked={fill !== null} onChange={(on) => onChange({ fill: on ? FILLS[0] : null })} />
+          {fill !== null && <Swatches label={t('pdf.edit.fillColor')} colors={FILLS} value={fill} onChange={(color) => onChange({ fill: color })} />}
+        </>
+      )}
+    </>
   )
 }
 
-export function SignPanel() {
+export function SignPanel({ variant }: { variant: Variant }) {
   const { t, i18n } = useTranslation()
   const reduce = useReducedMotion()
   const doc = useOpenPdf()
   const { showResults } = usePdfSession()
   const total = doc.pages.length
   const [page, setPage] = useState(0)
-  const [tool, setTool] = useState<PlaceTool>('select')
+  const [tool, setTool] = useState<PlaceTool>(variant === 'edit' ? 'text' : 'select')
+  const [pen, setPen] = useState({ stroke: STROKES[0] as string, width: 2, fill: null as string | null })
   const [items, setItems] = useState<Placed[]>([])
   const [history, setHistory] = useState<Placed[][]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -134,6 +143,7 @@ export function SignPanel() {
   }, [])
 
   useEffect(() => {
+    if (variant !== 'sign') return
     let cancelled = false
     readPdfFormFields(sourceOf(doc)).then(
       (found) => !cancelled && setFields(found.filter((field) => field.type !== 'other')),
@@ -142,7 +152,7 @@ export function SignPanel() {
     return () => {
       cancelled = true
     }
-  }, [doc])
+  }, [doc, variant])
 
   useEffect(() => {
     if (focusText && textArea.current) {
@@ -243,22 +253,43 @@ export function SignPanel() {
       case 'cover': {
         const w = 0.3
         const h = tool === 'highlight' ? pointH(16) : 0.05
-        add({
-          id,
-          kind: 'rect',
-          page,
-          u: clamp(u - w / 2, 0, 1 - w),
-          v: clamp(v - h / 2, 0, 1 - h),
-          w,
-          h,
-          variant: tool,
-          color: tool === 'highlight' ? HIGHLIGHTS[0] : COVERS[0],
-          opacity: tool === 'highlight' ? 0.4 : 1,
-        })
-        setTool('select')
+        createBox({ u: clamp(u - w / 2, 0, 1 - w), v: clamp(v - h / 2, 0, 1 - h), w, h, direction: 0 })
+        return
+      }
+      case 'box':
+      case 'ellipse':
+      case 'line':
+      case 'arrow': {
+        const w = 0.22
+        const h = tool === 'line' || tool === 'arrow' ? 0.002 : tool === 'ellipse' ? w * (info.width / info.height) : 0.12
+        createBox({ u: clamp(u - w / 2, 0, 1 - w), v: clamp(v - h / 2, 0, 1 - h), w, h, direction: 0 })
         return
       }
     }
+  }
+
+  function createBox(box: DraggedBox) {
+    const id = crypto.randomUUID()
+    if (tool === 'highlight' || tool === 'cover') {
+      add({ id, kind: 'rect', page, u: box.u, v: box.v, w: box.w, h: box.h, variant: tool, color: tool === 'highlight' ? HIGHLIGHTS[0] : COVERS[0], opacity: tool === 'highlight' ? 0.4 : 1 })
+      if (variant === 'sign') setTool('select')
+      return
+    }
+    const shape = SHAPE_FOR_TOOL[tool]
+    if (!shape) return
+    add({ id, kind: 'shape', page, u: box.u, v: box.v, w: box.w, h: box.h, shape, stroke: pen.stroke, width: pen.width, fill: shape === 'rect' || shape === 'ellipse' ? pen.fill : null, direction: box.direction })
+  }
+
+  const draw = (points: number[]) => {
+    const xs = points.filter((_, index) => index % 2 === 0)
+    const ys = points.filter((_, index) => index % 2 === 1)
+    const u = Math.min(...xs)
+    const v = Math.min(...ys)
+    const w = Math.max(0.002, Math.max(...xs) - u)
+    const h = Math.max(0.002, Math.max(...ys) - v)
+    const normalized = points.map((value, index) => (index % 2 === 0 ? (value - u) / w : (value - v) / h))
+    add({ id: crypto.randomUUID(), kind: 'ink', page, u, v, w, h, points: normalized, color: pen.stroke, width: pen.width })
+    setSelectedId(null)
   }
 
   const chooseTool = (next: PlaceTool) => {
@@ -305,7 +336,7 @@ export function SignPanel() {
       })
       showResults({
         artifacts: [
-          pdfArtifact(`${stemOf(doc)}-signed.pdf`, bytes, {
+          pdfArtifact(`${stemOf(doc)}-${variant === 'edit' ? 'edited' : 'signed'}.pdf`, bytes, {
             source: { name: doc.name, size: doc.bytes.length },
             note: items.some((item) => item.kind === 'rect' && item.variant === 'cover') ? t('pdf.sign.coverNote') : t('pdf.sign.note'),
           }),
@@ -328,7 +359,7 @@ export function SignPanel() {
         {selected ? (
           <>
             <p className="text-xs font-semibold">
-              {t(`pdf.sign.itemLabel.${selected.kind === 'image' && selected.signature ? 'signature' : selected.kind === 'rect' ? selected.variant : selected.kind}`)}
+              {t(`pdf.sign.itemLabel.${itemLabelKey(selected)}`)}
               <span className="ml-1.5 font-normal text-muted-foreground">{t('pdf.view.pageShort', { page: selected.page + 1 })}</span>
             </p>
             {selected.kind === 'text' && (
@@ -400,6 +431,24 @@ export function SignPanel() {
               </>
             )}
             {selected.kind === 'check' && <Swatches label={t('pdf.sign.color')} colors={TEXT_COLORS} value={selected.color} onChange={(color) => update(selected.id, { color })} />}
+            {(selected.kind === 'shape' || selected.kind === 'ink') && (
+              <PenControls
+                stroke={selected.kind === 'ink' ? selected.color : selected.stroke}
+                width={selected.width}
+                fill={selected.kind === 'shape' && (selected.shape === 'rect' || selected.shape === 'ellipse') ? selected.fill : undefined}
+                onChange={(patch) => {
+                  checkpoint()
+                  const { stroke, ...rest } = patch
+                  update(selected.id, { ...rest, ...(stroke ? (selected.kind === 'ink' ? { color: stroke } : { stroke }) : {}) })
+                }}
+              />
+            )}
+            {selected.kind === 'shape' && (selected.shape === 'line' || selected.shape === 'arrow') && (
+              <Button variant="outline" size="xs" className="self-start" onClick={() => update(selected.id, { direction: ((selected.direction + 1) % 4) as 0 | 1 | 2 | 3 })}>
+                <FlipHorizontal2Icon aria-hidden />
+                {t('pdf.edit.flip')}
+              </Button>
+            )}
             {selected.kind !== 'text' && (
               <OptionField label={t('pdf.sign.width', { value: Math.round(selected.w * 100) })}>
                 <Slider
@@ -429,6 +478,20 @@ export function SignPanel() {
               </Button>
             </div>
           </>
+        ) : variant === 'edit' ? (
+          SHAPE_FOR_TOOL[tool] || tool === 'draw' ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-xs font-semibold">{t('pdf.edit.pen')}</p>
+              <PenControls
+                stroke={pen.stroke}
+                width={pen.width}
+                fill={tool === 'box' || tool === 'ellipse' ? pen.fill : undefined}
+                onChange={(patch) => setPen((current) => ({ ...current, ...patch }))}
+              />
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">{t('pdf.edit.nothingSelected')}</p>
+          )
         ) : tool === 'signature' || signatures.length ? (
           <div className="flex flex-col gap-2">
             <p className="text-xs font-semibold">{t('pdf.sign.yourSignatures')}</p>
@@ -480,7 +543,8 @@ export function SignPanel() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-1 rounded-2xl border bg-card/80 p-1.5 shadow-xs" role="toolbar" aria-label={t('pdf.sign.tools')}>
-        {TOOLS.map(({ value, icon }) => {
+        {VARIANT_TOOLS[variant].map((value) => {
+          const icon = TOOL_ICONS[value]
           const active = tool === value
           return (
             <button
@@ -565,6 +629,8 @@ export function SignPanel() {
               selectedId={selectedId}
               tool={tool}
               onPlace={place}
+              onCreate={createBox}
+              onDraw={draw}
               onSelect={setSelectedId}
               onChange={update}
               onRemove={remove}
@@ -630,7 +696,7 @@ export function SignPanel() {
       <ActionBar>
         <Button onClick={() => void save()} disabled={busy || (!items.length && !formChanged)} className="min-w-40 flex-1 @[480px]:flex-none">
           {busy ? <LoaderCircleIcon className="animate-spin" aria-hidden /> : <FileCheck2Icon aria-hidden />}
-          {t('pdf.sign.save')}
+          {t(variant === 'edit' ? 'pdf.edit.save' : 'pdf.sign.save')}
         </Button>
         <span className="ml-auto text-[11px] text-muted-foreground tabular-nums" role="status" aria-live="polite">
           {items.length ? t('pdf.sign.summary', { count: items.length, pages: pagesWithItems.size }) : t('pdf.sign.summaryEmpty')}

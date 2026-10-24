@@ -59,13 +59,13 @@ function PositionPicker({ value, onChange, label }: { value: NumberPosition; onC
   )
 }
 
-export function StampPanel() {
+export function StampPanel({ mode }: { mode: 'watermark' | 'numbers' }) {
   const { t } = useTranslation()
   const reduce = useReducedMotion()
   const doc = useOpenPdf()
   const { showResults } = usePdfSession()
   const total = doc.pages.length
-  const [watermarkOn, setWatermarkOn] = useState(true)
+  const [watermarkOn, setWatermarkOn] = useState(mode === 'watermark')
   const [watermark, setWatermark] = useState<Watermark>({
     text: t('pdf.stamp.defaultText'),
     fontSize: 64,
@@ -75,7 +75,7 @@ export function StampPanel() {
     layout: 'center',
     bold: true,
   })
-  const [numbersOn, setNumbersOn] = useState(false)
+  const [numbersOn, setNumbersOn] = useState(mode === 'numbers')
   const [numbers, setNumbers] = useState<PageNumberSpec>({ template: 'Page {n} of {total}', position: 'bottom-center', start: 1, fontSize: 10, margin: 28, color: NUMBER_COLORS[1] })
   const [customTemplate, setCustomTemplate] = useState(false)
   const [range, setRange] = useState('')
@@ -110,7 +110,7 @@ export function StampPanel() {
         pages: targets,
       })
       showResults({
-        artifacts: [pdfArtifact(`${stemOf(doc)}-stamped.pdf`, bytes, { source: { name: doc.name, size: doc.bytes.length } })],
+        artifacts: [pdfArtifact(`${stemOf(doc)}-${mode === 'numbers' ? 'numbered' : 'watermarked'}.pdf`, bytes, { source: { name: doc.name, size: doc.bytes.length } })],
       })
     })
 
@@ -166,6 +166,7 @@ export function StampPanel() {
           <PanelSection
             title={t('pdf.stamp.numbers')}
             icon={<HashIcon />}
+            className={mode === 'numbers' ? 'order-first' : undefined}
             actions={<Toggle id="pdf-numbers" checked={numbersOn} onChange={setNumbersOn} label={t('pdf.stamp.numbersToggle')} />}
           >
             <AnimatePresence initial={false}>

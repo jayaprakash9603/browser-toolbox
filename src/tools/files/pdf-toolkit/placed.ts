@@ -1,7 +1,26 @@
-import type { EditItem, FontKey } from '@/core/engines/pdf/edit'
+import type { EditItem, FontKey, ShapeKind } from '@/core/engines/pdf/edit'
+import type { LineDirection } from '@/core/engines/pdf/geometry'
 import { pdfSafeText } from './raster'
 
-export type PlaceTool = 'select' | 'signature' | 'text' | 'date' | 'check' | 'highlight' | 'cover' | 'image'
+export type PlaceTool =
+  | 'select'
+  | 'signature'
+  | 'text'
+  | 'date'
+  | 'check'
+  | 'highlight'
+  | 'cover'
+  | 'image'
+  | 'box'
+  | 'ellipse'
+  | 'line'
+  | 'arrow'
+  | 'draw'
+
+/** Tools that draw a box by dragging; a plain click places a default size. */
+export const DRAG_TOOLS: ReadonlySet<PlaceTool> = new Set(['highlight', 'cover', 'box', 'ellipse', 'line', 'arrow'])
+
+export const SHAPE_FOR_TOOL: Partial<Record<PlaceTool, ShapeKind>> = { box: 'rect', ellipse: 'ellipse', line: 'line', arrow: 'arrow' }
 
 interface Base {
   id: string
@@ -17,6 +36,8 @@ export type Placed =
   | (Base & { kind: 'image'; w: number; h: number; url: string; bytes: Uint8Array; format: 'png' | 'jpg'; signature: boolean })
   | (Base & { kind: 'rect'; w: number; h: number; color: string; opacity: number; variant: 'cover' | 'highlight' })
   | (Base & { kind: 'check'; w: number; h: number; color: string })
+  | (Base & { kind: 'shape'; w: number; h: number; shape: ShapeKind; stroke: string; width: number; fill: string | null; direction: LineDirection })
+  | (Base & { kind: 'ink'; w: number; h: number; points: number[]; color: string; width: number })
 
 export type BoxItem = Exclude<Placed, { kind: 'text' }>
 
@@ -30,6 +51,14 @@ export interface PendingImage {
 }
 
 export const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
+
+/** Key under `pdf.sign.itemLabel` naming an item for screen readers and the properties panel. */
+export function itemLabelKey(item: Placed): string {
+  if (item.kind === 'image') return item.signature ? 'signature' : 'image'
+  if (item.kind === 'rect') return item.variant
+  if (item.kind === 'shape') return item.shape
+  return item.kind
+}
 
 export async function toEditItems(items: Placed[]): Promise<EditItem[]> {
   const out: EditItem[] = []
@@ -51,6 +80,12 @@ export async function toEditItems(items: Placed[]): Promise<EditItem[]> {
         break
       case 'check':
         out.push({ kind: 'check', page, u, v, w: item.w, h: item.h, color: item.color })
+        break
+      case 'shape':
+        out.push({ kind: 'shape', page, u, v, w: item.w, h: item.h, shape: item.shape, stroke: item.stroke, width: item.width, fill: item.fill ?? undefined, direction: item.direction })
+        break
+      case 'ink':
+        out.push({ kind: 'ink', page, u, v, w: item.w, h: item.h, points: item.points, color: item.color, width: item.width })
         break
     }
   }

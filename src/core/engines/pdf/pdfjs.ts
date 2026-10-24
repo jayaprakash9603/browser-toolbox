@@ -133,3 +133,179 @@ export async function extractPageText(doc: PDFDocumentProxy, pageNumber: number)
   page.cleanup()
   return text.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim()
 }
+
+interface DecodedImage {
+  width: number
+  height: number
+  bitmap?: ImageBitmap
+  data?: Uint8ClampedArray
+  /** 1 = 1-bit grey, 2 = RGB, 3 = RGBA. */
+  kind?: number
+}
+
+function decodedToCanvas(image: DecodedImage): HTMLCanvasElement | null {
+  const canvas = document.createElement('canvas')
+  canvas.width = image.width
+  canvas.height = image.height
+  const context = canvas.getContext('2d')
+  if (!context) return null
+  if (image.bitmap) {
+    context.drawImage(image.bitmap, 0, 0)
+    return canvas
+  }
+  if (!image.data) return null
+  const pixels = context.createImageData(image.width, image.height)
+  const out = pixels.data
+  const source = image.data
+  const count = image.width * image.height
+  if (image.kind === 3) out.set(source.subarray(0, count * 4))
+  else if (image.kind === 2) {
+    for (let index = 0; index < count; index += 1) {
+      out[index * 4] = source[index * 3]
+      out[index * 4 + 1] = source[index * 3 + 1]
+      out[index * 4 + 2] = source[index * 3 + 2]
+      out[index * 4 + 3] = 255
+    }
+  } else {
+    const rowBytes = (image.width + 7) >> 3
+    for (let y = 0; y < image.height; y += 1) {
+      for (let x = 0; x < image.width; x += 1) {
+        const bit = (source[y * rowBytes + (x >> 3)] >> (7 - (x & 7))) & 1
+        const value = bit ? 255 : 0
+        const offset = (y * image.width + x) * 4
+        out[offset] = out[offset + 1] = out[offset + 2] = value
+        out[offset + 3] = 255
+      }
+    }
+  }
+  context.putImageData(pixels, 0, 0)
+  return canvas
+}
+
+/** Pictures drawn on a page, decoded at their stored resolution. `seen` skips images already returned for earlier pages. */
+export async function extractPageImages(doc: PDFDocumentProxy, pageNumber: number, seen: Set<string> = new Set(), minSize = 24): Promise<HTMLCanvasElement[]> {
+  const lib = await loadPdfJs()
+  const page = await doc.getPage(pageNumber)
+  const operators = await page.getOperatorList()
+  const canvases: HTMLCanvasElement[] = []
+  const paint = new Set([lib.OPS.paintImageXObject, lib.OPS.paintImageXObjectRepeat])
+  for (let index = 0; index < operators.fnArray.length; index += 1) {
+    if (!paint.has(operators.fnArray[index])) continue
+    const id = operators.argsArray[index]?.[0]
+    if (typeof id !== 'string' || seen.has(id)) continue
+    seen.add(id)
+    const store = id.startsWith('g_') ? page.commonObjs : page.objs
+    const image = await new Promise<DecodedImage | null>((resolve) => {
+      try {
+        store.get(id, (value: unknown) => resolve((value as DecodedImage) ?? null))
+      } catch {
+        resolve(null)
+      }
+    })
+    if (!image || image.width < minSize || image.height < minSize) continue
+    const canvas = decodedToCanvas(image)
+    if (canvas) canvases.push(canvas)
+  }
+  page.cleanup()
+  return canvases
+}
+
+/** One horizontal run of text in display points, measured from the page's top-left corner. */
+export interface TextRun {
+  str: string
+  x: number
+  /** Top of the glyph box. */
+  y: number
+  w: number
+  h: number
+  /** Font size in points. */
+  size: number
+  bold: boolean
+  italic: boolean
+  /** Ends a line in the source. */
+  eol: boolean
+}
+
+export interface PageLink {
+  url: string
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
+export interface PageText {
+  width: number
+  height: number
+  runs: TextRun[]
+  links: PageLink[]
+}
+
+const BOLD_FONT = /bold|black|heavy|semibold|demi/i
+const ITALIC_FONT = /italic|oblique/i
+
+/**
+ * Positioned text of one page. `fonts` also loads the font program names so bold and
+ * italic runs can be told apart, which costs a full parse of the page.
+ */
+export async function readPageText(doc: PDFDocumentProxy, pageNumber: number, options: { fonts?: boolean; links?: boolean } = {}): Promise<PageText> {
+  const lib = await loadPdfJs()
+  const page = await doc.getPage(pageNumber)
+  const viewport = page.getViewport({ scale: 1 })
+  const content = await page.getTextContent()
+  const fontNames = new Map<string, string>()
+  if (options.fonts) {
+    await page.getOperatorList()
+    for (const item of content.items) {
+      if (!('fontName' in item) || fontNames.has(item.fontName)) continue
+      try {
+        const font = page.commonObjs.get(item.fontName) as { name?: string; bold?: boolean; italic?: boolean } | undefined
+        fontNames.set(item.fontName, `${font?.name ?? ''}${font?.bold ? ' bold' : ''}${font?.italic ? ' italic' : ''}`)
+      } catch {
+        fontNames.set(item.fontName, '')
+      }
+    }
+  }
+  const runs: TextRun[] = []
+  for (const item of content.items) {
+    if (!('str' in item)) continue
+    const text = item as TextItem
+    if (!text.str) {
+      if (text.hasEOL && runs.length) runs[runs.length - 1].eol = true
+      continue
+    }
+    const tx = lib.Util.transform(viewport.transform, text.transform) as number[]
+    // Skip vertical and rotated runs; they do not take part in line layout.
+    if (Math.abs(tx[1]) > Math.abs(tx[0]) * 0.1 || Math.abs(tx[2]) > Math.abs(tx[3]) * 0.1) continue
+    const size = Math.hypot(tx[2], tx[3]) || text.height || 10
+    const width = Math.abs(text.width) || text.str.length * size * 0.5
+    const name = fontNames.get(text.fontName) ?? ''
+    runs.push({
+      str: text.str,
+      x: tx[4],
+      y: tx[5] - size * 0.86,
+      w: width,
+      h: size,
+      size,
+      bold: BOLD_FONT.test(name),
+      italic: ITALIC_FONT.test(name),
+      eol: text.hasEOL,
+    })
+  }
+  const links: PageLink[] = []
+  if (options.links) {
+    const annotations = (await page.getAnnotations()) as { subtype?: string; url?: string; rect?: number[] }[]
+    for (const annotation of annotations) {
+      if (annotation.subtype !== 'Link' || !annotation.url || !annotation.rect) continue
+      const m = viewport.transform
+      const [ax, ay, bx, by] = annotation.rect
+      const x1 = m[0] * ax + m[2] * ay + m[4]
+      const y1 = m[1] * ax + m[3] * ay + m[5]
+      const x2 = m[0] * bx + m[2] * by + m[4]
+      const y2 = m[1] * bx + m[3] * by + m[5]
+      links.push({ url: annotation.url, x: Math.min(x1, x2), y: Math.min(y1, y2), w: Math.abs(x2 - x1), h: Math.abs(y2 - y1) })
+    }
+  }
+  page.cleanup()
+  return { width: viewport.width, height: viewport.height, runs, links }
+}

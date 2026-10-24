@@ -47,6 +47,48 @@ export function localToPdf(box: PageBox, lx: number, ly: number): Point {
   return toPdfPoint(box, lx / display.width, 1 - ly / display.height)
 }
 
+/** Corner a line or arrow starts from: 0 top-left, 1 top-right, 2 bottom-right, 3 bottom-left. */
+export type LineDirection = 0 | 1 | 2 | 3
+
+/** Ends of a line across a `w` × `h` box, with y growing downward. */
+export function lineEnds(direction: LineDirection, w: number, h: number): [Point, Point] {
+  const corners: Point[] = [
+    { x: 0, y: 0 },
+    { x: w, y: 0 },
+    { x: w, y: h },
+    { x: 0, y: h },
+  ]
+  return [corners[direction], corners[(direction + 2) % 4]]
+}
+
+/** The two barbs of an arrowhead at `to`. */
+export function arrowBarbs(from: Point, to: Point, size: number): [Point, Point] {
+  const angle = Math.atan2(to.y - from.y, to.x - from.x)
+  const spread = Math.PI / 7
+  return [
+    { x: to.x - size * Math.cos(angle - spread), y: to.y - size * Math.sin(angle - spread) },
+    { x: to.x - size * Math.cos(angle + spread), y: to.y - size * Math.sin(angle + spread) },
+  ]
+}
+
+/** Four cubic Bézier segments approximating an ellipse inside a `w` × `h` box: start point, then [c1, c2, end] triples. */
+export function ellipseCurves(w: number, h: number): { start: Point; curves: [Point, Point, Point][] } {
+  const k = 0.5522847498
+  const rx = w / 2
+  const ry = h / 2
+  const cx = rx
+  const cy = ry
+  return {
+    start: { x: cx + rx, y: cy },
+    curves: [
+      [{ x: cx + rx, y: cy + k * ry }, { x: cx + k * rx, y: cy + ry }, { x: cx, y: cy + ry }],
+      [{ x: cx - k * rx, y: cy + ry }, { x: cx - rx, y: cy + k * ry }, { x: cx - rx, y: cy }],
+      [{ x: cx - rx, y: cy - k * ry }, { x: cx - k * rx, y: cy - ry }, { x: cx, y: cy - ry }],
+      [{ x: cx + k * rx, y: cy - ry }, { x: cx + rx, y: cy - k * ry }, { x: cx + rx, y: cy }],
+    ],
+  }
+}
+
 /** Rotates (dx, dy) counter-clockwise by `degrees`. */
 export function rotateVector(dx: number, dy: number, degrees: number): Point {
   const radians = (degrees * Math.PI) / 180

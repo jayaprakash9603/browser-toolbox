@@ -1,29 +1,22 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, useReducedMotion } from 'motion/react'
-import { ArrowRightIcon, FileImageIcon, FileTextIcon, FileTypeIcon, ImagesIcon, LoaderCircleIcon, Settings2Icon, type LucideIcon } from 'lucide-react'
+import { FileImageIcon, LoaderCircleIcon, Settings2Icon } from 'lucide-react'
 
 import { DEFAULT_DOCUMENT_SETTINGS, type DocBlock, type DocumentSettings } from '@/core/engines/files/document'
 import { docToDocx } from '@/core/engines/files/docx'
-import { extractPageText, renderPdfPageBlob } from '@/core/engines/pdf/pdfjs'
-import { bytesBlob, createArtifact, FileGlyph, type FileArtifact } from '@/shared/components/files'
+import { canvasToBlob, extractPageImages, extractPageText, renderPdfPageBlob } from '@/core/engines/pdf/pdfjs'
+import { bytesBlob, createArtifact, type FileArtifact } from '@/shared/components/files'
 import { ActionBar, OptionField, OptionSelect, OptionSwitch, PanelError, PanelSection } from '@/shared/components/toolkit'
 import { Input } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
 import { Segmented } from '@/shared/components/ui/segmented'
 import { Slider } from '@/shared/components/ui/slider'
-import { cn } from '@/shared/utils/cn'
 import { optionalSelection, rangeIssueMessage } from './rangeText'
 import { stemOf, useOpenPdf, usePdfSession } from './session'
 import { useTask } from './useTask'
 
 type Target = 'images' | 'text' | 'word'
-
-const TARGETS: { value: Target; icon: LucideIcon; glyph: string }[] = [
-  { value: 'images', icon: ImagesIcon, glyph: 'PNG' },
-  { value: 'text', icon: FileTextIcon, glyph: 'TXT' },
-  { value: 'word', icon: FileTypeIcon, glyph: 'DOCX' },
-]
 
 const DPIS = ['72', '150', '220', '300'] as const
 
@@ -44,14 +37,14 @@ function toBlocks(pages: string[], headings: boolean): DocBlock[] {
   return blocks
 }
 
-export function ConvertPanel() {
+export function ConvertPanel({ target }: { target: Target }) {
   const { t } = useTranslation()
   const reduce = useReducedMotion()
   const doc = useOpenPdf()
   const { showResults } = usePdfSession()
   const total = doc.pages.length
-  const [target, setTarget] = useState<Target>('images')
-  const [format, setFormat] = useState<'png' | 'jpg'>('png')
+  const [imageMode, setImageMode] = useState<'pages' | 'extract'>('pages')
+  const [format, setFormat] = useState<'png' | 'jpg'>('jpg')
   const [dpi, setDpi] = useState<(typeof DPIS)[number]>('150')
   const [quality, setQuality] = useState(85)
   const [range, setRange] = useState('')
@@ -77,7 +70,27 @@ export function ConvertPanel() {
     run(async () => {
       setProgress({ done: 0, total: pages.length })
       const artifacts: FileArtifact[] = []
-      if (target === 'images') {
+      if (target === 'images' && imageMode === 'extract') {
+        const seen = new Set<string>()
+        const type = format === 'png' ? 'image/png' : 'image/jpeg'
+        for (const [position, page] of pages.entries()) {
+          const canvases = await extractPageImages(doc.handle, page + 1, seen)
+          for (const [index, canvas] of canvases.entries()) {
+            const blob = await canvasToBlob(canvas, type, quality / 100)
+            artifacts.push(
+              createArtifact({
+                name: `${stem}-p${page + 1}-image-${index + 1}.${format}`,
+                blob,
+                format: format.toUpperCase(),
+                preview: { kind: 'image', width: canvas.width, height: canvas.height },
+              }),
+            )
+            canvas.width = 0
+          }
+          setProgress({ done: position + 1, total: pages.length })
+        }
+        if (!artifacts.length) throw new Error(t('pdf.convert.noImages'))
+      } else if (target === 'images') {
         const type = format === 'png' ? 'image/png' : 'image/jpeg'
         for (const [position, page] of pages.entries()) {
           const blob = await renderPdfPageBlob(doc.handle, page + 1, { scale: Number(dpi) / 72, type, quality: quality / 100 })
@@ -127,48 +140,23 @@ export function ConvertPanel() {
 
   return (
     <div className="flex flex-col gap-3">
-      <PanelSection title={t('pdf.convert.targetTitle')} icon={<FileImageIcon />}>
-        <div role="radiogroup" aria-label={t('pdf.convert.targetTitle')} className="grid grid-cols-3 gap-2">
-          {TARGETS.map(({ value, icon: Icon, glyph }) => {
-            const active = value === target
-            return (
-              <button
-                key={value}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                onClick={() => setTarget(value)}
-                className={cn(
-                  'group relative flex cursor-pointer flex-col items-center gap-1.5 rounded-xl border bg-background/60 px-2 py-3 text-center outline-none transition-[border-color] hover:border-foreground/20 focus-visible:ring-2 focus-visible:ring-ring',
-                  active && 'border-transparent',
-                )}
-              >
-                {active && (
-                  <motion.span
-                    layoutId="pdf-convert-target"
-                    className="absolute inset-0 rounded-xl bg-primary/[0.06] ring-[1.5px] ring-primary/70"
-                    transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 34 }}
-                    aria-hidden
-                  />
-                )}
-                <span className="relative flex items-center gap-1" aria-hidden>
-                  <FileGlyph extension="PDF" className="h-8 opacity-70 transition-transform group-hover:-translate-x-0.5" />
-                  <ArrowRightIcon className="size-3 text-muted-foreground" />
-                  <FileGlyph extension={glyph} className="h-9 transition-transform group-hover:translate-x-0.5" />
-                </span>
-                <span className="relative flex items-center gap-1 text-xs font-semibold">
-                  <Icon className="size-3.5 text-muted-foreground" aria-hidden />
-                  {t(`pdf.convert.${value}`)}
-                </span>
-                <span className="relative hidden text-[10px] text-muted-foreground @[520px]:block">{t(`pdf.convert.${value}Hint`)}</span>
-              </button>
-            )
-          })}
-        </div>
-      </PanelSection>
-
       <PanelSection title={t('pdf.convert.options')} icon={<Settings2Icon />}>
-        <motion.div key={target} initial={reduce ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }} className="flex flex-col gap-3">
+        <motion.div key={imageMode} initial={reduce ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }} className="flex flex-col gap-3">
+          {target === 'images' && (
+            <Segmented
+              ariaLabel={t('pdf.convert.imageMode')}
+              value={imageMode}
+              onValueChange={setImageMode}
+              options={[
+                { value: 'pages', label: t('pdf.convert.modePages') },
+                { value: 'extract', label: t('pdf.convert.modeExtract') },
+              ]}
+              className="w-full max-w-md [&>button]:flex-1"
+            />
+          )}
+          {target === 'images' && (
+            <p className="text-[11px] text-muted-foreground">{imageMode === 'pages' ? t('pdf.convert.modePagesHint') : t('pdf.convert.modeExtractHint')}</p>
+          )}
           {target === 'images' && (
             <div className="grid gap-3 @[560px]:grid-cols-3">
               <OptionField label={t('pdf.convert.format')}>
@@ -188,6 +176,7 @@ export function ConvertPanel() {
                 label={t('pdf.convert.resolution')}
                 value={dpi}
                 onChange={setDpi}
+                disabled={imageMode === 'extract'}
                 options={DPIS.map((value) => ({ value, label: t(`pdf.convert.dpi${value}`) }))}
               />
               <OptionField label={t('pdf.convert.quality', { value: quality })}>
@@ -222,12 +211,6 @@ export function ConvertPanel() {
             {!selection.ok && <span className="text-[11px] text-destructive">{rangeIssueMessage(t, selection.issue)}</span>}
           </OptionField>
         </motion.div>
-        <p className="text-[11px] text-muted-foreground">
-          {t('pdf.convert.otherWay')}{' '}
-          <a href="#/tools/files/file-toolkit?tab=pdf" className="font-medium text-primary underline-offset-2 hover:underline">
-            {t('pdf.convert.otherWayLink')}
-          </a>
-        </p>
       </PanelSection>
 
       {error && <PanelError message={error} />}
@@ -235,7 +218,9 @@ export function ConvertPanel() {
       <ActionBar progress={progress ? progress.done / Math.max(1, progress.total) : null}>
         <Button onClick={() => void convert()} disabled={busy || !selection.ok || !pages.length} className="min-w-40 flex-1 @[480px]:flex-none">
           {busy ? <LoaderCircleIcon className="animate-spin" aria-hidden /> : <FileImageIcon aria-hidden />}
-          {progress ? t('pdf.convert.progress', { done: progress.done, total: progress.total }) : t(`pdf.convert.run.${target}`, { count: pages.length })}
+          {progress
+            ? t('pdf.convert.progress', { done: progress.done, total: progress.total })
+            : t(`pdf.convert.run.${target === 'images' && imageMode === 'extract' ? 'extract' : target}`, { count: pages.length })}
         </Button>
         <span className="ml-auto text-[11px] text-muted-foreground tabular-nums" role="status" aria-live="polite">
           {t('pdf.convert.pageCount', { count: pages.length })}

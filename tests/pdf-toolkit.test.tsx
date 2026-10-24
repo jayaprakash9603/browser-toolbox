@@ -7,6 +7,7 @@ import App from '@/app/App'
 import { protectPdf } from '@/core/engines/pdf/edit'
 import { registerModules } from '@/modules'
 import { bytesBlob } from '@/shared/components/files'
+import { TOOLS } from '@/tools/files/pdf-toolkit/toolList'
 
 const PASSWORD = 'open-sesame'
 
@@ -51,6 +52,7 @@ beforeEach(() => {
   URL.createObjectURL = vi.fn(() => 'blob:mock')
   URL.revokeObjectURL = vi.fn()
   Element.prototype.scrollTo ??= () => undefined
+  Element.prototype.scrollIntoView ??= () => undefined
   vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
   window.location.hash = '#/tools/files/pdf-toolkit'
 })
@@ -66,25 +68,36 @@ async function pdfFile(pages: number, name = 'report.pdf', password?: string): P
 }
 
 describe('PDF Toolkit', () => {
-  it('opens a PDF to read and search it, with all nine tools available', async () => {
+  it('lists every tool by category, filters them by search and opens one', async () => {
     const user = userEvent.setup()
     render(<App />)
 
-    const input = await screen.findByLabelText('Open a PDF', {}, LOAD)
-    const tiles = screen.getByRole('tablist', { name: 'PDF Toolkit tools' })
-    expect(within(tiles).getAllByRole('tab')).toHaveLength(9)
-    expect(within(tiles).getByRole('tab', { name: /^Read/ })).toHaveAttribute('data-state', 'active')
+    const search = await screen.findByLabelText('Search PDF tools', {}, LOAD)
+    const categories = screen.getByRole('tablist', { name: 'Tool categories' })
+    expect(within(categories).getAllByRole('tab')).toHaveLength(8)
+    expect(within(categories).getByRole('tab', { selected: true })).toHaveTextContent(`All${TOOLS.length}`)
+    expect(screen.getByRole('button', { name: 'Open Merge PDF' })).toBeInTheDocument()
 
-    await user.upload(input, await pdfFile(3))
-    expect(await screen.findByText('report.pdf', {}, LOAD)).toBeInTheDocument()
-    expect(screen.getByText('3 pages')).toBeInTheDocument()
-    await waitFor(() => expect(document.querySelectorAll('img[src="blob:mock"]').length).toBeGreaterThanOrEqual(3))
+    await user.type(search, 'docx')
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Open Merge PDF' })).not.toBeInTheDocument())
+    expect(screen.getByRole('button', { name: 'Open Word to PDF' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Open PDF to Word' })).toBeInTheDocument()
 
-    await user.type(screen.getByLabelText('Find in document'), 'report{Enter}')
-    expect(await screen.findByText('3 matches on 3 pages')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Open Word to PDF' }))
+    expect(await screen.findByRole('heading', { name: 'Word to PDF' }, LOAD)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'All PDF tools' }))
+    expect(await screen.findByText('Recently used', {}, LOAD)).toBeInTheDocument()
+  }, 30_000)
+
+  it('maps old deep-link tabs to their new tools', async () => {
+    window.location.hash = '#/tools/files/pdf-toolkit?tab=stamp'
+    render(<App />)
+
+    expect(await screen.findByRole('heading', { name: 'Add watermark' }, LOAD)).toBeInTheDocument()
+    expect(screen.getByLabelText('Open a PDF')).toBeInTheDocument()
   }, 20_000)
 
-  it('splits a PDF page by page and previews every part', async () => {
+  it('splits a PDF page by page and lists every part in the results', async () => {
     window.location.hash = '#/tools/files/pdf-toolkit?tab=split'
     const user = userEvent.setup()
     render(<App />)
@@ -93,9 +106,14 @@ describe('PDF Toolkit', () => {
     await user.click(await screen.findByRole('radio', { name: 'Each page' }, LOAD))
     await user.click(screen.getByRole('button', { name: 'Split into 4 files' }))
 
-    const dialog = await screen.findByRole('dialog', {}, LOAD)
-    expect(within(dialog).getByLabelText('File name')).toHaveValue('report-page-1')
-    expect(within(dialog).getByText('1 / 4')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '4 files are ready' }, LOAD)).toBeInTheDocument()
+    const files = screen.getByRole('list', { name: 'Files' })
+    expect(within(files).getAllByRole('listitem')).toHaveLength(4)
+    expect(within(files).getByText('report-page-1.pdf')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Download all (ZIP)' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Back to options' }))
+    expect(screen.getByRole('button', { name: 'Split into 4 files' })).toBeVisible()
   }, 20_000)
 
   it('merges two PDFs in order into one file', async () => {
@@ -108,32 +126,36 @@ describe('PDF Toolkit', () => {
     expect(await screen.findByText('5 pages in total', {}, LOAD)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Merge 2 files' }))
-    const dialog = await screen.findByRole('dialog', {}, LOAD)
-    expect(within(dialog).getByLabelText('File name')).toHaveValue('merged')
-    expect(await within(dialog).findByText('Page 5 of 5', {}, LOAD)).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Your file is ready' }, LOAD)).toBeInTheDocument()
+    expect(screen.getAllByText('merged.pdf').length).toBeGreaterThan(0)
+
+    window.location.hash = '#/tools/files/pdf-toolkit?tab=compress'
+    expect(await screen.findByRole('heading', { name: 'Compress PDF' }, LOAD)).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Your file is ready' })).not.toBeInTheDocument())
+    expect(screen.getByLabelText('Open a PDF')).toBeInTheDocument()
   }, 20_000)
 
-  it('deletes a page and keeps editing the organized result', async () => {
-    window.location.hash = '#/tools/files/pdf-toolkit?tab=organize'
+  it('removes pages picked by range and keeps working on the result', async () => {
+    window.location.hash = '#/tools/files/pdf-toolkit?tab=remove-pages'
     const user = userEvent.setup()
     render(<App />)
 
     await user.upload(await screen.findByLabelText('Open a PDF', {}, LOAD), await pdfFile(3))
-    await user.click(await screen.findByRole('button', { name: 'Delete page 2' }, LOAD))
-    expect(screen.getByText('Unsaved changes')).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Save PDF (2 pages)' }))
+    await user.type(await screen.findByLabelText('Select pages by range', {}, LOAD), '2')
+    await user.click(screen.getByRole('button', { name: 'Select' }))
+    expect(screen.getByText('1 of 3 selected')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Remove 1 page' }))
 
-    const dialog = await screen.findByRole('dialog', {}, LOAD)
-    expect(within(dialog).getByLabelText('File name')).toHaveValue('report-organized')
-    await user.click(within(dialog).getByRole('button', { name: 'Keep editing' }))
+    expect(await screen.findByRole('heading', { name: 'Your file is ready' }, LOAD)).toBeInTheDocument()
+    expect(screen.getByText('1 page removed, 2 left.')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Keep working on this' }))
 
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
-    expect(await screen.findByText('Edited copy')).toBeInTheDocument()
-    expect(screen.getByText('No changes yet')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save PDF (2 pages)' })).toBeInTheDocument()
+    expect(await screen.findByText('Edited copy', {}, LOAD)).toBeInTheDocument()
+    expect(screen.getByText('2 pages')).toBeInTheDocument()
   }, 20_000)
 
   it('asks for the password of a protected PDF and offers to remove it', async () => {
+    window.location.hash = '#/tools/files/pdf-toolkit?tab=unlock'
     const user = userEvent.setup()
     render(<App />)
 
@@ -148,8 +170,6 @@ describe('PDF Toolkit', () => {
     await user.type(screen.getByLabelText('Password'), PASSWORD)
     await user.click(screen.getByRole('button', { name: 'Unlock' }))
     expect(await screen.findByText('Password protected', {}, LOAD)).toBeInTheDocument()
-
-    await user.click(screen.getByRole('tab', { name: /^Protect/ }))
-    expect(await screen.findByRole('button', { name: 'Remove password' }, LOAD)).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Unlock PDF' }, LOAD)).toBeInTheDocument()
   }, 20_000)
 })

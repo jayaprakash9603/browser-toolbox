@@ -1,118 +1,217 @@
-import { useState, type ComponentType } from 'react'
+import { lazy, Suspense, useRef, useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
-import * as TabsPrimitive from '@radix-ui/react-tabs'
-import { FilePenLineIcon } from 'lucide-react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 
-import { PreviewDialog } from '@/shared/components/files'
-import { GlyphPairArt, ModeTiles, ToolkitHero } from '@/shared/components/toolkit'
+import type { FileArtifact } from '@/shared/components/files'
 import { ToolPage } from '@/shared/components/ToolPage'
-import { Button } from '@/shared/components/ui/button'
-import { TabsContent } from '@/shared/components/ui/tabs'
+import { Skeleton } from '@/shared/components/ui/skeleton'
 import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
+import { cn } from '@/shared/utils/cn'
 import { useFileTool } from '../_shared'
-import { CompressPanel } from './CompressPanel'
-import { ConvertPanel } from './ConvertPanel'
+import { Catalog } from './Catalog'
 import { DocumentBar, OpenDocument } from './DocumentChrome'
-import { MergePanel } from './MergePanel'
-import { MODE_META, MODES, STANDALONE_MODES, type Mode } from './modes'
-import { OrganizePanel } from './OrganizePanel'
-import { ProtectPanel } from './ProtectPanel'
-import { PdfSessionContext, usePdfSessionController, type OpenPdf, type Results } from './session'
-import { SignPanel } from './SignPanel'
-import { SplitPanel } from './SplitPanel'
-import { StampPanel } from './StampPanel'
-import { ViewPanel } from './ViewPanel'
+import { ResultsView } from './ResultsView'
+import { PdfSessionContext, usePdfSessionController } from './session'
+import { WorkspaceBar } from './ToolBar'
+import { LEGACY_TABS, TOOL_BY_ID, TOOL_IDS, type ToolId } from './toolList'
 
-const PANELS: Record<Exclude<Mode, 'merge'>, ComponentType> = {
-  view: ViewPanel,
-  organize: OrganizePanel,
-  split: SplitPanel,
-  compress: CompressPanel,
-  sign: SignPanel,
-  stamp: StampPanel,
-  convert: ConvertPanel,
-  protect: ProtectPanel,
+const ViewPanel = lazy(() => import('./ViewPanel').then((module) => ({ default: module.ViewPanel })))
+const OrganizePanel = lazy(() => import('./OrganizePanel').then((module) => ({ default: module.OrganizePanel })))
+const MergePanel = lazy(() => import('./MergePanel').then((module) => ({ default: module.MergePanel })))
+const SplitPanel = lazy(() => import('./SplitPanel').then((module) => ({ default: module.SplitPanel })))
+const CompressPanel = lazy(() => import('./CompressPanel').then((module) => ({ default: module.CompressPanel })))
+const SignPanel = lazy(() => import('./SignPanel').then((module) => ({ default: module.SignPanel })))
+const StampPanel = lazy(() => import('./StampPanel').then((module) => ({ default: module.StampPanel })))
+const ConvertPanel = lazy(() => import('./ConvertPanel').then((module) => ({ default: module.ConvertPanel })))
+const ProtectPanel = lazy(() => import('./ProtectPanel').then((module) => ({ default: module.ProtectPanel })))
+const UnlockPanel = lazy(() => import('./UnlockPanel').then((module) => ({ default: module.UnlockPanel })))
+const PagesPanel = lazy(() => import('./PagesPanel').then((module) => ({ default: module.PagesPanel })))
+const RotatePanel = lazy(() => import('./RotatePanel').then((module) => ({ default: module.RotatePanel })))
+const CropPanel = lazy(() => import('./CropPanel').then((module) => ({ default: module.CropPanel })))
+const FormsPanel = lazy(() => import('./FormsPanel').then((module) => ({ default: module.FormsPanel })))
+const RedactPanel = lazy(() => import('./RedactPanel').then((module) => ({ default: module.RedactPanel })))
+const ComparePanel = lazy(() => import('./ComparePanel').then((module) => ({ default: module.ComparePanel })))
+const PdfaPanel = lazy(() => import('./PdfaPanel').then((module) => ({ default: module.PdfaPanel })))
+const PdfToOfficePanel = lazy(() => import('./PdfToOfficePanel').then((module) => ({ default: module.PdfToOfficePanel })))
+const SummarizePanel = lazy(() => import('./SummarizePanel').then((module) => ({ default: module.SummarizePanel })))
+const TranslatePanel = lazy(() => import('./TranslatePanel').then((module) => ({ default: module.TranslatePanel })))
+const MarkdownPanel = lazy(() => import('./MarkdownPanel').then((module) => ({ default: module.MarkdownPanel })))
+const ImagesToPdfPanel = lazy(() => import('./ImagesToPdfPanel').then((module) => ({ default: module.ImagesToPdfPanel })))
+const OfficeToPdfPanel = lazy(() => import('./OfficeToPdfPanel').then((module) => ({ default: module.OfficeToPdfPanel })))
+const HtmlToPdfPanel = lazy(() => import('./HtmlToPdfPanel').then((module) => ({ default: module.HtmlToPdfPanel })))
+const ScanPanel = lazy(() => import('./ScanPanel').then((module) => ({ default: module.ScanPanel })))
+const RepairPanel = lazy(() => import('./RepairPanel').then((module) => ({ default: module.RepairPanel })))
+
+const PANELS: Record<ToolId, () => ReactElement> = {
+  merge: () => <MergePanel />,
+  split: () => <SplitPanel />,
+  'remove-pages': () => <PagesPanel mode="remove" />,
+  'extract-pages': () => <PagesPanel mode="extract" />,
+  organize: () => <OrganizePanel />,
+  scan: () => <ScanPanel />,
+  compress: () => <CompressPanel />,
+  repair: () => <RepairPanel />,
+  'jpg-to-pdf': () => <ImagesToPdfPanel />,
+  'word-to-pdf': () => <OfficeToPdfPanel kind="word" />,
+  'powerpoint-to-pdf': () => <OfficeToPdfPanel kind="powerpoint" />,
+  'excel-to-pdf': () => <OfficeToPdfPanel kind="excel" />,
+  'html-to-pdf': () => <HtmlToPdfPanel />,
+  'pdf-to-jpg': () => <ConvertPanel target="images" />,
+  'pdf-to-word': () => <ConvertPanel target="word" />,
+  'pdf-to-text': () => <ConvertPanel target="text" />,
+  'pdf-to-powerpoint': () => <PdfToOfficePanel kind="powerpoint" />,
+  'pdf-to-excel': () => <PdfToOfficePanel kind="excel" />,
+  'pdf-to-pdfa': () => <PdfaPanel />,
+  view: () => <ViewPanel />,
+  rotate: () => <RotatePanel />,
+  'page-numbers': () => <StampPanel mode="numbers" />,
+  watermark: () => <StampPanel mode="watermark" />,
+  crop: () => <CropPanel />,
+  edit: () => <SignPanel variant="edit" />,
+  forms: () => <FormsPanel />,
+  unlock: () => <UnlockPanel />,
+  protect: () => <ProtectPanel />,
+  sign: () => <SignPanel variant="sign" />,
+  redact: () => <RedactPanel />,
+  compare: () => <ComparePanel />,
+  summarize: () => <SummarizePanel />,
+  translate: () => <TranslatePanel />,
+  'pdf-to-markdown': () => <MarkdownPanel />,
 }
 
-function ModePanel({ mode, doc }: { mode: Mode; doc: OpenPdf | null }) {
-  const { t } = useTranslation()
-  if (mode === 'merge') return <MergePanel />
-  if (!doc) return STANDALONE_MODES.has(mode) ? null : <OpenDocument hint={t(`pdf.${mode}.dropHint`)} />
-  const Panel = PANELS[mode]
-  return <Panel key={doc.id} />
+const TABS = ['all', ...TOOL_IDS, ...Object.keys(LEGACY_TABS)] as const
+const RECENT_KEY = 'pdf-toolkit:recent'
+
+function readRecent(): ToolId[] {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]')
+    return Array.isArray(parsed) ? parsed.filter((id): id is ToolId => typeof id === 'string' && id in TOOL_BY_ID).slice(0, 6) : []
+  } catch {
+    return []
+  }
+}
+
+function PanelSkeleton() {
+  return (
+    <div className="flex flex-col gap-3" aria-hidden>
+      <Skeleton className="h-40 rounded-2xl" />
+      <Skeleton className="h-24 rounded-2xl" />
+      <Skeleton className="h-11 w-48 rounded-xl" />
+    </div>
+  )
 }
 
 export default function PdfToolkitTool() {
   const tool = useFileTool('files.pdf-toolkit')
   const { t } = useTranslation()
-  const [mode, setMode] = useDeepLinkTab('tab', MODES, 'view')
+  const reduce = useReducedMotion()
+  const [tab, setTab] = useDeepLinkTab('tab', TABS, 'all')
+  const active: ToolId | 'all' = tab in LEGACY_TABS ? LEGACY_TABS[tab] : (tab as ToolId | 'all')
   const session = usePdfSessionController()
-  const [visited, setVisited] = useState<ReadonlySet<Mode>>(() => new Set([mode]))
-  if (!visited.has(mode)) setVisited(new Set(visited).add(mode))
-  const [resultIndex, setResultIndex] = useState(0)
-  const [shownResults, setShownResults] = useState<Results | null>(null)
-  if (session.results !== shownResults) {
-    setShownResults(session.results)
-    setResultIndex(0)
+  const [shownTool, setShownTool] = useState(active)
+  // Back, forward and deep links change the tool without `open`, so results are dropped here too.
+  if (shownTool !== active) {
+    setShownTool(active)
+    session.showResults(null)
   }
+  const [recent, setRecent] = useState<ToolId[]>(readRecent)
+  const [resetKey, setResetKey] = useState(0)
+  const top = useRef<HTMLDivElement>(null)
 
   const doc = session.state.status === 'ready' ? session.state.doc : null
-  const [from, to] = MODE_META[mode].pair
+  const info = active === 'all' ? null : TOOL_BY_ID[active]
+  const results = info ? session.results : null
+
+  const open = (id: ToolId) => {
+    session.showResults(null)
+    setTab(id)
+    const next = [id, ...recent.filter((entry) => entry !== id)].slice(0, 6)
+    setRecent(next)
+    try {
+      localStorage.setItem(RECENT_KEY, JSON.stringify(next))
+    } catch {
+      // Private windows may refuse storage; recents are a nicety.
+    }
+    top.current?.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' })
+  }
+
+  const backToCatalog = () => {
+    session.showResults(null)
+    setTab('all')
+  }
+
+  const continueWith = async (artifact: FileArtifact, next: ToolId) => {
+    await session.adopt(artifact)
+    open(next)
+  }
+
+  const startOver = () => {
+    session.showResults(null)
+    if (info?.input === 'pdf') session.close()
+    setResetKey((value) => value + 1)
+  }
+
+  const panelKey = info ? `${info.id}:${info.input === 'pdf' ? (doc?.id ?? 'none') : 'files'}:${resetKey}` : 'catalog'
 
   return (
     <PdfSessionContext.Provider value={session}>
       <ToolPage tool={tool}>
-        <TabsPrimitive.Root value={mode} onValueChange={(value) => setMode(value as Mode)} className="flex flex-col gap-3 @container">
-          <ToolkitHero
-            motionKey={mode}
-            badge={t('pdf.hero.badge')}
-            title={t(`pdf.hero.${mode}.title`)}
-            text={t(`pdf.hero.${mode}.text`)}
-            art={<GlyphPairArt motionKey={mode} from={from} to={to} />}
-          />
-          <ModeTiles
-            label={t('pdf.modesLabel')}
-            layoutId="pdf-toolkit-mode"
-            value={mode}
-            className="grid grid-cols-3 gap-1.5 @[1100px]:grid-cols-9"
-            hintClassName="hidden @[560px]:block @[1100px]:hidden"
-            tiles={MODES.map((value) => ({
-              value,
-              label: t(`pdf.modes.${value}`),
-              hint: t(`pdf.modes.${value}Hint`),
-              icon: MODE_META[value].icon,
-              tone: MODE_META[value].tone,
-            }))}
-          />
-
-          {doc && <DocumentBar doc={doc} />}
-
-          {/* Panels mount on first visit and stay mounted; each restarts when a different document opens. */}
-          {MODES.map((value) => (
-            <TabsContent key={value} value={value} forceMount className="mt-0 flex flex-col gap-3 data-[state=inactive]:hidden">
-              {visited.has(value) && <ModePanel mode={value} doc={doc} />}
-            </TabsContent>
-          ))}
-        </TabsPrimitive.Root>
-
-        <PreviewDialog
-          artifacts={session.results?.artifacts ?? []}
-          index={session.results ? resultIndex : null}
-          onIndexChange={(index) => {
-            if (index === null) session.showResults(null)
-            else setResultIndex(index)
-          }}
-          zipName={session.results?.zipName}
-          actions={(artifact) =>
-            artifact.format === 'PDF' && (
-              <Button variant="outline" size="sm" onClick={() => void session.adopt(artifact)}>
-                <FilePenLineIcon aria-hidden />
-                {t('pdf.keepEditing')}
-              </Button>
+        <div ref={top} className="flex scroll-mt-16 flex-col gap-3 @container">
+          {info ? (
+            <WorkspaceBar tool={info.id} onBack={backToCatalog} onSelect={open} />
+          ) : (
+            doc && (
+              <div className="flex flex-col gap-1.5">
+                <p className="px-1 text-[11px] font-medium text-muted-foreground">{t('pdf.ui.workingOn')}</p>
+                <DocumentBar doc={doc} />
+              </div>
             )
-          }
-        />
+          )}
+
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={info ? info.id : 'catalog'}
+              initial={reduce ? { opacity: 0 } : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduce ? { opacity: 0 } : { opacity: 0, y: -4, transition: { duration: 0.12 } }}
+              transition={{ duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
+              className="flex flex-col gap-3"
+            >
+              {!info ? (
+                <Catalog recent={recent} onOpen={open} />
+              ) : (
+                <>
+                  {info.input === 'pdf' && doc && <DocumentBar doc={doc} />}
+                  {results && (
+                    <ResultsView
+                      results={results}
+                      tool={info.id}
+                      onBack={() => session.showResults(null)}
+                      onStartOver={startOver}
+                      onContinue={(artifact, next) => void continueWith(artifact, next)}
+                      onEditResult={(artifact) => void session.adopt(artifact)}
+                    />
+                  )}
+                  {/* The panel stays mounted under the results, so "Back to options" keeps every setting. */}
+                  <div className={cn('flex flex-col gap-3', results && 'hidden')}>
+                    {info.input === 'pdf' && !doc ? (
+                      <OpenDocument hint={t(`pdf.tools.${info.id}.desc`)} />
+                    ) : (
+                      <Suspense fallback={<PanelSkeleton />}>
+                        <PanelHost key={panelKey} id={info.id} />
+                      </Suspense>
+                    )}
+                  </div>
+                </>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </ToolPage>
     </PdfSessionContext.Provider>
   )
+}
+
+function PanelHost({ id }: { id: ToolId }) {
+  return PANELS[id]()
 }

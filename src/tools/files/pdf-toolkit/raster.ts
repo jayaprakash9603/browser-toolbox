@@ -55,6 +55,54 @@ export async function rasterizeText(text: string, style: TextStyle): Promise<Ras
   return { bytes: await canvasBytes(canvas), width, height }
 }
 
+function wrapLines(context: CanvasRenderingContext2D, text: string, width: number): string[] {
+  const lines: string[] = []
+  for (const paragraph of text.split('\n')) {
+    // Scripts written without spaces wrap between any two characters.
+    const tokens = /\s/.test(paragraph.trim()) ? paragraph.split(/(\s+)/) : [...paragraph]
+    let line = ''
+    for (const token of tokens) {
+      const next = line + token
+      if (line.trim() && context.measureText(next).width > width) {
+        lines.push(line.trimEnd())
+        line = token.trimStart()
+      } else line = next
+    }
+    lines.push(line.trimEnd())
+  }
+  return lines
+}
+
+/**
+ * A paragraph wrapped to a box (sizes in points) as a transparent PNG, shrinking the
+ * font down to 55% when the text does not fit the box's height.
+ */
+export async function paragraphImage(
+  text: string,
+  box: { width: number; height: number; fontSize: number; bold?: boolean; color?: string; rtl?: boolean },
+): Promise<Uint8Array> {
+  const scale = 3
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.ceil(box.width * scale))
+  canvas.height = Math.max(1, Math.ceil(box.height * scale))
+  const context = context2d(canvas)
+  context.scale(scale, scale)
+  let size = box.fontSize
+  let lines: string[] = []
+  const fits = () => {
+    context.font = `${box.bold ? 'bold ' : ''}${size}px ${CSS_FONTS.helvetica}`
+    lines = wrapLines(context, text, box.width)
+    return lines.length * size * 1.18 <= box.height + size * 0.2
+  }
+  while (!fits() && size > box.fontSize * 0.55) size *= 0.92
+  context.fillStyle = box.color ?? '#111827'
+  context.textBaseline = 'alphabetic'
+  context.direction = box.rtl ? 'rtl' : 'ltr'
+  context.textAlign = box.rtl ? 'right' : 'left'
+  lines.forEach((line, index) => context.fillText(line, box.rtl ? box.width : 0, index * size * 1.18 + size * 0.9))
+  return canvasBytes(canvas)
+}
+
 /** Text ready for the standard PDF fonts, or an image of it when they cannot encode every character. */
 export async function pdfSafeText(text: string, style: TextStyle): Promise<{ text: string; image?: RasterText }> {
   const lines = text.split('\n').map((line) => toWinAnsi(line))
