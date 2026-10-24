@@ -4,7 +4,7 @@ export function entriesToHar(entries: NetLogEntry[], pageTitle = 'HTTP Intercept
   const har = {
     log: {
       version: '1.2',
-      creator: { name: 'Browser Toolbox HTTP Interceptor', version: '1.0' },
+      creator: { name: 'One Panel HTTP Interceptor', version: '1.0' },
       pages: [{ startedDateTime: new Date().toISOString(), id: 'page_1', title: pageTitle }],
       entries: entries.map((e) => ({
         startedDateTime: new Date(e.startedAt).toISOString(),

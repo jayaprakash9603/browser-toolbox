@@ -41,7 +41,7 @@ export function ProtectionInterstitial({
     >
       <header className="mb-4 flex items-center gap-2 text-muted-foreground">
         <ShieldCheckIcon className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden />
-        <span className="text-[11px] font-medium tracking-wide uppercase">Browser Toolbox</span>
+        <span className="text-[11px] font-medium tracking-wide uppercase">One Panel</span>
       </header>
 
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col">

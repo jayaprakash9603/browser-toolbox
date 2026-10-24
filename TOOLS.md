@@ -1,6 +1,6 @@
 # Tools catalog & capability matrix
 
-Browser Toolbox ships **55 registry tools** (including one disabled legacy entry) as **consolidated toolkits**, not hundreds of separate icons. Search, favorites, the command palette (`Ctrl/Cmd+Shift+Space`), context menus, and clipboard insights surface the same capabilities.
+One Panel ships **55 registry tools** (including one disabled legacy entry) as **consolidated toolkits**, not hundreds of separate icons. Search, favorites, the command palette (`Ctrl/Cmd+Shift+Space`), context menus, and clipboard insights surface the same capabilities.
 
 See [ROADMAP.md](./ROADMAP.md) for what is planned next.
 

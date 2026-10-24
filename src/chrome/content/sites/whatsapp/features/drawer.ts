@@ -425,7 +425,7 @@ function viewBusiness(): HTMLElement {
       navRow('template', 'Message Templates', 'Preset list of message templates.', () => go('templates'), countBadge(d.templates.length)),
       navRow('broadcast', 'Broadcasting', 'Run customized message campaigns.', () => {
         openFullPanel()
-        toast('Broadcasting opens in the Browser Toolbox panel')
+        toast('Broadcasting opens in the One Panel panel')
       }, countBadge(d.campaigns.length)),
       navRow('reply', 'Smart Replies', 'Setup automatic smart replies.', () => go('smartReplies'), countBadge(d.smartReplies.length)),
       navRow('schedule', 'Scheduled Messages', 'Send a message later at a set time.', () => go('scheduled'), countBadge(d.scheduled.filter((x) => x.status === 'pending').length)),
@@ -826,18 +826,18 @@ function viewMore(): HTMLElement {
     el(
       'div',
       'tbx-d-list',
-      navRow('open', 'Open full panel', 'Presets, broadcasting and utilities in Browser Toolbox.', openFullPanel),
-      navRow('hide', 'Hide sidebar button', 'Show it again from the Browser Toolbox panel.', () => {
+      navRow('open', 'Open full panel', 'Presets, broadcasting and utilities in One Panel.', openFullPanel),
+      navRow('hide', 'Hide sidebar button', 'Show it again from the One Panel panel.', () => {
         void patchState({ values: { showSideLauncher: false } })
         closeDrawer()
       }),
       navRow('power', 'Turn off ChatBoost', 'Disable every ChatBoost feature on this site.', () => {
-        void confirmDialog('Turn off ChatBoost?', 'You can turn it on again from Browser Toolbox.', 'Turn off').then((yes) => {
+        void confirmDialog('Turn off ChatBoost?', 'You can turn it on again from One Panel.', 'Turn off').then((yes) => {
           if (yes) void patchState({ enabled: false })
         })
       }),
     ),
-    el('p', 'tbx-d-hint', `Browser Toolbox v${chrome.runtime.getManifest().version}`),
+    el('p', 'tbx-d-hint', `One Panel v${chrome.runtime.getManifest().version}`),
   )
 }
 
@@ -900,7 +900,7 @@ function build(): HTMLElement {
   })
   const header = el('header', 'tbx-d-header', title, iconButton('close', 'Close', closeDrawer))
   bodyEl = el('div', 'tbx-d-body')
-  footerEl = el('footer', 'tbx-d-footer', el('span', '', 'Browser Toolbox'), el('span', 'tbx-d-footer__active', ''))
+  footerEl = el('footer', 'tbx-d-footer', el('span', '', 'One Panel'), el('span', 'tbx-d-footer__active', ''))
   root.append(header, bodyEl, footerEl)
   return root
 }

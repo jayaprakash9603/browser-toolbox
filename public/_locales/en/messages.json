@@ -1,15 +1,15 @@
 {
   "extName": {
-    "message": "Browser Toolbox"
+    "message": "One Panel"
   },
   "extDescription": {
-    "message": "All-in-one productivity toolbox: clipboard, text, developer, QA and web utilities in one side panel."
+    "message": "One Panel: clipboard, text, developer, QA and web utilities in one Chrome side panel."
   },
   "actionTitle": {
-    "message": "Open Browser Toolbox"
+    "message": "Open One Panel"
   },
   "commandPaletteDescription": {
-    "message": "Open the toolbox command palette"
+    "message": "Open the One Panel command palette"
   },
   "commandPickElement": {
     "message": "Pick an element on the current page"
@@ -42,7 +42,7 @@
     "message": "Start or stop recording the current tab"
   },
   "contextMenuOpen": {
-    "message": "Open Browser Toolbox"
+    "message": "Open One Panel"
   },
   "contextMenuPauseAdblock": {
     "message": "Pause ad blocking on this site"

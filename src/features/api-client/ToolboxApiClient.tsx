@@ -16,7 +16,7 @@ import { DEFAULT_PALETTE } from '@/shared/lib/theme/palettes'
 
 const HOST_APPEARANCE_NOTE = (
   <p className="text-xs text-muted-foreground">
-    Theme and color palette follow Browser Toolbox Settings → Appearance.
+    Theme and color palette follow One Panel Settings → Appearance.
   </p>
 )
 

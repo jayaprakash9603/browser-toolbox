@@ -1,9 +1,9 @@
 const CHROME_UI_FALLBACKS: Record<string, string> = {
-  extName: 'Browser Toolbox',
+  extName: 'One Panel',
   extDescription:
-    'All-in-one productivity toolbox: clipboard, text, developer, QA and web utilities in one side panel.',
-  actionTitle: 'Open Browser Toolbox',
-  contextMenuOpen: 'Open Browser Toolbox',
+    'One Panel: clipboard, text, developer, QA and web utilities in one Chrome side panel.',
+  actionTitle: 'Open One Panel',
+  contextMenuOpen: 'Open One Panel',
   contextMenuPauseAdblock: 'Pause ad blocking on this site',
   contextMenuSaveImageAs: 'Save image as',
   contextMenuPip: 'Picture-in-Picture',

@@ -22,7 +22,7 @@ export const reactDevtoolsStrings = {
   'reactDevtools.noticeNoReactBody':
     'This page does not appear to use React, or the app has not mounted yet.',
   'reactDevtools.noticeDisabledTitle': 'React DevTools is off',
-  'reactDevtools.noticeDisabledBody': 'Turn it on in Browser Toolbox settings or the React DevTools tool.',
+  'reactDevtools.noticeDisabledBody': 'Turn it on in One Panel settings or the React DevTools tool.',
   'reactDevtools.noticeReloadTitle': 'Reload the page',
   'reactDevtools.noticeReloadBody': 'Reload the inspected page so the DevTools hook can attach.',
   'reactDevtools.noticeConflictTitle': 'Another React DevTools extension',

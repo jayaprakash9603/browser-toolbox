@@ -34,9 +34,9 @@ return \`Welcome, \${user.name} (\${title}) <\${user.email}>\`;
 }`,
   html: `<div class="card" id="user-profile"><header class="card-header"><h2>Profile</h2><span class="badge">Active</span></header><div class="card-body"><p>User details and settings.</p><button type="button" class="btn btn-primary">Edit</button></div></div>`,
   css: `.container{display:flex;flex-direction:column;gap:1rem;padding:1.5rem;}.card{background-color:#ffffff;border-radius:0.5rem;box-shadow:0 1px 3px rgba(0,0,0,0.1);}`,
-  json: `{"name":"Browser Toolbox","version":"1.0.0","active":true,"features":["formatter","toolkit","converter"],"settings":{"theme":"system","autoDetect":true}}`,
+  json: `{"name":"One Panel","version":"1.0.0","active":true,"features":["formatter","toolkit","converter"],"settings":{"theme":"system","autoDetect":true}}`,
   xml: `<root><item id="1"><name>First</name><status>active</status></item><item id="2"><name>Second</name><status>pending</status></item></root>`,
-  markdown: `# Browser Toolbox
+  markdown: `# One Panel
 A fast and offline-ready toolbox extension for modern browsers.
 - Fast performance
 - Clean UI/UX

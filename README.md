@@ -1,4 +1,4 @@
-# Browser Toolbox
+# One Panel
 
 **One Chrome extension. Everything you need.**
 

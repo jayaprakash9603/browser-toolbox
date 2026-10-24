@@ -169,8 +169,8 @@ const chromeMock = {
     getMessage: (name: string) =>
       (
         {
-          extName: 'Browser Toolbox',
-          contextMenuOpen: 'Open Browser Toolbox',
+          extName: 'One Panel',
+          contextMenuOpen: 'Open One Panel',
         } as Record<string, string>
       )[name] ?? '',
   },

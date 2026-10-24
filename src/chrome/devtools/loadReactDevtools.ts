@@ -64,7 +64,7 @@ export async function bootstrapReactDevtoolsHost(): Promise<void> {
   script.async = false
   script.onerror = () => {
     console.error(
-      '[Browser Toolbox] React DevTools failed to load. Run `npm run react-devtools:vendor` and reload the extension.',
+      '[One Panel] React DevTools failed to load. Run `npm run react-devtools:vendor` and reload the extension.',
       mainUrl,
     )
   }

@@ -160,7 +160,7 @@ ${schemeCss}
   const content = el('div', 'content')
   const meta = el('p', 'meta')
   const time = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-  meta.append(el('span', '', 'Browser Toolbox · Timer'), el('span', 'dot'), el('span', '', time))
+  meta.append(el('span', '', 'One Panel · Timer'), el('span', 'dot'), el('span', '', time))
   content.append(meta, el('p', 'title', title), el('p', 'body', message))
 
   const close = el('button', 'close') as HTMLButtonElement
