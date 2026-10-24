@@ -16,6 +16,7 @@ import { jsonToYaml, yamlToJson } from '@/core/engines/yaml'
 import { toolRegistry } from '@/core/registry'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
+import { TextPaneGrid } from '@/shared/components/TextPaneGrid'
 import { Button } from '@/shared/components/ui/button'
 import {
   Select,
@@ -24,10 +25,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/components/ui/select'
+import type { EditorLanguage } from '@/shared/lib/code-editor/languages'
+import { OutputPane } from '@/tools/developer/_shared'
 
 type DataFormat = 'json' | 'csv' | 'xml' | 'yaml' | 'markdown' | 'tsv'
 
 const FORMATS: DataFormat[] = ['json', 'csv', 'xml', 'yaml', 'markdown', 'tsv']
+
+function editorLanguage(format: DataFormat): EditorLanguage {
+  if (format === 'json') return 'json'
+  if (format === 'xml') return 'xml'
+  if (format === 'yaml') return 'yaml'
+  return 'text'
+}
+
 function convert(input: string, from: DataFormat, to: DataFormat): string {
   if (from === to) return input
   if (from === 'tsv' && to === 'csv') {
@@ -111,6 +122,8 @@ export default function UniversalConverterTool() {
   const [error, setError] = useState('')
 
   const canConvert = useMemo(() => input.trim().length > 0 && from !== to, [input, from, to])
+  const inputLanguage = editorLanguage(from)
+  const outputLanguage = editorLanguage(to)
 
   const run = () => {
     try {
@@ -122,10 +135,15 @@ export default function UniversalConverterTool() {
     }
   }
 
+  const clearOutput = () => {
+    setOutput('')
+    setError('')
+  }
+
   return (
-    <ToolPage tool={tool}>
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap gap-2">
+    <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           <Select value={from} onValueChange={(v) => setFrom(v as DataFormat)}>
             <SelectTrigger className="w-32" aria-label={t('data.inputFormat')}>
               <SelectValue />
@@ -138,7 +156,7 @@ export default function UniversalConverterTool() {
               ))}
             </SelectContent>
           </Select>
-          <span className="self-center text-xs text-muted-foreground">→</span>
+          <span className="text-xs text-muted-foreground">→</span>
           <Select value={to} onValueChange={(v) => setTo(v as DataFormat)}>
             <SelectTrigger className="w-32" aria-label={t('data.outputFormat')}>
               <SelectValue />
@@ -155,23 +173,29 @@ export default function UniversalConverterTool() {
             {t('data.convert')}
           </Button>
         </div>
-        <TextEditor
-          value={input}
-          onChange={setInput}
-          minRows={8}
-          ariaLabel={t('data.input')}
-          placeholder={t('data.inputPlaceholder')}
-        />
-        {error && <p className="text-xs text-destructive">{error}</p>}
-        {output && (
+
+        <TextPaneGrid split>
           <TextEditor
-            value={output}
-            onChange={setOutput}
-            minRows={8}
-            ariaLabel={t('data.output')}
-            readOnly
+            value={input}
+            onChange={setInput}
+            placeholder={t('data.inputPlaceholder')}
+            ariaLabel={t('data.input')}
+            label={t('common.input')}
+            language={inputLanguage}
+            fill
+            onKeyCommand={(command) => {
+              if (command === 'submit' && canConvert) run()
+            }}
           />
-        )}
+          <OutputPane
+            value={output}
+            error={error || null}
+            language={outputLanguage}
+            label={t('text.output')}
+            onClear={clearOutput}
+            fill
+          />
+        </TextPaneGrid>
       </div>
     </ToolPage>
   )
