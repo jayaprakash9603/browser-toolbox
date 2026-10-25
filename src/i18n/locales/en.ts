@@ -2,6 +2,7 @@ import { fileToolkitStrings } from './fileToolkitEn'
 import { imageDownloaderStrings } from './imageDownloaderEn'
 import { imageLinksStrings } from './imageLinksEn'
 import { pdfToolkitStrings } from './pdfToolkitEn'
+import { cssGeneratorStrings } from './cssGeneratorEn'
 import { interceptorStrings } from './interceptorEn'
 import { netmonStrings } from './netmonEn'
 import { notesStrings } from './notesEn'
@@ -945,7 +946,7 @@ const en = {
     'WCAG contrast ratio between foreground and background colors.',
   'tools.design.css-generator.name': 'CSS Generator',
   'tools.design.css-generator.description':
-    'Generate gradients, box shadows, border radius and glass effects.',
+    'Design gradients, shadows, glass, filters, shapes, clip paths, transforms, animations, flexbox and grid with a live preview. Copy as CSS, Tailwind or React.',
   'design.colorInput': 'Color (hex, rgb, hsl…)',
   'design.pickFromScreen': 'Pick from screen',
   'design.noEyedropper': 'Screen picking needs a Chromium browser. Use the swatch below.',
@@ -961,17 +962,6 @@ const en = {
   'design.previewText': 'Normal text preview',
   'design.previewLarge': 'Large text',
   'design.ratio': 'Contrast ratio',
-  'design.cssGradient': 'Gradient',
-  'design.cssShadow': 'Box shadow',
-  'design.cssRadius': 'Border radius',
-  'design.cssGlass': 'Glass effect',
-  'design.preview': 'Preview',
-  'design.from': 'From',
-  'design.to': 'To',
-  'design.angle': 'Angle',
-  'design.blur': 'Blur',
-  'design.color': 'Color',
-  'design.radius': 'Radius',
   'tools.screenshots.recorder.name': 'Screen Recorder',
   'tools.screenshots.recorder.description':
     'Record a tab, window, or your whole screen with mic and tab audio, then save or share it.',
@@ -1437,6 +1427,7 @@ const en = {
   'files.emptyCsv': 'This file has a header row but no data rows.',
   ...fileToolkitStrings,
   ...pdfToolkitStrings,
+  ...cssGeneratorStrings,
   ...imageDownloaderStrings,
   ...imageLinksStrings,
   ...sitesYoutubeStrings,
