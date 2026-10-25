@@ -42,7 +42,8 @@ export function ThisPagePanel({ url, scripts, settings, onToggle, loadCode }: Pr
   const host = useMemo(() => {
     if (!url) return null
     try {
-      return new URL(url).hostname
+      const parsed = new URL(url)
+      return /^https?:$/.test(parsed.protocol) ? parsed.hostname : null
     } catch {
       return null
     }
@@ -58,13 +59,13 @@ export function ThisPagePanel({ url, scripts, settings, onToggle, loadCode }: Pr
     ]
   }, [host])
 
+  if (!host) {
+    return <EmptyState icon={GlobeIcon} title={t('scriptStudio.thisPage.noSite')} description={t('scriptStudio.thisPage.noSiteHint')} />
+  }
+
   return (
     <div className="flex flex-col gap-3">
-      {host ? (
-        <p className="truncate text-xs text-muted-foreground">
-          {t('scriptStudio.thisPage.on', { host })}
-        </p>
-      ) : null}
+      <p className="truncate text-xs text-muted-foreground">{t('scriptStudio.thisPage.on', { host })}</p>
 
       {matching.length === 0 ? (
         <EmptyState icon={GlobeIcon} title={t('scriptStudio.noScripts')} description={t('scriptStudio.thisPage.emptyHint')} />

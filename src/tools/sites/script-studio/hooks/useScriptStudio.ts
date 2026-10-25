@@ -1,10 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { sendMessage } from '@/core/messaging'
-import type { ScriptRecord, ScriptStudioIndex, ScriptStudioSettings, UserScriptsProbe } from '@/core/script-studio'
+import type {
+  GalleryScript,
+  ScriptRecord,
+  ScriptStudioIndex,
+  ScriptStudioSettings,
+  UserScriptsProbe,
+} from '@/core/script-studio'
 import {
   DEFAULT_SCRIPT_STUDIO_INDEX,
   extensionSettingsUrl,
+  galleryInstallUrl,
   probeUserScripts,
   requestUserScriptsPermission,
   getScriptCode,
@@ -122,6 +129,20 @@ export function useScriptStudio() {
     return id
   }, [index?.scripts.length, saveScript])
 
+  const installFromGallery = useCallback(
+    async (item: GalleryScript) => {
+      const id = createScriptId()
+      const record = recordFromSource(id, item.code, {
+        installUrl: galleryInstallUrl(item.id),
+        enabled: item.enabledByDefault,
+        position: (index?.scripts.length ?? 0) + 1,
+      })
+      await saveScript(record, item.code)
+      return id
+    },
+    [index?.scripts.length, saveScript],
+  )
+
   const toggleScript = useCallback(
     async (record: ScriptRecord, enabled: boolean) => {
       await saveScript({ ...record, enabled }, (await getScriptCode(record.id)) ?? '')
@@ -183,6 +204,7 @@ export function useScriptStudio() {
     setGlobalEnabled,
     saveScript,
     createScript,
+    installFromGallery,
     toggleScript,
     updateSettings,
     trashScript,

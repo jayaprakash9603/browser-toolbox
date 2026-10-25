@@ -1,27 +1,41 @@
-import { AnimatePresence, motion } from 'motion/react'
+import {
+  ArchiveRestoreIcon,
+  FileCode2Icon,
+  MoreHorizontalIcon,
+  PencilIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  SparklesIcon,
+  Trash2Icon,
+  UploadIcon,
+} from 'lucide-react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { isBroadMatch } from '@/core/script-studio/match'
 import type { ScriptRecord } from '@/core/script-studio'
+import { EmptyState } from '@/shared/components/EmptyState'
 import { SearchInput } from '@/shared/components/SearchInput'
-import { Button } from '@/shared/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/shared/components/ui/select'
-import { Checkbox } from '@/shared/components/ui/checkbox'
-import { Switch } from '@/shared/components/ui/switch'
 import { Badge } from '@/shared/components/ui/badge'
+import { Button } from '@/shared/components/ui/button'
+import { Checkbox } from '@/shared/components/ui/checkbox'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/shared/components/ui/dropdown-menu'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
+import { Switch } from '@/shared/components/ui/switch'
+import { cn } from '@/shared/utils/cn'
 
-type SortKey = 'name' | 'version' | 'updatedAt' | 'size'
+type SortKey = 'name' | 'updatedAt' | 'size' | 'enabled'
+type View = 'installed' | 'trash'
 
 type Props = {
   scripts: ScriptRecord[]
-  trashed?: boolean
   onToggle: (record: ScriptRecord, enabled: boolean) => void
   onSelect: (id: string) => void
   onTrash: (ids: string[]) => void
@@ -29,6 +43,8 @@ type Props = {
   onBulkEnable: (ids: string[], enabled: boolean) => void
   onCheckUpdates: (ids: string[]) => void
   loadCode: (id: string) => Promise<string | null>
+  onCreate?: () => void
+  onBrowseGallery?: () => void
 }
 
 function matchSearch(query: string, text: string): boolean {
@@ -40,9 +56,12 @@ function matchSearch(query: string, text: string): boolean {
   }
 }
 
+function formatSize(bytes: number): string {
+  return bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`
+}
+
 export function LibraryView({
   scripts,
-  trashed = false,
   onToggle,
   onSelect,
   onTrash,
@@ -50,12 +69,21 @@ export function LibraryView({
   onBulkEnable,
   onCheckUpdates,
   loadCode,
+  onCreate,
+  onBrowseGallery,
 }: Props) {
   const { t } = useTranslation()
+  const reduce = useReducedMotion()
+  const [view, setView] = useState<View>('installed')
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<SortKey>('name')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [tagFilter, setTagFilter] = useState<string | null>(null)
+
+  const trashCount = scripts.filter((s) => s.trashed).length
+  const installedCount = scripts.length - trashCount
+  const activeView: View = view === 'trash' && trashCount === 0 ? 'installed' : view
+  const trash = activeView === 'trash'
 
   const tags = useMemo(() => {
     const set = new Set<string>()
@@ -64,19 +92,26 @@ export function LibraryView({
   }, [scripts])
 
   const filtered = useMemo(() => {
-    let list = scripts.filter((s) => (trashed ? s.trashed : !s.trashed))
+    let list = scripts.filter((s) => (trash ? s.trashed : !s.trashed))
     if (tagFilter) list = list.filter((s) => s.overrides.tags?.includes(tagFilter))
     list = list.filter((s) => matchSearch(query, `${s.name} ${s.version}`))
-    list.sort((a, b) => {
+    return [...list].sort((a, b) => {
       if (sort === 'name') return a.name.localeCompare(b.name)
-      if (sort === 'version') return a.version.localeCompare(b.version)
       if (sort === 'size') return b.size - a.size
+      if (sort === 'enabled') return Number(b.enabled) - Number(a.enabled) || a.name.localeCompare(b.name)
       return b.updatedAt - a.updatedAt
     })
-    return list
-  }, [scripts, trashed, query, sort, tagFilter])
+  }, [scripts, trash, query, sort, tagFilter])
 
-  const allSelected = filtered.length > 0 && filtered.every((s) => selected.has(s.id))
+  const visibleSelected = filtered.filter((s) => selected.has(s.id)).map((s) => s.id)
+  const allSelected = filtered.length > 0 && visibleSelected.length === filtered.length
+
+  const toggleSelected = (id: string, on: boolean) => {
+    const next = new Set(selected)
+    if (on) next.add(id)
+    else next.delete(id)
+    setSelected(next)
+  }
 
   const onDropFiles = (files: FileList | null) => {
     if (!files?.length) return
@@ -93,6 +128,39 @@ export function LibraryView({
     })()
   }
 
+  if (installedCount === 0 && trashCount === 0) {
+    return (
+      <div
+        className="flex flex-col items-center gap-3 rounded-xl border border-dashed px-4 py-8 text-center"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault()
+          onDropFiles(e.dataTransfer.files)
+        }}
+      >
+        <EmptyState className="py-0" icon={FileCode2Icon} title={t('scriptStudio.library.emptyTitle')} description={t('scriptStudio.library.emptyHint')} />
+        <div className="flex flex-wrap justify-center gap-2">
+          {onBrowseGallery ? (
+            <Button size="sm" className="min-h-9 gap-1.5" onClick={onBrowseGallery}>
+              <SparklesIcon className="size-4" aria-hidden />
+              {t('scriptStudio.library.browseGallery')}
+            </Button>
+          ) : null}
+          {onCreate ? (
+            <Button size="sm" variant="outline" className="min-h-9 gap-1.5" onClick={onCreate}>
+              <PlusIcon className="size-4" aria-hidden />
+              {t('scriptStudio.create')}
+            </Button>
+          ) : null}
+        </div>
+        <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <UploadIcon className="size-3.5" aria-hidden />
+          {t('scriptStudio.library.dropHint')}
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div
       className="flex flex-col gap-3"
@@ -103,33 +171,60 @@ export function LibraryView({
       }}
     >
       <div className="flex flex-wrap items-center gap-2">
+        {trashCount > 0 ? (
+          <div className="inline-flex h-9 items-center rounded-lg bg-muted p-1" role="group" aria-label={t('scriptStudio.library.view')}>
+            {(['installed', 'trash'] as const).map((id) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={activeView === id}
+                onClick={() => {
+                  setView(id)
+                  setSelected(new Set())
+                }}
+                className={cn(
+                  'inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                  activeView === id ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {id === 'trash' ? <Trash2Icon className="size-3.5" aria-hidden /> : null}
+                {t(`scriptStudio.library.views.${id}`)}
+                <span className="tabular-nums opacity-70">{id === 'trash' ? trashCount : installedCount}</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
         <SearchInput
           value={query}
           onChange={setQuery}
           placeholder={t('scriptStudio.library.search')}
-          className="min-w-[200px] flex-1"
+          className="min-w-[180px] flex-1"
         />
         <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-          <SelectTrigger size="sm" className="w-[120px]" aria-label="Sort">
+          <SelectTrigger size="sm" className="w-[130px]" aria-label={t('scriptStudio.library.sort')}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="name">Name</SelectItem>
-            <SelectItem value="version">Version</SelectItem>
-            <SelectItem value="updatedAt">Updated</SelectItem>
-            <SelectItem value="size">Size</SelectItem>
+            <SelectItem value="name">{t('scriptStudio.library.sortBy.name')}</SelectItem>
+            <SelectItem value="enabled">{t('scriptStudio.library.sortBy.enabled')}</SelectItem>
+            <SelectItem value="updatedAt">{t('scriptStudio.library.sortBy.updatedAt')}</SelectItem>
+            <SelectItem value="size">{t('scriptStudio.library.sortBy.size')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {tags.length > 0 ? (
+      {tags.length > 0 && !trash ? (
         <div className="flex flex-wrap gap-1">
           {tags.map((tag) => (
             <button
               key={tag}
               type="button"
+              aria-pressed={tagFilter === tag}
               onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
-              className={`rounded-full border px-2 py-0.5 text-[11px] ${tagFilter === tag ? 'bg-primary text-primary-foreground' : ''}`}
+              className={cn(
+                'rounded-full border px-2.5 py-0.5 text-[11px] transition-colors',
+                tagFilter === tag ? 'border-primary bg-primary text-primary-foreground' : 'hover:bg-muted',
+              )}
             >
               {tag}
             </button>
@@ -137,131 +232,170 @@ export function LibraryView({
         </div>
       ) : null}
 
-      <AnimatePresence>
-        {selected.size > 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
+      {filtered.length > 0 ? (
+        <div className="flex items-center gap-2 px-3 text-[11px] text-muted-foreground">
+          <Checkbox
+            checked={allSelected}
+            onCheckedChange={(c) => setSelected(c ? new Set(filtered.map((s) => s.id)) : new Set())}
+            aria-label={t('scriptStudio.library.selectAll')}
+          />
+          <span>
+            {visibleSelected.length > 0
+              ? t('scriptStudio.library.selected', { count: visibleSelected.length })
+              : t('scriptStudio.library.count', { count: filtered.length })}
+          </span>
+        </div>
+      ) : (
+        <EmptyState icon={FileCode2Icon} title={t('scriptStudio.library.noMatch')} />
+      )}
+
+      <ul className="flex flex-col gap-1.5">
+        {filtered.map((s, i) => (
+          <motion.li
+            key={s.id}
+            initial={reduce ? false : { opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            className="sticky bottom-2 z-10 flex flex-wrap gap-2 rounded-xl border bg-card p-2 shadow-md"
+            transition={{ delay: reduce ? 0 : Math.min(i, 10) * 0.02, duration: 0.18 }}
+            className={cn(
+              'flex min-h-14 items-center gap-3 rounded-lg border bg-card px-3 py-2 transition-colors hover:border-primary/30',
+              selected.has(s.id) && 'border-primary/40 bg-primary/5',
+            )}
           >
-            <Button size="sm" variant="secondary" onClick={() => onBulkEnable([...selected], true)}>
-              {t('scriptStudio.library.bulk.enable')}
-            </Button>
-            <Button size="sm" variant="secondary" onClick={() => onBulkEnable([...selected], false)}>
-              {t('scriptStudio.library.bulk.disable')}
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => onCheckUpdates([...selected])}>
-              {t('scriptStudio.library.bulk.update')}
-            </Button>
-            {!trashed ? (
-              <Button size="sm" variant="destructive" onClick={() => onTrash([...selected])}>
-                {t('scriptStudio.library.bulk.trash')}
-              </Button>
+            <Checkbox
+              checked={selected.has(s.id)}
+              onCheckedChange={(c) => toggleSelected(s.id, Boolean(c))}
+              aria-label={s.name}
+            />
+            <button
+              type="button"
+              className="min-w-0 flex-1 rounded-sm text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              onClick={() => onSelect(s.id)}
+            >
+              <p className={cn('truncate text-sm font-medium', !s.enabled && !trash && 'text-muted-foreground')}>{s.name}</p>
+              <p className="flex flex-wrap items-center gap-x-1.5 text-[11px] text-muted-foreground">
+                <span>v{s.version}</span>
+                <span aria-hidden>·</span>
+                <span>{formatSize(s.size)}</span>
+                <span aria-hidden>·</span>
+                <span>{new Date(s.updatedAt).toLocaleDateString()}</span>
+                <BroadBadge scriptId={s.id} loadCode={loadCode} />
+                {(s.overrides.tags ?? []).map((tag) => (
+                  <Badge key={tag} variant="secondary" className="h-4 px-1.5 text-[10px] font-normal">
+                    {tag}
+                  </Badge>
+                ))}
+              </p>
+            </button>
+            {trash ? (
+              onRestore ? (
+                <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => onRestore(s.id)}>
+                  <ArchiveRestoreIcon className="size-3.5" aria-hidden />
+                  {t('scriptStudio.library.restore')}
+                </Button>
+              ) : null
+            ) : (
+              <Switch checked={s.enabled} onCheckedChange={(on) => onToggle(s, on)} aria-label={s.name} />
+            )}
+            {!trash ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon-sm" aria-label={t('scriptStudio.library.actions', { name: s.name })}>
+                    <MoreHorizontalIcon className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={() => onSelect(s.id)}>
+                    <PencilIcon className="size-4" />
+                    {t('scriptStudio.library.edit')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => onCheckUpdates([s.id])}>
+                    <RefreshCwIcon className="size-4" />
+                    {t('scriptStudio.library.bulk.update')}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => onTrash([s.id])}>
+                    <Trash2Icon className="size-4" />
+                    {t('scriptStudio.library.bulk.trash')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : null}
+          </motion.li>
+        ))}
+      </ul>
+
+      <AnimatePresence>
+        {visibleSelected.length > 0 ? (
+          <motion.div
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, y: 8, transition: { duration: 0.12 } }}
+            className="sticky bottom-2 z-10 flex flex-wrap items-center gap-2 rounded-xl border bg-card/95 p-2 shadow-md backdrop-blur"
+          >
+            <span className="px-1 text-xs font-medium">{t('scriptStudio.library.selected', { count: visibleSelected.length })}</span>
+            <div className="ms-auto flex flex-wrap gap-1.5">
+              {trash ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    visibleSelected.forEach((id) => onRestore?.(id))
+                    setSelected(new Set())
+                  }}
+                >
+                  {t('scriptStudio.library.restore')}
+                </Button>
+              ) : (
+                <>
+                  <Button size="sm" variant="secondary" onClick={() => onBulkEnable(visibleSelected, true)}>
+                    {t('scriptStudio.library.bulk.enable')}
+                  </Button>
+                  <Button size="sm" variant="secondary" onClick={() => onBulkEnable(visibleSelected, false)}>
+                    {t('scriptStudio.library.bulk.disable')}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => onCheckUpdates(visibleSelected)}>
+                    {t('scriptStudio.library.bulk.update')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => {
+                      onTrash(visibleSelected)
+                      setSelected(new Set())
+                    }}
+                  >
+                    {t('scriptStudio.library.bulk.trash')}
+                  </Button>
+                </>
+              )}
+            </div>
           </motion.div>
         ) : null}
       </AnimatePresence>
-
-      <div className="hidden overflow-x-auto md:block">
-        <table className="w-full text-left text-xs">
-          <thead>
-            <tr className="border-b text-muted-foreground">
-              <th className="p-2">
-                <Checkbox
-                  checked={allSelected}
-                  onCheckedChange={(c) => {
-                    if (c) setSelected(new Set(filtered.map((s) => s.id)))
-                    else setSelected(new Set())
-                  }}
-                  aria-label="Select all"
-                />
-              </th>
-              <th className="p-2">On</th>
-              <th className="p-2">Name</th>
-              <th className="p-2">Version</th>
-              <th className="p-2">Size</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((s, i) => (
-              <motion.tr
-                key={s.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.03 }}
-                className="border-b hover:bg-muted/40"
-              >
-                <td className="p-2">
-                  <Checkbox
-                    checked={selected.has(s.id)}
-                    onCheckedChange={(c) => {
-                      const next = new Set(selected)
-                      if (c) next.add(s.id)
-                      else next.delete(s.id)
-                      setSelected(next)
-                    }}
-                  />
-                </td>
-                <td className="p-2">
-                  {!trashed ? <Switch checked={s.enabled} onCheckedChange={(on) => onToggle(s, on)} /> : null}
-                </td>
-                <td className="p-2">
-                  <button type="button" className="font-medium hover:underline" onClick={() => onSelect(s.id)}>
-                    {s.name}
-                  </button>
-                  <BroadBadge scriptId={s.id} loadCode={loadCode} />
-                </td>
-                <td className="p-2">{s.version}</td>
-                <td className="p-2">{(s.size / 1024).toFixed(1)} KB</td>
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="flex flex-col gap-2 md:hidden">
-        {filtered.map((s) => (
-          <div key={s.id} className="rounded-lg border p-3">
-            <div className="flex items-center justify-between">
-              <button type="button" className="text-sm font-medium" onClick={() => onSelect(s.id)}>
-                {s.name}
-              </button>
-              {!trashed ? <Switch checked={s.enabled} onCheckedChange={(on) => onToggle(s, on)} /> : null}
-            </div>
-            {trashed && onRestore ? (
-              <Button size="sm" className="mt-2" onClick={() => onRestore(s.id)}>
-                Restore
-              </Button>
-            ) : null}
-          </div>
-        ))}
-      </div>
     </div>
   )
 }
 
-function BroadBadge({
-  scriptId,
-  loadCode,
-}: {
-  scriptId: string
-  loadCode: (id: string) => Promise<string | null>
-}) {
+function BroadBadge({ scriptId, loadCode }: { scriptId: string; loadCode: (id: string) => Promise<string | null> }) {
+  const { t } = useTranslation()
   const [broad, setBroad] = useState(false)
   useEffect(() => {
+    let cancelled = false
     void loadCode(scriptId).then((code) => {
-      if (!code) return
-      import('@/core/script-studio/metadata').then(({ parseMetadata }) => {
+      if (!code || cancelled) return
+      void import('@/core/script-studio/metadata').then(({ parseMetadata }) => {
         const m = parseMetadata(code)
-        if (m && isBroadMatch([...m.matches, ...m.includes])) setBroad(true)
+        if (!cancelled && m && isBroadMatch([...m.matches, ...m.includes])) setBroad(true)
       })
     })
+    return () => {
+      cancelled = true
+    }
   }, [scriptId, loadCode])
   if (!broad) return null
   return (
-    <Badge variant="outline" className="ml-2 text-[10px] text-amber-600">
-      broad match
+    <Badge variant="outline" className="h-4 border-amber-500/40 px-1.5 text-[10px] font-normal text-amber-600 dark:text-amber-400">
+      {t('scriptStudio.library.allSites')}
     </Badge>
   )
 }

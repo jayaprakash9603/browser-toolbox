@@ -1,46 +1,102 @@
-import { useState } from 'react'
+import { ArrowLeftIcon, ExternalLinkIcon } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
+import { useRouter } from '@/app/router'
 import { ToolPage } from '@/shared/components/ToolPage'
-import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
+import { Button } from '@/shared/components/ui/button'
+import { parseSearchParam, useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
+import { cn } from '@/shared/utils/cn'
 
 import { useSitesTool } from '../_shared'
+import { InstallReview } from './components/InstallReview'
 import { ScriptStudioLoadingSkeleton } from './components/ScriptStudioLoadingSkeleton'
 import { ScriptStudioWorkspace } from './components/ScriptStudioWorkspace'
-import { PANEL_TABS, type StudioTab } from './components/workspaceTabs'
+import { ALL_TABS, type StudioTab } from './components/workspaceTabs'
 import { useActiveTabUrl } from './hooks/useActiveTabUrl'
 import { useScriptStudio } from './hooks/useScriptStudio'
 
+/** `null` until known; the same route renders in the side panel and in a full browser tab. */
+function useIsFullTab(): boolean | null {
+  const [inTab, setInTab] = useState<boolean | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    void Promise.resolve()
+      .then(() => chrome.tabs.getCurrent())
+      .then((current) => !cancelled && setInTab(Boolean(current)))
+      .catch(() => !cancelled && setInTab(false))
+    return () => {
+      cancelled = true
+    }
+  }, [])
+  return inTab
+}
+
 export default function ScriptStudioTool() {
+  const { t } = useTranslation()
   const tool = useSitesTool('sites.script-studio')
+  const { search, navigate } = useRouter()
   const url = useActiveTabUrl()
   const ss = useScriptStudio()
-  const [tab, setTab] = useDeepLinkTab('tab', PANEL_TABS, 'thisPage')
-  const [editId, setEditId] = useState<string | null>(null)
+  const inTab = useIsFullTab()
+  const [requestedTab, setTab] = useDeepLinkTab('tab', ALL_TABS, 'thisPage')
+  const [editId, setEditId] = useState<string | null>(() => parseSearchParam(search, 'edit'))
+  const installUrl = parseSearchParam(search, 'install')
 
-  const openDashboard = () => {
-    const hash = editId && tab === 'editor' ? `#/edit/${editId}` : ''
-    void chrome.tabs.create({ url: chrome.runtime.getURL(`script-studio.html${hash}`) })
+  const surface = inTab ? 'tab' : 'panel'
+  const tab: StudioTab = surface === 'tab' && requestedTab === 'thisPage' ? 'library' : surface === 'panel' && requestedTab === 'api' ? 'library' : requestedTab
+
+  const edit = (id: string) => {
+    setEditId(id)
+    setTab('editor')
   }
 
+  const openInTab = () => {
+    const query = tab === 'editor' && editId ? `?tab=editor&edit=${encodeURIComponent(editId)}` : tab === 'thisPage' ? '' : `?tab=${tab}`
+    void chrome.tabs.create({ url: chrome.runtime.getURL(`index.html#${tool.route}${query}`) })
+  }
+
+  const actions =
+    inTab === false ? (
+      <Button variant="ghost" size="icon-sm" onClick={openInTab} aria-label={t('scriptStudio.openInTab')} title={t('scriptStudio.openInTab')}>
+        <ExternalLinkIcon className="size-4" />
+      </Button>
+    ) : null
+
+  const ready = inTab !== null && !ss.loading && ss.index && ss.settings
+
   return (
-    <ToolPage tool={tool}>
-      {ss.loading || !ss.index || !ss.settings ? (
-        <ScriptStudioLoadingSkeleton variant="panel" />
-      ) : (
-        <ScriptStudioWorkspace
-          studio={ss}
-          surface="panel"
-          tab={tab}
-          onTabChange={(next: StudioTab) => setTab(next as (typeof PANEL_TABS)[number])}
-          editId={editId}
-          onEdit={(id) => {
-            setEditId(id)
-            setTab('editor')
-          }}
-          url={url}
-          onOpenDashboard={openDashboard}
-        />
-      )}
+    <ToolPage tool={tool} actions={actions}>
+      <div className={cn('flex flex-col gap-3', inTab && 'mx-auto w-full max-w-5xl py-2')}>
+        {!ready ? (
+          <ScriptStudioLoadingSkeleton variant={installUrl ? 'install' : 'panel'} />
+        ) : installUrl ? (
+          <>
+            <Button variant="ghost" size="sm" className="w-fit gap-1.5" onClick={() => navigate(tool.route)}>
+              <ArrowLeftIcon className="size-4" aria-hidden />
+              {t('scriptStudio.tabs.library')}
+            </Button>
+            <InstallReview
+              url={installUrl}
+              onDone={(id) => {
+                setEditId(id)
+                navigate(`${tool.route}?tab=editor`)
+              }}
+              onCancel={() => navigate(tool.route)}
+            />
+          </>
+        ) : (
+          <ScriptStudioWorkspace
+            studio={ss}
+            surface={surface}
+            tab={tab}
+            onTabChange={setTab}
+            editId={editId}
+            onEdit={edit}
+            url={url}
+          />
+        )}
+      </div>
     </ToolPage>
   )
 }

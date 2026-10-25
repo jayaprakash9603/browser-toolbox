@@ -12,6 +12,7 @@ import { eventBus } from '@/core/events'
 import {
   consumeOpenHomeOnPanel,
   consumePanelRouteIntent,
+  isSidePanelDocument,
   PANEL_OPEN_HOME_KEY,
   PANEL_ROUTE_INTENT_KEY,
 } from '@/core/panel/navigationSession'
@@ -46,6 +47,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void (async () => {
+      if (!(await isSidePanelDocument())) return
       const intent = await consumePanelRouteIntent()
       if (intent) {
         window.location.hash = intent
@@ -81,16 +83,22 @@ export function RouterProvider({ children }: { children: ReactNode }) {
       area: string,
     ) => {
       if (area !== 'session') return
-      if (changes[PANEL_OPEN_HOME_KEY]?.newValue) {
-        void consumeOpenHomeOnPanel().then((openHome) => {
-          if (openHome) window.location.hash = '/'
-        })
-      }
-      if (changes[PANEL_ROUTE_INTENT_KEY]?.newValue) {
-        void consumePanelRouteIntent().then((route) => {
-          if (route) window.location.hash = route
-        })
-      }
+      const openHome = Boolean(changes[PANEL_OPEN_HOME_KEY]?.newValue)
+      const intent = Boolean(changes[PANEL_ROUTE_INTENT_KEY]?.newValue)
+      if (!openHome && !intent) return
+      void isSidePanelDocument().then((inPanel) => {
+        if (!inPanel) return
+        if (openHome) {
+          void consumeOpenHomeOnPanel().then((home) => {
+            if (home) window.location.hash = '/'
+          })
+        }
+        if (intent) {
+          void consumePanelRouteIntent().then((route) => {
+            if (route) window.location.hash = route
+          })
+        }
+      })
     }
 
     if (chrome.storage?.session) {

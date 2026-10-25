@@ -3,6 +3,21 @@
 export const PANEL_ROUTE_INTENT_KEY = 'toolbox.routeIntent'
 export const PANEL_OPEN_HOME_KEY = 'toolbox.openHomeOnPanel'
 
+let sidePanelCheck: Promise<boolean> | null = null
+
+/** `index.html` also runs in normal tabs; panel-entry routing must never move those. */
+export function isSidePanelDocument(): Promise<boolean> {
+  sidePanelCheck ??= (async () => {
+    if (!chrome.tabs?.getCurrent) return false
+    try {
+      return !(await chrome.tabs.getCurrent())
+    } catch {
+      return false
+    }
+  })()
+  return sidePanelCheck
+}
+
 export async function setPanelRouteIntent(route: string): Promise<void> {
   if (!chrome.storage?.session) return
   await chrome.storage.session.set({ [PANEL_ROUTE_INTENT_KEY]: route })

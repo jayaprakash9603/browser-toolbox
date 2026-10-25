@@ -107,7 +107,7 @@ See `core/interceptor/` and `chrome/background/interceptor/` for DNR rules, page
 
 ## Script Studio (userscripts)
 
-Opt-in userscript manager (`sites.script-studio` tool + full-tab `script-studio.html`). State lives in `core/script-studio/` (`scriptStudio`, `scriptStudioSettings`, and per-script `ss:code|values|ext:*` keys). Background `chrome/background/script-studio/` registers scripts with `chrome.userScripts`, serves the GM API bridge (`SS_GM_BRIDGE`), detects `*.user.js` installs, and runs scheduled update checks. `@require` / `@resource` URLs are fetched only at install or update time and cached locally (optional SRI metadata).
+Opt-in userscript manager (`sites.script-studio` tool; the same route opens in a full tab via `index.html#/tools/sites/script-studio`, and `?install=<url>` shows the install review). A bundled gallery of ready-made scripts lives in `core/script-studio/gallery.ts`. State lives in `core/script-studio/` (`scriptStudio`, `scriptStudioSettings`, and per-script `ss:code|values|ext:*` keys). Background `chrome/background/script-studio/` registers scripts with `chrome.userScripts`, serves the GM API bridge (`SS_GM_BRIDGE`), detects `*.user.js` installs, and runs scheduled update checks. `@require` / `@resource` URLs are fetched only at install or update time and cached locally (optional SRI metadata).
 
 ## Security
 

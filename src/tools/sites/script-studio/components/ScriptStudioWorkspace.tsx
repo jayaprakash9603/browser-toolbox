@@ -1,14 +1,12 @@
 import {
   ArchiveRestoreIcon,
   BookOpenIcon,
-  Code2Icon,
-  ExternalLinkIcon,
   FileCode2Icon,
   GlobeIcon,
   LibraryIcon,
   PlusIcon,
   SettingsIcon,
-  Trash2Icon,
+  SparklesIcon,
   type LucideIcon,
 } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
@@ -24,20 +22,20 @@ import { cn } from '@/shared/utils/cn'
 
 import type { useScriptStudio } from '../hooks/useScriptStudio'
 import { BackupView } from './BackupView'
+import { GalleryView } from './GalleryView'
 import { LibraryView } from './LibraryView'
 import { ApiReferencePanel, ScriptEditor } from './ScriptEditor'
 import { SettingsView } from './SettingsView'
 import { SetupWizard } from './SetupWizard'
 import { StudioGuide } from './StudioGuide'
 import { ThisPagePanel } from './ThisPagePanel'
-
-import { DASHBOARD_TABS, PANEL_TABS, type StudioTab } from './workspaceTabs'
+import { FULL_TAB_TABS, PANEL_TABS, type StudioTab } from './workspaceTabs'
 
 const TAB_ICONS: Record<StudioTab, LucideIcon> = {
   thisPage: GlobeIcon,
   library: LibraryIcon,
+  gallery: SparklesIcon,
   editor: FileCode2Icon,
-  trash: Trash2Icon,
   settings: SettingsIcon,
   backup: ArchiveRestoreIcon,
   api: BookOpenIcon,
@@ -53,10 +51,9 @@ type Props = {
   editId: string | null
   onEdit: (id: string) => void
   url?: string | null
-  onOpenDashboard?: () => void
 }
 
-export function ScriptStudioWorkspace({ studio: ss, surface, tab, onTabChange, editId, onEdit, url, onOpenDashboard }: Props) {
+export function ScriptStudioWorkspace({ studio: ss, surface, tab, onTabChange, editId, onEdit, url }: Props) {
   const { t } = useTranslation()
   const reduce = useReducedMotion()
   const [guideDismissed, setGuideDismissed] = useState(false)
@@ -78,9 +75,8 @@ export function ScriptStudioWorkspace({ studio: ss, surface, tab, onTabChange, e
   const index = ss.index
   const settings = ss.settings
 
-  const tabs = surface === 'panel' ? PANEL_TABS : DASHBOARD_TABS
+  const tabs: readonly StudioTab[] = surface === 'panel' ? PANEL_TABS : FULL_TAB_TABS
   const live = index.scripts.filter((s) => !s.trashed)
-  const trashed = index.scripts.length - live.length
   const enabledCount = live.filter((s) => s.enabled).length
   const record = editId ? index.scripts.find((s) => s.id === editId) : undefined
   const ready = ss.probe?.operational === true
@@ -96,8 +92,6 @@ export function ScriptStudioWorkspace({ studio: ss, surface, tab, onTabChange, e
       if (r) void ss.toggleScript(r, on)
     }
   }
-
-  const counts: Partial<Record<StudioTab, number>> = { library: live.length, trash: trashed || undefined }
 
   const renderTab = (id: StudioTab) => {
     switch (id) {
@@ -122,24 +116,12 @@ export function ScriptStudioWorkspace({ studio: ss, surface, tab, onTabChange, e
             onBulkEnable={bulkEnable}
             onCheckUpdates={(ids) => void sendMessage({ type: 'SCRIPT_STUDIO_CHECK_UPDATES', scriptIds: ids })}
             loadCode={ss.loadCode}
+            onCreate={() => void create()}
+            onBrowseGallery={() => onTabChange('gallery')}
           />
         )
-      case 'trash':
-        return trashed === 0 ? (
-          <EmptyState icon={Trash2Icon} title={t('scriptStudio.trash.empty')} description={t('scriptStudio.trash.emptyHint')} />
-        ) : (
-          <LibraryView
-            scripts={index.scripts}
-            trashed
-            onToggle={() => {}}
-            onSelect={onEdit}
-            onTrash={() => {}}
-            onRestore={(sid) => void ss.restoreScriptById(sid)}
-            onBulkEnable={() => {}}
-            onCheckUpdates={() => {}}
-            loadCode={ss.loadCode}
-          />
-        )
+      case 'gallery':
+        return <GalleryView scripts={index.scripts} onInstall={ss.installFromGallery} onOpen={onEdit} />
       case 'editor':
         if (record && editor?.id === record.id) {
           return (
@@ -166,50 +148,35 @@ export function ScriptStudioWorkspace({ studio: ss, surface, tab, onTabChange, e
 
   return (
     <div className="flex flex-col gap-3">
-      <header className="rounded-xl border bg-card p-4 shadow-xs">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-primary/25 bg-primary/10">
-              <Code2Icon className="size-4.5 text-primary" aria-hidden />
-            </div>
-            <div className="min-w-0">
-              <h2 className="truncate text-sm font-semibold">{t('scriptStudio.title')}</h2>
-              <p className="truncate text-xs text-muted-foreground">{t('scriptStudio.tagline')}</p>
-            </div>
-          </div>
-          <Switch
-            checked={index.globalEnabled}
-            onCheckedChange={(on) => void ss.setGlobalEnabled(on)}
-            aria-label={t('scriptStudio.globalEnabled')}
-          />
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border bg-card px-3 py-2">
+        <label className="flex cursor-pointer items-center gap-2 text-xs font-medium">
+          <Switch checked={index.globalEnabled} onCheckedChange={(on) => void ss.setGlobalEnabled(on)} />
+          {index.globalEnabled ? t('scriptStudio.status.on') : t('scriptStudio.status.off')}
+        </label>
+        <span
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium',
+            ss.probe === null
+              ? 'bg-muted text-muted-foreground'
+              : ready
+                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                : 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
+          )}
+        >
           <span
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium',
-              ready ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
-            )}
-          >
-            <span className={cn('size-1.5 rounded-full', ready ? 'bg-emerald-500' : 'bg-amber-500')} aria-hidden />
-            {ss.probe === null ? t('scriptStudio.status.checking') : ready ? t('scriptStudio.status.ready') : t('scriptStudio.status.setup')}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {t('scriptStudio.status.counts', { enabled: enabledCount, total: live.length })}
-          </span>
-          <div className="ms-auto flex flex-wrap gap-2">
-            <Button size="sm" className="min-h-9 gap-1.5" onClick={() => void create()}>
-              <PlusIcon className="size-4" aria-hidden />
-              {t('scriptStudio.create')}
-            </Button>
-            {onOpenDashboard ? (
-              <Button size="sm" variant="outline" className="min-h-9 gap-1.5" onClick={onOpenDashboard}>
-                <ExternalLinkIcon className="size-4" aria-hidden />
-                {t('scriptStudio.openDashboard')}
-              </Button>
-            ) : null}
-          </div>
-        </div>
-      </header>
+            className={cn('size-1.5 rounded-full', ss.probe === null ? 'bg-muted-foreground' : ready ? 'bg-emerald-500' : 'bg-amber-500')}
+            aria-hidden
+          />
+          {ss.probe === null ? t('scriptStudio.status.checking') : ready ? t('scriptStudio.status.ready') : t('scriptStudio.status.setup')}
+        </span>
+        <span className="text-[11px] text-muted-foreground tabular-nums">
+          {t('scriptStudio.status.counts', { enabled: enabledCount, total: live.length })}
+        </span>
+        <Button size="sm" className="ms-auto h-8 gap-1.5 px-3 text-xs" onClick={() => void create()}>
+          <PlusIcon className="size-3.5" aria-hidden />
+          {t('scriptStudio.newScript')}
+        </Button>
+      </div>
 
       <SetupWizard
         probe={ss.probe}
@@ -228,11 +195,11 @@ export function ScriptStudioWorkspace({ studio: ss, surface, tab, onTabChange, e
       ) : null}
 
       <Tabs value={tab} onValueChange={(v) => onTabChange(v as StudioTab)}>
-        <TabsList className={cn(surface === 'tab' && 'w-full')}>
+        <TabsList className="w-full">
           {tabs.map((id) => {
             const Icon = TAB_ICONS[id]
             return (
-              <TabsTrigger key={id} value={id} count={counts[id]}>
+              <TabsTrigger key={id} value={id} count={id === 'library' && live.length > 0 ? live.length : undefined}>
                 <Icon aria-hidden />
                 {t(`scriptStudio.tabs.${id}`)}
               </TabsTrigger>
@@ -243,7 +210,7 @@ export function ScriptStudioWorkspace({ studio: ss, surface, tab, onTabChange, e
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={tab}
-            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 8 }}
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: -4, transition: { duration: 0.12 } }}
             transition={{ duration: 0.2, ease: [0.2, 0.8, 0.2, 1] }}

@@ -1,4 +1,4 @@
-const INSTALL_PARAM = 'ssInstallUrl'
+export const SCRIPT_STUDIO_ROUTE = '/tools/sites/script-studio'
 
 export function isUserScriptUrl(url: string): boolean {
   try {
@@ -9,11 +9,12 @@ export function isUserScriptUrl(url: string): boolean {
   }
 }
 
+export function scriptStudioPageUrl(query = ''): string {
+  return chrome.runtime.getURL(`index.html#${SCRIPT_STUDIO_ROUTE}${query}`)
+}
+
 export function openInstallReview(url: string): void {
-  const page = chrome.runtime.getURL(
-    `script-studio.html#install?${INSTALL_PARAM}=${encodeURIComponent(url)}`,
-  )
-  void chrome.tabs.create({ url: page })
+  void chrome.tabs.create({ url: scriptStudioPageUrl(`?install=${encodeURIComponent(url)}`) })
 }
 
 export function registerUserScriptInstallDetection(): void {

@@ -1,6 +1,7 @@
 import { getScriptStudioSettings } from '@/core/script-studio'
 
 import { getMenuCommandsForTab } from './bridge'
+import { scriptStudioPageUrl } from './install'
 import { executeScriptOnTab } from './registration'
 
 const MENU_ROOT = 'toolbox.script-studio'
@@ -35,7 +36,7 @@ export async function handleScriptStudioMenuClick(
   tab?: chrome.tabs.Tab,
 ): Promise<void> {
   if (menuItemId === `${MENU_ROOT}.dashboard`) {
-    void chrome.tabs.create({ url: chrome.runtime.getURL('script-studio.html') })
+    void chrome.tabs.create({ url: scriptStudioPageUrl() })
     return
   }
   if (menuItemId.startsWith(`${MENU_ROOT}.run.`) && tab?.id != null) {

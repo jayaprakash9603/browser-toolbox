@@ -52,7 +52,6 @@ export default defineVitestConfig({
         recorder: 'recorder.html',
         recording: 'recording.html',
         'react-devtools-panel': 'react-devtools-panel.html',
-        'script-studio': 'script-studio.html',
       },
     },
   },
