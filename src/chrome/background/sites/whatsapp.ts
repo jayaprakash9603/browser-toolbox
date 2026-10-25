@@ -12,6 +12,7 @@ import { STORAGE_KEYS } from '@/core/constants'
 import { registerMessageHandler } from '@/core/messaging'
 
 import { injectWhatsappIntoOpenTabs, syncWhatsappContentScripts } from './whatsappContentScripts'
+import { syncWaScheduleAlarm, WA_SCHEDULE_ALARM } from './whatsappScheduleAlarm'
 
 const deletedCache = new Map<string, { body: string; at: number }>()
 let lastRuntimeStatus: WaRuntimeStatus = 'no_tab'
@@ -21,6 +22,7 @@ export async function syncWhatsappPlusState(): Promise<void> {
   const state = await getWhatsappPlusState()
   await syncWhatsappContentScripts(state)
   await injectWhatsappIntoOpenTabs(state)
+  await syncWaScheduleAlarm(state.data.scheduled)
 }
 
 async function getWhatsappTabId(): Promise<number | null> {
@@ -163,9 +165,8 @@ export function registerSitesWhatsapp(): void {
     return { text, source: typeof json[2] === 'string' ? json[2] : '' }
   })
 
-  chrome.alarms.create('wa-schedule', { periodInMinutes: 1 })
   chrome.alarms.onAlarm.addListener((alarm) => {
-    if (alarm.name !== 'wa-schedule') return
+    if (alarm.name !== WA_SCHEDULE_ALARM) return
     void (async () => {
       const state = await getWhatsappPlusState()
       const now = Date.now()
@@ -182,7 +183,10 @@ export function registerSitesWhatsapp(): void {
           job.status = 'missed'
         }
       }
-      if (changed) await updateWhatsappPlusState({ data: { scheduled } })
+      if (changed) {
+        await updateWhatsappPlusState({ data: { scheduled } })
+        await syncWaScheduleAlarm(scheduled)
+      }
     })()
   })
 

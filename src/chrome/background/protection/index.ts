@@ -13,7 +13,7 @@ import { createLogger } from '@/core/logging'
 import { syncProtectionContentScripts } from './contentScripts'
 import { decideDownload, recordGesture, registerDownloadGuard } from './downloads'
 import { allowOpenedTabSite, recordTabGesture, registerOpenedTabGuard } from './openedTabs'
-import { invalidateThreatsCache, syncProtectionRules } from './rules'
+import { syncProtectionRules } from './rules'
 import { allowProceedOnce } from './trusted'
 
 const logger = createLogger('protection')
@@ -23,7 +23,6 @@ let syncQueue: Promise<void> = Promise.resolve()
 export function syncProtectionState(): Promise<void> {
   syncQueue = syncQueue
     .then(async () => {
-      invalidateThreatsCache()
       const state = await getProtectionState()
       await syncProtectionRules(state)
       await syncProtectionContentScripts(state)

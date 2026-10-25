@@ -9,7 +9,15 @@ import { searchForWorkspaceRoot, type Plugin } from 'vite'
 import { configDefaults, defineConfig as defineVitestConfig } from 'vitest/config'
 import manifest from './manifest.config.ts'
 
+const rootDir = fileURLToPath(new URL('.', import.meta.url))
 const postmanLiteDist = fileURLToPath(new URL('./node_modules/postman-lite/dist', import.meta.url))
+
+const protectionThreatsGenerated = (
+  JSON.parse(readFileSync(join(rootDir, 'public/protection/threats.json'), 'utf8')) as { generated: string }
+).generated
+
+/** jsPDF optional deps are unused in this extension (no .html() / SVG pipeline). */
+const jspdfOptionalStub = fileURLToPath(new URL('./src/shims/jspdf-optional-stub.ts', import.meta.url))
 
 // The content script is injected on demand via chrome.scripting, but the CRXJS loader
 // dynamically imports its chunks, which Chrome only allows on pages listed in
@@ -34,6 +42,9 @@ function exposeContentScriptChunks(): Plugin {
 
 export default defineVitestConfig({
   plugins: [react(), tailwindcss(), crx({ manifest }), exposeContentScriptChunks()],
+  define: {
+    __PROTECTION_THREATS_GENERATED__: JSON.stringify(protectionThreatsGenerated),
+  },
   resolve: {
     dedupe: ['react', 'react-dom'],
     alias: [
@@ -41,6 +52,9 @@ export default defineVitestConfig({
       { find: /^postman-lite\/style\.css(\?.*)?$/, replacement: `${postmanLiteDist}/style.css$1` },
       { find: /^postman-lite$/, replacement: `${postmanLiteDist}/index.js` },
       { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
+      { find: /^html2canvas$/, replacement: jspdfOptionalStub },
+      { find: /^dompurify$/, replacement: jspdfOptionalStub },
+      { find: /^canvg$/, replacement: jspdfOptionalStub },
     ],
   },
   build: {
@@ -52,6 +66,12 @@ export default defineVitestConfig({
         recorder: 'recorder.html',
         recording: 'recording.html',
         'react-devtools-panel': 'react-devtools-panel.html',
+      },
+      output: {
+        manualChunks(id) {
+          const norm = id.replace(/\\/g, '/')
+          if (norm.includes('/src/core/script-studio/')) return 'script-studio-core'
+        },
       },
     },
   },
@@ -69,7 +89,12 @@ export default defineVitestConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./tests/setup.ts'],
-    exclude: [...configDefaults.exclude, 'universal-form-autofill/**', 'website/**'],
+    exclude: [
+      ...configDefaults.exclude,
+      'universal-form-autofill/**',
+      'website/**',
+      'scripts/react-devtools/**',
+    ],
     css: false,
     pool: 'threads',
   },

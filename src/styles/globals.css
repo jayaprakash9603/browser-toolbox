@@ -1,4 +1,13 @@
 @import 'tailwindcss';
+
+@source not '../../public/**';
+@source not '../../scripts/**';
+@source not '../../tests/**';
+@source not '../../vendor/**';
+@source not '../../docs/**';
+@source not '../../_wip-interceptor-off-src/**';
+@source not '../../.tmp/**';
+
 @import '@fontsource-variable/inter';
 
 @custom-variant dark (&:is(.dark *));

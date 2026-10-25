@@ -225,6 +225,7 @@ function buildZip(zipPath) {
   for (const full of listFiles(DIST)) {
     const path = relative(DIST, full).split('\\').join('/')
     if (path.split('/').some((part) => part.startsWith('.')) || /\.map$/.test(path) || /(^|\/)Thumbs\.db$/i.test(path)) continue
+    if (path === '_metadata' || path.startsWith('_metadata/')) continue
     const data = readFileSync(full)
     files[path] = [new Uint8Array(data), { level: STORED_EXTENSIONS.test(path) ? 0 : 9 }]
     count += 1

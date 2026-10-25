@@ -152,6 +152,12 @@ const chromeMock = {
     insertCSS: vi.fn(async () => undefined),
     getRegisteredContentScripts: vi.fn(async () => []),
   },
+  alarms: {
+    create: vi.fn(async () => undefined),
+    clear: vi.fn(async () => true),
+    get: vi.fn(async (_name?: string) => undefined as chrome.alarms.Alarm | undefined),
+    onAlarm: makeEvent(),
+  },
   declarativeNetRequest: {
     updateEnabledRulesets: vi.fn(async () => undefined),
     updateDynamicRules: vi.fn(async () => undefined),

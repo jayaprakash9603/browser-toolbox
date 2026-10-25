@@ -23,7 +23,7 @@ const skipFetch = args.has('--skip-fetch')
 const skipInstall = args.has('--skip-install')
 const webpackOnly = args.has('--webpack-only')
 
-function run(cmd, cwd, env = {}) {
+function run(cmd, cwd, env = {}, { yarnInstall = false } = {}) {
   console.log(`[react-devtools:vendor] ${cmd}`)
   const pathKey = process.platform === 'win32' ? 'Path' : 'PATH'
   const bins = [join(cwd, 'node_modules', '.bin'), join(cacheDir, 'node_modules', '.bin')].filter(
@@ -32,7 +32,7 @@ function run(cmd, cwd, env = {}) {
   const pathPrefix = bins.length ? `${bins.join(delimiter)}${delimiter}` : ''
   // Yarn skips devDependencies when NODE_ENV=production (common in extension CI).
   const mergedEnv = { ...process.env, ...env }
-  if (mergedEnv.NODE_ENV === 'production') {
+  if (yarnInstall && mergedEnv.NODE_ENV === 'production') {
     mergedEnv.NODE_ENV = 'development'
   }
   execSync(cmd, {
@@ -86,6 +86,8 @@ function installDeps() {
   run(
     'npx yarn@1.22.22 install --frozen-lockfile --network-timeout 600000 --ignore-scripts --check-files',
     cacheDir,
+    {},
+    { yarnInstall: true },
   )
   verifyMonorepoTooling()
 }
@@ -111,7 +113,7 @@ function buildExperimentalReact() {
   }
   if (useDownload) {
     const releaseDir = join(cacheDir, 'scripts', 'release')
-    run('npx yarn@1.22.22 install --ignore-scripts', releaseDir)
+    run('npx yarn@1.22.22 install --ignore-scripts', releaseDir, {}, { yarnInstall: true })
     run(`node scripts/release/download-experimental-build.js --commit=${PINNED_SHA}`, cacheDir)
   } else {
     const pkgs =
@@ -137,7 +139,7 @@ function ensureWebpackPluginDeps() {
   const terser = join(cacheDir, 'node_modules', 'terser-webpack-plugin', 'package.json')
   if (!existsSync(terser)) {
     console.log('[react-devtools:vendor] installing terser-webpack-plugin (required by upstream webpack.config)')
-    run('npx yarn@1.22.22 add -D -W terser-webpack-plugin@5.3.14', cacheDir)
+    run('npx yarn@1.22.22 add -D -W terser-webpack-plugin@5.3.14', cacheDir, {}, { yarnInstall: true })
   }
 }
 

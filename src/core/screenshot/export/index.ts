@@ -1,7 +1,5 @@
 import { encodeBmp } from './bmp'
 import { canvasToBlob } from './canvas'
-import { exportCanvasToPdf } from './pdf'
-import { encodeGifFromRgba } from './gif'
 import { applyFilenameTemplate, formatDateParts } from '@/core/screenshot/filename'
 import type { PageInfo } from '@/core/screenshot/types'
 
@@ -30,16 +28,19 @@ export async function exportCanvas(
       const ctx = canvas.getContext('2d')
       if (!ctx) throw new Error('Canvas unavailable')
       const rgba = ctx.getImageData(0, 0, canvas.width, canvas.height).data
+      const { encodeGifFromRgba } = await import('./gif')
       const bytes = encodeGifFromRgba([{ rgba, width: canvas.width, height: canvas.height }])
       return new Blob([new Uint8Array(bytes)], { type: 'image/gif' })
     }
-    case 'pdf':
+    case 'pdf': {
+      const { exportCanvasToPdf } = await import('./pdf')
       return exportCanvasToPdf(canvas, {
         splitPages: opts?.pdfSplit ?? 'none',
         links: opts?.links,
         textRuns: opts?.textRuns,
         jpegQuality: opts?.jpegQuality,
       })
+    }
     default:
       return canvasToBlob(canvas, 'image/png')
   }

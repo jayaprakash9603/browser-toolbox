@@ -9,6 +9,7 @@ import {
   type ThreatListCategory,
   type ThreatsFile,
 } from '@/core/protection'
+import { bundledThreatsGenerated } from '@/core/protection/bundledThreatsStamp'
 import { STORAGE_KEYS } from '@/core/constants'
 import { get, set } from '@/core/storage'
 import { createLogger } from '@/core/logging'
@@ -67,14 +68,18 @@ function stateFingerprint(state: ProtectionState): string {
 }
 
 export async function syncProtectionRules(state: ProtectionState): Promise<void> {
+  const fingerprint = stateFingerprint(state)
+  const stored = await get<string>(STORAGE_KEYS.protectionRulesVersion)
+  const quickVersion = `${bundledThreatsGenerated}|${fingerprint}`
+  if (bundledThreatsGenerated && stored === quickVersion) return
+
   const threats = await loadThreatsFile()
   if (!threats) {
     logger.warn('no threats file; skipping rule sync')
     return
   }
 
-  const version = `${threats.generated}|${stateFingerprint(state)}`
-  const stored = await get<string>(STORAGE_KEYS.protectionRulesVersion)
+  const version = `${threats.generated}|${fingerprint}`
   if (stored === version) return
 
   const extensionBase = chrome.runtime.getURL('').replace(/\/$/, '')

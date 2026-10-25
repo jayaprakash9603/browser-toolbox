@@ -15,6 +15,7 @@
     "react-devtools:ensure": "node scripts/react-devtools/ensure-vendored.mjs",
     "build:world-map": "node scripts/build-world-map.mjs",
     "build": "node scripts/copy-postman-sandbox.mjs && node scripts/copy-wa-vendor.mjs && npm run autofill:assets && npm run build:world-map && npm run adblock:scripts && node scripts/build-script-studio-runtime.mjs && tsc -b && vite build && node scripts/check-startup-budget.mjs",
+    "measure-build": "node scripts/measure-build.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",

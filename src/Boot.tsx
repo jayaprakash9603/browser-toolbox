@@ -10,10 +10,11 @@ export function Boot() {
       const [{ registerModules }, { preloadRouteFromHash }] = await Promise.all([
         import('@/modules'),
         import('@/app/routePreload'),
+        import('@/i18n'),
+        import('@/app/App'),
       ])
       registerModules()
       preloadRouteFromHash()
-      await import('@/i18n')
       setReady(true)
     })()
   }, [])
