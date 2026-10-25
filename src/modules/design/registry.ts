@@ -42,7 +42,8 @@ export const designTools = [
   defineTool({
     id: 'design.palette-generator',
     name: 'Palette Generator',
-    description: 'Generate complementary, analogous, triadic, monochromatic and random palettes.',
+    description:
+      'Build harmonious palettes with locks, OKLCH scales, WCAG contrast, color-vision checks, a live UI preview, exports and a curated library.',
     category: 'design',
     icon: PaletteIcon,
     keywords: [
@@ -53,8 +54,21 @@ export const designTools = [
       'analogous',
       'triadic',
       'monochromatic',
+      'tailwind',
+      'tokens',
+      'shades',
+      'oklch',
+      'color blind',
     ],
-    aliases: ['color palette', 'color scheme', 'palette generator', 'color harmony'],
+    aliases: [
+      'color palette',
+      'color scheme',
+      'palette generator',
+      'color harmony',
+      'tailwind colors',
+      'color scale',
+      'image palette',
+    ],
     route: '/tools/design/palette-generator',
     capabilities: ['SIDE_PANEL'],
     status: 'active',

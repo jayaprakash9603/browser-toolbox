@@ -19,6 +19,7 @@ import { sitesYoutubeStrings } from './sitesYoutubeEn'
 import { scriptStudioStrings } from './scriptStudioEn'
 import { reactDevtoolsStrings } from './reactDevtoolsEn'
 import { testDataStrings } from './testDataEn'
+import { paletteGeneratorStrings } from './paletteGeneratorEn'
 
 const en = {
   'app.name': 'One Panel',
@@ -940,7 +941,7 @@ const en = {
     'Pick a color from the screen or a swatch, copy as HEX/RGB/HSL.',
   'tools.design.palette-generator.name': 'Palette Generator',
   'tools.design.palette-generator.description':
-    'Generate complementary, analogous, triadic, monochromatic and random palettes.',
+    'Build harmonious palettes with locks, OKLCH scales, WCAG contrast, color-vision checks, a live UI preview, exports and a curated library.',
   'tools.design.contrast-checker.name': 'Contrast Checker',
   'tools.design.contrast-checker.description':
     'WCAG contrast ratio between foreground and background colors.',
@@ -1446,6 +1447,7 @@ const en = {
   ...tabManagerStrings,
   ...datetimeStrings,
   ...qrToolkitStrings,
+  ...paletteGeneratorStrings,
 } as const
 
 export default en

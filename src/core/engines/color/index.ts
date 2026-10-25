@@ -263,6 +263,112 @@ export function checkContrast(foreground: Rgb, background: Rgb): ContrastResult 
   }
 }
 
+export interface Oklch {
+  /** Perceptual lightness, 0–1. */
+  l: number
+  /** Chroma, roughly 0–0.37 inside sRGB. */
+  c: number
+  /** Hue in degrees. */
+  h: number
+}
+
+function linearToChannel(value: number): number {
+  const v = value <= 0.0031308 ? 12.92 * value : 1.055 * Math.pow(value, 1 / 2.4) - 0.055
+  return v * 255
+}
+
+export function rgbToOklch({ r, g, b }: Rgb): Oklch {
+  const lr = channelToLinear(r)
+  const lg = channelToLinear(g)
+  const lb = channelToLinear(b)
+  const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb)
+  const m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb)
+  const s = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb)
+  const L = 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s
+  const A = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s
+  const B = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s
+  const c = Math.sqrt(A * A + B * B)
+  const h = c < 1e-4 ? 0 : ((Math.atan2(B, A) * 180) / Math.PI + 360) % 360
+  return { l: L, c, h }
+}
+
+function oklchToLinear({ l, c, h }: Oklch): [number, number, number] {
+  const rad = (h * Math.PI) / 180
+  const A = c * Math.cos(rad)
+  const B = c * Math.sin(rad)
+  const l_ = Math.pow(l + 0.3963377774 * A + 0.2158037573 * B, 3)
+  const m_ = Math.pow(l - 0.1055613458 * A - 0.0638541728 * B, 3)
+  const s_ = Math.pow(l - 0.0894841775 * A - 1.291485548 * B, 3)
+  return [
+    4.0767416621 * l_ - 3.3077115913 * m_ + 0.2309699292 * s_,
+    -1.2684380046 * l_ + 2.6097574011 * m_ - 0.3413193965 * s_,
+    -0.0041960863 * l_ - 0.7034186147 * m_ + 1.707614701 * s_,
+  ]
+}
+
+const inGamut = (channels: [number, number, number]) => channels.every((v) => v >= -1e-4 && v <= 1 + 1e-4)
+
+/** Converts to sRGB, lowering chroma until the color fits so hue and lightness are kept. */
+export function oklchToRgb(color: Oklch): Rgb {
+  let linear = oklchToLinear(color)
+  if (!inGamut(linear)) {
+    let low = 0
+    let high = color.c
+    for (let step = 0; step < 18; step += 1) {
+      const mid = (low + high) / 2
+      if (inGamut(oklchToLinear({ ...color, c: mid }))) low = mid
+      else high = mid
+    }
+    linear = oklchToLinear({ ...color, c: low })
+  }
+  const [r, g, b] = linear.map((v) => clamp(round(linearToChannel(clamp(v, 0, 1))), 0, 255))
+  return { r, g, b }
+}
+
+/** Distance in OKLab; below ~0.04 two colors are hard to tell apart. */
+export function colorDistance(a: Rgb, b: Rgb): number {
+  const toLab = (rgb: Rgb) => {
+    const { l, c, h } = rgbToOklch(rgb)
+    const rad = (h * Math.PI) / 180
+    return [l, c * Math.cos(rad), c * Math.sin(rad)]
+  }
+  const [l1, a1, b1] = toLab(a)
+  const [l2, a2, b2] = toLab(b)
+  return Math.hypot(l1 - l2, a1 - a2, b1 - b2)
+}
+
+export type VisionMode = 'normal' | 'protanopia' | 'deuteranopia' | 'tritanopia' | 'achromatopsia'
+
+/** Machado et al. (2009) full-severity matrices, applied in linear RGB. */
+const VISION_MATRICES: Record<Exclude<VisionMode, 'normal' | 'achromatopsia'>, number[][]> = {
+  protanopia: [
+    [0.152286, 1.052583, -0.204868],
+    [0.114503, 0.786281, 0.099216],
+    [-0.003882, -0.048116, 1.051998],
+  ],
+  deuteranopia: [
+    [0.367322, 0.860646, -0.227968],
+    [0.280085, 0.672501, 0.047413],
+    [-0.01182, 0.04294, 0.968881],
+  ],
+  tritanopia: [
+    [1.255528, -0.076749, -0.178779],
+    [-0.078411, 0.930809, 0.147602],
+    [0.004733, 0.691367, 0.3039],
+  ],
+}
+
+export function simulateVision(rgb: Rgb, mode: VisionMode): Rgb {
+  if (mode === 'normal') return rgb
+  const linear = [channelToLinear(rgb.r), channelToLinear(rgb.g), channelToLinear(rgb.b)]
+  const out =
+    mode === 'achromatopsia'
+      ? Array(3).fill(relativeLuminance(rgb))
+      : VISION_MATRICES[mode].map((row) => row[0] * linear[0] + row[1] * linear[1] + row[2] * linear[2])
+  const [r, g, b] = out.map((v) => clamp(round(linearToChannel(clamp(v, 0, 1))), 0, 255))
+  return { r, g, b }
+}
+
 export type PaletteMode = 'complementary' | 'analogous' | 'triadic' | 'monochromatic' | 'random'
 
 export function generatePalette(
