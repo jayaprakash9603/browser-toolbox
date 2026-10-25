@@ -1,5 +1,32 @@
+import {
+  ClipboardListIcon,
+  CodeXmlIcon,
+  GlobeIcon,
+  ImageIcon,
+  ShieldCheckIcon,
+  TypeIcon,
+  type LucideIcon,
+} from 'lucide-react'
+
 import type { ToolDefinition } from '@/core/registry'
 import { toolRegistry } from '@/core/registry'
+
+export type HomeTagline = {
+  id: 'text' | 'developer' | 'web' | 'media' | 'security' | 'productivity'
+  icon: LucideIcon
+}
+
+/** Rotating welcome messages; copy lives under `home.tagline.<id>` and `home.taglineTopic.<id>`. */
+export const HOME_TAGLINES: readonly HomeTagline[] = [
+  { id: 'text', icon: TypeIcon },
+  { id: 'developer', icon: CodeXmlIcon },
+  { id: 'web', icon: GlobeIcon },
+  { id: 'media', icon: ImageIcon },
+  { id: 'security', icon: ShieldCheckIcon },
+  { id: 'productivity', icon: ClipboardListIcon },
+]
+
+export const TAGLINE_INTERVAL_MS = 4500
 
 export const QUICK_ACTION_IDS = [
   'clipboard.manager',
