@@ -16,6 +16,8 @@ export const scriptStudioStrings = {
   'scriptStudio.newScript': 'New script',
   'scriptStudio.status.on': 'Scripts on',
   'scriptStudio.status.off': 'Scripts off',
+  'scriptStudio.status.paused': 'Paused',
+  'scriptStudio.status.pausedHint': 'No scripts will run on new page loads. Reload tabs that are already open to stop scripts running there.',
   'scriptStudio.gallery.search': 'Search 30+ ready-made scripts',
   'scriptStudio.gallery.categories': 'Categories',
   'scriptStudio.gallery.category.all': 'All',

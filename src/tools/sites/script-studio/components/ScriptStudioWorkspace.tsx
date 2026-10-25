@@ -80,6 +80,7 @@ export function ScriptStudioWorkspace({ studio: ss, surface, tab, onTabChange, e
   const enabledCount = live.filter((s) => s.enabled).length
   const record = editId ? index.scripts.find((s) => s.id === editId) : undefined
   const ready = ss.probe?.operational === true
+  const status = !index.globalEnabled ? 'paused' : ss.probe === null ? 'checking' : ready ? 'ready' : 'setup'
 
   const create = async () => {
     const id = await ss.createScript()
@@ -149,25 +150,34 @@ export function ScriptStudioWorkspace({ studio: ss, surface, tab, onTabChange, e
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border bg-card px-3 py-2">
-        <label className="flex cursor-pointer items-center gap-2 text-xs font-medium">
-          <Switch checked={index.globalEnabled} onCheckedChange={(on) => void ss.setGlobalEnabled(on)} />
-          {index.globalEnabled ? t('scriptStudio.status.on') : t('scriptStudio.status.off')}
-        </label>
+        <div className="flex items-center gap-2">
+          <Switch
+            id="ss-global-switch"
+            checked={index.globalEnabled}
+            onCheckedChange={(on) => void ss.setGlobalEnabled(on)}
+          />
+          <label htmlFor="ss-global-switch" className="cursor-pointer text-xs font-medium select-none">
+            {index.globalEnabled ? t('scriptStudio.status.on') : t('scriptStudio.status.off')}
+          </label>
+        </div>
         <span
           className={cn(
             'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium',
-            ss.probe === null
+            status === 'checking' || status === 'paused'
               ? 'bg-muted text-muted-foreground'
-              : ready
+              : status === 'ready'
                 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
                 : 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
           )}
         >
           <span
-            className={cn('size-1.5 rounded-full', ss.probe === null ? 'bg-muted-foreground' : ready ? 'bg-emerald-500' : 'bg-amber-500')}
+            className={cn(
+              'size-1.5 rounded-full',
+              status === 'checking' || status === 'paused' ? 'bg-muted-foreground' : status === 'ready' ? 'bg-emerald-500' : 'bg-amber-500',
+            )}
             aria-hidden
           />
-          {ss.probe === null ? t('scriptStudio.status.checking') : ready ? t('scriptStudio.status.ready') : t('scriptStudio.status.setup')}
+          {t(`scriptStudio.status.${status}`)}
         </span>
         <span className="text-[11px] text-muted-foreground tabular-nums">
           {t('scriptStudio.status.counts', { enabled: enabledCount, total: live.length })}
@@ -176,6 +186,11 @@ export function ScriptStudioWorkspace({ studio: ss, surface, tab, onTabChange, e
           <PlusIcon className="size-3.5" aria-hidden />
           {t('scriptStudio.newScript')}
         </Button>
+        {!index.globalEnabled ? (
+          <p role="status" className="basis-full text-[11px] text-muted-foreground">
+            {t('scriptStudio.status.pausedHint')}
+          </p>
+        ) : null}
       </div>
 
       <SetupWizard

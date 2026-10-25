@@ -106,8 +106,14 @@ export function useScriptStudio() {
 
   const setGlobalEnabled = useCallback(
     async (enabled: boolean) => {
-      await sendMessage({ type: 'SCRIPT_STUDIO_SET_GLOBAL', enabled })
-      await refresh()
+      setIndex((prev) => (prev ? { ...prev, globalEnabled: enabled } : prev))
+      try {
+        const current = await getScriptStudioIndex()
+        await setScriptStudioIndex({ ...current, globalEnabled: enabled })
+        void sendMessage({ type: 'SCRIPT_STUDIO_SYNC' })
+      } catch {
+        await refresh()
+      }
     },
     [refresh],
   )

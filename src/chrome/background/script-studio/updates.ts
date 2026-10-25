@@ -6,6 +6,7 @@ import {
   isNewerVersion,
   parseMetadata,
   setScriptCode,
+  setScriptExternals,
   upsertScriptRecord,
 } from '@/core/script-studio'
 
@@ -50,7 +51,6 @@ export async function checkScriptUpdates(scriptIds?: string[]): Promise<
           const newCode = await dl.text()
           const newMeta = parseMetadata(newCode)
           if (newMeta) {
-            const { setScriptExternals } = await import('@/core/script-studio')
             const ext = await refreshScriptExternals(newMeta, [], true)
             await setScriptExternals(record.id, ext)
             await setScriptCode(record.id, newCode)

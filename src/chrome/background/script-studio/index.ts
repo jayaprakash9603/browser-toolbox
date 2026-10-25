@@ -2,7 +2,7 @@ import { STORAGE_KEYS } from '@/core/constants'
 import { registerMessageHandler } from '@/core/messaging'
 import { createLogger } from '@/core/logging'
 import { checkScriptUpdates } from './updates'
-import { getScriptStudioIndex, getScriptStudioSettings } from '@/core/script-studio'
+import { getScriptStudioIndex, getScriptStudioSettings, setScriptStudioIndex } from '@/core/script-studio'
 
 import { probeUserScripts as probeApi } from './availability'
 import { registerGmBridgeListener } from './bridge'
@@ -13,7 +13,7 @@ import {
   watchScriptStudioStorage,
 } from './registration'
 import { registerUpdateAlarms } from './updates'
-import { updateBadgeForTab } from './badge'
+import { clearTabBadge, updateBadgeForTab } from './badge'
 
 const logger = createLogger('script-studio')
 
@@ -27,7 +27,7 @@ export function registerScriptStudio(): void {
     if (info.status === 'complete' || info.url) void updateBadgeForTab(tabId)
   })
   chrome.tabs.onRemoved.addListener((tabId) => {
-    void import('./badge').then(({ clearTabBadge }) => clearTabBadge(tabId))
+    clearTabBadge(tabId)
   })
 
   registerMessageHandler('SCRIPT_STUDIO_SYNC', async () => {
@@ -63,7 +63,6 @@ export function registerScriptStudio(): void {
     if (!('enabled' in msg)) return null
     const index = await getScriptStudioIndex()
     index.globalEnabled = Boolean(msg.enabled)
-    const { setScriptStudioIndex } = await import('@/core/script-studio')
     await setScriptStudioIndex(index)
     scheduleScriptStudioSync()
     return index
