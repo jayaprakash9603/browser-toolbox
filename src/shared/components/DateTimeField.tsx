@@ -91,19 +91,32 @@ function TimeSelect({
 interface DateTimeFieldProps {
   value: string
   onChange: (value: string) => void
-  ariaLabel: string
+  ariaLabel?: string
+  id?: string
+  /** Earliest selectable value in the same `YYYY-MM-DDTHH:mm` format; earlier days are disabled. */
+  min?: string
+  disabled?: boolean
   placeholder?: string
   className?: string
+}
+
+function startOfDay(date: Date): number {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
 }
 
 export function DateTimeField({
   value,
   onChange,
   ariaLabel,
+  id,
+  min,
+  disabled,
   placeholder = 'Pick date and time',
   className,
 }: DateTimeFieldProps) {
   const selected = parseDateTimeValue(value)
+  const minDate = min ? parseDateTimeValue(min) : null
+  const minDay = minDate ? startOfDay(minDate) : null
   const [open, setOpen] = useState(false)
   const [view, setView] = useState(() => selected ?? new Date())
   const cells = useMemo(() => buildMonth(view), [view])
@@ -138,15 +151,17 @@ export function DateTimeField({
         <Button
           type="button"
           variant="outline"
+          id={id}
+          disabled={disabled}
           aria-label={ariaLabel}
           className={cn(
-            'h-9 w-full justify-start px-3 text-left font-normal',
+            'h-9 w-full justify-start px-3 text-left text-[13px] font-normal',
             !selected && 'text-muted-foreground',
             className,
           )}
         >
-          <CalendarIcon />
-          <span className="truncate">{selected ? displayLabel(selected) : placeholder}</span>
+          <CalendarIcon className="text-muted-foreground" />
+          <span className="truncate tabular-nums">{selected ? displayLabel(selected) : placeholder}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[min(18rem,calc(100vw-2rem))]">
@@ -190,6 +205,8 @@ export function DateTimeField({
                 type="button"
                 variant={active ? 'default' : 'ghost'}
                 size="icon-sm"
+                disabled={minDay !== null && day.getTime() < minDay}
+                aria-pressed={Boolean(active)}
                 onClick={() => pickDay(day)}
                 className="w-full font-normal"
               >

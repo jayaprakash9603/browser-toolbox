@@ -32,6 +32,7 @@ export const qrToolkitStrings = {
   'qrk.eventTitle': 'Event title',
   'qrk.starts': 'Starts',
   'qrk.ends': 'Ends',
+  'qrk.pickDateTime': 'Pick date & time',
   'qrk.location': 'Location',
 
   'qrk.previewTitle': 'QR code preview',

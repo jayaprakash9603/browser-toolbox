@@ -1,11 +1,17 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useId, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { EyeIcon, EyeOffIcon, GlobeIcon } from 'lucide-react'
 
 import type { QrPreset } from '@/core/engines/qrcode'
+import {
+  DateTimeField,
+  formatDateTimeValue,
+  parseDateTimeValue,
+} from '@/shared/components/DateTimeField'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
+import { Label } from '@/shared/components/ui/label'
 import { Segmented } from '@/shared/components/ui/segmented'
 import { Switch } from '@/shared/components/ui/switch'
 import { Textarea } from '@/shared/components/ui/textarea'
@@ -14,7 +20,13 @@ import { cn } from '@/shared/utils/cn'
 import { PRESET_ICONS } from './presetIcons'
 import { PRESETS, type QrForm } from './qrModel'
 
-export function PresetPicker({ value, onChange }: { value: QrPreset; onChange: (preset: QrPreset) => void }) {
+export function PresetPicker({
+  value,
+  onChange,
+}: {
+  value: QrPreset
+  onChange: (preset: QrPreset) => void
+}) {
   const { t } = useTranslation()
   const reduce = useReducedMotion()
   const refs = useRef<(HTMLButtonElement | null)[]>([])
@@ -65,12 +77,18 @@ export function PresetPicker({ value, onChange }: { value: QrPreset; onChange: (
                   layoutId="qr-preset-active"
                   aria-hidden
                   className="absolute inset-0 rounded-[11px] bg-gradient-to-b from-primary/15 to-primary/[0.04]"
-                  transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 480, damping: 36 }}
+                  transition={
+                    reduce ? { duration: 0 } : { type: 'spring', stiffness: 480, damping: 36 }
+                  }
                 />
               )}
               <motion.span
                 className="relative"
-                animate={selected && !reduce ? { scale: [1, 1.22, 1], rotate: [0, -8, 0] } : { scale: 1, rotate: 0 }}
+                animate={
+                  selected && !reduce
+                    ? { scale: [1, 1.22, 1], rotate: [0, -8, 0] }
+                    : { scale: 1, rotate: 0 }
+                }
                 transition={{ duration: 0.4 }}
               >
                 <Icon className="size-4" aria-hidden />
@@ -84,16 +102,36 @@ export function PresetPicker({ value, onChange }: { value: QrPreset; onChange: (
   )
 }
 
-function Field({ label, hint, children, className }: { label: ReactNode; hint?: ReactNode; children: ReactNode; className?: string }) {
+function Field({
+  label,
+  hint,
+  children,
+  className,
+}: {
+  label: ReactNode
+  hint?: ReactNode
+  children: (id: string) => ReactNode
+  className?: string
+}) {
+  const id = useId()
   return (
-    <label className={cn('flex min-w-0 flex-col gap-1.5', className)}>
-      <span className="flex items-center justify-between gap-2 text-xs font-medium text-muted-foreground">
-        {label}
-        {hint && <span className="font-normal tabular-nums">{hint}</span>}
-      </span>
-      {children}
-    </label>
+    <div className={cn('flex min-w-0 flex-col gap-1.5', className)}>
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={id} className="text-xs text-muted-foreground">
+          {label}
+        </Label>
+        {hint && <span className="text-xs text-muted-foreground tabular-nums">{hint}</span>}
+      </div>
+      {children(id)}
+    </div>
   )
+}
+
+function addHour(value: string): string {
+  const date = parseDateTimeValue(value)
+  if (!date) return ''
+  date.setHours(date.getHours() + 1)
+  return formatDateTimeValue(date)
 }
 
 function currentTabUrl(): Promise<string | null> {
@@ -118,7 +156,11 @@ export function ContentFields({ preset, form, onChange }: ContentFieldsProps) {
         key={preset}
         initial={reduce ? { opacity: 0 } : { opacity: 0, x: 12, filter: 'blur(3px)' }}
         animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-        exit={reduce ? { opacity: 0 } : { opacity: 0, x: -8, filter: 'blur(2px)', transition: { duration: 0.12 } }}
+        exit={
+          reduce
+            ? { opacity: 0 }
+            : { opacity: 0, x: -8, filter: 'blur(2px)', transition: { duration: 0.12 } }
+        }
         transition={{ duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
         className="@container flex flex-col gap-3"
       >
@@ -132,49 +174,60 @@ function PresetFields({ preset, form, onChange }: ContentFieldsProps) {
   const { t } = useTranslation()
   const [showPassword, setShowPassword] = useState(false)
   const [tabError, setTabError] = useState(false)
+  const hiddenId = useId()
   const grid = 'grid grid-cols-1 gap-3 @sm:grid-cols-2'
 
   switch (preset) {
     case 'text':
       return (
         <Field label={t('qr.content')} hint={t('qrk.chars', { count: form.text.length })}>
-          <Textarea
-            rows={3}
-            value={form.text}
-            onChange={(e) => onChange({ text: e.target.value })}
-            placeholder={t('qr.textPlaceholder')}
-          />
+          {(id) => (
+            <Textarea
+              id={id}
+              rows={3}
+              value={form.text}
+              onChange={(e) => onChange({ text: e.target.value })}
+              placeholder={t('qr.textPlaceholder')}
+            />
+          )}
         </Field>
       )
     case 'url':
       return (
         <Field label={t('qrk.url')}>
-          <div className="flex gap-2">
-            <Input
-              type="url"
-              inputMode="url"
-              value={form.url}
-              onChange={(e) => onChange({ url: e.target.value })}
-              placeholder="https://example.com"
-              className="font-mono"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-9 shrink-0"
-              onClick={() => {
-                void currentTabUrl().then((url) => {
-                  setTabError(!url)
-                  if (url) onChange({ url })
-                })
-              }}
-            >
-              <GlobeIcon aria-hidden />
-              {t('qrk.currentTab')}
-            </Button>
-          </div>
-          {tabError && <span className="text-xs text-muted-foreground">{t('qrk.noTabUrl')}</span>}
+          {(id) => (
+            <>
+              <div className="flex gap-2">
+                <Input
+                  id={id}
+                  type="url"
+                  inputMode="url"
+                  value={form.url}
+                  onChange={(e) => onChange({ url: e.target.value })}
+                  placeholder="https://example.com"
+                  className="font-mono"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-9 shrink-0"
+                  onClick={() => {
+                    void currentTabUrl().then((url) => {
+                      setTabError(!url)
+                      if (url) onChange({ url })
+                    })
+                  }}
+                >
+                  <GlobeIcon aria-hidden />
+                  {t('qrk.currentTab')}
+                </Button>
+              </div>
+              {tabError && (
+                <span className="text-xs text-muted-foreground">{t('qrk.noTabUrl')}</span>
+              )}
+            </>
+          )}
         </Field>
       )
     case 'wifi':
@@ -182,32 +235,39 @@ function PresetFields({ preset, form, onChange }: ContentFieldsProps) {
         <>
           <div className={grid}>
             <Field label={t('qrk.ssid')}>
-              <Input value={form.ssid} onChange={(e) => onChange({ ssid: e.target.value })} placeholder="Home-5G" />
+              {(id) => (
+                <Input
+                  id={id}
+                  value={form.ssid}
+                  onChange={(e) => onChange({ ssid: e.target.value })}
+                  placeholder="Home-5G"
+                />
+              )}
             </Field>
             <Field label={t('qr.password')}>
-              <div className="relative">
-                <Input
-                  type={showPassword ? 'text' : 'password'}
-                  value={form.password}
-                  disabled={form.encryption === 'nopass'}
-                  onChange={(e) => onChange({ password: e.target.value })}
-                  className="pr-9 font-mono"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  className="absolute top-1 right-1"
-                  aria-label={t(showPassword ? 'qrk.hidePassword' : 'qrk.showPassword')}
-                  aria-pressed={showPassword}
-                  onClick={(e) => {
-                    e.preventDefault()
-                    setShowPassword((v) => !v)
-                  }}
-                >
-                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-                </Button>
-              </div>
+              {(id) => (
+                <div className="relative">
+                  <Input
+                    id={id}
+                    type={showPassword ? 'text' : 'password'}
+                    value={form.password}
+                    disabled={form.encryption === 'nopass'}
+                    onChange={(e) => onChange({ password: e.target.value })}
+                    className="pr-9 font-mono"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
+                    className="absolute top-1 right-1"
+                    aria-label={t(showPassword ? 'qrk.hidePassword' : 'qrk.showPassword')}
+                    aria-pressed={showPassword}
+                    onClick={() => setShowPassword((v) => !v)}
+                  >
+                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                  </Button>
+                </div>
+              )}
             </Field>
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -221,10 +281,19 @@ function PresetFields({ preset, form, onChange }: ContentFieldsProps) {
                 { value: 'nopass', label: t('qrk.openNetwork') },
               ]}
             />
-            <label className="flex cursor-pointer items-center gap-2 text-[13px] text-muted-foreground">
-              <Switch checked={form.hidden} onCheckedChange={(hidden) => onChange({ hidden })} />
-              {t('qrk.hiddenNetwork')}
-            </label>
+            <div className="flex items-center gap-2">
+              <Switch
+                id={hiddenId}
+                checked={form.hidden}
+                onCheckedChange={(hidden) => onChange({ hidden })}
+              />
+              <Label
+                htmlFor={hiddenId}
+                className="cursor-pointer text-[13px] font-normal text-muted-foreground"
+              >
+                {t('qrk.hiddenNetwork')}
+              </Label>
+            </div>
           </div>
         </>
       )
@@ -233,31 +302,75 @@ function PresetFields({ preset, form, onChange }: ContentFieldsProps) {
         <>
           <div className={grid}>
             <Field label={t('qr.emailTo')}>
-              <Input type="email" value={form.emailTo} onChange={(e) => onChange({ emailTo: e.target.value })} placeholder="name@example.com" />
+              {(id) => (
+                <Input
+                  id={id}
+                  type="email"
+                  value={form.emailTo}
+                  onChange={(e) => onChange({ emailTo: e.target.value })}
+                  placeholder="name@example.com"
+                />
+              )}
             </Field>
             <Field label={t('qr.subject')}>
-              <Input value={form.emailSubject} onChange={(e) => onChange({ emailSubject: e.target.value })} />
+              {(id) => (
+                <Input
+                  id={id}
+                  value={form.emailSubject}
+                  onChange={(e) => onChange({ emailSubject: e.target.value })}
+                />
+              )}
             </Field>
           </div>
           <Field label={t('qrk.message')}>
-            <Textarea rows={2} value={form.emailBody} onChange={(e) => onChange({ emailBody: e.target.value })} />
+            {(id) => (
+              <Textarea
+                id={id}
+                rows={2}
+                value={form.emailBody}
+                onChange={(e) => onChange({ emailBody: e.target.value })}
+              />
+            )}
           </Field>
         </>
       )
     case 'phone':
       return (
         <Field label={t('qr.phone')}>
-          <Input type="tel" value={form.phone} onChange={(e) => onChange({ phone: e.target.value })} placeholder="+1 555 123 4567" />
+          {(id) => (
+            <Input
+              id={id}
+              type="tel"
+              value={form.phone}
+              onChange={(e) => onChange({ phone: e.target.value })}
+              placeholder="+1 555 123 4567"
+            />
+          )}
         </Field>
       )
     case 'sms':
       return (
         <>
           <Field label={t('qr.phone')}>
-            <Input type="tel" value={form.smsPhone} onChange={(e) => onChange({ smsPhone: e.target.value })} placeholder="+1 555 123 4567" />
+            {(id) => (
+              <Input
+                id={id}
+                type="tel"
+                value={form.smsPhone}
+                onChange={(e) => onChange({ smsPhone: e.target.value })}
+                placeholder="+1 555 123 4567"
+              />
+            )}
           </Field>
           <Field label={t('qrk.message')} hint={t('qrk.chars', { count: form.smsMessage.length })}>
-            <Textarea rows={2} value={form.smsMessage} onChange={(e) => onChange({ smsMessage: e.target.value })} />
+            {(id) => (
+              <Textarea
+                id={id}
+                rows={2}
+                value={form.smsMessage}
+                onChange={(e) => onChange({ smsMessage: e.target.value })}
+              />
+            )}
           </Field>
         </>
       )
@@ -265,22 +378,62 @@ function PresetFields({ preset, form, onChange }: ContentFieldsProps) {
       return (
         <div className={grid}>
           <Field label={t('qr.firstName')}>
-            <Input value={form.firstName} onChange={(e) => onChange({ firstName: e.target.value })} />
+            {(id) => (
+              <Input
+                id={id}
+                value={form.firstName}
+                onChange={(e) => onChange({ firstName: e.target.value })}
+              />
+            )}
           </Field>
           <Field label={t('qr.lastName')}>
-            <Input value={form.lastName} onChange={(e) => onChange({ lastName: e.target.value })} />
+            {(id) => (
+              <Input
+                id={id}
+                value={form.lastName}
+                onChange={(e) => onChange({ lastName: e.target.value })}
+              />
+            )}
           </Field>
           <Field label={t('qr.phone')}>
-            <Input type="tel" value={form.contactPhone} onChange={(e) => onChange({ contactPhone: e.target.value })} />
+            {(id) => (
+              <Input
+                id={id}
+                type="tel"
+                value={form.contactPhone}
+                onChange={(e) => onChange({ contactPhone: e.target.value })}
+              />
+            )}
           </Field>
           <Field label={t('qrk.email')}>
-            <Input type="email" value={form.contactEmail} onChange={(e) => onChange({ contactEmail: e.target.value })} />
+            {(id) => (
+              <Input
+                id={id}
+                type="email"
+                value={form.contactEmail}
+                onChange={(e) => onChange({ contactEmail: e.target.value })}
+              />
+            )}
           </Field>
           <Field label={t('qrk.organization')}>
-            <Input value={form.organization} onChange={(e) => onChange({ organization: e.target.value })} />
+            {(id) => (
+              <Input
+                id={id}
+                value={form.organization}
+                onChange={(e) => onChange({ organization: e.target.value })}
+              />
+            )}
           </Field>
           <Field label={t('qrk.website')}>
-            <Input type="url" value={form.contactUrl} onChange={(e) => onChange({ contactUrl: e.target.value })} placeholder="https://" />
+            {(id) => (
+              <Input
+                id={id}
+                type="url"
+                value={form.contactUrl}
+                onChange={(e) => onChange({ contactUrl: e.target.value })}
+                placeholder="https://"
+              />
+            )}
           </Field>
         </div>
       )
@@ -288,10 +441,28 @@ function PresetFields({ preset, form, onChange }: ContentFieldsProps) {
       return (
         <div className={grid}>
           <Field label={t('qrk.latitude')}>
-            <Input inputMode="decimal" value={form.lat} onChange={(e) => onChange({ lat: e.target.value })} placeholder="48.8584" className="font-mono" />
+            {(id) => (
+              <Input
+                id={id}
+                inputMode="decimal"
+                value={form.lat}
+                onChange={(e) => onChange({ lat: e.target.value })}
+                placeholder="48.8584"
+                className="font-mono"
+              />
+            )}
           </Field>
           <Field label={t('qrk.longitude')}>
-            <Input inputMode="decimal" value={form.lng} onChange={(e) => onChange({ lng: e.target.value })} placeholder="2.2945" className="font-mono" />
+            {(id) => (
+              <Input
+                id={id}
+                inputMode="decimal"
+                value={form.lng}
+                onChange={(e) => onChange({ lng: e.target.value })}
+                placeholder="2.2945"
+                className="font-mono"
+              />
+            )}
           </Field>
         </div>
       )
@@ -299,18 +470,52 @@ function PresetFields({ preset, form, onChange }: ContentFieldsProps) {
       return (
         <>
           <Field label={t('qrk.eventTitle')}>
-            <Input value={form.eventTitle} onChange={(e) => onChange({ eventTitle: e.target.value })} />
+            {(id) => (
+              <Input
+                id={id}
+                value={form.eventTitle}
+                onChange={(e) => onChange({ eventTitle: e.target.value })}
+              />
+            )}
           </Field>
           <div className={grid}>
             <Field label={t('qrk.starts')}>
-              <Input type="datetime-local" value={form.eventStart} onChange={(e) => onChange({ eventStart: e.target.value })} />
+              {(id) => (
+                <DateTimeField
+                  id={id}
+                  value={form.eventStart}
+                  placeholder={t('qrk.pickDateTime')}
+                  onChange={(eventStart) => {
+                    const endsTooEarly = Boolean(
+                      eventStart && form.eventEnd && form.eventEnd <= eventStart,
+                    )
+                    onChange(
+                      endsTooEarly ? { eventStart, eventEnd: addHour(eventStart) } : { eventStart },
+                    )
+                  }}
+                />
+              )}
             </Field>
             <Field label={t('qrk.ends')}>
-              <Input type="datetime-local" value={form.eventEnd} min={form.eventStart || undefined} onChange={(e) => onChange({ eventEnd: e.target.value })} />
+              {(id) => (
+                <DateTimeField
+                  id={id}
+                  value={form.eventEnd}
+                  min={form.eventStart || undefined}
+                  placeholder={t('qrk.pickDateTime')}
+                  onChange={(eventEnd) => onChange({ eventEnd })}
+                />
+              )}
             </Field>
           </div>
           <Field label={t('qrk.location')}>
-            <Input value={form.eventLocation} onChange={(e) => onChange({ eventLocation: e.target.value })} />
+            {(id) => (
+              <Input
+                id={id}
+                value={form.eventLocation}
+                onChange={(e) => onChange({ eventLocation: e.target.value })}
+              />
+            )}
           </Field>
         </>
       )

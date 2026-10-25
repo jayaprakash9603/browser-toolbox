@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { ImagePlusIcon, PaletteIcon, RotateCcwIcon, ShapesIcon, SparklesIcon, Trash2Icon } from 'lucide-react'
@@ -8,6 +8,7 @@ import { fileToDataUrl } from '@/core/engines/image'
 import { SectionCard } from '@/shared/components/ValueCard'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
+import { Label } from '@/shared/components/ui/label'
 import { Segmented } from '@/shared/components/ui/segmented'
 import { Slider } from '@/shared/components/ui/slider'
 import { Switch } from '@/shared/components/ui/switch'
@@ -418,19 +419,29 @@ function ColorField({
   toggle?: { label: string; checked: boolean; onChange: (checked: boolean) => void }
 }) {
   const [draft, setDraft] = useState<string | null>(null)
+  const id = useId()
   const locked = Boolean(disabled)
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        <Label htmlFor={`${id}-hex`} className="text-xs text-muted-foreground">
+          {label}
+        </Label>
         {toggle && (
-          <label className="flex cursor-pointer items-center gap-1.5 text-[11px] text-muted-foreground">
-            {toggle.label}
-            <Switch checked={toggle.checked} onCheckedChange={toggle.onChange} />
-          </label>
+          <div className="flex items-center gap-1.5">
+            <Label htmlFor={`${id}-toggle`} className="cursor-pointer text-[11px] font-normal text-muted-foreground">
+              {toggle.label}
+            </Label>
+            <Switch id={`${id}-toggle`} checked={toggle.checked} onCheckedChange={toggle.onChange} />
+          </div>
         )}
       </div>
-      <div className={cn('flex items-center gap-2 rounded-md border bg-background p-1 shadow-xs transition-opacity', locked && 'opacity-50')}>
+      <div
+        className={cn(
+          'flex items-center gap-1 rounded-md border border-input bg-background p-1 shadow-xs transition-[opacity,border-color,box-shadow] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/30',
+          locked && 'opacity-50',
+        )}
+      >
         <span className="relative size-7 shrink-0 overflow-hidden rounded-[5px] border shadow-inner" style={{ background: value }}>
           <input
             type="color"
@@ -441,18 +452,20 @@ function ColorField({
             className="absolute inset-0 size-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
           />
         </span>
-        <input
+        <Input
+          id={`${id}-hex`}
           value={draft ?? value}
           disabled={locked}
           spellCheck={false}
+          maxLength={7}
           onChange={(e) => {
             const next = e.target.value
             setDraft(next)
             if (/^#[0-9a-f]{6}$/i.test(next)) onChange(next.toLowerCase())
           }}
           onBlur={() => setDraft(null)}
-          aria-label={`${label} hex`}
-          className="min-w-0 flex-1 bg-transparent font-mono text-[13px] uppercase outline-none disabled:cursor-not-allowed"
+          aria-invalid={draft !== null && !/^#[0-9a-f]{6}$/i.test(draft)}
+          className="h-7 flex-1 border-0 bg-transparent px-1.5 font-mono uppercase shadow-none hover:border-0 focus-visible:ring-0 disabled:opacity-100"
         />
       </div>
     </div>
