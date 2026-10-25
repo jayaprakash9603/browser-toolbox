@@ -35,3 +35,6 @@ scripts/react-devtools/build-log.txt
 *.njsproj
 *.sln
 *.sw?
+
+# Local scratch files
+.tmp/
