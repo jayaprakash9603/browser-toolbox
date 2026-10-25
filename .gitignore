@@ -10,6 +10,8 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+# Chrome Web Store zips from release.bat
+/releases/
 *.local
 
 # Universal Form Autofill lives in its own git repository; its injectable runtime is copied at build time

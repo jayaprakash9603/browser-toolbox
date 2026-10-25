@@ -1,4 +1,9 @@
+import { readFileSync } from 'node:fs'
+
 import { defineManifest } from '@crxjs/vite-plugin'
+
+/** package.json is the single source of the version; release.bat bumps it. */
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string }
 
 /** Keep ids in sync with src/core/commands/manifest.ts */
 function buildManifestCommands(): Record<string, { description: string }> {
@@ -15,7 +20,7 @@ export default defineManifest({
   manifest_version: 3,
   default_locale: 'en',
   name: '__MSG_extName__',
-  version: '0.1.0',
+  version,
   description: '__MSG_extDescription__',
   icons: {
     16: 'public/icons/icon16.png',
