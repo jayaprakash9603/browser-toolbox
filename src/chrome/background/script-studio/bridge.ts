@@ -203,18 +203,8 @@ export function registerGmBridgeListener(): void {
     return true
   })
 
-  const us = chrome.userScripts as typeof chrome.userScripts & {
-    onUserScriptMessage?: {
-      addListener: (
-        cb: (
-          message: unknown,
-          sender: chrome.runtime.MessageSender,
-          sendResponse: (response: unknown) => void,
-        ) => boolean | void,
-      ) => void
-    }
-  }
-  us?.onUserScriptMessage?.addListener((message, sender, sendResponse) => {
+  // Messages from the USER_SCRIPT world (including the page-world relay) only arrive on this event, never onMessage.
+  chrome.runtime.onUserScriptMessage?.addListener((message, sender, sendResponse) => {
     if (!isBridgeMessage(message)) return false
     void handleGmBridge(message, sender).then((res) => sendResponse(res))
     return true
