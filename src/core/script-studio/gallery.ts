@@ -28,6 +28,8 @@ type Spec = {
   grants?: string[]
   runAt?: RunAt
   enabledByDefault?: boolean
+  /** Bump when the code changes so installed copies are upgraded. */
+  version?: string
   body: string
 }
 
@@ -66,6 +68,11 @@ const TOAST = String.raw`function toast(text) {
 }
 `
 
+const NOTE = String.raw`function note(text) {
+  if (typeof __ssNote === 'function') __ssNote(text);
+}
+`
+
 const IS_TYPING = String.raw`function isTyping(target) {
   var el = target instanceof Element ? target : null;
   return !!el && (el.closest('input, textarea, select') !== null || el.isContentEditable);
@@ -91,7 +98,7 @@ function build(spec: Spec): GalleryScript {
     '// ==UserScript==',
     `// @name         ${spec.name}`,
     '// @namespace    https://one-panel.local/script-studio/gallery',
-    '// @version      1.0.0',
+    `// @version      ${spec.version ?? '1.0.0'}`,
     `// @description  ${spec.description}`,
     '// @author       One Panel',
     ...spec.matches.map((m) => `// @match        ${m}`),
@@ -450,20 +457,283 @@ window.addEventListener('scroll', function () {
   },
   {
     id: 'copy-markdown-link',
-    name: 'Copy Page as Markdown Link',
-    description: 'Press Alt+Shift+C to copy the current page as [Title](URL) for notes and chats.',
+    name: 'Copy Page as Markdown',
+    description:
+      'Press Alt+Shift+C to copy the whole page (or your selection) as clean Markdown, or Alt+Shift+L for just a [Title](URL) link.',
     category: 'productivity',
     sites: 'All sites',
     matches: ALL_SITES,
-    body: TOAST + String.raw`
-document.addEventListener('keydown', function (e) {
-  if (!(e.altKey && e.shiftKey && e.code === 'KeyC')) return;
-  e.preventDefault();
-  var title = document.title.replace(/[\[\]]/g, '').trim() || location.hostname;
-  navigator.clipboard.writeText('[' + title + '](' + location.href + ')').then(function () {
-    toast('Markdown link copied');
+    version: '1.1.0',
+    body: TOAST + NOTE + String.raw`
+var SKIP_TAGS = /^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE|SVG|CANVAS|IFRAME|BUTTON|INPUT|SELECT|TEXTAREA|OPTION|DIALOG|VIDEO|AUDIO|OBJECT|EMBED|MAP|LINK|META)$/;
+var SKIP_ALWAYS = 'nav, aside, [role="navigation"], [role="complementary"], [role="search"], [role="dialog"], [aria-modal="true"], .sr-only, .visually-hidden';
+var SITE_CHROME = 'header, footer, [role="banner"], [role="contentinfo"]';
+var BLOCK_TAGS = /^(DIV|SECTION|ARTICLE|MAIN|HEADER|FOOTER|FIGURE|DETAILS|SUMMARY|ADDRESS|DL|DD|FIELDSET|CENTER|HGROUP|BODY|FORM)$/;
+var BLOCK_DISPLAY = /^(block|flex|grid|table|list-item|flow-root)/;
+
+function flat(s) { return s.replace(/\s+/g, ' ').trim(); }
+function block(s) { s = s.trim(); return s ? '\n\n' + s + '\n\n' : ''; }
+function spaced(inner, md) { return (/^\s/.test(inner) ? ' ' : '') + md + (/\s$/.test(inner) ? ' ' : ''); }
+function wrap(mark, inner) {
+  var t = inner.trim();
+  if (!t || /\n\n/.test(t)) return inner;
+  return spaced(inner, mark + flat(t) + mark);
+}
+function styleOf(el) { return el.isConnected ? getComputedStyle(el) : null; }
+function kids(el, ctx) {
+  var out = '';
+  for (var c = el.firstChild; c; c = c.nextSibling) out += convert(c, ctx);
+  return out;
+}
+// aria-hidden marks icons and duplicated marquee copies, but also visible text whose parent carries the
+// accessible name (<span aria-label="305+"><span aria-hidden="true">305+</span></span>); keep only that case.
+function skipHidden(el) {
+  if (el.getAttribute('aria-hidden') !== 'true') return false;
+  var icon = /icon|material|glyph|emoji|\bfa\b|fa-/i.test(String(el.className)) || /^[a-z]+(?:_[a-z]+)+$/.test(el.textContent.trim());
+  return icon || !(el.parentElement && el.parentElement.hasAttribute('aria-label'));
+}
+
+function convert(node, ctx) {
+  if (node.nodeType === 3) return node.nodeValue.replace(/\s+/g, ' ');
+  if (node.nodeType === 11) return kids(node, ctx);
+  if (node.nodeType !== 1) return '';
+  var out = convertElement(node, ctx);
+  // Items laid out side by side in a flex or grid row have no whitespace between them in the HTML.
+  return ctx.flex && out && !/^\n\n/.test(out) ? ' ' + out + ' ' : out;
+}
+
+function convertElement(el, parentCtx) {
+  var tag = el.tagName.toUpperCase();
+  if (SKIP_TAGS.test(tag) || el.matches(SKIP_ALWAYS) || skipHidden(el)) return '';
+  if (!parentCtx.selection && el.matches(SITE_CHROME) && !el.closest('article, main, [role="main"]')) return '';
+  var cs = styleOf(el);
+  if (el.hidden || (cs && (cs.display === 'none' || cs.visibility === 'hidden'))) return '';
+  var ctx = { selection: parentCtx.selection, flex: !!cs && /flex|grid/.test(cs.display) };
+
+  var level = /^H([1-6])$/.exec(tag);
+  if (level) {
+    var heading = flat(kids(el, ctx));
+    return heading ? block(new Array(+level[1] + 1).join('#') + ' ' + heading) : '';
+  }
+  switch (tag) {
+    case 'P': return block(kids(el, ctx));
+    case 'BR': return '\n';
+    case 'HR': return block('---');
+    case 'STRONG': case 'B': return wrap('**', kids(el, ctx));
+    case 'EM': case 'I': case 'CITE': return wrap('_', kids(el, ctx));
+    case 'DEL': case 'S': case 'STRIKE': return wrap('~~', kids(el, ctx));
+    case 'CODE': case 'KBD': case 'SAMP': {
+      var code = el.textContent.replace(/\s+/g, ' ');
+      if (!code.trim()) return '';
+      return code.indexOf('\x60') >= 0 ? '\x60\x60 ' + code + ' \x60\x60' : '\x60' + code + '\x60';
+    }
+    case 'PRE': {
+      var codeEl = el.querySelector('code');
+      var lang = (String((codeEl || el).className).match(/(?:language|lang)-([\w+#-]+)/) || [])[1] || '';
+      var text = ((el.isConnected && el.innerText) || el.textContent).replace(/\n+$/, '');
+      return text.trim() ? block('\x60\x60\x60' + lang + '\n' + text + '\n\x60\x60\x60') : '';
+    }
+    case 'A': return link(el, ctx);
+    case 'IMG': return image(el);
+    case 'UL': case 'OL': return block(list(el, ctx));
+    case 'LI': return block('- ' + tidy(kids(el, ctx)).replace(/\n{2,}/g, '\n'));
+    case 'BLOCKQUOTE': {
+      var quote = tidy(kids(el, ctx));
+      return quote ? block(quote.split('\n').map(function (l) { return l ? '> ' + l : '>'; }).join('\n')) : '';
+    }
+    case 'TABLE': return block(table(el, ctx));
+    case 'DT': {
+      var term = flat(kids(el, ctx));
+      return term ? block('**' + term + '**') : '';
+    }
+    case 'FIGCAPTION': {
+      var caption = flat(kids(el, ctx));
+      return caption ? block('_' + caption + '_') : '';
+    }
+  }
+  var inner = kids(el, ctx);
+  var isBlock = cs ? BLOCK_DISPLAY.test(cs.display) : BLOCK_TAGS.test(tag);
+  return isBlock ? block(inner) : inner;
+}
+
+function link(el, ctx) {
+  var inner = kids(el, ctx);
+  var href = el.getAttribute('href') || '';
+  if (!href || href.charAt(0) === '#' || /^javascript:/i.test(href)) return inner;
+  var url = el.href.replace(/\(/g, '%28').replace(/\)/g, '%29');
+  if (/\n\n/.test(inner)) {
+    // Card links wrap whole blocks; keep the card readable and link its heading instead.
+    var card = tidy(inner);
+    var heading = /^(#{1,6}) (.+)$/m.exec(card);
+    if (heading) return block(card.replace(heading[0], heading[1] + ' [' + heading[2] + '](' + url + ')'));
+  }
+  var label = flat(inner.replace(/(^|\n)#{1,6} /g, '$1').replace(/\*\*/g, ''));
+  if (!label) label = flat(el.getAttribute('aria-label') || el.title || '');
+  if (!label) return '';
+  var md = '[' + label + '](' + url + ')';
+  return /\n\n/.test(inner) ? block(md) : spaced(inner, md);
+}
+
+function image(el) {
+  var alt = flat(el.getAttribute('alt') || '');
+  var src = el.currentSrc || el.src || '';
+  if (!alt || !src || /^data:/i.test(src)) return '';
+  if (el.isConnected && el.getBoundingClientRect().width < 40) return '';
+  return '![' + alt + '](' + src + ')';
+}
+
+function list(el, ctx) {
+  var ordered = el.tagName.toUpperCase() === 'OL';
+  var n = parseInt(el.getAttribute('start') || '1', 10) || 1;
+  var out = [];
+  for (var li = el.firstElementChild; li; li = li.nextElementSibling) {
+    if (li.tagName.toUpperCase() !== 'LI') continue;
+    var cs = styleOf(li);
+    if (li.hidden || (cs && cs.display === 'none')) continue;
+    var text = tidy(kids(li, ctx)).replace(/\n{2,}/g, '\n');
+    if (!text) continue;
+    var marker = ordered ? n++ + '. ' : '- ';
+    out.push(marker + text.split('\n').join('\n' + new Array(marker.length + 1).join(' ')));
+  }
+  return out.join('\n');
+}
+
+function table(el, ctx) {
+  var rows = Array.prototype.filter.call(el.rows, function (r) {
+    var cs = styleOf(r);
+    return !(cs && cs.display === 'none');
   });
-});`,
+  if (!rows.length) return '';
+  var grid = rows.map(function (r) {
+    return Array.prototype.map.call(r.cells, function (c) { return flat(kids(c, ctx)).replace(/\|/g, '\\|'); });
+  });
+  var cols = Math.max.apply(null, grid.map(function (r) { return r.length; }));
+  if (cols < 2) {
+    return rows.map(function (r) { return r.cells[0] ? kids(r.cells[0], ctx) : ''; }).join('\n\n');
+  }
+  grid.forEach(function (r) { while (r.length < cols) r.push(''); });
+  function line(r) { return '| ' + r.join(' | ') + ' |'; }
+  var out = [line(grid[0]), '|' + new Array(cols + 1).join(' --- |')];
+  for (var i = 1; i < grid.length; i++) out.push(line(grid[i]));
+  return out.join('\n');
+}
+
+function tidy(md) {
+  var out = [];
+  var fence = false;
+  var listy = false;
+  md.replace(/\r/g, '').split('\n').forEach(function (line) {
+    if (/^\s*\x60\x60\x60/.test(line)) { fence = !fence; listy = false; out.push(line.trim()); return; }
+    if (fence) { out.push(line); return; }
+    line = line.replace(/[ \t]+$/, '').replace(/(\S)[ \t]{2,}/g, '$1 ');
+    if (!line.trim()) { listy = false; out.push(''); return; }
+    var marker = /^\s*(?:[-*+]|\d+\.)\s/.test(line);
+    if (!marker && !(listy && /^\s/.test(line))) line = line.replace(/^\s+/, '');
+    listy = marker || (listy && /^\s/.test(line));
+    out.push(line);
+  });
+  return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+function pickRoot() {
+  var body = document.body;
+  if (!body) return document.documentElement;
+  var total = (body.innerText || '').length;
+  var best = null;
+  var bestLen = 0;
+  document.querySelectorAll('article, main, [role="main"]').forEach(function (c) {
+    var len = (c.innerText || '').length;
+    if (len > bestLen) { best = c; bestLen = len; }
+  });
+  return best && bestLen >= total * 0.3 ? best : body;
+}
+
+function selectionFragment() {
+  var sel = window.getSelection();
+  if (!sel || sel.isCollapsed || !String(sel).trim()) return null;
+  var frag = document.createDocumentFragment();
+  for (var i = 0; i < sel.rangeCount; i++) {
+    var range = sel.getRangeAt(i);
+    var part = range.cloneContents();
+    // Selecting inside a list clones bare <li>s, so put them back in a list of the same kind.
+    if (Array.prototype.some.call(part.children, function (c) { return c.tagName === 'LI'; })) {
+      var anchor = range.commonAncestorContainer;
+      var owner = (anchor.nodeType === 1 ? anchor : anchor.parentNode).closest('ol, ul');
+      var listEl = document.createElement(owner ? owner.tagName : 'ul');
+      listEl.appendChild(part);
+      part = listEl;
+    }
+    frag.appendChild(part);
+  }
+  return frag;
+}
+
+function title() {
+  return (document.title || '').replace(/[\[\]]/g, '').trim() || location.hostname;
+}
+
+function legacyCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.cssText = 'position:fixed;top:-1000px;left:0;opacity:0';
+  document.documentElement.appendChild(ta);
+  ta.select();
+  var ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) {}
+  ta.remove();
+  if (!ok) throw new Error('Clipboard blocked');
+}
+
+function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text).catch(function () { legacyCopy(text); });
+  }
+  return new Promise(function (resolve) { legacyCopy(text); resolve(); });
+}
+
+function failed() {
+  toast('Could not copy: this page blocked the clipboard');
+  note('Copy failed because this page blocked clipboard access.');
+}
+
+function copyLink() {
+  var md = '[' + title() + '](' + location.href + ')';
+  copyText(md).then(function () {
+    toast('Markdown link copied');
+    note('Copied the link ' + md);
+  }, failed);
+}
+
+function copyPage() {
+  var frag = selectionFragment();
+  var md = frag ? tidy(convert(frag, { selection: true })) : '';
+  var fromSelection = !!md;
+  if (!md) md = tidy(convert(pickRoot(), { selection: false }));
+  if (!md) {
+    toast('Nothing to copy on this page');
+    note('Found no readable text to copy on this page.');
+    return;
+  }
+  if (!fromSelection) {
+    if (!/^# /m.test(md)) md = '# ' + title() + '\n\n' + md;
+    md += '\n\n---\n\nSource: ' + location.href;
+  }
+  var words = (md.match(/[\p{L}\p{N}]+/gu) || []).length.toLocaleString();
+  var what = fromSelection ? 'selection' : 'page';
+  copyText(md).then(function () {
+    toast('Copied ' + what + ' as Markdown · ' + words + ' words');
+    note('Copied the ' + what + ' as Markdown: ' + words + ' words, ' + md.length.toLocaleString() + ' characters.');
+  }, failed);
+}
+
+document.addEventListener('keydown', function (e) {
+  if (!e.altKey || !e.shiftKey || e.ctrlKey || e.metaKey || e.repeat) return;
+  if (e.code === 'KeyC') { e.preventDefault(); copyPage(); }
+  else if (e.code === 'KeyL') { e.preventDefault(); copyLink(); }
+}, true);
+
+note('Ready. Press Alt+Shift+C to copy this page as Markdown, or Alt+Shift+L for just the link.');`,
   },
   {
     id: 'external-links-new-tab',
@@ -540,14 +810,20 @@ document.addEventListener('dblclick', function (e) {
   {
     id: 'dark-mode-everywhere',
     name: 'Dark Mode Everywhere',
-    description: 'Press Alt+Shift+D to switch any site to dark mode. Remembered per site.',
+    description:
+      'Turns every site dark as it loads and leaves sites that already have a dark theme alone. Press Alt+Shift+D to switch it off or on for a site.',
     category: 'reading',
     sites: 'All sites',
     matches: ALL_SITES,
     grants: ['GM_getValue', 'GM_setValue'],
     runAt: 'document-start',
-    body: String.raw`
-var KEY = 'dark:' + location.hostname;
+    version: '1.1.0',
+    body: TOAST + NOTE + String.raw`
+var host = location.hostname;
+var KEY = 'site:' + host;
+var legacy = GM_getValue('dark:' + host, null);
+// 'auto' darkens unless the site is already dark; 'on' and 'off' are the user's choice for this site.
+var pref = GM_getValue(KEY, legacy === true ? 'on' : 'auto');
 var style = null;
 
 function apply(on) {
@@ -562,14 +838,74 @@ function apply(on) {
   }
 }
 
-apply(GM_getValue(KEY, false));
+function luminance(color) {
+  var m = /rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,\/]\s*([\d.]+)(%?))?/.exec(color || '');
+  if (!m) return null;
+  var alpha = m[4] === undefined ? 1 : parseFloat(m[4]) / (m[5] ? 100 : 1);
+  if (alpha < 0.5) return null;
+  var c = [m[1], m[2], m[3]].map(function (v) {
+    v = v / 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+
+// Samples the page-wide background under a grid of points, so a dark wrapper inside a white body counts as
+// dark while light cards, buttons and image panels on a dark page don't.
+function pageIsDark() {
+  var root = document.documentElement;
+  var minWidth = innerWidth * 0.6;
+  var dark = 0;
+  var light = 0;
+  for (var y = 1; y <= 4; y++) {
+    for (var x = 1; x <= 4; x++) {
+      var hits = document.elementsFromPoint ? document.elementsFromPoint(innerWidth * x / 5, innerHeight * y / 5) : [];
+      var stack = hits.concat([document.body, root]);
+      for (var i = 0; i < stack.length; i++) {
+        var el = stack[i];
+        if (!el || (el !== document.body && el !== root && el.getBoundingClientRect().width < minWidth)) continue;
+        var l = luminance(getComputedStyle(el).backgroundColor);
+        if (l === null) continue;
+        if (l < 0.18) dark++; else light++;
+        break;
+      }
+    }
+  }
+  if (dark !== light) return dark > light;
+  var text = luminance(getComputedStyle(document.body).color);
+  return text !== null && text > 0.5;
+}
+
+function autoCheck() {
+  if (pref !== 'auto' || !style || !document.body) return;
+  if (pageIsDark()) {
+    apply(false);
+    note(host + ' already has a dark theme, so it was left as is. Press Alt+Shift+D to force dark mode here.');
+  }
+}
+
+if (pref === 'off') {
+  note('Off for ' + host + ' because you switched it off. Press Alt+Shift+D to turn it back on.');
+} else {
+  apply(true);
+  note('Dark mode is on for ' + host + '. Press Alt+Shift+D to switch it off for this site.');
+  if (pref === 'auto') {
+    document.addEventListener('DOMContentLoaded', autoCheck, { once: true });
+    window.addEventListener('load', autoCheck, { once: true });
+  }
+}
+
 document.addEventListener('keydown', function (e) {
-  if (!(e.altKey && e.shiftKey && e.code === 'KeyD')) return;
+  if (!(e.altKey && e.shiftKey && e.code === 'KeyD') || e.ctrlKey || e.metaKey || e.repeat) return;
   e.preventDefault();
-  var next = !style;
-  GM_setValue(KEY, next);
-  apply(next);
-});`,
+  pref = style ? 'off' : 'on';
+  GM_setValue(KEY, pref);
+  apply(pref === 'on');
+  toast(pref === 'on' ? 'Dark mode on for ' + host : 'Dark mode off for ' + host);
+  note(pref === 'on'
+    ? 'Dark mode is on for ' + host + ' (you turned it on). Press Alt+Shift+D to switch it off.'
+    : 'Off for ' + host + ' because you switched it off. Press Alt+Shift+D to turn it back on.');
+}, true);`,
   },
   {
     id: 'reading-progress',
@@ -864,30 +1200,80 @@ scan();`,
   {
     id: 'json-viewer',
     name: 'JSON Pretty Viewer',
-    description: 'Formats raw JSON responses with indentation, plus Raw/Pretty and Copy buttons.',
+    description:
+      'Formats raw JSON responses (API URLs, .json files) with colours, Raw/Pretty and Copy buttons. Other pages are left untouched.',
     category: 'developer',
     sites: 'All sites',
     matches: ALL_SITES,
     runAt: 'document-end',
-    body: String.raw`
-var pre = document.body && document.body.children.length === 1 ? document.body.querySelector(':scope > pre') : null;
-var looksJson = /json/i.test(document.contentType || '') || (pre && /^\s*[\[{]/.test(pre.textContent || ''));
-if (!pre || !looksJson) return;
+    version: '1.1.0',
+    body: NOTE + String.raw`
+var body = document.body;
+var source = body ? body.querySelector(':scope > pre') : null;
+var raw = source ? source.textContent || '' : '';
+// Chrome adds its own "Pretty-print" container next to the <pre> on JSON responses.
+var extras = body ? Array.prototype.filter.call(body.children, function (el) {
+  return el !== source && !el.classList.contains('json-formatter-container');
+}).length : 1;
+var looksJson = /json/i.test(document.contentType || '') || (source && extras === 0 && /^\s*[\[{]/.test(raw));
+if (!source || !looksJson) {
+  note('Nothing to format here: this page is not a raw JSON response. Open a JSON file or API URL, such as https://api.github.com, to see the viewer.');
+  return;
+}
 
-var raw = pre.textContent || '';
-var pretty;
-try { pretty = JSON.stringify(JSON.parse(raw), null, 2); } catch (e) { return; }
+var data;
+try { data = JSON.parse(raw); } catch (e) {
+  note('This looks like JSON but is not valid (' + e.message + '), so it was left as is.');
+  return;
+}
+var pretty = JSON.stringify(data, null, 2);
 
-pre.textContent = pretty;
-pre.style.cssText = 'font:13px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;padding:16px;margin:0;white-space:pre-wrap;word-break:break-word';
+function size(n) { return n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : (n / 1048576).toFixed(1) + ' MB'; }
+function describe(v) {
+  if (Array.isArray(v)) return 'Array of ' + v.length.toLocaleString() + (v.length === 1 ? ' item' : ' items');
+  if (v && typeof v === 'object') {
+    var keys = Object.keys(v).length;
+    return 'Object with ' + keys.toLocaleString() + (keys === 1 ? ' key' : ' keys');
+  }
+  return typeof v;
+}
+function escapeHtml(s) {
+  return s.replace(/[&<>]/g, function (c) { return c === '&' ? '&amp;' : c === '<' ? '&lt;' : '&gt;'; });
+}
+function highlight(json) {
+  return escapeHtml(json).replace(/("(?:\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g, function (m, str, colon, lit) {
+    if (str) return '<span class="' + (colon ? 'k' : 's') + '">' + str + '</span>' + (colon || '');
+    return '<span class="' + (lit ? 'l' : 'n') + '">' + m + '</span>';
+  });
+}
+
+var css = document.createElement('style');
+css.textContent = [
+  '#op-json-bar{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:8px;padding:8px 16px;font:12px/1.4 system-ui,sans-serif;background:rgba(127,127,127,.12);backdrop-filter:blur(8px);border-bottom:1px solid rgba(127,127,127,.2)}',
+  '#op-json-bar button{padding:4px 10px;border-radius:6px;border:1px solid rgba(127,127,127,.4);background:transparent;color:inherit;font:inherit;cursor:pointer}',
+  '#op-json-bar button:hover{background:rgba(127,127,127,.15)}',
+  '#op-json-bar span{margin-left:auto;opacity:.7}',
+  '#op-json{margin:0;padding:16px;font:13px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;word-break:break-word;tab-size:2}',
+  '#op-json .k{color:#0550ae}#op-json .s{color:#116329}#op-json .n{color:#b35900}#op-json .l{color:#8250df}',
+  '@media (prefers-color-scheme: dark){html{background:#0d1117;color:#e6edf3}#op-json .k{color:#79c0ff}#op-json .s{color:#7ee787}#op-json .n{color:#ffa657}#op-json .l{color:#d2a8ff}}'
+].join('\n');
+(document.head || document.documentElement).appendChild(css);
+
+var view = document.createElement('pre');
+view.id = 'op-json';
+var colours = raw.length < 2000000;
+function render(showPretty) {
+  if (!showPretty) view.textContent = raw;
+  else if (colours) view.innerHTML = highlight(pretty);
+  else view.textContent = pretty;
+}
 
 var bar = document.createElement('div');
-bar.style.cssText = 'position:sticky;top:0;display:flex;gap:8px;padding:8px 16px;background:rgba(127,127,127,.12);backdrop-filter:blur(6px)';
+bar.id = 'op-json-bar';
 function button(label, onClick) {
   var b = document.createElement('button');
   b.type = 'button';
   b.textContent = label;
-  b.style.cssText = 'padding:4px 10px;border-radius:6px;border:1px solid rgba(127,127,127,.4);background:transparent;color:inherit;font:12px system-ui,sans-serif;cursor:pointer';
   b.onclick = onClick;
   bar.appendChild(b);
   return b;
@@ -895,16 +1281,24 @@ function button(label, onClick) {
 var showingPretty = true;
 var toggle = button('Raw', function () {
   showingPretty = !showingPretty;
-  pre.textContent = showingPretty ? pretty : raw;
+  render(showingPretty);
   toggle.textContent = showingPretty ? 'Raw' : 'Pretty';
 });
 var copy = button('Copy', function () {
-  navigator.clipboard.writeText(pre.textContent || '').then(function () {
+  navigator.clipboard.writeText(showingPretty ? pretty : raw).then(function () {
     copy.textContent = 'Copied';
     setTimeout(function () { copy.textContent = 'Copy'; }, 1200);
   });
 });
-document.body.insertBefore(bar, pre);`,
+var info = document.createElement('span');
+info.textContent = describe(data) + ' · ' + size(raw.length);
+bar.appendChild(info);
+
+Array.prototype.forEach.call(body.children, function (el) { el.style.display = 'none'; });
+render(true);
+body.appendChild(bar);
+body.appendChild(view);
+note('Formatted this JSON response: ' + describe(data).toLowerCase() + ', ' + size(raw.length) + '. Use Raw/Pretty and Copy at the top of the page.');`,
   },
   {
     id: 'outline-debugger',

@@ -112,4 +112,28 @@ describe('mergeScriptRun', () => {
     expect(frame).toMatchObject({ status: 'error', error: 'x', runs: 2, frameRuns: 1, url: 'https://a.test/', lastRunAt: 200 })
     expect(mergeScriptRun(frame, 's', { status: 'ok', top: true }, 300).status).toBe('error')
   })
+
+  it('stores result notes without counting them as runs', () => {
+    const early = mergeScriptRun(undefined, 's', { kind: 'note', note: ' Ready ', url: 'https://a.test/' }, 50)
+    expect(early).toMatchObject({ runs: 0, note: 'Ready', noteAt: 50 })
+    const ran = mergeScriptRun(early, 's', { status: 'ok', top: true }, 60)
+    expect(ran).toMatchObject({ runs: 1, firstRunAt: 50, note: 'Ready' })
+    expect(mergeScriptRun(ran, 's', { kind: 'note', note: 'Copied 12 words' }, 70)).toMatchObject({ runs: 1, note: 'Copied 12 words', noteAt: 70 })
+    expect(mergeScriptRun(ran, 's', { kind: 'note', note: 'frame', top: false }, 80).note).toBe('Ready')
+  })
+})
+
+describe('script result notes', () => {
+  const sendMessage = vi.fn()
+  beforeEach(() => {
+    sendMessage.mockReset()
+    vi.stubGlobal('chrome', { runtime: { sendMessage } })
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('lets a script describe its outcome with __ssNote', () => {
+    new Function(build(SAMPLE.replace('console.log(1);', '__ssNote("Did it");')).code)()
+    expect(sendMessage.mock.calls[0][0].payload).toMatchObject({ kind: 'note', note: 'Did it' })
+    expect(sendMessage.mock.calls[1][0].payload).toMatchObject({ status: 'ok' })
+  })
 })

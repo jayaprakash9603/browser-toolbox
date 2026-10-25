@@ -103,6 +103,16 @@ export function ScriptRunDetails({ open, onOpenChange, record, run, state, reloa
           </div>
         </div>
 
+        {run?.note ? (
+          <div aria-live="polite" className="rounded-lg border border-primary/25 bg-primary/5 p-3">
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">{t('scriptStudio.runs.result')}</p>
+              <p className="shrink-0 text-[11px] text-muted-foreground tabular-nums">{formatAgo(run.noteAt ?? run.lastRunAt, now, i18n.language)}</p>
+            </div>
+            <p className="mt-1 text-sm leading-relaxed break-words">{run.note}</p>
+          </div>
+        ) : null}
+
         {description ? <p className="text-xs leading-relaxed text-muted-foreground">{description}</p> : null}
 
         {fields.length ? (

@@ -16,6 +16,8 @@ import {
   SS_RELAY_ID,
 } from '@/core/script-studio/registration'
 
+import { upgradeGalleryScripts } from './gallery'
+
 const logger = createLogger('script-studio-register')
 
 const OWNED_PREFIX = 'ss-'
@@ -23,6 +25,7 @@ const RELAY_NONCE_KEY = 'scriptStudioRelayNonce'
 let runtimeJsCache: string | null = null
 let syncTimer: ReturnType<typeof setTimeout> | null = null
 let nonceCache: string | null = null
+let galleryChecked = false
 
 async function getReportNonce(): Promise<string> {
   if (nonceCache) return nonceCache
@@ -214,6 +217,10 @@ export async function initScriptStudioRegistration(): Promise<void> {
     if (chrome.userScripts) await chrome.userScripts.configureWorld({ messaging: true })
   } catch {
     /* permission not granted yet */
+  }
+  if (!galleryChecked) {
+    galleryChecked = true
+    await upgradeGalleryScripts().catch((e) => logger.warn('gallery upgrade failed', e))
   }
   await syncScriptStudioUserScripts()
 }

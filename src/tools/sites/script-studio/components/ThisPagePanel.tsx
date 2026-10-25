@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { scriptMatchesUrl } from '@/core/script-studio'
+import { isBrowserRestrictedUrl, scriptMatchesUrl } from '@/core/script-studio'
 import type { ScriptRecord, ScriptRun, ScriptStudioSettings, TabScriptRuns } from '@/core/script-studio'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { Button } from '@/shared/components/ui/button'
@@ -45,6 +45,7 @@ export function ThisPagePanel({ url, tabId, scripts, settings, runs, globalEnabl
   const [found, setFound] = useState<{ url: string; ids: Set<string> } | null>(null)
   const [detailId, setDetailId] = useState<string | null>(null)
   const matchIds = url && found?.url === url ? found.ids : null
+  const restricted = url ? isBrowserRestrictedUrl(url) : false
 
   useEffect(() => {
     if (!url) return
@@ -79,11 +80,11 @@ export function ThisPagePanel({ url, tabId, scripts, settings, runs, globalEnabl
       .filter((s) => !s.trashed && (matchIds.has(s.id) || runs[s.id]))
       .map((record) => {
         const run = runs[record.id]
-        const state = deriveRunState(record, run, globalEnabled, operational)
+        const state = deriveRunState(record, run, globalEnabled, operational, restricted)
         return { record, run, state, reload: needsReload(record, run, state, globalEnabled) }
       })
       .sort((a, b) => RUN_STATE_ORDER[a.state] - RUN_STATE_ORDER[b.state] || a.record.name.localeCompare(b.record.name))
-  }, [matchIds, scripts, runs, globalEnabled, operational])
+  }, [matchIds, scripts, runs, globalEnabled, operational, restricted])
 
   const searchLinks = useMemo(() => {
     if (!host) return []
@@ -108,6 +109,9 @@ export function ThisPagePanel({ url, tabId, scripts, settings, runs, globalEnabl
   }
 
   const statusLine = (r: Row): string => {
+    if (r.state === 'ran' && r.run?.note) {
+      return t('scriptStudio.runs.line.note', { note: r.run.note, ago: formatAgo(r.run.noteAt ?? r.run.lastRunAt, now, i18n.language) })
+    }
     if (r.state === 'ran' && r.run) {
       return t('scriptStudio.runs.line.ran', { ago: formatAgo(r.run.lastRunAt, now, i18n.language), duration: formatDuration(r.run.durationMs) })
     }
@@ -126,7 +130,11 @@ export function ThisPagePanel({ url, tabId, scripts, settings, runs, globalEnabl
             <div className="min-w-0 flex-1">
               <p className="truncate text-[11px] text-muted-foreground">{t('scriptStudio.thisPage.on', { host })}</p>
               <p role="status" aria-atomic="true" className="text-sm font-semibold tabular-nums">
-                {executed > 0 ? t('scriptStudio.runs.summary', { ran: executed, total: rows.length }) : t('scriptStudio.runs.summaryNone')}
+                {restricted && executed === 0
+                  ? t('scriptStudio.runs.summaryBlocked')
+                  : executed > 0
+                    ? t('scriptStudio.runs.summary', { ran: executed, total: rows.length })
+                    : t('scriptStudio.runs.summaryNone')}
               </p>
             </div>
             {anyReload && tabId != null ? (
@@ -242,7 +250,7 @@ export function ThisPagePanel({ url, tabId, scripts, settings, runs, globalEnabl
         />
       ) : null}
 
-      {settings.scriptSearchEnabled && host ? (
+      {settings.scriptSearchEnabled && host && !restricted ? (
         <Card className="gap-2 py-3">
           <CardHeader className="px-3">
             <CardTitle className="text-xs">{t('scriptStudio.findScripts')}</CardTitle>

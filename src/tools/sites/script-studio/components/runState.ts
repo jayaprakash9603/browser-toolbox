@@ -1,10 +1,19 @@
-import { AlertCircleIcon, CheckCircle2Icon, CircleOffIcon, PauseCircleIcon, RotateCwIcon, ShieldAlertIcon, type LucideIcon } from 'lucide-react'
+import {
+  AlertCircleIcon,
+  CheckCircle2Icon,
+  CircleOffIcon,
+  PauseCircleIcon,
+  RotateCwIcon,
+  ShieldAlertIcon,
+  ShieldOffIcon,
+  type LucideIcon,
+} from 'lucide-react'
 
 import type { ScriptRecord, ScriptRun } from '@/core/script-studio'
 
-export type RunState = 'error' | 'ran' | 'reload' | 'off' | 'paused' | 'setup'
+export type RunState = 'error' | 'ran' | 'reload' | 'blocked' | 'off' | 'paused' | 'setup'
 
-export const RUN_STATE_ORDER: Record<RunState, number> = { error: 0, ran: 1, reload: 2, setup: 3, paused: 4, off: 5 }
+export const RUN_STATE_ORDER: Record<RunState, number> = { error: 0, ran: 1, reload: 2, blocked: 3, setup: 4, paused: 5, off: 6 }
 
 export const RUN_STATE_STYLE: Record<RunState, { icon: LucideIcon; tone: string; dot: string; bar: string }> = {
   ran: {
@@ -24,6 +33,12 @@ export const RUN_STATE_STYLE: Record<RunState, { icon: LucideIcon; tone: string;
     tone: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
     dot: 'text-amber-600 dark:text-amber-400',
     bar: 'bg-amber-500',
+  },
+  blocked: {
+    icon: ShieldOffIcon,
+    tone: 'bg-muted text-muted-foreground',
+    dot: 'text-muted-foreground',
+    bar: 'bg-muted-foreground/40',
   },
   setup: {
     icon: ShieldAlertIcon,
@@ -54,8 +69,10 @@ export function deriveRunState(
   run: ScriptRun | undefined,
   globalEnabled: boolean,
   operational: boolean,
+  restricted = false,
 ): RunState {
   if (run) return run.status === 'error' ? 'error' : 'ran'
+  if (restricted) return 'blocked'
   if (!globalEnabled) return 'paused'
   if (!record.enabled) return 'off'
   if (!operational) return 'setup'

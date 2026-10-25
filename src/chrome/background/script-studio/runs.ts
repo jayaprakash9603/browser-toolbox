@@ -28,7 +28,7 @@ export function recordScriptRun(
     const runs = await getTabScriptRuns(tabId)
     runs[scriptId] = mergeScriptRun(runs[scriptId], scriptId, report)
     await chrome.storage.session.set({ [scriptRunsKey(tabId)]: runs })
-    noteScriptRan(tabId, scriptId)
+    if (report.kind !== 'note') noteScriptRan(tabId, scriptId)
   })
 }
 

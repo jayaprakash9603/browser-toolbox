@@ -80,17 +80,21 @@ export function reportEventNames(nonce: string): { report: string; ack: string }
 /**
  * USER_SCRIPT-world scripts can message the extension directly. MAIN-world scripts cannot, so they hand
  * their result to the relay script over a DOM event and retry until it acknowledges.
+ *
+ * Scripts may call `__ssNote(text)` to describe what they just did; Script Studio shows it as the outcome.
  */
 function reporterSource(world: 'MAIN' | 'USER_SCRIPT', nonce: string): string {
   const head =
     'var __ssT0=Date.now();function __ssPayload(s,e){return{status:s,error:e?String((e&&e.stack)||e).slice(0,4000):undefined,' +
-    'durationMs:Date.now()-__ssT0,url:location.href,top:window===window.top}}'
+    'durationMs:Date.now()-__ssT0,url:location.href,top:window===window.top}}' +
+    'function __ssReport(s,e){__ssSend(__ssPayload(s,e))}' +
+    "function __ssNote(t){var p=__ssPayload('ok');p.kind='note';p.note=String(t);__ssSend(p)}"
   if (world === 'USER_SCRIPT') {
-    return `${head}function __ssReport(s,e){try{chrome.runtime.sendMessage({type:'SS_GM_BRIDGE',sub:'report',scriptId:__SS_SCRIPT_ID__,payload:__ssPayload(s,e)})}catch(_){}}`
+    return `${head}function __ssSend(p){try{chrome.runtime.sendMessage({type:'SS_GM_BRIDGE',sub:'report',scriptId:__SS_SCRIPT_ID__,payload:p})}catch(_){}}`
   }
   const { report, ack } = reportEventNames(nonce)
   return (
-    `${head}function __ssReport(s,e){var p=__ssPayload(s,e);p.scriptId=__SS_SCRIPT_ID__;p.seq=String(Math.random());` +
+    `${head}function __ssSend(p){p.scriptId=__SS_SCRIPT_ID__;p.seq=String(Math.random());` +
     `var d=JSON.stringify(p),done=false,n=0;function onAck(ev){if(ev.detail===p.seq){done=true;document.removeEventListener(${JSON.stringify(ack)},onAck)}}` +
     `document.addEventListener(${JSON.stringify(ack)},onAck);(function send(){if(done||n++>30)return;` +
     `document.dispatchEvent(new CustomEvent(${JSON.stringify(report)},{detail:d}));setTimeout(send,100)})()}`
