@@ -1,12 +1,25 @@
 export type Decl = readonly [property: string, value: string]
 
+export interface Rule {
+  /** `&` stands for the element, as in `&:hover`, `&::before` or `& .button`. */
+  selector: string
+  decls: Decl[]
+}
+
 export interface CssResult {
   decls: Decl[]
-  /** Extra top-level CSS the declarations depend on, such as `@keyframes`. */
+  rules?: Rule[]
+  /** Extra top-level CSS the declarations depend on, such as `@keyframes`. `&` is the element. */
   extra?: string
 }
 
 export const GENERATOR_IDS = [
+  'ui-style',
+  'background',
+  'button',
+  'hover',
+  'loader',
+  'text-effect',
   'gradient',
   'shadow',
   'text-shadow',
@@ -724,35 +737,72 @@ export const gridPresets: Preset<GridState>[] = [
 export const OUTPUT_FORMATS = ['css', 'tailwind', 'react'] as const
 export type OutputFormat = (typeof OUTPUT_FORMATS)[number]
 
-export function toCss(result: CssResult, selector = '.element'): string {
-  const body = result.decls.map(([property, value]) => `  ${property}: ${value};`).join('\n')
-  const block = `${selector} {\n${body}\n}`
-  return result.extra ? `${block}\n\n${result.extra}` : block
+export const DEFAULT_SELECTOR = '.element'
+
+const block = (selector: string, decls: Decl[]) =>
+  `${selector} {\n${decls.map(([property, value]) => `  ${property}: ${value};`).join('\n')}\n}`
+
+/** Nested rules and extra CSS, with `&` replaced by the selector. */
+function supporting(result: CssResult, selector: string): string {
+  const parts = (result.rules ?? []).filter((r) => r.decls.length).map((r) => block(r.selector.replaceAll('&', selector), r.decls))
+  if (result.extra) parts.push(result.extra.replaceAll('&', selector))
+  return parts.join('\n\n')
 }
 
-export function toTailwind(result: CssResult): string {
+export function toCss(result: CssResult, selector = DEFAULT_SELECTOR): string {
+  const main = result.decls.length ? block(selector, result.decls) : ''
+  return [main, supporting(result, selector)].filter(Boolean).join('\n\n')
+}
+
+const withGlobal = (code: string, result: CssResult, selector: string) => {
+  const rest = supporting(result, selector)
+  return rest ? `${code}\n\n/* Add to your global CSS */\n${rest}` : code
+}
+
+export function toTailwind(result: CssResult, selector = DEFAULT_SELECTOR): string {
   const classes = result.decls
     .map(([property, value]) => `[${property}:${value.replace(/_/g, '\\_').replace(/\s+/g, '_')}]`)
     .join(' ')
-  return result.extra ? `${classes}\n\n/* Add to your global CSS */\n${result.extra}` : classes
+  const name = result.rules?.length || result.extra?.includes('&') ? `${selector.replace(/^\./, '')} ` : ''
+  return withGlobal(`${name}${classes}`.trim(), result, selector)
 }
 
 export function reactProperty(property: string): string {
+  if (property.startsWith('--')) return property
   return property
     .replace(/^-(webkit|moz)-/, (_, vendor: string) => `${vendor[0].toUpperCase()}${vendor.slice(1)}-`)
     .replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())
 }
 
-export function toReact(result: CssResult): string {
-  const lines = result.decls.map(([property, value]) => `  ${reactProperty(property)}: '${value.replace(/'/g, "\\'")}',`)
-  const style = `const style = {\n${lines.join('\n')}\n}`
-  return result.extra ? `${style}\n\n/* Add to your global CSS */\n${result.extra}` : style
+export function toReact(result: CssResult, selector = DEFAULT_SELECTOR): string {
+  const key = (property: string) => (property.startsWith('--') ? `'${property}'` : reactProperty(property))
+  const lines = result.decls.map(([property, value]) => `  ${key(property)}: '${value.replace(/'/g, "\\'")}',`)
+  return withGlobal(`const style = {\n${lines.join('\n')}\n}`, result, selector)
 }
 
-export function formatResult(result: CssResult, format: OutputFormat): string {
-  if (format === 'tailwind') return toTailwind(result)
-  if (format === 'react') return toReact(result)
-  return toCss(result)
+export function formatResult(result: CssResult, format: OutputFormat, selector = DEFAULT_SELECTOR): string {
+  if (format === 'tailwind') return toTailwind(result, selector)
+  if (format === 'react') return toReact(result, selector)
+  return toCss(result, selector)
+}
+
+/** Turns a class name typed by the user into a safe `.class` selector. */
+export function toSelector(name: string): string {
+  const clean = name.trim().replace(/^\.+/, '').replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '')
+  return clean ? `.${/^\d/.test(clean) ? `_${clean}` : clean}` : DEFAULT_SELECTOR
+}
+
+/**
+ * CSS for the live preview: scoped to one class, keyframes renamed so they cannot clash with the
+ * app's own, and `:hover` also matching a class so the hover state can be pinned on.
+ */
+export function previewCss(result: CssResult, className: string, forceClass: string): string {
+  let css = toCss(result, `.${className}`)
+  const names = [...css.matchAll(/@keyframes\s+([\w-]+)/g)].map((m) => m[1])
+  for (const name of new Set(names)) {
+    css = css.replace(new RegExp(`(?<![\\w-])${name}(?![\\w-])`, 'g'), `cssgen-${name}`)
+  }
+  return css.replaceAll(':hover', `:is(:hover, .${forceClass})`)
 }
 
 /** Declarations as a React style object, for the live preview. */

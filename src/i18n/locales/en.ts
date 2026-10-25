@@ -947,7 +947,7 @@ const en = {
     'WCAG contrast ratio between foreground and background colors.',
   'tools.design.css-generator.name': 'CSS Generator',
   'tools.design.css-generator.description':
-    'Design gradients, shadows, glass, filters, shapes, clip paths, transforms, animations, flexbox and grid with a live preview. Copy as CSS, Tailwind or React.',
+    'Generate complete UI styles (liquid glass, neumorphism, claymorphism, brutalism and more), animated backgrounds, button, hover, text and loader effects, plus gradients, shadows, shapes, animations and layouts. Save styles to a library and export them as one stylesheet.',
   'design.colorInput': 'Color (hex, rgb, hsl…)',
   'design.pickFromScreen': 'Pick from screen',
   'design.noEyedropper': 'Screen picking needs a Chromium browser. Use the swatch below.',

@@ -6,15 +6,43 @@ import {
   HexagonIcon,
   LayersIcon,
   LayoutGridIcon,
+  LoaderIcon,
+  MousePointerClickIcon,
   Move3dIcon,
+  PaletteIcon,
   PlayIcon,
   SparklesIcon,
   SquareDashedIcon,
+  SquareMousePointerIcon,
   SquareRoundCornerIcon,
   TypeIcon,
+  WallpaperIcon,
+  WandSparklesIcon,
   type LucideIcon,
 } from 'lucide-react'
 
+import { BgEffectEditor, ButtonEffectEditor, HoverEffectEditor, LoaderEditor, TextEffectEditor, UiStyleEditor } from './effectEditors'
+import {
+  bgEffectDefaults,
+  bgEffectPresets,
+  buildBgEffect,
+  buildButtonEffect,
+  buildHoverEffect,
+  buildLoader,
+  buildTextEffect,
+  buildUiStyle,
+  buttonEffectDefaults,
+  buttonEffectPresets,
+  hoverEffectDefaults,
+  hoverEffectPresets,
+  loaderDefaults,
+  loaderPresets,
+  textEffectDefaults,
+  textEffectPresets,
+  uiStyleDefaults,
+  uiStylePresets,
+  type UiStyleId,
+} from './effects'
 import {
   AnimationEditor,
   BorderEditor,
@@ -71,12 +99,13 @@ import {
   textShadowPresets,
   transformDefaults,
   transformPresets,
+  toStyle,
   type CssResult,
   type GeneratorId,
   type Preset,
 } from './generators'
 
-export const GROUPS = ['backgrounds', 'effects', 'shapes', 'motion', 'layout'] as const
+export const GROUPS = ['styles', 'backgrounds', 'components', 'typography', 'effects', 'shapes', 'motion', 'layout'] as const
 export type GroupId = (typeof GROUPS)[number]
 
 export interface GeneratorDef<S = unknown> {
@@ -97,7 +126,72 @@ function define<S>(def: GeneratorDef<S>): GeneratorDef {
   return def as unknown as GeneratorDef
 }
 
+const STYLE_SWATCH: Record<UiStyleId, string> = {
+  'liquid-glass': 'radial-gradient(circle at 30% 25%, #ffffffcc, transparent 45%), linear-gradient(135deg, #a5b4fc, #f0abfc)',
+  glass: 'linear-gradient(#ffffff66, #ffffff33), linear-gradient(135deg, #6366f1, #ec4899)',
+  neumorphism: 'radial-gradient(circle at 30% 30%, #ffffff, #d5dce6)',
+  'soft-ui': 'radial-gradient(circle at 50% 120%, #c7d2fe, #ffffff 70%)',
+  claymorphism: 'radial-gradient(circle at 35% 30%, #e0e7ff, #a5b4fc)',
+  skeuomorphism: 'linear-gradient(180deg, #ffffff, #c9ced6)',
+  'neo-brutalism': 'linear-gradient(135deg, #fde047 60%, #000000 60%)',
+  brutalism: 'linear-gradient(90deg, #000000 50%, #ffffff 50%)',
+  minimal: 'linear-gradient(#ffffff, #f4f4f5)',
+  material: 'linear-gradient(180deg, #ffffff 55%, #6366f1 55%)',
+  aurora: 'radial-gradient(at 0% 0%, #6366f1, transparent 60%), radial-gradient(at 100% 100%, #22d3ee, transparent 60%), #0b1020',
+  holographic: 'linear-gradient(125deg, #ffd6f5, #c7e9ff, #d8ffd1, #fff3c4)',
+  neon: 'radial-gradient(circle, #a78bfa 0 25%, #07020f 60%)',
+  retro: 'linear-gradient(180deg, #000080 35%, #c0c0c0 35%)',
+}
+
 export const GENERATORS: GeneratorDef[] = [
+  define({
+    id: 'ui-style',
+    group: 'styles',
+    icon: PaletteIcon,
+    defaults: uiStyleDefaults,
+    presets: uiStylePresets,
+    build: buildUiStyle,
+    Editor: UiStyleEditor,
+    swatch: (s) => ({ background: STYLE_SWATCH[s.style] }),
+  }),
+  define({
+    id: 'background',
+    group: 'backgrounds',
+    icon: WallpaperIcon,
+    defaults: bgEffectDefaults,
+    presets: bgEffectPresets,
+    build: buildBgEffect,
+    Editor: BgEffectEditor,
+    swatch: (s) => toStyle(buildBgEffect({ ...s, animate: false, size: 6 })),
+  }),
+  define({
+    id: 'button',
+    group: 'components',
+    icon: MousePointerClickIcon,
+    defaults: buttonEffectDefaults,
+    presets: buttonEffectPresets,
+    build: buildButtonEffect,
+    Editor: ButtonEffectEditor,
+  }),
+  define({
+    id: 'hover',
+    group: 'components',
+    icon: SquareMousePointerIcon,
+    defaults: hoverEffectDefaults,
+    presets: hoverEffectPresets,
+    build: buildHoverEffect,
+    Editor: HoverEffectEditor,
+  }),
+  define({ id: 'loader', group: 'components', icon: LoaderIcon, defaults: loaderDefaults, presets: loaderPresets, build: buildLoader, Editor: LoaderEditor }),
+  define({
+    id: 'text-effect',
+    group: 'typography',
+    icon: WandSparklesIcon,
+    defaults: textEffectDefaults,
+    presets: textEffectPresets,
+    build: buildTextEffect,
+    Editor: TextEffectEditor,
+  }),
   define({
     id: 'gradient',
     group: 'backgrounds',
@@ -121,7 +215,7 @@ export const GENERATORS: GeneratorDef[] = [
   define({ id: 'shadow', group: 'effects', icon: LayersIcon, defaults: shadowDefaults, presets: shadowPresets, build: buildShadow, Editor: ShadowEditor }),
   define({
     id: 'text-shadow',
-    group: 'effects',
+    group: 'typography',
     icon: TypeIcon,
     defaults: textShadowDefaults,
     presets: textShadowPresets,

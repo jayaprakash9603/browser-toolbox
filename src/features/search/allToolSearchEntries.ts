@@ -156,6 +156,12 @@ export const TOOL_SEARCH_ENTRIES: Record<string, ToolSearchEntry[]> = {
     })),
   ],
   'design.css-generator': [
+    tab('ui-style', 'css.gen.ui-style', 'UI styles', 'ui-style'),
+    tab('background', 'css.gen.background', 'Background effects', 'background'),
+    tab('button', 'css.gen.button', 'Button effects', 'button'),
+    tab('hover', 'css.gen.hover', 'Card hover effects', 'hover'),
+    tab('loader', 'css.gen.loader', 'Loaders', 'loader'),
+    tab('text-effect', 'css.gen.text-effect', 'Text effects', 'text-effect'),
     tab('gradient', 'css.gen.gradient', 'Gradient', 'gradient'),
     tab('glass', 'css.gen.glass', 'Glassmorphism', 'glass'),
     tab('shadow', 'css.gen.shadow', 'Box shadow', 'shadow'),
