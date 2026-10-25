@@ -60,7 +60,7 @@ export default defineManifest({
     'webRequest',
     'webNavigation',
   ],
-  optional_permissions: ['userScripts', 'debugger'],
+  optional_permissions: ['userScripts', 'debugger', 'cookies'],
   host_permissions: ['<all_urls>'],
   declarative_net_request: {
     rule_resources: [
@@ -89,6 +89,8 @@ export default defineManifest({
         'sites/instagram/*',
         'sites/vendor/*',
         'interceptor/scripts/*',
+        'script-studio/*',
+        'script-studio.html',
         'recorder.html',
         'react-devtools/build/*',
       ],

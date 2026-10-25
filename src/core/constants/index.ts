@@ -36,6 +36,8 @@ export const STORAGE_KEYS = {
   /** Resolved light/dark state of the UI; the service worker can't evaluate `prefers-color-scheme` itself. */
   uiDark: 'uiDark',
   meta: 'meta',
+  scriptStudio: 'scriptStudio',
+  scriptStudioSettings: 'scriptStudioSettings',
 } as const
 
 import { getExtensionName } from '@/core/i18n/chromeMessages'

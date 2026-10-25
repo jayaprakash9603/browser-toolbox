@@ -1,0 +1,26 @@
+const INSTALL_PARAM = 'ssInstallUrl'
+
+export function isUserScriptUrl(url: string): boolean {
+  try {
+    const u = new URL(url)
+    return u.pathname.endsWith('.user.js') || u.pathname.endsWith('.user.js/')
+  } catch {
+    return url.endsWith('.user.js')
+  }
+}
+
+export function openInstallReview(url: string): void {
+  const page = chrome.runtime.getURL(
+    `script-studio.html#install?${INSTALL_PARAM}=${encodeURIComponent(url)}`,
+  )
+  void chrome.tabs.create({ url: page })
+}
+
+export function registerUserScriptInstallDetection(): void {
+  chrome.webNavigation.onCommitted.addListener((details) => {
+    if (details.frameId !== 0) return
+    if (!isUserScriptUrl(details.url)) return
+    if (details.url.startsWith(chrome.runtime.getURL(''))) return
+    openInstallReview(details.url)
+  })
+}

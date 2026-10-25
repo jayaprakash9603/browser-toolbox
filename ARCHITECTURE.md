@@ -105,6 +105,10 @@ See `core/interceptor/` and `chrome/background/interceptor/` for DNR rules, page
 - Global search is pure client-side string matching.
 - Storage writes are batched per action (no write-per-keystroke).
 
+## Script Studio (userscripts)
+
+Opt-in userscript manager (`sites.script-studio` tool + full-tab `script-studio.html`). State lives in `core/script-studio/` (`scriptStudio`, `scriptStudioSettings`, and per-script `ss:code|values|ext:*` keys). Background `chrome/background/script-studio/` registers scripts with `chrome.userScripts`, serves the GM API bridge (`SS_GM_BRIDGE`), detects `*.user.js` installs, and runs scheduled update checks. `@require` / `@resource` URLs are fetched only at install or update time and cached locally (optional SRI metadata).
+
 ## Security
 
-No `eval`, no remote code, no unsanitized HTML injection (all tool output renders as text), no network calls, least-privilege permissions (see PERMISSIONS.md).
+Built-in tools avoid `eval`, unsanitized HTML injection (tool output renders as text), and undeclared network calls. **Script Studio** is an explicit exception: you choose which third-party scripts to install; they run only after granting `userScripts` and reviewing install metadata. Least-privilege optional permissions otherwise (see PERMISSIONS.md).

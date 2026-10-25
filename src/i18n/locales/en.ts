@@ -15,6 +15,7 @@ import { consolidationStrings } from './consolidationEn'
 import { dataScraperStrings } from './dataScraperEn'
 import { sitesInstagramStrings } from './sitesInstagramEn'
 import { sitesYoutubeStrings } from './sitesYoutubeEn'
+import { scriptStudioStrings } from './scriptStudioEn'
 import { reactDevtoolsStrings } from './reactDevtoolsEn'
 import { testDataStrings } from './testDataEn'
 
@@ -1439,6 +1440,7 @@ const en = {
   ...imageDownloaderStrings,
   ...imageLinksStrings,
   ...sitesYoutubeStrings,
+  ...scriptStudioStrings,
   ...sitesWhatsappStrings,
   ...sitesInstagramStrings,
   ...reactDevtoolsStrings,

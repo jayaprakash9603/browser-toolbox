@@ -52,6 +52,7 @@ import { safeRegister, safeStartup } from './safeInit'
 import { initClipboardCapture, registerClipboardCapture } from './clipboardCapture'
 import { registerTimer } from './timer'
 import { registerReactDevtools, syncReactDevtoolsState } from './reactDevtools'
+import { registerScriptStudio } from './script-studio'
 
 const logger = createLogger('background')
 
@@ -179,4 +180,5 @@ safeRegister('scraper', registerScraperJobHandlers)
 safeRegister('clipboardCapture', registerClipboardCapture)
 safeRegister('timer', registerTimer)
 safeRegister('reactDevtools', registerReactDevtools)
+safeRegister('scriptStudio', registerScriptStudio)
 startMessageRouter()

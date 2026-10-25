@@ -1,0 +1,75 @@
+import { STORAGE_KEYS } from '@/core/constants'
+import { registerMessageHandler } from '@/core/messaging'
+import { createLogger } from '@/core/logging'
+import { checkScriptUpdates } from './updates'
+import { getScriptStudioIndex, getScriptStudioSettings } from '@/core/script-studio'
+
+import { probeUserScripts as probeApi, requestUserScriptsPermission } from './availability'
+import { registerGmBridgeListener } from './bridge'
+import { registerUserScriptInstallDetection } from './install'
+import {
+  initScriptStudioRegistration,
+  scheduleScriptStudioSync,
+  watchScriptStudioStorage,
+} from './registration'
+import { registerUpdateAlarms } from './updates'
+import { updateBadgeForTab } from './badge'
+
+const logger = createLogger('script-studio')
+
+export function registerScriptStudio(): void {
+  registerGmBridgeListener()
+  watchScriptStudioStorage()
+  registerUserScriptInstallDetection()
+  registerUpdateAlarms()
+
+  chrome.tabs.onUpdated.addListener((tabId, info) => {
+    if (info.status === 'complete' || info.url) void updateBadgeForTab(tabId)
+  })
+  chrome.tabs.onRemoved.addListener((tabId) => {
+    void import('./badge').then(({ clearTabBadge }) => clearTabBadge(tabId))
+  })
+
+  registerMessageHandler('SCRIPT_STUDIO_SYNC', async () => {
+    await initScriptStudioRegistration()
+    return { synced: true }
+  })
+
+  registerMessageHandler('SCRIPT_STUDIO_PROBE', async () => probeApi())
+
+  registerMessageHandler('SCRIPT_STUDIO_REQUEST_PERMISSION', async () => {
+    const granted = await requestUserScriptsPermission()
+    if (granted) await initScriptStudioRegistration()
+    return { granted, ...(await probeApi()) }
+  })
+
+  registerMessageHandler('SCRIPT_STUDIO_GET_STATE', async () => {
+    const [index, settings] = await Promise.all([getScriptStudioIndex(), getScriptStudioSettings()])
+    return { index, settings }
+  })
+
+  registerMessageHandler('SCRIPT_STUDIO_CHECK_UPDATES', async (msg) => {
+    const ids = 'scriptIds' in msg ? (msg.scriptIds as string[] | undefined) : undefined
+    return checkScriptUpdates(ids)
+  })
+
+  registerMessageHandler('SCRIPT_STUDIO_SET_GLOBAL', async (msg) => {
+    if (!('enabled' in msg)) return null
+    const index = await getScriptStudioIndex()
+    index.globalEnabled = Boolean(msg.enabled)
+    const { setScriptStudioIndex } = await import('@/core/script-studio')
+    await setScriptStudioIndex(index)
+    scheduleScriptStudioSync()
+    return index
+  })
+
+  void initScriptStudioRegistration().catch((e) => logger.warn('init failed', e))
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes[STORAGE_KEYS.scriptStudioSettings]) {
+      scheduleScriptStudioSync()
+    }
+  })
+}
+
+export { scheduleScriptStudioSync, initScriptStudioRegistration }

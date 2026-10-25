@@ -234,6 +234,12 @@ export type ExtensionMessage =
     }
   | { type: 'RECORDER_STATE'; session: import('@/core/recorder/types').RecorderSession | null }
   | { type: 'TIMER_RECONCILE' }
+  | { type: 'SCRIPT_STUDIO_SYNC' }
+  | { type: 'SCRIPT_STUDIO_PROBE' }
+  | { type: 'SCRIPT_STUDIO_REQUEST_PERMISSION' }
+  | { type: 'SCRIPT_STUDIO_GET_STATE' }
+  | { type: 'SCRIPT_STUDIO_CHECK_UPDATES'; scriptIds?: string[] }
+  | { type: 'SCRIPT_STUDIO_SET_GLOBAL'; enabled: boolean }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
@@ -365,6 +371,12 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'OFFSCREEN_RECORDER_START',
   'RECORDER_STATE',
   'TIMER_RECONCILE',
+  'SCRIPT_STUDIO_SYNC',
+  'SCRIPT_STUDIO_PROBE',
+  'SCRIPT_STUDIO_REQUEST_PERMISSION',
+  'SCRIPT_STUDIO_GET_STATE',
+  'SCRIPT_STUDIO_CHECK_UPDATES',
+  'SCRIPT_STUDIO_SET_GLOBAL',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {

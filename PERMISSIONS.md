@@ -15,13 +15,15 @@ The extension requests the minimum set required for the implemented features. Ea
 | `declarativeNetRequest` | Applies bundled static filter rules to block ad and tracker requests when ad blocking is enabled.                                                                                                                      |
 | `declarativeNetRequestFeedback` | Shows per-tab blocked-request counts on the extension badge and in the Ad Blocker tool.                                                                                                                        |
 | `webRequest` | Observes (does not block) HTTP requests for the HTTP Interceptor network log; rules still use `declarativeNetRequest` and page scripts.                                                                      |
-| Optional `userScripts` | Insert Script rules register page scripts when you enable user scripts in HTTP Interceptor settings.                                                                                                            |
+| Optional `userScripts` | HTTP Interceptor Insert Script rules and **Script Studio** register user-authored scripts via `chrome.userScripts` after you grant the permission and enable “Allow user scripts” for One Panel. |
+| Optional `cookies` | Script Studio exposes `GM_cookie` only when you enable cookie access in Script Studio settings and scripts declare the grant. |
 | Optional `debugger` | Deep intercept attaches with the Fetch domain only when you turn on Deep intercept and attach to a tab (Chrome shows a debugging banner).                                                                      |
 | Optional HTTP(S) hosts | The API Request Builder requests access to the selected hostname only after Send is clicked. The grant covers all ports on that hostname and can be revoked in Chrome settings. |
 
 ## Deliberately NOT requested
 
-- `cookies`, `bookmarks`, `sessions`, `alarms` — these will be added only when a feature needs them and after an explicit user action.
+- `bookmarks`, `sessions` — these will be added only when a feature needs them and after an explicit user action.
+- `alarms` — used by Script Studio update checks and other scheduled background tasks.
 - Required HTTP(S) host permissions — HTTP(S) access is declared as optional and is not granted by default.
 - The page-tools content script bundle uses a non-routable manifest match pattern so Chrome does not auto-inject it on real pages; the background service worker injects it with `scripting.executeScript` when you use page tools or the element picker.
 - Form Autofill needs no extra permissions. It injects its own runtime (`form-autofill/content-script.js`) with `scripting.executeScript` only into the tab its panel is open on, and talks to it on a separate `ufa/v1` message channel. It never submits forms, never fills passwords, one-time codes or payment fields, and keeps saved answers in `chrome.storage.local` under keys prefixed `browser_toolbox_autofill`.

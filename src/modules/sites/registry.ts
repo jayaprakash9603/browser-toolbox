@@ -1,8 +1,27 @@
-import { AtSignIcon, BriefcaseBusinessIcon, ImageIcon, MessageCircleIcon, PlaySquareIcon } from 'lucide-react'
+import {
+  AtSignIcon,
+  BriefcaseBusinessIcon,
+  Code2Icon,
+  ImageIcon,
+  MessageCircleIcon,
+  PlaySquareIcon,
+} from 'lucide-react'
 
 import { defineTool } from '@/core/registry/defineTool'
 
 export const sitesTools = [
+  defineTool({
+    id: 'sites.script-studio',
+    name: 'Script Studio',
+    description: 'Userscript manager with editor, GM APIs, install and update flows',
+    category: 'sites',
+    icon: Code2Icon,
+    keywords: ['userscript', 'tampermonkey', 'greasemonkey', 'script', 'gm', 'inject'],
+    aliases: ['script studio', 'userscript manager'],
+    route: '/tools/sites/script-studio',
+    capabilities: ['SIDE_PANEL', 'COMMAND', 'PAGE_ACCESS'],
+    loader: () => import('@/tools/sites/script-studio/Tool'),
+  }),
   defineTool({
     id: 'sites.youtube',
     name: 'YouTube Control Panel',
