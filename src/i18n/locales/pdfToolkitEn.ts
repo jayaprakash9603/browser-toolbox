@@ -381,6 +381,13 @@ export const pdfToolkitStrings = {
   'pdf.cat.edit': 'Edit PDF',
   'pdf.cat.security': 'PDF security',
   'pdf.cat.intelligence': 'PDF intelligence',
+  'pdf.catShort.organize': 'Organize',
+  'pdf.catShort.optimize': 'Optimize',
+  'pdf.catShort.to-pdf': 'To PDF',
+  'pdf.catShort.from-pdf': 'From PDF',
+  'pdf.catShort.edit': 'Edit',
+  'pdf.catShort.security': 'Security',
+  'pdf.catShort.intelligence': 'AI tools',
 
   'pdf.tools.merge.name': 'Merge PDF',
   'pdf.tools.merge.desc': 'Combine PDFs and images in the order you want, choosing pages from each.',

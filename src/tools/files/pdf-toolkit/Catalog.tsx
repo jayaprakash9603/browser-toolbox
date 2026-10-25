@@ -6,6 +6,7 @@ import { ArrowUpRightIcon, HistoryIcon, LayoutGridIcon, SearchXIcon } from 'luci
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/utils/cn'
 import { CATEGORY_META } from './toolMeta'
+import { ChipRail } from './ChipRail'
 import { CatalogSearch, ToolIcon } from './ToolBar'
 import { CATEGORIES, TOOLS, type Category, type ToolId, type ToolInfo } from './toolList'
 import { useToolSearch } from './useToolSearch'
@@ -27,12 +28,12 @@ function ToolCard({ tool, index, onOpen }: { tool: ToolInfo; index: number; onOp
         type="button"
         onClick={() => onOpen(tool.id)}
         aria-label={t('pdf.ui.open', { tool: name })}
-        className="group relative flex h-full w-full cursor-pointer items-start gap-3 rounded-2xl border bg-card p-3 text-left shadow-xs outline-none transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-foreground/15 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring motion-reduce:hover:translate-y-0"
+        className="group relative flex h-full w-full cursor-pointer items-start gap-2.5 rounded-xl border bg-card p-2.5 text-left shadow-xs outline-none transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-foreground/15 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring motion-reduce:hover:translate-y-0"
       >
-        <ToolIcon id={tool.id} className="size-10 transition-transform duration-200 group-hover:scale-105 motion-reduce:group-hover:scale-100" />
+        <ToolIcon id={tool.id} className="size-9 transition-transform duration-200 group-hover:scale-105 motion-reduce:group-hover:scale-100" />
         <span className="flex min-w-0 flex-1 flex-col gap-0.5 pr-4">
-          <span className="text-sm leading-tight font-semibold">{name}</span>
-          <span className="line-clamp-2 text-xs text-muted-foreground">{t(`pdf.tools.${tool.id}.desc`)}</span>
+          <span className="text-[13px] leading-tight font-semibold">{name}</span>
+          <span className="line-clamp-1 text-xs text-muted-foreground @[400px]:line-clamp-2">{t(`pdf.tools.${tool.id}.desc`)}</span>
         </span>
         <ArrowUpRightIcon
           className="absolute top-3 right-3 size-3.5 text-muted-foreground opacity-0 transition-[opacity,transform] duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100 group-focus-visible:opacity-100"
@@ -52,7 +53,7 @@ function CategoryBadge({ category }: { category: Category }) {
   )
 }
 
-const GRID = 'grid grid-cols-1 gap-2.5 @[460px]:grid-cols-2 @[780px]:grid-cols-3 @[1120px]:grid-cols-4'
+const GRID = 'grid grid-cols-1 gap-2 @[400px]:grid-cols-2 @[760px]:grid-cols-3 @[1080px]:grid-cols-4'
 
 /** Every tool, searchable and grouped by category. */
 export function Catalog({ recent, onOpen }: { recent: ToolId[]; onOpen: (id: ToolId) => void }) {
@@ -61,6 +62,10 @@ export function Catalog({ recent, onOpen }: { recent: ToolId[]; onOpen: (id: Too
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<Category | 'all'>('all')
   const search = useRef<HTMLInputElement>(null)
+  const bar = useRef<HTMLDivElement>(null)
+  const [stuck, setStuck] = useState(false)
+  const root = useRef<HTMLDivElement>(null)
+  const scrollArea = useRef<HTMLElement | null>(null)
   const matches = useToolSearch(query)
   const visible = category === 'all' ? matches : matches.filter((tool) => tool.category === category)
   const groups = query.trim()
@@ -78,16 +83,57 @@ export function Catalog({ recent, onOpen }: { recent: ToolId[]; onOpen: (id: Too
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  useEffect(() => {
+    let scroller = bar.current?.parentElement ?? null
+    while (scroller && !/(auto|scroll)/.test(getComputedStyle(scroller).overflowY)) scroller = scroller.parentElement
+    if (!scroller) return
+    const area = scroller
+    scrollArea.current = area
+    const onScroll = () => {
+      const pinned = !!bar.current && area.scrollTop > 0 && bar.current.getBoundingClientRect().top - area.getBoundingClientRect().top <= 1
+      setStuck((current) => (current === pinned ? current : pinned))
+    }
+    area.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      area.removeEventListener('scroll', onScroll)
+      scrollArea.current = null
+    }
+  }, [])
+
+  /** After a filter change, brings the first matching tools back up under the pinned bar. */
+  const revealList = () => {
+    const area = scrollArea.current
+    const start = root.current
+    if (!area || !start) return
+    const offset = start.getBoundingClientRect().top - area.getBoundingClientRect().top + area.scrollTop
+    if (area.scrollTop > offset) area.scrollTo({ top: offset, behavior: reduce ? 'auto' : 'smooth' })
+  }
+
+  const pickCategory = (value: Category | 'all') => {
+    setCategory(value)
+    revealList()
+  }
+
+  const changeQuery = (value: string) => {
+    setQuery(value)
+    revealList()
+  }
+
   const chips: { value: Category | 'all'; count: number }[] = [
     { value: 'all', count: matches.length },
     ...CATEGORIES.map((id) => ({ value: id, count: matches.filter((tool) => tool.category === id).length })),
   ]
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2.5">
-        <CatalogSearch value={query} onChange={setQuery} inputRef={search} />
-        <div role="tablist" aria-label={t('pdf.ui.categoriesLabel')} className="flex flex-wrap gap-1.5">
+    <div ref={root} className="flex flex-col gap-3">
+      {/* Search and categories stay pinned while the tools scroll beneath them. */}
+      <div
+        ref={bar}
+        data-stuck={stuck || undefined}
+        className="sticky top-[calc(var(--density-page-pad)*-1)] z-10 -mx-[var(--density-page-pad)] -mt-2 flex flex-col gap-2 border-b border-transparent bg-background/90 px-[var(--density-page-pad)] pt-2 pb-2 backdrop-blur-md transition-[border-color,box-shadow] duration-200 data-[stuck]:border-border data-[stuck]:shadow-[0_6px_12px_-10px_rgb(0_0_0/0.25)]"
+      >
+        <CatalogSearch value={query} onChange={changeQuery} inputRef={search} />
+        <ChipRail role="tablist" label={t('pdf.ui.categoriesLabel')}>
           {chips.map(({ value, count }) => {
             const active = value === category
             const Icon = value === 'all' ? LayoutGridIcon : CATEGORY_META[value].icon
@@ -97,10 +143,11 @@ export function Catalog({ recent, onOpen }: { recent: ToolId[]; onOpen: (id: Too
                 type="button"
                 role="tab"
                 aria-selected={active}
-                onClick={() => setCategory(value)}
+                title={value === 'all' ? undefined : t(`pdf.cat.${value}`)}
+                onClick={() => pickCategory(value)}
                 disabled={!count && !active}
                 className={cn(
-                  'relative flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-medium outline-none transition-colors duration-200 hover:border-foreground/20 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40',
+                  'relative flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium whitespace-nowrap outline-none transition-colors duration-200 hover:border-foreground/20 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40',
                   active ? 'border-transparent text-primary-foreground' : 'bg-card text-muted-foreground hover:text-foreground',
                 )}
               >
@@ -113,31 +160,40 @@ export function Catalog({ recent, onOpen }: { recent: ToolId[]; onOpen: (id: Too
                   />
                 )}
                 <Icon className="relative size-3.5" aria-hidden />
-                <span className="relative">{value === 'all' ? t('pdf.ui.all') : t(`pdf.cat.${value}`)}</span>
-                <span className={cn('relative tabular-nums', active ? 'text-primary-foreground/75' : 'text-muted-foreground/70')}>{count}</span>
+                <span className="relative">{value === 'all' ? t('pdf.ui.all') : t(`pdf.catShort.${value}`)}</span>
+                <span
+                  className={cn(
+                    'relative min-w-4 rounded-full px-1 text-center text-[10px] leading-4 tabular-nums',
+                    active ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground',
+                  )}
+                >
+                  {count}
+                </span>
               </button>
             )
           })}
-        </div>
+        </ChipRail>
       </div>
 
       {recent.length > 0 && !query.trim() && category === 'all' && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-0.5 flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <span className="flex shrink-0 items-center gap-1 text-[11px] font-medium text-muted-foreground" title={t('pdf.ui.recent')}>
             <HistoryIcon className="size-3.5" aria-hidden />
-            {t('pdf.ui.recent')}
+            <span className="hidden @[420px]:inline">{t('pdf.ui.recent')}</span>
           </span>
-          {recent.map((id) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => onOpen(id)}
-              className="flex h-7 cursor-pointer items-center gap-1.5 rounded-full border bg-card pr-2.5 pl-1 text-[11px] font-medium outline-none transition-colors hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <ToolIcon id={id} className="size-5 rounded-full" />
-              {t(`pdf.tools.${id}.name`)}
-            </button>
-          ))}
+          <ChipRail className="flex-1" role="group" label={t('pdf.ui.recent')}>
+            {recent.map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => onOpen(id)}
+                className="flex h-7 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border bg-card pr-2.5 pl-1 text-[11px] font-medium whitespace-nowrap outline-none transition-colors hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <ToolIcon id={id} className="size-5 rounded-full" />
+                {t(`pdf.tools.${id}.name`)}
+              </button>
+            ))}
+          </ChipRail>
         </div>
       )}
 

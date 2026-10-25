@@ -24,7 +24,7 @@ export function ToolIcon({ id, className }: { id: ToolId; className?: string }) 
 export function CatalogSearch({ value, onChange, inputRef }: { value: string; onChange: (value: string) => void; inputRef: React.RefObject<HTMLInputElement | null> }) {
   const { t } = useTranslation()
   return (
-    <div className="flex items-center gap-2 rounded-2xl border bg-card p-1.5 shadow-xs">
+    <div className="flex items-center gap-2 rounded-xl border bg-card p-1 shadow-xs focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-ring/30">
       <div className="relative min-w-0 flex-1">
         <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
         <Input
