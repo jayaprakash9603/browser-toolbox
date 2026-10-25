@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { sendMessage } from '@/core/messaging'
-import type { ScriptRecord, ScriptStudioIndex, ScriptStudioSettings } from '@/core/script-studio'
+import type { ScriptRecord, ScriptStudioIndex, ScriptStudioSettings, UserScriptsProbe } from '@/core/script-studio'
 import {
   DEFAULT_SCRIPT_STUDIO_INDEX,
+  extensionSettingsUrl,
+  probeUserScripts,
+  requestUserScriptsPermission,
   getScriptCode,
   getScriptStudioIndex,
   getScriptStudioSettings,
@@ -21,27 +24,42 @@ import {
 import { DEFAULT_SCRIPT_STUDIO_SETTINGS } from '@/core/script-studio/settings'
 import { newScriptTemplate } from '@/core/script-studio/templates'
 
-export type UserScriptsProbe = {
-  apiPresent: boolean
-  permissionGranted: boolean
-  operational: boolean
-  error?: string
-}
+export type { UserScriptsProbe }
 
 export function useScriptStudio() {
   const [index, setIndex] = useState<ScriptStudioIndex | null>(null)
   const [settings, setSettings] = useState<ScriptStudioSettings | null>(null)
   const [probe, setProbe] = useState<UserScriptsProbe | null>(null)
   const [loading, setLoading] = useState(true)
+  const wasOperational = useRef<boolean | null>(null)
 
   const refreshProbe = useCallback(async () => {
-    const timeoutMs = 4_000
-    const p = await Promise.race([
-      sendMessage<UserScriptsProbe>({ type: 'SCRIPT_STUDIO_PROBE' }),
-      new Promise<undefined>((resolve) => window.setTimeout(resolve, timeoutMs)),
-    ])
-    if (p) setProbe(p)
+    const next = await probeUserScripts()
+    setProbe(next)
+    if (next.operational && wasOperational.current === false) {
+      void sendMessage({ type: 'SCRIPT_STUDIO_SYNC' })
+    }
+    wasOperational.current = next.operational
+    return next
   }, [])
+
+  // The "Allow user scripts" toggle lives in chrome://extensions, so re-check whenever the user comes back.
+  useEffect(() => {
+    const recheck = () => {
+      if (document.visibilityState === 'visible') void refreshProbe()
+    }
+    const onPermissions = () => void refreshProbe()
+    window.addEventListener('focus', recheck)
+    document.addEventListener('visibilitychange', recheck)
+    chrome.permissions?.onAdded?.addListener(onPermissions)
+    chrome.permissions?.onRemoved?.addListener(onPermissions)
+    return () => {
+      window.removeEventListener('focus', recheck)
+      document.removeEventListener('visibilitychange', recheck)
+      chrome.permissions?.onAdded?.removeListener(onPermissions)
+      chrome.permissions?.onRemoved?.removeListener(onPermissions)
+    }
+  }, [refreshProbe])
 
   const refresh = useCallback(async () => {
     try {
@@ -54,11 +72,11 @@ export function useScriptStudio() {
     } finally {
       setLoading(false)
     }
-    void refreshProbe()
-  }, [refreshProbe])
+  }, [])
 
   useEffect(() => {
-    void refresh()
+    void Promise.resolve().then(refresh)
+    void Promise.resolve().then(refreshProbe)
     const onChange = (changes: { [key: string]: chrome.storage.StorageChange }, area: string) => {
       if (area !== 'local') return
       if (changes.scriptStudio || changes.scriptStudioSettings || Object.keys(changes).some((k) => k.startsWith('ss:'))) {
@@ -67,17 +85,17 @@ export function useScriptStudio() {
     }
     chrome.storage.onChanged.addListener(onChange)
     return () => chrome.storage.onChanged.removeListener(onChange)
-  }, [refresh])
+  }, [refresh, refreshProbe])
 
   const requestPermission = useCallback(async () => {
-    const res = await sendMessage<UserScriptsProbe & { granted?: boolean }>({
-      type: 'SCRIPT_STUDIO_REQUEST_PERMISSION',
-    })
-    if (res) setProbe(res)
-    await sendMessage({ type: 'SCRIPT_STUDIO_SYNC' })
-    await refresh()
-    return res
-  }, [refresh])
+    const granted = await requestUserScriptsPermission()
+    if (granted) await sendMessage({ type: 'SCRIPT_STUDIO_REQUEST_PERMISSION' })
+    return refreshProbe()
+  }, [refreshProbe])
+
+  const openExtensionSettings = useCallback(() => {
+    void chrome.tabs.create({ url: extensionSettingsUrl() })
+  }, [])
 
   const setGlobalEnabled = useCallback(
     async (enabled: boolean) => {
@@ -159,7 +177,9 @@ export function useScriptStudio() {
     probe,
     loading,
     refresh,
+    refreshProbe,
     requestPermission,
+    openExtensionSettings,
     setGlobalEnabled,
     saveScript,
     createScript,

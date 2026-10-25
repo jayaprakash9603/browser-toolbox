@@ -1,11 +1,11 @@
-import { ExternalLinkIcon, PlusIcon } from 'lucide-react'
-import { motion } from 'motion/react'
+import { ExternalLinkIcon, GlobeIcon } from 'lucide-react'
+import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { scriptMatchesUrl } from '@/core/script-studio'
 import type { ScriptRecord, ScriptStudioSettings } from '@/core/script-studio'
-import { Button } from '@/shared/components/ui/button'
+import { EmptyState } from '@/shared/components/EmptyState'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Switch } from '@/shared/components/ui/switch'
 
@@ -13,73 +13,70 @@ type Props = {
   url: string | null
   scripts: ScriptRecord[]
   settings: ScriptStudioSettings
-  globalEnabled: boolean
-  onGlobalChange: (on: boolean) => void
   onToggle: (record: ScriptRecord, enabled: boolean) => void
-  onCreate: () => void
-  onOpenDashboard: () => void
   loadCode: (id: string) => Promise<string | null>
 }
 
-export function ThisPagePanel({
-  url,
-  scripts,
-  settings,
-  globalEnabled,
-  onGlobalChange,
-  onToggle,
-  onCreate,
-  onOpenDashboard,
-  loadCode,
-}: Props) {
+export function ThisPagePanel({ url, scripts, settings, onToggle, loadCode }: Props) {
   const { t } = useTranslation()
-  const [matching, setMatching] = useState<ScriptRecord[]>([])
+  const reduce = useReducedMotion()
+  const [found, setFound] = useState<{ url: string; scripts: ScriptRecord[] } | null>(null)
+  const matching = url && found?.url === url ? found.scripts : []
 
   useEffect(() => {
-    if (!url) {
-      setMatching([])
-      return
-    }
+    if (!url) return
+    let cancelled = false
     void (async () => {
       const list: ScriptRecord[] = []
-      for (const s of scripts.filter((r) => !r.trashed && r.enabled)) {
+      for (const s of scripts.filter((r) => !r.trashed)) {
         const code = await loadCode(s.id)
         if (code && scriptMatchesUrl(s, code, url, settings)) list.push(s)
       }
-      setMatching(list)
+      if (!cancelled) setFound({ url, scripts: list })
     })()
+    return () => {
+      cancelled = true
+    }
   }, [url, scripts, settings, loadCode])
 
-  const searchLinks = useMemo(() => {
-    if (!url) return []
-    const q = encodeURIComponent(url)
-    return [
-      { label: 'Greasy Fork', href: `https://greasyfork.org/en/scripts?q=${q}` },
-      { label: 'OpenUserJS', href: `https://openuserjs.org/?q=${q}` },
-      { label: 'userscript.zone', href: `https://www.userscript.zone/?q=${q}` },
-    ]
+  const host = useMemo(() => {
+    if (!url) return null
+    try {
+      return new URL(url).hostname
+    } catch {
+      return null
+    }
   }, [url])
+
+  const searchLinks = useMemo(() => {
+    if (!host) return []
+    const q = encodeURIComponent(host)
+    return [
+      { label: 'Greasy Fork', href: `https://greasyfork.org/en/scripts/by-site/${q}` },
+      { label: 'OpenUserJS', href: `https://openuserjs.org/?q=${q}` },
+      { label: 'userscript.zone', href: `https://www.userscript.zone/search?q=${q}` },
+    ]
+  }, [host])
 
   return (
     <div className="flex flex-col gap-3">
-      <Card>
-        <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm">{t('scriptStudio.globalEnabled')}</CardTitle>
-          <Switch checked={globalEnabled} onCheckedChange={onGlobalChange} aria-label={t('scriptStudio.globalEnabled')} />
-        </CardHeader>
-      </Card>
+      {host ? (
+        <p className="truncate text-xs text-muted-foreground">
+          {t('scriptStudio.thisPage.on', { host })}
+        </p>
+      ) : null}
 
       {matching.length === 0 ? (
-        <p className="text-xs text-muted-foreground">{t('scriptStudio.noScripts')}</p>
+        <EmptyState icon={GlobeIcon} title={t('scriptStudio.noScripts')} description={t('scriptStudio.thisPage.emptyHint')} />
       ) : (
         <ul className="flex flex-col gap-2">
           {matching.map((s, i) => (
             <motion.li
               key={s.id}
-              initial={{ opacity: 0, y: 6 }}
+              initial={reduce ? { opacity: 0 } : { opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.03, duration: 0.25 }}
-              className="flex items-center justify-between rounded-lg border bg-card px-3 py-2 shadow-xs"
+              transition={{ delay: reduce ? 0 : i * 0.03, duration: 0.22 }}
+              className="flex min-h-12 items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2 shadow-xs"
             >
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">{s.name}</p>
@@ -91,37 +88,27 @@ export function ThisPagePanel({
         </ul>
       )}
 
-      {settings.scriptSearchEnabled && url ? (
-        <Card>
-          <CardHeader className="pb-2">
+      {settings.scriptSearchEnabled && host ? (
+        <Card className="gap-2 py-3">
+          <CardHeader className="px-3">
             <CardTitle className="text-xs">{t('scriptStudio.findScripts')}</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-2 pt-0">
+          <CardContent className="flex flex-wrap gap-2 px-3">
             {searchLinks.map((l) => (
               <a
                 key={l.href}
                 href={l.href}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex min-h-9 items-center gap-1 rounded-md border px-2 text-xs hover:bg-muted"
+                className="inline-flex min-h-9 items-center gap-1 rounded-md border px-2.5 text-xs transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
                 {l.label}
-                <ExternalLinkIcon className="size-3" />
+                <ExternalLinkIcon className="size-3" aria-hidden />
               </a>
             ))}
           </CardContent>
         </Card>
       ) : null}
-
-      <div className="flex flex-wrap gap-2">
-        <Button variant="secondary" className="min-h-11" onClick={() => void onCreate()}>
-          <PlusIcon className="size-4" />
-          {t('scriptStudio.create')}
-        </Button>
-        <Button variant="outline" className="min-h-11" onClick={onOpenDashboard}>
-          {t('scriptStudio.openDashboard')}
-        </Button>
-      </div>
     </div>
   )
 }

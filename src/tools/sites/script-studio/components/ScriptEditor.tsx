@@ -1,5 +1,5 @@
 import { js_beautify } from 'js-beautify'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { parseMetadata } from '@/core/script-studio'
@@ -8,7 +8,18 @@ import { GM_GRANTS } from '@/core/script-studio/grants'
 import { CodeEditor } from '@/shared/components/CodeEditor'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
+import { Label } from '@/shared/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
+
+const RUN_AT_OPTIONS = ['document-start', 'document-end', 'document-idle', 'context-menu'] as const
+
+function toRows(values: Record<string, unknown>) {
+  return Object.entries(values).map(([key, value]) => ({
+    key,
+    value: typeof value === 'string' ? value : JSON.stringify(value),
+  }))
+}
 
 type Props = {
   record: ScriptRecord
@@ -22,27 +33,29 @@ type Props = {
 export function ScriptEditor({ record, settings, code, values, onSave, onValuesSave }: Props) {
   const { t } = useTranslation()
   const [source, setSource] = useState(code)
-  const [localRecord, setLocalRecord] = useState(record)
-  const [storageRows, setStorageRows] = useState<{ key: string; value: string }[]>([])
+  const [overrides, setOverrides] = useState(record.overrides)
+  const [tagsText, setTagsText] = useState((record.overrides.tags ?? []).join(', '))
+  const [storageRows, setStorageRows] = useState(() => toRows(values))
+  const [prevValues, setPrevValues] = useState(values)
+  if (values !== prevValues) {
+    setPrevValues(values)
+    setStorageRows(toRows(values))
+  }
+  const saved = useRef({ source: code, overrides: record.overrides })
 
-  useEffect(() => setSource(code), [code])
-  useEffect(() => setLocalRecord(record), [record])
-
-  useEffect(() => {
-    setStorageRows(
-      Object.entries(values).map(([key, value]) => ({
-        key,
-        value: typeof value === 'string' ? value : JSON.stringify(value),
-      })),
-    )
-  }, [values])
+  // Fields outside the editor (enabled, position, update info) can change elsewhere, so always save on top of the latest record.
+  const save = () => {
+    saved.current = { source, overrides }
+    onSave(source, { ...record, overrides })
+  }
 
   useEffect(() => {
     if (!settings.editorAutosave) return
-    const tmr = setTimeout(() => onSave(source, localRecord), 800)
+    if (saved.current.source === source && saved.current.overrides === overrides) return
+    const tmr = setTimeout(save, 800)
     return () => clearTimeout(tmr)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- debounced save
-  }, [source, localRecord, settings.editorAutosave])
+  }, [source, overrides, settings.editorAutosave])
 
   const meta = parseMetadata(source)
 
@@ -51,9 +64,7 @@ export function ScriptEditor({ record, settings, code, values, onSave, onValuesS
       <div className="flex flex-wrap gap-2">
         <Button
           size="sm"
-          onClick={() => {
-            onSave(source, localRecord)
-          }}
+          onClick={save}
         >
           {t('scriptStudio.editor.save')}
         </Button>
@@ -79,53 +90,48 @@ export function ScriptEditor({ record, settings, code, values, onSave, onValuesS
           <CodeEditor value={source} onChange={setSource} language="javascript" className="min-h-[300px] flex-1" ariaLabel="Script source" />
         </TabsContent>
 
-        <TabsContent value="settings" className="space-y-2 text-xs">
-          <label className="block">
-            Run-at override
-            <select
-              className="mt-1 w-full rounded-md border px-2 py-1"
-              value={localRecord.overrides.runAt ?? meta?.runAt ?? 'document-idle'}
-              onChange={(e) =>
-                setLocalRecord({
-                  ...localRecord,
-                  overrides: { ...localRecord.overrides, runAt: e.target.value as ScriptRecord['overrides']['runAt'] },
-                })
-              }
+        <TabsContent value="settings" className="flex max-w-md flex-col gap-3 text-xs">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="ss-run-at">Run-at override</Label>
+            <Select
+              value={overrides.runAt ?? meta?.runAt ?? 'document-idle'}
+              onValueChange={(v) => setOverrides({ ...overrides, runAt: v as ScriptRecord['overrides']['runAt'] })}
             >
-              <option value="document-start">document-start</option>
-              <option value="document-idle">document-idle</option>
-              <option value="document-end">document-end</option>
-              <option value="context-menu">context-menu</option>
-            </select>
-          </label>
-          <label className="block">
-            Position
+              <SelectTrigger id="ss-run-at" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {RUN_AT_OPTIONS.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="ss-position">Position</Label>
             <Input
+              id="ss-position"
               type="number"
-              value={localRecord.overrides.position ?? localRecord.position}
-              onChange={(e) =>
-                setLocalRecord({
-                  ...localRecord,
-                  overrides: { ...localRecord.overrides, position: Number(e.target.value) },
-                })
-              }
+              value={overrides.position ?? record.position}
+              onChange={(e) => setOverrides({ ...overrides, position: Number(e.target.value) })}
             />
-          </label>
-          <label className="block">
-            Tags (comma-separated)
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="ss-tags">Tags (comma-separated)</Label>
             <Input
-              value={(localRecord.overrides.tags ?? []).join(', ')}
-              onChange={(e) =>
-                setLocalRecord({
-                  ...localRecord,
-                  overrides: {
-                    ...localRecord.overrides,
-                    tags: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
-                  },
+              id="ss-tags"
+              value={tagsText}
+              onChange={(e) => {
+                setTagsText(e.target.value)
+                setOverrides({
+                  ...overrides,
+                  tags: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
                 })
-              }
+              }}
             />
-          </label>
+          </div>
         </TabsContent>
 
         <TabsContent value="storage" className="space-y-2">

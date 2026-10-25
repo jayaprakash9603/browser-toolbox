@@ -4,7 +4,7 @@ import { createLogger } from '@/core/logging'
 import { checkScriptUpdates } from './updates'
 import { getScriptStudioIndex, getScriptStudioSettings } from '@/core/script-studio'
 
-import { probeUserScripts as probeApi, requestUserScriptsPermission } from './availability'
+import { probeUserScripts as probeApi } from './availability'
 import { registerGmBridgeListener } from './bridge'
 import { registerUserScriptInstallDetection } from './install'
 import {
@@ -37,10 +37,16 @@ export function registerScriptStudio(): void {
 
   registerMessageHandler('SCRIPT_STUDIO_PROBE', async () => probeApi())
 
+  // The prompt itself needs a user gesture, so pages request the permission and only notify us here.
   registerMessageHandler('SCRIPT_STUDIO_REQUEST_PERMISSION', async () => {
-    const granted = await requestUserScriptsPermission()
-    if (granted) await initScriptStudioRegistration()
-    return { granted, ...(await probeApi()) }
+    await initScriptStudioRegistration()
+    return probeApi()
+  })
+
+  chrome.permissions.onAdded.addListener((permissions) => {
+    if (permissions.permissions?.includes('userScripts')) {
+      void initScriptStudioRegistration().catch((e) => logger.warn('init after grant failed', e))
+    }
   })
 
   registerMessageHandler('SCRIPT_STUDIO_GET_STATE', async () => {

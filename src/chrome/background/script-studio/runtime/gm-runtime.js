@@ -287,7 +287,6 @@
   if (hasGrant('unsafeWindow') || noneGrant) {
     try {
       if (typeof unsafeWindow === 'undefined') {
-        // eslint-disable-next-line no-var
         var unsafeWindow = window.wrappedJSObject || window;
       }
     } catch (e) {

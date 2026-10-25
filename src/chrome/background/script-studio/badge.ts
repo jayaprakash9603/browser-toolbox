@@ -28,7 +28,7 @@ export async function updateBadgeForTab(tabId: number): Promise<void> {
     return
   }
 
-  let count = 0
+  let count: number
   if (settings.badgeMode === 'total-installed') {
     count = (await listActiveScripts(index)).filter((s) => s.enabled).length
   } else if (settings.badgeMode === 'unique-running') {

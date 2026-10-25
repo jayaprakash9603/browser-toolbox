@@ -1,52 +1,53 @@
-import { Code2Icon } from 'lucide-react'
-import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useMemo, useState } from 'react'
+import { ArrowLeftIcon } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { sendMessage } from '@/core/messaging'
 import { ThemeApplicator } from '@/app/providers/ThemeApplicator'
 import { Button } from '@/shared/components/ui/button'
 
-import { ApiReferencePanel, ScriptEditor } from '@/tools/sites/script-studio/components/ScriptEditor'
-import { BackupView } from '@/tools/sites/script-studio/components/BackupView'
 import { InstallReview } from '@/tools/sites/script-studio/components/InstallReview'
-import { LibraryView } from '@/tools/sites/script-studio/components/LibraryView'
-import { SettingsView } from '@/tools/sites/script-studio/components/SettingsView'
-import { SetupWizard } from '@/tools/sites/script-studio/components/SetupWizard'
 import { ScriptStudioLoadingSkeleton } from '@/tools/sites/script-studio/components/ScriptStudioLoadingSkeleton'
+import { ScriptStudioWorkspace } from '@/tools/sites/script-studio/components/ScriptStudioWorkspace'
+import { DASHBOARD_TABS, type StudioTab } from '@/tools/sites/script-studio/components/workspaceTabs'
 import { useScriptStudio } from '@/tools/sites/script-studio/hooks/useScriptStudio'
 
+type DashboardTab = (typeof DASHBOARD_TABS)[number]
+
 type Route =
-  | { kind: 'library' }
-  | { kind: 'trash' }
-  | { kind: 'settings' }
-  | { kind: 'backup' }
-  | { kind: 'api' }
+  | { kind: 'tab'; tab: DashboardTab }
   | { kind: 'edit'; id: string }
   | { kind: 'install'; url: string }
 
 function parseRoute(hash: string): Route {
-  const h = hash.replace(/^#/, '')
-  if (h.startsWith('/edit/')) return { kind: 'edit', id: h.slice('/edit/'.length) }
-  if (h.startsWith('install?') || h.startsWith('/install?')) {
-    const q = h.includes('?') ? h.slice(h.indexOf('?') + 1) : ''
-    const params = new URLSearchParams(q)
-    const url = params.get('ssInstallUrl') ?? params.get('url') ?? ''
-    return { kind: 'install', url: decodeURIComponent(url) }
+  const h = hash.replace(/^#\/?/, '')
+  if (h.startsWith('edit/')) return { kind: 'edit', id: decodeURIComponent(h.slice('edit/'.length)) }
+  if (h.startsWith('install?')) {
+    const params = new URLSearchParams(h.slice(h.indexOf('?') + 1))
+    return { kind: 'install', url: params.get('ssInstallUrl') ?? params.get('url') ?? '' }
   }
-  if (h === 'trash') return { kind: 'trash' }
-  if (h === 'settings') return { kind: 'settings' }
-  if (h === 'backup') return { kind: 'backup' }
-  if (h === 'api') return { kind: 'api' }
-  return { kind: 'library' }
+  const tab = (DASHBOARD_TABS as readonly string[]).includes(h) ? (h as DashboardTab) : 'library'
+  return { kind: 'tab', tab }
+}
+
+/** The side panel must always start on One Panel's home, never on this full-tab page. */
+function useLeaveSidePanel() {
+  const [checked, setChecked] = useState(() => !chrome.tabs?.getCurrent)
+  useEffect(() => {
+    if (!chrome.tabs?.getCurrent) return
+    void chrome.tabs.getCurrent().then((current) => {
+      if (!current) window.location.replace(chrome.runtime.getURL('index.html#/'))
+      else setChecked(true)
+    })
+  }, [])
+  return checked
 }
 
 export function DashboardApp() {
   const { t } = useTranslation()
   const ss = useScriptStudio()
+  const inTab = useLeaveSidePanel()
   const [route, setRoute] = useState<Route>(() => parseRoute(window.location.hash))
-  const [editorCode, setEditorCode] = useState('')
-  const [editorValues, setEditorValues] = useState<Record<string, unknown>>({})
+  const [lastEditId, setLastEditId] = useState<string | null>(route.kind === 'edit' ? route.id : null)
 
   useEffect(() => {
     const onHash = () => setRoute(parseRoute(window.location.hash))
@@ -54,24 +55,29 @@ export function DashboardApp() {
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
 
-  const nav = (path: string) => {
+  useEffect(() => {
+    document.title = `${t('scriptStudio.title')} · One Panel`
+  }, [t])
+
+  const go = (path: string) => {
     window.location.hash = path
   }
 
-  const editRecord = useMemo(
-    () => (route.kind === 'edit' ? ss.index?.scripts.find((s) => s.id === route.id) : undefined),
-    [route, ss.index],
-  )
+  const edit = (id: string) => {
+    setLastEditId(id)
+    go(`/edit/${encodeURIComponent(id)}`)
+  }
 
-  useEffect(() => {
-    if (route.kind !== 'edit') return
-    void (async () => {
-      setEditorCode((await ss.loadCode(route.id)) ?? '')
-      setEditorValues(await ss.loadValues(route.id))
-    })()
-  }, [route, ss])
+  const changeTab = (tab: StudioTab) => {
+    if (tab === 'editor') {
+      if (lastEditId) edit(lastEditId)
+      else go('editor')
+      return
+    }
+    go(tab === 'library' ? '' : tab)
+  }
 
-  if (ss.loading || !ss.index || !ss.settings) {
+  if (!inTab || ss.loading || !ss.index || !ss.settings) {
     return (
       <>
         <ThemeApplicator />
@@ -83,101 +89,26 @@ export function DashboardApp() {
   return (
     <>
       <ThemeApplicator />
-      <div className="flex min-h-screen bg-background text-foreground">
-        <nav className="flex w-52 shrink-0 flex-col gap-1 border-r p-3">
-          <div className="mb-4 flex items-center gap-2 px-2">
-            <Code2Icon className="size-5" />
-            <span className="font-semibold">{t('scriptStudio.title')}</span>
-          </div>
-          {(
-            [
-              ['library', t('scriptStudio.nav.library')],
-              ['trash', t('scriptStudio.nav.trash')],
-              ['settings', t('scriptStudio.nav.settings')],
-              ['backup', t('scriptStudio.nav.backup')],
-              ['api', t('scriptStudio.nav.api')],
-            ] as const
-          ).map(([path, label]) => (
-            <Button
-              key={path}
-              variant={route.kind === path ? 'secondary' : 'ghost'}
-              className="justify-start"
-              onClick={() => nav(path === 'library' ? '' : path)}
-            >
-              {label}
-            </Button>
-          ))}
-          <Button className="mt-4" onClick={() => void ss.createScript().then((id) => nav(`/edit/${id}`))}>
-            {t('scriptStudio.create')}
-          </Button>
-        </nav>
-
-        <main className="min-w-0 flex-1 p-6">
-          <SetupWizard probe={ss.probe} onEnable={() => void ss.requestPermission()} />
-
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={route.kind + ('id' in route ? route.id : '')}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 4 }}
-              transition={{ duration: 0.18 }}
-            >
-              {route.kind === 'library' ? (
-                <LibraryView
-                  scripts={ss.index.scripts}
-                  onToggle={(r, on) => void ss.toggleScript(r, on)}
-                  onSelect={(id) => nav(`/edit/${id}`)}
-                  onTrash={(ids) => ids.forEach((id) => void ss.trashScript(id))}
-                  onRestore={(id) => void ss.restoreScriptById(id)}
-                  onBulkEnable={(ids, on) => {
-                    for (const id of ids) {
-                      const r = ss.index!.scripts.find((s) => s.id === id)
-                      if (r) void ss.toggleScript(r, on)
-                    }
-                  }}
-                  onCheckUpdates={(ids) => void sendMessage({ type: 'SCRIPT_STUDIO_CHECK_UPDATES', scriptIds: ids })}
-                  loadCode={ss.loadCode}
-                />
-              ) : null}
-
-              {route.kind === 'trash' ? (
-                <LibraryView
-                  scripts={ss.index.scripts}
-                  trashed
-                  onToggle={() => {}}
-                  onSelect={(id) => nav(`/edit/${id}`)}
-                  onTrash={() => {}}
-                  onRestore={(id) => void ss.restoreScriptById(id)}
-                  onBulkEnable={() => {}}
-                  onCheckUpdates={() => {}}
-                  loadCode={ss.loadCode}
-                />
-              ) : null}
-
-              {route.kind === 'edit' && editRecord ? (
-                <ScriptEditor
-                  record={editRecord}
-                  settings={ss.settings}
-                  code={editorCode}
-                  values={editorValues}
-                  onSave={(code, rec) => void ss.saveScript(rec, code)}
-                  onValuesSave={(v) => void ss.saveValues(editRecord.id, v)}
-                />
-              ) : null}
-
-              {route.kind === 'settings' ? (
-                <SettingsView settings={ss.settings} onChange={(p) => void ss.updateSettings(p)} />
-              ) : null}
-
-              {route.kind === 'backup' ? <BackupView /> : null}
-              {route.kind === 'api' ? <ApiReferencePanel /> : null}
-
-              {route.kind === 'install' && route.url ? (
-                <InstallReview url={route.url} onDone={(id) => nav(`/edit/${id}`)} onCancel={() => nav('')} />
-              ) : null}
-            </motion.div>
-          </AnimatePresence>
+      <div className="min-h-screen bg-background text-foreground">
+        <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:py-8">
+          {route.kind === 'install' ? (
+            <div className="flex flex-col gap-4">
+              <Button variant="ghost" size="sm" className="w-fit gap-1.5" onClick={() => go('')}>
+                <ArrowLeftIcon className="size-4" aria-hidden />
+                {t('scriptStudio.tabs.library')}
+              </Button>
+              {route.url ? <InstallReview url={route.url} onDone={edit} onCancel={() => go('')} /> : null}
+            </div>
+          ) : (
+            <ScriptStudioWorkspace
+              studio={ss}
+              surface="tab"
+              tab={route.kind === 'edit' ? 'editor' : route.tab}
+              onTabChange={changeTab}
+              editId={route.kind === 'edit' ? route.id : null}
+              onEdit={edit}
+            />
+          )}
         </main>
       </div>
     </>

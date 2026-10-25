@@ -23,7 +23,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Textarea } from '@/shared/components/ui/textarea'
 import { Checkbox } from '@/shared/components/ui/checkbox'
 
-export function BackupView() {
+export function BackupView({ onInstalled }: { onInstalled?: (id: string) => void }) {
   const [includeValues, setIncludeValues] = useState(true)
   const [includeSettings, setIncludeSettings] = useState(true)
   const [includeExternals, setIncludeExternals] = useState(false)
@@ -92,7 +92,7 @@ export function BackupView() {
     const id = crypto.randomUUID()
     const record = recordFromSource(id, code, { installUrl })
     await upsertScriptRecord(record, code)
-    window.location.hash = `#/edit/${id}`
+    onInstalled?.(id)
   }
 
   return (
