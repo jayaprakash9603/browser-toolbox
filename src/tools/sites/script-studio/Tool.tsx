@@ -13,7 +13,7 @@ import { InstallReview } from './components/InstallReview'
 import { ScriptStudioLoadingSkeleton } from './components/ScriptStudioLoadingSkeleton'
 import { ScriptStudioWorkspace } from './components/ScriptStudioWorkspace'
 import { ALL_TABS, type StudioTab } from './components/workspaceTabs'
-import { useActiveTabUrl } from './hooks/useActiveTabUrl'
+import { useActiveTab } from './hooks/useActiveTabUrl'
 import { useScriptStudio } from './hooks/useScriptStudio'
 
 /** `null` until known; the same route renders in the side panel and in a full browser tab. */
@@ -36,7 +36,7 @@ export default function ScriptStudioTool() {
   const { t } = useTranslation()
   const tool = useSitesTool('sites.script-studio')
   const { search, navigate } = useRouter()
-  const url = useActiveTabUrl()
+  const { id: activeTabId, url } = useActiveTab()
   const ss = useScriptStudio()
   const inTab = useIsFullTab()
   const [requestedTab, setTab] = useDeepLinkTab('tab', ALL_TABS, 'thisPage')
@@ -94,6 +94,7 @@ export default function ScriptStudioTool() {
             editId={editId}
             onEdit={edit}
             url={url}
+            tabId={activeTabId}
           />
         )}
       </div>

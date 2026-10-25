@@ -9,6 +9,7 @@ import {
 } from '@/core/script-studio'
 
 import { downloadWithName } from '../downloadNames'
+import { recordScriptRun } from './runs'
 
 const logger = createLogger('script-studio-bridge')
 
@@ -48,6 +49,11 @@ export async function handleGmBridge(
 
   try {
     switch (sub) {
+      case 'report': {
+        if (tabId == null || !scriptId) return { ok: false }
+        await recordScriptRun(tabId, scriptId, payload ?? {})
+        return { ok: true }
+      }
       case 'setValue': {
         const key = String(payload.key)
         const values = await getScriptValues(scriptId)
@@ -199,12 +205,19 @@ export function registerGmBridgeListener(): void {
 
   const us = chrome.userScripts as typeof chrome.userScripts & {
     onUserScriptMessage?: {
-      addListener: (cb: (message: unknown, sender: chrome.runtime.MessageSender) => void) => void
+      addListener: (
+        cb: (
+          message: unknown,
+          sender: chrome.runtime.MessageSender,
+          sendResponse: (response: unknown) => void,
+        ) => boolean | void,
+      ) => void
     }
   }
-  us?.onUserScriptMessage?.addListener((message, sender) => {
-    if (!isBridgeMessage(message)) return
-    void handleGmBridge(message, sender)
+  us?.onUserScriptMessage?.addListener((message, sender, sendResponse) => {
+    if (!isBridgeMessage(message)) return false
+    void handleGmBridge(message, sender).then((res) => sendResponse(res))
+    return true
   })
 }
 

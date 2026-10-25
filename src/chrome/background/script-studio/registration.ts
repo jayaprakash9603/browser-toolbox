@@ -10,13 +10,50 @@ import {
   userScriptFingerprint,
   type BuiltScriptBundle,
 } from '@/core/script-studio'
-import { buildRegistrationBundle as buildBundle } from '@/core/script-studio/registration'
+import {
+  buildRegistrationBundle as buildBundle,
+  buildRelaySource,
+  SS_RELAY_ID,
+} from '@/core/script-studio/registration'
 
 const logger = createLogger('script-studio-register')
 
 const OWNED_PREFIX = 'ss-'
+const RELAY_NONCE_KEY = 'scriptStudioRelayNonce'
 let runtimeJsCache: string | null = null
 let syncTimer: ReturnType<typeof setTimeout> | null = null
+let nonceCache: string | null = null
+
+async function getReportNonce(): Promise<string> {
+  if (nonceCache) return nonceCache
+  const stored = (await chrome.storage.local.get(RELAY_NONCE_KEY))[RELAY_NONCE_KEY]
+  if (typeof stored === 'string' && stored) {
+    nonceCache = stored
+  } else {
+    nonceCache = crypto.randomUUID().replace(/-/g, '').slice(0, 12)
+    await chrome.storage.local.set({ [RELAY_NONCE_KEY]: nonceCache })
+  }
+  return nonceCache
+}
+
+function relayBundle(bundles: BuiltScriptBundle[], nonce: string): BuiltScriptBundle | null {
+  const main = bundles.filter((b) => b.world === 'MAIN')
+  if (!main.length) return null
+  const code = buildRelaySource(nonce)
+  return {
+    scriptId: '',
+    userScriptId: SS_RELAY_ID,
+    matches: [...new Set(main.flatMap((b) => b.matches))].sort(),
+    excludeMatches: [],
+    includeGlobs: [],
+    excludeGlobs: [],
+    runAt: 'document_start',
+    world: 'USER_SCRIPT',
+    allFrames: main.some((b) => b.allFrames),
+    code,
+    contextMenuOnly: false,
+  }
+}
 
 async function loadRuntimeJs(): Promise<string> {
   if (runtimeJsCache) return runtimeJsCache
@@ -32,6 +69,7 @@ async function collectBundles(): Promise<BuiltScriptBundle[]> {
 
   const runtimeJs = await loadRuntimeJs()
   const handlerVersion = chrome.runtime.getManifest().version
+  const nonce = await getReportNonce()
   const bundles: BuiltScriptBundle[] = []
 
   for (const record of await listActiveScripts(index)) {
@@ -40,13 +78,24 @@ async function collectBundles(): Promise<BuiltScriptBundle[]> {
     if (!code) continue
     const values = await getScriptValues(record.id)
     const externals = await getScriptExternals(record.id)
-    const bundle = buildBundle(record, code, values, externals, runtimeJs, settings, handlerVersion)
+    const bundle = buildBundle(
+      record,
+      code,
+      values,
+      externals,
+      runtimeJs,
+      settings,
+      handlerVersion,
+      nonce,
+    )
     if (!bundle || bundle.contextMenuOnly) continue
     if (!bundle.code) continue
     bundles.push(bundle)
   }
 
-  return bundles
+  const relay = relayBundle(bundles, nonce)
+  // The relay must be registered first so it is listening before document_start page-world scripts report.
+  return relay ? [relay, ...bundles] : bundles
 }
 
 export async function syncScriptStudioUserScripts(): Promise<void> {

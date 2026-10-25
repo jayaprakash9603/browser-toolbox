@@ -1,20 +1,34 @@
 import { useEffect, useState } from 'react'
 
-export function useActiveTabUrl() {
-  const [url, setUrl] = useState<string | null>(null)
+export type ActiveTab = { id: number | null; url: string | null }
+
+export function useActiveTab(): ActiveTab {
+  const [tab, setTab] = useState<ActiveTab>({ id: null, url: null })
 
   useEffect(() => {
-    void chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
-      setUrl(tabs[0]?.url ?? null)
-    })
-    const onActivated = () => {
+    let activeId: number | null = null
+    const read = () => {
       void chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
-        setUrl(tabs[0]?.url ?? null)
+        activeId = tabs[0]?.id ?? null
+        const url = tabs[0]?.url ?? null
+        setTab((prev) => (prev.id === activeId && prev.url === url ? prev : { id: activeId, url }))
       })
     }
-    chrome.tabs.onActivated.addListener(onActivated)
-    return () => chrome.tabs.onActivated.removeListener(onActivated)
+    const onUpdated = (tabId: number, info: { url?: string; status?: string }) => {
+      if (tabId === activeId && (info.url || info.status)) read()
+    }
+    read()
+    chrome.tabs.onActivated.addListener(read)
+    chrome.tabs.onUpdated.addListener(onUpdated)
+    return () => {
+      chrome.tabs.onActivated.removeListener(read)
+      chrome.tabs.onUpdated.removeListener(onUpdated)
+    }
   }, [])
 
-  return url
+  return tab
+}
+
+export function useActiveTabUrl() {
+  return useActiveTab().url
 }

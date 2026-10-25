@@ -1,6 +1,8 @@
 import {
+  AlertCircleIcon,
   ArchiveRestoreIcon,
   BookOpenIcon,
+  CheckCircle2Icon,
   FileCode2Icon,
   GlobeIcon,
   LibraryIcon,
@@ -21,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { cn } from '@/shared/utils/cn'
 
 import type { useScriptStudio } from '../hooks/useScriptStudio'
+import { useTabScriptRuns } from '../hooks/useTabScriptRuns'
 import { BackupView } from './BackupView'
 import { GalleryView } from './GalleryView'
 import { LibraryView } from './LibraryView'
@@ -51,11 +54,13 @@ type Props = {
   editId: string | null
   onEdit: (id: string) => void
   url?: string | null
+  tabId?: number | null
 }
 
-export function ScriptStudioWorkspace({ studio: ss, surface, tab, onTabChange, editId, onEdit, url }: Props) {
+export function ScriptStudioWorkspace({ studio: ss, surface, tab, onTabChange, editId, onEdit, url, tabId = null }: Props) {
   const { t } = useTranslation()
   const reduce = useReducedMotion()
+  const runs = useTabScriptRuns(tabId)
   const [guideDismissed, setGuideDismissed] = useState(false)
   const [editor, setEditor] = useState<{ id: string; code: string; values: Record<string, unknown> } | null>(null)
 
@@ -81,6 +86,10 @@ export function ScriptStudioWorkspace({ studio: ss, surface, tab, onTabChange, e
   const record = editId ? index.scripts.find((s) => s.id === editId) : undefined
   const ready = ss.probe?.operational === true
   const status = !index.globalEnabled ? 'paused' : ss.probe === null ? 'checking' : ready ? 'ready' : 'setup'
+  const liveIds = new Set(live.map((s) => s.id))
+  const tabRuns = Object.values(runs).filter((r) => liveIds.has(r.scriptId))
+  const failedHere = tabRuns.filter((r) => r.status === 'error').length
+  const ranHere = tabRuns.length - failedHere
 
   const create = async () => {
     const id = await ss.createScript()
@@ -100,9 +109,14 @@ export function ScriptStudioWorkspace({ studio: ss, surface, tab, onTabChange, e
         return (
           <ThisPagePanel
             url={url ?? null}
+            tabId={tabId}
             scripts={index.scripts}
             settings={settings}
+            runs={runs}
+            globalEnabled={index.globalEnabled}
+            operational={ready}
             onToggle={(r, on) => void ss.toggleScript(r, on)}
+            onEdit={onEdit}
             loadCode={ss.loadCode}
           />
         )
@@ -117,6 +131,7 @@ export function ScriptStudioWorkspace({ studio: ss, surface, tab, onTabChange, e
             onBulkEnable={bulkEnable}
             onCheckUpdates={(ids) => void sendMessage({ type: 'SCRIPT_STUDIO_CHECK_UPDATES', scriptIds: ids })}
             loadCode={ss.loadCode}
+            runs={surface === 'panel' ? runs : undefined}
             onCreate={() => void create()}
             onBrowseGallery={() => onTabChange('gallery')}
           />
@@ -182,6 +197,23 @@ export function ScriptStudioWorkspace({ studio: ss, surface, tab, onTabChange, e
         <span className="text-[11px] text-muted-foreground tabular-nums">
           {t('scriptStudio.status.counts', { enabled: enabledCount, total: live.length })}
         </span>
+        {surface === 'panel' && tabRuns.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => onTabChange('thisPage')}
+            className={cn(
+              'inline-flex h-6 items-center gap-1 rounded-full px-2 text-[11px] font-medium tabular-nums transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+              failedHere
+                ? 'bg-destructive/10 text-destructive hover:bg-destructive/15'
+                : 'bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-400',
+            )}
+          >
+            {failedHere ? <AlertCircleIcon className="size-3" aria-hidden /> : <CheckCircle2Icon className="size-3" aria-hidden />}
+            {failedHere
+              ? t('scriptStudio.runs.failedHere', { count: failedHere })
+              : t('scriptStudio.runs.ranHere', { count: ranHere })}
+          </button>
+        ) : null}
         <Button size="sm" className="ms-auto h-8 gap-1.5 px-3 text-xs" onClick={() => void create()}>
           <PlusIcon className="size-3.5" aria-hidden />
           {t('scriptStudio.newScript')}

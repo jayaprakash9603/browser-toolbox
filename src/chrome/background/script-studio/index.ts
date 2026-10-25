@@ -14,6 +14,7 @@ import {
 } from './registration'
 import { registerUpdateAlarms } from './updates'
 import { clearTabBadge, updateBadgeForTab } from './badge'
+import { registerScriptRunTracking } from './runs'
 
 const logger = createLogger('script-studio')
 
@@ -22,6 +23,7 @@ export function registerScriptStudio(): void {
   watchScriptStudioStorage()
   registerUserScriptInstallDetection()
   registerUpdateAlarms()
+  registerScriptRunTracking()
 
   chrome.tabs.onUpdated.addListener((tabId, info) => {
     if (info.status === 'complete' || info.url) void updateBadgeForTab(tabId)

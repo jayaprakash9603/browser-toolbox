@@ -1,5 +1,7 @@
 import {
+  AlertCircleIcon,
   ArchiveRestoreIcon,
+  CheckCircle2Icon,
   FileCode2Icon,
   MoreHorizontalIcon,
   PencilIcon,
@@ -14,7 +16,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { isBroadMatch } from '@/core/script-studio/match'
-import type { ScriptRecord } from '@/core/script-studio'
+import type { ScriptRecord, TabScriptRuns } from '@/core/script-studio'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { Badge } from '@/shared/components/ui/badge'
@@ -45,6 +47,8 @@ type Props = {
   loadCode: (id: string) => Promise<string | null>
   onCreate?: () => void
   onBrowseGallery?: () => void
+  /** Execution results for the active tab; rows that ran there get a status pill. */
+  runs?: TabScriptRuns
 }
 
 function matchSearch(query: string, text: string): boolean {
@@ -71,6 +75,7 @@ export function LibraryView({
   loadCode,
   onCreate,
   onBrowseGallery,
+  runs,
 }: Props) {
   const { t } = useTranslation()
   const reduce = useReducedMotion()
@@ -271,7 +276,10 @@ export function LibraryView({
               className="min-w-0 flex-1 rounded-sm text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               onClick={() => onSelect(s.id)}
             >
-              <p className={cn('truncate text-sm font-medium', !s.enabled && !trash && 'text-muted-foreground')}>{s.name}</p>
+              <p className="flex min-w-0 items-center gap-1.5">
+                <span className={cn('truncate text-sm font-medium', !s.enabled && !trash && 'text-muted-foreground')}>{s.name}</span>
+                {!trash && runs?.[s.id] ? <RanHerePill failed={runs[s.id].status === 'error'} /> : null}
+              </p>
               <p className="flex flex-wrap items-center gap-x-1.5 text-[11px] text-muted-foreground">
                 <span>v{s.version}</span>
                 <span aria-hidden>·</span>
@@ -373,6 +381,22 @@ export function LibraryView({
         ) : null}
       </AnimatePresence>
     </div>
+  )
+}
+
+function RanHerePill({ failed }: { failed: boolean }) {
+  const { t } = useTranslation()
+  const Icon = failed ? AlertCircleIcon : CheckCircle2Icon
+  return (
+    <span
+      className={cn(
+        'inline-flex h-4 shrink-0 items-center gap-0.5 rounded-full px-1.5 text-[10px] font-medium',
+        failed ? 'bg-destructive/10 text-destructive' : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+      )}
+    >
+      <Icon className="size-2.5" aria-hidden />
+      {failed ? t('scriptStudio.runs.libraryError') : t('scriptStudio.runs.libraryRan')}
+    </span>
   )
 }
 

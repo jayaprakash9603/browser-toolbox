@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { buildRegistrationBundle } from '@/core/script-studio/registration'
+import { buildRegistrationBundle, buildRelaySource } from '@/core/script-studio/registration'
+import { mergeScriptRun } from '@/core/script-studio/runs'
 import { DEFAULT_SCRIPT_STUDIO_SETTINGS } from '@/core/script-studio/settings'
 import type { ScriptRecord } from '@/core/script-studio'
 
@@ -56,5 +57,59 @@ describe('script-studio registration', () => {
       '0.1.0',
     )
     expect(bundle?.world).toBe('MAIN')
+  })
+})
+
+function build(source: string) {
+  return buildRegistrationBundle(record, source, {}, [], '', DEFAULT_SCRIPT_STUDIO_SETTINGS, '0.1.0', 'n0nce')!
+}
+
+describe('script-studio execution reporting', () => {
+  const sendMessage = vi.fn()
+  beforeEach(() => {
+    sendMessage.mockReset()
+    vi.stubGlobal('chrome', { runtime: { sendMessage } })
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('reports success from the isolated world', () => {
+    new Function(build(SAMPLE).code)()
+    expect(sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'SS_GM_BRIDGE', sub: 'report', scriptId: 'r1', payload: expect.objectContaining({ status: 'ok' }) }),
+    )
+  })
+
+  it('reports and rethrows errors', () => {
+    const broken = SAMPLE.replace('console.log(1);', 'throw new TypeError("boom");')
+    expect(() => new Function(build(broken).code)()).toThrow('boom')
+    const payload = sendMessage.mock.calls[0][0].payload
+    expect(payload.status).toBe('error')
+    expect(payload.error).toContain('boom')
+  })
+
+  it('routes page-world reports through the relay', () => {
+    const none = SAMPLE.replace('@grant GM_addStyle', '@grant none')
+    new Function(buildRelaySource('n0nce'))()
+    new Function(build(none).code)()
+    expect(sendMessage).toHaveBeenCalledTimes(1)
+    expect(sendMessage.mock.calls[0][0]).toMatchObject({ sub: 'report', scriptId: 'r1', payload: { status: 'ok' } })
+  })
+
+  it('skips the body and the report when a runtime @include regex does not match', () => {
+    const guarded = SAMPLE.replace('// @match https://example.com/*', '// @include /^https:\\/\\/nowhere\\.test\\//')
+    const bundle = build(guarded)
+    expect(bundle.code).toContain('if((function(){')
+    new Function(bundle.code)()
+    expect(sendMessage).not.toHaveBeenCalled()
+  })
+})
+
+describe('mergeScriptRun', () => {
+  it('counts runs, tracks frames, and keeps a frame error visible', () => {
+    const first = mergeScriptRun(undefined, 's', { status: 'ok', durationMs: 4.4, url: 'https://a.test/', top: true }, 100)
+    expect(first).toMatchObject({ status: 'ok', runs: 1, frameRuns: 0, durationMs: 4, firstRunAt: 100 })
+    const frame = mergeScriptRun(first, 's', { status: 'error', error: 'x', url: 'https://f.test/', top: false }, 200)
+    expect(frame).toMatchObject({ status: 'error', error: 'x', runs: 2, frameRuns: 1, url: 'https://a.test/', lastRunAt: 200 })
+    expect(mergeScriptRun(frame, 's', { status: 'ok', top: true }, 300).status).toBe('error')
   })
 })
