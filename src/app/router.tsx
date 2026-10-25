@@ -9,6 +9,12 @@ import {
 } from 'react'
 
 import { eventBus } from '@/core/events'
+import {
+  consumeOpenHomeOnPanel,
+  consumePanelRouteIntent,
+  PANEL_OPEN_HOME_KEY,
+  PANEL_ROUTE_INTENT_KEY,
+} from '@/core/panel/navigationSession'
 import { PENDING_ROUTE_KEY } from '@/core/timer/model'
 import { cn } from '@/shared/utils/cn'
 
@@ -39,6 +45,21 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   const [navKey, setNavKey] = useState(0)
 
   useEffect(() => {
+    void (async () => {
+      const intent = await consumePanelRouteIntent()
+      if (intent) {
+        window.location.hash = intent
+        return
+      }
+      const openHome = await consumeOpenHomeOnPanel()
+      if (openHome) {
+        const { path } = readHash()
+        if (path.startsWith('/tools/') || path.startsWith('/categories/') || path.startsWith('/devtools')) {
+          window.location.hash = '/'
+        }
+      }
+    })()
+
     const onHashChange = () => setLocation(readHash())
     window.addEventListener('hashchange', onHashChange)
     const off = eventBus.on('OPEN_TOOL', ({ toolId }) => {
@@ -55,15 +76,34 @@ export function RouterProvider({ children }: { children: ReactNode }) {
     const onPendingRoute = (changes: { [key: string]: chrome.storage.StorageChange }, area: string) => {
       if (area === 'session' && changes[PENDING_ROUTE_KEY]) applyPendingRoute(changes[PENDING_ROUTE_KEY].newValue)
     }
+    const onSessionNav = (
+      changes: { [key: string]: chrome.storage.StorageChange },
+      area: string,
+    ) => {
+      if (area !== 'session') return
+      if (changes[PANEL_OPEN_HOME_KEY]?.newValue) {
+        void consumeOpenHomeOnPanel().then((openHome) => {
+          if (openHome) window.location.hash = '/'
+        })
+      }
+      if (changes[PANEL_ROUTE_INTENT_KEY]?.newValue) {
+        void consumePanelRouteIntent().then((route) => {
+          if (route) window.location.hash = route
+        })
+      }
+    }
+
     if (chrome.storage?.session) {
       void chrome.storage.session.get(PENDING_ROUTE_KEY).then((stored) => {
         applyPendingRoute(stored[PENDING_ROUTE_KEY])
       })
       chrome.storage.onChanged.addListener(onPendingRoute)
+      chrome.storage.onChanged.addListener(onSessionNav)
     }
     return () => {
       window.removeEventListener('hashchange', onHashChange)
       chrome.storage?.onChanged.removeListener(onPendingRoute)
+      chrome.storage?.onChanged?.removeListener(onSessionNav)
       off()
     }
   }, [])

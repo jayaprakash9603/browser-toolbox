@@ -13,6 +13,7 @@ import {
 } from '@/core/script-studio'
 import { sendMessage } from '@/core/messaging'
 import { Button } from '@/shared/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card'
 
 import { ScriptStudioLoadingSkeleton } from './ScriptStudioLoadingSkeleton'
 
@@ -69,13 +70,17 @@ export function InstallReview({ url, onDone, onCancel }: Props) {
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       <h1 className="text-lg font-semibold">{t('scriptStudio.install.title')}</h1>
-      <div className="rounded-xl border p-4 text-sm">
-        <p className="font-medium">{pickLocalized(meta.name)}</p>
-        <p className="text-muted-foreground">{pickLocalized(meta.description)}</p>
-        <p className="mt-2 text-xs">Version {meta.version}</p>
-        <p className="text-xs">Grants: {meta.grants.join(', ') || 'default'}</p>
-        <p className="text-xs">Connect: {meta.connects.join(', ') || 'none'}</p>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>{pickLocalized(meta.name)}</CardTitle>
+          <CardDescription>{pickLocalized(meta.description)}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-1 text-xs text-muted-foreground">
+          <p>Version {meta.version}</p>
+          <p>Grants: {meta.grants.join(', ') || 'default'}</p>
+          <p>Connect: {meta.connects.join(', ') || 'none'}</p>
+        </CardContent>
+      </Card>
       {diffText ? (
         <pre className="max-h-48 overflow-auto rounded-md bg-muted p-2 text-[10px]">{diffText}</pre>
       ) : null}

@@ -6,6 +6,13 @@ import { isBroadMatch } from '@/core/script-studio/match'
 import type { ScriptRecord } from '@/core/script-studio'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { Button } from '@/shared/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/components/ui/select'
 import { Checkbox } from '@/shared/components/ui/checkbox'
 import { Switch } from '@/shared/components/ui/switch'
 import { Badge } from '@/shared/components/ui/badge'
@@ -102,17 +109,17 @@ export function LibraryView({
           placeholder={t('scriptStudio.library.search')}
           className="min-w-[200px] flex-1"
         />
-        <select
-          className="h-9 rounded-md border bg-background px-2 text-xs"
-          value={sort}
-          onChange={(e) => setSort(e.target.value as SortKey)}
-          aria-label="Sort"
-        >
-          <option value="name">Name</option>
-          <option value="version">Version</option>
-          <option value="updatedAt">Updated</option>
-          <option value="size">Size</option>
-        </select>
+        <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+          <SelectTrigger size="sm" className="w-[120px]" aria-label="Sort">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name">Name</SelectItem>
+            <SelectItem value="version">Version</SelectItem>
+            <SelectItem value="updatedAt">Updated</SelectItem>
+            <SelectItem value="size">Size</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {tags.length > 0 ? (

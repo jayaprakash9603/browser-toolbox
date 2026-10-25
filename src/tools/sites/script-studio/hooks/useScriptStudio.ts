@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { sendMessage } from '@/core/messaging'
 import type { ScriptRecord, ScriptStudioIndex, ScriptStudioSettings } from '@/core/script-studio'
 import {
+  DEFAULT_SCRIPT_STUDIO_INDEX,
   getScriptCode,
   getScriptStudioIndex,
   getScriptStudioSettings,
@@ -17,6 +18,7 @@ import {
   removeScript,
   restoreScript,
 } from '@/core/script-studio'
+import { DEFAULT_SCRIPT_STUDIO_SETTINGS } from '@/core/script-studio/settings'
 import { newScriptTemplate } from '@/core/script-studio/templates'
 
 export type UserScriptsProbe = {
@@ -32,14 +34,28 @@ export function useScriptStudio() {
   const [probe, setProbe] = useState<UserScriptsProbe | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const refresh = useCallback(async () => {
-    const [idx, st] = await Promise.all([getScriptStudioIndex(), getScriptStudioSettings()])
-    setIndex(idx)
-    setSettings(st)
-    const p = await sendMessage<UserScriptsProbe>({ type: 'SCRIPT_STUDIO_PROBE' })
+  const refreshProbe = useCallback(async () => {
+    const timeoutMs = 4_000
+    const p = await Promise.race([
+      sendMessage<UserScriptsProbe>({ type: 'SCRIPT_STUDIO_PROBE' }),
+      new Promise<undefined>((resolve) => window.setTimeout(resolve, timeoutMs)),
+    ])
     if (p) setProbe(p)
-    setLoading(false)
   }, [])
+
+  const refresh = useCallback(async () => {
+    try {
+      const [idx, st] = await Promise.all([getScriptStudioIndex(), getScriptStudioSettings()])
+      setIndex(idx)
+      setSettings(st)
+    } catch {
+      setIndex({ ...DEFAULT_SCRIPT_STUDIO_INDEX, scripts: [] })
+      setSettings(DEFAULT_SCRIPT_STUDIO_SETTINGS)
+    } finally {
+      setLoading(false)
+    }
+    void refreshProbe()
+  }, [refreshProbe])
 
   useEffect(() => {
     void refresh()

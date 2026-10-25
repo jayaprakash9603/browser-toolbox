@@ -51,10 +51,6 @@ export default function ScriptStudioTool() {
   return (
     <ToolPage tool={tool}>
       <div className="flex flex-col gap-3">
-        <div>
-          <h2 className="text-sm font-semibold">{t('scriptStudio.title')}</h2>
-          <p className="text-[11px] text-muted-foreground">{t('scriptStudio.tagline')}</p>
-        </div>
 
         <SetupWizard probe={ss.probe} onEnable={() => void ss.requestPermission()} />
 
@@ -66,7 +62,7 @@ export default function ScriptStudioTool() {
         />
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList variant="pill" fullWidth className="w-full">
             <TabsTrigger value="thisPage" className="min-h-11">
               {t('scriptStudio.tabs.thisPage')}
             </TabsTrigger>

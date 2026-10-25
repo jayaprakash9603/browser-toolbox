@@ -53,6 +53,8 @@ import { initClipboardCapture, registerClipboardCapture } from './clipboardCaptu
 import { registerTimer } from './timer'
 import { registerReactDevtools, syncReactDevtoolsState } from './reactDevtools'
 import { registerScriptStudio } from './script-studio'
+import { registerSidePanelNavigation } from './panelNavigation'
+import { setPanelRouteIntent } from '@/core/panel/navigationSession'
 
 const logger = createLogger('background')
 
@@ -68,6 +70,8 @@ async function openPanelWithTool(
   payload: { text?: string; linkUrl?: string; imageUrl?: string; pageUrl?: string },
 ) {
   await stashPayload({ toolId, ...payload })
+  const tool = toolRegistry.get(toolId)
+  if (tool?.route) await setPanelRouteIntent(tool.route)
   if (tab?.windowId != null) {
     try {
       await chrome.sidePanel.open({ windowId: tab.windowId })
@@ -181,4 +185,5 @@ safeRegister('clipboardCapture', registerClipboardCapture)
 safeRegister('timer', registerTimer)
 safeRegister('reactDevtools', registerReactDevtools)
 safeRegister('scriptStudio', registerScriptStudio)
+safeRegister('panelNavigation', registerSidePanelNavigation)
 startMessageRouter()

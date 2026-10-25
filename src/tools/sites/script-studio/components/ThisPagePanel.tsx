@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { scriptMatchesUrl } from '@/core/script-studio'
 import type { ScriptRecord, ScriptStudioSettings } from '@/core/script-studio'
 import { Button } from '@/shared/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Switch } from '@/shared/components/ui/switch'
 
 type Props = {
@@ -61,10 +62,12 @@ export function ThisPagePanel({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between rounded-xl border bg-card p-3">
-        <span className="text-sm font-medium">{t('scriptStudio.globalEnabled')}</span>
-        <Switch checked={globalEnabled} onCheckedChange={onGlobalChange} className="min-h-11 min-w-11" />
-      </div>
+      <Card>
+        <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm">{t('scriptStudio.globalEnabled')}</CardTitle>
+          <Switch checked={globalEnabled} onCheckedChange={onGlobalChange} aria-label={t('scriptStudio.globalEnabled')} />
+        </CardHeader>
+      </Card>
 
       {matching.length === 0 ? (
         <p className="text-xs text-muted-foreground">{t('scriptStudio.noScripts')}</p>
@@ -76,7 +79,7 @@ export function ThisPagePanel({
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.03, duration: 0.25 }}
-              className="flex items-center justify-between rounded-lg border px-3 py-2"
+              className="flex items-center justify-between rounded-lg border bg-card px-3 py-2 shadow-xs"
             >
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">{s.name}</p>
@@ -89,9 +92,11 @@ export function ThisPagePanel({
       )}
 
       {settings.scriptSearchEnabled && url ? (
-        <div className="rounded-xl border p-3">
-          <p className="text-xs font-medium">{t('scriptStudio.findScripts')}</p>
-          <div className="mt-2 flex flex-wrap gap-2">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs">{t('scriptStudio.findScripts')}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2 pt-0">
             {searchLinks.map((l) => (
               <a
                 key={l.href}
@@ -104,8 +109,8 @@ export function ThisPagePanel({
                 <ExternalLinkIcon className="size-3" />
               </a>
             ))}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       ) : null}
 
       <div className="flex flex-wrap gap-2">
