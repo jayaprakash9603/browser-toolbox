@@ -34,8 +34,14 @@
 
 * {
   border-color: var(--border);
-  scrollbar-width: thin;
-  scrollbar-color: var(--scroll-thumb) transparent;
+}
+
+/* Layered so utilities such as `scrollbar-none` can override it. */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scroll-thumb) transparent;
+  }
 }
 
 *::-webkit-scrollbar {
@@ -87,8 +93,7 @@
 }
 
 @utility scrollbar-none {
-  /* the unlayered `*` rule above outranks layered utilities */
-  scrollbar-width: none !important;
+  scrollbar-width: none;
 
   &::-webkit-scrollbar {
     display: none;

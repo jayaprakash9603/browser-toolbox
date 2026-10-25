@@ -58,11 +58,10 @@ export function ChipRail({ children, role, label, className }: ChipRailProps) {
 
   return (
     <div className={cn('group/rail relative min-w-0', className)}>
-      {/* Inline because the global `*` scrollbar rule outranks the `scrollbar-none` utility. */}
       <div
         ref={rail}
         className="scrollbar-none overflow-x-auto overscroll-x-contain scroll-px-1 py-0.5"
-        style={{ maskImage: mask, WebkitMaskImage: mask, scrollbarWidth: 'none' }}
+        style={{ maskImage: mask, WebkitMaskImage: mask }}
       >
         <div ref={row} role={role} aria-label={label} className="flex w-max gap-1.5 px-px">
           {children}

@@ -39,6 +39,7 @@ const tabsTriggerVariants = cva(
 
 const UNDERLINE_PX = 2
 const SCROLL_PADDING_PX = 24
+const FADE_PX = 24
 
 type UnderlineBox = { left: number; top: number; width: number }
 type Edges = { start: boolean; end: boolean }
@@ -158,6 +159,11 @@ function TabsList({
     scrollTabsBy(node, direction, !reduceMotion)
   }
 
+  // Fade only the edge that has hidden tabs behind it.
+  const fade = showScrollButtons
+    ? `linear-gradient(to right, ${edges.start ? 'transparent' : '#000'} 0, #000 ${edges.start ? FADE_PX : 0}px, #000 calc(100% - ${edges.end ? FADE_PX : 0}px), ${edges.end ? 'transparent' : '#000'} 100%)`
+    : undefined
+
   return (
     <TabsVariantContext.Provider value={resolved}>
       <div
@@ -173,7 +179,7 @@ function TabsList({
             type="button"
             variant="ghost"
             size="icon-xs"
-            className="my-auto shrink-0 rounded-md text-muted-foreground disabled:opacity-25"
+            className="my-auto shrink-0 rounded-md text-muted-foreground transition-opacity duration-200 disabled:opacity-0"
             disabled={!edges.start}
             aria-label={t('common.scrollTabsLeft')}
             onClick={() => scroll(-1)}
@@ -191,7 +197,7 @@ function TabsList({
               : 'max-w-full',
             className,
           )}
-          style={style}
+          style={fade ? { ...style, maskImage: fade, WebkitMaskImage: fade } : style}
           {...props}
         >
           {children}
@@ -210,7 +216,7 @@ function TabsList({
             type="button"
             variant="ghost"
             size="icon-xs"
-            className="my-auto shrink-0 rounded-md text-muted-foreground disabled:opacity-25"
+            className="my-auto shrink-0 rounded-md text-muted-foreground transition-opacity duration-200 disabled:opacity-0"
             disabled={!edges.end}
             aria-label={t('common.scrollTabsRight')}
             onClick={() => scroll(1)}

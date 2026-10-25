@@ -127,18 +127,20 @@ export default function SeoToolkitTool() {
           </div>
 
           <Tabs value={tab} onValueChange={(v) => setTab(v as TabId)}>
-            <TabsList className="w-full justify-start gap-0.5 overflow-x-auto pb-0.5">
-              {TAB_IDS.map((id) => (
-                <TabsTrigger
-                  key={id}
-                  value={id}
-                  className="shrink-0 px-2.5 text-xs"
-                  count={id === 'issues' && issueCount > 0 ? issueCount : undefined}
-                >
-                  {t(TAB_LABELS[id])}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+            <div className="sticky top-[calc(var(--density-page-pad)*-1)] z-10 -mx-[var(--density-page-pad)] -mt-2 bg-background/90 px-[var(--density-page-pad)] pt-2 backdrop-blur-md">
+              <TabsList fullWidth className="justify-start gap-0.5">
+                {TAB_IDS.map((id) => (
+                  <TabsTrigger
+                    key={id}
+                    value={id}
+                    className="shrink-0 px-2.5 text-xs"
+                    count={id === 'issues' && issueCount > 0 ? issueCount : undefined}
+                  >
+                    {t(TAB_LABELS[id])}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
 
             <TabsContent value="overview" className={seoTabEnterClass}>
               <OverviewTab report={report} />
