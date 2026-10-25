@@ -163,6 +163,14 @@ export type ExtensionMessage =
   | { type: 'SVG_TO_JSX'; markup: string }
   | { type: 'WIREFRAME_TOGGLE'; enabled: boolean }
   | { type: 'FONT_INSPECTOR_TOGGLE'; enabled: boolean }
+  | {
+      type: 'PAGE_INSPECTOR_SET'
+      options: Partial<import('@/chrome/content/pageInspector/model').PageInspectorOptions>
+      labels?: Record<string, string>
+    }
+  | { type: 'PAGE_INSPECTOR_GET' }
+  | { type: 'PAGE_INSPECTOR_ACTION'; action: 'undo' | 'reset' | 'deselect' | 'export' }
+  | { type: 'PAGE_INSPECTOR_STATE'; state: import('@/chrome/content/pageInspector/model').PageInspectorState }
   | { type: 'GET_READABLE_TEXT'; scope?: 'page' | 'selection' }
   | { type: 'GET_MARKDOWN_FROM_PAGE'; mode: 'selection' | 'article' }
   | { type: 'CHECK_HTTP_URLS'; items: { href: string; text: string }[] }
@@ -329,6 +337,10 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'SVG_TO_JSX',
   'WIREFRAME_TOGGLE',
   'FONT_INSPECTOR_TOGGLE',
+  'PAGE_INSPECTOR_SET',
+  'PAGE_INSPECTOR_GET',
+  'PAGE_INSPECTOR_ACTION',
+  'PAGE_INSPECTOR_STATE',
   'GET_READABLE_TEXT',
   'GET_MARKDOWN_FROM_PAGE',
   'CHECK_HTTP_URLS',

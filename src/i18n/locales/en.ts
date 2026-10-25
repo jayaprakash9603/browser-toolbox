@@ -20,6 +20,7 @@ import { scriptStudioStrings } from './scriptStudioEn'
 import { reactDevtoolsStrings } from './reactDevtoolsEn'
 import { testDataStrings } from './testDataEn'
 import { paletteGeneratorStrings } from './paletteGeneratorEn'
+import { pageInspectorStrings } from './pageInspectorEn'
 
 const en = {
   'app.name': 'One Panel',
@@ -1448,6 +1449,7 @@ const en = {
   ...datetimeStrings,
   ...qrToolkitStrings,
   ...paletteGeneratorStrings,
+  ...pageInspectorStrings,
 } as const
 
 export default en

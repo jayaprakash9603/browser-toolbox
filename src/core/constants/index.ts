@@ -39,6 +39,7 @@ export const STORAGE_KEYS = {
   scriptStudio: 'scriptStudio',
   scriptStudioSettings: 'scriptStudioSettings',
   cssGeneratorLibrary: 'cssGeneratorLibrary',
+  pageInspector: 'pageInspector',
 } as const
 
 import { getExtensionName } from '@/core/i18n/chromeMessages'

@@ -11,6 +11,8 @@ import { collectTechStack } from './collectors/techStack'
 import { collectPageSvgs, svgToJsx } from './collectors/svgs'
 import { collectPageLinks, locatePageLink } from './collectors/links'
 import { setFontInspector, setWireframe } from './designModes'
+import { getInspectorState, runInspectorAction, setInspector } from './pageInspector/inspector'
+import type { InspectorAction, InspectorLabels, PageInspectorOptions } from './pageInspector/model'
 import { articleHtmlToMarkdown, selectionHtmlToMarkdown } from '@/core/text/htmlToMarkdown'
 import { extractReadablePage, extractSelection } from '@/core/text/readablePage'
 
@@ -164,6 +166,17 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
     case 'FONT_INSPECTOR_TOGGLE':
       setFontInspector((raw as { enabled: boolean }).enabled)
       sendResponse({ ok: true, data: { enabled: (raw as { enabled: boolean }).enabled } })
+      return false
+    case 'PAGE_INSPECTOR_SET': {
+      const { options, labels } = raw as { options: Partial<PageInspectorOptions>; labels?: Partial<InspectorLabels> }
+      sendResponse({ ok: true, data: setInspector(options, labels) })
+      return false
+    }
+    case 'PAGE_INSPECTOR_GET':
+      sendResponse({ ok: true, data: getInspectorState() })
+      return false
+    case 'PAGE_INSPECTOR_ACTION':
+      sendResponse({ ok: true, data: runInspectorAction((raw as { action: InspectorAction }).action) })
       return false
     case 'GET_READABLE_TEXT': {
       const scope = (raw as { scope?: 'page' | 'selection' }).scope
