@@ -98,7 +98,9 @@ export function AppShell({ children }: { children?: ReactNode }) {
   const chromeless = path === '/devtools/interceptor' || captureFullPage
 
   return (
-    <div className="flex h-full flex-col overflow-x-clip bg-background">
+    // `relative` + `overflow-clip`: absolutely positioned descendants (e.g. `sr-only` status text) would otherwise
+    // resolve against <body> and grow the document, adding a second scrollbar and blank space under the panel.
+    <div className="relative flex h-full flex-col overflow-clip bg-background">
       {!chromeless && (
         <header className="sticky top-0 z-30 flex h-11 shrink-0 items-center gap-1.5 border-b bg-background/85 px-2.5 backdrop-blur-md @[360px]:gap-2 @[360px]:px-3">
           <Link
@@ -147,7 +149,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
       <main
         ref={mainRef}
         tabIndex={-1}
-        className="@container min-h-0 min-w-0 flex-1 overflow-hidden outline-none"
+        className="@container relative min-h-0 min-w-0 flex-1 overflow-clip outline-none"
       >
         <motion.div
           key={path}
