@@ -1,10 +1,12 @@
 import { StarIcon } from 'lucide-react'
+import { motion } from 'motion/react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Link } from '@/app/router'
 import { toolRegistry, type ToolDefinition } from '@/core/registry'
 import { SectionHeader } from '@/app/pages/home/SectionHeader'
+import { ChipRail } from '@/shared/components/ChipRail'
 import { SlideUp } from '@/shared/components/motion'
 import { useFavorites } from '@/shared/hooks/useFavorites'
 import { useToolLabels } from '@/shared/hooks/useToolLabels'
@@ -17,7 +19,7 @@ interface FavoritesSectionProps {
 
 export function FavoritesSection({
   delay = 0.18,
-  limit = 8,
+  limit = 24,
   showManage = true,
 }: FavoritesSectionProps) {
   const { t } = useTranslation()
@@ -46,13 +48,20 @@ export function FavoritesSection({
           <p className="text-tool-desc">{t('home.favoriteHint')}</p>
         </div>
       ) : (
-        <ul className="flex flex-wrap gap-1.5">
-          {tools.map((tool) => (
-            <li key={tool.id} className="max-w-full">
+        <ChipRail role="list" label={t('nav.favorites')}>
+          {tools.map((tool, index) => (
+            <motion.div
+              key={tool.id}
+              role="listitem"
+              className="shrink-0"
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: delay + Math.min(index, 8) * 0.035, duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            >
               <FavoriteChip tool={tool} />
-            </li>
+            </motion.div>
           ))}
-        </ul>
+        </ChipRail>
       )}
     </SlideUp>
   )
@@ -70,9 +79,9 @@ function FavoriteChip({ tool }: { tool: ToolDefinition }) {
       title={description}
       onPointerEnter={preload}
       onFocus={preload}
-      className="group flex min-h-10 max-w-full items-center gap-1.5 rounded-full border bg-card py-1 pr-3 pl-1 shadow-xs outline-none transition-[border-color,background-color,box-shadow] duration-150 hover:border-amber-400/60 hover:bg-amber-500/5 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98]"
+      className="group flex min-h-10 max-w-56 items-center gap-1.5 rounded-full border bg-card py-1 pr-3 pl-1 whitespace-nowrap shadow-xs outline-none transition-[border-color,background-color,box-shadow,transform] duration-150 hover:-translate-y-px hover:border-amber-400/60 hover:bg-amber-500/5 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset active:scale-[0.98] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
     >
-      <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-amber-500/12 text-amber-600 dark:text-amber-400">
+      <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-amber-500/12 text-amber-600 transition-transform duration-150 group-hover:scale-105 dark:text-amber-400">
         <Icon className="size-3.5" aria-hidden />
       </span>
       <span className="truncate text-xs font-medium">{name}</span>

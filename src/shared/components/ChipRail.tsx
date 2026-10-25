@@ -34,14 +34,28 @@ export function ChipRail({ children, role, label, className }: ChipRailProps) {
       const end = offset + scroller.clientWidth < scroller.scrollWidth - 2
       setEdges((current) => (current.start === start && current.end === end ? current : { start, end }))
     }
+    // A vertical mouse wheel scrolls the row sideways, but only while the row can still move
+    // that way, so the page keeps scrolling once the row reaches either end.
+    const onWheel = (event: WheelEvent) => {
+      if (event.ctrlKey || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return
+      const max = scroller.scrollWidth - scroller.clientWidth
+      if (max <= 0) return
+      const offset = Math.abs(scroller.scrollLeft)
+      if ((event.deltaY < 0 && offset <= 0) || (event.deltaY > 0 && offset >= max - 1)) return
+      event.preventDefault()
+      const rtl = getComputedStyle(scroller).direction === 'rtl' ? -1 : 1
+      scroller.scrollLeft += event.deltaY * rtl
+    }
     // The first observation reports both sizes, so the edges are measured without a synchronous update.
     const observer = new ResizeObserver(update)
     observer.observe(scroller)
     observer.observe(content)
     scroller.addEventListener('scroll', update, { passive: true })
+    scroller.addEventListener('wheel', onWheel, { passive: false })
     return () => {
       observer.disconnect()
       scroller.removeEventListener('scroll', update)
+      scroller.removeEventListener('wheel', onWheel)
     }
   }, [])
 
