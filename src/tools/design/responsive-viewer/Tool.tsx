@@ -9,6 +9,7 @@ import {
   LayoutGridIcon,
   LocateFixedIcon,
   LockIcon,
+  Maximize2Icon,
   MonitorSmartphoneIcon,
   RefreshCwIcon,
   RotateCwSquareIcon,
@@ -24,6 +25,7 @@ import { cn } from '@/shared/utils/cn'
 import { useDesignTool } from '../_shared'
 import { DeviceCard } from './DeviceCard'
 import { DevicePicker } from './DevicePicker'
+import { DeviceViewer } from './DeviceViewer'
 import {
   DEVICES,
   ZOOM_MODES,
@@ -50,6 +52,7 @@ export default function ResponsiveViewerTool() {
   const [url, setUrl] = useState<string | null>(null)
   const [urlError, setUrlError] = useState<string | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
+  const [fullOpen, setFullOpen] = useState(false)
   /** The unblock setting whose network rules are in effect; frames wait for it so they load with the right headers. */
   const [appliedUnblock, setAppliedUnblock] = useState<boolean | null>(null)
   const windowHeight = useWindowHeight()
@@ -221,6 +224,19 @@ export default function ResponsiveViewerTool() {
                 <Button
                   variant="outline"
                   size="xs"
+                  disabled={!url || shown.length === 0 || !framesReady}
+                  aria-haspopup="dialog"
+                  aria-expanded={fullOpen}
+                  aria-label={t('rv.full.open')}
+                  title={t('rv.full.open')}
+                  onClick={() => setFullOpen(true)}
+                >
+                  <Maximize2Icon />
+                  <span className="hidden @[420px]:inline">{t('rv.full.open')}</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="xs"
                   aria-pressed={settings.frame}
                   onClick={() => update({ frame: !settings.frame })}
                   className="aria-pressed:border-primary/40 aria-pressed:bg-primary/10 aria-pressed:text-primary"
@@ -274,7 +290,8 @@ export default function ResponsiveViewerTool() {
               {t('rv.empty.noDevices')}
             </motion.p>
           ) : (
-            framesReady && (
+            framesReady &&
+            !fullOpen && (
               <div
                 className={cn(
                   settings.layout === 'grid'
@@ -313,6 +330,18 @@ export default function ResponsiveViewerTool() {
             />
           </div>
         </div>
+        {url && (
+          <DeviceViewer
+            open={fullOpen}
+            devices={shown}
+            url={url}
+            rotated={settings.rotated}
+            frame={settings.frame}
+            reloadKey={reloadKey}
+            onRotate={(id) => update({ rotated: toggleIn(settings.rotated, id) })}
+            onClose={() => setFullOpen(false)}
+          />
+        )}
       </MotionConfig>
     </ToolPage>
   )

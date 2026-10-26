@@ -7,19 +7,11 @@ import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/utils/cn'
 import { breakpointFor, orientedSize, viewportScale, type Device, type DeviceKind, type ZoomMode } from './devices'
-import { EASE_OUT, KIND_ICON, openSizedWindow, useContentWidth } from './helpers'
+import { EASE_OUT, KIND_ICON, frameInsets, hostnameOf, openSizedWindow, useContentWidth } from './helpers'
 import { IconAction } from './parts'
 
 const BODY_PAD = 12
 const SLOW_LOAD_MS = 8000
-
-/** Bezel thickness around the screen, in panel pixels (not scaled with the page). */
-function frameInsets(kind: DeviceKind, frame: boolean) {
-  if (!frame) return { x: 0, top: 0, bottom: 0 }
-  if (kind === 'phone') return { x: 8, top: 8, bottom: 8 }
-  if (kind === 'tablet') return { x: 10, top: 10, bottom: 10 }
-  return { x: 0, top: 24, bottom: 0 }
-}
 
 interface DeviceCardProps {
   device: Device
@@ -174,15 +166,7 @@ export function DeviceCard({
   )
 }
 
-function hostnameOf(url: string) {
-  try {
-    return new URL(url).host
-  } catch {
-    return url
-  }
-}
-
-function DeviceShell({ kind, frame, hostname, children }: { kind: DeviceKind; frame: boolean; hostname: string; children: ReactNode }) {
+export function DeviceShell({ kind, frame, hostname, children }: { kind: DeviceKind; frame: boolean; hostname: string; children: ReactNode }) {
   if (!frame) return <div className="shrink-0 rounded-md shadow-lg ring-1 ring-border">{children}</div>
   if (kind === 'phone' || kind === 'tablet') {
     return (
@@ -211,7 +195,7 @@ function DeviceShell({ kind, frame, hostname, children }: { kind: DeviceKind; fr
   )
 }
 
-function Viewport({ src, title, width, height, scale }: { src: string; title: string; width: number; height: number; scale: number }) {
+export function Viewport({ src, title, width, height, scale }: { src: string; title: string; width: number; height: number; scale: number }) {
   const { t } = useTranslation()
   const [state, setState] = useState<'loading' | 'slow' | 'loaded'>('loading')
 

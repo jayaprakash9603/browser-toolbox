@@ -47,5 +47,23 @@ export function openSizedWindow(url: string, width: number, height: number) {
     return
   }
   // Window size includes the OS frame and the popup's address bar.
-  windows.create({ url, type: 'popup', width: width + 16, height: height + 80, focused: true }).catch(fallback)
+  windows
+    .create({ url, type: 'popup', width: width + 16, height: height + 80, focused: true })
+    .catch(fallback)
+}
+
+/** Bezel thickness around the screen, in panel pixels (not scaled with the page). */
+export function frameInsets(kind: DeviceKind, frame: boolean) {
+  if (!frame) return { x: 0, top: 0, bottom: 0 }
+  if (kind === 'phone') return { x: 8, top: 8, bottom: 8 }
+  if (kind === 'tablet') return { x: 10, top: 10, bottom: 10 }
+  return { x: 0, top: 24, bottom: 0 }
+}
+
+export function hostnameOf(url: string) {
+  try {
+    return new URL(url).host
+  } catch {
+    return url
+  }
 }
