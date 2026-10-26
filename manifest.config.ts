@@ -2,41 +2,10 @@ import { readFileSync } from 'node:fs'
 
 import { defineManifest } from '@crxjs/vite-plugin'
 
+import { buildManifestCommands } from './src/core/commands/manifest.ts'
+
 /** package.json is the single source of the version; release.bat bumps it. */
 const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string }
-
-/** Keep ids and default keys in sync with src/core/commands/manifest.ts and registry.ts */
-function buildManifestCommands(): Record<
-  string,
-  { description: string; suggested_key: { default: string; mac: string } }
-> {
-  return {
-    'open-command-palette': {
-      suggested_key: { default: 'Ctrl+Shift+Space', mac: 'Command+Shift+Space' },
-      description: '__MSG_commandPaletteDescription__',
-    },
-    'pick-element': {
-      suggested_key: { default: 'Ctrl+Shift+E', mac: 'Command+Shift+E' },
-      description: '__MSG_commandPickElement__',
-    },
-    'capture-screenshot': {
-      suggested_key: { default: 'Ctrl+Shift+S', mac: 'Command+Shift+S' },
-      description: '__MSG_commandCaptureScreenshot__',
-    },
-    'toggle-pip': {
-      suggested_key: { default: 'Alt+P', mac: 'Alt+P' },
-      description: '__MSG_commandTogglePip__',
-    },
-    'toggle-recording': {
-      suggested_key: { default: 'Alt+Shift+R', mac: 'Alt+Shift+R' },
-      description: '__MSG_commandToggleRecording__',
-    },
-    'add-page-task': {
-      suggested_key: { default: 'Alt+Shift+Q', mac: 'Alt+Shift+Q' },
-      description: '__MSG_commandAddPageTask__',
-    },
-  }
-}
 
 export default defineManifest({
   manifest_version: 3,

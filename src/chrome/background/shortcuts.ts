@@ -12,6 +12,7 @@ import { getActiveWebTab } from '@/chrome/contentScriptClient'
 
 import { executeToolboxCommand } from './executeCommand'
 import { injectShortcutDispatcherIntoOpenTabs, syncShortcutContentScripts } from './shortcutContentScripts'
+import { syncManifestShortcuts } from './syncManifestShortcuts'
 
 const logger = createLogger('shortcuts')
 
@@ -56,14 +57,17 @@ export function registerShortcuts(): void {
 
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local' && changes.keyboardShortcuts) {
+      const next = changes.keyboardShortcuts.newValue as typeof shortcutState | undefined
       void refreshShortcutState()
       void syncShortcutContentScripts(true)
+      void syncManifestShortcuts(next)
     }
   })
 }
 
 export async function initShortcutsOnStartup(): Promise<void> {
   await refreshShortcutState()
+  await syncManifestShortcuts(shortcutState)
   await syncShortcutContentScripts(true)
   await injectShortcutDispatcherIntoOpenTabs()
 }

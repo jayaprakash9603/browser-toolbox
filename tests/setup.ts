@@ -124,6 +124,7 @@ const chromeMock = {
   commands: {
     onCommand: makeEvent(),
     getAll: vi.fn(async () => [{ name: 'toggle-pip', shortcut: 'Alt+P' }]),
+    update: vi.fn(async () => undefined),
   },
   action: {
     onClicked: makeEvent(),

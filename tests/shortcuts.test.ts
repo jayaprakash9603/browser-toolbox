@@ -44,9 +44,10 @@ describe('shortcut bindings', () => {
 })
 
 describe('command registry', () => {
-  it('lists global manifest commands with default suggested keys', () => {
+  it('lists global manifest commands without baked-in Chrome keys', () => {
     const manifest = buildManifestCommands()
-    expect(manifest['open-command-palette']?.suggested_key?.default).toBe('Ctrl+Shift+Space')
+    expect(manifest['open-command-palette']?.description).toBe('__MSG_commandPaletteDescription__')
+    expect(manifest['open-command-palette']).not.toHaveProperty('suggested_key')
     expect(GLOBAL_TOOLBOX_COMMANDS.map((c) => c.id)).toEqual([
       'open-command-palette',
       'pick-element',

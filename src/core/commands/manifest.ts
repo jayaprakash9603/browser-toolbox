@@ -1,5 +1,3 @@
-import { getToolboxCommand } from './registry'
-
 /** Command ids registered in chrome manifest (global scope only). Keep in sync with registry.ts */
 export const MANIFEST_COMMAND_IDS = [
   'open-command-palette',
@@ -21,23 +19,11 @@ const DESCRIPTIONS: Record<(typeof MANIFEST_COMMAND_IDS)[number], string> = {
   'pick-color': '__MSG_commandPickColor__',
 }
 
-/** Manifest commands use registry defaults as suggested keys; in-app settings can override via content scripts. */
-export function buildManifestCommands(): Record<
-  string,
-  { description: string; suggested_key?: { default: string; mac: string } }
-> {
-  const commands: Record<
-    string,
-    { description: string; suggested_key?: { default: string; mac: string } }
-  > = {}
+/** Commands are registered without suggested keys; bindings come from Settings and sync on startup. */
+export function buildManifestCommands(): Record<string, { description: string }> {
+  const commands: Record<string, { description: string }> = {}
   for (const id of MANIFEST_COMMAND_IDS) {
-    const def = getToolboxCommand(id)
-    commands[id] = {
-      description: DESCRIPTIONS[id],
-      ...(def
-        ? { suggested_key: { default: def.binding.default, mac: def.binding.mac } }
-        : {}),
-    }
+    commands[id] = { description: DESCRIPTIONS[id] }
   }
   return commands
 }

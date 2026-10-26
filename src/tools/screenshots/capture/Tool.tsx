@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 
 import { useRouter } from '@/app/router'
-import { getToolboxCommand } from '@/core/commands'
+import { useShortcutDisplay } from '@/features/shortcuts/useShortcutDisplay'
 import { captureViewerUrl, isCaptureViewerSearch } from '@/core/screenshot/viewerUrl'
 import { CaptureEditorApp } from '@/features/captureEditor/CaptureEditorApp'
 import { sendMessage } from '@/core/messaging/messageService'
@@ -25,26 +25,32 @@ import { useCaptureTool } from '../_shared'
 
 const MODES: {
   mode: ScreenshotMode
-  commandId: string
   icon: typeof CameraIcon
   labelKey: string
 }[] = [
-  { mode: 'entire', commandId: 'capture-entire', icon: UnfoldVerticalIcon, labelKey: 'capture.launcher.entire' },
-  { mode: 'visible', commandId: 'capture-visible', icon: CameraIcon, labelKey: 'capture.launcher.visible' },
-  { mode: 'selection', commandId: 'capture-selection', icon: FrameIcon, labelKey: 'capture.launcher.selection' },
-  { mode: 'element', commandId: 'capture-element', icon: MousePointerClickIcon, labelKey: 'capture.launcher.element' },
-  { mode: 'all-tabs', commandId: '', icon: LayersIcon, labelKey: 'capture.launcher.allTabs' },
+  { mode: 'entire', icon: UnfoldVerticalIcon, labelKey: 'capture.launcher.entire' },
+  { mode: 'visible', icon: CameraIcon, labelKey: 'capture.launcher.visible' },
+  { mode: 'selection', icon: FrameIcon, labelKey: 'capture.launcher.selection' },
+  { mode: 'element', icon: MousePointerClickIcon, labelKey: 'capture.launcher.element' },
+  { mode: 'all-tabs', icon: LayersIcon, labelKey: 'capture.launcher.allTabs' },
 ]
-
-function shortcutLabel(commandId: string): string {
-  const def = getToolboxCommand(commandId)
-  return def?.binding.default ?? ''
-}
 
 function CaptureLauncher() {
   const { t } = useTranslation()
   const tool = useCaptureTool('screenshots.capture')
   useFocusTarget()
+  const shortcutEntire = useShortcutDisplay('capture-entire')
+  const shortcutVisible = useShortcutDisplay('capture-visible')
+  const shortcutSelection = useShortcutDisplay('capture-selection')
+  const shortcutElement = useShortcutDisplay('capture-element')
+  const shortcutMenu = useShortcutDisplay('capture-menu')
+  const shortcutPrimary = useShortcutDisplay('capture-screenshot')
+  const modeShortcut: Partial<Record<ScreenshotMode, string>> = {
+    entire: shortcutEntire,
+    visible: shortcutVisible,
+    selection: shortcutSelection,
+    element: shortcutElement,
+  }
   const [urls, setUrls] = useState('')
   const [busy, setBusy] = useState(false)
   const [history, setHistory] = useState<ScreenshotHistoryEntry[]>([])
@@ -71,7 +77,7 @@ function CaptureLauncher() {
       <div className="flex flex-col gap-4">
         <p className="text-sm text-muted-foreground">{t('capture.launcher.hint')}</p>
         <div className="grid gap-2 sm:grid-cols-2">
-          {MODES.map(({ mode, commandId, icon: Icon, labelKey }) => (
+          {MODES.map(({ mode, icon: Icon, labelKey }) => (
             <Button
               key={mode}
               variant="outline"
@@ -82,8 +88,8 @@ function CaptureLauncher() {
               <Icon className="size-4 shrink-0" />
               <span className="flex flex-col items-start text-left">
                 <span>{t(labelKey)}</span>
-                {commandId && (
-                  <span className="text-[10px] text-muted-foreground">{shortcutLabel(commandId)}</span>
+                {modeShortcut[mode] && (
+                  <span className="text-[10px] text-muted-foreground">{modeShortcut[mode]}</span>
                 )}
               </span>
             </Button>
@@ -98,7 +104,7 @@ function CaptureLauncher() {
             <span className="flex flex-col items-start text-left">
               <span>{t('capture.launcher.menu')}</span>
               <span className="text-[10px] text-muted-foreground">
-                {shortcutLabel('capture-menu')}
+                {shortcutMenu}
               </span>
             </span>
           </Button>
@@ -159,7 +165,7 @@ function CaptureLauncher() {
         </div>
         <p className="text-[11px] text-muted-foreground">
           {t('capture.launcher.primaryShortcut', {
-            shortcut: shortcutLabel('capture-screenshot'),
+            shortcut: shortcutPrimary,
           })}
         </p>
       </div>

@@ -5,7 +5,9 @@ import { pdfToolkitStrings } from './pdfToolkitEn'
 import { cssGeneratorStrings } from './cssGeneratorEn'
 import { interceptorStrings } from './interceptorEn'
 import { netmonStrings } from './netmonEn'
-import { notesStrings } from './notesEn'
+import { tasksStrings } from './tasksEn'
+import { autofillStrings } from './autofillEn'
+import { colorPickerStrings } from './colorPickerEn'
 import { speedtestStrings } from './speedtestEn'
 import { tabManagerStrings } from './tabManagerEn'
 import { datetimeStrings } from './datetimeEn'
@@ -651,8 +653,9 @@ const en = {
   'tools.text.find-replace.name': 'Find & Replace',
   'tools.text.find-replace.description':
     'Find and replace with regex, case and whole-word options.',
-  'tools.text.diff.name': 'Text Diff',
-  'tools.text.diff.description': 'Compare two texts and highlight additions and removals.',
+  'tools.text.diff.name': 'Diff',
+  'tools.text.diff.description':
+    'Compare texts or files side by side: aligned lines, in-line highlights, unimportant-difference rules, section merging and patch or HTML reports.',
   'tools.text.read-aloud.name': 'Read Aloud',
   'tools.text.read-aloud.description':
     'Listen to page text with built-in speech synthesis and adjustable speed.',
@@ -1140,7 +1143,8 @@ const en = {
   'shortcuts.disabled': 'Disabled',
   'shortcuts.pressKeys': 'Press keys…',
   'shortcuts.conflict': 'That shortcut is already used by another action.',
-  'shortcuts.hint': '{{count}} actions — add more commands in code as the toolbox grows.',
+  'shortcuts.hint':
+    '{{count}} actions. Click a shortcut to change it; use Reset to restore the default. Changes apply while you browse and in the side panel.',
   'shortcuts.commands.panelSearch': 'Focus search / command palette',
   'shortcuts.commands.commandPalette': 'Open command palette (from page)',
   'shortcuts.commands.pickElement': 'Pick element on page',
@@ -1152,6 +1156,8 @@ const en = {
   'shortcuts.commands.captureMenu': 'Open capture menu',
   'shortcuts.commands.togglePip': 'Toggle Picture-in-Picture',
   'shortcuts.commands.toggleRecording': 'Start or stop screen recording',
+  'shortcuts.commands.addPageTask': 'Add current page to Tasks',
+  'shortcuts.commands.pickColor': 'Pick a color from the page',
   'pip.toggleButton': 'Toggle Picture-in-Picture on this tab',
   'pip.gestureHint': 'Chrome blocked PiP from the panel. Press {{shortcut}} on the page instead.',
   'pip.entered': 'Picture-in-Picture started.',
@@ -1268,7 +1274,10 @@ const en = {
     'Detailed on-page SEO audit: indexability, content, links, images, schema, hreflang, social and PageSpeed.',
   'tools.productivity.notes.name': 'Notes',
   'tools.productivity.notes.description':
-    'Notepad-style notes with formatting, colors, find & replace and export.',
+    'Notes with quick capture, #tags, checklists, templates, archive and trash, plus formatting, find & replace and export.',
+  'tools.productivity.tasks.name': 'Tasks',
+  'tools.productivity.tasks.description':
+    'To-do list with due dates and reminders. Save the current page as a task, type dates in plain words, sort into projects and labels.',
   'tools.productivity.timer.name': 'Timer',
   'tools.productivity.timer.description': 'Countdown, stopwatch and Pomodoro. Keeps running when the panel is closed.',
   'tools.productivity.tab-manager.name': 'Tab Manager',
@@ -1462,7 +1471,9 @@ const en = {
   ...interceptorStrings,
   ...consolidationStrings,
   ...dataScraperStrings,
-  ...notesStrings,
+  ...tasksStrings,
+  ...autofillStrings,
+  ...colorPickerStrings,
   ...tabManagerStrings,
   ...datetimeStrings,
   ...qrToolkitStrings,
