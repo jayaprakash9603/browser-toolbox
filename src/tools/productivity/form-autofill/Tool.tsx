@@ -38,8 +38,8 @@ function readDetailsOpen(): boolean {
  */
 const PANEL_LAYOUT = [
   'ufa:min-h-0 ufa:flex-1',
-  // Our ConnectionBar replaces the SDK's header card.
-  '[&_header]:hidden',
+  // ConnectionBar replaces the SDK page/profile card; !hidden beats the panel header's ufa:flex.
+  '[&_header]:!hidden',
 ]
 
 const COMPACT_FILL_BAR = [
