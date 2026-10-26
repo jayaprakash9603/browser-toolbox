@@ -9,6 +9,9 @@ export interface Note {
   body: string
   pinned: boolean
   color: NoteColor
+  archived: boolean
+  /** When the note was moved to the trash; `null` while it is live. */
+  trashedAt: number | null
   createdAt: number
   updatedAt: number
 }
@@ -24,6 +27,10 @@ export interface NotesPrefs {
   zoom: number
   statusBar: boolean
   confirmDelete: boolean
+  /** Hides snippets, tags and progress in the list. */
+  compact: boolean
+  /** Splits the list into Pinned / Today / This week… sections. */
+  grouped: boolean
 }
 
 export const DEFAULT_PREFS: NotesPrefs = {
@@ -34,10 +41,13 @@ export const DEFAULT_PREFS: NotesPrefs = {
   zoom: 100,
   statusBar: true,
   confirmDelete: true,
+  compact: false,
+  grouped: true,
 }
 
 export const ZOOM_MIN = 50
 export const ZOOM_MAX = 300
+export const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1000
 
 const KEY = 'toolbox.notes'
 const PREFS_KEY = 'toolbox.notes.prefs'
@@ -50,6 +60,8 @@ export function normalizeNote(raw: Partial<Note>): Note {
     body: typeof raw.body === 'string' ? raw.body : '',
     pinned: raw.pinned === true,
     color: NOTE_COLORS.includes(raw.color as NoteColor) ? (raw.color as NoteColor) : 'default',
+    archived: raw.archived === true,
+    trashedAt: typeof raw.trashedAt === 'number' ? raw.trashedAt : null,
     createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : updatedAt,
     updatedAt,
   }
@@ -58,6 +70,11 @@ export function normalizeNote(raw: Partial<Note>): Note {
 export function createNote(partial: Partial<Note> = {}): Note {
   const now = Date.now()
   return normalizeNote({ createdAt: now, updatedAt: now, ...partial, id: crypto.randomUUID() })
+}
+
+/** Drops notes that have sat in the trash longer than the retention window. */
+export function purgeExpiredTrash(notes: Note[], now = Date.now()): Note[] {
+  return notes.filter((n) => n.trashedAt == null || now - n.trashedAt < TRASH_RETENTION_MS)
 }
 
 export async function getNotes(): Promise<Note[]> {

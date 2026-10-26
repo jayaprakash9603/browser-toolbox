@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { I18nextProvider } from 'react-i18next'
@@ -23,7 +23,14 @@ function renderTool() {
 
 async function storedNotes() {
   const result = await chrome.storage.local.get('toolbox.notes')
-  return result['toolbox.notes'] as { title: string; body: string; color: string }[]
+  return result['toolbox.notes'] as {
+    title: string
+    body: string
+    color: string
+    pinned: boolean
+    archived: boolean
+    trashedAt: number | null
+  }[]
 }
 
 beforeEach(() => {
@@ -74,7 +81,7 @@ describe('Notes tool', { timeout: 20_000 }, () => {
     await waitFor(() => expect(editor).toHaveValue('dog dog dog'))
   })
 
-  it('changes color and deletes after confirmation', async () => {
+  it('changes color, moves to trash with undo, then deletes forever after confirmation', async () => {
     const user = userEvent.setup()
     await chrome.storage.local.set({
       'toolbox.notes': [{ id: 'n1', title: 'Temp', body: 'x', pinned: false, updatedAt: 1 }],
@@ -86,9 +93,55 @@ describe('Notes tool', { timeout: 20_000 }, () => {
     await waitFor(async () => expect((await storedNotes())[0].color).toBe('yellow'))
 
     await user.click(screen.getByRole('button', { name: 'Note options' }))
-    await user.click(await screen.findByRole('menuitem', { name: 'Delete note' }))
-    await user.click(await screen.findByRole('button', { name: 'Delete note' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Move to trash' }))
+    await waitFor(async () => expect((await storedNotes())[0].trashedAt).toEqual(expect.any(Number)))
+
+    await user.click(screen.getByRole('button', { name: 'Undo' }))
+    await waitFor(async () => expect((await storedNotes())[0].trashedAt).toBeNull())
+
+    await user.click(screen.getByRole('button', { name: 'Move “Temp” to trash' }))
+    await user.click(screen.getByRole('button', { name: 'Trash' }))
+    await user.click(await screen.findByRole('button', { name: 'Delete “Temp” forever' }))
+    const dialog = await screen.findByRole('dialog')
+    await user.click(within(dialog).getByRole('button', { name: 'Delete forever' }))
     await waitFor(async () => expect(await storedNotes()).toHaveLength(0))
+  }, 60_000)
+
+  it('filters by #tag and saves quick notes without opening them', async () => {
+    const user = userEvent.setup()
+    await chrome.storage.local.set({
+      'toolbox.notes': [
+        { id: 'n1', title: 'Launch plan', body: 'ship it #work', pinned: false, updatedAt: 2 },
+        { id: 'n2', title: 'Groceries', body: 'milk #home', pinned: false, updatedAt: 1 },
+      ],
+    })
+    renderTool()
+    await screen.findByText('Launch plan')
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search notes…' }), { target: { value: '#wor' } })
+    await waitFor(() => expect(screen.queryByText('Groceries')).not.toBeInTheDocument())
+    expect(screen.getByText('1 of 2 notes')).toBeInTheDocument()
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search notes…' }), { target: { value: '' } })
+
+    const quick = screen.getByRole('textbox', { name: 'Quick note' })
+    await user.type(quick, 'call the bank{Enter}')
+    await waitFor(async () => expect((await storedNotes()).map((n) => n.body)).toContain('call the bank'))
+    expect(screen.queryByRole('textbox', { name: 'Take a note…' })).not.toBeInTheDocument()
+    expect(await screen.findByText('Note saved')).toBeInTheDocument()
+  })
+
+  it('archives and pins from row quick actions', async () => {
+    const user = userEvent.setup()
+    await chrome.storage.local.set({
+      'toolbox.notes': [{ id: 'n1', title: 'Ideas', body: 'x', pinned: false, updatedAt: 1 }],
+    })
+    renderTool()
+    await user.click(await screen.findByRole('button', { name: 'Pin “Ideas”' }))
+    await waitFor(async () => expect((await storedNotes())[0]).toMatchObject({ pinned: true }))
+    await user.click(screen.getByRole('button', { name: 'Archive “Ideas”' }))
+    await waitFor(async () => expect((await storedNotes())[0]).toMatchObject({ archived: true, pinned: false }))
+    expect(await screen.findByText('Your notes live here')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Archive' }))
+    expect(await screen.findByText('Ideas')).toBeInTheDocument()
   })
 
   it('previews markdown and toggles checklist items', async () => {

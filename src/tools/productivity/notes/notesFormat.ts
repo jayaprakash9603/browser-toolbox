@@ -360,13 +360,13 @@ export function noteDisplayTitle(note: Pick<Note, 'title' | 'body'>, fallback: s
   return first ? first.trim().slice(0, 80) : fallback
 }
 
-export function noteSnippet(note: Pick<Note, 'title' | 'body'>): string {
+export function noteSnippet(note: Pick<Note, 'title' | 'body'>, max = 140): string {
   const lines = markdownToPlain(note.body)
     .split('\n')
     .map((l) => l.trim())
     .filter(Boolean)
   const rest = note.title.trim() ? lines : lines.slice(1)
-  return rest.join(' ').slice(0, 140)
+  return rest.join(' ').slice(0, max)
 }
 
 export function safeFilename(name: string, fallback = 'note'): string {

@@ -75,6 +75,7 @@ interface NoteEditorProps {
   onPrint: () => void
   autoFocus: boolean
   savedLabel: string
+  readOnly?: boolean
 }
 
 interface ToolButtonProps {
@@ -123,6 +124,7 @@ export function NoteEditor({
   onPrint,
   autoFocus,
   savedLabel,
+  readOnly = false,
 }: NoteEditorProps) {
   const { t } = useTranslation()
   const body = note.body
@@ -198,7 +200,7 @@ export function NoteEditor({
   /** Applies an edit through the browser's editing pipeline so Ctrl+Z / Ctrl+Y keep working. */
   const runEdit = (edit: TextEdit) => {
     const el = textareaRef.current
-    if (!el) return
+    if (!el || readOnly) return
     if (edit.from === edit.to && edit.insert === '') return
     el.focus()
     el.setSelectionRange(edit.from, edit.to)
@@ -416,7 +418,7 @@ export function NoteEditor({
     return parts
   }, [matches, current, body])
 
-  const fmtDisabled = preview
+  const fmtDisabled = preview || readOnly
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-1.5">
@@ -623,6 +625,10 @@ export function NoteEditor({
             tabIndex={0}
             onClick={(e) => {
               const target = e.target as HTMLElement
+              if (readOnly && target instanceof HTMLInputElement) {
+                e.preventDefault()
+                return
+              }
               if (target instanceof HTMLInputElement && target.dataset.line) {
                 onBodyChange(toggleCheckboxAtLine(body, Number(target.dataset.line)))
               }
@@ -659,6 +665,7 @@ export function NoteEditor({
               onSelect={readSelection}
               onKeyDown={onKeyDown}
               onScroll={syncScroll}
+              readOnly={readOnly}
               placeholder={t('notes.body')}
               aria-label={t('notes.body')}
               spellCheck={prefs.spellcheck}
