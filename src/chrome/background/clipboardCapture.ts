@@ -11,22 +11,29 @@ const logger = createLogger('clipboard-capture')
 
 const SCRIPT_ID = 'toolbox-clipboard-capture'
 const SCRIPT_FILE = 'clipboard/capture.js'
-/** Session flag: the Clipboard Manager is on screen and should record copies. */
-const WATCH_KEY = 'clipboardWatch'
+const MAIN_SCRIPT_ID = 'toolbox-clipboard-capture-main'
+const MAIN_SCRIPT_FILE = 'clipboard/capture-main.js'
+const SCRIPT_IDS = [SCRIPT_ID, MAIN_SCRIPT_ID]
 
-function captureScript(): chrome.scripting.RegisteredContentScript {
-  return {
-    id: SCRIPT_ID,
-    js: [SCRIPT_FILE],
+/** Copies are saved one at a time so rapid copies cannot overwrite each other's history write. */
+let saveQueue: Promise<unknown> = Promise.resolve()
+
+function captureScripts(): chrome.scripting.RegisteredContentScript[] {
+  const base = {
     matches: ['http://*/*', 'https://*/*', 'file://*/*'],
-    runAt: 'document_start',
+    runAt: 'document_start' as const,
     allFrames: true,
   }
+  return [
+    { ...base, id: SCRIPT_ID, js: [SCRIPT_FILE] },
+    // Page world: sees copy buttons that call navigator.clipboard / execCommand.
+    { ...base, id: MAIN_SCRIPT_ID, js: [MAIN_SCRIPT_FILE], world: 'MAIN' },
+  ]
 }
 
 async function syncCaptureScript(enabled: boolean): Promise<void> {
   try {
-    await reconcileContentScripts([SCRIPT_ID], enabled ? [captureScript()] : [])
+    await reconcileContentScripts(SCRIPT_IDS, enabled ? captureScripts() : [])
   } catch (error) {
     logger.warn('registerContentScripts failed', error)
   }
@@ -40,20 +47,25 @@ async function injectIntoOpenTabs(): Promise<void> {
     void chrome.scripting
       .executeScript({ target: { tabId: tab.id, allFrames: true }, files: [SCRIPT_FILE] })
       .catch(() => undefined)
+    void chrome.scripting
+      .executeScript({ target: { tabId: tab.id, allFrames: true }, files: [MAIN_SCRIPT_FILE], world: 'MAIN' })
+      .catch(() => undefined)
   }
 }
 
 export function registerClipboardCapture(): void {
   registerMessageHandler('CLIPBOARD_WATCH', async (message) => {
     if (message.type !== 'CLIPBOARD_WATCH') return
-    await chrome.storage.session.set({ [WATCH_KEY]: message.active })
+    // Capture no longer depends on the panel being open; kept for older callers.
+    void message.active
   })
 
   registerMessageHandler('CLIPBOARD_CAPTURED', async (message) => {
     if (message.type !== 'CLIPBOARD_CAPTURED') return
-    const stored = await chrome.storage.session.get(WATCH_KEY)
-    if (stored[WATCH_KEY] !== true) return
-    await addClipboardEntry(message.text.slice(0, MAX_CLIPBOARD_CAPTURE_CHARS))
+    // Recorded whenever clipboard history is enabled, even if the panel/tab is closed.
+    const text = message.text.slice(0, MAX_CLIPBOARD_CAPTURE_CHARS)
+    saveQueue = saveQueue.then(() => addClipboardEntry(text)).catch(() => undefined)
+    await saveQueue
   })
 
   void getSettings().then((settings) => syncCaptureScript(settings.clipboardHistoryEnabled))
