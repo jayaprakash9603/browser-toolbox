@@ -23,6 +23,7 @@ import {
 import { CodeEditor } from '@/shared/components/CodeEditor'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
+import { useToast } from '@/shared/components/toast/useToast'
 import { cn } from '@/shared/utils/cn'
 import type { NetLogEntry } from '@/core/interceptor'
 import {
@@ -55,7 +56,7 @@ export function NetworkInspector({ rows, onClear, preserveLog, onPreserveLogChan
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [tab, setTab] = useState<DetailTab>('General')
   const [dialog, setDialog] = useState<QuickRuleRequest | null>(null)
-  const [toast, setToast] = useState<string | null>(null)
+  const { show: showToast } = useToast()
   const [body, setBody] = useState<string | null>(null)
 
   const visible = useMemo(() => {
@@ -85,12 +86,6 @@ export function NetworkInspector({ rows, onClear, preserveLog, onPreserveLogChan
       cancelled = true
     }
   }, [selected, tab])
-
-  useEffect(() => {
-    if (!toast) return
-    const id = window.setTimeout(() => setToast(null), 2500)
-    return () => window.clearTimeout(id)
-  }, [toast])
 
   const open = (req: Omit<QuickRuleRequest, 'url'>) => selected && setDialog({ ...req, url: selected.url })
 
@@ -404,12 +399,7 @@ export function NetworkInspector({ rows, onClear, preserveLog, onPreserveLogChan
         )}
       </div>
 
-      {toast && (
-        <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded bg-foreground px-3 py-1.5 text-background">
-          {toast}
-        </div>
-      )}
-      <QuickRuleDialog request={dialog} onClose={() => setDialog(null)} onSaved={setToast} />
+      <QuickRuleDialog request={dialog} onClose={() => setDialog(null)} onSaved={(message) => showToast(message)} />
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { ThemeApplicator } from '@/app/providers/ThemeApplicator'
 import { RouterProvider } from '@/app/router'
 import i18n, { DocumentLanguage } from '@/i18n'
 import { TooltipProvider } from '@/shared/components/ui/tooltip'
+import { ToastProvider } from '@/shared/components/toast/ToastProvider'
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
 import { I18nextProvider } from 'react-i18next'
 
@@ -14,7 +15,9 @@ export default function App() {
           <RouterProvider>
             <DocumentLanguage />
             <ThemeApplicator />
-            <AppShell />
+            <ToastProvider>
+              <AppShell />
+            </ToastProvider>
           </RouterProvider>
         </I18nextProvider>
       </TooltipProvider>
