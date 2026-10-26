@@ -7,7 +7,7 @@ import {
   findCommandForKeyEvent,
   DEFAULT_KEYBOARD_SHORTCUTS_STATE,
 } from '@/core/commands'
-import { MANIFEST_COMMAND_IDS } from '@/core/commands/manifest'
+import { buildManifestCommands, MANIFEST_COMMAND_IDS } from '@/core/commands/manifest'
 import { TOOLBOX_COMMANDS, GLOBAL_TOOLBOX_COMMANDS } from '@/core/commands/registry'
 
 describe('accelerator', () => {
@@ -44,7 +44,9 @@ describe('shortcut bindings', () => {
 })
 
 describe('command registry', () => {
-  it('lists global manifest commands without suggested keys in code', () => {
+  it('lists global manifest commands with default suggested keys', () => {
+    const manifest = buildManifestCommands()
+    expect(manifest['open-command-palette']?.suggested_key?.default).toBe('Ctrl+Shift+Space')
     expect(GLOBAL_TOOLBOX_COMMANDS.map((c) => c.id)).toEqual([
       'open-command-palette',
       'pick-element',
@@ -54,8 +56,10 @@ describe('command registry', () => {
       'capture-selection',
       'capture-element',
       'capture-menu',
+      'pick-color',
       'toggle-pip',
       'toggle-recording',
+      'add-page-task',
     ])
     expect([...MANIFEST_COMMAND_IDS]).toEqual([
       'open-command-palette',
@@ -63,6 +67,8 @@ describe('command registry', () => {
       'capture-screenshot',
       'toggle-pip',
       'toggle-recording',
+      'add-page-task',
+      'pick-color',
     ])
     expect(TOOLBOX_COMMANDS.length).toBeGreaterThanOrEqual(5)
   })

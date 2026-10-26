@@ -23,9 +23,18 @@ export function usePanelShortcuts() {
 
   const resolvePanelCommand = useCallback(
     (event: KeyboardEvent): string | null => {
-      if (!state) return null
+      if (!state || event.repeat) return null
       const modifiers = keyModifiersFromKeyboardEvent(event)
       return findCommandForKeyEvent(modifiers, state, 'panel')
+    },
+    [state],
+  )
+
+  const resolveGlobalCommand = useCallback(
+    (event: KeyboardEvent): string | null => {
+      if (!state || event.repeat) return null
+      const modifiers = keyModifiersFromKeyboardEvent(event)
+      return findCommandForKeyEvent(modifiers, state, 'global')
     },
     [state],
   )
@@ -35,12 +44,13 @@ export function usePanelShortcuts() {
     (event: KeyboardEvent): boolean => {
       if (!state || event.repeat) return false
       const modifiers = keyModifiersFromKeyboardEvent(event)
-      if (!findCommandForKeyEvent(modifiers, state, 'global')) return false
+      const command = findCommandForKeyEvent(modifiers, state, 'global')
+      if (!command || command === 'open-command-palette') return false
       void chrome.runtime.sendMessage({ type: 'SHORTCUT_KEY_EVENT', modifiers }).catch(() => undefined)
       return true
     },
     [state],
   )
 
-  return { state, resolvePanelCommand, forwardGlobalShortcut }
+  return { state, resolvePanelCommand, resolveGlobalCommand, forwardGlobalShortcut }
 }

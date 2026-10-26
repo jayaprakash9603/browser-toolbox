@@ -18,6 +18,10 @@ import { BrandLogo } from '@/shared/components/BrandLogo'
 import { Button } from '@/shared/components/ui/button'
 import { ThemeToggle } from '@/shared/components/ThemeToggle'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip'
+import {
+  consumeOpenCommandPalette,
+  PANEL_OPEN_COMMAND_PALETTE_KEY,
+} from '@/core/panel/navigationSession'
 import { usePanelShortcuts } from '@/features/shortcuts/usePanelShortcuts'
 import { useShortcutDisplay } from '@/features/shortcuts/useShortcutDisplay'
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
@@ -51,7 +55,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
   const [paletteMounted, setPaletteMounted] = useState(false)
   const mainRef = useRef<HTMLElement>(null)
   const reduceMotion = useReducedMotion()
-  const { resolvePanelCommand, forwardGlobalShortcut } = usePanelShortcuts()
+  const { resolvePanelCommand, resolveGlobalCommand, forwardGlobalShortcut } = usePanelShortcuts()
   const searchShortcutLabel = useShortcutDisplay('panel-search')
 
   useEffect(() => {
@@ -67,19 +71,46 @@ export function AppShell({ children }: { children?: ReactNode }) {
   }
 
   useEffect(() => {
+    let active = true
+    const openPaletteFromIntent = () => {
+      void consumeOpenCommandPalette().then((open) => {
+        if (open && active) openPalette()
+      })
+    }
+    openPaletteFromIntent()
+    const onSessionPalette = (
+      changes: { [key: string]: chrome.storage.StorageChange },
+      area: string,
+    ) => {
+      if (area === 'session' && changes[PANEL_OPEN_COMMAND_PALETTE_KEY]?.newValue) openPaletteFromIntent()
+    }
+    chrome.storage?.onChanged.addListener(onSessionPalette)
+
     const onKey = (event: KeyboardEvent) => {
       const panelCommand = resolvePanelCommand(event)
       if (panelCommand === 'panel-search') {
         event.preventDefault()
         openPalette()
-      } else if (!panelCommand && forwardGlobalShortcut(event)) {
+        return
+      }
+      const globalCommand = panelCommand ? null : resolveGlobalCommand(event)
+      if (globalCommand === 'open-command-palette') {
+        event.preventDefault()
+        openPalette()
+        return
+      }
+      if (!panelCommand && forwardGlobalShortcut(event)) {
         event.preventDefault()
       }
       if (event.key === 'Escape') setPaletteOpen(false)
     }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [resolvePanelCommand, forwardGlobalShortcut])
+    return () => {
+      active = false
+      chrome.storage?.onChanged.removeListener(onSessionPalette)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [resolvePanelCommand, resolveGlobalCommand, forwardGlobalShortcut])
 
   const tool = useMemo(() => toolRegistry.getAll().find((entry) => entry.route === path), [path])
 

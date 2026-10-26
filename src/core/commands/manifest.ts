@@ -1,3 +1,5 @@
+import { getToolboxCommand } from './registry'
+
 /** Command ids registered in chrome manifest (global scope only). Keep in sync with registry.ts */
 export const MANIFEST_COMMAND_IDS = [
   'open-command-palette',
@@ -5,6 +7,8 @@ export const MANIFEST_COMMAND_IDS = [
   'capture-screenshot',
   'toggle-pip',
   'toggle-recording',
+  'add-page-task',
+  'pick-color',
 ] as const
 
 const DESCRIPTIONS: Record<(typeof MANIFEST_COMMAND_IDS)[number], string> = {
@@ -13,13 +17,27 @@ const DESCRIPTIONS: Record<(typeof MANIFEST_COMMAND_IDS)[number], string> = {
   'capture-screenshot': '__MSG_commandCaptureScreenshot__',
   'toggle-pip': '__MSG_commandTogglePip__',
   'toggle-recording': '__MSG_commandToggleRecording__',
+  'add-page-task': '__MSG_commandAddPageTask__',
+  'pick-color': '__MSG_commandPickColor__',
 }
 
-/** Manifest command entries (no suggested_key — shortcuts are managed in extension settings). */
-export function buildManifestCommands(): Record<string, { description: string }> {
-  const commands: Record<string, { description: string }> = {}
+/** Manifest commands use registry defaults as suggested keys; in-app settings can override via content scripts. */
+export function buildManifestCommands(): Record<
+  string,
+  { description: string; suggested_key?: { default: string; mac: string } }
+> {
+  const commands: Record<
+    string,
+    { description: string; suggested_key?: { default: string; mac: string } }
+  > = {}
   for (const id of MANIFEST_COMMAND_IDS) {
-    commands[id] = { description: DESCRIPTIONS[id] }
+    const def = getToolboxCommand(id)
+    commands[id] = {
+      description: DESCRIPTIONS[id],
+      ...(def
+        ? { suggested_key: { default: def.binding.default, mac: def.binding.mac } }
+        : {}),
+    }
   }
   return commands
 }

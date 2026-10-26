@@ -2,6 +2,7 @@
 
 export const PANEL_ROUTE_INTENT_KEY = 'toolbox.routeIntent'
 export const PANEL_OPEN_HOME_KEY = 'toolbox.openHomeOnPanel'
+export const PANEL_OPEN_COMMAND_PALETTE_KEY = 'toolbox.openCommandPalette'
 
 let sidePanelCheck: Promise<boolean> | null = null
 
@@ -39,5 +40,18 @@ export async function consumeOpenHomeOnPanel(): Promise<boolean> {
   const stored = await chrome.storage.session.get(PANEL_OPEN_HOME_KEY)
   if (!stored[PANEL_OPEN_HOME_KEY]) return false
   await chrome.storage.session.remove(PANEL_OPEN_HOME_KEY)
+  return true
+}
+
+export async function requestOpenCommandPalette(): Promise<void> {
+  if (!chrome.storage?.session) return
+  await chrome.storage.session.set({ [PANEL_OPEN_COMMAND_PALETTE_KEY]: true })
+}
+
+export async function consumeOpenCommandPalette(): Promise<boolean> {
+  if (!chrome.storage?.session) return false
+  const stored = await chrome.storage.session.get(PANEL_OPEN_COMMAND_PALETTE_KEY)
+  if (!stored[PANEL_OPEN_COMMAND_PALETTE_KEY]) return false
+  await chrome.storage.session.remove(PANEL_OPEN_COMMAND_PALETTE_KEY)
   return true
 }
