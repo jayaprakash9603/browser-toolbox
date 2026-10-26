@@ -115,6 +115,8 @@ export type ExtensionMessage =
       sourceMime: string
       format: 'jpg' | 'png' | 'webp' | 'gif' | 'pdf'
       quality: number
+      maxSize?: number
+      background?: string
     }
   | { type: 'OFFSCREEN_IMAGE_RELEASE'; url: string }
   | { type: 'PIP_TOGGLE'; tabId?: number }

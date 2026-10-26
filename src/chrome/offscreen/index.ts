@@ -43,7 +43,11 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
       return false
     }
     case 'OFFSCREEN_IMAGE_CONVERT': {
-      void convertImageInOffscreen(raw.base64, raw.sourceMime, raw.format as ImageSaveFormat, raw.quality)
+      void convertImageInOffscreen(raw.base64, raw.sourceMime, raw.format as ImageSaveFormat, {
+        quality: raw.quality,
+        maxSize: raw.maxSize,
+        background: raw.background,
+      })
         .then((data) => sendResponse({ ok: true, data }))
         .catch((error: unknown) =>
           sendResponse({

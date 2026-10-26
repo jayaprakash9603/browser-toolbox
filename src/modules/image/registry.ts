@@ -6,10 +6,11 @@ export const imageTools = [
   defineTool({
     id: 'image.save-as-type',
     name: 'Save Image As Type',
-    description: 'Right-click any image and save as JPG, PNG, WebP, GIF, or PDF — converted locally.',
+    description:
+      'Right-click any image and save as JPG, PNG, WebP, GIF, or PDF — converted locally, with menu order, a one-click format, quality, resize, file naming and a live size comparison.',
     category: 'image',
     icon: DownloadIcon,
-    keywords: ['save image', 'download image', 'jpg', 'png', 'pdf', 'webp', 'gif', 'convert', 'context menu'],
+    keywords: ['save image', 'download image', 'jpg', 'png', 'pdf', 'webp', 'gif', 'convert', 'context menu', 'resize', 'quality', 'compress'],
     aliases: ['save image as type', 'image format converter', 'save as jpg', 'save as png'],
     route: '/tools/image/save-as-type',
     capabilities: ['CONTEXT_MENU'],

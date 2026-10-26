@@ -3,10 +3,12 @@ import { getChromeMessage } from '@/core/i18n/chromeMessages'
 import {
   FORMAT_LABELS,
   IMAGE_SAVE_MENU_PARENT,
+  downloadPath,
   formatFromMenuId,
   getSaveImageAsState,
   imageSaveMenuId,
   suggestFilename,
+  type ImageConvertOptions,
   type ImageSaveFormat,
 } from '@/core/imageConvert'
 import { createLogger } from '@/core/logging'
@@ -21,9 +23,17 @@ export async function buildImageConvertMenus(): Promise<void> {
   const state = await getSaveImageAsState()
   if (!state.enabled || !state.formats.length) return
 
+  const saveAs = getChromeMessage('contextMenuSaveImageAs') || 'Save image as'
+  if (state.quickFormat && state.formats.includes(state.quickFormat)) {
+    chrome.contextMenus.create({
+      id: imageSaveMenuId(state.quickFormat, true),
+      title: `${saveAs} ${FORMAT_LABELS[state.quickFormat]}`,
+      contexts: ['image'],
+    })
+  }
   chrome.contextMenus.create({
     id: IMAGE_SAVE_MENU_PARENT,
-    title: getChromeMessage('contextMenuSaveImageAs') || 'Save image as',
+    title: saveAs,
     contexts: ['image'],
   })
   for (const format of state.formats) {
@@ -50,25 +60,21 @@ export async function handleImageConvertMenuClick(
   const state = await getSaveImageAsState()
   if (!state.enabled) return
 
+  const filename = downloadPath(
+    state.folder,
+    suggestFilename(format, { pageTitle: tab?.title, imageUrl: info.srcUrl, pageUrl: info.pageUrl ?? tab?.url }, state.naming),
+  )
+
   try {
     const { bytes, mime } = await fetchImageBytes(info.srcUrl, tab?.id)
-    const { url } = await convertBytes(bytes, mime, format, state.quality)
-    const filename = suggestFilename(format, {
-      pageTitle: tab?.title,
-      imageUrl: info.srcUrl,
-      pageUrl: info.pageUrl ?? tab?.url,
-    })
+    const { url } = await convertBytes(bytes, mime, format, state)
     await downloadConverted(url, filename, state.askFilename)
+    if (state.notifyOnSave) notify(`Saved as ${FORMAT_LABELS[format]}`, filename)
   } catch (error) {
     logger.warn('image convert failed', error)
     const reason = error instanceof Error ? error.message : String(error)
     notify('Could not convert image', `${reason}. Downloading the original file instead.`)
     try {
-      const filename = suggestFilename(format, {
-        pageTitle: tab?.title,
-        imageUrl: info.srcUrl,
-        pageUrl: info.pageUrl ?? tab?.url,
-      })
       await downloadWithName({ url: info.srcUrl, filename, saveAs: state.askFilename })
     } catch (fallbackError) {
       logger.warn('fallback download failed', fallbackError)
@@ -138,7 +144,7 @@ async function convertBytes(
   bytes: Uint8Array,
   sourceMime: string,
   format: ImageSaveFormat,
-  quality: number,
+  options: ImageConvertOptions,
 ): Promise<{ url: string; mime: string }> {
   await ensureOffscreenDocument()
   return request<{ url: string; mime: string }>(() =>
@@ -147,7 +153,9 @@ async function convertBytes(
       base64: bytesToBase64(bytes),
       sourceMime,
       format,
-      quality,
+      quality: options.quality,
+      maxSize: options.maxSize,
+      background: options.background,
     }),
   )
 }

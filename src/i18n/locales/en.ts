@@ -24,6 +24,7 @@ import { testDataStrings } from './testDataEn'
 import { paletteGeneratorStrings } from './paletteGeneratorEn'
 import { pageInspectorStrings } from './pageInspectorEn'
 import { responsiveViewerStrings } from './responsiveViewerEn'
+import { saveImageAsStrings } from './saveImageAsEn'
 
 const en = {
   'app.name': 'One Panel',
@@ -1480,6 +1481,7 @@ const en = {
   ...paletteGeneratorStrings,
   ...pageInspectorStrings,
   ...responsiveViewerStrings,
+  ...saveImageAsStrings,
 } as const
 
 export default en
