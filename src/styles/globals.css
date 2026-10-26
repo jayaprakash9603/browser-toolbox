@@ -210,6 +210,58 @@ textarea {
   animation: float-drift 6s ease-in-out infinite;
 }
 
+/* Wall clock: hands and the seconds ring run on the compositor, phased with a negative delay. */
+@keyframes clock-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes clock-ring {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.clock-hand {
+  animation-name: clock-spin;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+.clock-ring {
+  animation: clock-ring 60s linear infinite;
+}
+
+@keyframes clock-colon {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.clock-colon {
+  animation: clock-colon 1s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clock-hand,
+  .clock-ring,
+  .clock-colon {
+    animation: none;
+  }
+}
+
 .hero-float-icon-delay-1 {
   animation-delay: 0.8s;
 }

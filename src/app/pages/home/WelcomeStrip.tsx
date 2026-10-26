@@ -8,6 +8,8 @@ import { getGreetingKey, HOME_TAGLINES, TAGLINE_INTERVAL_MS, type GreetingKey } 
 import { SlideUp } from '@/shared/components/motion'
 import { cn } from '@/shared/utils/cn'
 
+import { RollingTime, WallClock } from './WallClock'
+
 const DAYPART_ICON: Record<GreetingKey, typeof SunIcon> = {
   'home.greeting.morning': SunriseIcon,
   'home.greeting.afternoon': SunIcon,
@@ -73,7 +75,8 @@ export function WelcomeStrip({ favoriteCount, delay = 0 }: { favoriteCount: numb
       .trim()
     const period = parts.find((p) => p.type === 'dayPeriod')?.value ?? ''
     const date = new Intl.DateTimeFormat(i18n.language, { weekday: 'short', month: 'short', day: 'numeric' }).format(now)
-    return { time, period, date }
+    const full = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'full', timeStyle: 'short' }).format(now)
+    return { time, period, date, full }
   }, [now, i18n.language])
 
   const stats = useMemo(() => {
@@ -162,29 +165,22 @@ export function WelcomeStrip({ favoriteCount, delay = 0 }: { favoriteCount: numb
 
           <time
             dateTime={now.toISOString()}
-            className="flex shrink-0 flex-col items-end gap-0.5 rounded-lg border bg-background/50 px-2 py-1 backdrop-blur-sm"
+            aria-label={clock.full}
+            title={clock.full}
+            className="flex shrink-0 items-center gap-2 rounded-2xl border bg-background/50 py-1 ps-1 pe-2.5 shadow-sm backdrop-blur-sm"
           >
-            <span className="flex items-baseline gap-0.5 text-[15px] leading-none font-semibold tabular-nums">
-              <span className="relative inline-grid overflow-hidden">
-                <AnimatePresence mode="popLayout" initial={false}>
-                  <motion.span
-                    key={clock.time}
-                    initial={reduce ? { opacity: 0 } : { opacity: 0, y: '60%' }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={reduce ? { opacity: 0 } : { opacity: 0, y: '-60%' }}
-                    transition={{ duration: 0.25, ease: [0.2, 0.8, 0.2, 1] }}
-                  >
-                    {clock.time}
-                  </motion.span>
-                </AnimatePresence>
+            <WallClock now={now} />
+            <span className="flex flex-col items-end gap-1" aria-hidden>
+              <span className="flex items-baseline gap-0.5 text-[15px] leading-none font-semibold tracking-tight tabular-nums">
+                <RollingTime time={clock.time} />
+                {clock.period ? (
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase">{clock.period}</span>
+                ) : null}
               </span>
-              {clock.period ? (
-                <span className="text-[10px] font-medium text-muted-foreground uppercase">{clock.period}</span>
-              ) : null}
-            </span>
-            <span className="flex items-center gap-1 text-[10px] leading-none text-muted-foreground">
-              <DaypartIcon className="size-3" aria-hidden />
-              {clock.date}
+              <span className="flex items-center gap-1 text-[10px] leading-none text-muted-foreground">
+                <DaypartIcon className="size-3 text-[var(--hero-from)]" aria-hidden />
+                {clock.date}
+              </span>
             </span>
           </time>
         </div>
