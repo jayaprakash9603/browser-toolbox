@@ -21,6 +21,7 @@ import { reactDevtoolsStrings } from './reactDevtoolsEn'
 import { testDataStrings } from './testDataEn'
 import { paletteGeneratorStrings } from './paletteGeneratorEn'
 import { pageInspectorStrings } from './pageInspectorEn'
+import { responsiveViewerStrings } from './responsiveViewerEn'
 
 const en = {
   'app.name': 'One Panel',
@@ -1467,6 +1468,7 @@ const en = {
   ...qrToolkitStrings,
   ...paletteGeneratorStrings,
   ...pageInspectorStrings,
+  ...responsiveViewerStrings,
 } as const
 
 export default en

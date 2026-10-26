@@ -103,10 +103,11 @@ export const designTools = [
   defineTool({
     id: 'design.responsive-viewer',
     name: 'Responsive Viewer',
-    description: 'Preview the active URL in multiple device viewports side by side.',
+    description:
+      'Preview any page on phones, tablets, laptops and desktops at true viewport sizes, with rotation, zoom, device frames, breakpoints and custom sizes.',
     category: 'design',
     icon: LayoutTemplateIcon,
-    keywords: ['responsive', 'viewport', 'mobile', 'iframe', 'devices'],
+    keywords: ['responsive', 'viewport', 'mobile', 'iframe', 'devices', 'breakpoint', 'tablet', 'rotate', 'device frame'],
     aliases: ['responsive viewer', 'device preview'],
     route: '/tools/design/responsive-viewer',
     capabilities: ['SIDE_PANEL'],
