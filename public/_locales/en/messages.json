@@ -41,6 +41,54 @@
   "commandToggleRecording": {
     "message": "Start or stop recording the current tab"
   },
+  "commandAddPageTask": {
+    "message": "Add the current page to Tasks"
+  },
+  "commandPickColor": {
+    "message": "Pick a color from the current page"
+  },
+  "colorCopied": {
+    "message": "Copied"
+  },
+  "colorCopyFailed": {
+    "message": "Copy failed"
+  },
+  "colorHintPick": {
+    "message": "copy"
+  },
+  "colorHintZoom": {
+    "message": "zoom"
+  },
+  "colorHintFormat": {
+    "message": "format"
+  },
+  "colorHintKeep": {
+    "message": "keep picking"
+  },
+  "colorHintExit": {
+    "message": "exit"
+  },
+  "contextMenuTaskPage": {
+    "message": "Add page to Tasks"
+  },
+  "contextMenuTaskLink": {
+    "message": "Add link to Tasks"
+  },
+  "contextMenuTaskSelection": {
+    "message": "Add “%s” to Tasks"
+  },
+  "taskReminderTitle": {
+    "message": "Task reminder"
+  },
+  "taskReminderDue": {
+    "message": "Due"
+  },
+  "taskReminderComplete": {
+    "message": "Complete"
+  },
+  "taskReminderSnooze": {
+    "message": "Snooze 10 min"
+  },
   "contextMenuOpen": {
     "message": "Open One Panel"
   },

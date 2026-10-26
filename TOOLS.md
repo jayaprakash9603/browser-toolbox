@@ -28,7 +28,8 @@ See [ROADMAP.md](./ROADMAP.md) for what is planned next.
 | **14. Website inspector (Wappalyzer-style)** | **Deferred** | Phase 5 epic. |
 | **15. Element inspector / selectors** | **Shipped** | QA toolkits + shared picker/selector engine. |
 | **16–18. Responsive, rulers, measurement** | **Deferred** | Phase 5. |
-| **19. Productivity (tabs, bookmarks)** | **Partial** | Notes, timer, tab search/duplicates/URLs. No bookmark manager or tab groups yet. |
+| **19. Productivity (tabs, bookmarks)** | **Partial** | Tasks, notes, timer, tab search/duplicates/URLs. No bookmark manager or tab groups yet. |
+| **19a. Tasks** | **Shipped** | `productivity.tasks` — Todoist-style quick add ("tomorrow 5pm p1 #Work @reading", "every monday"), one-tap "save this page" with due date, Today/Upcoming/Inbox/projects/labels/Completed views, subtasks, repeats, reminders (notifications with Complete/Snooze), undo, search, Markdown copy and JSON backup. Right-click "Add to Tasks" for page/link/selection and the `Alt+Shift+Q` command. |
 | **20. Notes** | **Shipped** | Notepad/Sticky Notes-style editor: formatting toolbar + shortcuts, checklists, colors, find/replace, go to line, zoom, word wrap, preview, status bar; export TXT/MD/HTML/Word/PDF/ZIP/JSON, import, print. |
 | **21. AI utilities** | **Out of scope** | Optional future module; off by default. |
 | **22. Generators** | **Partial** | Test data, passwords, UUIDs, QR, lorem — not full fake-identity suite. |
@@ -181,7 +182,7 @@ Engines: `src/core/engines/` (`json`, `xml`, `yaml`, `sql`, `regex`, `id`, `date
 | Files | File Toolkit | `/tools/files/file-toolkit` |
 | Generators | QR Code Toolkit | `/tools/generators/qr-toolkit` |
 | SEO | SEO Toolkit | `/tools/seo/toolkit` |
-| Productivity | Notes, Timer, Tab Manager, Form Autofill (beta) | `/tools/productivity/*` |
+| Productivity | Tasks, Notes, Timer, Tab Manager, Form Autofill (beta) | `/tools/productivity/*` |
 | Privacy | Ad Blocker | `/tools/privacy/ad-blocker` |
 | Browser | Browser Toolkit | `/tools/browser/toolkit` |
 | Storage | Storage Inspector | `/tools/storage/inspector` (local + session storage) |

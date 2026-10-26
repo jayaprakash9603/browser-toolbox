@@ -1,8 +1,34 @@
-import { NotebookPenIcon, TimerIcon, LayoutGridIcon, TextCursorInputIcon } from 'lucide-react'
+import { ListTodoIcon, NotebookPenIcon, TimerIcon, LayoutGridIcon, TextCursorInputIcon } from 'lucide-react'
 
 import { defineTool } from '@/core/registry'
 
 export const productivityTools = [
+  defineTool({
+    id: 'productivity.tasks',
+    name: 'Tasks',
+    description:
+      'To-do list with due dates and reminders. Save the current page as a task, type dates in plain words, sort into projects and labels.',
+    category: 'productivity',
+    icon: ListTodoIcon,
+    keywords: [
+      'tasks',
+      'todo',
+      'to-do',
+      'todoist',
+      'reminder',
+      'due date',
+      'checklist',
+      'read later',
+      'projects',
+      'labels',
+      'upcoming',
+    ],
+    aliases: ['tasks', 'todo list', 'to do list', 'todoist', 'reminders', 'save page as task', 'read later'],
+    route: '/tools/productivity/tasks',
+    capabilities: ['SIDE_PANEL', 'STORAGE', 'CONTEXT_MENU', 'COMMAND'],
+    status: 'active',
+    loader: () => import('@/tools/productivity/tasks/Tool'),
+  }),
   defineTool({
     id: 'productivity.notes',
     name: 'Notes',

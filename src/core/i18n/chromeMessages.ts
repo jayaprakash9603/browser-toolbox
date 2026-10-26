@@ -8,6 +8,20 @@ const CHROME_UI_FALLBACKS: Record<string, string> = {
   contextMenuSaveImageAs: 'Save image as',
   contextMenuPip: 'Picture-in-Picture',
   commandTogglePip: 'Toggle Picture-in-Picture for the current tab',
+  contextMenuTaskPage: 'Add page to Tasks',
+  contextMenuTaskLink: 'Add link to Tasks',
+  contextMenuTaskSelection: 'Add “%s” to Tasks',
+  taskReminderTitle: 'Task reminder',
+  taskReminderDue: 'Due',
+  taskReminderComplete: 'Complete',
+  taskReminderSnooze: 'Snooze 10 min',
+  colorCopied: 'Copied',
+  colorCopyFailed: 'Copy failed',
+  colorHintPick: 'copy',
+  colorHintZoom: 'zoom',
+  colorHintFormat: 'format',
+  colorHintKeep: 'keep picking',
+  colorHintExit: 'exit',
 }
 
 export function getChromeMessage(messageName: string): string {

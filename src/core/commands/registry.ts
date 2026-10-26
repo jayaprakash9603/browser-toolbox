@@ -73,6 +73,15 @@ export const TOOLBOX_COMMANDS: ToolboxCommandDef[] = [
     opensPanel: false,
   },
   {
+    id: 'pick-color',
+    titleKey: 'shortcuts.commands.pickColor',
+    descriptionMessage: '__MSG_commandPickColor__',
+    scope: 'global',
+    binding: { default: 'Alt+Shift+C', mac: 'Alt+Shift+C' },
+    opensPanel: false,
+    toolId: 'design.color-picker',
+  },
+  {
     id: 'toggle-pip',
     titleKey: 'shortcuts.commands.togglePip',
     descriptionMessage: '__MSG_commandTogglePip__',
@@ -89,6 +98,15 @@ export const TOOLBOX_COMMANDS: ToolboxCommandDef[] = [
     binding: { default: 'Alt+Shift+R', mac: 'Alt+Shift+R' },
     opensPanel: false,
     toolId: 'screenshots.recorder',
+  },
+  {
+    id: 'add-page-task',
+    titleKey: 'shortcuts.commands.addPageTask',
+    descriptionMessage: '__MSG_commandAddPageTask__',
+    scope: 'global',
+    binding: { default: 'Alt+Shift+Q', mac: 'Alt+Shift+Q' },
+    opensPanel: true,
+    toolId: 'productivity.tasks',
   },
 ]
 

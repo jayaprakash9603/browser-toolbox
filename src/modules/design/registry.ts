@@ -29,10 +29,11 @@ export const designTools = [
   defineTool({
     id: 'design.color-picker',
     name: 'Color Picker',
-    description: 'Pick a color from the screen or a swatch, copy as HEX/RGB/HSL.',
+    description:
+      'Pick colors from any page with a magnifier loupe via a global shortcut, copy in 7 formats, and browse history, shades and contrast.',
     category: 'design',
     icon: PipetteIcon,
-    keywords: ['color', 'picker', 'eyedropper', 'screen', 'swatch'],
+    keywords: ['color', 'picker', 'eyedropper', 'screen', 'swatch', 'loupe', 'shades', 'contrast', 'history'],
     aliases: ['color picker', 'eyedropper', 'pick color', 'color dropper'],
     route: '/tools/design/color-picker',
     capabilities: ['SIDE_PANEL', 'CONTEXT_MENU', 'COMMAND'],

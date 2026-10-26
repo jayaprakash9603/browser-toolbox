@@ -51,6 +51,8 @@ import { registerRedirectTracer } from './web/redirectTracer'
 import { safeRegister, safeStartup } from './safeInit'
 import { initClipboardCapture, registerClipboardCapture } from './clipboardCapture'
 import { registerTimer } from './timer'
+import { handleTaskMenuClick, isTaskMenuItem, registerTasks } from './tasks'
+import { registerColorPicker } from './colorPicker'
 import { registerReactDevtools, syncReactDevtoolsState } from './reactDevtools'
 import { registerScriptStudio } from './script-studio'
 import { registerSidePanelNavigation } from './panelNavigation'
@@ -118,6 +120,10 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     void togglePipInTab(tab)
     return
   }
+  if (isTaskMenuItem(menuItemId)) {
+    void handleTaskMenuClick(info, tab)
+    return
+  }
   if (isChatPulseMenuItem(menuItemId) && tab?.id != null) {
     void sendOpenAnalyticsToTab(tab.id)
     return
@@ -183,6 +189,8 @@ safeRegister('linkChecker', registerLinkChecker)
 safeRegister('scraper', registerScraperJobHandlers)
 safeRegister('clipboardCapture', registerClipboardCapture)
 safeRegister('timer', registerTimer)
+safeRegister('tasks', registerTasks)
+safeRegister('colorPicker', registerColorPicker)
 safeRegister('reactDevtools', registerReactDevtools)
 safeRegister('scriptStudio', registerScriptStudio)
 safeRegister('panelNavigation', registerSidePanelNavigation)

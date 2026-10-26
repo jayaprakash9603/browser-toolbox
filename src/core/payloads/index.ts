@@ -4,6 +4,8 @@ export interface ToolPayload {
   linkUrl?: string
   imageUrl?: string
   pageUrl?: string
+  pageTitle?: string
+  favIconUrl?: string
   createdAt: number
 }
 
@@ -54,6 +56,35 @@ export async function peekPayload(toolId: string): Promise<ToolPayload | null> {
     return payload
   } catch {
     return null
+  }
+}
+
+const handledPayloads = new Map<string, number>()
+
+/**
+ * Delivers the tool's pending payload now and every time a new one is stashed while the tool
+ * stays open. A subscription torn down before its read finishes leaves the payload for the next.
+ */
+export function subscribePayload(toolId: string, handler: (payload: ToolPayload) => void): () => void {
+  const area = storageArea()
+  if (!area) return () => undefined
+  const key = PAYLOAD_PREFIX + toolId
+  let live = true
+  const take = async () => {
+    const payload = await peekPayload(toolId)
+    if (!payload || !live || handledPayloads.get(toolId) === payload.createdAt) return
+    handledPayloads.set(toolId, payload.createdAt)
+    await Promise.resolve(area.remove(key)).catch(() => undefined)
+    handler(payload)
+  }
+  const onChanged = (changes: { [name: string]: chrome.storage.StorageChange }) => {
+    if (changes[key]?.newValue) void take()
+  }
+  void take()
+  chrome.storage.onChanged.addListener(onChanged)
+  return () => {
+    live = false
+    chrome.storage.onChanged.removeListener(onChanged)
   }
 }
 

@@ -11,7 +11,8 @@ The extension requests the minimum set required for the implemented features. Ea
 | `contextMenus`   | The right-click "Toolbox" menu (grouped by Text / Developer / QA / Page / Color) launches tools with the current selection, link, image or page as payload.                                                                 |
 | `activeTab`      | Lets the element picker and page tools run on the tab you explicitly interact with — only after a keyboard command or menu click.                                                                                           |
 | `scripting`      | Injects the on-demand page-tools content script and registers ad-blocker scripts when you enable ad blocking in Settings.                                                                                                  |
-| `tabs`           | Reads the active tab and supports Tab Manager and Browser Toolkit actions.                                                                                                                                                   |
+| `tabs`           | Reads the active tab and supports Tab Manager and Browser Toolkit actions. Tasks reads the active tab's URL, title and favicon to offer "save this page" — only while the panel is open.                                    |
+| `notifications`  | Tasks shows due-date reminders with **Complete** and **Snooze 10 min** buttons; nothing is shown unless a task has a reminder.                                                                                              |
 | `declarativeNetRequest` | Applies bundled static filter rules to block ad and tracker requests when ad blocking is enabled.                                                                                                                      |
 | `declarativeNetRequestFeedback` | Shows per-tab blocked-request counts on the extension badge and in the Ad Blocker tool.                                                                                                                        |
 | `webRequest` | Observes (does not block) HTTP requests for the HTTP Interceptor network log; rules still use `declarativeNetRequest` and page scripts.                                                                      |
@@ -23,7 +24,7 @@ The extension requests the minimum set required for the implemented features. Ea
 ## Deliberately NOT requested
 
 - `bookmarks`, `sessions` — these will be added only when a feature needs them and after an explicit user action.
-- `alarms` — used by Script Studio update checks and other scheduled background tasks.
+- `alarms` — used by Script Studio update checks, Tasks reminder wake-ups and other scheduled background tasks.
 - Required HTTP(S) host permissions — HTTP(S) access is declared as optional and is not granted by default.
 - The page-tools content script bundle uses a non-routable manifest match pattern so Chrome does not auto-inject it on real pages; the background service worker injects it with `scripting.executeScript` when you use page tools or the element picker.
 - Form Autofill needs no extra permissions. It injects its own runtime (`form-autofill/content-script.js`) with `scripting.executeScript` only into the tab its panel is open on, and talks to it on a separate `ufa/v1` message channel. It never submits forms, never fills passwords, one-time codes or payment fields, and keeps saved answers in `chrome.storage.local` under keys prefixed `browser_toolbox_autofill`.
@@ -35,6 +36,7 @@ The extension requests the minimum set required for the implemented features. Ea
 - The API Request Builder sends requests directly to the user-selected host after an explicit action and optional Chrome permission prompt. Recent responses are stored locally in `chrome.storage.local` (capped) for the History tab; credentials are not saved. JSON response fields with common credential names are redacted in the displayed body. No analytics, remote code, or remote fonts.
 - Page inspection runs only after you open a page tool or use a keyboard command; the content script is injected on demand for that tab.
 - Element-picker results and context-menu payloads stay in `chrome.storage.session` on this device and expire after 5 minutes.
+- Tasks, projects and saved page links are stored only in `chrome.storage.local` (`toolbox.tasks*` keys); there is no sync service. Export/Import in the Tasks menu writes and reads a local JSON backup.
 - Clipboard history may contain sensitive text — the Settings page warns about this and lets users disable or wipe it at any time.
 - Ad blocking is **on by default** and can be turned off in Settings or the Ad Blocker tool. It may break sites that depend on third-party scripts; use the per-site allowlist or “Pause ad blocking on this site” in the context menu.
 - Pop-up blocking (on by default, one switch in the ad blocker panel): `popups-main.js` runs in the page's MAIN world in every frame. It wraps `window.open` and `HTMLAnchorElement.prototype.click`, allowing a new window only for one real (trusted) click on a real control, plus sign-in providers, and it neutralises transparent full-page "click anywhere" ad links. It reads no page data and sends nothing off-device; it only posts a counter message to the extension's own content script.
