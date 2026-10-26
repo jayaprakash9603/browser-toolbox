@@ -1,0 +1,15 @@
+export const autofillStrings = {
+  'autofill.bar.expand': 'Show page and profile details',
+  'autofill.bar.collapse': 'Hide page and profile details',
+  'autofill.bar.refresh': 'Rescan this page',
+  'autofill.bar.profile': 'Profile',
+  'autofill.bar.noProfile': 'No profile',
+  'autofill.bar.noPage': 'No page connected',
+  'autofill.bar.detail_one': '{{count}} frame · Portal: {{name}}',
+  'autofill.bar.detail_other': '{{count}} frames · Portal: {{name}}',
+  'autofill.status.ready': 'Connected',
+  'autofill.status.connecting': 'Connecting…',
+  'autofill.status.error': 'Problem',
+  'autofill.status.idle': 'Idle',
+  'autofill.status.destroyed': 'Closed',
+} as const
