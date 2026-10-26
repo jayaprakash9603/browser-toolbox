@@ -12,25 +12,37 @@ const PAD = 4
 const SEPARATOR = 9
 
 /** Decorative replica of the right-click menu, driven by the live settings. */
-export function MenuPreview({ state }: { state: SaveImageAsState }) {
+export function MenuPreview({ state, compact = false }: { state: SaveImageAsState; compact?: boolean }) {
   const { t } = useTranslation()
   const quick = state.quickFormat && state.formats.includes(state.quickFormat) ? state.quickFormat : null
   const saveAs = t('sia.menu.saveAs')
-  const flyoutY = PAD + ROW * 2 + SEPARATOR + (quick ? ROW : 0) - PAD
+  const row = compact ? 20 : ROW
+  const pad = compact ? 3 : PAD
+  const separator = compact ? 7 : SEPARATOR
+  const flyoutY = pad + row * 2 + separator + (quick ? row : 0) - pad
 
   return (
-    <div aria-hidden className="relative mx-auto w-full max-w-[19rem] select-none">
+    <div
+      aria-hidden
+      className={cn('relative mx-auto w-full select-none', compact ? 'max-w-[15.5rem]' : 'max-w-[19rem]')}
+    >
       <LayoutGroup>
         <div
           className={cn(
             'flex items-start transition-[opacity,filter,min-height] duration-300',
             !state.enabled && 'opacity-40 grayscale',
           )}
-          style={{ minHeight: flyoutY + state.formats.length * ROW + PAD * 2 + 2 }}
+          style={{ minHeight: flyoutY + state.formats.length * row + pad * 2 + 2 }}
         >
-          <motion.div layout className="min-w-0 flex-1 rounded-lg border bg-popover p-1 text-[11px] shadow-lg">
+          <motion.div
+            layout
+            className={cn('min-w-0 flex-1 rounded-lg border bg-popover p-1 shadow-lg', compact ? 'text-[10px]' : 'text-[11px]')}
+          >
             {[t('sia.menu.openImage'), t('sia.menu.copyImage')].map((label) => (
-              <div key={label} className="flex h-6 items-center truncate rounded px-2 text-muted-foreground">
+              <div
+                key={label}
+                className={cn('flex items-center truncate rounded px-2 text-muted-foreground', compact ? 'h-5' : 'h-6')}
+              >
                 {label}
               </div>
             ))}
@@ -41,27 +53,36 @@ export function MenuPreview({ state }: { state: SaveImageAsState }) {
                   key="quick"
                   layout
                   initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: ROW }}
+                  animate={{ opacity: 1, height: row }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.22, ease: EASE_OUT }}
                   className="flex items-center gap-1.5 overflow-hidden rounded px-2 font-medium"
                 >
-                  <ZapIcon className="size-3 shrink-0 text-amber-500" />
+                  <ZapIcon className={cn('shrink-0 text-amber-500', compact ? 'size-2.5' : 'size-3')} />
                   <span className="truncate">
                     {saveAs} {FORMAT_LABELS[quick]}
                   </span>
                 </motion.div>
               )}
             </AnimatePresence>
-            <motion.div layout className="flex h-6 items-center gap-1.5 rounded bg-primary px-2 font-medium text-primary-foreground">
-              <DownloadIcon className="size-3 shrink-0" />
+            <motion.div
+              layout
+              className={cn(
+                'flex items-center gap-1.5 rounded bg-primary px-2 font-medium text-primary-foreground',
+                compact ? 'h-5' : 'h-6',
+              )}
+            >
+              <DownloadIcon className={cn('shrink-0', compact ? 'size-2.5' : 'size-3')} />
               <span className="min-w-0 flex-1 truncate">{saveAs}</span>
               <ChevronRightIcon className="size-3 shrink-0" />
             </motion.div>
           </motion.div>
 
           <motion.div
-            className="-ml-1 w-[5.5rem] shrink-0 rounded-lg border bg-popover p-1 text-[11px] shadow-xl"
+            className={cn(
+              '-ml-1 shrink-0 rounded-lg border bg-popover p-1 shadow-xl',
+              compact ? 'w-[4.75rem] text-[10px]' : 'w-[5.5rem] text-[11px]',
+            )}
             animate={{ y: flyoutY }}
             transition={{ type: 'spring', stiffness: 380, damping: 32 }}
           >
@@ -71,14 +92,14 @@ export function MenuPreview({ state }: { state: SaveImageAsState }) {
                   key={format}
                   layout
                   initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: ROW }}
+                  animate={{ opacity: 1, height: row }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.22, ease: EASE_OUT }}
                   className="flex items-center gap-1.5 overflow-hidden rounded px-2"
                 >
-                  <span className={cn('size-1.5 shrink-0 rounded-full', FORMAT_DOT[format])} />
+                  <span className={cn('shrink-0 rounded-full', FORMAT_DOT[format], compact ? 'size-1' : 'size-1.5')} />
                   <span className="min-w-0 flex-1 truncate">{FORMAT_LABELS[format]}</span>
-                  {format === quick && <ZapIcon className="size-2.5 shrink-0 text-amber-500" />}
+                  {format === quick && <ZapIcon className="size-2 shrink-0 text-amber-500" />}
                 </motion.div>
               ))}
             </AnimatePresence>

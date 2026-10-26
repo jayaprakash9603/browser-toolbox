@@ -22,6 +22,11 @@ export const saveImageAsStrings = {
   'sia.hero.local': 'Converted locally, never uploaded',
   'sia.hero.enable': 'Turn on',
 
+  'sia.bar.active': 'Active in the menu',
+  'sia.bar.paused': 'Paused',
+  'sia.bar.expand': 'Show status and menu preview',
+  'sia.bar.collapse': 'Hide status details',
+
   'sia.menu.saveAs': 'Save image as',
   'sia.menu.openImage': 'Open image in new tab',
   'sia.menu.copyImage': 'Copy image',
