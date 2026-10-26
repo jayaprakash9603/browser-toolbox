@@ -128,10 +128,10 @@ export default function ResponsiveViewerTool() {
   }
 
   return (
-    <ToolPage tool={tool}>
+    <ToolPage tool={tool} contentClassName="flex min-h-0 flex-1 flex-col overflow-hidden gap-3">
       <MotionConfig reducedMotion="user">
-        <div ref={stageRef} className="flex flex-col gap-3 @container">
-          <div className="sticky top-0 z-20 -mx-1 flex flex-col gap-2 rounded-2xl border bg-background/85 p-2 shadow-sm backdrop-blur-md">
+        <div ref={stageRef} className="flex min-h-0 flex-1 flex-col gap-3 @container">
+          <div className="flex shrink-0 flex-col gap-2 rounded-2xl border bg-background p-2 shadow-xs">
             <form onSubmit={submit} className="flex items-center gap-1.5" noValidate>
               <label htmlFor={inputId} className="sr-only">
                 {t('rv.url.label')}
@@ -245,24 +245,25 @@ export default function ResponsiveViewerTool() {
             </div>
           </div>
 
-          <DevicePicker
-            devices={allDevices}
-            selected={settings.selected}
-            onToggle={(id) => update({ selected: toggleIn(settings.selected, id) })}
-            onClear={() => update({ selected: [] })}
-            onAddCustom={(device) =>
-              update({ custom: [...settings.custom, device], selected: [...settings.selected, device.id] })
-            }
-            onRemoveCustom={(id) =>
-              update({
-                custom: settings.custom.filter((d) => d.id !== id),
-                selected: settings.selected.filter((x) => x !== id),
-                rotated: settings.rotated.filter((x) => x !== id),
-              })
-            }
-          />
+          <div className="scrollbar-styled flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain">
+            <DevicePicker
+              devices={allDevices}
+              selected={settings.selected}
+              onToggle={(id) => update({ selected: toggleIn(settings.selected, id) })}
+              onClear={() => update({ selected: [] })}
+              onAddCustom={(device) =>
+                update({ custom: [...settings.custom, device], selected: [...settings.selected, device.id] })
+              }
+              onRemoveCustom={(id) =>
+                update({
+                  custom: settings.custom.filter((d) => d.id !== id),
+                  selected: settings.selected.filter((x) => x !== id),
+                  rotated: settings.rotated.filter((x) => x !== id),
+                })
+              }
+            />
 
-          {!url ? (
+            {!url ? (
             <EmptyState onUseTab={() => void loadCurrentTab()} />
           ) : shown.length === 0 ? (
             <motion.p
@@ -304,12 +305,13 @@ export default function ResponsiveViewerTool() {
             )
           )}
 
-          <OptionSwitch
-            label={t('rv.unblock.title')}
-            hint={t('rv.unblock.body')}
-            checked={settings.unblock}
-            onChange={(unblock) => update({ unblock })}
-          />
+            <OptionSwitch
+              label={t('rv.unblock.title')}
+              hint={t('rv.unblock.body')}
+              checked={settings.unblock}
+              onChange={(unblock) => update({ unblock })}
+            />
+          </div>
         </div>
       </MotionConfig>
     </ToolPage>

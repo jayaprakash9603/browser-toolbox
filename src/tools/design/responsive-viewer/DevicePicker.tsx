@@ -1,9 +1,8 @@
-import { useId, useState, type FormEvent } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
-import { CheckIcon, MonitorSmartphoneIcon, PlusIcon, XIcon } from 'lucide-react'
+import { useCallback, useId, useMemo, useState, type FormEvent } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { CheckIcon, ChevronDownIcon, MonitorSmartphoneIcon, PlusIcon, XIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { PanelSection } from '@/shared/components/toolkit'
 import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -14,6 +13,19 @@ import { CUSTOM_MAX, CUSTOM_MIN, DEVICE_KINDS, isValidDimension, kindForWidth, t
 import { EASE_OUT, KIND_ICON } from './helpers'
 
 type Filter = 'all' | DeviceKind
+
+const DEVICES_OPEN_KEY = 'tbx.rv.devices.open'
+
+function readDevicesOpen(selectedCount: number): boolean {
+  try {
+    const stored = localStorage.getItem(DEVICES_OPEN_KEY)
+    if (stored === '1') return true
+    if (stored === '0') return false
+  } catch {
+    /* preference only */
+  }
+  return selectedCount === 0
+}
 
 interface DevicePickerProps {
   devices: readonly Device[]
@@ -26,74 +38,151 @@ interface DevicePickerProps {
 
 export function DevicePicker({ devices, selected, onToggle, onClear, onAddCustom, onRemoveCustom }: DevicePickerProps) {
   const { t } = useTranslation()
+  const reduceMotion = useReducedMotion()
+  const panelId = useId()
   const [filter, setFilter] = useState<Filter>('all')
+  const [open, setOpen] = useState(() => readDevicesOpen(selected.length))
+
   const visible = filter === 'all' ? devices : devices.filter((d) => d.kind === filter)
+  const selectedDevices = useMemo(
+    () => selected.map((id) => devices.find((d) => d.id === id)).filter((d): d is Device => d != null),
+    [devices, selected],
+  )
+
+  const summary = useMemo(() => {
+    if (selectedDevices.length === 0) return t('rv.devices.summaryNone')
+    const names = selectedDevices.slice(0, 2).map((d) => d.label)
+    const rest = selectedDevices.length - names.length
+    if (rest <= 0) return names.join(', ')
+    return t('rv.devices.summaryMore', { names: names.join(', '), count: rest })
+  }, [selectedDevices, t])
+
+  const changeOpen = useCallback((next: boolean) => {
+    setOpen(next)
+    try {
+      localStorage.setItem(DEVICES_OPEN_KEY, next ? '1' : '0')
+    } catch {
+      /* preference only */
+    }
+  }, [])
 
   return (
-    <PanelSection
-      title={t('rv.devices.title')}
-      icon={<MonitorSmartphoneIcon />}
-      actions={
-        <div className="flex items-center gap-1.5">
-          <Badge variant="secondary" className="tabular-nums">
+    <section className="overflow-hidden rounded-2xl border bg-card/70 shadow-xs">
+      <div className="flex items-center gap-1 p-1.5 @[480px]:p-2">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={panelId}
+          aria-label={open ? t('rv.devices.collapse') : t('rv.devices.expand')}
+          title={open ? t('rv.devices.collapse') : t('rv.devices.expand')}
+          onClick={() => changeOpen(!open)}
+          className="group flex min-h-8 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg px-1 text-left outline-none transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span
+            className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+            aria-hidden
+          >
+            <MonitorSmartphoneIcon className="size-3.5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold leading-5">{t('rv.devices.title')}</span>
+            <AnimatePresence initial={false} mode="wait">
+              {!open && (
+                <motion.span
+                  key="summary"
+                  initial={reduceMotion ? false : { opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 2, transition: { duration: 0.1 } }}
+                  transition={{ duration: 0.16, ease: 'easeOut' }}
+                  className="block truncate text-[11px] leading-4 text-muted-foreground"
+                >
+                  {summary}
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </span>
+          <Badge variant="secondary" className="shrink-0 tabular-nums">
             {t('rv.devices.selected', { count: selected.length })}
           </Badge>
-          <Button variant="ghost" size="xs" onClick={onClear} disabled={selected.length === 0}>
-            {t('rv.devices.clear')}
-          </Button>
-        </div>
-      }
-    >
-      <div className="-mx-1 overflow-x-auto px-1 pb-0.5">
-        <Segmented<Filter>
-          size="sm"
-          ariaLabel={t('rv.devices.filter')}
-          value={filter}
-          onValueChange={setFilter}
-          options={[
-            { value: 'all', label: t('rv.kind.all') },
-            ...DEVICE_KINDS.map((kind) => {
-              const Icon = KIND_ICON[kind]
-              return {
-                value: kind,
-                label: (
-                  <>
-                    <Icon aria-hidden />
-                    {t(`rv.kind.${kind}`)}
-                  </>
-                ),
-              }
-            }),
-          ]}
-        />
+          <ChevronDownIcon
+            aria-hidden
+            className={cn(
+              'size-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out motion-reduce:transition-none',
+              open && 'rotate-180',
+            )}
+          />
+        </button>
+        <Button variant="ghost" size="xs" className="shrink-0" onClick={onClear} disabled={selected.length === 0}>
+          {t('rv.devices.clear')}
+        </Button>
       </div>
 
-      <motion.ul layout className="flex flex-wrap gap-1.5">
-        <AnimatePresence initial={false} mode="popLayout">
-          {visible.map((device) => (
-            <motion.li
-              key={device.id}
-              layout="position"
-              initial={{ opacity: 0, scale: 0.92 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.92 }}
-              transition={{ duration: 0.18, ease: EASE_OUT }}
-              className="flex"
-            >
-              <DeviceChip
-                device={device}
-                on={selected.includes(device.id)}
-                onToggle={() => onToggle(device.id)}
-                onRemove={device.custom ? () => onRemoveCustom(device.id) : undefined}
-              />
-            </motion.li>
-          ))}
-          <motion.li key="custom" layout="position" className="flex">
-            <CustomDevicePopover onAdd={onAddCustom} />
-          </motion.li>
-        </AnimatePresence>
-      </motion.ul>
-    </PanelSection>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            id={panelId}
+            key="picker"
+            initial={reduceMotion ? false : { height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0, transition: { duration: reduceMotion ? 0 : 0.16, ease: 'easeIn' } }}
+            transition={{ duration: reduceMotion ? 0 : 0.24, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="flex flex-col gap-3 border-t px-3 pb-3 pt-2.5 @[480px]:px-4 @[480px]:pb-4">
+              <div className="-mx-1 overflow-x-auto px-1 pb-0.5">
+                <Segmented<Filter>
+                  size="sm"
+                  ariaLabel={t('rv.devices.filter')}
+                  value={filter}
+                  onValueChange={setFilter}
+                  options={[
+                    { value: 'all', label: t('rv.kind.all') },
+                    ...DEVICE_KINDS.map((kind) => {
+                      const Icon = KIND_ICON[kind]
+                      return {
+                        value: kind,
+                        label: (
+                          <>
+                            <Icon aria-hidden />
+                            {t(`rv.kind.${kind}`)}
+                          </>
+                        ),
+                      }
+                    }),
+                  ]}
+                />
+              </div>
+
+              <motion.ul layout className="flex flex-wrap gap-1.5">
+                <AnimatePresence initial={false} mode="popLayout">
+                  {visible.map((device) => (
+                    <motion.li
+                      key={device.id}
+                      layout="position"
+                      initial={{ opacity: 0, scale: 0.92 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.92 }}
+                      transition={{ duration: 0.18, ease: EASE_OUT }}
+                      className="flex"
+                    >
+                      <DeviceChip
+                        device={device}
+                        on={selected.includes(device.id)}
+                        onToggle={() => onToggle(device.id)}
+                        onRemove={device.custom ? () => onRemoveCustom(device.id) : undefined}
+                      />
+                    </motion.li>
+                  ))}
+                  <motion.li key="custom" layout="position" className="flex">
+                    <CustomDevicePopover onAdd={onAddCustom} />
+                  </motion.li>
+                </AnimatePresence>
+              </motion.ul>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
   )
 }
 
