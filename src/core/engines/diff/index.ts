@@ -1,5 +1,7 @@
 import { diffLines, diffWordsWithSpace, type Change } from 'diff'
 
+export * from './aligned'
+
 export type DiffGranularity = 'lines' | 'words'
 
 export interface DiffResult {

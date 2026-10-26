@@ -77,7 +77,7 @@ Capture is **not** passive: panel focus, paste, and “add from clipboard” in 
 | Text Analyzer | `/tools/text/analyzer` | Words, chars, lines, reading time |
 | Line Tools | `/tools/text/line-tools` | Dedupe, sort, reverse, shuffle, numbering |
 | Find & Replace | `/tools/text/find-replace` | Regex, case, whole-word |
-| Text Diff | `/tools/text/diff` | Line diff |
+| Diff | `/tools/text/diff` | Beyond Compare-style text compare: aligned side-by-side or inline rows, word/character highlights, unimportant-difference rules (whitespace, case, blank lines), All/Diffs/Context/Same filters, thumbnail map, line details, section merge with undo, open/drop files, unified patch and HTML report |
 | Dummy Data | `/tools/text/dummy-data` | Lorem / random text |
 
 ---
