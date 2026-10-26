@@ -19,6 +19,14 @@ export type ExtensionMessage =
   | { type: 'SCAN_PAGE_IMAGES' }
   | { type: 'GET_STORAGE_SNAPSHOT' }
   | {
+      type: 'STORAGE_WRITE'
+      area: 'local' | 'session'
+      op: 'set' | 'remove' | 'clear' | 'merge'
+      key?: string
+      value?: string
+      entries?: Record<string, string>
+    }
+  | {
       type: 'START_IMAGE_DOWNLOAD_JOB'
       tabId: number
       pageUrl: string
@@ -120,6 +128,8 @@ export type ExtensionMessage =
     }
   | { type: 'OFFSCREEN_IMAGE_RELEASE'; url: string }
   | { type: 'PIP_TOGGLE'; tabId?: number }
+  | { type: 'COLOR_PICK_START' }
+  | { type: 'COLOR_PICKED'; hex: string; format?: string; url?: string }
   | {
       type: 'NETMON_SAMPLE'
       status: import('@/core/netmon/types').NetStatus
@@ -273,6 +283,7 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'SEO_CLEAR_HIGHLIGHT',
   'SCAN_PAGE_IMAGES',
   'GET_STORAGE_SNAPSHOT',
+  'STORAGE_WRITE',
   'START_IMAGE_DOWNLOAD_JOB',
   'CANCEL_IMAGE_DOWNLOAD_JOB',
   'OFFSCREEN_ZIP_FROM_BYTES',
@@ -320,6 +331,8 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'OFFSCREEN_IMAGE_CONVERT',
   'OFFSCREEN_IMAGE_RELEASE',
   'PIP_TOGGLE',
+  'COLOR_PICK_START',
+  'COLOR_PICKED',
   'NETMON_SAMPLE',
   'NETMON_OFFSCREEN_READY',
   'NETMON_GET_REALTIME',

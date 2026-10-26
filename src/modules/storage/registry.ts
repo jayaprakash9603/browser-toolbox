@@ -6,7 +6,8 @@ export const storageTools = [
   defineTool({
     id: 'storage.inspector',
     name: 'Storage Inspector',
-    description: 'Inspect localStorage and sessionStorage of the current page.',
+    description:
+      'Browse, search, edit, import and export localStorage and sessionStorage with type detection, JWT decode and live refresh.',
     category: 'storage',
     icon: DatabaseIcon,
     keywords: ['storage', 'localstorage', 'sessionstorage', 'cookies', 'inspect', 'keys'],

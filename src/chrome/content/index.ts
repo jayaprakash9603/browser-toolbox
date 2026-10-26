@@ -54,7 +54,10 @@ export interface PageInfo {
 export interface StorageSnapshot {
   localStorage: Record<string, string>
   sessionStorage: Record<string, string>
+  origin?: string
 }
+
+export type StorageWriteResult = { ok: true; snapshot: StorageSnapshot } | { ok: false; error: string }
 
 function collectPageInfo(): PageInfo {
   const meta = (name: string) =>
@@ -122,6 +125,28 @@ function collectStorage(): StorageSnapshot {
   return {
     localStorage: read(() => window.localStorage),
     sessionStorage: read(() => window.sessionStorage),
+    origin: window.location.origin,
+  }
+}
+
+function writeStorage(message: {
+  area: 'local' | 'session'
+  op: 'set' | 'remove' | 'clear' | 'merge'
+  key?: string
+  value?: string
+  entries?: Record<string, string>
+}): StorageWriteResult {
+  try {
+    const storage = message.area === 'local' ? window.localStorage : window.sessionStorage
+    if (message.op === 'set' && message.key != null) storage.setItem(message.key, message.value ?? '')
+    else if (message.op === 'remove' && message.key != null) storage.removeItem(message.key)
+    else if (message.op === 'clear') storage.clear()
+    else if (message.op === 'merge' && message.entries) {
+      for (const [key, value] of Object.entries(message.entries)) storage.setItem(key, value)
+    }
+    return { ok: true, snapshot: collectStorage() }
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'write failed' }
   }
 }
 
@@ -208,6 +233,9 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
       return false
     case 'GET_STORAGE_SNAPSHOT':
       sendResponse({ ok: true, data: collectStorage() })
+      return false
+    case 'STORAGE_WRITE':
+      sendResponse({ ok: true, data: writeStorage(raw) })
       return false
     case 'GET_SELECTED_ELEMENT':
       sendResponse({ ok: true, data: { pickerActive: isPickerActive() } })
