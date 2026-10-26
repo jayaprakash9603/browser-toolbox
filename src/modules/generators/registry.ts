@@ -7,7 +7,7 @@ export const generatorsTools = [
     id: 'generators.qr-toolkit',
     name: 'QR Code Toolkit',
     description:
-      'Generate QR codes for text, URLs, Wi-Fi, email, phone and contacts; decode from images.',
+      'Generate styled QR codes and linear barcodes (EAN, UPC, Code 128/39), customize colors and logos, and decode QR images.',
     category: 'generators',
     icon: QrCodeIcon,
     keywords: ['qr', 'qrcode', 'qr code', 'wifi', 'barcode', 'generate', 'decode', 'scan'],
