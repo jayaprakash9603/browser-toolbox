@@ -43,7 +43,7 @@ export function AllToolsCategories({ delay = 0.3 }: { delay?: number }) {
             </button>
           }
         />
-        <ul className="grid grid-cols-2 gap-2 @[560px]:grid-cols-3 @[820px]:grid-cols-4">
+        <ul className="grid grid-cols-1 gap-2.5 @[520px]:grid-cols-2 @[960px]:grid-cols-3">
           {categories.map(({ category, tools }, position) => (
             <li key={category.id} className="min-w-0">
               <CategoryCard category={category} tools={tools} position={position} playing={!paused} />

@@ -1,6 +1,6 @@
 import { useEffect, useState, useSyncExternalStore, type RefObject } from 'react'
 
-export const DEMO_STEP_MS = 2800
+export const DEMO_STEP_MS = 4400
 
 const PAUSE_KEY = 'tbx.home.demos.paused'
 
