@@ -1,0 +1,16 @@
+export const calculatorStrings = {
+  'calcTool.mode.label': 'Calculator mode',
+  'calcTool.mode.standard': 'Standard',
+  'calcTool.mode.scientific': 'Scientific',
+  'calcTool.display.expr': 'Expression',
+  'calcTool.display.preview': 'Live result',
+  'calcTool.display.empty': '0',
+  'calcTool.display.degrees': 'Trigonometry in degrees',
+  'calcTool.memory': 'Memory',
+  'calcTool.memorySet': 'Memory stored',
+  'calcTool.history': 'History',
+  'calcTool.historyEmpty': 'Your calculations will appear here.',
+  'calcTool.historyClear': 'Clear history',
+  'calcTool.copy': 'Copy result',
+  'calcTool.keyboardHint': 'Keyboard: digits, + − × ÷, Enter =, Esc clear',
+} as const

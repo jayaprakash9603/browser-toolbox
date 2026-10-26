@@ -6,7 +6,8 @@ export const calculatorsTools = [
   defineTool({
     id: 'calculators.calculator',
     name: 'Calculator',
-    description: 'Arithmetic and scientific calculator with history (no eval).',
+    description:
+      'Glass-style keypad with live preview, memory, history, degrees-based trig, and scientific functions — parsed safely without eval.',
     category: 'calculators',
     icon: CalculatorIcon,
     keywords: ['calculator', 'math', 'arithmetic', 'scientific', 'percent', 'sqrt'],

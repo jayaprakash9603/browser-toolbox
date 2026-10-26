@@ -1,123 +1,202 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { MotionConfig } from 'motion/react'
+import { HistoryIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { evaluate } from '@/core/engines/calc'
 import { ToolPage } from '@/shared/components/ToolPage'
-import { Input } from '@/shared/components/ui/input'
 import { Button } from '@/shared/components/ui/button'
-import { CopyButton } from '@/shared/components/CopyButton'
-import { JsonErrorView } from '@/tools/developer/_shared'
+import { Segmented } from '@/shared/components/ui/segmented'
 import { useCalcTool } from '../_shared'
 
-const KEYS = [
-  '7',
-  '8',
-  '9',
-  '/',
-  '4',
-  '5',
-  '6',
-  '*',
-  '1',
-  '2',
-  '3',
-  '-',
-  '0',
-  '.',
-  '%',
-  '+',
-  '(',
-  ')',
-  '^',
-  'sqrt',
-]
-const FN = ['sin', 'cos', 'tan', 'ln', 'log', 'abs', 'pi']
+import { CalcDisplay } from './Display'
+import { HistoryPanel, type HistoryEntry } from './HistoryPanel'
+import { Keypad } from './Keypad'
+import {
+  appendKey,
+  backspaceExpr,
+  formatResult,
+  keyboardToKeyId,
+  KEYPAD_ROWS,
+  livePreview,
+  MEMORY_KEYS,
+  negateExpr,
+  SCIENTIFIC_ROW,
+  type CalcKey,
+  type CalcMode,
+} from './logic'
+
+const HISTORY_MAX = 24
+let historySeq = 0
 
 export default function CalculatorTool() {
   const { t } = useTranslation()
   const tool = useCalcTool('calculators.calculator')
+  const historyBtnId = useId()
+  const [mode, setMode] = useState<CalcMode>('standard')
   const [expr, setExpr] = useState('')
-  const [history, setHistory] = useState<{ expr: string; result: string }[]>([])
+  const [lastResult, setLastResult] = useState<string | null>(null)
+  const [memory, setMemory] = useState<number | null>(null)
+  const [history, setHistory] = useState<HistoryEntry[]>([])
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [activeKey, setActiveKey] = useState<string | null>(null)
+  const exprRef = useRef(expr)
+  const lastResultRef = useRef(lastResult)
+  const memoryRef = useRef(memory)
 
-  const result = useMemo(() => (expr.trim() ? evaluate(expr) : null), [expr])
+  useEffect(() => {
+    exprRef.current = expr
+  }, [expr])
+  useEffect(() => {
+    lastResultRef.current = lastResult
+  }, [lastResult])
+  useEffect(() => {
+    memoryRef.current = memory
+  }, [memory])
 
-  const press = (key: string) => setExpr((e) => e + (FN.includes(key) ? `${key}(` : key))
-  const submit = () => {
-    if (result?.ok) {
-      setHistory((h) => [{ expr, result: String(result.value) }, ...h].slice(0, 10))
-      setExpr(String(result.value))
+  const preview = useMemo(() => livePreview(expr), [expr])
+
+  const flashKey = useCallback((id: string) => {
+    setActiveKey(id)
+    window.setTimeout(() => setActiveKey((current) => (current === id ? null : current)), 120)
+  }, [])
+
+  const commitResult = useCallback(() => {
+    const trimmed = exprRef.current.trim()
+    if (!trimmed) return
+    const out = evaluate(trimmed)
+    if (!out.ok) return
+    const formatted = formatResult(out.value)
+    historySeq += 1
+    setHistory((entries) => [{ id: `h-${historySeq}`, expr: trimmed, result: formatted }, ...entries].slice(0, HISTORY_MAX))
+    setLastResult(formatted)
+    setExpr(formatted)
+  }, [])
+
+  const applyMemory = useCallback((op: 'add' | 'sub' | 'recall' | 'clear') => {
+    if (op === 'clear') {
+      setMemory(null)
+      return
     }
-  }
+    if (op === 'recall') {
+      const mem = memoryRef.current
+      if (mem != null) setExpr((current) => `${current}${formatResult(mem)}`)
+      return
+    }
+    const trimmed = exprRef.current.trim()
+    let out = trimmed ? evaluate(trimmed) : null
+    if (!out?.ok && lastResultRef.current) {
+      const value = Number(lastResultRef.current)
+      if (Number.isFinite(value)) out = { ok: true, value }
+    }
+    if (!out?.ok) return
+    setMemory((current) => {
+      const base = current ?? 0
+      return op === 'add' ? base + out.value : base - out.value
+    })
+  }, [])
+
+  const handleKey = useCallback(
+    (key: CalcKey) => {
+      flashKey(key.id)
+      switch (key.id) {
+        case 'clear':
+          setExpr('')
+          return
+        case 'backspace':
+          setExpr((current) => backspaceExpr(current))
+          return
+        case 'negate':
+          setExpr((current) => negateExpr(current))
+          return
+        case 'ans':
+          if (lastResultRef.current) setExpr((current) => `${current}${lastResultRef.current}`)
+          return
+        case 'equals':
+          commitResult()
+          return
+        case 'mc':
+          applyMemory('clear')
+          return
+        case 'mr':
+          applyMemory('recall')
+          return
+        case 'm-plus':
+          applyMemory('add')
+          return
+        case 'm-minus':
+          applyMemory('sub')
+          return
+        default:
+          if (key.append) setExpr((current) => appendKey(current, key))
+      }
+    },
+    [applyMemory, commitResult, flashKey],
+  )
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target
+      if (target instanceof HTMLElement && (target.isContentEditable || target.closest('input, textarea, select'))) return
+      const id = keyboardToKeyId(event)
+      if (!id) return
+      event.preventDefault()
+      const allKeys = [...MEMORY_KEYS, ...SCIENTIFIC_ROW, ...KEYPAD_ROWS.flat()]
+      const match = allKeys.find((k) => k.id === id)
+      if (match) handleKey(match)
+      else if (id === 'equals') handleKey({ id: 'equals', label: '=', kind: 'action' })
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [handleKey])
 
   return (
-    <ToolPage tool={tool}>
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-1">
-          <Input
-            value={expr}
-            onChange={(e) => setExpr(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && submit()}
-            placeholder="2 + 3 * (4 - 1)"
-            aria-label={t('calc.input')}
-            className="flex-1 font-mono text-sm"
-          />
-          <Button size="sm" onClick={submit} disabled={!result?.ok}>
-            =
+    <ToolPage tool={tool} contentClassName="@container flex min-h-0 flex-col gap-3">
+      <MotionConfig reducedMotion="user">
+        <Segmented
+          ariaLabel={t('calcTool.mode.label')}
+          value={mode}
+          onValueChange={setMode}
+          size="sm"
+          className="w-full"
+          options={[
+            { value: 'standard', label: t('calcTool.mode.standard') },
+            { value: 'scientific', label: t('calcTool.mode.scientific') },
+          ]}
+        />
+        <CalcDisplay expr={expr} preview={preview} memoryActive={memory != null} />
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[11px] text-muted-foreground">{t('calcTool.keyboardHint')}</p>
+          <Button
+            type="button"
+            id={historyBtnId}
+            variant={historyOpen ? 'secondary' : 'outline'}
+            size="xs"
+            className="cursor-pointer gap-1"
+            aria-expanded={historyOpen}
+            onClick={() => setHistoryOpen((open) => !open)}
+          >
+            <HistoryIcon className="size-3.5" aria-hidden />
+            {t('calcTool.history')}
+            {history.length > 0 && (
+              <span className="rounded-full bg-primary/15 px-1.5 font-mono text-[10px] text-primary">{history.length}</span>
+            )}
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => setExpr('')}>
-            C
-          </Button>
         </div>
-        {result && !result.ok && <JsonErrorView message={result.error} />}
-        {result?.ok && (
-          <div className="flex items-center justify-between rounded-md border bg-muted/40 p-2">
-            <code className="font-mono text-lg font-semibold">{result.value}</code>
-            <CopyButton text={String(result.value)} />
-          </div>
-        )}
-        <div className="grid grid-cols-4 gap-1">
-          {KEYS.map((key) => (
-            <Button
-              key={key}
-              variant="outline"
-              size="sm"
-              className="font-mono"
-              onClick={() => press(key)}
-            >
-              {key}
-            </Button>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-1">
-          {FN.map((fn) => (
-            <Button
-              key={fn}
-              variant="ghost"
-              size="xs"
-              className="font-mono"
-              onClick={() => press(fn)}
-            >
-              {fn}
-            </Button>
-          ))}
-        </div>
-        {history.length > 0 && (
-          <div className="scrollbar-styled max-h-40 space-y-0.5 border-t pt-2">
-            {history.map((entry, index) => (
-              <Button
-                key={index}
-                variant="ghost"
-                size="xs"
-                onClick={() => setExpr(entry.expr)}
-                className="w-full justify-between font-mono font-normal tabular-nums active:scale-100"
-              >
-                <span className="truncate text-muted-foreground">{entry.expr}</span>
-                <span>= {entry.result}</span>
-              </Button>
-            ))}
-          </div>
-        )}
-      </div>
+        <Keypad
+          memoryRow={MEMORY_KEYS}
+          scientificRow={mode === 'scientific' ? SCIENTIFIC_ROW : undefined}
+          rows={KEYPAD_ROWS}
+          activeKey={activeKey}
+          onPress={handleKey}
+        />
+        <HistoryPanel
+          open={historyOpen}
+          entries={history}
+          onPick={(entry) => setExpr(entry.expr)}
+          onClear={() => setHistory([])}
+        />
+      </MotionConfig>
     </ToolPage>
   )
 }

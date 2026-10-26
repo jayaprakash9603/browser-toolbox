@@ -24,6 +24,7 @@ import { paletteGeneratorStrings } from './paletteGeneratorEn'
 import { pageInspectorStrings } from './pageInspectorEn'
 import { responsiveViewerStrings } from './responsiveViewerEn'
 import { saveImageAsStrings } from './saveImageAsEn'
+import { calculatorStrings } from './calculatorEn'
 
 const en = {
   'app.name': 'One Panel',
@@ -1480,6 +1481,7 @@ const en = {
   ...pageInspectorStrings,
   ...responsiveViewerStrings,
   ...saveImageAsStrings,
+  ...calculatorStrings,
 } as const
 
 export default en
