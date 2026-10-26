@@ -1,5 +1,7 @@
 import type { BarcodeFormat, BarcodeStyle } from '@/core/engines/barcode'
 
+export type { BarcodeFormat, BarcodeStyle } from '@/core/engines/barcode'
+
 export const BARCODE_FORMATS: BarcodeFormat[] = ['EAN13', 'UPC', 'CODE128', 'CODE39']
 
 const STORAGE_KEY = 'tbx.barcode.style'
