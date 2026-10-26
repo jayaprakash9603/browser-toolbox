@@ -19,6 +19,8 @@ import {
   TriangleAlertIcon,
   TypeIcon,
   Undo2Icon,
+  ZoomInIcon,
+  ZoomOutIcon,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -76,8 +78,11 @@ const TOOLS: { id: AnnotationTool; label: string; icon: LucideIcon }[] = [
   { id: 'text', label: 'Text', icon: TypeIcon },
 ]
 
-const ZOOM_LEVELS = ['fit', '100', '75', '50'] as const
-type ZoomLevel = (typeof ZOOM_LEVELS)[number]
+const MIN_ZOOM = 0.1
+const MAX_ZOOM = 4
+const ZOOM_STEP = 1.25
+const clampZoom = (value: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value))
+type ZoomLevel = 'fit' | number
 type PdfSplit = 'none' | 'a4' | 'letter'
 
 async function frameToCanvas(frame: ScreenshotFrame, settings: ScreenshotSettings): Promise<HTMLCanvasElement> {
@@ -167,6 +172,10 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
   const [pdfSplit, setPdfSplit] = useState<PdfSplit>('none')
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [baseSize, setBaseSize] = useState({ width: 0, height: 0 })
+  const [viewport, setViewport] = useState({ width: 0, height: 0 })
+  const effectiveZoomRef = useRef(1)
   const baseCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const dragStart = useRef<{ x: number; y: number } | null>(null)
   const markerCount = useRef(0)
@@ -217,6 +226,7 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
       .then((canvas) => {
         if (cancelled) return
         baseCanvasRef.current = canvas
+        setBaseSize({ width: canvas.width, height: canvas.height })
         setAnnotations([])
         markerCount.current = 0
         undoStack.current = []
@@ -380,11 +390,99 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
     printWindow.print()
   }
 
+  const fitScale =
+    baseSize.width && viewport.width
+      ? Math.min(1, (viewport.width - 48) / baseSize.width, (viewport.height - 48) / baseSize.height)
+      : 1
+  const effectiveZoom = zoom === 'fit' ? Math.max(0.02, fitScale) : zoom
+  useEffect(() => {
+    effectiveZoomRef.current = effectiveZoom
+  }, [effectiveZoom])
+
+  const zoomTo = useCallback((next: number, anchor?: { x: number; y: number }) => {
+    const box = scrollRef.current
+    const current = effectiveZoomRef.current
+    const target = clampZoom(next)
+    setZoom(target)
+    if (!box) return
+    const px = anchor?.x ?? box.clientWidth / 2
+    const py = anchor?.y ?? box.clientHeight / 2
+    const ratio = target / current
+    const left = (box.scrollLeft + px) * ratio - px
+    const top = (box.scrollTop + py) * ratio - py
+    requestAnimationFrame(() => {
+      box.scrollLeft = left
+      box.scrollTop = top
+    })
+  }, [])
+
+  const zoomBy = useCallback(
+    (factor: number, anchor?: { x: number; y: number }) => zoomTo(effectiveZoomRef.current * factor, anchor),
+    [zoomTo],
+  )
+
+  useEffect(() => {
+    const box = scrollRef.current
+    if (!box) return
+    const measure = () => setViewport({ width: box.clientWidth, height: box.clientHeight })
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(box)
+    const anchorOf = (clientX: number, clientY: number) => {
+      const rect = box.getBoundingClientRect()
+      return { x: clientX - rect.left, y: clientY - rect.top }
+    }
+    const onWheel = (event: WheelEvent) => {
+      if (!(event.ctrlKey || event.metaKey)) return
+      event.preventDefault()
+      zoomBy(Math.exp(-event.deltaY * 0.01), anchorOf(event.clientX, event.clientY))
+    }
+    let pinch: number | null = null
+    const distance = (touches: TouchList) =>
+      Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY)
+    const onTouchStart = (event: TouchEvent) => {
+      if (event.touches.length === 2) pinch = distance(event.touches)
+    }
+    const onTouchMove = (event: TouchEvent) => {
+      if (event.touches.length !== 2 || pinch === null || pinch === 0) return
+      event.preventDefault()
+      const [a, b] = [event.touches[0], event.touches[1]]
+      const next = distance(event.touches)
+      zoomBy(next / pinch, anchorOf((a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2))
+      pinch = next
+    }
+    const onTouchEnd = (event: TouchEvent) => {
+      if (event.touches.length < 2) pinch = null
+    }
+    box.addEventListener('wheel', onWheel, { passive: false })
+    box.addEventListener('touchstart', onTouchStart, { passive: true })
+    box.addEventListener('touchmove', onTouchMove, { passive: false })
+    box.addEventListener('touchend', onTouchEnd)
+    box.addEventListener('touchcancel', onTouchEnd)
+    return () => {
+      observer.disconnect()
+      box.removeEventListener('wheel', onWheel)
+      box.removeEventListener('touchstart', onTouchStart)
+      box.removeEventListener('touchmove', onTouchMove)
+      box.removeEventListener('touchend', onTouchEnd)
+      box.removeEventListener('touchcancel', onTouchEnd)
+    }
+  }, [zoomBy, loading, session])
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey)) return
       const key = event.key.toLowerCase()
-      if (key === 'z') {
+      if (key === '=' || key === '+') {
+        event.preventDefault()
+        zoomBy(ZOOM_STEP)
+      } else if (key === '-') {
+        event.preventDefault()
+        zoomBy(1 / ZOOM_STEP)
+      } else if (key === '0') {
+        event.preventDefault()
+        setZoom('fit')
+      } else if (key === 'z') {
         event.preventDefault()
         undo()
       } else if (key === 'y') {
@@ -420,8 +518,10 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
   }
   if (error || !session || !frame) return <CenteredMessage destructive>{error ?? 'Nothing to show.'}</CenteredMessage>
 
-  const canvasStyle =
-    zoom === 'fit' ? { maxWidth: '100%', maxHeight: 'calc(100vh - 7rem)' } : { width: `${zoom}%` }
+  const canvasStyle = baseSize.width
+    ? { width: `${baseSize.width * effectiveZoom}px`, height: `${baseSize.height * effectiveZoom}px` }
+    : undefined
+  const zoomPercent = Math.round(effectiveZoom * 100)
 
   return (
     <div className="flex h-screen flex-col bg-muted/40 lg:flex-row">
@@ -481,19 +581,44 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
             </TooltipTrigger>
             <TooltipContent>Redo (Ctrl+Y)</TooltipContent>
           </Tooltip>
-          <div className="ml-auto">
-            <Select value={zoom} onValueChange={(value) => setZoom(value as ZoomLevel)}>
-              <SelectTrigger size="sm" className="w-24" aria-label="Zoom">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ZOOM_LEVELS.map((level) => (
-                  <SelectItem key={level} value={level}>
-                    {level === 'fit' ? 'Fit' : `${level}%`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="ml-auto flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  aria-label="Zoom out"
+                  disabled={effectiveZoom <= MIN_ZOOM}
+                  onClick={() => zoomBy(1 / ZOOM_STEP)}
+                >
+                  <ZoomOutIcon />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Zoom out (Ctrl+-)</TooltipContent>
+            </Tooltip>
+            <span className="w-12 text-center text-xs tabular-nums" aria-live="polite">
+              {zoomPercent}%
+            </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  aria-label="Zoom in"
+                  disabled={effectiveZoom >= MAX_ZOOM}
+                  onClick={() => zoomBy(ZOOM_STEP)}
+                >
+                  <ZoomInIcon />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Zoom in (Ctrl++)</TooltipContent>
+            </Tooltip>
+            <Button size="sm" variant={zoom === 'fit' ? 'secondary' : 'ghost'} onClick={() => setZoom('fit')}>
+              Fit
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => zoomTo(1)}>
+              100%
+            </Button>
           </div>
         </div>
         {frame.notice && (
@@ -502,10 +627,10 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
             <AlertDescription>{frame.notice}</AlertDescription>
           </Alert>
         )}
-        <div className="min-h-0 flex-1 overflow-auto p-6">
+        <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto p-6" style={{ touchAction: "pan-x pan-y" }}>
           <canvas
             ref={canvasRef}
-            className="mx-auto block cursor-crosshair rounded-md border bg-background shadow-sm"
+            className="mx-auto block max-w-none cursor-crosshair rounded-md border bg-background shadow-sm"
             style={canvasStyle}
             onMouseDown={(event) => {
               const point = imagePoint(event)
