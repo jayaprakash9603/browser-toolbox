@@ -51,6 +51,7 @@ export const storageInspectorStrings = {
   'storage.copied': 'Copied',
   'storage.writeFailed': 'The page refused the change.',
   'storage.addTitle': 'Add entry',
+  'storage.addTitleArea': 'Add to {{area}}',
   'storage.addDescription': 'Creates or overwrites a key in {{area}}.',
   'storage.keyLabel': 'Key',
   'storage.keyRequired': 'Enter a key.',

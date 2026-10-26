@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from '@/shared/components/ui/dialog'
 import { Input } from '@/shared/components/ui/input'
+import { Textarea } from '@/shared/components/ui/textarea'
 import { cn } from '@/shared/utils/cn'
 
 export function AddEntryDialog({
@@ -50,41 +51,39 @@ export function AddEntryDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-md gap-3 p-4">
-        <DialogHeader>
-          <DialogTitle className="text-sm">{t('storage.addTitle')}</DialogTitle>
-          <DialogDescription>{t('storage.addDescription', { area: areaLabel })}</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={submit} className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1 text-xs font-medium">
-            {t('storage.keyLabel')}
+      <DialogContent aria-describedby={undefined} className="max-w-xs">
+        <form className="grid gap-3" onSubmit={submit}>
+          <DialogHeader>
+            <DialogTitle>{t('storage.addTitleArea', { area: areaLabel })}</DialogTitle>
+          </DialogHeader>
+          <label className="grid gap-1.5">
+            <span className="text-xs font-medium">{t('storage.keyLabel')}</span>
             <Input
               autoFocus
               value={key}
               onChange={(event) => setKey(event.target.value)}
               spellCheck={false}
-              className="font-mono text-[12px]"
+              className="h-8 font-mono text-xs"
             />
-            {overwrites && <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400">{t('storage.keyExists')}</span>}
+            {overwrites && (
+              <span className="text-[11px] text-amber-600 dark:text-amber-400">{t('storage.keyExists')}</span>
+            )}
           </label>
-          <label className="flex flex-col gap-1 text-xs font-medium">
-            {t('storage.editValue')}
-            <textarea
+          <label className="grid gap-1.5">
+            <span className="text-xs font-medium">{t('storage.editValue')}</span>
+            <Textarea
               value={value}
               onChange={(event) => setValue(event.target.value)}
               spellCheck={false}
-              rows={5}
+              rows={3}
               aria-invalid={badJson}
-              className={cn(
-                'scrollbar-styled resize-y rounded-md border bg-background p-2 font-mono text-[11px] leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                badJson && 'border-red-500/60',
-              )}
+              className={cn('min-h-[4.5rem] resize-y font-mono text-xs leading-relaxed', badJson && 'border-red-500/60')}
             />
-            {badJson && <span className="text-[11px] font-normal text-red-500">{t('storage.invalidJson')}</span>}
+            {badJson && <span className="text-[11px] text-red-500">{t('storage.invalidJson')}</span>}
           </label>
-          <DialogFooter className="gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-              {t('storage.cancel')}
+          <DialogFooter>
+            <Button type="button" size="sm" variant="ghost" onClick={onClose}>
+              {t('common.cancel')}
             </Button>
             <Button type="submit" size="sm" disabled={!trimmed}>
               {t('storage.create')}
@@ -112,16 +111,16 @@ export function ClearAreaDialog({
   const { t } = useTranslation()
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-sm gap-3 p-4">
+      <DialogContent className="max-w-xs">
         <DialogHeader>
-          <DialogTitle className="text-sm">{t('storage.clearTitle', { area: areaLabel })}</DialogTitle>
+          <DialogTitle>{t('storage.clearTitle', { area: areaLabel })}</DialogTitle>
           <DialogDescription>{t('storage.clearDescription', { count })}</DialogDescription>
         </DialogHeader>
-        <DialogFooter className="gap-2">
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            {t('storage.cancel')}
+        <DialogFooter>
+          <Button size="sm" variant="ghost" onClick={onClose}>
+            {t('common.cancel')}
           </Button>
-          <Button variant="destructive" size="sm" onClick={onConfirm}>
+          <Button size="sm" variant="destructive" onClick={onConfirm}>
             {t('storage.clearConfirm')}
           </Button>
         </DialogFooter>
