@@ -30,7 +30,7 @@ const HomePage = lazy(() => import('@/app/pages/HomePage'))
 const SettingsPage = lazy(() => import('@/app/pages/SettingsPage'))
 const KeyboardShortcutsPage = lazy(() => import('@/app/pages/settings/KeyboardShortcutsPage'))
 const CategoryPage = lazy(() => import('@/app/pages/CategoryPage'))
-const AllCategoriesPage = lazy(() => import('@/app/pages/AllCategoriesPage'))
+const AllToolsPage = lazy(() => import('@/app/pages/AllToolsPage'))
 const DevToolsPage = lazy(() => import('@/app/pages/DevToolsPage'))
 const DevToolsInterceptorPage = lazy(() => import('@/app/pages/DevToolsInterceptorPage'))
 const CommandPalette = lazy(() =>
@@ -218,7 +218,7 @@ function renderRoute(path: string) {
   if (path === '/settings/keyboard-shortcuts') return <KeyboardShortcutsPage />
   if (path === '/favorites') return <HomePage section="favorites" />
   if (path === '/recent') return <HomePage section="recent" />
-  if (path === '/categories') return <AllCategoriesPage />
+  if (path === '/tools') return <AllToolsPage />
   if (path === '/devtools') return <DevToolsPage />
   if (path === '/devtools/interceptor') return <DevToolsInterceptorPage />
   const legacyToolId = LEGACY_TOOL_ROUTES[path]
@@ -232,8 +232,8 @@ function renderRoute(path: string) {
 
 function getLoadingVariant(path: string): AppLoadingSkeletonVariant {
   if (path === '/settings' || path === '/settings/keyboard-shortcuts') return 'settings'
-  if (path === '/favorites' || path === '/recent') return 'collection'
-  if (path === '/devtools' || path === '/devtools/interceptor' || path === '/categories') return 'category'
+  if (path === '/favorites' || path === '/recent' || path === '/tools') return 'collection'
+  if (path === '/devtools' || path === '/devtools/interceptor') return 'category'
   if (path in LEGACY_TOOL_ROUTES) return 'tool'
   if (/^\/categories\/[\w-]+$/.test(path)) return 'category'
   if (toolRegistry.getAll().some((tool) => tool.route === path)) return 'tool'
