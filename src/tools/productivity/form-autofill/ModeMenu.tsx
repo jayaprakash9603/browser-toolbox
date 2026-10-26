@@ -11,17 +11,12 @@ import {
 } from '@/shared/components/ui/dropdown-menu'
 import { cn } from '@/shared/utils/cn'
 
-export const AUTOFILL_MODE_IDS = ['suggest', 'review', 'trusted'] as const
-export type AutofillModeId = (typeof AUTOFILL_MODE_IDS)[number]
+import { AUTOFILL_MODE_IDS, type AutofillModeId } from './modes'
 
 const MODE_ICON: Record<AutofillModeId, LucideIcon> = {
   suggest: EyeIcon,
   review: SparklesIcon,
   trusted: ShieldCheckIcon,
-}
-
-export function isAutofillMode(value: unknown): value is AutofillModeId {
-  return typeof value === 'string' && (AUTOFILL_MODE_IDS as readonly string[]).includes(value)
 }
 
 interface ModeMenuProps {

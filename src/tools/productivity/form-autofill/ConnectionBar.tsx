@@ -13,7 +13,8 @@ import type { AutofillController } from '@universal-form-autofill/sdk'
 
 import { cn } from '@/shared/utils/cn'
 
-import { isAutofillMode, ModeMenu } from './ModeMenu'
+import { ModeMenu } from './ModeMenu'
+import { isAutofillMode } from './modes'
 
 type Status = 'idle' | 'connecting' | 'ready' | 'error' | 'destroyed'
 
