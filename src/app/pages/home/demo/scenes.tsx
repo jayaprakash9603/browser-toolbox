@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import type { ToolDefinition } from '@/core/registry'
 import { cn } from '@/shared/utils/cn'
-import { at, from, pick, seedOf } from '@/app/pages/home/demo/beat'
+import { at, EASE, from, pick, seedOf } from '@/app/pages/home/demo/beat'
 
 interface SceneProps {
   tool: ToolDefinition
