@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MotionConfig, motion, useAnimate, useReducedMotion } from 'motion/react'
-import { BlocksIcon, ChevronRightIcon, SearchXIcon } from 'lucide-react'
+import { BlocksIcon, GalleryHorizontalEndIcon, LayoutGridIcon, SearchXIcon } from 'lucide-react'
 
-import { Link } from '@/app/router'
+import { CategoryViewer, type ViewerSection } from '@/app/pages/all-tools/CategoryViewer'
+import { ToolRow, type Row } from '@/app/pages/all-tools/ToolRow'
 import { categoryRegistry, toolRegistry, type ToolDefinition } from '@/core/registry'
 import { getToolDescription, getToolName, getToolSearchLabels } from '@/i18n/toolLabels'
 import { BackButton } from '@/shared/components/BackButton'
+import { ChipRail } from '@/shared/components/ChipRail'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { cn } from '@/shared/utils/cn'
@@ -15,18 +17,11 @@ const EASE = [0.22, 1, 0.36, 1] as const
 const MARQUEE_PER_ROW = 22
 const ALL = 'all'
 
-interface Row {
-  tool: ToolDefinition
-  name: string
-  description: string
-  categoryName: string
-  haystack: string
-}
-
 export default function AllToolsPage() {
   const { t, i18n } = useTranslation()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<string>(ALL)
+  const [viewerOpen, setViewerOpen] = useState(false)
 
   const categories = useMemo(
     () =>
@@ -62,6 +57,26 @@ export default function AllToolsPage() {
       .sort((a, b) => a.name.localeCompare(b.name, i18n.language))
   }, [categories, t, i18n.language])
 
+  const sections = useMemo<ViewerSection[]>(
+    () => [
+      {
+        id: ALL,
+        name: t('allTools.all'),
+        description: t('allTools.viewer.allDescription'),
+        icon: LayoutGridIcon,
+        rows,
+      },
+      ...categories.map(({ category, name }) => ({
+        id: category.id,
+        name,
+        description: t(`categories.${category.id}.description`, { defaultValue: category.description }),
+        icon: category.icon,
+        rows: rows.filter((row) => row.tool.category === category.id),
+      })),
+    ],
+    [categories, rows, t],
+  )
+
   const search = query.trim().toLowerCase()
   const visible = rows.filter(
     (row) => (filter === ALL || row.tool.category === filter) && (!search || row.haystack.includes(search)),
@@ -90,28 +105,40 @@ export default function AllToolsPage() {
               ariaLabel={t('allTools.search')}
               shortcut="/"
             />
-            <div
-              role="group"
-              aria-label={t('allTools.filter')}
-              className="-mx-[var(--density-page-pad)] flex gap-1.5 overflow-x-auto px-[var(--density-page-pad)] pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            >
-              <FilterChip active={filter === ALL} count={rows.length} onClick={() => setFilter(ALL)}>
-                {t('allTools.all')}
-              </FilterChip>
-              {categories.map(({ category, name, count }) => {
-                const Icon = category.icon
-                return (
-                  <FilterChip
-                    key={category.id}
-                    active={filter === category.id}
-                    count={count}
-                    onClick={() => setFilter(filter === category.id ? ALL : category.id)}
-                  >
-                    <Icon className="size-3" aria-hidden />
-                    {name}
-                  </FilterChip>
-                )
-              })}
+            <div className="flex items-center gap-1.5">
+              <ChipRail role="group" label={t('allTools.filter')} className="flex-1">
+                <FilterChip active={filter === ALL} count={rows.length} onClick={() => setFilter(ALL)}>
+                  {t('allTools.all')}
+                </FilterChip>
+                {categories.map(({ category, name, count }) => {
+                  const Icon = category.icon
+                  return (
+                    <FilterChip
+                      key={category.id}
+                      active={filter === category.id}
+                      count={count}
+                      onClick={() => setFilter(filter === category.id ? ALL : category.id)}
+                    >
+                      <Icon className="size-3" aria-hidden />
+                      {name}
+                    </FilterChip>
+                  )
+                })}
+              </ChipRail>
+              <button
+                type="button"
+                onClick={() => setViewerOpen(true)}
+                aria-haspopup="dialog"
+                aria-expanded={viewerOpen}
+                aria-label={t('allTools.viewer.open')}
+                title={t('allTools.viewer.open')}
+                className="group flex size-8 shrink-0 items-center justify-center rounded-full border bg-card text-muted-foreground outline-none transition-[color,border-color,background-color] duration-200 hover:border-primary/35 hover:bg-primary/[0.06] hover:text-primary focus-visible:ring-2 focus-visible:ring-ring active:scale-95 motion-reduce:active:scale-100"
+              >
+                <GalleryHorizontalEndIcon
+                  className="size-3.5 transition-transform duration-200 group-hover:scale-110 motion-reduce:transition-none"
+                  aria-hidden
+                />
+              </button>
             </div>
           </div>
 
@@ -160,6 +187,15 @@ export default function AllToolsPage() {
           )}
         </div>
       </div>
+      <CategoryViewer
+        open={viewerOpen}
+        sections={sections}
+        initialId={filter}
+        onClose={(id) => {
+          setFilter(id)
+          setViewerOpen(false)
+        }}
+      />
     </MotionConfig>
   )
 }
@@ -206,41 +242,6 @@ function FilterChip({
         {count}
       </span>
     </button>
-  )
-}
-
-function ToolRow({ row, showCategory }: { row: Row; showCategory: boolean }) {
-  const { tool, name, description, categoryName } = row
-  const Icon = tool.icon
-  const preload = () => {
-    void tool.loader()
-  }
-  return (
-    <Link
-      to={tool.route}
-      onPointerEnter={preload}
-      onFocus={preload}
-      className="group flex min-h-14 items-center gap-2.5 rounded-xl border bg-card px-2.5 py-2 outline-none transition-colors duration-200 hover:border-primary/35 hover:bg-primary/[0.03] focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.99] motion-reduce:active:scale-100"
-    >
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-muted text-foreground/75 transition-[color,background-color,rotate] duration-200 group-hover:-rotate-6 group-hover:bg-primary/10 group-hover:text-primary motion-reduce:group-hover:rotate-0 [&_svg]:size-[18px]">
-        <Icon aria-hidden />
-      </span>
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="flex min-w-0 items-center gap-1.5">
-          <span className="truncate text-[13px] leading-5 font-semibold">{name}</span>
-          {showCategory && (
-            <span className="hidden shrink-0 rounded-full bg-muted px-1.5 text-[10px] leading-4 font-medium text-muted-foreground @[400px]:inline">
-              {categoryName}
-            </span>
-          )}
-        </span>
-        <span className="truncate text-[11px] leading-4 text-muted-foreground">{description}</span>
-      </span>
-      <ChevronRightIcon
-        aria-hidden
-        className="size-4 shrink-0 text-muted-foreground/50 transition-[translate,color] duration-200 group-hover:translate-x-0.5 group-hover:text-primary motion-reduce:transition-none"
-      />
-    </Link>
   )
 }
 
