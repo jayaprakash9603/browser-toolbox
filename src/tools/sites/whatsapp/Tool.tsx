@@ -104,7 +104,7 @@ export default function ChatBoostTool() {
 
         <StaggerItem>
           <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-            <TabsList className="grid h-auto w-full grid-cols-4 gap-1 rounded-xl border bg-muted/60 p-1">
+            <TabsList variant="pill" className="grid h-auto w-full grid-cols-4 gap-1 rounded-xl border bg-muted/60 p-1">
               {WHATSAPP_TOOL_TABS.map((id) => {
                 const Icon = TAB_ICONS[id]
                 return (

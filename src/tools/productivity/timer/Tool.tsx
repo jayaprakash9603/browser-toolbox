@@ -99,7 +99,7 @@ export default function TimerTool() {
   return (
     <ToolPage tool={tool}>
       <Tabs value={tab} onValueChange={(value) => setTab(value as typeof tab)} className="mx-auto flex w-full max-w-md flex-col gap-4">
-        <TabsList fullWidth className="grid h-auto w-full grid-cols-3">
+        <TabsList variant="pill" fullWidth className="grid h-auto w-full grid-cols-3">
           <TabsTrigger value="countdown" className="h-11 w-full">{t('timer.countdown')}</TabsTrigger>
           <TabsTrigger value="stopwatch" className="h-11 w-full">{t('timer.stopwatch')}</TabsTrigger>
           <TabsTrigger value="pomodoro" className="h-11 w-full">{t('timer.pomodoro')}</TabsTrigger>
