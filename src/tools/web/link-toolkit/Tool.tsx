@@ -20,6 +20,7 @@ import {
 } from '@/core/engines/links/pageLinks'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { ToolPage } from '@/shared/components/ToolPage'
+import { ToolSearchLayout } from '@/shared/components/ToolSearchLayout'
 import { Button } from '@/shared/components/ui/button'
 import { Segmented } from '@/shared/components/ui/segmented'
 import { Switch } from '@/shared/components/ui/switch'
@@ -229,8 +230,65 @@ export default function LinkToolkitTool() {
 
   return (
     <ToolPage tool={tool} actions={actions} contentClassName="overflow-hidden p-0">
-      <div className="relative h-full">
-        <div className="scrollbar-styled h-full overflow-y-auto overscroll-contain px-3 pt-3 pb-6">
+      <ToolSearchLayout
+        header={
+          snapshot && snapshot.links.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <SearchInput
+                value={search}
+                onChange={setSearch}
+                placeholder={t('web.links.searchPlaceholder')}
+                ariaLabel={t('web.links.searchPlaceholder')}
+                shortcut="/"
+                className="min-w-44 flex-1"
+              />
+              <div className="flex w-full items-center justify-between gap-2 @[520px]:w-auto">
+                <Segmented
+                  size="sm"
+                  value={view}
+                  onValueChange={setView}
+                  ariaLabel={t('web.links.view')}
+                  options={[
+                    { value: 'list', label: <><ListIcon aria-hidden />{t('web.links.viewList')}</> },
+                    { value: 'sites', label: <><GlobeIcon aria-hidden />{t('web.links.viewSites')}</> },
+                    { value: 'sections', label: <><LayoutTemplateIcon aria-hidden />{t('web.links.viewSections')}</> },
+                  ]}
+                />
+                <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground" title={t('web.links.mergeHint')}>
+                  <Switch checked={merge} onCheckedChange={setMerge} aria-label={t('web.links.merge')} />
+                  {t('web.links.merge')}
+                </label>
+              </div>
+            </div>
+          ) : undefined
+        }
+        bodyClassName="pt-3 pb-6"
+        footer={
+          <>
+            <div role="status" aria-live="polite" className="sr-only">
+              {notice?.text ?? ''}
+            </div>
+            <AnimatePresence>
+              {notice && (
+                <motion.div
+                  key={notice.id}
+                  aria-hidden
+                  initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, transition: { duration: 0.12 } }}
+                  transition={{ duration: reduceMotion ? 0 : 0.2, ease: 'easeOut' }}
+                  className="pointer-events-none absolute inset-x-3 bottom-3 z-20 flex justify-center"
+                >
+                  <span className="max-w-full rounded-full bg-foreground px-3.5 py-1.5 text-center text-xs font-medium text-background shadow-lg">
+                    {notice.text}
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </>
+        }
+      >
+        <>
           {load.status === 'loading' && <LoadingState />}
           {load.status === 'error' && <ErrorState onRetry={rescan} retrying={refreshing} />}
           {snapshot && (
@@ -257,36 +315,6 @@ export default function LinkToolkitTool() {
                   <Button size="xs" variant="outline" className="h-6" onClick={rescan} disabled={refreshing}>
                     {t('web.links.rescan')}
                   </Button>
-                </div>
-              )}
-
-              {snapshot.links.length > 0 && (
-                <div className="sticky top-0 z-10 -mx-3 mt-1 flex flex-wrap items-center gap-2 border-b bg-background px-3 pt-2 pb-2">
-                  <SearchInput
-                    value={search}
-                    onChange={setSearch}
-                    placeholder={t('web.links.searchPlaceholder')}
-                    ariaLabel={t('web.links.searchPlaceholder')}
-                    shortcut="/"
-                    className="min-w-44 flex-1"
-                  />
-                  <div className="flex w-full items-center justify-between gap-2 @[520px]:w-auto">
-                    <Segmented
-                      size="sm"
-                      value={view}
-                      onValueChange={setView}
-                      ariaLabel={t('web.links.view')}
-                      options={[
-                        { value: 'list', label: <><ListIcon aria-hidden />{t('web.links.viewList')}</> },
-                        { value: 'sites', label: <><GlobeIcon aria-hidden />{t('web.links.viewSites')}</> },
-                        { value: 'sections', label: <><LayoutTemplateIcon aria-hidden />{t('web.links.viewSections')}</> },
-                      ]}
-                    />
-                    <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground" title={t('web.links.mergeHint')}>
-                      <Switch checked={merge} onCheckedChange={setMerge} aria-label={t('web.links.merge')} />
-                      {t('web.links.merge')}
-                    </label>
-                  </div>
                 </div>
               )}
 
@@ -362,29 +390,8 @@ export default function LinkToolkitTool() {
               )}
             </>
           )}
-        </div>
-
-        <div role="status" aria-live="polite" className="sr-only">
-          {notice?.text ?? ''}
-        </div>
-        <AnimatePresence>
-          {notice && (
-            <motion.div
-              key={notice.id}
-              aria-hidden
-              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, transition: { duration: 0.12 } }}
-              transition={{ duration: reduceMotion ? 0 : 0.2, ease: 'easeOut' }}
-              className="pointer-events-none absolute inset-x-3 bottom-3 z-20 flex justify-center"
-            >
-              <span className="max-w-full rounded-full bg-foreground px-3.5 py-1.5 text-center text-xs font-medium text-background shadow-lg">
-                {notice.text}
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+        </>
+      </ToolSearchLayout>
     </ToolPage>
   )
 }
