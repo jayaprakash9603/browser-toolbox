@@ -53,6 +53,7 @@ import { initClipboardCapture, registerClipboardCapture } from './clipboardCaptu
 import { registerTimer } from './timer'
 import { handleTaskMenuClick, isTaskMenuItem, registerTasks } from './tasks'
 import { registerColorPicker } from './colorPicker'
+import { registerFormMemory } from './formMemory'
 import { registerReactDevtools, syncReactDevtoolsState } from './reactDevtools'
 import { registerScriptStudio } from './script-studio'
 import { registerSidePanelNavigation } from './panelNavigation'
@@ -191,6 +192,7 @@ safeRegister('clipboardCapture', registerClipboardCapture)
 safeRegister('timer', registerTimer)
 safeRegister('tasks', registerTasks)
 safeRegister('colorPicker', registerColorPicker)
+safeRegister('formMemory', registerFormMemory)
 safeRegister('reactDevtools', registerReactDevtools)
 safeRegister('scriptStudio', registerScriptStudio)
 safeRegister('panelNavigation', registerSidePanelNavigation)

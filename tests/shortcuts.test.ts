@@ -61,6 +61,8 @@ describe('command registry', () => {
       'toggle-pip',
       'toggle-recording',
       'add-page-task',
+      'form-fill',
+      'form-clear',
     ])
     expect([...MANIFEST_COMMAND_IDS]).toEqual([
       'open-command-palette',
@@ -70,7 +72,10 @@ describe('command registry', () => {
       'toggle-recording',
       'add-page-task',
       'pick-color',
+      'form-fill',
+      'form-clear',
     ])
+    expect(manifest['form-fill']?.suggested_key).toEqual({ default: 'Ctrl+Shift+F', mac: 'Command+Shift+F' })
     expect(TOOLBOX_COMMANDS.length).toBeGreaterThanOrEqual(5)
   })
 })

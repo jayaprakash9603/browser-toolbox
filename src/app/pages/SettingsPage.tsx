@@ -39,6 +39,7 @@ import {
   SelectValue,
 } from '@/shared/components/ui/select'
 import { AdblockSettingsSection } from '@/app/pages/settings/AdblockSettingsSection'
+import { FormMemorySettingsSection } from '@/app/pages/settings/FormMemorySettingsSection'
 import { ProtectionSettingsSection } from '@/app/pages/settings/ProtectionSettingsSection'
 import { KeyboardShortcutsSettingsCard } from '@/app/pages/settings/KeyboardShortcutsSettingsCard'
 import { NetMonitorSettingsSection } from '@/app/pages/settings/NetMonitorSettingsSection'
@@ -194,6 +195,7 @@ export default function SettingsPage() {
           <KeyboardShortcutsSettingsCard />
           <SaveImageAsSettingsSection />
           <PipSettingsSection />
+          <FormMemorySettingsSection />
           <ReactDevtoolsSettingsSection />
           <NetMonitorSettingsSection />
         </SettingsGroup>

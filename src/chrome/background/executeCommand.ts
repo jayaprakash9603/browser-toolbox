@@ -6,6 +6,7 @@ import { contentScriptBundlePath, ensureContentScriptInTab, getActiveBrowserTab 
 import { togglePipInTab } from './pip'
 import { addPageAsTask } from './tasks'
 import { pickColorOnPage } from './colorPicker'
+import { runFormCommand } from './formMemory'
 import { openScreenshotCaptureMenu } from './screenshot/menu'
 import { modeFromCommand, startScreenshot } from './screenshot/start'
 
@@ -46,6 +47,11 @@ export async function executeToolboxCommand(command: string, tab?: chrome.tabs.T
 
   if (command === 'pick-color') {
     await pickColorOnPage(tab)
+    return
+  }
+
+  if (command === 'form-fill' || command === 'form-clear') {
+    await runFormCommand(command, tab)
     return
   }
 

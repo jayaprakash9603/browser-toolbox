@@ -22,6 +22,12 @@ const CHROME_UI_FALLBACKS: Record<string, string> = {
   colorHintFormat: 'format',
   colorHintKeep: 'keep picking',
   colorHintExit: 'exit',
+  formFilledOne: 'Filled 1 field',
+  formFilledOther: 'Filled {count} fields',
+  formCleared: 'Cleared {count} fields',
+  formNothingSaved: 'Nothing saved for this page yet. Fill it once and it will be remembered.',
+  formAlreadyFilled: 'Saved values are already in place',
+  formNothingToClear: 'Nothing to clear',
 }
 
 export function getChromeMessage(messageName: string): string {

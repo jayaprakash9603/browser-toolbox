@@ -87,6 +87,8 @@ describe('command registry', () => {
       'toggle-pip',
       'toggle-recording',
       'add-page-task',
+      'form-fill',
+      'form-clear',
     ])
     expect(GLOBAL_TOOLBOX_COMMANDS.every((command) => command.binding.default)).toBe(true)
     expect(getCommand('pick-element')?.binding.mac).toBe('Command+Shift+E')

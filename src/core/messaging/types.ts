@@ -130,6 +130,8 @@ export type ExtensionMessage =
   | { type: 'PIP_TOGGLE'; tabId?: number }
   | { type: 'COLOR_PICK_START' }
   | { type: 'COLOR_PICKED'; hex: string; format?: string; url?: string }
+  | { type: 'FORM_MEMORY_CAPTURE'; url: string; title?: string; fields: unknown[] }
+  | { type: 'FORM_MEMORY_RUN'; action: 'fill' | 'clear' | 'inspect' | 'save'; tabId?: number }
   | {
       type: 'NETMON_SAMPLE'
       status: import('@/core/netmon/types').NetStatus
@@ -333,6 +335,8 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'PIP_TOGGLE',
   'COLOR_PICK_START',
   'COLOR_PICKED',
+  'FORM_MEMORY_CAPTURE',
+  'FORM_MEMORY_RUN',
   'NETMON_SAMPLE',
   'NETMON_OFFSCREEN_READY',
   'NETMON_GET_REALTIME',

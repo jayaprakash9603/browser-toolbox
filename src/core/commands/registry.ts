@@ -108,6 +108,24 @@ export const TOOLBOX_COMMANDS: ToolboxCommandDef[] = [
     opensPanel: true,
     toolId: 'productivity.tasks',
   },
+  {
+    id: 'form-fill',
+    titleKey: 'shortcuts.commands.formFill',
+    descriptionMessage: '__MSG_commandFormFill__',
+    scope: 'global',
+    binding: { default: 'Ctrl+Shift+F', mac: 'Command+Shift+F' },
+    opensPanel: false,
+    toolId: 'productivity.form-autofill',
+  },
+  {
+    id: 'form-clear',
+    titleKey: 'shortcuts.commands.formClear',
+    descriptionMessage: '__MSG_commandFormClear__',
+    scope: 'global',
+    binding: { default: 'Ctrl+Shift+C', mac: 'Command+Shift+C' },
+    opensPanel: false,
+    toolId: 'productivity.form-autofill',
+  },
 ]
 
 export const GLOBAL_TOOLBOX_COMMANDS = TOOLBOX_COMMANDS.filter((c) => c.scope === 'global')

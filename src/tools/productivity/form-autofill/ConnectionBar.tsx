@@ -13,9 +13,6 @@ import type { AutofillController } from '@universal-form-autofill/sdk'
 
 import { cn } from '@/shared/utils/cn'
 
-import { ModeMenu } from './ModeMenu'
-import { isAutofillMode } from './modes'
-
 type Status = 'idle' | 'connecting' | 'ready' | 'error' | 'destroyed'
 
 const DOT: Record<Status, string> = {
@@ -52,8 +49,6 @@ export function ConnectionBar({ controller, theme, open, onOpenChange }: Connect
   const state = useAutofillState(controller)
   const snapshot = useStoreSnapshot(controller?.store)
   const status = state.status as Status
-  const rawMode = snapshot.settings?.mode
-  const mode = isAutofillMode(rawMode) ? rawMode : 'suggest'
   const page = state.page
   const busy = !controller || status === 'connecting' || state.scanning
   const title = page ? page.title || page.hostname : t(`autofill.status.${status}`)
@@ -111,7 +106,6 @@ export function ConnectionBar({ controller, theme, open, onOpenChange }: Connect
               )}
             />
           </button>
-          <ModeMenu controller={controller} mode={mode} />
           <button
             type="button"
             onClick={() => void controller?.connect()}

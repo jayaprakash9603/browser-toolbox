@@ -68,6 +68,30 @@
   "colorHintExit": {
     "message": "exit"
   },
+  "commandFormFill": {
+    "message": "Fill the form on the current page with saved values"
+  },
+  "commandFormClear": {
+    "message": "Clear the form on the current page"
+  },
+  "formFilledOne": {
+    "message": "Filled 1 field"
+  },
+  "formFilledOther": {
+    "message": "Filled {count} fields"
+  },
+  "formCleared": {
+    "message": "Cleared {count} fields"
+  },
+  "formNothingSaved": {
+    "message": "Nothing saved for this page yet. Fill it once and it will be remembered."
+  },
+  "formAlreadyFilled": {
+    "message": "Saved values are already in place"
+  },
+  "formNothingToClear": {
+    "message": "Nothing to clear"
+  },
   "contextMenuTaskPage": {
     "message": "Add page to Tasks"
   },
