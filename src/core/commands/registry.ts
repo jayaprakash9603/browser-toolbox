@@ -122,7 +122,7 @@ export const TOOLBOX_COMMANDS: ToolboxCommandDef[] = [
     titleKey: 'shortcuts.commands.formClear',
     descriptionMessage: '__MSG_commandFormClear__',
     scope: 'global',
-    binding: { default: 'Ctrl+Shift+C', mac: 'Command+Shift+C' },
+    binding: { default: 'Ctrl+Shift+U', mac: 'Command+Shift+U' },
     opensPanel: false,
     toolId: 'productivity.form-autofill',
   },

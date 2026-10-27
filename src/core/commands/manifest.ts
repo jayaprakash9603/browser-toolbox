@@ -32,7 +32,8 @@ const DESCRIPTIONS: Record<ManifestCommandId, string> = {
  */
 const SUGGESTED_KEYS: Partial<Record<ManifestCommandId, { default: string; mac: string }>> = {
   'form-fill': { default: 'Ctrl+Shift+F', mac: 'Command+Shift+F' },
-  'form-clear': { default: 'Ctrl+Shift+C', mac: 'Command+Shift+C' },
+  // Not Ctrl+Shift+C: Chrome reserves that for Inspect element (DevTools).
+  'form-clear': { default: 'Ctrl+Shift+U', mac: 'Command+Shift+U' },
 }
 
 export interface ManifestCommand {
