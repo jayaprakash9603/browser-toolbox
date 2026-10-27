@@ -123,23 +123,22 @@ describe('CategoryPage demo toggle', () => {
       </TooltipProvider>,
     )
 
-  it('starts closed, opens the player from the header and remembers it', async () => {
+  it('starts closed every visit and opens only when the user toggles it', async () => {
+    localStorage.setItem('tbx.category.demo.open', '1')
     renderPage()
     const toggle = screen.getByRole('button', { name: 'Watch demo' })
     expect(toggle).toHaveAttribute('aria-expanded', 'false')
     expect(screen.queryByRole('region', { name: 'Watch demo' })).not.toBeInTheDocument()
+    expect(localStorage.getItem('tbx.category.demo.open')).toBeNull()
 
     fireEvent.click(toggle)
     expect(toggle).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByRole('region', { name: 'Watch demo' })).toBeInTheDocument()
     expect(await screen.findByRole('tablist', {}, { timeout: 20_000 })).toBeInTheDocument()
-    expect(localStorage.getItem('tbx.category.demo.open')).toBe('1')
     cleanup()
 
     renderPage()
-    expect(screen.getByRole('button', { name: 'Watch demo' })).toHaveAttribute('aria-expanded', 'true')
-    fireEvent.click(screen.getByRole('button', { name: 'Watch demo' }))
-    expect(localStorage.getItem('tbx.category.demo.open')).toBe('0')
+    expect(screen.getByRole('button', { name: 'Watch demo' })).toHaveAttribute('aria-expanded', 'false')
   }, 30_000)
 })
 

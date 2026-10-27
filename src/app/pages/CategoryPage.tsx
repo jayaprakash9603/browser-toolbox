@@ -13,7 +13,7 @@ import { InboxIcon } from 'lucide-react'
 export default function CategoryPage({ categoryId }: { categoryId: string }) {
   const { t } = useTranslation()
   const [query, setQuery] = useState('')
-  const [demoOpen, toggleDemo] = useDemoOpen()
+  const [demoOpen, toggleDemo] = useDemoOpen(categoryId)
   const demoId = useId()
   const category = categoryRegistry.get(categoryId)
   const tools = toolRegistry.getByCategory(categoryId)

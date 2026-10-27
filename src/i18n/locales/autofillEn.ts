@@ -13,7 +13,7 @@ export const autofillStrings = {
   'autofill.status.idle': 'Idle',
   'autofill.status.destroyed': 'Closed',
 
-  'shortcuts.commands.formFill': 'Fill the form on this page',
+  'shortcuts.commands.formFill': 'Fill the form, or clear it when it already has values',
   'shortcuts.commands.formClear': 'Clear the form on this page',
 
   'formMemory.view.label': 'Form autofill view',

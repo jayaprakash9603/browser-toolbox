@@ -1,29 +1,23 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
-const OPEN_KEY = 'tbx.category.demo.open'
+const LEGACY_OPEN_KEY = 'tbx.category.demo.open'
 
-function readOpen() {
-  try {
-    return localStorage.getItem(OPEN_KEY) === '1'
-  } catch {
-    return false
-  }
-}
+/** Demo panel is closed until the user opens it; never restored from storage or after leaving the page. */
+export function useDemoOpen(categoryId: string) {
+  const [open, setOpen] = useState(false)
 
-function writeOpen(open: boolean) {
-  try {
-    localStorage.setItem(OPEN_KEY, open ? '1' : '0')
-  } catch {
-    // Storage can be unavailable in private contexts; the toggle still works for this visit.
-  }
-}
+  useEffect(() => {
+    try {
+      localStorage.removeItem(LEGACY_OPEN_KEY)
+    } catch {
+      /* ignore */
+    }
+  }, [])
 
-/** Whether the category demo panel is open. Closed until the user opens it, then remembered. */
-export function useDemoOpen() {
-  const [open, setOpen] = useState(readOpen)
-  const toggle = () => {
-    writeOpen(!open)
-    setOpen(!open)
-  }
+  useEffect(() => {
+    setOpen(false)
+  }, [categoryId])
+
+  const toggle = () => setOpen((current) => !current)
   return [open, toggle] as const
 }

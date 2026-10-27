@@ -285,8 +285,19 @@ export async function runFormCommand(command: 'form-fill' | 'form-clear', tab?: 
   const now = Date.now()
   if (now - (recent.get(command) ?? 0) < 500) return
   recent.set(command, now)
-  if (command === 'form-fill') await fillFormInTab('shortcut', tab)
-  else await clearFormInTab('shortcut', tab)
+  if (command === 'form-clear') {
+    await clearFormInTab('shortcut', tab)
+    return
+  }
+  const target = await resolveTab(tab, undefined)
+  if (target?.id != null) {
+    const inspection = await inspectTab(target.id)
+    if (inspection.ok && inspection.populated > 0) {
+      await clearFormInTab('shortcut', tab)
+      return
+    }
+  }
+  await fillFormInTab('shortcut', tab)
 }
 
 export function registerFormMemory(): void {
