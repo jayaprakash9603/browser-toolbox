@@ -24,6 +24,7 @@ export const autofillStrings = {
   'formMemory.bar.clear': 'Clear form',
   'formMemory.bar.allow': 'Allow access to this site',
   'formMemory.bar.checking': 'Checking this page…',
+  'formMemory.bar.scanToStart': 'Scan this page (refresh)',
   'formMemory.bar.restricted': 'Open a web page to fill its form',
   'formMemory.bar.needsAccess': 'Allow access so {{host}} can be filled and remembered',
   'formMemory.bar.blocked': 'Remembering is paused for {{host}}',

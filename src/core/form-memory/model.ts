@@ -90,7 +90,7 @@ export interface FormActionResult {
 
 export const DEFAULT_FORM_MEMORY_SETTINGS: FormMemorySettings = {
   learn: true,
-  autoFill: true,
+  autoFill: false,
   blockedHosts: [],
 }
 
@@ -189,7 +189,7 @@ function normalizePage(raw: unknown): MemoryPage | null {
     ...ref,
     title: cleanText(item.title, 200) ?? ref.host,
     fields,
-    autoFill: item.autoFill !== false,
+    autoFill: item.autoFill === true,
     createdAt: typeof item.createdAt === 'number' ? item.createdAt : updatedAt,
     updatedAt,
     fillCount: typeof item.fillCount === 'number' ? item.fillCount : 0,
@@ -212,7 +212,7 @@ export function normalizeFormMemoryState(raw: unknown): FormMemoryState {
     pages,
     settings: {
       learn: settings.learn !== false,
-      autoFill: settings.autoFill !== false,
+      autoFill: settings.autoFill === true,
       blockedHosts: Array.isArray(settings.blockedHosts)
         ? settings.blockedHosts.filter((host): host is string => typeof host === 'string')
         : [],
@@ -272,7 +272,7 @@ export function applyCapture(state: FormMemoryState, capture: FormCapture, now: 
     ...ref,
     title: cleanText(capture.title, 200) ?? existing?.title ?? ref.host,
     fields: bounded,
-    autoFill: existing?.autoFill ?? true,
+    autoFill: existing?.autoFill ?? false,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
     fillCount: existing?.fillCount ?? 0,

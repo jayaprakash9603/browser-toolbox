@@ -75,7 +75,7 @@ describe('form memory model', () => {
     expect(Object.keys(restored.pages)).toHaveLength(3)
     expect(normalizeFormMemoryState({ pages: { x: { url: 'nope' } }, settings: { learn: false } })).toMatchObject({
       pages: {},
-      settings: { learn: false, autoFill: true, blockedHosts: [] },
+      settings: { learn: false, autoFill: false, blockedHosts: [] },
     })
   })
 })

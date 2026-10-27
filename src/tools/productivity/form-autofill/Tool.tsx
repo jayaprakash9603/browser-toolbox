@@ -81,13 +81,17 @@ export default function FormAutofillTool() {
   const { t } = useTranslation()
   const { show } = useToast()
   const tool = useProductivityTool('productivity.form-autofill')
-  const controller = useReviewAutofillController(host)
+  const [pageScanEnabled, setPageScanEnabled] = useState(false)
+  const controller = useReviewAutofillController(host, pageScanEnabled)
   const sdk = useAutofillState(controller)
   const memory = useFormMemory()
   const [detailsOpen, setDetailsOpen] = useState(() => readPreference(DETAILS_KEY) === '1')
   const [view, setView] = useState<View>(() => (readPreference(VIEW_KEY) === 'saved' ? 'saved' : 'page'))
   const [busy, setBusy] = useState<FillBarAction | 'access' | 'save' | null>(null)
-  const { info: pageInfo, refresh: refreshPage, run: runPage } = useFormPage(true, sdk.page?.url)
+  const { info: pageInfo, refresh: refreshPage, run: runPage } = useFormPage(
+    pageScanEnabled && view === 'page',
+    sdk.page?.url,
+  )
   const fillKey = useShortcutDisplay('form-fill')
   const clearKey = useShortcutDisplay('form-clear')
 
@@ -112,8 +116,13 @@ export default function FormAutofillTool() {
     writePreference(VIEW_KEY, next)
   }, [])
 
+  const requestPageScan = useCallback(() => {
+    setPageScanEnabled(true)
+  }, [])
+
   const act = useCallback(
     async (action: FillBarAction) => {
+      setPageScanEnabled(true)
       setBusy(action)
       try {
         if (action === 'fill') {
@@ -151,6 +160,7 @@ export default function FormAutofillTool() {
         .request({ origins: [`${new URL(url).origin}/*`] })
         .catch(() => false)
       if (granted) {
+        setPageScanEnabled(true)
         await refreshPage()
         if (controller) void controller.connect()
       }
@@ -175,7 +185,14 @@ export default function FormAutofillTool() {
 
   return (
     <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col overflow-hidden p-0">
-      <ConnectionBar controller={controller} theme={theme} open={detailsOpen} onOpenChange={changeDetails} />
+      <ConnectionBar
+        controller={controller}
+        theme={theme}
+        open={detailsOpen}
+        onOpenChange={changeDetails}
+        scanEnabled={pageScanEnabled}
+        onRequestScan={requestPageScan}
+      />
       <div className="shrink-0 px-3 pb-2">
         <Segmented
           value={view}

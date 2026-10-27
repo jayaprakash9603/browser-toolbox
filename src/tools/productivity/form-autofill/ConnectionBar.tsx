@@ -36,13 +36,22 @@ interface ConnectionBarProps {
   theme: AutofillTheme
   open: boolean
   onOpenChange: (open: boolean) => void
+  scanEnabled: boolean
+  onRequestScan: () => void
 }
 
 /**
  * The page and profile strip above the autofill fields. Collapsed it is a single slim row (status
  * icon, page, profile) so the field list gets the space; expanded it shows the full details.
  */
-export function ConnectionBar({ controller, theme, open, onOpenChange }: ConnectionBarProps) {
+export function ConnectionBar({
+  controller,
+  theme,
+  open,
+  onOpenChange,
+  scanEnabled,
+  onRequestScan,
+}: ConnectionBarProps) {
   const { t } = useTranslation()
   const reduceMotion = useReducedMotion()
   const detailsId = useId()
@@ -51,7 +60,11 @@ export function ConnectionBar({ controller, theme, open, onOpenChange }: Connect
   const status = state.status as Status
   const page = state.page
   const busy = !controller || status === 'connecting' || state.scanning
-  const title = page ? page.title || page.hostname : t(`autofill.status.${status}`)
+  const title = page
+    ? page.title || page.hostname
+    : !scanEnabled
+      ? t('formMemory.bar.scanToStart')
+      : t(`autofill.status.${status}`)
   const profileName = snapshot.activeProfile?.name ?? t('autofill.bar.noProfile')
   const statusLabel = t(`autofill.status.${status}`)
   const detail = page
@@ -108,10 +121,13 @@ export function ConnectionBar({ controller, theme, open, onOpenChange }: Connect
           </button>
           <button
             type="button"
-            onClick={() => void controller?.connect()}
+            onClick={() => {
+              if (!scanEnabled) onRequestScan()
+              else void controller?.connect()
+            }}
             disabled={busy}
-            aria-label={t('autofill.bar.refresh')}
-            title={t('autofill.bar.refresh')}
+            aria-label={scanEnabled ? t('autofill.bar.refresh') : t('formMemory.bar.scanToStart')}
+            title={scanEnabled ? t('autofill.bar.refresh') : t('formMemory.bar.scanToStart')}
             className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-60"
           >
             <RotateCwIcon className={cn('size-4', busy && 'motion-safe:animate-spin')} aria-hidden />

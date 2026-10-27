@@ -4,11 +4,19 @@ import { useEffect, useState } from 'react'
 
 type AutofillHost = ReturnType<typeof createExtensionAutofillHost>
 
-/** Connects only after the store is in review mode so trusted-site matches never fill the page on scan. */
-export function useReviewAutofillController(host: AutofillHost) {
+/**
+ * Connects only when `enabled` is true (user chose to scan the page). Review mode is enforced so
+ * trusted-site matches never fill the page on scan or connect.
+ */
+export function useReviewAutofillController(host: AutofillHost, enabled: boolean) {
   const [controller, setController] = useState<AutofillController | null>(null)
 
   useEffect(() => {
+    if (!enabled) {
+      setController(null)
+      return
+    }
+
     const instance = host.createController()
     let cancelled = false
 
@@ -30,7 +38,7 @@ export function useReviewAutofillController(host: AutofillHost) {
       setController(null)
       instance.destroy()
     }
-  }, [host])
+  }, [host, enabled])
 
   return controller
 }
