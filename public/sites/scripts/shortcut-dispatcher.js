@@ -42,19 +42,16 @@
     }
   }
 
-  function onKeyDown(event) {
-    if (!alive()) {
-      document.removeEventListener('keydown', onKeyDown, true)
-      return
-    }
-    if (event.repeat) return
-    if (isEditableTarget(event.target)) return
-    if (!event.key || event.key === 'Control' || event.key === 'Shift' || event.key === 'Alt' || event.key === 'Meta') {
-      return
-    }
-    // Plain keys are never toolbox shortcuts; skip the round trip to the background.
-    if (!event.ctrlKey && !event.altKey && !event.metaKey && !/^F\d+$/i.test(event.key)) return
-    const modifiers = modifiersFromEvent(event)
+  // Chrome binds Ctrl+Shift+C to “Inspect element”. Block it on the page immediately (capture phase)
+  // so form fill can run, including while focus is inside an input.
+  function isFormShortcutChord(event) {
+    if (!event.shiftKey || event.altKey) return false
+    if (!event.ctrlKey && !event.metaKey) return false
+    const key = normalizeKey(keyFromEvent(event))
+    return key === 'C' || key === 'F'
+  }
+
+  function dispatchShortcut(event, modifiers) {
     chrome.runtime
       .sendMessage({ type: 'SHORTCUT_KEY_EVENT', modifiers })
       .then((response) => {
@@ -64,6 +61,27 @@
         }
       })
       .catch(() => {})
+  }
+
+  function onKeyDown(event) {
+    if (!alive()) {
+      document.removeEventListener('keydown', onKeyDown, true)
+      return
+    }
+    if (event.repeat) return
+    if (isFormShortcutChord(event)) {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      dispatchShortcut(event, modifiersFromEvent(event))
+      return
+    }
+    if (isEditableTarget(event.target)) return
+    if (!event.key || event.key === 'Control' || event.key === 'Shift' || event.key === 'Alt' || event.key === 'Meta') {
+      return
+    }
+    // Plain keys are never toolbox shortcuts; skip the round trip to the background.
+    if (!event.ctrlKey && !event.altKey && !event.metaKey && !/^F\d+$/i.test(event.key)) return
+    dispatchShortcut(event, modifiersFromEvent(event))
   }
 
   document.addEventListener('keydown', onKeyDown, true)

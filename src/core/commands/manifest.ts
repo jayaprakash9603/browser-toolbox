@@ -30,10 +30,10 @@ const DESCRIPTIONS: Record<ManifestCommandId, string> = {
  * the in-page shortcut listener stays quiet, and on sites without access, where it never runs.
  * Chrome allows at most four of these.
  */
+/** Fill uses Ctrl+Shift+C so it can win over Chrome’s “Inspect element” shortcut on the page. */
 const SUGGESTED_KEYS: Partial<Record<ManifestCommandId, { default: string; mac: string }>> = {
-  'form-fill': { default: 'Ctrl+Shift+F', mac: 'Command+Shift+F' },
-  // Not Ctrl+Shift+C: Chrome reserves that for Inspect element (DevTools).
-  'form-clear': { default: 'Ctrl+Shift+U', mac: 'Command+Shift+U' },
+  'form-fill': { default: 'Ctrl+Shift+C', mac: 'Command+Shift+C' },
+  'form-clear': { default: 'Ctrl+Shift+F', mac: 'Command+Shift+F' },
 }
 
 export interface ManifestCommand {

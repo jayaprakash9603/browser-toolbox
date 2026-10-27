@@ -82,6 +82,6 @@ export const autofillStrings = {
     'Saves what you type, tick and pick in forms, per page. Passwords and card numbers are never saved.',
   'formMemory.settings.autoFill': 'Fill remembered forms on open',
   'formMemory.settings.autoFillHint':
-    'Fills saved pages as they load on sites you allowed. {{fill}} fills and {{clear}} clears a form anywhere.',
+    'Fills saved pages as they load on sites you allowed. {{fill}} fills and {{clear}} clears a form anywhere. If Inspect still opens, remove Chrome’s “Inspect” shortcut at chrome://extensions/shortcuts.',
   'formMemory.settings.manage': 'Review saved form entries',
 } as const

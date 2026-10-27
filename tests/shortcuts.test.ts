@@ -75,7 +75,7 @@ describe('command registry', () => {
       'form-fill',
       'form-clear',
     ])
-    expect(manifest['form-fill']?.suggested_key).toEqual({ default: 'Ctrl+Shift+F', mac: 'Command+Shift+F' })
+    expect(manifest['form-fill']?.suggested_key).toEqual({ default: 'Ctrl+Shift+C', mac: 'Command+Shift+C' })
     expect(TOOLBOX_COMMANDS.length).toBeGreaterThanOrEqual(5)
   })
 })
