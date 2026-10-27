@@ -61,14 +61,12 @@ export function compilePageRules(
           base.payload = {
             status: rule.status,
             body: resolveBody(rule.bodySource, rule.body, rule.libraryId, library),
-            functionBody: rule.functionBody,
             bodySource: rule.bodySource,
           }
           break
         case 'modifyRequestBody':
           base.payload = {
             body: resolveBody(rule.bodySource, rule.body, rule.libraryId, library),
-            functionBody: rule.functionBody,
             bodySource: rule.bodySource,
           }
           break

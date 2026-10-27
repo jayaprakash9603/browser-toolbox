@@ -39,7 +39,7 @@ export interface HeaderChange {
   value?: string
 }
 
-export type BodySourceKind = 'static' | 'library' | 'function'
+export type BodySourceKind = 'static' | 'library'
 
 export interface InterceptorRuleBase {
   id: string
@@ -116,7 +116,6 @@ export interface ModifyResponseRule extends InterceptorRuleBase {
   bodySource: BodySourceKind
   body?: string
   libraryId?: string
-  functionBody?: string
 }
 
 export interface ModifyRequestBodyRule extends InterceptorRuleBase {
@@ -124,7 +123,6 @@ export interface ModifyRequestBodyRule extends InterceptorRuleBase {
   bodySource: BodySourceKind
   body?: string
   libraryId?: string
-  functionBody?: string
 }
 
 export interface StatusCodeRule extends InterceptorRuleBase {
@@ -144,10 +142,9 @@ export interface InsertScriptRule extends InterceptorRuleBase {
   type: 'insertScript'
   kind: InsertScriptKind
   timing: InsertScriptTiming
-  scriptSource: 'inline' | 'library' | 'url'
+  scriptSource: 'inline' | 'library'
   code?: string
   libraryId?: string
-  url?: string
 }
 
 export type InterceptorRule =

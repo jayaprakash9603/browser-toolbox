@@ -1,5 +1,5 @@
 import { newRuleId } from '../interceptorService'
-import type { InsertScriptRule, InterceptorRule, RedirectRule } from '../types'
+import type { InterceptorRule, RedirectRule } from '../types'
 
 interface RoEntry {
   enabled?: boolean
@@ -42,14 +42,7 @@ export function importResourceOverride(
     } else if (entry.type === 'fileOverride') {
       warnings.push(`Map local skipped for ${entry.match} (use Library + Insert Script)`)
     } else if (entry.files?.length) {
-      rules.push({
-        ...base,
-        type: 'insertScript',
-        kind: 'js',
-        timing: 'document_start',
-        scriptSource: 'url',
-        url: entry.files[0],
-      } satisfies InsertScriptRule)
+      warnings.push(`Injected file skipped for ${entry.match} (paste its code into an Insert Script rule)`)
     }
   }
   return { rules, warnings }

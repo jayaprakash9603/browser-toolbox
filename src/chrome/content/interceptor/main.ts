@@ -167,19 +167,7 @@ function installFetch(): void {
         relay('userAgent', rule, url, method, {})
       }
       if (rule.type === 'modifyRequestBody' && body) {
-        const fn = rule.payload.functionBody as string | undefined
-        if (fn) {
-          try {
-            const runner = new Function('body', 'url', 'method', fn) as (
-              b: string,
-              u: string,
-              m: string,
-            ) => string
-            body = runner(body, url, method)
-          } catch {
-            /* ignore */
-          }
-        } else if (rule.payload.body) body = String(rule.payload.body)
+        if (rule.payload.body) body = String(rule.payload.body)
         relay('request', rule, url, method, { requestBody: body })
       }
       if (rule.type === 'delay') {
@@ -208,21 +196,8 @@ function installFetch(): void {
         return new Response(response.body, { status, headers: response.headers })
       }
       if (rule.type === 'modifyResponse') {
-        const text = await response.clone().text()
-        let next = text
-        const fn = rule.payload.functionBody as string | undefined
-        if (fn) {
-          try {
-            const runner = new Function('body', 'url', 'method', fn) as (
-              b: string,
-              u: string,
-              m: string,
-            ) => string
-            next = runner(text, url, method)
-          } catch {
-            next = text
-          }
-        } else if (rule.payload.body) next = String(rule.payload.body)
+        let next = await response.clone().text()
+        if (rule.payload.body) next = String(rule.payload.body)
         const status = Number(rule.payload.status) || response.status
         relay('response', rule, url, method, { responseBody: next, status })
         return new Response(next, { status, headers: response.headers })

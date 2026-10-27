@@ -9,9 +9,6 @@ function resolveScriptContent(rule: InsertScriptRule, library: LibraryItem[]): s
   if (rule.scriptSource === 'library' && rule.libraryId) {
     return library.find((i) => i.id === rule.libraryId)?.content ?? null
   }
-  if (rule.scriptSource === 'url' && rule.url) {
-    return `/* remote: ${rule.url} */\nfetch("${rule.url}").then(r=>r.text()).then(t=>{const s=document.createElement('script');s.textContent=t;document.documentElement.appendChild(s);});`
-  }
   return null
 }
 

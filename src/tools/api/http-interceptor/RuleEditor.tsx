@@ -288,13 +288,6 @@ export function RuleEditor({ rule, onChange, actionsOnly, readOnly }: Props) {
             className="font-mono text-xs"
             placeholder="Static response body"
           />
-          <Textarea
-            value={rule.functionBody ?? ''}
-            onChange={(e) => patch({ functionBody: e.target.value })}
-            rows={4}
-            className="font-mono text-xs"
-            placeholder="Or JS function body: return body.replace('a','b')  (args: body, url, method)"
-          />
         </>
       )}
 
@@ -306,13 +299,6 @@ export function RuleEditor({ rule, onChange, actionsOnly, readOnly }: Props) {
             rows={6}
             className="font-mono text-xs"
             placeholder="Static request body"
-          />
-          <Textarea
-            value={rule.functionBody ?? ''}
-            onChange={(e) => patch({ functionBody: e.target.value })}
-            rows={4}
-            className="font-mono text-xs"
-            placeholder="Or JS function body (args: body, url, method)"
           />
         </>
       )}
@@ -342,21 +328,33 @@ export function RuleEditor({ rule, onChange, actionsOnly, readOnly }: Props) {
                 <SelectItem value="document_idle">After page load</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={rule.scriptSource} onValueChange={(s) => patch({ scriptSource: s as 'inline' | 'library' | 'url' })}>
+            <Select
+              value={rule.scriptSource === 'library' ? 'library' : 'inline'}
+              onValueChange={(s) => patch({ scriptSource: s as 'inline' | 'library' })}
+            >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="inline">Code</SelectItem>
-                <SelectItem value="url">URL</SelectItem>
                 <SelectItem value="library">Library item</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          {rule.scriptSource === 'url' ? (
-            <Input value={rule.url ?? ''} onChange={(e) => patch({ url: e.target.value })} placeholder="https://localhost:3000/script.js" />
-          ) : rule.scriptSource === 'library' ? (
+          {rule.scriptSource === 'library' ? (
             <Input value={rule.libraryId ?? ''} onChange={(e) => patch({ libraryId: e.target.value })} placeholder="Library item id" />
           ) : (
-            <Textarea value={rule.code ?? ''} onChange={(e) => patch({ code: e.target.value })} rows={8} className="font-mono text-xs" />
+            <>
+              {'url' in rule && !rule.code && (
+                <p className="text-xs text-muted-foreground">
+                  Scripts can no longer load from a URL. Paste the script code here to keep this rule working.
+                </p>
+              )}
+              <Textarea
+                value={rule.code ?? ''}
+                onChange={(e) => patch({ code: e.target.value, scriptSource: 'inline' })}
+                rows={8}
+                className="font-mono text-xs"
+              />
+            </>
           )}
         </>
       )}
