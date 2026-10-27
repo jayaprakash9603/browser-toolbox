@@ -19,7 +19,8 @@ const MAX_HOME_BOOT_JS = 1_135_000
 /** After SW leak fix, measured ~423 KB static closure. */
 const MAX_SERVICE_WORKER_JS = 480 * 1024
 
-const BANNED_IN_HOME = [/postman-lite/i, /\bcmdk\b/]
+/** `_gsap` is the cache property GSAP stamps on every target: the tool demos must stay lazy. */
+const BANNED_IN_HOME = [/postman-lite/i, /\bcmdk\b/, /\b_gsap\b/]
 
 const BANNED_SW_CHUNK_PREFIX = [/^Tool-/, /^CodeEditor-/]
 const BANNED_SW_CONTENT = [/cm-scroller/, /framer-motion/, /js_beautify/, /postman-lite/i]

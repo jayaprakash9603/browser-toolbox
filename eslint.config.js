@@ -12,6 +12,8 @@ export default defineConfig([
     'coverage',
     'universal-form-autofill',
     'website',
+    // Copied from the website by scripts/sync-website-demos.mjs and linted there.
+    'src/app/demos/tools',
     'public/form-autofill',
     'public/react-devtools/**',
     'vendor/react-devtools/**',

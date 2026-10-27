@@ -41,8 +41,54 @@
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+/* Tool demos share the website's palette and stay dark in every extension theme. */
+@theme {
+  --color-canvas: #07070b;
+  --color-surface: #0f0f16;
+  --color-elevated: #161622;
+  --color-raised: #1d1d2b;
+  --color-line: rgb(255 255 255 / 0.08);
+  --color-line-strong: rgb(255 255 255 / 0.16);
+  --color-ink: #f4f4f6;
+  --color-ink-soft: #c9c9d3;
+  --color-indigo: #6366f1;
+  --color-indigo-deep: #4f46e5;
+  --color-violet: #8b5cf6;
+  --color-cyan: #22d3ee;
+  --color-emerald: #34d399;
+  --color-amber: #fbbf24;
+  --color-rose: #fb7185;
+}
+
 * {
   border-color: var(--border);
+}
+
+/* `muted`, `accent` and `border` mean something else in the extension, so the demo scope redefines them. */
+[data-demo-stage] {
+  --muted: #8b8b9a;
+  --accent: var(--demo-accent, #6366f1);
+  --border: rgb(255 255 255 / 0.08);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  color-scheme: dark;
+  color: var(--color-ink);
+}
+
+@keyframes demo-caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.demo-caret::after {
+  content: '';
+  display: inline-block;
+  width: 1.5px;
+  height: 1em;
+  margin-left: 1px;
+  vertical-align: -0.15em;
+  background: currentColor;
+  animation: demo-caret-blink 1s steps(1) infinite;
 }
 
 /* Layered so utilities such as `scrollbar-none` can override it. */

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { categoryRegistry, groupToolsByToolkit, toolRegistry } from '@/core/registry'
 import { getToolSearchLabels } from '@/i18n/toolLabels'
@@ -7,6 +7,8 @@ import { ToolCardGrid } from '@/shared/components/ToolCardGrid'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { InboxIcon } from 'lucide-react'
+
+const CategoryDemoPlayer = lazy(() => import('@/app/pages/category/CategoryDemoPlayer'))
 
 export default function CategoryPage({ categoryId }: { categoryId: string }) {
   const { t } = useTranslation()
@@ -45,6 +47,11 @@ export default function CategoryPage({ categoryId }: { categoryId: string }) {
           </p>
         </div>
       </div>
+      {tools.length > 0 && (
+        <Suspense fallback={<div aria-hidden className="mb-4 h-11 rounded-2xl border bg-card" />}>
+          <CategoryDemoPlayer key={category.id} tools={tools} />
+        </Suspense>
+      )}
       {tools.length > 0 && (
         <SearchInput
           value={query}

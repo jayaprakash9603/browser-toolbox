@@ -1,6 +1,4 @@
-import { useEffect, useState, useSyncExternalStore, type RefObject } from 'react'
-
-export const DEMO_STEP_MS = 4400
+import { useCallback, useEffect, useState, useSyncExternalStore, type RefObject } from 'react'
 
 const PAUSE_KEY = 'tbx.home.demos.paused'
 
@@ -33,25 +31,22 @@ export function useInViewport(ref: RefObject<Element | null>) {
 }
 
 /**
- * Steps through `count` items while `active`. The first step waits an extra `lead` ms so a grid of
- * cards ripples instead of switching in unison.
+ * Steps through `count` items, one per finished demo (`advance`). The first demo starts `lead` ms
+ * after the card becomes active so a grid of cards ripples instead of playing in unison.
  */
 export function useDemoCycle(count: number, active: boolean, lead: number) {
   const [index, setIndex] = useState(0)
-  const [first, setFirst] = useState(true)
-  const running = active && count > 1
-  const stepMs = first ? DEMO_STEP_MS + lead : DEMO_STEP_MS
+  const [started, setStarted] = useState(lead <= 0)
 
   useEffect(() => {
-    if (!running) return
-    const timer = setTimeout(() => {
-      setFirst(false)
-      setIndex((current) => (current + 1) % count)
-    }, stepMs)
+    if (started || !active) return
+    const timer = setTimeout(() => setStarted(true), lead)
     return () => clearTimeout(timer)
-  }, [running, count, stepMs, index])
+  }, [started, active, lead])
 
-  return { index: index % Math.max(count, 1), stepMs, running }
+  const advance = useCallback(() => setIndex((current) => (current + 1) % Math.max(count, 1)), [count])
+
+  return { index: index % Math.max(count, 1), running: active && started, advance }
 }
 
 function readPaused() {

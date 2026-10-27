@@ -1,0 +1,18 @@
+export const demoStrings = {
+  'demo.play': 'Play demo',
+  'demo.pause': 'Pause demo',
+  'demo.stepLabel': 'Step {{index}}: {{title}}',
+  'demo.toolOf': 'Tool {{current}} of {{total}}',
+  'demo.loading': 'Loading demo…',
+  'demo.noDemo': 'A walkthrough for this tool is on the way.',
+  'demo.player.heading': 'See it in action',
+  'demo.player.tools': 'Demos in this category',
+  'demo.player.steps': 'How it works',
+  'demo.player.open': 'Open {{name}}',
+  'demo.player.autoAdvance': 'Play every tool',
+  'demo.player.autoAdvanceHint': 'Moves to the next tool after each walkthrough',
+  'demo.player.previous': 'Previous tool',
+  'demo.player.next': 'Next tool',
+  'demo.player.hide': 'Hide demo',
+  'demo.player.show': 'Show demo',
+}

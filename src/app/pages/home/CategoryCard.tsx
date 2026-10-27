@@ -10,8 +10,10 @@ import { useDemoCycle, useInViewport, usePageVisible } from '@/app/pages/home/us
 
 const DemoReel = lazy(() => import('@/app/pages/home/demo/DemoReel'))
 
-const PREVIEW =
-  'relative aspect-[320/236] overflow-hidden rounded-xl bg-muted/45 bg-[radial-gradient(circle,var(--border)_1px,transparent_1.2px)] bg-[size:10px_10px]'
+/** Matches the reel's geometry (a 520x420 demo canvas over a 34px caption bar) so nothing shifts as it loads. */
+const FRAME = 'relative overflow-hidden rounded-xl'
+const CANVAS = 'aspect-[520/420]'
+const BAR = 'h-[34px]'
 
 interface CategoryCardProps {
   category: CategoryDefinition
@@ -35,10 +37,13 @@ export function CategoryCard({ category, tools, position = 0, playing = true }: 
         title={description}
         className="flex h-full flex-col gap-2 rounded-2xl border border-dashed p-1.5 text-muted-foreground"
       >
-        <div className={`${PREVIEW} flex items-center justify-center`}>
-          <span className="flex size-12 items-center justify-center rounded-2xl border border-dashed bg-background/60">
-            <Icon className="size-5" aria-hidden />
-          </span>
+        <div className={`${FRAME} bg-muted/45 bg-[radial-gradient(circle,var(--border)_1px,transparent_1.2px)] bg-[size:10px_10px]`}>
+          <div className={`${CANVAS} flex items-center justify-center`}>
+            <span className="flex size-12 items-center justify-center rounded-2xl border border-dashed bg-background/60">
+              <Icon className="size-5" aria-hidden />
+            </span>
+          </div>
+          <div className={BAR} />
         </div>
         <div className="flex min-w-0 flex-col px-1.5 pb-1">
           <span className="truncate text-[13px] font-semibold text-foreground/70">{name}</span>
@@ -86,12 +91,16 @@ function CategoryDemo({
   const pageVisible = usePageVisible()
   const reduceMotion = useReducedMotion()
   const active = playing && inView && pageVisible && !reduceMotion
-  const { index, stepMs, running } = useDemoCycle(tools.length, active, (position % 4) * 700)
+  const { index, running, advance } = useDemoCycle(tools.length, active, (position % 4) * 350)
 
   return (
-    <div ref={ref} aria-hidden className={PREVIEW}>
+    <div
+      ref={ref}
+      aria-hidden
+      className={`${FRAME} bg-[#0f0f16] ring-1 ring-black/5 transition-shadow duration-200 ring-inset group-hover:shadow-[0_10px_30px_-14px_rgb(0_0_0/0.55)] dark:ring-white/5`}
+    >
       <Suspense fallback={<Poster tool={tools[index]} />}>
-        <DemoReel category={category} tools={tools} index={index} stepMs={stepMs} running={running} />
+        <DemoReel category={category} tools={tools} index={index} running={running} advance={advance} />
       </Suspense>
     </div>
   )
@@ -102,11 +111,14 @@ function Poster({ tool }: { tool: ToolDefinition }) {
   const { name } = useToolLabels(tool)
   const ToolIcon = tool.icon
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-      <span className="flex size-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground [&_svg]:size-5">
-        <ToolIcon />
-      </span>
-      <span className="max-w-[80%] truncate text-xs font-semibold">{name}</span>
-    </div>
+    <>
+      <div className={`${CANVAS} flex flex-col items-center justify-center gap-2 text-[#f4f4f6]`}>
+        <span className="flex size-11 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] [&_svg]:size-5">
+          <ToolIcon />
+        </span>
+        <span className="max-w-[80%] truncate text-xs font-semibold">{name}</span>
+      </div>
+      <div className={`${BAR} border-t border-white/10`} />
+    </>
   )
 }
