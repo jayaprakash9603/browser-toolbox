@@ -9,16 +9,18 @@ interface ChipRailProps {
   /** Role and name for the row itself, such as a tablist of categories. */
   role?: string
   label?: string
+  /** Two rows fill column by column, so neighbours in the list stay next to each other. */
+  rows?: 1 | 2
   className?: string
 }
 
 const FADE = 28
 
 /**
- * One row of chips that never wraps. When the row is wider than the space, it scrolls
+ * One or two rows of chips that never wrap. When the rows are wider than the space, they scroll
  * sideways inside itself; edges fade and arrow buttons appear only on the hidden side.
  */
-export function ChipRail({ children, role, label, className }: ChipRailProps) {
+export function ChipRail({ children, role, label, rows = 1, className }: ChipRailProps) {
   const reduce = useReducedMotion()
   const rail = useRef<HTMLDivElement>(null)
   const row = useRef<HTMLDivElement>(null)
@@ -77,7 +79,12 @@ export function ChipRail({ children, role, label, className }: ChipRailProps) {
         className="scrollbar-none overflow-x-auto overscroll-x-contain scroll-px-1 py-0.5"
         style={{ maskImage: mask, WebkitMaskImage: mask }}
       >
-        <div ref={row} role={role} aria-label={label} className="flex w-max gap-1.5 px-px">
+        <div
+          ref={row}
+          role={role}
+          aria-label={label}
+          className={cn('w-max gap-1.5 px-px', rows === 2 ? 'grid grid-flow-col grid-rows-2' : 'flex')}
+        >
           {children}
         </div>
       </div>

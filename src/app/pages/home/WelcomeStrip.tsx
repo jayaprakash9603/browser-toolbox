@@ -97,7 +97,7 @@ export function WelcomeStrip({ favoriteCount, delay = 0 }: { favoriteCount: numb
   const exit = reduce ? { opacity: 0 } : { opacity: 0, y: -8, filter: 'blur(4px)' }
 
   return (
-    <SlideUp delay={delay} className="mb-[var(--density-section-gap)]">
+    <SlideUp delay={delay} className="@container mb-[var(--density-section-gap)]">
       <section
         aria-labelledby="home-welcome-title"
         className="relative overflow-hidden rounded-2xl border p-3 shadow-[var(--shadow-card)]"
@@ -117,10 +117,11 @@ export function WelcomeStrip({ favoriteCount, delay = 0 }: { favoriteCount: numb
           className="pointer-events-none absolute -top-10 -right-8 size-28 rounded-full opacity-25 blur-2xl"
           style={{ background: 'linear-gradient(135deg, var(--hero-from), var(--hero-to))' }}
         />
-        <div className="relative flex items-start gap-2.5">
+        {/* Narrow cards give the tagline its own full-width line instead of squeezing it beside the clock. */}
+        <div className="relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-2 @[560px]:items-start @[560px]:gap-y-0.5">
           <span
             aria-hidden
-            className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-xl text-white shadow-sm"
+            className="relative col-start-1 row-start-1 flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-xl text-white shadow-sm @[560px]:row-span-2"
             style={{ background: 'linear-gradient(135deg, var(--hero-from), var(--hero-to))' }}
           >
             <AnimatePresence mode="popLayout" initial={false}>
@@ -137,39 +138,40 @@ export function WelcomeStrip({ favoriteCount, delay = 0 }: { favoriteCount: numb
             </AnimatePresence>
           </span>
 
-          <div className="min-w-0 flex-1">
-            <h1 id="home-welcome-title" className="text-[15px] leading-tight font-semibold tracking-tight">
-              {t(greetingKey)}
-            </h1>
-            {/* Every message is laid out invisibly in the same cell so the card never changes height. */}
-            <div className="mt-0.5 grid text-xs leading-snug text-muted-foreground">
-              {HOME_TAGLINES.map((item) => (
-                <span key={item.id} aria-hidden className="invisible col-start-1 row-start-1">
-                  {t(`home.tagline.${item.id}`)}
-                </span>
-              ))}
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.p
-                  key={tagline.id}
-                  initial={enter}
-                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                  exit={{ ...exit, transition: { duration: 0.16 } }}
-                  transition={{ duration: 0.28, ease: [0.2, 0.8, 0.2, 1] }}
-                  className="col-start-1 row-start-1"
-                >
-                  {t(`home.tagline.${tagline.id}`)}
-                </motion.p>
-              </AnimatePresence>
-            </div>
+          <h1
+            id="home-welcome-title"
+            className="col-start-2 row-start-1 min-w-0 text-[15px] leading-tight font-semibold tracking-tight text-balance"
+          >
+            {t(greetingKey)}
+          </h1>
+          {/* Every message is laid out invisibly in the same cell so the card never changes height. */}
+          <div className="col-span-3 col-start-1 row-start-2 grid min-w-0 text-xs leading-snug text-pretty text-muted-foreground @[560px]:col-span-1 @[560px]:col-start-2">
+            {HOME_TAGLINES.map((item) => (
+              <span key={item.id} aria-hidden className="invisible col-start-1 row-start-1">
+                {t(`home.tagline.${item.id}`)}
+              </span>
+            ))}
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.p
+                key={tagline.id}
+                initial={enter}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                exit={{ ...exit, transition: { duration: 0.16 } }}
+                transition={{ duration: 0.28, ease: [0.2, 0.8, 0.2, 1] }}
+                className="col-start-1 row-start-1"
+              >
+                {t(`home.tagline.${tagline.id}`)}
+              </motion.p>
+            </AnimatePresence>
           </div>
 
           <time
             dateTime={now.toISOString()}
             aria-label={clock.full}
             title={clock.full}
-            className="flex shrink-0 items-center gap-2 rounded-2xl border bg-background/50 py-1 ps-1 pe-2.5 shadow-sm backdrop-blur-sm"
+            className="col-start-3 row-start-1 flex shrink-0 items-center gap-2 rounded-2xl border bg-background/50 py-1.5 ps-2.5 pe-2.5 shadow-sm backdrop-blur-sm @[360px]:py-1 @[360px]:ps-1 @[560px]:row-span-2"
           >
-            <WallClock now={now} />
+            <WallClock now={now} className="hidden size-10 @[360px]:block @[560px]:size-[46px]" />
             <span className="flex flex-col items-end gap-1" aria-hidden>
               <span className="flex items-baseline gap-0.5 text-[15px] leading-none font-semibold tracking-tight tabular-nums">
                 <RollingTime time={clock.time} />
@@ -185,7 +187,7 @@ export function WelcomeStrip({ favoriteCount, delay = 0 }: { favoriteCount: numb
           </time>
         </div>
 
-        <div className="relative mt-2 flex items-center gap-1 ps-[46px]" role="group" aria-label={t('home.taglines')}>
+        <div className="relative mt-1.5 flex items-center gap-1 @[560px]:mt-2 @[560px]:ps-[46px]" role="group" aria-label={t('home.taglines')}>
           {HOME_TAGLINES.map((item, i) => {
             const active = i === taglineIndex
             return (

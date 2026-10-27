@@ -34,7 +34,7 @@ export interface ViewerSection {
   rows: readonly Row[]
 }
 
-interface CategoryViewerProps {
+export interface CategoryViewerProps {
   open: boolean
   sections: readonly ViewerSection[]
   initialId: string
