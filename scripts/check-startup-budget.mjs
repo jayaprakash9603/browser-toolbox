@@ -14,7 +14,8 @@ const assets = join(dist, 'assets')
 /** Measured home boot ~986 KB; allow headroom for i18n/catalog growth. */
 /** Measured home boot ~1.08 MB after script-studio-core split (was ~986 KB). */
 /** ~1.10 MB after the Tasks, Diff, Color picker and Responsive viewer strings joined the boot i18n catalog. */
-const MAX_HOME_BOOT_JS = 1_120_000
+/** ~1.12 MB once site-access prompts and the HTML bundle strings joined the catalog. */
+const MAX_HOME_BOOT_JS = 1_135_000
 /** After SW leak fix, measured ~423 KB static closure. */
 const MAX_SERVICE_WORKER_JS = 480 * 1024
 
