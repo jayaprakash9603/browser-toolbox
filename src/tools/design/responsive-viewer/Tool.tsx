@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState, type FormEvent } from 'react'
-import { AnimatePresence, MotionConfig, motion } from 'motion/react'
+import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'motion/react'
 import {
   ArrowRightIcon,
   ExternalLinkIcon,
@@ -24,7 +24,7 @@ import { Segmented } from '@/shared/components/ui/segmented'
 import { cn } from '@/shared/utils/cn'
 import { useDesignTool } from '../_shared'
 import { DeviceCard } from './DeviceCard'
-import { DevicePicker } from './DevicePicker'
+import { DeviceMenu, SelectedDevices } from './DevicePicker'
 import { DeviceViewer } from './DeviceViewer'
 import {
   DEVICES,
@@ -41,7 +41,8 @@ import { setFramingAllowed } from './framing'
 import { EASE_OUT, useContentWidth, useWindowHeight } from './helpers'
 import { IconAction } from './parts'
 
-const toggleIn = (list: readonly string[], id: string) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id])
+const toggleIn = (list: readonly string[], id: string) =>
+  list.includes(id) ? list.filter((x) => x !== id) : [...list, id]
 
 export default function ResponsiveViewerTool() {
   const { t } = useTranslation()
@@ -53,6 +54,8 @@ export default function ResponsiveViewerTool() {
   const [urlError, setUrlError] = useState<string | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
   const [fullOpen, setFullOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const reduceMotion = useReducedMotion()
   /** The unblock setting whose network rules are in effect; frames wait for it so they load with the right headers. */
   const [appliedUnblock, setAppliedUnblock] = useState<boolean | null>(null)
   const windowHeight = useWindowHeight()
@@ -126,8 +129,30 @@ export default function ResponsiveViewerTool() {
   const rotateAll = () => {
     const ids = rotatable.map((d) => d.id)
     update({
-      rotated: allRotated ? settings.rotated.filter((id) => !ids.includes(id)) : [...new Set([...settings.rotated, ...ids])],
+      rotated: allRotated
+        ? settings.rotated.filter((id) => !ids.includes(id))
+        : [...new Set([...settings.rotated, ...ids])],
     })
+  }
+
+  const jumpTo = (id: string) => {
+    const card = document.getElementById(`rv-card-${id}`)
+    if (!card) return
+    card.scrollIntoView({
+      block: 'nearest',
+      inline: 'nearest',
+      behavior: reduceMotion ? 'auto' : 'smooth',
+    })
+    if (!reduceMotion) {
+      card.animate(
+        [
+          { boxShadow: '0 0 0 2px var(--primary)' },
+          { boxShadow: '0 0 0 2px var(--primary)', offset: 0.6 },
+          { boxShadow: '0 0 0 0 transparent' },
+        ],
+        { duration: 1100, easing: 'ease-out' },
+      )
+    }
   }
 
   return (
@@ -140,8 +165,15 @@ export default function ResponsiveViewerTool() {
                 {t('rv.url.label')}
               </label>
               <div className="relative min-w-0 flex-1">
-                <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden>
-                  {secure ? <LockIcon className="size-3.5 text-emerald-600 dark:text-emerald-400" /> : <GlobeIcon className="size-3.5" />}
+                <span
+                  className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden
+                >
+                  {secure ? (
+                    <LockIcon className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                  ) : (
+                    <GlobeIcon className="size-3.5" />
+                  )}
                 </span>
                 <input
                   id={inputId}
@@ -172,7 +204,11 @@ export default function ResponsiveViewerTool() {
               <IconAction label={t('rv.url.currentTab')} onClick={() => void loadCurrentTab()}>
                 <LocateFixedIcon />
               </IconAction>
-              <IconAction label={t('rv.url.reloadAll')} onClick={() => setReloadKey((k) => k + 1)} disabled={!url}>
+              <IconAction
+                label={t('rv.url.reloadAll')}
+                onClick={() => setReloadKey((k) => k + 1)}
+                disabled={!url}
+              >
                 <RefreshCwIcon />
               </IconAction>
               <IconAction
@@ -199,7 +235,45 @@ export default function ResponsiveViewerTool() {
               )}
             </AnimatePresence>
 
-            <div className="flex flex-wrap items-center gap-1.5" role="toolbar" aria-label={t('rv.view.label')}>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <DeviceMenu
+                devices={allDevices}
+                selected={settings.selected}
+                open={menuOpen}
+                onOpenChange={setMenuOpen}
+                onToggle={(id) => update({ selected: toggleIn(settings.selected, id) })}
+                onSelect={(selected) => update({ selected })}
+                onAddCustom={(device) =>
+                  update({
+                    custom: [...settings.custom, device],
+                    selected: [...settings.selected, device.id],
+                  })
+                }
+                onRemoveCustom={(id) =>
+                  update({
+                    custom: settings.custom.filter((d) => d.id !== id),
+                    selected: settings.selected.filter((x) => x !== id),
+                    rotated: settings.rotated.filter((x) => x !== id),
+                  })
+                }
+              />
+              <span className="h-5 w-px shrink-0 bg-border" aria-hidden />
+              <div className="min-w-0 flex-1">
+                <SelectedDevices
+                  devices={allDevices}
+                  selected={settings.selected}
+                  onRemove={(id) => update({ selected: settings.selected.filter((x) => x !== id) })}
+                  onJump={jumpTo}
+                  onOpenMenu={() => setMenuOpen(true)}
+                />
+              </div>
+            </div>
+
+            <div
+              className="flex flex-wrap items-center gap-1.5 border-t pt-2"
+              role="toolbar"
+              aria-label={t('rv.view.label')}
+            >
               <Segmented<ZoomMode>
                 size="sm"
                 ariaLabel={t('rv.view.zoom')}
@@ -216,8 +290,16 @@ export default function ResponsiveViewerTool() {
                 value={settings.layout}
                 onValueChange={(layout) => update({ layout })}
                 options={[
-                  { value: 'grid', label: <LayoutGridIcon aria-label={t('rv.view.grid')} />, title: t('rv.view.grid') },
-                  { value: 'row', label: <GalleryHorizontalIcon aria-label={t('rv.view.row')} />, title: t('rv.view.row') },
+                  {
+                    value: 'grid',
+                    label: <LayoutGridIcon aria-label={t('rv.view.grid')} />,
+                    title: t('rv.view.grid'),
+                  },
+                  {
+                    value: 'row',
+                    label: <GalleryHorizontalIcon aria-label={t('rv.view.row')} />,
+                    title: t('rv.view.row'),
+                  },
                 ]}
               />
               <div className="ml-auto flex items-center gap-1">
@@ -232,95 +314,92 @@ export default function ResponsiveViewerTool() {
                   onClick={() => setFullOpen(true)}
                 >
                   <Maximize2Icon />
-                  <span className="hidden @[420px]:inline">{t('rv.full.open')}</span>
+                  <span className="hidden @[640px]:inline">{t('rv.full.open')}</span>
                 </Button>
                 <Button
                   variant="outline"
                   size="xs"
                   aria-pressed={settings.frame}
+                  aria-label={t('rv.view.frame')}
+                  title={t('rv.view.frame')}
                   onClick={() => update({ frame: !settings.frame })}
                   className="aria-pressed:border-primary/40 aria-pressed:bg-primary/10 aria-pressed:text-primary"
                 >
                   <FrameIcon />
-                  <span className="hidden @[420px]:inline">{t('rv.view.frame')}</span>
+                  <span className="hidden @[640px]:inline">{t('rv.view.frame')}</span>
                 </Button>
                 <Button
                   variant="outline"
                   size="xs"
                   aria-pressed={allRotated}
+                  aria-label={t('rv.view.rotateAll')}
+                  title={t('rv.view.rotateAll')}
                   disabled={rotatable.length === 0}
                   onClick={rotateAll}
                   className="aria-pressed:border-primary/40 aria-pressed:bg-primary/10 aria-pressed:text-primary"
                 >
-                  <motion.span className="flex" animate={{ rotate: allRotated ? 90 : 0 }} transition={{ type: 'spring', stiffness: 300, damping: 22 }}>
+                  <motion.span
+                    className="flex"
+                    animate={{ rotate: allRotated ? 90 : 0 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+                  >
                     <RotateCwSquareIcon />
                   </motion.span>
-                  <span className="hidden @[420px]:inline">{t('rv.view.rotateAll')}</span>
+                  <span className="hidden @[640px]:inline">{t('rv.view.rotateAll')}</span>
                 </Button>
               </div>
             </div>
           </div>
 
           <div className="scrollbar-styled flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain">
-            <DevicePicker
-              devices={allDevices}
-              selected={settings.selected}
-              onToggle={(id) => update({ selected: toggleIn(settings.selected, id) })}
-              onClear={() => update({ selected: [] })}
-              onAddCustom={(device) =>
-                update({ custom: [...settings.custom, device], selected: [...settings.selected, device.id] })
-              }
-              onRemoveCustom={(id) =>
-                update({
-                  custom: settings.custom.filter((d) => d.id !== id),
-                  selected: settings.selected.filter((x) => x !== id),
-                  rotated: settings.rotated.filter((x) => x !== id),
-                })
-              }
-            />
-
             {!url ? (
-            <EmptyState onUseTab={() => void loadCurrentTab()} />
-          ) : shown.length === 0 ? (
-            <motion.p
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl border border-dashed px-4 py-10 text-center text-xs text-muted-foreground"
-            >
-              {t('rv.empty.noDevices')}
-            </motion.p>
-          ) : (
-            framesReady &&
-            !fullOpen && (
-              <div
-                className={cn(
-                  settings.layout === 'grid'
-                    ? 'grid items-start gap-3 @[760px]:grid-cols-2 @[1180px]:grid-cols-3'
-                    : '-mx-1 flex snap-x items-start gap-3 overflow-x-auto px-1 pb-2',
-                )}
+              <EmptyState onUseTab={() => void loadCurrentTab()} />
+            ) : shown.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col items-center gap-3 rounded-2xl border border-dashed px-4 py-10 text-center text-xs text-muted-foreground"
               >
-                <AnimatePresence>
-                  {shown.map((device, index) => (
-                    <DeviceCard
-                      key={device.id}
-                      device={device}
-                      url={url}
-                      rotated={settings.rotated.includes(device.id)}
-                      zoom={settings.zoom}
-                      fitWidth={settings.layout === 'grid'}
-                      stageWidth={stageWidth}
-                      maxHeight={maxHeight}
-                      frame={settings.frame}
-                      reloadKey={reloadKey}
-                      index={index}
-                      onRotate={() => update({ rotated: toggleIn(settings.rotated, device.id) })}
-                      onHide={() => update({ selected: settings.selected.filter((x) => x !== device.id) })}
-                    />
-                  ))}
-                </AnimatePresence>
-              </div>
-            )
-          )}
+                {t('rv.empty.noDevices')}
+                <Button size="sm" variant="outline" onClick={() => setMenuOpen(true)}>
+                  <MonitorSmartphoneIcon />
+                  {t('rv.devices.open')}
+                </Button>
+              </motion.div>
+            ) : (
+              framesReady &&
+              !fullOpen && (
+                <div
+                  className={cn(
+                    settings.layout === 'grid'
+                      ? 'grid items-start gap-3 @[760px]:grid-cols-2 @[1180px]:grid-cols-3'
+                      : '-mx-1 flex snap-x items-start gap-3 overflow-x-auto px-1 pb-2',
+                  )}
+                >
+                  <AnimatePresence>
+                    {shown.map((device, index) => (
+                      <DeviceCard
+                        key={device.id}
+                        device={device}
+                        url={url}
+                        rotated={settings.rotated.includes(device.id)}
+                        zoom={settings.zoom}
+                        fitWidth={settings.layout === 'grid'}
+                        stageWidth={stageWidth}
+                        maxHeight={maxHeight}
+                        frame={settings.frame}
+                        reloadKey={reloadKey}
+                        index={index}
+                        onRotate={() => update({ rotated: toggleIn(settings.rotated, device.id) })}
+                        onHide={() =>
+                          update({ selected: settings.selected.filter((x) => x !== device.id) })
+                        }
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )
+            )}
 
             <OptionSwitch
               label={t('rv.unblock.title')}

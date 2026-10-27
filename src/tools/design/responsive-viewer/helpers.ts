@@ -12,6 +12,13 @@ export const KIND_ICON: Record<DeviceKind, LucideIcon> = {
   desktop: MonitorIcon,
 }
 
+export const KIND_TONE: Record<DeviceKind, string> = {
+  phone: 'bg-sky-500/12 text-sky-600 dark:text-sky-300',
+  tablet: 'bg-violet-500/12 text-violet-600 dark:text-violet-300',
+  laptop: 'bg-amber-500/14 text-amber-700 dark:text-amber-300',
+  desktop: 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300',
+}
+
 /** Content-box width of an element, null until the first measurement. */
 export function useContentWidth<T extends HTMLElement>() {
   const ref = useRef<T>(null)

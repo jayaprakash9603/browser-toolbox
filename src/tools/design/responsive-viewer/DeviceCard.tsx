@@ -7,7 +7,7 @@ import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/utils/cn'
 import { breakpointFor, orientedSize, viewportScale, type Device, type DeviceKind, type ZoomMode } from './devices'
-import { EASE_OUT, KIND_ICON, frameInsets, hostnameOf, openSizedWindow, useContentWidth } from './helpers'
+import { EASE_OUT, KIND_ICON, KIND_TONE, frameInsets, hostnameOf, openSizedWindow, useContentWidth } from './helpers'
 import { IconAction } from './parts'
 
 const BODY_PAD = 12
@@ -78,9 +78,10 @@ export function DeviceCard({
       )}
       style={fitWidth ? undefined : { width: Math.max(272, screenW + insets.x * 2 + BODY_PAD * 2 + 2) }}
       aria-label={device.label}
+      id={`rv-card-${device.id}`}
     >
       <header className="flex min-h-11 items-center gap-2 border-b bg-background/60 px-2.5 py-1.5">
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary" aria-hidden>
+        <span className={cn('flex size-7 shrink-0 items-center justify-center rounded-lg', KIND_TONE[device.kind])} aria-hidden>
           <Icon className="size-3.5" />
         </span>
         <div className="min-w-0 flex-1">
