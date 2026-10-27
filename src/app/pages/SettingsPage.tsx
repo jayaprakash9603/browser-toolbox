@@ -3,6 +3,7 @@ import {
   ClipboardIcon,
   CpuIcon,
   GlobeIcon,
+  GlobeLockIcon,
   KeyboardIcon,
   ShieldCheckIcon,
   ShieldIcon,
@@ -46,6 +47,7 @@ import { NetMonitorSettingsSection } from '@/app/pages/settings/NetMonitorSettin
 import { PipSettingsSection } from '@/app/pages/settings/PipSettingsSection'
 import { ReactDevtoolsSettingsSection } from '@/app/pages/settings/ReactDevtoolsSettingsSection'
 import { SaveImageAsSettingsSection } from '@/app/pages/settings/SaveImageAsSettingsSection'
+import { SiteAccessSettingsSection } from '@/app/pages/settings/SiteAccessSettingsSection'
 import { SitesSettingsSection } from '@/app/pages/settings/SitesSettingsSection'
 import { SettingsGroup, SettingsRow } from '@/app/pages/settings/ui'
 import { useFocusTarget } from '@/shared/hooks/useFocusTarget'
@@ -70,6 +72,7 @@ export default function SettingsPage() {
     { id: 'appearance', icon: BrushIcon, label: t('settings.groupAppearance') },
     { id: 'adblock', icon: ShieldCheckIcon, label: t('settings.adblockSection') },
     { id: 'protection', icon: ShieldIcon, label: t('settings.protectionSection') },
+    { id: 'siteAccess', icon: GlobeLockIcon, label: t('settings.siteAccess') },
     { id: 'sites', icon: GlobeIcon, label: t('settings.groupSites') },
     { id: 'features', icon: KeyboardIcon, label: t('settings.groupFeatures') },
     { id: 'clipboard', icon: ClipboardIcon, label: t('settings.clipboard') },
@@ -178,6 +181,15 @@ export default function SettingsPage() {
         </SettingsGroup>
 
         <SettingsGroup
+          id="siteAccess"
+          icon={GlobeLockIcon}
+          title={t('settings.siteAccess')}
+          description={t('settings.siteAccessDescription')}
+        >
+          <SiteAccessSettingsSection />
+        </SettingsGroup>
+
+        <SettingsGroup
           id="sites"
           icon={GlobeIcon}
           title={t('settings.groupSites')}
@@ -213,6 +225,18 @@ export default function SettingsPage() {
               checked={settings.clipboardHistoryEnabled}
               onCheckedChange={(checked) => void update({ clipboardHistoryEnabled: checked })}
               aria-label={t('settings.enableClipboardHistory')}
+            />
+          </SettingsRow>
+          <SettingsRow
+            searchId="clipboardCapturePages"
+            label={t('settings.clipboardCapturePages')}
+            description={t('settings.clipboardCapturePagesDescription')}
+          >
+            <Switch
+              checked={settings.clipboardCaptureFromPages}
+              disabled={!settings.clipboardHistoryEnabled}
+              onCheckedChange={(checked) => void update({ clipboardCaptureFromPages: checked })}
+              aria-label={t('settings.clipboardCapturePages')}
             />
           </SettingsRow>
           <SettingsRow

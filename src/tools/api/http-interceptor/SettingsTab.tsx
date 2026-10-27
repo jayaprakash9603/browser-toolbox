@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 
 import { DEFAULT_LOG_SIZE, MAX_LOG_SIZE, type InterceptorState } from '@/core/interceptor'
+import { requestUserScriptsPermission } from '@/core/script-studio/availability'
 import { Input } from '@/shared/components/ui/input'
 import { Switch } from '@/shared/components/ui/switch'
 
@@ -61,7 +62,7 @@ export function SettingsTab({ state, patchSettings }: Props) {
         <Switch
           checked={s.userScriptsEnabled}
           onCheckedChange={(on) => {
-            if (on) void chrome.permissions.request({ permissions: ['userScripts'] })
+            if (on) void requestUserScriptsPermission()
             void patchSettings({ userScriptsEnabled: on })
           }}
         />

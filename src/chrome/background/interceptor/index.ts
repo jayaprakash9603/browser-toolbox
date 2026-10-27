@@ -40,7 +40,10 @@ async function fullSync(): Promise<void> {
 export function registerInterceptor(): void {
   void initNetworkLog()
   registerDeepInterceptListener()
-  chrome.permissions?.onAdded?.addListener(() => registerDeepInterceptListener())
+  chrome.permissions?.onAdded?.addListener(() => {
+    registerDeepInterceptListener()
+    void updateNetlogListeners()
+  })
 
   chrome.runtime.onConnect.addListener((port) => connectNetlogPort(port))
 

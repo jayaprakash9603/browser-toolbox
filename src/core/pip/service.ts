@@ -1,11 +1,12 @@
 import { STORAGE_KEYS } from '@/core/constants'
+import { requestAllSitesAccess } from '@/core/permissions/siteAccess'
 import { get, set } from '@/core/storage'
 
 import type { PipState } from './types'
 
 export const DEFAULT_PIP_STATE: PipState = {
   enabled: true,
-  autoPip: true,
+  autoPip: false,
   showContextMenu: true,
 }
 
@@ -26,6 +27,8 @@ export async function updatePipState(patch: Partial<PipState>): Promise<PipState
     autoPip: patch.autoPip ?? current.autoPip,
     showContextMenu: patch.showContextMenu ?? current.showContextMenu,
   }
+  const autoTurningOn = next.enabled && next.autoPip && !(current.enabled && current.autoPip)
+  if (autoTurningOn && !(await requestAllSitesAccess())) return current
   await set(STORAGE_KEYS.pip, next)
   return next
 }

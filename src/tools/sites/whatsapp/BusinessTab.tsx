@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { PlusIcon, Trash2Icon } from 'lucide-react'
 
 import { sendMessage } from '@/core/messaging'
+import { requestHostAccess } from '@/core/permissions/originPermissions'
 import {
   BROADCAST_DAILY_CAP_DEFAULT,
   type BroadcastCampaign,
@@ -246,12 +247,16 @@ function WebhookList({ items, onChange, disabled }: { items: WebhookConfig[]; on
         {items.map((w) => (
           <li key={w.id} className="flex justify-between gap-2 py-1">
             <span className="truncate">{w.url}</span>
-            <Switch checked={w.enabled} disabled={disabled} onCheckedChange={(on) => onChange(items.map((x) => (x.id === w.id ? { ...x, enabled: on } : x)))} />
+            <Switch checked={w.enabled} disabled={disabled} onCheckedChange={(on) => {
+              if (on) void requestHostAccess(w.url)
+              onChange(items.map((x) => (x.id === w.id ? { ...x, enabled: on } : x)))
+            }} />
           </li>
         ))}
       </ul>
       <Input className="mb-1 text-xs" placeholder="https://…" value={url} disabled={disabled} onChange={(e) => setUrl(e.target.value)} />
       <Button type="button" size="sm" disabled={disabled || !url} onClick={() => {
+        void requestHostAccess(url)
         onChange([...items, { id: uid(), url, enabled: true, events: ['message'] }])
         setUrl('')
       }}>Add webhook</Button>

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { readClipboardText } from '@/core/clipboard/clipboardService'
 import { CodeEditor, type CursorPosition } from '@/shared/components/CodeEditor'
 import { CopyButton } from '@/shared/components/CopyButton'
 import { Button } from '@/shared/components/ui/button'
@@ -110,7 +111,7 @@ export function EditorPane({
   const hasHeader = label !== undefined || actions !== undefined
 
   const paste = async () => {
-    const text = await navigator.clipboard.readText().catch(() => '')
+    const text = await readClipboardText().catch(() => '')
     if (text) onChange?.(text)
   }
 

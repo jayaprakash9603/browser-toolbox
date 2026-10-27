@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { sendMessage } from '@/core/messaging'
+import { requestAllSitesAccess } from '@/core/permissions/siteAccess'
 import type { LinkCheckResult } from '@/core/engines/linkChecker/check'
 import { summarizeResults } from '@/core/engines/linkChecker/check'
 import { ToolPage } from '@/shared/components/ToolPage'
@@ -17,6 +18,7 @@ export default function LinkCheckerTool() {
 
   const run = async () => {
     setRunning(true)
+    await requestAllSitesAccess()
     const info = await getPageInfo()
     const unique = new Map<string, string>()
     for (const link of info?.links ?? []) {

@@ -13,6 +13,7 @@ import {
   registerSitesWhatsapp,
   registerSitesYoutube,
   syncInstagramEnhancerState,
+  syncWhatsappPlusState,
   syncYoutubeEnhancerState,
 } from './sites'
 import {
@@ -105,6 +106,20 @@ chrome.runtime.onStartup.addListener(() => {
   safeStartup('protection', () => syncProtectionState())
   safeStartup('youtube', () => syncYoutubeEnhancerState())
   safeStartup('instagram', () => syncInstagramEnhancerState())
+  safeStartup('pip', () => initPipOnStartup())
+  safeStartup('shortcuts', () => initShortcutsOnStartup())
+  safeStartup('clipboardCapture', () => initClipboardCapture())
+  safeStartup('reactDevtools', () => syncReactDevtoolsState())
+})
+
+// Site access is optional: registered scripts only run once it is granted, and open tabs need a push.
+chrome.permissions.onAdded.addListener((added) => {
+  if (!added.origins?.length) return
+  safeStartup('adblock', () => syncAdblockState())
+  safeStartup('protection', () => syncProtectionState())
+  safeStartup('youtube', () => syncYoutubeEnhancerState())
+  safeStartup('instagram', () => syncInstagramEnhancerState())
+  safeStartup('whatsapp', () => syncWhatsappPlusState())
   safeStartup('pip', () => initPipOnStartup())
   safeStartup('shortcuts', () => initShortcutsOnStartup())
   safeStartup('clipboardCapture', () => initClipboardCapture())

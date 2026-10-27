@@ -1,6 +1,8 @@
 import { STORAGE_KEYS } from '@/core/constants'
+import { requestPermissions } from '@/core/permissions/siteAccess'
 import { get, set } from '@/core/storage'
 
+import { WHATSAPP_MATCHES } from './constants'
 import { WHATSAPP_FEATURES } from './features'
 import type { WhatsappFeatureValue, WhatsappPlusData, WhatsappPlusState } from './types'
 
@@ -49,6 +51,9 @@ export async function updateWhatsappPlusState(
   },
 ): Promise<WhatsappPlusState> {
   const current = await getWhatsappPlusState()
+  if (patch.enabled && !current.enabled && !(await requestPermissions({ origins: [...WHATSAPP_MATCHES] }))) {
+    return current
+  }
   const next: WhatsappPlusState = {
     enabled: patch.enabled ?? current.enabled,
     values: patch.values ? { ...current.values, ...patch.values } as Record<string, WhatsappFeatureValue> : current.values,

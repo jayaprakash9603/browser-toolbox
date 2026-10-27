@@ -10,6 +10,7 @@ import { getToolComponent } from '@/app/toolComponents'
 import { toolRegistry } from '@/core/registry'
 import { trackRecentTool } from '@/features/recent-tools/recentToolsService'
 import { NetStatusIndicator } from '@/features/netmon/components/NetStatusIndicator'
+import { SiteAccessBar } from '@/features/site-access/SiteAccessBar'
 import {
   AppLoadingSkeleton,
   type AppLoadingSkeletonVariant,
@@ -240,15 +241,28 @@ function getLoadingVariant(path: string): AppLoadingSkeletonVariant {
   return 'home'
 }
 
+/** These ask for all-sites access themselves, so a per-tab prompt would only duplicate it. */
+const TOOLS_WITH_OWN_ACCESS_PROMPT = new Set(['privacy.ad-blocker', 'api.http-interceptor'])
+
 function ToolHost({ toolId }: { toolId: string }) {
   const { t } = useTranslation()
   const tool = toolRegistry.get(toolId)
   if (!tool) return <HomePage />
   const Component = getToolComponent(toolId, tool.loader)
-  return (
+  const readsPage =
+    !TOOLS_WITH_OWN_ACCESS_PROMPT.has(toolId) &&
+    tool.capabilities.some((c) => c === 'PAGE_ACCESS' || c === 'CONTENT_SCRIPT')
+  const body = (
     <Suspense fallback={<AppLoadingSkeleton variant="tool" label={t('nav.loading')} />}>
       {/* eslint-disable-next-line react-hooks/static-components */}
       <Component />
     </Suspense>
+  )
+  if (!readsPage) return body
+  return (
+    <div className="flex h-full flex-col">
+      <SiteAccessBar />
+      <div className="min-h-0 flex-1">{body}</div>
+    </div>
   )
 }

@@ -8,6 +8,7 @@ import { ProtectionHeader } from '@/features/adblock/components/ProtectionHeader
 import { SiteCard } from '@/features/adblock/components/SiteCard'
 import { useAdblock } from '@/features/adblock/useAdblock'
 import { useAdblockLive } from '@/features/adblock/useAdblockLive'
+import { PermissionNotice } from '@/features/site-access/PermissionNotice'
 import { StaggerChildren, StaggerItem } from '@/shared/components/motion/StaggerChildren'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
@@ -44,6 +45,7 @@ export default function AdBlockerTool() {
             onToggle={(enabled) => onPatch({ enabled })}
           />
         </StaggerItem>
+        <PermissionNotice active={state.enabled} message={t('siteAccess.adblockNeeded')} />
         <StaggerItem>
           <SiteCard
             state={state}

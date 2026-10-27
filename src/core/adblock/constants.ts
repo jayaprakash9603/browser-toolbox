@@ -30,7 +30,7 @@ export const DEFAULT_LIST_TOGGLES: Record<RulesetId, boolean> = {
 }
 
 export const DEFAULT_ADBLOCK_STATE: AdblockState = {
-  enabled: true,
+  enabled: false,
   youtubeEnabled: true,
   cosmeticEnabled: true,
   cookieBanners: false,

@@ -3,7 +3,7 @@ import { MAX_CLIPBOARD_CAPTURE_CHARS } from '@/core/clipboard/readCopySelection'
 import { STORAGE_KEYS } from '@/core/constants'
 import { createLogger } from '@/core/logging'
 import { registerMessageHandler } from '@/core/messaging'
-import { getSettings } from '@/features/settings/settingsService'
+import { getSettings, isPageClipboardCaptureOn, type Settings } from '@/features/settings/settingsService'
 
 import { reconcileContentScripts } from './scriptRegistry'
 
@@ -68,18 +68,21 @@ export function registerClipboardCapture(): void {
     await saveQueue
   })
 
-  void getSettings().then((settings) => syncCaptureScript(settings.clipboardHistoryEnabled))
+  void getSettings().then((settings) => syncCaptureScript(isPageClipboardCaptureOn(settings)))
 
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local' || !(STORAGE_KEYS.settings in changes)) return
-    const next = changes[STORAGE_KEYS.settings]?.newValue as
-      { clipboardHistoryEnabled?: boolean } | undefined
-    void syncCaptureScript(next?.clipboardHistoryEnabled !== false)
+    const prev = isPageClipboardCaptureOn(changes[STORAGE_KEYS.settings]?.oldValue as Partial<Settings> | undefined)
+    const next = isPageClipboardCaptureOn(changes[STORAGE_KEYS.settings]?.newValue as Partial<Settings> | undefined)
+    if (prev === next) return
+    void syncCaptureScript(next)
+    if (next) void injectIntoOpenTabs()
   })
 }
 
 export async function initClipboardCapture(): Promise<void> {
   const settings = await getSettings()
-  await syncCaptureScript(settings.clipboardHistoryEnabled)
-  if (settings.clipboardHistoryEnabled) await injectIntoOpenTabs()
+  const enabled = isPageClipboardCaptureOn(settings)
+  await syncCaptureScript(enabled)
+  if (enabled) await injectIntoOpenTabs()
 }

@@ -1,4 +1,5 @@
 import { STORAGE_KEYS } from '@/core/constants'
+import { requestAllSitesAccess } from '@/core/permissions/siteAccess'
 import { get, set } from '@/core/storage'
 
 import { DEFAULT_ADBLOCK_STATE } from './constants'
@@ -15,8 +16,10 @@ export async function getAdblockState(): Promise<AdblockState> {
   }
 }
 
+/** Turning blocking on asks for site access first; if the user declines, nothing changes. */
 export async function updateAdblockState(patch: Partial<AdblockState>): Promise<AdblockState> {
   const current = await getAdblockState()
+  if (patch.enabled && !current.enabled && !(await requestAllSitesAccess())) return current
   const next: AdblockState = {
     ...current,
     ...patch,

@@ -18,6 +18,7 @@ import {
   type ParsedQrContent,
   type QrDecodeResult,
 } from '@/core/engines/qrcode'
+import { ensureClipboardReadPermission } from '@/core/clipboard/clipboardService'
 import { captureVisibleTab } from '@/core/engines/capture'
 import { fileToDataUrl, loadImageFromDataUrl } from '@/core/engines/image'
 import { CopyButton } from '@/shared/components/CopyButton'
@@ -114,6 +115,7 @@ export function DecodePanel({ onEdit }: { onEdit: (parsed: ParsedQrContent) => v
 
   const pasteFromClipboard = () =>
     start(async () => {
+      await ensureClipboardReadPermission()
       const items = await navigator.clipboard.read()
       for (const item of items) {
         const type = item.types.find((ty) => ty.startsWith('image/'))

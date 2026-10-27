@@ -1,47 +1,65 @@
 # Permissions
 
-The extension requests the minimum set required for the implemented features. Each permission below is in use by shipped functionality.
+The extension installs with no site access. Anything that runs on web pages or reads sensitive data asks Chrome for permission when the user turns the feature on. Keep this file in sync with `manifest.config.ts` and `website/src/content/permissions.ts`.
+
+## Required
 
 | Permission       | Why                                                                                                                                                                                                                         |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `sidePanel`      | The side panel is the primary UI of the extension.                                                                                                                                                                          |
 | `storage`        | Settings, favorites, recent tools and clipboard history persist in `chrome.storage.local`. Short-lived tool handoffs (context-menu picks, element-picker results) use `chrome.storage.session` and expire within 5 minutes. |
-| `clipboardRead`  | Clipboard tools read the current clipboard text on user action (button, paste, panel focus) and for the optional "Analyze clipboard" suggestions on the home screen.                                                        |
-| `clipboardWrite` | "Copy again" / copy-result actions write to the clipboard.                                                                                                                                                                  |
-| `contextMenus`   | The right-click "Toolbox" menu (grouped by Text / Developer / QA / Page / Color) launches tools with the current selection, link, image or page as payload.                                                                 |
-| `activeTab`      | Lets the element picker and page tools run on the tab you explicitly interact with — only after a keyboard command or menu click.                                                                                           |
-| `scripting`      | Injects the on-demand page-tools content script and registers ad-blocker scripts when you enable ad blocking in Settings.                                                                                                  |
-| `tabs`           | Reads the active tab and supports Tab Manager and Browser Toolkit actions. Tasks reads the active tab's URL, title and favicon to offer "save this page" — only while the panel is open.                                    |
-| `notifications`  | Tasks shows due-date reminders with **Complete** and **Snooze 10 min** buttons; nothing is shown unless a task has a reminder.                                                                                              |
-| `declarativeNetRequest` | Applies bundled static filter rules to block ad and tracker requests when ad blocking is enabled.                                                                                                                      |
-| `declarativeNetRequestFeedback` | Shows per-tab blocked-request counts on the extension badge and in the Ad Blocker tool.                                                                                                                        |
-| `webRequest` | Observes (does not block) HTTP requests for the HTTP Interceptor network log; rules still use `declarativeNetRequest` and page scripts.                                                                      |
-| Optional `userScripts` | HTTP Interceptor Insert Script rules and **Script Studio** register user-authored scripts via `chrome.userScripts` after you grant the permission and enable “Allow user scripts” for One Panel. |
-| Optional `cookies` | Script Studio exposes `GM_cookie` only when you enable cookie access in Script Studio settings and scripts declare the grant. |
-| Optional `debugger` | Deep intercept attaches with the Fetch domain only when you turn on Deep intercept and attach to a tab (Chrome shows a debugging banner).                                                                      |
-| Optional HTTP(S) hosts | The API Request Builder requests access to the selected hostname only after Send is clicked. The grant covers all ports on that hostname and can be revoked in Chrome settings. |
+| `clipboardWrite` | Copy buttons write results to the clipboard.                                                                                                                                                                                |
+| `contextMenus`   | The right-click menu launches tools with the current selection, link, image or page as payload.                                                                                                                             |
+| `activeTab`      | Page tools and the element picker run on the current tab after the user clicks the toolbar icon, a menu item or a keyboard shortcut.                                                                                        |
+| `scripting`      | Injects page tools on demand, and registers ad-blocking, protection and site add-on scripts while those features are on and site access is granted.                                                                         |
+| `tabs`           | Reads the active tab and powers Tab Manager and Browser Toolkit. Tasks reads the active tab's URL, title and favicon to offer "save this page", only while the panel is open.                                                |
+| `downloads`      | Saves screenshots, converted images, page bundles and exports. When web protection is on, the download guard cancels files from known threat hosts.                                                                         |
+| `offscreen`      | Recording streams, blobs and audio playback that a service worker cannot handle.                                                                                                                                            |
+| `tabCapture`, `desktopCapture` | Screen Recorder records the current tab, or a window or screen picked in Chrome's chooser.                                                                                                                    |
+| `declarativeNetRequest` | Bundled static rules block ads and trackers, and dynamic rules block known threat hosts, only after the user turns ad blocking or web protection on (both are off by default).                                       |
+| `declarativeNetRequestFeedback` | Per-tab blocked-request counts on the badge and in the Ad Blocker tool.                                                                                                                                      |
+| `webNavigation`  | Redirect Tracer follows navigation hops; web protection checks tabs that pages open on their own.                                                                                                                           |
+| `alarms`         | Timers, Tasks reminders, the internet monitor, scheduled WhatsApp messages and Script Studio update checks.                                                                                                                 |
+| `notifications`  | Timer, task reminder and "saved" notifications.                                                                                                                                                                             |
 
-## Deliberately NOT requested
+## Optional (requested at runtime)
 
-- `bookmarks`, `sessions` — these will be added only when a feature needs them and after an explicit user action.
-- `alarms` — used by Script Studio update checks, Tasks reminder wake-ups and other scheduled background tasks.
-- Required HTTP(S) host permissions — HTTP(S) access is declared as optional and is not granted by default.
-- The page-tools content script bundle uses a non-routable manifest match pattern so Chrome does not auto-inject it on real pages; the background service worker injects it with `scripting.executeScript` when you use page tools or the element picker.
-- Form Autofill needs no extra permissions. It injects its own runtime (`form-autofill/content-script.js`) with `scripting.executeScript` only into the tab its panel is open on, and talks to it on a separate `ufa/v1` message channel. It never submits forms, never fills passwords, one-time codes or payment fields, and keeps saved answers in `chrome.storage.local` under keys prefixed `browser_toolbox_autofill`.
-- Ad-blocker cosmetic and YouTube scripts are registered with `chrome.scripting.registerContentScripts` only while ad blocking is enabled in Settings. Filter lists are bundled under `public/adblock/` (rebuild with `npm run adblock:lists`); the extension does not download remote filter code at runtime.
-- `clipboardRead` is never used to exfiltrate data: clipboard contents are processed locally and stored only on-device, with a disable switch, size limit and clear-all in Settings.
+| Permission | When it is requested |
+| ---------- | -------------------- |
+| `<all_urls>` (optional host permission) | Turning on ad blocking, web protection, page clipboard capture, PiP auto mode or React DevTools; starting Link Checker, Image Downloader or HTML Bundle jobs. Site add-ons request only their own sites (YouTube, Instagram, WhatsApp Web). The Site access bar in page tools offers "Allow on this site" (one origin) or "All sites". The API Request Builder and WhatsApp webhooks request only the host the user entered. Revocable in Settings › Website access. |
+| `clipboardRead` | First Paste / Read clipboard action in a tool (`ensureClipboardReadPermission`). |
+| `webRequest` | The "Allow access" prompt in HTTP Interceptor, needed for its network log. Observes only; listeners are attached only after the grant. |
+| `userScripts` | Enabling Script Studio or HTTP Interceptor "Insert script" rules. Runs only scripts the user installs or writes, through `chrome.userScripts`. |
+| `cookies` | Enabling `GM_cookie` for Script Studio scripts. |
+| `debugger` | Turning on Deep intercept and attaching to a tab (Chrome shows its debugging banner). |
 
-## Privacy
+`src/core/permissions/siteAccess.ts` holds the request helpers. The background worker listens to `chrome.permissions.onAdded` and re-syncs content script registrations, so features start working in open tabs without a reload.
 
-- The API Request Builder sends requests directly to the user-selected host after an explicit action and optional Chrome permission prompt. Recent responses are stored locally in `chrome.storage.local` (capped) for the History tab; credentials are not saved. JSON response fields with common credential names are redacted in the displayed body. No analytics, remote code, or remote fonts.
-- Page inspection runs only after you open a page tool or use a keyboard command; the content script is injected on demand for that tab.
-- Element-picker results and context-menu payloads stay in `chrome.storage.session` on this device and expire after 5 minutes.
-- Tasks, projects and saved page links are stored only in `chrome.storage.local` (`toolbox.tasks*` keys); there is no sync service. Export/Import in the Tasks menu writes and reads a local JSON backup.
-- Clipboard history may contain sensitive text — the Settings page warns about this and lets users disable or wipe it at any time.
-- Ad blocking is **on by default** and can be turned off in Settings or the Ad Blocker tool. It may break sites that depend on third-party scripts; use the per-site allowlist or “Pause ad blocking on this site” in the context menu.
-- Pop-up blocking (on by default, one switch in the ad blocker panel): `popups-main.js` runs in the page's MAIN world in every frame. It wraps `window.open` and `HTMLAnchorElement.prototype.click`, allowing a new window only for one real (trusted) click on a real control, plus sign-in providers, and it neutralises transparent full-page "click anywhere" ad links. It reads no page data and sends nothing off-device; it only posts a counter message to the extension's own content script.
-- Per-site cosmetic rules are split into 64 hashed shards under `public/adblock/cosmetic/specific/`, so a page fetches only the shards for its own hostname from the extension package. `npm run adblock:lists` caches downloaded lists in `scripts/adblock/.cache/` (git-ignored) and `npm run adblock:audit` validates the generated rulesets.
-- Optional premium features (all off by default): cookie consent pop-up hiding (`cookies.css` plus the Fanboy annoyances ruleset), distraction control (`distractions.css`), and push notification blocking (`notifications-main.js`, MAIN world, which auto-denies `Notification.requestPermission` and `PushManager.subscribe`).
-- When ad blocking is turned on, the scripts are injected once into already-open tabs, including background YouTube tabs, so blocking starts without a reload. Blocked counts are kept per tab in `chrome.storage.session` and as a running total in `chrome.storage.local`.
-- **YouTube Control Panel** (`sites.youtube`, optional): injects scripts on YouTube only. **SponsorBlock** and **Return YouTube Dislike** are **off by default**; when you turn them on, the extension requests segment/dislike data from `sponsor.ajay.app` and `returnyoutubedislikeapi.com` for the video you are watching. No other site-enhancement data is sent to third parties.
-- **Web protection** is **on by default** (Settings switch + Web Protection tool). Known phishing, malware and scam hosts from bundled lists (`public/protection/threats.json`, rebuilt with `npm run protection:lists`) are blocked via **dynamic** declarativeNetRequest rules; top-level hits redirect to the extension `blocked.html` warning page (no remote Safe Browsing API). A heuristics script warns on suspicious password pages (look-alike brands) and fake "your computer is locked" tech-support scam pages. Page guards (`scripting`, `<all_urls>`) break browser lockers, block hidden shell commands written to the clipboard and deny notification prompts made without a click. The existing `downloads` permission lets the download guard cancel files from known threat hosts and pause executables that start without a user gesture until the user keeps or deletes them. Cryptominer hosts (NoCoin list) are blocked like other threats. Trusted sites skip every protection layer. Trusted sites and one-time proceed use local allow rules only. No URLs are sent to third parties for this feature.
+## Defaults
+
+- Ad blocking, web protection, page clipboard capture, PiP auto mode, React DevTools, the internet monitor and every site add-on are **off** after install.
+- Clipboard history records text copied inside One Panel. Capturing copies made on web pages is a separate switch that is off by default.
+- SponsorBlock, Return YouTube Dislike and WhatsApp translation are off by default.
+
+## Data that leaves the device
+
+Only when the user starts a tool or turns a feature on:
+
+- API Request Builder, Link Checker, Redirect Tracer, Image Downloader, HTML Bundle: the hosts the user targets.
+- Speed test: `speed.cloudflare.com`, `ipwho.is`, `api.bigdatacloud.net`.
+- SEO PageSpeed: page URL to `www.googleapis.com/pagespeedonline`.
+- Internet monitor: the ping URL the user chooses, and `api.ipify.org` when "Show IP" is on.
+- SponsorBlock / Return YouTube Dislike: video ID to `sponsor.ajay.app` / `returnyoutubedislikeapi.com`.
+- WhatsApp translation: the message text to `translate.googleapis.com`.
+- WhatsApp webhooks: a test event to the URL the user adds (no message content).
+- Script Studio: script install and update URLs, plus hosts that scripts are granted via `@connect`.
+
+There is no analytics, no account and no server operated by the developer. Web protection uses bundled lists; no URLs are sent to a third party.
+
+## Code execution
+
+The extension's own code and filter lists ship in the package. Script Studio and HTTP Interceptor "Insert script" rules run user-installed or user-written scripts only through `chrome.userScripts`, which Chrome gates behind the optional permission and the "Allow user scripts" toggle. HTTP Interceptor rule bodies written by the user are evaluated locally.
+
+## Deliberately not requested
+
+`history`, `bookmarks`, `sessions`, `identity`, `geolocation`.

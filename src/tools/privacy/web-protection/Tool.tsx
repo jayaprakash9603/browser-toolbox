@@ -10,6 +10,7 @@ import { ProtectionToolHeader } from '@/features/protection/components/Protectio
 import { RecentBlocked } from '@/features/protection/components/RecentBlocked'
 import { TrustedSitesEditor } from '@/features/protection/components/TrustedSitesEditor'
 import { useProtection } from '@/features/protection/useProtection'
+import { PermissionNotice } from '@/features/site-access/PermissionNotice'
 import { StaggerChildren, StaggerItem } from '@/shared/components/motion/StaggerChildren'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
@@ -51,6 +52,7 @@ export default function WebProtectionTool() {
             onToggle={(enabled) => onPatch({ enabled })}
           />
         </StaggerItem>
+        <PermissionNotice active={state.enabled} message={t('siteAccess.protectionNeeded')} />
         <StaggerItem>
           <div data-search-id="categories">
             <h3 className="mb-2 text-xs font-semibold">{t('protection.categoriesTitle')}</h3>

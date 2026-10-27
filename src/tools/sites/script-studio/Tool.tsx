@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useRouter } from '@/app/router'
+import { PermissionNotice } from '@/features/site-access/PermissionNotice'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
 import { parseSearchParam, useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
@@ -68,6 +69,10 @@ export default function ScriptStudioTool() {
   return (
     <ToolPage tool={tool} actions={actions}>
       <div className={cn('flex flex-col gap-3', inTab && 'mx-auto w-full max-w-5xl py-2')}>
+        <PermissionNotice
+          active={ss.probe?.step === 'ready'}
+          message={t('siteAccess.scriptStudioNeeded')}
+        />
         {!ready ? (
           <ScriptStudioLoadingSkeleton variant={installUrl ? 'install' : 'panel'} />
         ) : installUrl ? (

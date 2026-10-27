@@ -1,6 +1,7 @@
 import { STORAGE_KEYS } from '@/core/constants'
 import { get, set } from '@/core/storage'
 import { normalizeHostname } from '@/core/adblock/hostname'
+import { requestAllSitesAccess } from '@/core/permissions/siteAccess'
 
 import { DEFAULT_PROTECTION_STATE, emptyProtectionStats, MAX_RECENT_ENTRIES } from './constants'
 import { THREAT_CATEGORIES } from './types'
@@ -21,6 +22,7 @@ export async function getProtectionState(): Promise<ProtectionState> {
 
 export async function updateProtectionState(patch: Partial<ProtectionState>): Promise<ProtectionState> {
   const current = await getProtectionState()
+  if (patch.enabled && !current.enabled && !(await requestAllSitesAccess())) return current
   const next: ProtectionState = {
     ...current,
     ...patch,

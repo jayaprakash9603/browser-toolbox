@@ -10,6 +10,7 @@ import {
 import { DEFAULT_MAX_PAGES, MAX_PAGES_CEILING } from '@/core/engines/htmlArchive'
 import type { HtmlBundleJobRequest } from '@/core/htmlBundleJob'
 import type { ExtensionMessage, ExtensionResponse } from '@/core/messaging/types'
+import { requestAllSitesAccess } from '@/core/permissions/siteAccess'
 
 async function resolveTargetTab(tabId?: number): Promise<chrome.tabs.Tab> {
   if (tabId != null) {
@@ -104,6 +105,8 @@ export async function startHtmlBundleJob(input: {
   pageCount: number
   request: HtmlBundleJobRequest
 }): Promise<string> {
+  // Stylesheets, fonts and images are often on other origins than the page itself.
+  await requestAllSitesAccess()
   const tab = await resolveTargetTab(input.tabId)
   await prepareTab(tab)
   const { jobId } = await sendToBackground<{ jobId: string }>({

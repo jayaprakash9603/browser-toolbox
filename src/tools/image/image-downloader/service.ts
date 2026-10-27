@@ -6,6 +6,7 @@ import {
 } from '@/chrome/contentScriptClient'
 import type { PageImage } from '@/core/engines/imageDownloader'
 import { sendMessage } from '@/core/messaging/messageService'
+import { requestAllSitesAccess } from '@/core/permissions/siteAccess'
 import type { ExtensionResponse } from '@/core/messaging/types'
 
 export { TabMessagingError }
@@ -34,6 +35,8 @@ export async function startImageDownloadJob(input: {
   zipExtraFiles?: { name: string; text: string }[]
   items: { url: string }[]
 }): Promise<{ jobId: string }> {
+  // Images usually live on CDNs, so downloading them needs more than the page's own origin.
+  await requestAllSitesAccess()
   const data = await sendMessage<{ jobId: string }>({
     type: 'START_IMAGE_DOWNLOAD_JOB',
     ...input,

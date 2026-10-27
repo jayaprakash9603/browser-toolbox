@@ -92,6 +92,18 @@ export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
     keywords: ['clipboard'],
   },
   {
+    id: 'siteAccess',
+    labelKey: 'settings.siteAccessAll',
+    fallbackLabel: 'Access to all websites',
+    keywords: ['permission', 'host', 'all sites', 'access', 'privacy'],
+  },
+  {
+    id: 'clipboardCapturePages',
+    labelKey: 'settings.clipboardCapturePages',
+    fallbackLabel: 'Capture copies on websites',
+    keywords: ['clipboard', 'copy', 'websites', 'capture'],
+  },
+  {
     id: 'historySize',
     labelKey: 'settings.historySize',
     fallbackLabel: 'Clipboard history size',

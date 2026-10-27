@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { INTERCEPTOR_TABS, type InterceptorTab } from '@/features/interceptor/routes'
 import { useInterceptorState } from '@/features/interceptor/hooks'
+import { PermissionNotice } from '@/features/site-access/PermissionNotice'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Switch } from '@/shared/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
@@ -40,6 +41,11 @@ export default function HttpInterceptorTool() {
         />
       }
     >
+      <PermissionNotice
+        active
+        permissions={['webRequest']}
+        message={t('siteAccess.interceptorNeeded')}
+      />
       <Tabs value={tab} onValueChange={(v) => setTab(v as InterceptorTab)}>
         <TabsList>
           {INTERCEPTOR_TABS.map((id) => {

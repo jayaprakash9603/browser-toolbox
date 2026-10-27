@@ -1,3 +1,5 @@
+import { ALL_SITES_ORIGINS, requestPermissions } from '@/core/permissions/siteAccess'
+
 export type UserScriptsStep = 'unsupported' | 'permission' | 'toggle' | 'ready'
 
 export type UserScriptsProbe = {
@@ -50,14 +52,12 @@ export async function probeUserScripts(): Promise<UserScriptsProbe> {
   return { step: 'toggle', apiPresent: false, permissionGranted, operational: false }
 }
 
-/** Must run inside a click handler: Chrome only shows the permission prompt for a user gesture. */
+/**
+ * Must run inside a click handler: Chrome only shows the permission prompt for a user gesture.
+ * User scripts only inject where the extension has host access, so both are asked for in one prompt.
+ */
 export async function requestUserScriptsPermission(): Promise<boolean> {
-  try {
-    if (await hasUserScriptsPermission()) return true
-    return await chrome.permissions.request({ permissions: ['userScripts'] })
-  } catch {
-    return false
-  }
+  return requestPermissions({ permissions: ['userScripts'], origins: ALL_SITES_ORIGINS })
 }
 
 export function extensionSettingsUrl(): string {

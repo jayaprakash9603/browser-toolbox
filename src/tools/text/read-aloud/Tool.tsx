@@ -15,6 +15,7 @@ import {
 import { motion, useReducedMotion } from 'motion/react'
 import { useTranslation } from 'react-i18next'
 
+import { readClipboardText } from '@/core/clipboard/clipboardService'
 import { toolRegistry } from '@/core/registry'
 import { textToBlocks, type ReadablePage } from '@/core/text/readablePage'
 import { ToolPage } from '@/shared/components/ToolPage'
@@ -302,7 +303,7 @@ export default function ReadAloudTool() {
 
   const pasteText = async () => {
     try {
-      const pasted = await navigator.clipboard.readText()
+      const pasted = await readClipboardText()
       if (pasted) setCustomText((prev) => (prev.trim() ? `${prev.trimEnd()}\n\n${pasted}` : pasted))
     } catch {
       // Clipboard access needs focus and permission; the textarea still accepts Ctrl+V.

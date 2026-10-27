@@ -21,7 +21,7 @@ export const privacyTools = [
     id: 'privacy.web-protection',
     name: 'Web Protection',
     description:
-      'Block known phishing, malware and scam sites. Warns on suspicious sign-in pages. On by default.',
+      'Block known phishing, malware and scam sites. Warns on suspicious sign-in pages.',
     category: 'privacy',
     icon: ShieldCheckIcon,
     keywords: ['phishing', 'malware', 'scam', 'security', 'safe browsing', '360'],

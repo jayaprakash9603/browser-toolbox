@@ -1,6 +1,8 @@
 import { STORAGE_KEYS } from '@/core/constants'
+import { requestPermissions } from '@/core/permissions/siteAccess'
 import { get, set } from '@/core/storage'
 
+import { INSTAGRAM_MATCHES } from './constants'
 import { INSTAGRAM_FEATURES } from './features'
 import type { InstagramEnhancerState, InstagramFeatureValue } from './types'
 
@@ -28,6 +30,9 @@ export async function updateInstagramEnhancerState(
   patch: Partial<InstagramEnhancerState> & { values?: Partial<Record<string, InstagramFeatureValue>> },
 ): Promise<InstagramEnhancerState> {
   const current = await getInstagramEnhancerState()
+  if (patch.enabled && !current.enabled && !(await requestPermissions({ origins: [...INSTAGRAM_MATCHES] }))) {
+    return current
+  }
   const next: InstagramEnhancerState = {
     enabled: patch.enabled ?? current.enabled,
     values: { ...current.values, ...patch.values },

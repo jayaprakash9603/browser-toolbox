@@ -259,8 +259,13 @@ const onErrorOccurred = (details: chrome.webRequest.OnErrorOccurredDetails): und
   return undefined
 }
 
+/** webRequest is an optional permission, so the namespace is missing until the user grants it. */
+function hasWebRequest(): boolean {
+  return Boolean(chrome.webRequest?.onBeforeRequest)
+}
+
 function attachRedirectListener(): void {
-  if (redirectListenerAttached) return
+  if (redirectListenerAttached || !hasWebRequest()) return
   redirectListenerAttached = true
   chrome.webRequest.onBeforeRedirect.addListener(onBeforeRedirect, { urls: ['<all_urls>'] })
 }
@@ -276,7 +281,7 @@ function detachRedirectListener(): void {
 }
 
 function attachRecordListeners(): void {
-  if (recordListenersAttached) return
+  if (recordListenersAttached || !hasWebRequest()) return
   recordListenersAttached = true
   chrome.webRequest.onBeforeRequest.addListener(onBeforeRequest, { urls: ['<all_urls>'] })
   chrome.webRequest.onSendHeaders.addListener(onSendHeaders, { urls: ['<all_urls>'] }, ['requestHeaders'])

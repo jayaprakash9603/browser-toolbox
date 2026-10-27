@@ -1,6 +1,8 @@
 import { STORAGE_KEYS } from '@/core/constants'
+import { requestPermissions } from '@/core/permissions/siteAccess'
 import { get, set } from '@/core/storage'
 
+import { YOUTUBE_MATCHES } from './constants'
 import { YOUTUBE_FEATURES } from './features'
 import type { YoutubeEnhancerState, YoutubeFeatureValue } from './types'
 import { PROGRESS_THEMES } from './progressThemes'
@@ -34,6 +36,9 @@ export async function updateYoutubeEnhancerState(
   patch: Partial<YoutubeEnhancerState> & { values?: Partial<Record<string, YoutubeFeatureValue>> },
 ): Promise<YoutubeEnhancerState> {
   const current = await getYoutubeEnhancerState()
+  if (patch.enabled && !current.enabled && !(await requestPermissions({ origins: [...YOUTUBE_MATCHES] }))) {
+    return current
+  }
   const next: YoutubeEnhancerState = {
     enabled: patch.enabled ?? current.enabled,
     values: { ...current.values, ...patch.values },

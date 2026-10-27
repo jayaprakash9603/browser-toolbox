@@ -57,7 +57,7 @@ export const MAX_RECENT_ENTRIES = 20
 export const PROTECTION_RULES_VERSION_KEY = 'protectionRulesVersion'
 
 export const DEFAULT_PROTECTION_STATE: ProtectionState = {
-  enabled: true,
+  enabled: false,
   phishing: true,
   malware: true,
   scams: true,

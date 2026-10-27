@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { LinkCheckResult } from '@/core/engines/linkChecker/check'
 import type { LinkStatusInfo } from '@/core/engines/links/pageLinks'
 import { sendMessage } from '@/core/messaging'
+import { requestAllSitesAccess } from '@/core/permissions/siteAccess'
 
 /** The background checker handles one batch sequentially, so several small batches run in parallel. */
 const BATCH_SIZE = 4
@@ -35,6 +36,8 @@ export function useLinkChecks() {
       setProgress(null)
       return
     }
+    // Checking other sites' links is a cross-origin request; without access it fails on CORS.
+    await requestAllSitesAccess()
 
     let cursor = 0
     let done = 0

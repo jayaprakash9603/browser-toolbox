@@ -12,6 +12,7 @@ import type {
   ScraperPickMode,
 } from '@/core/scraper'
 import { sendMessage } from '@/core/messaging'
+import { requestSiteAccess } from '@/core/permissions/siteAccess'
 
 function friendlyTabError(error: unknown): string {
   if (error instanceof TabMessagingError) {
@@ -94,6 +95,9 @@ export async function clearHighlights(tabId: number) {
 }
 
 export async function startJob(tabId: number, config: ScrapeConfig, rows: ScrapeRow[]) {
+  // activeTab can end when pagination navigates the tab, so keep access to the site for the whole run.
+  const tab = await chrome.tabs.get(tabId).catch(() => undefined)
+  await requestSiteAccess(tab?.url)
   return sendMessage({ type: 'SCRAPER_JOB_START', tabId, config, rows })
 }
 

@@ -1,4 +1,5 @@
 import { STORAGE_KEYS } from '@/core/constants'
+import { requestAllSitesAccess } from '@/core/permissions/siteAccess'
 import { get, set } from '@/core/storage'
 
 import type { ReactDevtoolsSurfaceKey } from './constants'
@@ -22,7 +23,7 @@ export const DEFAULT_REACT_DEVTOOLS_SURFACES: ReactDevtoolsSurfaces = {
 }
 
 export const DEFAULT_REACT_DEVTOOLS_STATE: ReactDevtoolsState = {
-  enabled: true,
+  enabled: false,
   theme: 'system',
   surfaces: { ...DEFAULT_REACT_DEVTOOLS_SURFACES },
 }
@@ -40,7 +41,9 @@ export async function getReactDevtoolsState(): Promise<ReactDevtoolsState> {
 export async function setReactDevtoolsState(
   patch: Partial<ReactDevtoolsState>,
 ): Promise<ReactDevtoolsState> {
-  const next = { ...(await getReactDevtoolsState()), ...patch }
+  const current = await getReactDevtoolsState()
+  if (patch.enabled && !current.enabled && !(await requestAllSitesAccess())) return current
+  const next = { ...current, ...patch }
   if (patch.surfaces) {
     next.surfaces = { ...DEFAULT_REACT_DEVTOOLS_SURFACES, ...patch.surfaces }
   }

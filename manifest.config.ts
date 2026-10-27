@@ -39,7 +39,6 @@ export default defineManifest({
   permissions: [
     'sidePanel',
     'storage',
-    'clipboardRead',
     'clipboardWrite',
     'contextMenus',
     'activeTab',
@@ -53,11 +52,10 @@ export default defineManifest({
     'declarativeNetRequestFeedback',
     'alarms',
     'notifications',
-    'webRequest',
     'webNavigation',
   ],
-  optional_permissions: ['userScripts', 'debugger', 'cookies'],
-  host_permissions: ['<all_urls>'],
+  optional_permissions: ['clipboardRead', 'webRequest', 'userScripts', 'debugger', 'cookies'],
+  optional_host_permissions: ['<all_urls>'],
   declarative_net_request: {
     rule_resources: [
       { id: 'ruleset-ads', enabled: false, path: 'adblock/rulesets/ads.json' },

@@ -1,5 +1,6 @@
 import { DEFAULT_CLIPBOARD_HISTORY_LIMIT, MAX_CLIPBOARD_HISTORY_LIMIT, STORAGE_KEYS } from '@/core/constants'
 import { eventBus } from '@/core/events'
+import { requestPermissions } from '@/core/permissions/siteAccess'
 import { get, remove, set } from '@/core/storage'
 import { getSettings } from '@/features/settings/settingsService'
 
@@ -95,7 +96,13 @@ export async function clearHistory(includePinned = false): Promise<void> {
   await saveHistory((await getHistory()).filter((entry) => entry.pinned))
 }
 
+/** clipboardRead is optional; the prompt only appears when this runs from a click or key press. */
+export function ensureClipboardReadPermission(): Promise<boolean> {
+  return requestPermissions({ permissions: ['clipboardRead'] })
+}
+
 export async function readClipboardText(): Promise<string> {
+  await ensureClipboardReadPermission()
   return navigator.clipboard.readText()
 }
 
