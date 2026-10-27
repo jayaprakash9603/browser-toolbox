@@ -1,13 +1,11 @@
 import '@universal-form-autofill/sdk/style.css'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BookmarkIcon, ScanTextIcon } from 'lucide-react'
 import {
   AutofillPanel,
   cssVariableTheme,
-  useAutofillController,
   useAutofillState,
-  useStoreSnapshot,
 } from '@universal-form-autofill/sdk/react'
 import { createExtensionAutofillHost } from '@universal-form-autofill/sdk/extension'
 
@@ -23,6 +21,7 @@ import { ConnectionBar } from './ConnectionBar'
 import { FillBar, type FillBarAction } from './FillBar'
 import { SavedView } from './SavedView'
 import { useFormPage } from './useFormPage'
+import { useReviewAutofillController } from './useReviewAutofillController'
 
 const host = createExtensionAutofillHost({
   chrome,
@@ -82,9 +81,8 @@ export default function FormAutofillTool() {
   const { t } = useTranslation()
   const { show } = useToast()
   const tool = useProductivityTool('productivity.form-autofill')
-  const controller = useAutofillController(host)
+  const controller = useReviewAutofillController(host)
   const sdk = useAutofillState(controller)
-  const snapshot = useStoreSnapshot(controller?.store)
   const memory = useFormMemory()
   const [detailsOpen, setDetailsOpen] = useState(() => readPreference(DETAILS_KEY) === '1')
   const [view, setView] = useState<View>(() => (readPreference(VIEW_KEY) === 'saved' ? 'saved' : 'page'))
@@ -92,14 +90,6 @@ export default function FormAutofillTool() {
   const { info: pageInfo, refresh: refreshPage, run: runPage } = useFormPage(true, sdk.page?.url)
   const fillKey = useShortcutDisplay('form-fill')
   const clearKey = useShortcutDisplay('form-clear')
-
-  const mode = snapshot.settings?.mode
-  // Selected-field filling is what the single button drives; suggest mode would block it.
-  useEffect(() => {
-    if (controller && mode && mode !== 'review') {
-      void controller.store.settings.update({ mode: 'review' }).catch(() => undefined)
-    }
-  }, [controller, mode])
 
   const profileIds = useMemo(
     () =>

@@ -1,5 +1,7 @@
-import { lazy, Suspense, useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { DemoPanel, DemoToggle } from '@/app/pages/category/DemoDisclosure'
+import { useDemoOpen } from '@/app/pages/category/useDemoOpen'
 import { categoryRegistry, groupToolsByToolkit, toolRegistry } from '@/core/registry'
 import { getToolSearchLabels } from '@/i18n/toolLabels'
 import { BackButton } from '@/shared/components/BackButton'
@@ -8,11 +10,11 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { InboxIcon } from 'lucide-react'
 
-const CategoryDemoPlayer = lazy(() => import('@/app/pages/category/CategoryDemoPlayer'))
-
 export default function CategoryPage({ categoryId }: { categoryId: string }) {
   const { t } = useTranslation()
   const [query, setQuery] = useState('')
+  const [demoOpen, toggleDemo] = useDemoOpen()
+  const demoId = useId()
   const category = categoryRegistry.get(categoryId)
   const tools = toolRegistry.getByCategory(categoryId)
   const filteredTools = useMemo(() => {
@@ -33,12 +35,12 @@ export default function CategoryPage({ categoryId }: { categoryId: string }) {
   const Icon = category.icon
   return (
     <div className="@container h-full overflow-y-auto p-[var(--density-page-pad)]">
-      <div className="mb-4 flex flex-wrap items-center gap-2.5">
+      <div className="mb-4 flex items-center gap-2.5">
         <BackButton />
         <div className="rounded-md border bg-muted p-1.5">
           <Icon className="size-4" />
         </div>
-        <div>
+        <div className="min-w-0 flex-1">
           <h1 className="text-sm font-semibold">
             {t(`categories.${category.id}.name`, { defaultValue: category.name })}
           </h1>
@@ -46,11 +48,18 @@ export default function CategoryPage({ categoryId }: { categoryId: string }) {
             {t(`categories.${category.id}.description`, { defaultValue: category.description })}
           </p>
         </div>
+        {tools.length > 0 && (
+          <DemoToggle id={`${demoId}-toggle`} panelId={`${demoId}-panel`} open={demoOpen} onToggle={toggleDemo} />
+        )}
       </div>
       {tools.length > 0 && (
-        <Suspense fallback={<div aria-hidden className="mb-4 h-11 rounded-2xl border bg-card" />}>
-          <CategoryDemoPlayer key={category.id} tools={tools} />
-        </Suspense>
+        <DemoPanel
+          id={`${demoId}-panel`}
+          labelledBy={`${demoId}-toggle`}
+          open={demoOpen}
+          tools={tools}
+          resetKey={category.id}
+        />
       )}
       {tools.length > 0 && (
         <SearchInput

@@ -74,7 +74,7 @@ export function AllToolsCategories({ delay = 0.3 }: { delay?: number }) {
           onFilter={setFilter}
           onOpenFullView={() => setViewerOpen(true)}
         />
-        <ul className="grid grid-cols-1 gap-2.5 @[520px]:grid-cols-2 @[960px]:grid-cols-3">
+        <ul className="grid grid-cols-2 gap-2 @[360px]:gap-2.5 @[960px]:grid-cols-3">
           {visible.map(({ category, tools }, position) => (
             <li key={category.id} className="min-w-0">
               <CategoryCard category={category} tools={tools} position={position} playing={!paused} />

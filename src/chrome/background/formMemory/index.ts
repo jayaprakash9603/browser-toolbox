@@ -317,8 +317,8 @@ export function registerFormMemory(): void {
     }
   })
 
-  chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
-    if (info.status === 'complete' || (info.url && tab.status === 'complete')) schedulePageReady(tabId)
+  chrome.tabs.onUpdated.addListener((tabId, info) => {
+    if (info.status === 'complete') schedulePageReady(tabId)
   })
   chrome.tabs.onRemoved.addListener((tabId) => {
     const timer = pending.get(tabId)

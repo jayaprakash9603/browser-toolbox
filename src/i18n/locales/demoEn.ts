@@ -5,7 +5,7 @@ export const demoStrings = {
   'demo.toolOf': 'Tool {{current}} of {{total}}',
   'demo.loading': 'Loading demo…',
   'demo.noDemo': 'A walkthrough for this tool is on the way.',
-  'demo.player.heading': 'See it in action',
+  'demo.player.trigger': 'Watch demo',
   'demo.player.tools': 'Demos in this category',
   'demo.player.steps': 'How it works',
   'demo.player.open': 'Open {{name}}',

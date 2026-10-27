@@ -4,9 +4,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DEMOS } from '@/app/demos/registry.generated'
 import { ToolDemo } from '@/app/demos/ToolDemo'
 import CategoryDemoPlayer from '@/app/pages/category/CategoryDemoPlayer'
+import CategoryPage from '@/app/pages/CategoryPage'
 import { CategoryCard } from '@/app/pages/home/CategoryCard'
 import { categoryRegistry, toolRegistry } from '@/core/registry'
 import { registerModules } from '@/modules'
+import { TooltipProvider } from '@/shared/components/ui/tooltip'
 
 registerModules()
 
@@ -111,15 +113,33 @@ describe('CategoryDemoPlayer', () => {
     expect(screen.getByRole('link', { name: /^Open / })).toHaveAttribute('href', `#${tools[3].route}`)
   }, 30_000)
 
-  it('collapses and remembers the choice', () => {
-    render(<CategoryDemoPlayer tools={toolRegistry.getByCategory('text')} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Hide demo' }))
-    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
-    expect(localStorage.getItem('tbx.category.demo.hidden')).toBe('1')
+})
+
+describe('CategoryPage demo toggle', () => {
+  const renderPage = () =>
+    render(
+      <TooltipProvider>
+        <CategoryPage categoryId="text" />
+      </TooltipProvider>,
+    )
+
+  it('starts closed, opens the player from the header and remembers it', async () => {
+    renderPage()
+    const toggle = screen.getByRole('button', { name: 'Watch demo' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('region', { name: 'Watch demo' })).not.toBeInTheDocument()
+
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('region', { name: 'Watch demo' })).toBeInTheDocument()
+    expect(await screen.findByRole('tablist', {}, { timeout: 20_000 })).toBeInTheDocument()
+    expect(localStorage.getItem('tbx.category.demo.open')).toBe('1')
     cleanup()
 
-    render(<CategoryDemoPlayer tools={toolRegistry.getByCategory('text')} />)
-    expect(screen.getByRole('button', { name: 'Show demo' })).toHaveAttribute('aria-expanded', 'false')
+    renderPage()
+    expect(screen.getByRole('button', { name: 'Watch demo' })).toHaveAttribute('aria-expanded', 'true')
+    fireEvent.click(screen.getByRole('button', { name: 'Watch demo' }))
+    expect(localStorage.getItem('tbx.category.demo.open')).toBe('0')
   }, 30_000)
 })
 
