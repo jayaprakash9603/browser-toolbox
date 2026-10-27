@@ -58,7 +58,7 @@ There is no analytics, no account and no server operated by the developer. Web p
 
 ## Code execution
 
-The extension's own code and filter lists ship in the package. Script Studio and HTTP Interceptor "Insert script" rules run user-installed or user-written scripts only through `chrome.userScripts`, which Chrome gates behind the optional permission and the "Allow user scripts" toggle. HTTP Interceptor rule bodies written by the user are evaluated locally.
+The extension's own code and filter lists ship in the package. Script Studio and HTTP Interceptor "Insert script" rules run user-installed or user-written scripts only through `chrome.userScripts`, which Chrome gates behind the optional permission and the "Allow user scripts" toggle. No other user-written or downloaded code runs: HTTP Interceptor body rules apply static text only, and nothing is fetched from a URL and executed.
 
 ## Deliberately not requested
 

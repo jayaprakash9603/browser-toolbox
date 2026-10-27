@@ -1,7 +1,7 @@
 const CHROME_UI_FALLBACKS: Record<string, string> = {
   extName: 'One Panel',
   extDescription:
-    'One Panel: clipboard, text, developer, QA and web utilities in one Chrome side panel.',
+    'Everyday developer, text and web tools in one searchable Chrome side panel. Works on your device; site features are opt-in.',
   actionTitle: 'Open One Panel',
   contextMenuOpen: 'Open One Panel',
   contextMenuPauseAdblock: 'Pause ad blocking on this site',
