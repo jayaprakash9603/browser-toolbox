@@ -1,4 +1,4 @@
-import type { PaletteId } from '@/shared/lib/theme/palettes'
+import { PALETTES, type PaletteId } from '@/shared/lib/theme/palettes'
 
 export type ColorScheme = 'light' | 'dark'
 
@@ -69,29 +69,15 @@ export const TOOLBOX_SURFACES: Record<ColorScheme, ToolboxSurface> = {
   },
 }
 
-export const TOOLBOX_PALETTE_BRANDS: Record<PaletteId, Record<ColorScheme, ToolboxBrand>> = {
-  indigo: {
-    light: { primary: '#4f46e5', primaryForeground: '#ffffff', ring: '#4f46e5' },
-    dark: { primary: '#818cf8', primaryForeground: '#0b1120', ring: '#818cf8' },
-  },
-  coral: {
-    light: { primary: '#e85d4c', primaryForeground: '#ffffff', ring: '#e85d4c' },
-    dark: { primary: '#f18164', primaryForeground: '#21120d', ring: '#f18164' },
-  },
-  ocean: {
-    light: { primary: '#0284c7', primaryForeground: '#ffffff', ring: '#0284c7' },
-    dark: { primary: '#38bdf8', primaryForeground: '#0c4a6e', ring: '#38bdf8' },
-  },
-  emerald: {
-    light: { primary: '#059669', primaryForeground: '#ffffff', ring: '#059669' },
-    dark: { primary: '#34d399', primaryForeground: '#064e3b', ring: '#34d399' },
-  },
-  sunset: {
-    light: { primary: '#ea580c', primaryForeground: '#ffffff', ring: '#ea580c' },
-    dark: { primary: '#fb923c', primaryForeground: '#431407', ring: '#fb923c' },
-  },
-  graphite: {
-    light: { primary: '#475569', primaryForeground: '#ffffff', ring: '#475569' },
-    dark: { primary: '#94a3b8', primaryForeground: '#0f172a', ring: '#94a3b8' },
-  },
-}
+export const TOOLBOX_PALETTE_BRANDS = Object.fromEntries(
+  PALETTES.map(({ id, swatches, light, dark }) => {
+    const primary = swatches[0].toLowerCase()
+    return [
+      id,
+      {
+        light: { primary, primaryForeground: light.primaryForeground, ring: primary },
+        dark: { primary: dark.primary, primaryForeground: dark.primaryForeground, ring: dark.primary },
+      },
+    ]
+  }),
+) as Record<PaletteId, Record<ColorScheme, ToolboxBrand>>

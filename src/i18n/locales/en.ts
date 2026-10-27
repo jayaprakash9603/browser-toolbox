@@ -7,6 +7,7 @@ import { interceptorStrings } from './interceptorEn'
 import { netmonStrings } from './netmonEn'
 import { tasksStrings } from './tasksEn'
 import { autofillStrings } from './autofillEn'
+import { paletteStrings } from './paletteEn'
 import { speedtestStrings } from './speedtestEn'
 import { tabManagerStrings } from './tabManagerEn'
 import { datetimeStrings } from './datetimeEn'
@@ -1501,6 +1502,7 @@ const en = {
   ...dataScraperStrings,
   ...tasksStrings,
   ...autofillStrings,
+  ...paletteStrings,
   ...tabManagerStrings,
   ...datetimeStrings,
   ...qrToolkitStrings,
