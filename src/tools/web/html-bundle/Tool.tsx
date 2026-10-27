@@ -1,14 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  CircleCheckIcon,
-  DownloadIcon,
-  FolderOpenIcon,
-  RefreshCwIcon,
-  SaveIcon,
-  SearchIcon,
-  XIcon,
-} from 'lucide-react'
+import { AlertTriangleIcon, CircleCheckIcon, DownloadIcon, SaveIcon, XIcon } from 'lucide-react'
 
 import type { HtmlLinkCandidate } from '@/core/engines/htmlArchive'
 import {
@@ -25,16 +17,16 @@ import {
   type HtmlBundleJob,
 } from '@/core/htmlBundleJob'
 import { useHtmlBundleJob } from '@/features/html-bundle-job/useHtmlBundleJob'
-import { NumberField, parseNumberInRange } from '@/shared/components/NumberField'
+import { parseNumberInRange } from '@/shared/components/NumberField'
 import { ToolPage } from '@/shared/components/ToolPage'
+import { useToast } from '@/shared/components/toast/useToast'
 import { Button } from '@/shared/components/ui/button'
-import { Checkbox } from '@/shared/components/ui/checkbox'
-import { Input } from '@/shared/components/ui/input'
-import { Switch } from '@/shared/components/ui/switch'
 import { useFocusTarget } from '@/shared/hooks/useFocusTarget'
 import { cn } from '@/shared/utils/cn'
 import { useWebTool } from '../_shared'
+import { FilterBar, PageCard } from './BundleHeader'
 import { BundleProgress } from './BundleProgress'
+import { LinkList } from './LinkList'
 import {
   buildBundleFromFolderIndex,
   getCachedReportFolder,
@@ -93,6 +85,9 @@ function formatTabToolError(error: unknown, t: Translate): string {
   return t('htmlBundle.scanFailed')
 }
 
+const SAVE_SHORTCUT =
+  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘S' : 'Ctrl S'
+
 function statsMessage(stats: { pages: number; assets: number; missing: number }, t: Translate) {
   return stats.missing > 0
     ? t('htmlBundle.doneWithMissing', stats)
@@ -120,6 +115,7 @@ function jobOutcome(job: HtmlBundleJob | null, t: Translate) {
 export default function HtmlBundleTool() {
   const { t } = useTranslation()
   const tool = useWebTool('web.html-bundle')
+  const toast = useToast()
   useFocusTarget()
   const job = useHtmlBundleJob()
   const [entries, setEntries] = useState<HtmlLinkCandidate[]>([])
@@ -242,7 +238,8 @@ export default function HtmlBundleTool() {
   }, [htmlOnly, pageTabId, sameFolderOnly, t])
 
   useEffect(() => {
-    void scan()
+    const timer = setTimeout(() => void scan(), 0)
+    return () => clearTimeout(timer)
   }, [scan])
 
   useEffect(() => {
@@ -293,6 +290,40 @@ export default function HtmlBundleTool() {
       }
       return next
     })
+  }
+
+  const invertFiltered = () => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      for (const entry of filtered) {
+        if (next.has(entry.resolvedUrl)) next.delete(entry.resolvedUrl)
+        else next.add(entry.resolvedUrl)
+      }
+      return next
+    })
+  }
+
+  const copySelectedLinks = async () => {
+    const urls = entries.map((entry) => entry.resolvedUrl).filter((url) => selected.has(url))
+    try {
+      await navigator.clipboard.writeText(urls.join('\n'))
+      toast.show(t('htmlBundle.ui.copied', { count: urls.length }), { variant: 'success' })
+    } catch {
+      toast.show(t('htmlBundle.ui.copyFailed'), { variant: 'error' })
+    }
+  }
+
+  const scanFolderPage = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const url = pageUrl || (await getActivePageMeta()).url
+      await scanFromFolder(url)
+    } catch (folderScanError) {
+      setError(folderScanError instanceof Error ? folderScanError.message : t('htmlBundle.scanFailed'))
+    } finally {
+      setLoading(false)
+    }
   }
 
   const runFolderDownload = useCallback(
@@ -394,74 +425,37 @@ export default function HtmlBundleTool() {
     if (job) void cancelHtmlBundleJob(job.id).catch(() => {})
   }
 
+  const zipPageCount = pageUrl ? new Set([pageUrl.split('#')[0], ...selected]).size : selected.size + 1
+  const canDownloadZip = !busy && selected.size > 0 && !tooManySelected
+
   return (
     <ToolPage tool={tool}>
-      <div className="flex min-h-0 flex-1 flex-col gap-3">
-        <p className="text-[11px] text-muted-foreground">{t('htmlBundle.privacy')}</p>
-        {pageTitle && (
-          <div className="rounded-md border bg-muted/30 px-2 py-1.5 text-[11px]">
-            <div className="font-medium">{pageTitle}</div>
-            <div className="truncate text-muted-foreground">{pageUrl}</div>
-          </div>
-        )}
+      <div className="flex min-h-0 flex-1 flex-col gap-2.5">
+        <PageCard
+          pageTitle={pageTitle}
+          pageUrl={pageUrl}
+          linkCount={entries.length}
+          loading={loading}
+          onRescan={() => {
+            setProgress('')
+            void scan()
+          }}
+        />
 
-        <div className="flex flex-wrap gap-1.5">
-          <Button size="sm" variant="outline" onClick={() => void scan()} disabled={loading}>
-            <RefreshCwIcon className="size-3.5" />
-            {t('htmlBundle.scan')}
-          </Button>
-          <Button size="sm" variant="outline" onClick={downloadCurrentOnly} disabled={busy}>
-            <SaveIcon className="size-3.5" />
-            {t('htmlBundle.downloadCurrent')}
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => void downloadSelectedZip(false)}
-            disabled={busy || selected.size === 0 || tooManySelected}
-          >
-            <DownloadIcon className="size-3.5" />
-            {t('htmlBundle.downloadZip')}
-          </Button>
-          {isFilePage && (
-            <>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => {
-                  void (async () => {
-                    setLoading(true)
-                    setError('')
-                    try {
-                      const url = pageUrl || (await getActivePageMeta()).url
-                      await scanFromFolder(url)
-                    } catch (folderScanError) {
-                      setError(
-                        folderScanError instanceof Error
-                          ? folderScanError.message
-                          : t('htmlBundle.scanFailed'),
-                      )
-                    } finally {
-                      setLoading(false)
-                    }
-                  })()
-                }}
-                disabled={busy}
-              >
-                <FolderOpenIcon className="size-3.5" />
-                {t('htmlBundle.scanFromFolder')}
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => void downloadSelectedZip(true)}
-                disabled={busy}
-              >
-                <FolderOpenIcon className="size-3.5" />
-                {t('htmlBundle.pickFolder')}
-              </Button>
-            </>
-          )}
-        </div>
+        <FilterBar
+          htmlOnly={htmlOnly}
+          sameFolderOnly={sameFolderOnly}
+          onHtmlOnly={setHtmlOnly}
+          onSameFolderOnly={setSameFolderOnly}
+          pageLimit={pageLimit}
+          limitText={limitText}
+          onLimitText={onLimitTextChange}
+          onLimitPreset={applyPageLimit}
+          busy={busy}
+          isFilePage={isFilePage}
+          onScanFolder={() => void scanFolderPage()}
+          onPickFolder={() => void downloadSelectedZip(true)}
+        />
 
         <BundleProgress
           active={jobActive}
@@ -481,7 +475,7 @@ export default function HtmlBundleTool() {
           <div
             role={outcome.tone === 'error' ? 'alert' : 'status'}
             className={cn(
-              'flex items-start gap-2 rounded-md border px-2 py-1.5 text-[11px]',
+              'flex items-start gap-2 rounded-xl border px-2.5 py-2 text-[11px]',
               outcome.tone === 'error' && 'border-destructive/30 bg-destructive/5 text-destructive',
               outcome.tone === 'success' && 'border-primary/20 bg-primary/5',
               outcome.tone === 'muted' && 'text-muted-foreground',
@@ -508,59 +502,25 @@ export default function HtmlBundleTool() {
           </div>
         )}
         {progress && !folderBuild && (
-          <p className="text-[11px] text-muted-foreground">{progress}</p>
-        )}
-        {error && (
-          <p role="alert" className="text-[11px] text-destructive">
-            {error}
+          <p role="status" className="text-[11px] text-muted-foreground">
+            {progress}
           </p>
         )}
-
-        <div className="flex flex-col gap-2 rounded-md border p-2 text-[11px]">
-          <label className="flex items-center justify-between gap-2" data-search-id="htmlOnly">
-            {t('htmlBundle.htmlOnly')}
-            <Switch checked={htmlOnly} onCheckedChange={setHtmlOnly} />
-          </label>
-          <label className="flex items-center justify-between gap-2" data-search-id="sameFolderOnly">
-            {t('htmlBundle.sameFolderOnly')}
-            <Switch checked={sameFolderOnly} onCheckedChange={setSameFolderOnly} />
-          </label>
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div>{t('htmlBundle.pageLimit')}</div>
-              <div className="text-[10px] text-muted-foreground">
-                {t('htmlBundle.pageLimitHint', { default: DEFAULT_MAX_PAGES, max: MAX_PAGES_CEILING })}
-              </div>
-            </div>
-            <NumberField
-              value={limitText}
-              onChange={onLimitTextChange}
-              ariaLabel={t('htmlBundle.pageLimit')}
-              min={1}
-              max={MAX_PAGES_CEILING}
-              disabled={busy}
-              className="h-8 w-20 shrink-0 text-right text-xs"
-            />
-          </div>
-          <span className="text-muted-foreground">{t('htmlBundle.includeAssetsHint')}</span>
-        </div>
-
-        <div className="relative">
-          <SearchIcon className="absolute top-2 left-2 size-3.5 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('htmlBundle.search')}
-            className="pl-8"
-            aria-label={t('htmlBundle.search')}
-          />
-        </div>
-
+        {error && (
+          <p
+            role="alert"
+            className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-2.5 py-2 text-[11px] text-destructive"
+          >
+            <AlertTriangleIcon className="mt-px size-3.5 shrink-0" aria-hidden />
+            <span className="min-w-0 flex-1">{error}</span>
+          </p>
+        )}
         {tooManySelected && (
           <div
             role="alert"
-            className="flex flex-wrap items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-2 py-1.5 text-[11px] text-destructive"
+            className="flex flex-wrap items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-2.5 py-2 text-[11px] text-destructive"
           >
+            <AlertTriangleIcon className="size-3.5 shrink-0" aria-hidden />
             <span className="min-w-0 flex-1">
               {t('htmlBundle.tooManySelected', { max: pageLimit, count: selected.size })}
             </span>
@@ -578,54 +538,60 @@ export default function HtmlBundleTool() {
           </div>
         )}
 
-        <div className="min-h-0 flex-1 overflow-y-auto rounded-md border">
-          {filtered.length === 0 ? (
-            <p className="p-3 text-xs text-muted-foreground">{t('htmlBundle.noLinks')}</p>
-          ) : (
-            <>
-              <label className="sticky top-0 z-10 flex min-h-10 cursor-pointer items-center gap-2 border-b bg-muted/80 px-2 py-2 text-[11px] backdrop-blur-sm transition-colors hover:bg-muted">
-                <Checkbox
-                  checked={selectAllState}
-                  onCheckedChange={toggleAllFiltered}
-                  aria-label={t('htmlBundle.selectAll')}
-                />
-                <span className="font-medium">
-                  {query.trim()
-                    ? t('htmlBundle.selectAllMatches', { count: filtered.length })
-                    : t('htmlBundle.selectAll')}
-                </span>
-                <span
-                  className={cn(
-                    'ml-auto tabular-nums',
-                    tooManySelected ? 'font-medium text-destructive' : 'text-muted-foreground',
-                  )}
-                >
-                  {t('htmlBundle.selectedCount', { count: selected.size, total: entries.length })}
-                </span>
-              </label>
-              <ul className="divide-y">
-                {filtered.map((entry) => (
-                  <li key={entry.id}>
-                    <label className="flex cursor-pointer items-start gap-2 px-2 py-1.5 text-[11px] hover:bg-accent/50">
-                      <Checkbox
-                        className="mt-0.5"
-                        checked={selected.has(entry.resolvedUrl)}
-                        onCheckedChange={() => toggle(entry.resolvedUrl)}
-                        aria-label={entry.label}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="font-medium">{entry.label}</div>
-                        <div className="truncate text-muted-foreground">{entry.filename}</div>
-                      </div>
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </div>
+        <LinkList
+          total={entries.length}
+          filtered={filtered}
+          selected={selected}
+          selectAllState={selectAllState}
+          query={query}
+          onQuery={setQuery}
+          loading={loading}
+          busy={busy}
+          overLimit={tooManySelected}
+          filtersOn={{ htmlOnly, sameFolderOnly }}
+          onToggle={toggle}
+          onToggleAll={toggleAllFiltered}
+          onInvert={invertFiltered}
+          onCopy={() => void copySelectedLinks()}
+          onAllTypes={() => setHtmlOnly(false)}
+          onAnyFolder={() => setSameFolderOnly(false)}
+          onSaveThisPage={downloadCurrentOnly}
+        />
 
-        <p className="text-[10px] text-muted-foreground">{t('htmlBundle.shortcutHint')}</p>
+        <div className="sticky bottom-0 z-10 -mx-[var(--density-page-pad)] -mb-[var(--density-page-pad)] flex items-center gap-2 border-t bg-background px-[var(--density-page-pad)] py-2.5">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs leading-4 font-semibold tabular-nums">
+              {t('htmlBundle.ui.summary', { count: zipPageCount })}
+            </p>
+            <p className="truncate text-[11px] leading-4 text-muted-foreground">{t('htmlBundle.ui.summaryHint')}</p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={downloadCurrentOnly}
+            disabled={busy}
+            title={t('htmlBundle.downloadCurrent')}
+            aria-label={t('htmlBundle.downloadCurrent')}
+            className="shrink-0"
+          >
+            <SaveIcon className="size-3.5" />
+            <span className="hidden @[400px]:inline">{t('htmlBundle.ui.thisPage')}</span>
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => void downloadSelectedZip(false)}
+            disabled={!canDownloadZip}
+            aria-keyshortcuts="Control+S Meta+S"
+            title={t('htmlBundle.shortcutHint')}
+            className="shrink-0"
+          >
+            <DownloadIcon className="size-3.5" />
+            {t('htmlBundle.downloadZip')}
+            <kbd className="hidden rounded bg-primary-foreground/20 px-1 font-sans text-[10px] leading-4 font-medium @[340px]:inline">
+              {SAVE_SHORTCUT}
+            </kbd>
+          </Button>
+        </div>
       </div>
     </ToolPage>
   )

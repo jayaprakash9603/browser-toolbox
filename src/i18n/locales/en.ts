@@ -25,6 +25,7 @@ import { pageInspectorStrings } from './pageInspectorEn'
 import { responsiveViewerStrings } from './responsiveViewerEn'
 import { saveImageAsStrings } from './saveImageAsEn'
 import { calculatorStrings } from './calculatorEn'
+import { htmlBundleStrings } from './htmlBundleEn'
 
 const en = {
   'app.name': 'One Panel',
@@ -1508,6 +1509,7 @@ const en = {
   ...responsiveViewerStrings,
   ...saveImageAsStrings,
   ...calculatorStrings,
+  ...htmlBundleStrings,
 } as const
 
 export default en
