@@ -172,6 +172,10 @@ export function scheduleScriptStudioSync(): void {
 }
 
 export async function executeScriptOnTab(tabId: number, scriptId: string): Promise<void> {
+  if (!chrome.userScripts?.execute) {
+    logger.warn('userScripts.execute unavailable; run from menu needs Chrome 135+ and the userScripts permission')
+    return
+  }
   const code = await getScriptCode(scriptId)
   if (!code) return
   const index = await getScriptStudioIndex()
@@ -184,17 +188,11 @@ export async function executeScriptOnTab(tabId: number, scriptId: string): Promi
   const handlerVersion = chrome.runtime.getManifest().version
   const bundle = buildBundle(record, code, values, externals, runtimeJs, settings, handlerVersion)
   if (!bundle?.code) return
-  await chrome.scripting.executeScript({
+  await chrome.userScripts.execute({
     target: { tabId },
-    world: bundle.world === 'MAIN' ? 'MAIN' : 'MAIN',
+    js: [{ code: bundle.code }],
+    world: bundle.world,
     injectImmediately: true,
-    func: (src: string) => {
-      const el = document.createElement('script')
-      el.textContent = src
-      ;(document.head || document.documentElement).appendChild(el)
-      el.remove()
-    },
-    args: [bundle.code],
   })
 }
 
