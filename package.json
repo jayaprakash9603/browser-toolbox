@@ -58,7 +58,7 @@
     "@radix-ui/react-tabs": "^1.1.21",
     "@radix-ui/react-tooltip": "^1.2.16",
     "@tailwindcss/vite": "^4.3.3",
-    "@universal-form-autofill/sdk": "file:./universal-form-autofill/release/sdk",
+    "@universal-form-autofill/sdk": "npm:@jayaprakash9603/universal-form-autofill@^0.1.0",
     "@wppconnect/wa-js": "^4.7.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

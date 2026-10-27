@@ -11,15 +11,9 @@ Load `dist/` via `chrome://extensions` → *Load unpacked*. Vite rebuilds on cha
 
 ### Form Autofill package
 
-The Form Autofill tool comes from `@universal-form-autofill/sdk`, linked from `universal-form-autofill/release/sdk`. That folder is its own git repository and is ignored here, like `postman-lite`, so `npm install` fails until the package has been built:
+The Form Autofill tool imports `@universal-form-autofill/sdk`, an npm alias for the published [`@jayaprakash9603/universal-form-autofill`](https://www.npmjs.com/package/@jayaprakash9603/universal-form-autofill) package, so a plain `npm install` is enough. Its source lives in [auto-fill](https://github.com/jayaprakash9603/auto-fill); a local checkout in `universal-form-autofill/` is ignored here, like `postman-lite`.
 
-```bash
-cd universal-form-autofill
-pnpm install
-pnpm build:package
-```
-
-`dev` and `build` run `npm run autofill:assets`, which copies the package's page runtime into `public/form-autofill/` (also ignored). Rebuild the package and rerun that script after changing anything in `universal-form-autofill/`.
+`dev` and `build` run `npm run autofill:assets`, which copies the package's page runtime into `public/form-autofill/` (also ignored). To try unpublished SDK changes, run `pnpm build:package` in the checkout and point the dependency at `file:./universal-form-autofill/release/sdk` temporarily.
 
 ## Add a new tool
 
