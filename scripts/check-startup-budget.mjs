@@ -15,9 +15,11 @@ const assets = join(dist, 'assets')
 /** Measured home boot ~1.08 MB after script-studio-core split (was ~986 KB). */
 /** ~1.10 MB after the Tasks, Diff, Color picker and Responsive viewer strings joined the boot i18n catalog. */
 /** ~1.12 MB once site-access prompts and the HTML bundle strings joined the catalog. */
-const MAX_HOME_BOOT_JS = 1_135_000
+/** ~1.14 MB after category demo disclosure and related home strings. */
+const MAX_HOME_BOOT_JS = 1_140_000
 /** After SW leak fix, measured ~423 KB static closure. */
-const MAX_SERVICE_WORKER_JS = 480 * 1024
+/** ~481 KB measured after interceptor optional-permission wiring in the SW graph. */
+const MAX_SERVICE_WORKER_JS = 492 * 1024
 
 /** `_gsap` is the cache property GSAP stamps on every target: the tool demos must stay lazy. */
 const BANNED_IN_HOME = [/postman-lite/i, /\bcmdk\b/, /\b_gsap\b/]
