@@ -15,6 +15,11 @@ export const responsiveViewerStrings = {
   'rv.view.row': 'Side by side',
   'rv.view.frame': 'Device frames',
   'rv.view.rotateAll': 'Rotate all',
+  'rv.controls.label': 'Device and view controls',
+  'rv.controls.fold': 'Fold controls for more preview space',
+  'rv.controls.show': 'Show device and view controls',
+  'rv.controls.summary_one': '{{count}} device · {{zoom}}',
+  'rv.controls.summary_other': '{{count}} devices · {{zoom}}',
   'rv.full.open': 'Full view',
   'rv.full.close': 'Close full view',
   'rv.full.title': 'Device full view',
@@ -64,7 +69,8 @@ export const responsiveViewerStrings = {
   'rv.card.slow': 'Still loading. Some sites refuse to appear inside frames.',
   'rv.card.openTab': 'Open in tab',
   'rv.empty.title': 'Preview a page on every screen',
-  'rv.empty.body': 'Load the current tab or type an address to see it on phones, tablets and desktops at once.',
+  'rv.empty.body':
+    'Load the current tab or type an address to see it on phones, tablets and desktops at once.',
   'rv.empty.noDevices': 'Pick at least one device to start previewing.',
   'rv.unblock.title': 'Load sites that block embedding',
   'rv.unblock.body':

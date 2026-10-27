@@ -140,7 +140,9 @@ export function DeviceMenu({
               ),
             )}
           </span>
-          <span className="text-xs font-semibold">{t('rv.devices.title')}</span>
+          <span className="hidden text-xs font-semibold @[360px]:inline">
+            {t('rv.devices.title')}
+          </span>
           <span className="rounded-full bg-muted px-1.5 text-[10px] leading-4 font-semibold text-muted-foreground tabular-nums">
             {selected.length}
           </span>
