@@ -17,23 +17,12 @@ export function FormMemorySettingsSection() {
       <SettingsRow
         searchId="formMemoryLearn"
         label={t('formMemory.settings.learn')}
-        description={t('formMemory.settings.learnHint')}
+        description={t('formMemory.settings.learnHint', { fill: fillKey, clear: clearKey })}
       >
         <Switch
           checked={state.settings.learn}
           onCheckedChange={(on) => void patchSettings({ learn: on })}
           aria-label={t('formMemory.settings.learn')}
-        />
-      </SettingsRow>
-      <SettingsRow
-        searchId="formMemoryAutoFill"
-        label={t('formMemory.settings.autoFill')}
-        description={t('formMemory.settings.autoFillHint', { fill: fillKey, clear: clearKey })}
-      >
-        <Switch
-          checked={state.settings.autoFill}
-          onCheckedChange={(on) => void patchSettings({ autoFill: on })}
-          aria-label={t('formMemory.settings.autoFill')}
         />
       </SettingsRow>
       <SettingsLinkRow to={FORM_AUTOFILL_ROUTE}>{t('formMemory.settings.manage')}</SettingsLinkRow>

@@ -29,7 +29,6 @@ import {
   removeMemoryPage,
   restoreMemoryPages,
   setHostBlocked,
-  setPageAutoFill,
   updateMemoryField,
   type FormMemoryState,
   type MemoryField,
@@ -304,7 +303,6 @@ function HostCard({
 function PageBlock({ page, update, current }: { page: MemoryPage; update: Update; current: boolean }) {
   const { t } = useTranslation()
   const { show } = useToast()
-  const switchId = useId()
   const fields = Object.values(page.fields).sort((a, b) => a.label.localeCompare(b.label))
 
   const forget = () => {
@@ -337,15 +335,6 @@ function PageBlock({ page, update, current }: { page: MemoryPage; update: Update
             {page.path}
           </p>
         </div>
-        <label htmlFor={switchId} className="flex shrink-0 cursor-pointer items-center gap-1.5 text-[11px] text-muted-foreground">
-          <span className="hidden @[300px]:inline">{t('formMemory.saved.autoFill')}</span>
-          <Switch
-            id={switchId}
-            checked={page.autoFill}
-            onCheckedChange={(on) => void update((state) => setPageAutoFill(state, page.id, on))}
-            aria-label={t('formMemory.saved.autoFillPage')}
-          />
-        </label>
         <Button
           variant="ghost"
           size="icon-xs"

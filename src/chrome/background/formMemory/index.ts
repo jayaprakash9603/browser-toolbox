@@ -243,25 +243,19 @@ function capturedFields(raw: unknown[]): CapturedField[] {
 
 const pending = new Map<number, ReturnType<typeof setTimeout>>()
 
-/** With site access, remembered pages fill as they open and new entries are recorded as typed. */
+/** With site access, start learning watchers on load; filling always waits for the user shortcut or panel action. */
 async function onPageReady(tabId: number): Promise<void> {
   const tab = await chrome.tabs.get(tabId).catch(() => undefined)
   if (!tab?.url || !scriptable(tab.url) || tab.discarded) return
   const state = await loadFormMemory()
+  if (!state.settings.learn) return
   const ref = pageRefFor(tab.url)
   if (!ref || isHostBlocked(state.settings, ref.host)) return
-  const remembered = state.pages[ref.id]
-  const autoFill = state.settings.autoFill && Boolean(remembered?.autoFill)
-  if (!autoFill && !state.settings.learn) return
   if (!/^file:/i.test(tab.url)) {
     const allowed = await chrome.permissions
       .contains({ origins: [`${new URL(tab.url).origin}/*`] })
       .catch(() => false)
     if (!allowed) return
-  }
-  if (autoFill) {
-    await fillFormInTab('auto', tab)
-    return
   }
   await runInTab(tabId, { action: 'inspect', watch: true })
 }
