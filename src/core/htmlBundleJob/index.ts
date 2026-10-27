@@ -1,9 +1,15 @@
-export type BundlePhase = 'pages' | 'assets' | 'zip' | 'transfer'
+import type { CrawlOptions, CrawlProgress, CrawlSummary } from '@/core/engines/htmlArchive/crawl'
+
+export type BundlePhase = 'crawl' | 'pages' | 'assets' | 'zip' | 'transfer'
+
+/** `links` saves the pages picked from the list; `crawl` follows links across the site. */
+export type BundleMode = 'links' | 'crawl'
 
 export interface BundleProgressEvent {
   phase: BundlePhase
   done: number
   total: number
+  crawl?: CrawlProgress
 }
 
 export interface BundleStats {
@@ -11,6 +17,7 @@ export interface BundleStats {
   assets: number
   bytes: number
   missing: number
+  crawl?: CrawlSummary
 }
 
 export type HtmlBundleJobStatus = 'running' | 'done' | 'error' | 'cancelled'
@@ -22,6 +29,9 @@ export interface HtmlBundleJob {
   pageTitle: string
   fileName: string
   pageCount: number
+  mode?: BundleMode
+  /** The user asked a crawl to stop early; the ZIP is built from the pages saved so far. */
+  stopRequested?: boolean
   status: HtmlBundleJobStatus
   progress: BundleProgressEvent | null
   startedAt: number
@@ -36,21 +46,42 @@ export interface HtmlBundleJobRequest {
   selectedResolvedUrls: string[]
   includeAssets: boolean
   maxPages: number
+  /** Present only in crawl mode; the selected URLs are then ignored. */
+  crawl?: CrawlOptions
 }
 
 export const HTML_BUNDLE_JOB_KEY = 'htmlBundle.job'
 export const STALE_AFTER_MS = 3 * 60 * 1000
 
-export const BUNDLE_PHASES: { id: BundlePhase; label: string; start: number; end: number }[] = [
+interface PhaseSpan {
+  id: BundlePhase
+  label: string
+  start: number
+  end: number
+}
+
+export const BUNDLE_PHASES: PhaseSpan[] = [
   { id: 'pages', label: 'htmlBundle.phasePages', start: 0, end: 45 },
   { id: 'assets', label: 'htmlBundle.phaseAssets', start: 45, end: 85 },
   { id: 'zip', label: 'htmlBundle.phaseZip', start: 85, end: 93 },
   { id: 'transfer', label: 'htmlBundle.phaseTransfer', start: 93, end: 100 },
 ]
 
-export function overallPercent(progress: BundleProgressEvent | null): number {
+export const CRAWL_PHASES: PhaseSpan[] = [
+  { id: 'crawl', label: 'htmlBundle.crawl.phaseCrawl', start: 0, end: 60 },
+  { id: 'assets', label: 'htmlBundle.phaseAssets', start: 60, end: 88 },
+  { id: 'zip', label: 'htmlBundle.phaseZip', start: 88, end: 94 },
+  { id: 'transfer', label: 'htmlBundle.phaseTransfer', start: 94, end: 100 },
+]
+
+export function phasesFor(mode: BundleMode | undefined): PhaseSpan[] {
+  return mode === 'crawl' ? CRAWL_PHASES : BUNDLE_PHASES
+}
+
+export function overallPercent(progress: BundleProgressEvent | null, mode?: BundleMode): number {
   if (!progress) return 0
-  const phase = BUNDLE_PHASES.find((item) => item.id === progress.phase) ?? BUNDLE_PHASES[0]
+  const phases = phasesFor(mode ?? (progress.phase === 'crawl' ? 'crawl' : 'links'))
+  const phase = phases.find((item) => item.id === progress.phase) ?? phases[0]
   const ratio = progress.total > 0 ? Math.min(progress.done / progress.total, 1) : 0
   return Math.round(phase.start + (phase.end - phase.start) * ratio)
 }

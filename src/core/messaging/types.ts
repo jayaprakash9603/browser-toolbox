@@ -1,4 +1,5 @@
-import type { BundleStats, HtmlBundleJobRequest } from '@/core/htmlBundleJob'
+import type { CrawlOptions, CrawlProgress } from '@/core/engines/htmlArchive/crawl'
+import type { BundlePhase, BundleStats, HtmlBundleJobRequest } from '@/core/htmlBundleJob'
 
 export type ExtensionMessage =
   | { type: 'CONTENT_SCRIPT_PING' }
@@ -55,14 +56,16 @@ export type ExtensionMessage =
       includeAssets: boolean
       maxPages?: number
       maxBytes?: number
+      crawl?: CrawlOptions
     }
   | { type: 'READ_HTML_BUNDLE_CHUNK'; buildId: string; index: number }
   | {
       type: 'HTML_BUNDLE_PROGRESS'
       buildId: string
-      phase: 'pages' | 'assets' | 'zip' | 'transfer'
+      phase: BundlePhase
       done: number
       total: number
+      crawl?: CrawlProgress
     }
   | {
       type: 'HTML_BUNDLE_READY'
@@ -83,6 +86,8 @@ export type ExtensionMessage =
       request: HtmlBundleJobRequest
     }
   | { type: 'CANCEL_HTML_BUNDLE_JOB'; jobId: string }
+  | { type: 'STOP_HTML_BUNDLE_CRAWL'; buildId: string }
+  | { type: 'STOP_HTML_BUNDLE_JOB'; jobId: string }
   | { type: 'OFFSCREEN_BUNDLE_CHUNK'; buildId: string; base64: string }
   | { type: 'OFFSCREEN_BUNDLE_FINALIZE'; buildId: string }
   | { type: 'OFFSCREEN_BUNDLE_RELEASE'; buildId: string }
@@ -299,6 +304,8 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'CANCEL_HTML_BUNDLE',
   'START_HTML_BUNDLE_JOB',
   'CANCEL_HTML_BUNDLE_JOB',
+  'STOP_HTML_BUNDLE_CRAWL',
+  'STOP_HTML_BUNDLE_JOB',
   'OFFSCREEN_BUNDLE_CHUNK',
   'OFFSCREEN_BUNDLE_FINALIZE',
   'OFFSCREEN_BUNDLE_RELEASE',

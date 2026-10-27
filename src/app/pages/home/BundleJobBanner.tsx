@@ -26,7 +26,7 @@ export function BundleJobBanner() {
   const stalled = isJobStalled(job, now)
   const stalledRecently = job != null && stalled && now - job.updatedAt < STALE_AFTER_MS + RESULT_VISIBLE_MS
   const visible = Boolean(route) && (running || finishedRecently || stalledRecently)
-  const percent = overallPercent(job?.progress ?? null)
+  const percent = overallPercent(job?.progress ?? null, job?.mode)
   const failed = job?.status === 'error' || stalled
 
   return (
@@ -78,7 +78,9 @@ export function BundleJobBanner() {
               <span className="flex items-baseline justify-between gap-2">
                 <span className="truncate text-xs font-semibold">
                   {running
-                    ? t('htmlBundle.bannerPreparing', { count: job.pageCount })
+                    ? t('htmlBundle.bannerPreparing', {
+                        count: job.mode === 'crawl' ? (job.progress?.crawl?.saved ?? 0) : job.pageCount,
+                      })
                     : failed
                       ? t('htmlBundle.bannerFailed')
                       : t('htmlBundle.bannerDone')}

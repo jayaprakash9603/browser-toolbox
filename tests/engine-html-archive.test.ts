@@ -9,6 +9,8 @@ import {
   collectSameOriginAssets,
   decodeText,
   isHtmlPageLink,
+  pageUrlAliases,
+  pageZipPathForUrl,
   relativeZipPath,
   safeZipPath,
   enrichLinkLabelsWithPageTitles,
@@ -121,6 +123,49 @@ describe('htmlArchive engine', () => {
     expect(lastPages).toBe(300)
     expect([...phases]).toEqual(['pages', 'assets', 'zip'])
     expect(Object.keys(unzipSync(result.zipBytes))).toHaveLength(301)
+  })
+
+  it('saves extensionless routes and folders as html files', () => {
+    const root = 'https://site.example.com/'
+    expect(pageZipPathForUrl('https://site.example.com/about', root, '/')).toBe('about.html')
+    expect(pageZipPathForUrl('https://site.example.com/docs/', root, '/')).toBe('docs/index.html')
+    expect(pageZipPathForUrl('https://site.example.com/', root, '/')).toBe('index.html')
+    expect(pageZipPathForUrl('https://site.example.com/a/b.html', root, '/')).toBe('a/b.html')
+    expect(pageUrlAliases('https://site.example.com/docs/')).toEqual([
+      'https://site.example.com/docs/index.html',
+      'https://site.example.com/docs/index.htm',
+      'https://site.example.com/docs',
+    ])
+    expect(pageUrlAliases('https://site.example.com/about')).toEqual([
+      'https://site.example.com/about/',
+      'https://site.example.com/about/index.html',
+    ])
+  })
+
+  it('links crawled routes to each other offline and adds an entry page', async () => {
+    const origin = 'https://site.example.com'
+    const html: Record<string, string> = {
+      [`${origin}/guide/start`]: '<a href="/docs">docs</a><a href="/docs/index.html">again</a><a href="/pricing">p</a>',
+      [`${origin}/docs/`]: '<a href="../guide/start">back</a>',
+    }
+    const result = await buildHtmlArchive(
+      {
+        rootPageUrl: `${origin}/guide/start`,
+        pageUrls: Object.keys(html),
+        includeAssets: false,
+        rootDir: '/',
+        entryRedirect: true,
+      },
+      { loadBytes: async (url) => (url in html ? textEncoder(html[url]) : null) },
+    )
+    const entries = unzipSync(result.zipBytes)
+    expect(Object.keys(entries).sort()).toEqual(['docs/index.html', 'guide/start.html', 'index.html'])
+    const start = decodeText(entries['guide/start.html'])
+    expect(start).toContain('href="../docs/index.html"')
+    expect(start).not.toContain('href="/docs/index.html"')
+    expect(start).toContain('href="https://site.example.com/pricing"')
+    expect(decodeText(entries['docs/index.html'])).toContain('href="../guide/start.html"')
+    expect(decodeText(entries['index.html'])).toContain('url=guide/start.html')
   })
 
   it('parses document title from html', () => {

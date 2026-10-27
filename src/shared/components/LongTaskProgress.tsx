@@ -29,6 +29,10 @@ export interface LongTaskProgressProps {
   flyingIcons?: LucideIcon[]
   steps?: LongTaskStep[]
   hint?: ReactNode
+  /** Extra detail under the time row, such as live counters. */
+  children?: ReactNode
+  /** Buttons shown before Cancel in the footer. */
+  actions?: ReactNode
   onCancel?: () => void
   cancelLabel?: string
   layout?: LongTaskLayout
@@ -66,6 +70,8 @@ export function LongTaskProgress({
   flyingIcons = [],
   steps,
   hint,
+  children,
+  actions,
   onCancel,
   cancelLabel,
   layout = 'auto',
@@ -94,8 +100,9 @@ export function LongTaskProgress({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={reduce ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }}
           transition={{ duration: 0.22, ease: 'easeOut' }}
+          // Must not shrink inside a flex column, or overflow-hidden clips the steps and Cancel.
           className={cn(
-            'overflow-hidden rounded-lg border border-primary/20 bg-primary/5',
+            '@container shrink-0 overflow-hidden rounded-lg border border-primary/20 bg-primary/5',
             layout === 'compact' ? 'p-2.5' : 'p-3',
             className,
           )}
@@ -141,9 +148,9 @@ export function LongTaskProgress({
 
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-2">
-                <p className="text-xs font-semibold">{title}</p>
+                <p className="min-w-0 text-xs leading-4 font-semibold text-pretty">{title}</p>
                 {!indeterminate && (
-                  <span className="text-sm font-semibold tabular-nums text-primary">{safePercent}%</span>
+                  <span className="shrink-0 text-sm font-semibold tabular-nums text-primary">{safePercent}%</span>
                 )}
               </div>
               <div className="relative h-4 overflow-hidden">
@@ -188,9 +195,9 @@ export function LongTaskProgress({
             </motion.div>
           </div>
 
-          <div className="mt-1.5 flex justify-between text-[10px] tabular-nums text-muted-foreground">
+          <div className="mt-1.5 flex justify-between gap-2 text-[10px] tabular-nums text-muted-foreground">
             <span>{t('longTask.elapsed', { time: formatElapsedSeconds(elapsed) })}</span>
-            <span>
+            <span className="text-end">
               {indeterminate
                 ? t('longTask.working')
                 : remaining != null
@@ -199,19 +206,25 @@ export function LongTaskProgress({
             </span>
           </div>
 
+          {children}
+
           {showSteps && (
             <ol
               className={cn(
-                'mt-2.5 grid gap-x-3 gap-y-1',
-                layout === 'expanded' ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-1 sm:grid-cols-2',
+                'mt-2.5 grid gap-1',
+                layout === 'expanded' ? 'grid-cols-2 @[300px]:grid-cols-4' : 'grid-cols-2 @[420px]:grid-cols-4',
               )}
             >
               {steps!.map((step) => (
                 <li
                   key={step.id}
+                  aria-current={step.state === 'current' ? 'step' : undefined}
                   className={cn(
-                    'flex items-center gap-1.5 text-[11px]',
-                    step.state === 'todo' ? 'text-muted-foreground/60' : 'text-foreground',
+                    'flex min-w-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-[11px] transition-colors duration-200',
+                    step.state === 'done' && 'text-foreground',
+                    step.state === 'current' &&
+                      'bg-background/80 font-medium text-foreground shadow-xs ring-1 ring-primary/25',
+                    step.state === 'todo' && 'text-muted-foreground',
                   )}
                 >
                   <span
@@ -219,7 +232,7 @@ export function LongTaskProgress({
                       'flex size-3.5 shrink-0 items-center justify-center rounded-full',
                       step.state === 'done' && 'bg-primary text-primary-foreground',
                       step.state === 'current' && 'text-primary',
-                      step.state === 'todo' && 'border border-muted-foreground/30',
+                      step.state === 'todo' && 'border border-muted-foreground/35',
                     )}
                     aria-hidden
                   >
@@ -228,17 +241,18 @@ export function LongTaskProgress({
                       <LoaderCircleIcon className={cn('size-3.5', !reduce && 'animate-spin')} />
                     )}
                   </span>
-                  {step.label}
+                  <span className="truncate">{step.label}</span>
                 </li>
               ))}
             </ol>
           )}
 
-          {(hint || onCancel) && (
-            <div className="mt-2.5 flex items-center gap-2 rounded-md bg-background/70 px-2 py-1.5">
+          {(hint || onCancel || actions) && (
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-md bg-background/70 px-2 py-1.5">
               {hint && (
-                <p className="min-w-0 flex-1 text-[10px] leading-snug text-muted-foreground">{hint}</p>
+                <p className="min-w-40 flex-1 text-[10px] leading-snug text-muted-foreground">{hint}</p>
               )}
+              {actions}
               {onCancel && (
                 <Button
                   size="sm"

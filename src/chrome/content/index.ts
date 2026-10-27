@@ -22,6 +22,8 @@ const BUNDLE_CHUNK_BYTES = 4 * 1024 * 1024
 const PROGRESS_INTERVAL_MS = 120
 const builtBundles = new Map<string, Uint8Array>()
 const activeBuilds = new Map<string, AbortController>()
+/** Ends a crawl early and zips what it has; `activeBuilds` cancels without a ZIP. */
+const crawlStops = new Map<string, AbortController>()
 
 function throttledProgress(buildId: string) {
   let lastSent = 0
@@ -256,7 +258,9 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
     case 'BUILD_HTML_BUNDLE': {
       const { buildId } = raw
       const controller = new AbortController()
+      const stop = new AbortController()
       activeBuilds.set(buildId, controller)
+      crawlStops.set(buildId, stop)
       void buildHtmlBundleInPage(
         {
           includeCurrent: raw.includeCurrent,
@@ -264,9 +268,11 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
           includeAssets: raw.includeAssets,
           maxPages: raw.maxPages,
           maxBytes: raw.maxBytes,
+          crawl: raw.crawl,
         },
         throttledProgress(buildId),
         controller.signal,
+        stop.signal,
       )
         .then((result) => {
           if (controller.signal.aborted) return
@@ -287,15 +293,23 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
           }),
         )
         .catch(() => {})
-        .finally(() => activeBuilds.delete(buildId))
+        .finally(() => {
+          activeBuilds.delete(buildId)
+          crawlStops.delete(buildId)
+        })
       sendResponse({ ok: true, data: { accepted: true } })
       return false
     }
     case 'CANCEL_HTML_BUNDLE':
       activeBuilds.get(raw.buildId)?.abort()
       activeBuilds.delete(raw.buildId)
+      crawlStops.delete(raw.buildId)
       builtBundles.delete(raw.buildId)
       sendResponse({ ok: true, data: { cancelled: true } })
+      return false
+    case 'STOP_HTML_BUNDLE_CRAWL':
+      crawlStops.get(raw.buildId)?.abort()
+      sendResponse({ ok: true, data: { stopping: crawlStops.has(raw.buildId) } })
       return false
     case 'READ_HTML_BUNDLE_CHUNK': {
       const bytes = builtBundles.get(raw.buildId)

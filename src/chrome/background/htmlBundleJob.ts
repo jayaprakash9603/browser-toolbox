@@ -116,6 +116,7 @@ async function startJob(message: Extract<ExtensionMessage, { type: 'START_HTML_B
     pageTitle: message.pageTitle,
     fileName: message.fileName,
     pageCount: message.pageCount,
+    mode: message.request.crawl ? 'crawl' : 'links',
     status: 'running',
     progress: null,
     startedAt: now,
@@ -148,7 +149,7 @@ export function registerHtmlBundleJobHandlers() {
   registerMessageHandler('HTML_BUNDLE_PROGRESS', async (message) => {
     if (message.type !== 'HTML_BUNDLE_PROGRESS') return
     await patchRunningJob(message.buildId, {
-      progress: { phase: message.phase, done: message.done, total: message.total },
+      progress: { phase: message.phase, done: message.done, total: message.total, crawl: message.crawl },
     })
   })
 
@@ -180,6 +181,15 @@ export function registerHtmlBundleJobHandlers() {
         .sendMessage(job.tabId, { type: 'CANCEL_HTML_BUNDLE', buildId: job.id })
         .catch(() => {})
     }
+  })
+
+  registerMessageHandler('STOP_HTML_BUNDLE_JOB', async (message) => {
+    if (message.type !== 'STOP_HTML_BUNDLE_JOB') return
+    const job = await patchRunningJob(message.jobId, { stopRequested: true })
+    if (job?.id !== message.jobId || job.status !== 'running') return
+    await chrome.tabs
+      .sendMessage(job.tabId, { type: 'STOP_HTML_BUNDLE_CRAWL', buildId: job.id })
+      .catch(() => {})
   })
 
   chrome.tabs.onRemoved.addListener((tabId) => {

@@ -5,14 +5,27 @@ import {
   DEFAULT_MAX_PAGES,
   enrichLinkLabelsWithPageTitles,
   scanAnchorList,
+  sameOrigin,
+  textEncoder,
   type HtmlBundleProgress,
   type HtmlLinkCandidate,
 } from '@/core/engines/htmlArchive'
+import {
+  clampCrawlOptions,
+  crawlSite,
+  type CrawlOptions,
+  type CrawlSummary,
+  type FetchedPage,
+} from '@/core/engines/htmlArchive/crawl'
+
+import { detectFramework, renderPageInFrame, serializeRenderedDocument } from './pageRender'
 
 export interface ScanHtmlBundleResult {
   pageUrl: string
   pageTitle: string
   entries: HtmlLinkCandidate[]
+  /** Front-end framework the page appears to use, when one is recognizable. */
+  framework?: string | null
 }
 
 export interface BuildHtmlBundleRequest {
@@ -21,6 +34,7 @@ export interface BuildHtmlBundleRequest {
   includeAssets: boolean
   maxPages?: number
   maxBytes?: number
+  crawl?: CrawlOptions
 }
 
 export interface BuildHtmlBundleStats {
@@ -28,6 +42,7 @@ export interface BuildHtmlBundleStats {
   assets: number
   bytes: number
   missing: number
+  crawl?: CrawlSummary
 }
 
 export interface BuildHtmlBundleResult {
@@ -60,7 +75,74 @@ export async function scanHtmlBundleFromDom(
     pageUrl,
     pageTitle,
     entries,
+    framework: detectFramework(document),
   }
+}
+
+async function fetchPageHtml(url: string, signal: AbortSignal): Promise<FetchedPage> {
+  const response = await fetch(url, { credentials: 'include', signal })
+  if (!response.ok) return null
+  const type = response.headers.get('content-type') ?? ''
+  const finalUrl = response.url || url
+  if ((type && !/html|xml/i.test(type)) || !sameOrigin(finalUrl, url)) {
+    void response.body?.cancel().catch(() => {})
+    return { kind: 'skip' }
+  }
+  return { kind: 'html', html: await response.text(), url: finalUrl }
+}
+
+async function buildCrawledBundle(
+  request: BuildHtmlBundleRequest & { crawl: CrawlOptions },
+  onProgress: (progress: HtmlBundleProgress) => void,
+  signal?: AbortSignal,
+  stopSignal?: AbortSignal,
+): Promise<BuildHtmlBundleResult> {
+  const options = clampCrawlOptions(request.crawl)
+  const startUrl = window.location.href
+  const { pages, summary } = await crawlSite(
+    startUrl,
+    options,
+    {
+      fetchPage: fetchPageHtml,
+      renderPage: options.render === 'off' ? undefined : renderPageInFrame,
+    },
+    {
+      signal,
+      stopSignal,
+      startHtml: () => serializeRenderedDocument(document),
+      onProgress: (crawl) =>
+        onProgress({
+          phase: 'crawl',
+          done: crawl.saved,
+          total: Math.min(Math.max(crawl.found, crawl.saved), options.maxPages),
+          crawl,
+        }),
+    },
+  )
+  if (pages.length === 0) throw new Error('Could not load this page, so there was nothing to crawl.')
+
+  const htmlByUrl = new Map(pages.map((page) => [page.url, page.html]))
+  const { zipBytes, stats } = await buildHtmlArchive(
+    {
+      rootPageUrl: pages[0].url,
+      rootDir: options.scope === 'site' ? '/' : undefined,
+      pageUrls: pages.map((page) => page.url),
+      includeAssets: request.includeAssets,
+      entryRedirect: true,
+      maxBytes: request.maxBytes ?? DEFAULT_MAX_BYTES,
+      // Pages are already in memory, so only asset and zip progress is worth showing.
+      onProgress: (progress) => {
+        if (progress.phase !== 'pages') onProgress(progress)
+      },
+    },
+    {
+      loadBytes: async (url) => {
+        const html = htmlByUrl.get(url)
+        return html != null ? textEncoder(html) : fetchBytes(url, signal)
+      },
+    },
+  )
+  return { zipBytes, stats: { ...stats, crawl: summary } }
 }
 
 async function fetchBytes(url: string, signal?: AbortSignal): Promise<Uint8Array | null> {
@@ -77,7 +159,11 @@ export async function buildHtmlBundleInPage(
   request: BuildHtmlBundleRequest,
   onProgress?: (progress: HtmlBundleProgress) => void,
   signal?: AbortSignal,
+  stopSignal?: AbortSignal,
 ): Promise<BuildHtmlBundleResult> {
+  if (request.crawl) {
+    return buildCrawledBundle({ ...request, crawl: request.crawl }, onProgress ?? (() => {}), signal, stopSignal)
+  }
   const maxPages = request.maxPages ?? DEFAULT_MAX_PAGES
   const pageUrl = window.location.href.split('#')[0]
   const pageUrls = [

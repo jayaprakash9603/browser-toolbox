@@ -39,6 +39,13 @@ describe('html bundle job state', () => {
     expect(overallPercent({ phase: 'transfer', done: 3, total: 3 })).toBe(100)
   })
 
+  it('uses the crawl phase weights for whole-site jobs', () => {
+    expect(overallPercent({ phase: 'crawl', done: 5, total: 10 })).toBe(30)
+    expect(overallPercent({ phase: 'assets', done: 1, total: 2 }, 'crawl')).toBe(74)
+    expect(overallPercent({ phase: 'zip', done: 0, total: 1 }, 'crawl')).toBe(88)
+    expect(overallPercent({ phase: 'transfer', done: 1, total: 1 }, 'crawl')).toBe(100)
+  })
+
   it('treats a running job without recent updates as stalled', () => {
     const job = makeJob()
     expect(isJobRunning(job, 1_000 + STALE_AFTER_MS - 1)).toBe(true)

@@ -1,5 +1,7 @@
 import { zipSync } from 'fflate'
 
+import type { CrawlProgress, CrawlSummary } from './crawl'
+
 export const DEFAULT_MAX_PAGES = 300
 export const MAX_PAGES_CEILING = 2000
 export const DEFAULT_MAX_BYTES = 1024 * 1024 * 1024
@@ -247,16 +249,49 @@ function safeDecode(segment: string): string {
   }
 }
 
-/** Mirrors the original layout under the root page's folder; anything outside goes to `_external/`. */
-export function zipPathForUrl(url: string, rootPageUrl: string): string {
+/** Mirrors the original layout under `rootDir` (default: the root page's folder); anything outside goes to `_external/`. */
+export function zipPathForUrl(url: string, rootPageUrl: string, rootDir = dirnameOf(rootPageUrl)): string {
   const pathname = pathnameOf(url)
-  const rootDir = dirnameOf(rootPageUrl)
   const relative =
     sameOrigin(url, rootPageUrl) && pathname.startsWith(rootDir)
       ? pathname.slice(rootDir.length)
       : `_external/${pathname}`
   const decoded = relative.split('/').map(safeDecode).join('/')
   return safeZipPath(decoded || 'index.html')
+}
+
+/** Like `zipPathForUrl`, but always lands on an `.html` file so routes such as `/about` open offline. */
+export function pageZipPathForUrl(url: string, rootPageUrl: string, rootDir?: string): string {
+  try {
+    const parsed = new URL(url)
+    const path = parsed.pathname
+    if (path.endsWith('/')) parsed.pathname = `${path}index.html`
+    else if (!/\.x?html?$/i.test(path)) parsed.pathname = `${path}.html`
+    return zipPathForUrl(parsed.href, rootPageUrl, rootDir)
+  } catch {
+    return zipPathForUrl(url, rootPageUrl, rootDir)
+  }
+}
+
+/** Other spellings of the same page that links may use (`/docs`, `/docs/`, `/docs/index.html`). */
+export function pageUrlAliases(url: string): string[] {
+  try {
+    const { origin, pathname } = new URL(url)
+    const paths: string[] = []
+    if (pathname.endsWith('/')) {
+      paths.push(`${pathname}index.html`, `${pathname}index.htm`)
+      if (pathname !== '/') paths.push(pathname.slice(0, -1))
+    } else if (/\/index\.html?$/i.test(pathname)) {
+      const folder = pathname.replace(/index\.html?$/i, '')
+      paths.push(folder)
+      if (folder !== '/') paths.push(folder.slice(0, -1))
+    } else if (!/\.[a-z0-9]{1,8}$/i.test(pathname.split('/').pop() ?? '')) {
+      paths.push(`${pathname}/`, `${pathname}/index.html`)
+    }
+    return paths.map((path) => `${origin}${path}`)
+  } catch {
+    return []
+  }
 }
 
 export function relativeZipPath(fromFile: string, toFile: string): string {
@@ -302,6 +337,14 @@ function rewriteCssRefs(
     })
 }
 
+/** A relative web link left out of the archive would break offline, so it points at the live page instead. */
+function absoluteWebRef(raw: string, baseUrl: string): string | null {
+  const value = raw.trim()
+  if (!isFetchableRef(value) || /^[a-z][a-z0-9+.-]*:/i.test(value) || value.startsWith('//')) return null
+  const resolved = resolveUrl(value, baseUrl)
+  return resolved && /^https?:/i.test(resolved) ? resolved : null
+}
+
 export function rewriteHtmlRefs(
   html: string,
   pageUrl: string,
@@ -311,7 +354,7 @@ export function rewriteHtmlRefs(
   const withAttrs = html.replace(
     HTML_REF_ATTR_PATTERN,
     (whole, prefix: string, quote: string, raw: string) => {
-      const mapped = mapRef(raw, pageUrl, fromZipPath, urlToZipPath)
+      const mapped = mapRef(raw, pageUrl, fromZipPath, urlToZipPath) ?? absoluteWebRef(raw, pageUrl)
       return mapped ? `${prefix}${quote}${mapped}${quote}` : whole
     },
   )
@@ -328,22 +371,27 @@ export interface HtmlBundleOptions {
   rootPageUrl: string
   pageUrls: string[]
   includeAssets: boolean
+  /** Folder the archive mirrors; defaults to the root page's folder. */
+  rootDir?: string
+  /** Adds an `index.html` that opens the root page when the archive has none. */
+  entryRedirect?: boolean
   maxBytes?: number
   maxAssets?: number
   onProgress?: (progress: HtmlBundleProgress) => void
 }
 
-export type HtmlBundlePhase = 'pages' | 'assets' | 'zip'
+export type HtmlBundlePhase = 'crawl' | 'pages' | 'assets' | 'zip'
 
 export interface HtmlBundleProgress {
   phase: HtmlBundlePhase
   done: number
   total: number
+  crawl?: CrawlProgress
 }
 
 export interface HtmlBundleOutput {
   zipBytes: Uint8Array
-  stats: { pages: number; assets: number; bytes: number; missing: number }
+  stats: { pages: number; assets: number; bytes: number; missing: number; crawl?: CrawlSummary }
 }
 
 async function runPool<T>(
@@ -389,7 +437,12 @@ export async function buildHtmlArchive(
     const html = loadedPages.get(url)
     if (html == null) continue
     pages.set(url, html)
-    urlToZipPath.set(url, zipPathForUrl(url, options.rootPageUrl))
+    urlToZipPath.set(url, pageZipPathForUrl(url, options.rootPageUrl, options.rootDir))
+  }
+  for (const url of pages.keys()) {
+    for (const alias of pageUrlAliases(url)) {
+      if (!urlToZipPath.has(alias)) urlToZipPath.set(alias, urlToZipPath.get(url)!)
+    }
   }
 
   const assets = new Map<string, Uint8Array>()
@@ -414,7 +467,7 @@ export async function buildHtmlArchive(
           missing += 1
         } else {
           assets.set(url, bytes)
-          urlToZipPath.set(url, zipPathForUrl(url, options.rootPageUrl))
+          urlToZipPath.set(url, zipPathForUrl(url, options.rootPageUrl, options.rootDir))
           if (isCssUrl(url)) {
             for (const nested of collectCssAssets(decodeText(bytes), url)) enqueue(nested, nextWave)
           }
@@ -448,6 +501,16 @@ export async function buildHtmlArchive(
   for (const [url, html] of pages) {
     const zipPath = urlToZipPath.get(url)!
     addFile(zipPath, textEncoder(rewriteHtmlRefs(html, url, zipPath, urlToZipPath)))
+  }
+  const rootZipPath = urlToZipPath.get(stripQueryAndHash(options.rootPageUrl))
+  if (options.entryRedirect && rootZipPath && !files.has('index.html')) {
+    const target = relativeZipPath('index.html', rootZipPath)
+    addFile(
+      'index.html',
+      textEncoder(
+        `<!DOCTYPE html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=${target}"><a href="${target}">${target}</a>`,
+      ),
+    )
   }
 
   await new Promise((resolve) => setTimeout(resolve, 0))

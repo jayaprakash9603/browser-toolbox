@@ -14,11 +14,11 @@ interface ChoiceChipsProps<T extends string> {
   options: readonly ChoiceChipOption<T>[]
   ariaLabel: string
   /** Grid columns; wraps cleanly instead of overflowing in narrow panels. */
-  columns?: 2 | 3 | 4
+  columns?: 2 | 3 | 4 | 5
   className?: string
 }
 
-const COLUMNS = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' } as const
+const COLUMNS = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4', 5: 'grid-cols-5' } as const
 
 /** Wrapping radio-group of chips with a sliding highlight. */
 export function ChoiceChips<T extends string>({

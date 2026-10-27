@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AlertTriangleIcon, CircleCheckIcon, DownloadIcon, SaveIcon, XIcon } from 'lucide-react'
+import {
+  AlertTriangleIcon,
+  CircleCheckIcon,
+  DownloadIcon,
+  ListChecksIcon,
+  NetworkIcon,
+  SaveIcon,
+  XIcon,
+} from 'lucide-react'
 
 import type { HtmlLinkCandidate } from '@/core/engines/htmlArchive'
 import {
@@ -9,15 +17,18 @@ import {
   MAX_PAGES_CEILING,
   zipFileName,
 } from '@/core/engines/htmlArchive'
+import { MAX_CRAWL_DEPTH } from '@/core/engines/htmlArchive/crawl'
 import {
   clearHtmlBundleJob,
   isJobRunning,
   isJobStalled,
+  type BundleMode,
   type BundleProgressEvent,
   type HtmlBundleJob,
 } from '@/core/htmlBundleJob'
 import { useHtmlBundleJob } from '@/features/html-bundle-job/useHtmlBundleJob'
 import { parseNumberInRange } from '@/shared/components/NumberField'
+import { Segmented } from '@/shared/components/ui/segmented'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { useToast } from '@/shared/components/toast/useToast'
 import { Button } from '@/shared/components/ui/button'
@@ -26,6 +37,15 @@ import { cn } from '@/shared/utils/cn'
 import { useWebTool } from '../_shared'
 import { FilterBar, PageCard } from './BundleHeader'
 import { BundleProgress } from './BundleProgress'
+import { CrawlPanel } from './CrawlPanel'
+import {
+  DEFAULT_CRAWL_SETTINGS,
+  loadCrawlSettings,
+  saveCrawlSettings,
+  stopHtmlBundleCrawl,
+  toCrawlOptions,
+  type CrawlSettings,
+} from './crawlSettings'
 import { LinkList } from './LinkList'
 import {
   buildBundleFromFolderIndex,
@@ -47,6 +67,8 @@ import {
   startHtmlBundleJob,
 } from './service'
 import { isFileUrlTab } from '@/chrome/contentScriptClient'
+
+import './i18n'
 
 type Translate = (key: string, options?: Record<string, unknown>) => string
 
@@ -94,6 +116,28 @@ function statsMessage(stats: { pages: number; assets: number; missing: number },
     : t('htmlBundle.done', { pages: stats.pages, assets: stats.assets })
 }
 
+function crawlMessage(stats: NonNullable<HtmlBundleJob['stats']>, t: Translate) {
+  const crawl = stats.crawl
+  if (!crawl) return statsMessage(stats, t)
+  const counts = { pages: stats.pages, assets: stats.assets }
+  const main =
+    crawl.reason === 'limit'
+      ? t('htmlBundle.crawl.doneLimit', {
+          ...counts,
+          more: Math.max(0, crawl.found - crawl.saved - crawl.skipped - crawl.failed),
+        })
+      : crawl.reason === 'stopped'
+        ? t('htmlBundle.crawl.doneStopped', counts)
+        : t('htmlBundle.crawl.doneComplete', counts)
+  const extras = [
+    crawl.rendered > 0 && t('htmlBundle.crawl.extraRendered', { count: crawl.rendered }),
+    crawl.skipped > 0 && t('htmlBundle.crawl.extraSkipped', { count: crawl.skipped }),
+    crawl.failed > 0 && t('htmlBundle.crawl.extraFailed', { count: crawl.failed }),
+    stats.missing > 0 && t('htmlBundle.crawl.extraMissing', { count: stats.missing }),
+  ].filter(Boolean)
+  return extras.length ? `${main} ${extras.join(' · ')}` : main
+}
+
 function jobOutcome(job: HtmlBundleJob | null, t: Translate) {
   if (!job) return null
   if (isJobStalled(job)) return { tone: 'error' as const, text: t('htmlBundle.jobStalled') }
@@ -101,7 +145,7 @@ function jobOutcome(job: HtmlBundleJob | null, t: Translate) {
     case 'done':
       return {
         tone: 'success' as const,
-        text: job.stats ? statsMessage(job.stats, t) : t('htmlBundle.bannerDone'),
+        text: job.stats ? crawlMessage(job.stats, t) : t('htmlBundle.bannerDone'),
       }
     case 'error':
       return { tone: 'error' as const, text: job.error || t('htmlBundle.buildFailed') }
@@ -133,17 +177,29 @@ export default function HtmlBundleTool() {
   const [pageTabId, setPageTabId] = useState<number>()
   const [pageLimit, setPageLimit] = useState(DEFAULT_MAX_PAGES)
   const [limitText, setLimitText] = useState(String(DEFAULT_MAX_PAGES))
+  const [crawlSettings, setCrawlSettings] = useState<CrawlSettings>(DEFAULT_CRAWL_SETTINGS)
+  const [framework, setFramework] = useState<string | null>(null)
 
   const isFilePage = pageUrl.startsWith('file:')
+  const crawlMode = crawlSettings.mode === 'crawl' && !isFilePage
   const jobActive = isJobRunning(job)
   const busy = loading || jobActive || folderBuild !== null
-  const tooManySelected = selected.size > pageLimit
+  const tooManySelected = !crawlMode && selected.size > pageLimit
   const outcome = jobOutcome(job, t)
 
   useEffect(() => {
     void loadPageLimit().then((limit) => {
       setPageLimit(limit)
       setLimitText(String(limit))
+    })
+    void loadCrawlSettings().then(setCrawlSettings)
+  }, [])
+
+  const updateCrawlSettings = useCallback((patch: Partial<CrawlSettings>) => {
+    setCrawlSettings((current) => {
+      const next = { ...current, ...patch }
+      void saveCrawlSettings(next)
+      return next
     })
   }, [])
 
@@ -200,6 +256,7 @@ export default function HtmlBundleTool() {
     setError('')
     try {
       const meta = await getActivePageMeta()
+      setFramework(null)
       if (meta.tabId != null) setPageTabId(meta.tabId)
       if (meta.url) {
         setPageUrl(meta.url)
@@ -219,6 +276,7 @@ export default function HtmlBundleTool() {
       setPageTitle(result.pageTitle)
       setEntries(result.entries)
       setSelected(new Set(result.entries.map((entry) => entry.resolvedUrl)))
+      setFramework(result.framework ?? null)
     } catch (scanError) {
       const meta = await getActivePageMeta().catch(() => ({ url: '', title: '' }))
       if (
@@ -408,16 +466,57 @@ export default function HtmlBundleTool() {
     [runDownload, selected],
   )
 
+  const runCrawl = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    setProgress('')
+    try {
+      const meta = await getActivePageMeta()
+      const url = pageUrl || meta.url
+      const resolvedTitle =
+        pageTitle.trim() ||
+        (await getDocumentTitleFromTab(pageTabId ?? meta.tabId).catch(() => '')) ||
+        meta.title
+      await clearHtmlBundleJob()
+      await startHtmlBundleJob({
+        tabId: pageTabId ?? meta.tabId,
+        pageUrl: url,
+        pageTitle: resolvedTitle,
+        fileName: zipFileName(resolvedTitle, url, ' (site)'),
+        pageCount: 0,
+        request: {
+          includeCurrent: true,
+          selectedResolvedUrls: [],
+          includeAssets: crawlSettings.includeAssets,
+          maxPages: pageLimit,
+          crawl: toCrawlOptions(crawlSettings, pageLimit),
+        },
+      })
+    } catch (crawlError) {
+      setError(formatTabToolError(crawlError, t) || t('htmlBundle.buildFailed'))
+    } finally {
+      setLoading(false)
+    }
+  }, [crawlSettings, pageLimit, pageTabId, pageTitle, pageUrl, t])
+
+  const canDownloadZip = crawlMode
+    ? !busy && Boolean(pageUrl)
+    : !busy && selected.size > 0 && !tooManySelected
+  const startZip = useCallback(
+    () => (crawlMode ? runCrawl() : downloadSelectedZip()),
+    [crawlMode, downloadSelectedZip, runCrawl],
+  )
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
         event.preventDefault()
-        if (!busy && selected.size > 0 && !tooManySelected) void downloadSelectedZip()
+        if (canDownloadZip) void startZip()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [busy, downloadSelectedZip, selected.size, tooManySelected])
+  }, [canDownloadZip, startZip])
 
   const downloadCurrentOnly = () => void runDownload([])
 
@@ -425,8 +524,20 @@ export default function HtmlBundleTool() {
     if (job) void cancelHtmlBundleJob(job.id).catch(() => {})
   }
 
+  const stopCrawl = () => {
+    if (job) void stopHtmlBundleCrawl(job.id).catch(() => {})
+  }
+
   const zipPageCount = pageUrl ? new Set([pageUrl.split('#')[0], ...selected]).size : selected.size + 1
-  const canDownloadZip = !busy && selected.size > 0 && !tooManySelected
+  const summaryText = crawlMode
+    ? t('htmlBundle.crawl.summary', {
+        count: pageLimit,
+        depth:
+          crawlSettings.maxDepth >= MAX_CRAWL_DEPTH
+            ? t('htmlBundle.crawl.summaryDepthAny')
+            : t('htmlBundle.crawl.summaryDepth', { count: crawlSettings.maxDepth }),
+      })
+    : t('htmlBundle.ui.summary', { count: zipPageCount })
 
   return (
     <ToolPage tool={tool}>
@@ -442,27 +553,81 @@ export default function HtmlBundleTool() {
           }}
         />
 
-        <FilterBar
-          htmlOnly={htmlOnly}
-          sameFolderOnly={sameFolderOnly}
-          onHtmlOnly={setHtmlOnly}
-          onSameFolderOnly={setSameFolderOnly}
-          pageLimit={pageLimit}
-          limitText={limitText}
-          onLimitText={onLimitTextChange}
-          onLimitPreset={applyPageLimit}
-          busy={busy}
-          isFilePage={isFilePage}
-          onScanFolder={() => void scanFolderPage()}
-          onPickFolder={() => void downloadSelectedZip(true)}
-        />
+        <div className="flex flex-col gap-1">
+          <Segmented<BundleMode>
+            ariaLabel={t('htmlBundle.crawl.modeLabel')}
+            value={crawlMode ? 'crawl' : 'links'}
+            onValueChange={(mode) => updateCrawlSettings({ mode })}
+            className="flex w-full [&>button]:flex-1"
+            options={[
+              {
+                value: 'links',
+                disabled: busy,
+                label: (
+                  <>
+                    <ListChecksIcon className="size-3.5" aria-hidden />
+                    {t('htmlBundle.crawl.modeLinks')}
+                  </>
+                ),
+              },
+              {
+                value: 'crawl',
+                disabled: busy || isFilePage,
+                title: isFilePage ? t('htmlBundle.crawl.modeSiteFileHint') : undefined,
+                label: (
+                  <>
+                    <NetworkIcon className="size-3.5" aria-hidden />
+                    {t('htmlBundle.crawl.modeSite')}
+                  </>
+                ),
+              },
+            ]}
+          />
+          {isFilePage && (
+            <p className="px-1 text-[11px] leading-4 text-muted-foreground">{t('htmlBundle.crawl.modeSiteFileHint')}</p>
+          )}
+        </div>
+
+        {crawlMode ? (
+          !jobActive && (
+            <CrawlPanel
+              settings={crawlSettings}
+              onChange={updateCrawlSettings}
+              pageUrl={pageUrl}
+              framework={framework}
+              pageLimit={pageLimit}
+              limitText={limitText}
+              onLimitText={onLimitTextChange}
+              onLimitPreset={applyPageLimit}
+              busy={busy}
+            />
+          )
+        ) : (
+          <FilterBar
+            htmlOnly={htmlOnly}
+            sameFolderOnly={sameFolderOnly}
+            onHtmlOnly={setHtmlOnly}
+            onSameFolderOnly={setSameFolderOnly}
+            pageLimit={pageLimit}
+            limitText={limitText}
+            onLimitText={onLimitTextChange}
+            onLimitPreset={applyPageLimit}
+            busy={busy}
+            isFilePage={isFilePage}
+            onScanFolder={() => void scanFolderPage()}
+            onPickFolder={() => void downloadSelectedZip(true)}
+          />
+        )}
 
         <BundleProgress
           active={jobActive}
+          mode={job?.mode}
           pageCount={job?.pageCount ?? 0}
           progress={job?.progress ?? null}
           startedAt={job?.startedAt}
+          stopRequested={job?.stopRequested}
           runsInBackground
+          onStop={stopCrawl}
           onCancel={cancelJob}
         />
         <BundleProgress
@@ -538,32 +703,34 @@ export default function HtmlBundleTool() {
           </div>
         )}
 
-        <LinkList
-          total={entries.length}
-          filtered={filtered}
-          selected={selected}
-          selectAllState={selectAllState}
-          query={query}
-          onQuery={setQuery}
-          loading={loading}
-          busy={busy}
-          overLimit={tooManySelected}
-          filtersOn={{ htmlOnly, sameFolderOnly }}
-          onToggle={toggle}
-          onToggleAll={toggleAllFiltered}
-          onInvert={invertFiltered}
-          onCopy={() => void copySelectedLinks()}
-          onAllTypes={() => setHtmlOnly(false)}
-          onAnyFolder={() => setSameFolderOnly(false)}
-          onSaveThisPage={downloadCurrentOnly}
-        />
+        {!crawlMode && (
+          <LinkList
+            total={entries.length}
+            filtered={filtered}
+            selected={selected}
+            selectAllState={selectAllState}
+            query={query}
+            onQuery={setQuery}
+            loading={loading}
+            busy={busy}
+            overLimit={tooManySelected}
+            filtersOn={{ htmlOnly, sameFolderOnly }}
+            onToggle={toggle}
+            onToggleAll={toggleAllFiltered}
+            onInvert={invertFiltered}
+            onCopy={() => void copySelectedLinks()}
+            onAllTypes={() => setHtmlOnly(false)}
+            onAnyFolder={() => setSameFolderOnly(false)}
+            onSaveThisPage={downloadCurrentOnly}
+          />
+        )}
 
         <div className="sticky bottom-0 z-10 -mx-[var(--density-page-pad)] -mb-[var(--density-page-pad)] flex items-center gap-2 border-t bg-background px-[var(--density-page-pad)] py-2.5">
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs leading-4 font-semibold tabular-nums">
-              {t('htmlBundle.ui.summary', { count: zipPageCount })}
+            <p className="truncate text-xs leading-4 font-semibold tabular-nums">{summaryText}</p>
+            <p className="truncate text-[11px] leading-4 text-muted-foreground">
+              {crawlMode ? t('htmlBundle.crawl.summaryHint') : t('htmlBundle.ui.summaryHint')}
             </p>
-            <p className="truncate text-[11px] leading-4 text-muted-foreground">{t('htmlBundle.ui.summaryHint')}</p>
           </div>
           <Button
             size="sm"
@@ -579,14 +746,14 @@ export default function HtmlBundleTool() {
           </Button>
           <Button
             size="sm"
-            onClick={() => void downloadSelectedZip(false)}
+            onClick={() => void startZip()}
             disabled={!canDownloadZip}
             aria-keyshortcuts="Control+S Meta+S"
             title={t('htmlBundle.shortcutHint')}
             className="shrink-0"
           >
-            <DownloadIcon className="size-3.5" />
-            {t('htmlBundle.downloadZip')}
+            {crawlMode ? <NetworkIcon className="size-3.5" /> : <DownloadIcon className="size-3.5" />}
+            {crawlMode ? t('htmlBundle.crawl.start') : t('htmlBundle.downloadZip')}
             <kbd className="hidden rounded bg-primary-foreground/20 px-1 font-sans text-[10px] leading-4 font-medium @[340px]:inline">
               {SAVE_SHORTCUT}
             </kbd>
