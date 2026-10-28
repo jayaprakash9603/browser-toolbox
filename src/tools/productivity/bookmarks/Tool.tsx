@@ -174,25 +174,25 @@ export default function BookmarksTool() {
               </Button>
             </ProductivityToolActions>
 
-            {visible.length > 0 && (
-              <BookmarkExportPreview rows={visible} onCopy={copyMarkdown} />
-            )}
+            {visible.length > 0 && <BookmarkExportPreview rows={visible} onCopy={copyMarkdown} />}
 
-            <Segmented
-              value={sort}
-              onValueChange={(value) => setSort(value as BookmarkSort)}
-              ariaLabel={t('bookmarks.sort')}
-              size="sm"
-              className="w-full flex-wrap"
-              options={(['recent', 'title', 'folder'] as const).map((value) => ({
-                value,
-                label: t(`bookmarks.sort.${value}`),
-              }))}
-            />
+            <div className="flex flex-col gap-1.5 @md:flex-row @md:items-center @md:justify-between">
+              <Segmented
+                value={sort}
+                onValueChange={(value) => setSort(value as BookmarkSort)}
+                ariaLabel={t('bookmarks.sort')}
+                size="sm"
+                className="min-w-0 flex-1 flex-wrap"
+                options={(['recent', 'title', 'folder'] as const).map((value) => ({
+                  value,
+                  label: t(`bookmarks.sort.${value}`),
+                }))}
+              />
+            </div>
 
             {folderRoots.length > 1 && (
-              <div className="flex flex-col gap-1.5">
-                <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              <div className="flex flex-col gap-1">
+                <p className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
                   {t('bookmarks.folders')}
                 </p>
                 <div
@@ -230,12 +230,12 @@ export default function BookmarksTool() {
           </>
         }
         footer={<ProductivityStatusBar>{statusLabel}</ProductivityStatusBar>}
-        bodyClassName="pb-3 pt-2.5"
+        bodyClassName="pb-2 pt-1.5"
       >
         {loading && rows.length === 0 ? (
           <ul className="space-y-2" aria-hidden>
             {[0, 1, 2, 3].map((i) => (
-              <li key={i} className="h-[4.25rem] animate-pulse rounded-xl border bg-muted/40" />
+              <li key={i} className="h-11 animate-pulse rounded-lg border bg-muted/40" />
             ))}
           </ul>
         ) : visible.length === 0 ? (
@@ -245,7 +245,7 @@ export default function BookmarksTool() {
             <p className="max-w-xs text-xs text-muted-foreground">{t('bookmarks.emptyHint')}</p>
           </div>
         ) : (
-          <StaggerChildren className="space-y-1.5" stagger={0.03}>
+          <StaggerChildren className="space-y-1" stagger={0.025}>
             {visible.map((row) => (
               <StaggerItem key={row.id}>
                 <BookmarkResultRow
@@ -284,7 +284,7 @@ function FolderChip({
       aria-selected={active}
       onClick={onClick}
       className={cn(
-        'inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium',
+        'inline-flex h-6 cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium',
         'transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         active
           ? 'border-primary/40 bg-primary/10 text-primary'
@@ -294,7 +294,7 @@ function FolderChip({
       <span className="max-w-[8rem] truncate">{label}</span>
       <span
         className={cn(
-          'rounded-full px-1.5 py-px text-[9px] tabular-nums',
+          'rounded-full px-1 py-px text-[8px] tabular-nums',
           active ? 'bg-primary/15 text-primary' : 'bg-background/80 text-muted-foreground',
         )}
       >

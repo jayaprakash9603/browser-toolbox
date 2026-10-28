@@ -27,35 +27,37 @@ export function BookmarkExportPreview({
   const rest = lines.length - PREVIEW_LINES
 
   return (
-    <section className="rounded-xl border bg-muted/20">
+    <section className="rounded-lg border bg-muted/15">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         className={cn(
-          'flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2.5 text-left outline-none',
-          'transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring',
+          'flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-left outline-none',
+          'transition-colors hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring',
         )}
       >
         <ChevronDownIcon
-          className={cn('size-4 shrink-0 text-muted-foreground transition-transform duration-200', open && 'rotate-180')}
+          className={cn('size-3.5 shrink-0 text-muted-foreground transition-transform duration-200', open && 'rotate-180')}
           aria-hidden
         />
         <span className="min-w-0 flex-1">
-          <span className="block text-xs font-medium text-foreground">{t('bookmarks.previewTitle')}</span>
-          <span className="block truncate text-[11px] text-muted-foreground">{t('bookmarks.previewHint', { count: rows.length })}</span>
+          <span className="block text-[11px] font-medium text-foreground">{t('bookmarks.previewTitle')}</span>
+          <span className="block truncate text-[10px] text-muted-foreground">
+            {t('bookmarks.previewHint', { count: rows.length })}
+          </span>
         </span>
         <Button
           type="button"
           size="xs"
           variant="secondary"
-          className="shrink-0"
+          className="h-7 shrink-0 px-2 text-[10px]"
           onClick={(event) => {
             event.stopPropagation()
             onCopy()
           }}
         >
-          <CopyIcon />
+          <CopyIcon className="size-3" />
           {t('bookmarks.copyMarkdown')}
         </Button>
       </button>
@@ -68,7 +70,7 @@ export function BookmarkExportPreview({
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden"
           >
-            <pre className="max-h-36 overflow-auto border-t bg-background/80 px-3 py-2 font-mono text-[10px] leading-relaxed text-muted-foreground">
+            <pre className="max-h-28 overflow-auto border-t bg-background/80 px-2 py-1.5 font-mono text-[9px] leading-relaxed text-muted-foreground">
               {preview}
               {rest > 0 ? `\n… ${t('bookmarks.previewMore', { count: rest })}` : null}
             </pre>
