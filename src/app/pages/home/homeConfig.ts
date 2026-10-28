@@ -35,14 +35,6 @@ export const QUICK_ACTION_IDS = [
   'calculators.calculator',
 ] as const
 
-/** Highlighted on the home page “New” row */
-export const DISCOVER_TOOL_IDS = [
-  'productivity.snippets',
-  'productivity.reading-list',
-  'productivity.workspaces',
-  'productivity.bookmarks',
-] as const
-
 export const POPULAR_TOOL_IDS = [
   'clipboard.manager',
   'text.formatter',
@@ -68,17 +60,13 @@ export function getQuickActionTools() {
   return resolveHomeTools(QUICK_ACTION_IDS)
 }
 
-export function getDiscoverTools() {
-  return resolveHomeTools(DISCOVER_TOOL_IDS)
-}
-
 export function getPopularTools() {
   return resolveHomeTools(POPULAR_TOOL_IDS)
 }
 
 /** Popular tools minus the ones already pinned as quick actions, so the home page never repeats a tool. */
 export function getHomePopularTools() {
-  const hidden = new Set<string>([...QUICK_ACTION_IDS, ...DISCOVER_TOOL_IDS])
+  const hidden = new Set<string>(QUICK_ACTION_IDS)
   return getPopularTools().filter((tool) => !hidden.has(tool.id))
 }
 

@@ -5,7 +5,6 @@ import { useScrollMemory } from '@/app/navigationMemory'
 import { filterTools } from '@/features/search/filterTools'
 import { toolRegistry } from '@/core/registry'
 import { AllToolsCategories } from '@/app/pages/home/AllToolsCategories'
-import { DiscoverSection } from '@/app/pages/home/DiscoverSection'
 import { BottomTip } from '@/app/pages/home/BottomTip'
 import { BundleJobBanner } from '@/app/pages/home/BundleJobBanner'
 import { FavoritesSection } from '@/app/pages/home/FavoritesSection'
@@ -80,7 +79,6 @@ export default function HomePage({ section }: HomePageProps) {
           <BundleJobBanner />
           <WelcomeStrip favoriteCount={favorites.length} />
           <QuickActions />
-          <DiscoverSection delay={0.1} />
           <RecentSection />
           <FavoritesSection />
           <PopularTools />
