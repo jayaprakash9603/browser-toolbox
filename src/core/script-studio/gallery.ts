@@ -459,11 +459,11 @@ window.addEventListener('scroll', function () {
     id: 'copy-markdown-link',
     name: 'Copy Page as Markdown',
     description:
-      'Press Alt+Shift+C to copy the whole page (or your selection) as clean Markdown, or Alt+Shift+L for just a [Title](URL) link.',
+      'Press Alt+Shift+M to copy the whole page (or your selection) as clean Markdown, or Alt+Shift+L for just a [Title](URL) link.',
     category: 'productivity',
     sites: 'All sites',
     matches: ALL_SITES,
-    version: '1.1.0',
+    version: '1.2.0',
     body: TOAST + NOTE + String.raw`
 var SKIP_TAGS = /^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE|SVG|CANVAS|IFRAME|BUTTON|INPUT|SELECT|TEXTAREA|OPTION|DIALOG|VIDEO|AUDIO|OBJECT|EMBED|MAP|LINK|META)$/;
 var SKIP_ALWAYS = 'nav, aside, [role="navigation"], [role="complementary"], [role="search"], [role="dialog"], [aria-modal="true"], .sr-only, .visually-hidden';
@@ -727,13 +727,14 @@ function copyPage() {
   }, failed);
 }
 
+// Not Alt+Shift+C: that is the extension's Color picker shortcut, which Chrome handles before the page.
 document.addEventListener('keydown', function (e) {
   if (!e.altKey || !e.shiftKey || e.ctrlKey || e.metaKey || e.repeat) return;
-  if (e.code === 'KeyC') { e.preventDefault(); copyPage(); }
+  if (e.code === 'KeyM') { e.preventDefault(); copyPage(); }
   else if (e.code === 'KeyL') { e.preventDefault(); copyLink(); }
 }, true);
 
-note('Ready. Press Alt+Shift+C to copy this page as Markdown, or Alt+Shift+L for just the link.');`,
+note('Ready. Press Alt+Shift+M to copy this page as Markdown, or Alt+Shift+L for just the link.');`,
   },
   {
     id: 'external-links-new-tab',

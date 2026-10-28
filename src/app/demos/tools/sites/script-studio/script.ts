@@ -97,7 +97,7 @@ export const GALLERY: GalleryScript[] = [
   g(
     'copy-markdown-link',
     'Copy Page as Markdown Link',
-    'Press Alt+Shift+C to copy the current page as [Title](URL) for notes and chats.',
+    'Press Alt+Shift+M to copy the current page as [Title](URL) for notes and chats.',
     'productivity',
     'All sites',
   ),

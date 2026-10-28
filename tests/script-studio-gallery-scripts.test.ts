@@ -77,7 +77,7 @@ describe('Copy Page as Markdown', () => {
   })
 
   it('copies the whole page as Markdown and reports the result', async () => {
-    press('KeyC')
+    press('KeyM')
     await vi.waitFor(() => expect(writeText).toHaveBeenCalled())
     const md = writeText.mock.calls[0][0] as string
     expect(md.startsWith('# Guide\n\nHello **world** and [a link](https://x.test/a).')).toBe(true)
@@ -97,7 +97,7 @@ describe('Copy Page as Markdown', () => {
     range.selectNodeContents(document.querySelector('ul')!)
     window.getSelection()!.removeAllRanges()
     window.getSelection()!.addRange(range)
-    press('KeyC')
+    press('KeyM')
     await vi.waitFor(() => expect(writeText).toHaveBeenCalled())
     expect(writeText.mock.calls[0][0]).toBe('- One\n- Two\n  - Nested')
     window.getSelection()!.removeAllRanges()
@@ -190,7 +190,7 @@ describe('gallery upgrades', () => {
     expect(await upgradeGalleryScripts()).toBe(1)
     expect(await getScriptCode('g1')).toBe(latest.code)
     const [upgraded] = (await getScriptStudioIndex()).scripts
-    expect(upgraded).toMatchObject({ name: 'Copy Page as Markdown', version: '1.1.0', enabled: false })
+    expect(upgraded).toMatchObject({ name: 'Copy Page as Markdown', version: '1.2.0', enabled: false })
     expect(await upgradeGalleryScripts()).toBe(0)
   })
 })
