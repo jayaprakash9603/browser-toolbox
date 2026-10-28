@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { runFormMemoryPage } from '@/chrome/background/formMemory/page'
+import { runFormMemoryPage } from '@/chrome/content/formMemory/run'
 
 async function snapshot(html: string) {
   document.body.innerHTML = html

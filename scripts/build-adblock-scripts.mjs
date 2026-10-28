@@ -58,11 +58,16 @@ async function buildEntry(name, entry, outDir, format = 'iife') {
   console.log(`[page-scripts] built ${outDir}/${name}.js`)
 }
 
+const formMemoryEntries = {
+  page: 'src/chrome/content/formMemory/page.ts',
+}
+
 const groups = [
   [adblockEntries, 'public/adblock/scripts'],
   [protectionEntries, 'public/protection/scripts'],
   [sitesEntries, 'public/sites/scripts'],
   [interceptorEntries, 'public/interceptor/scripts'],
+  [formMemoryEntries, 'public/form-memory/scripts'],
 ]
 
 // Every build writes into a shared folder, so stale adblock scripts are cleared once up front instead.

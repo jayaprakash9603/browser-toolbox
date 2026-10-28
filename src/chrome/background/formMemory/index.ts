@@ -18,7 +18,9 @@ import { registerMessageHandler } from '@/core/messaging'
 import { setPanelRouteIntent } from '@/core/panel/navigationSession'
 import { isRestrictedCaptureUrl } from '@/core/screenshot/restricted'
 
-import { runFormMemoryPage, type FormPageArgs, type FormPageResult } from './page'
+import type { FormPageResult } from '@/chrome/content/formMemory/types'
+
+import { notify, runInTab } from './inject'
 
 const logger = createLogger('form-memory')
 
@@ -44,57 +46,6 @@ async function resolveTab(tab?: chrome.tabs.Tab, tabId?: number): Promise<chrome
   if (tabId != null) return chrome.tabs.get(tabId).catch(() => undefined)
   if (tab?.id != null && tab.url) return tab
   return (await getActiveWebTab()) ?? tab
-}
-
-function sum(results: chrome.scripting.InjectionResult<FormPageResult>[]): FormPageResult | null {
-  const done = results.map((item) => item.result).filter((item): item is FormPageResult => Boolean(item?.ok))
-  if (done.length === 0) return null
-  return done.reduce(
-    (acc, item) => ({
-      ok: true,
-      filled: acc.filled + item.filled,
-      cleared: acc.cleared + item.cleared,
-      total: acc.total + item.total,
-      populated: acc.populated + item.populated,
-      matched: acc.matched + item.matched,
-      fields: item.fields ? [...(acc.fields ?? []), ...item.fields] : acc.fields,
-    }),
-    { ok: true, filled: 0, cleared: 0, total: 0, populated: 0, matched: 0 } as FormPageResult,
-  )
-}
-
-/** Every frame we may script first; the top frame alone when a child frame refuses. */
-async function runInTab(tabId: number, args: FormPageArgs): Promise<FormPageResult | null> {
-  try {
-    const results = await chrome.scripting.executeScript({
-      target: { tabId, allFrames: true },
-      func: runFormMemoryPage,
-      args: [args],
-    })
-    return sum(results)
-  } catch {
-    try {
-      const results = await chrome.scripting.executeScript({
-        target: { tabId },
-        func: runFormMemoryPage,
-        args: [args],
-      })
-      return sum(results)
-    } catch (error) {
-      logger.debug('page unavailable', error)
-      return null
-    }
-  }
-}
-
-function notify(tabId: number, notice: string): void {
-  void chrome.scripting
-    .executeScript({
-      target: { tabId },
-      func: runFormMemoryPage,
-      args: [{ action: 'inspect', notice, brand: getExtensionName() }],
-    })
-    .catch(() => undefined)
 }
 
 function filledText(count: number): string {

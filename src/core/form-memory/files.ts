@@ -3,8 +3,8 @@ import type { CapturedField, FormMemoryState, MemoryField } from './model'
 /** Each remembered file lives under its own key so form memory itself stays small to read and write. */
 export const FORM_FILE_PREFIX = 'tbx.formFile.'
 
-/** Matches the limit the page applies before reading a file. */
-const MAX_FILE_BYTES = 1024 * 1024
+/** The page skips larger files before reading them, and storage refuses them too. */
+export const MAX_FILE_BYTES = 1024 * 1024
 /** storage.local holds 10 MB for the whole extension. */
 const MAX_TOTAL_BYTES = 4 * 1024 * 1024
 /** A file is stored before the capture that points at it, so pruning leaves fresh files alone. */
