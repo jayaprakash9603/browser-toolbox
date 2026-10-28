@@ -3,23 +3,14 @@ import { ArrowLeftIcon, DownloadIcon, ImageIcon, Trash2Icon } from 'lucide-react
 
 import { useRouter } from '@/app/router'
 import { downloadBlobInExtension } from '@/core/screenshot/export'
-import { sanitizeFilenamePart } from '@/core/screenshot/filename'
 import {
   deleteScreenshotHistory,
+  historyEntryFilename,
   listScreenshotHistory,
   type ScreenshotHistoryEntry,
 } from '@/core/screenshot/history'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardTitle } from '@/shared/components/ui/card'
-
-const EXTENSION_BY_MIME: Record<string, string> = {
-  'image/png': 'png',
-  'image/jpeg': 'jpg',
-  'image/webp': 'webp',
-  'image/gif': 'gif',
-  'image/bmp': 'bmp',
-  'application/pdf': 'pdf',
-}
 
 export function CaptureHistory() {
   const { navigate } = useRouter()
@@ -73,12 +64,7 @@ export function CaptureHistory() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() =>
-                    void downloadBlobInExtension(
-                      item.blob,
-                      `${sanitizeFilenamePart(item.title)}.${EXTENSION_BY_MIME[item.blob.type] ?? 'png'}`,
-                    )
-                  }
+                  onClick={() => void downloadBlobInExtension(item.blob, historyEntryFilename(item))}
                 >
                   <DownloadIcon /> Save
                 </Button>

@@ -22,7 +22,12 @@ export function PermissionNotice({
   permissions,
 }: PermissionNoticeProps) {
   const { t } = useTranslation()
-  const request: chrome.permissions.Permissions = permissions ? { origins, permissions } : { origins }
+  const request: chrome.permissions.Permissions = (() => {
+    if (permissions?.length) {
+      return origins.length > 0 ? { permissions, origins } : { permissions }
+    }
+    return { origins }
+  })()
   const granted = usePermissionGranted(request)
 
   if (!active || granted !== false) return null

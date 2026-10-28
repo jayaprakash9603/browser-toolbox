@@ -1,173 +1,124 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  CameraIcon,
-  FrameIcon,
-  HistoryIcon,
-  LayersIcon,
-  ListIcon,
-  MousePointerClickIcon,
-  UnfoldVerticalIcon,
-} from 'lucide-react'
+import { CameraIcon, KeyboardIcon, TimerIcon } from 'lucide-react'
 
 import { useRouter } from '@/app/router'
 import { useShortcutDisplay } from '@/features/shortcuts/useShortcutDisplay'
-import { captureViewerUrl, isCaptureViewerSearch } from '@/core/screenshot/viewerUrl'
+import { isCaptureViewerSearch } from '@/core/screenshot/viewerUrl'
+import {
+  DEFAULT_SCREENSHOT_SETTINGS,
+  loadScreenshotSettings,
+  saveScreenshotSettings,
+  type ScreenshotSettings,
+} from '@/core/screenshot/settings'
 import { CaptureEditorApp } from '@/features/captureEditor/CaptureEditorApp'
-import { sendMessage } from '@/core/messaging/messageService'
-import type { ScreenshotMode } from '@/core/screenshot/types'
-import { listScreenshotHistory, type ScreenshotHistoryEntry } from '@/core/screenshot/history'
 import { ToolPage } from '@/shared/components/ToolPage'
-import { Button } from '@/shared/components/ui/button'
-import { Textarea } from '@/shared/components/ui/textarea'
+import { useToast } from '@/shared/components/toast/useToast'
+import { PanelSection } from '@/shared/components/toolkit'
 import { useFocusTarget } from '@/shared/hooks/useFocusTarget'
 import { useCaptureTool } from '../_shared'
-
-const MODES: {
-  mode: ScreenshotMode
-  icon: typeof CameraIcon
-  labelKey: string
-}[] = [
-  { mode: 'entire', icon: UnfoldVerticalIcon, labelKey: 'capture.launcher.entire' },
-  { mode: 'visible', icon: CameraIcon, labelKey: 'capture.launcher.visible' },
-  { mode: 'selection', icon: FrameIcon, labelKey: 'capture.launcher.selection' },
-  { mode: 'element', icon: MousePointerClickIcon, labelKey: 'capture.launcher.element' },
-  { mode: 'all-tabs', icon: LayersIcon, labelKey: 'capture.launcher.allTabs' },
-]
+import { ModeGrid } from './ModeGrid'
+import { QuickOptions } from './QuickOptions'
+import { RecentCaptures } from './RecentCaptures'
+import { RunStatus } from './RunStatus'
+import { TargetHero } from './TargetHero'
+import { UrlBatch } from './UrlBatch'
+import { useCaptureRun, type RunMode } from './useCaptureRun'
+import { useCaptureTarget } from './useCaptureTarget'
 
 function CaptureLauncher() {
   const { t } = useTranslation()
+  const { navigate } = useRouter()
+  const { show } = useToast()
   const tool = useCaptureTool('screenshots.capture')
   useFocusTarget()
-  const shortcutEntire = useShortcutDisplay('capture-entire')
-  const shortcutVisible = useShortcutDisplay('capture-visible')
-  const shortcutSelection = useShortcutDisplay('capture-selection')
-  const shortcutElement = useShortcutDisplay('capture-element')
-  const shortcutMenu = useShortcutDisplay('capture-menu')
   const shortcutPrimary = useShortcutDisplay('capture-screenshot')
-  const modeShortcut: Partial<Record<ScreenshotMode, string>> = {
-    entire: shortcutEntire,
-    visible: shortcutVisible,
-    selection: shortcutSelection,
-    element: shortcutElement,
-  }
-  const [urls, setUrls] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [history, setHistory] = useState<ScreenshotHistoryEntry[]>([])
+  const blockedId = useId()
+  const target = useCaptureTarget()
+  const [settings, setSettings] = useState<ScreenshotSettings>(DEFAULT_SCREENSHOT_SETTINGS)
+  const { run, shots, start, cancel } = useCaptureRun(settings.captureDelaySec)
+  const busy = run.phase !== 'idle'
+  const blocked = !target.target || target.target.restricted
 
   useEffect(() => {
-    void listScreenshotHistory().then(setHistory)
+    void loadScreenshotSettings().then(setSettings)
   }, [])
 
-  const start = async (mode: ScreenshotMode, batchUrls?: string[]) => {
-    setBusy(true)
-    try {
-      await sendMessage({
-        type: 'SCREENSHOT_START',
-        mode,
-        urls: batchUrls,
-      })
-    } finally {
-      setBusy(false)
+  useEffect(() => {
+    if (run.phase !== 'countdown') return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      cancel()
     }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [run.phase, cancel])
+
+  const patch = (next: Partial<ScreenshotSettings>) => {
+    setSettings((current) => ({ ...current, ...next }))
+    void saveScreenshotSettings(next)
+  }
+
+  const launch = (mode: RunMode, urls?: string[]) => {
+    void start(mode, urls).then((ok) => {
+      if (!ok && mode === 'menu') show(t('capture.run.menuFailed'), { variant: 'error' })
+    })
   }
 
   return (
     <ToolPage tool={tool}>
-      <div className="flex flex-col gap-4">
-        <p className="text-sm text-muted-foreground">{t('capture.launcher.hint')}</p>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {MODES.map(({ mode, icon: Icon, labelKey }) => (
-            <Button
-              key={mode}
-              variant="outline"
-              className="h-auto justify-start gap-2 py-3"
-              disabled={busy}
-              onClick={() => void start(mode)}
-            >
-              <Icon className="size-4 shrink-0" />
-              <span className="flex flex-col items-start text-left">
-                <span>{t(labelKey)}</span>
-                {modeShortcut[mode] && (
-                  <span className="text-[10px] text-muted-foreground">{modeShortcut[mode]}</span>
-                )}
+      <div className="flex flex-col gap-3 @container">
+        <TargetHero state={target} run={run} shots={shots} blockedId={blockedId} />
+
+        <PanelSection
+          title={t('capture.launcher.title')}
+          icon={<CameraIcon />}
+          actions={
+            settings.captureDelaySec > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                <TimerIcon className="size-3" aria-hidden />
+                {t('capture.launcher.delayBadge', { count: settings.captureDelaySec })}
               </span>
-            </Button>
-          ))}
-          <Button
-            variant="outline"
-            className="h-auto justify-start gap-2 py-3"
-            disabled={busy}
-            onClick={() => void sendMessage({ type: 'SCREENSHOT_MENU_OPEN' })}
-          >
-            <ListIcon className="size-4" />
-            <span className="flex flex-col items-start text-left">
-              <span>{t('capture.launcher.menu')}</span>
-              <span className="text-[10px] text-muted-foreground">
-                {shortcutMenu}
-              </span>
-            </span>
-          </Button>
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">{t('capture.launcher.urlBatch')}</label>
-          <Textarea
-            value={urls}
-            onChange={(e) => setUrls(e.target.value)}
-            placeholder={t('capture.launcher.urlBatchPlaceholder')}
-            rows={4}
-            className="font-mono text-xs"
+            )
+          }
+        >
+          <p className="-mt-1 text-xs text-muted-foreground">{t(`capture.launcher.after.${settings.afterCapture}`)}</p>
+          <ModeGrid
+            run={run}
+            blocked={blocked}
+            describedBy={blockedId}
+            windowTabs={target.windowUrls.length}
+            onStart={(mode) => launch(mode)}
           />
-          <Button
-            size="sm"
-            disabled={busy || !urls.trim()}
-            onClick={() =>
-              void start(
-                'batch-urls',
-                urls
-                  .split(/\n/)
-                  .map((u) => u.trim())
-                  .filter(Boolean),
-              )
-            }
+        </PanelSection>
+
+        <QuickOptions settings={settings} onChange={patch} />
+
+        <UrlBatch
+          windowUrls={target.windowUrls}
+          waitMs={settings.batchUrlDelayMs}
+          busy={busy}
+          onCapture={(urls) => launch('batch-urls', urls)}
+        />
+
+        <RecentCaptures />
+
+        <footer className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 pb-1 text-[11px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5">
+            <KeyboardIcon className="size-3.5" aria-hidden />
+            {t('capture.launcher.primaryShortcut', { shortcut: shortcutPrimary })}
+          </span>
+          <button
+            type="button"
+            className="cursor-pointer rounded-sm underline-offset-2 outline-none hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+            onClick={() => navigate('/settings/keyboard-shortcuts')}
           >
-            {t('capture.launcher.urlBatchRun')}
-          </Button>
-        </div>
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-medium">
-              <HistoryIcon className="mr-1 inline size-3.5" />
-              {t('capture.launcher.history')}
-            </h3>
-            <Button
-              size="xs"
-              variant="ghost"
-              onClick={() => {
-                void chrome.tabs.create({ url: captureViewerUrl({ history: true }) })
-              }}
-            >
-              {t('capture.launcher.historyOpen')}
-            </Button>
-          </div>
-          {history.length === 0 ? (
-            <p className="text-xs text-muted-foreground">{t('capture.launcher.historyEmpty')}</p>
-          ) : (
-            <ul className="space-y-2">
-              {history.slice(0, 5).map((item) => (
-                <li key={item.id} className="flex items-center gap-2 text-xs">
-                  <img src={item.thumbnail} alt="" className="size-10 rounded border object-cover" />
-                  <span className="flex-1 truncate">{item.title}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <p className="text-[11px] text-muted-foreground">
-          {t('capture.launcher.primaryShortcut', {
-            shortcut: shortcutPrimary,
-          })}
-        </p>
+            {t('capture.launcher.customizeShortcuts')}
+          </button>
+        </footer>
+
+        <RunStatus run={run} onCancel={cancel} />
       </div>
     </ToolPage>
   )

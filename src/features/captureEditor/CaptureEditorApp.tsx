@@ -28,6 +28,7 @@ import { useRouter } from '@/app/router'
 import type { Annotation, AnnotationTool } from '@/core/engines/capture'
 import { sendMessage } from '@/core/messaging/messageService'
 import type { ScreenshotFrame, ScreenshotSession } from '@/core/screenshot/types'
+import { captureAutoAction, withoutAutoAction, type CaptureAutoAction } from '@/core/screenshot/viewerUrl'
 import {
   applyAnnotations,
   dataUrlToCanvas,
@@ -50,6 +51,7 @@ import {
 } from '@/core/screenshot/settings'
 import { addScreenshotHistory } from '@/core/screenshot/history'
 import { LongTaskProgress } from '@/shared/components/LongTaskProgress'
+import { useToast } from '@/shared/components/toast/useToast'
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
@@ -149,12 +151,13 @@ export function CaptureEditorApp({ search = '' }: { search?: string }) {
   )
   if (params.get('options') === '1') return <ScreenshotOptions />
   if (params.get('history') === '1' && !params.get('session')) return <CaptureHistory />
-  return <CaptureEditor sessionId={params.get('session')} />
+  return <CaptureEditor sessionId={params.get('session')} auto={captureAutoAction(params)} />
 }
 
-function CaptureEditor({ sessionId }: { sessionId: string | null }) {
+function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: CaptureAutoAction | null }) {
   const { t } = useTranslation()
   const { navigate } = useRouter()
+  const { show } = useToast()
   const [session, setSession] = useState<ScreenshotSession | null>(null)
   const [frameIndex, setFrameIndex] = useState(0)
   const [error, setError] = useState<string | null>(null)
@@ -163,6 +166,7 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
   const [exportJob, setExportJob] = useState<CaptureExportJob | null>(null)
   const [status, setStatus] = useState<string | null>(null)
   const [settings, setSettings] = useState<ScreenshotSettings>(DEFAULT_SCREENSHOT_SETTINGS)
+  const [settingsLoaded, setSettingsLoaded] = useState(false)
   const [format, setFormat] = useState<ImageFormat>(DEFAULT_SCREENSHOT_SETTINGS.defaultFormat)
   const [zoom, setZoom] = useState<ZoomLevel>('fit')
   const [annotations, setAnnotations] = useState<Annotation[]>([])
@@ -181,6 +185,7 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
   const markerCount = useRef(0)
   const undoStack = useRef<Annotation[][]>([])
   const redoStack = useRef<Annotation[][]>([])
+  const autoRan = useRef(false)
 
   const frame = session?.frames[frameIndex]
 
@@ -200,6 +205,7 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
     void loadScreenshotSettings().then((loaded) => {
       setSettings(loaded)
       setFormat(loaded.defaultFormat === 'pdf' ? 'png' : loaded.defaultFormat)
+      setSettingsLoaded(true)
     })
   }, [])
 
@@ -220,7 +226,7 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
   }, [sessionId])
 
   useEffect(() => {
-    if (!frame) return
+    if (!frame || !settingsLoaded) return
     let cancelled = false
     void frameToCanvas(frame, settings)
       .then((canvas) => {
@@ -240,7 +246,7 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [frame, settings.pageInfoStamp, settings.pageInfoPosition])
+  }, [frame, settingsLoaded, settings.pageInfoStamp, settings.pageInfoPosition])
 
   useEffect(() => {
     redraw()
@@ -274,7 +280,7 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
     label: string,
     anchor: 'image' | 'pdf' | 'zip',
     action: () => Promise<void>,
-  ) => {
+  ): Promise<boolean> => {
     setBusy(true)
     setStatus(null)
     setExportJob({
@@ -287,15 +293,17 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
     try {
       await action()
       setStatus(label)
+      return true
     } catch (cause) {
       setStatus(cause instanceof Error ? cause.message : 'Something went wrong.')
+      return false
     } finally {
       setBusy(false)
       setExportJob(null)
     }
   }
 
-  const save = async (saveFormat: ImageFormat, anchor: 'image' | 'pdf') => {
+  const save = async (saveFormat: ImageFormat, anchor: 'image' | 'pdf', { saveAs = true } = {}) => {
     const view = canvasRef.current
     if (!view || !frame) return
     setExportJob((job) =>
@@ -327,7 +335,9 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
           }
         : job,
     )
-    await downloadBlobInExtension(blob, buildExportFilename(settings.filenameTemplate, frame.pageInfo, ext))
+    await downloadBlobInExtension(blob, buildExportFilename(settings.filenameTemplate, frame.pageInfo, ext), {
+      saveAs,
+    })
     await addScreenshotHistory({
       id: `hist_${Date.now()}`,
       createdAt: Date.now(),
@@ -375,6 +385,25 @@ function CaptureEditor({ sessionId }: { sessionId: string | null }) {
     )
     await downloadBlobInExtension(await zipBlobs(files), 'captures.zip')
   }
+
+  useEffect(() => {
+    if (!auto || autoRan.current || !baseSize.width || !canvasRef.current) return
+    autoRan.current = true
+    history.replaceState(history.state, '', withoutAutoAction(window.location.hash))
+    if (auto === 'copy') {
+      void copyCanvasToClipboard(canvasRef.current).then(
+        () => show(t('capture.auto.copied'), { variant: 'success' }),
+        () => show(t('capture.auto.copyFailed'), { variant: 'error' }),
+      )
+      return
+    }
+    const target = settings.defaultFormat
+    const anchor = target === 'pdf' ? 'pdf' : 'image'
+    void runExport(t('capture.auto.saved'), anchor, () => save(target, anchor, { saveAs: false })).then(
+      (ok) => ok && show(t('capture.auto.saved'), { variant: 'success' }),
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auto, baseSize.width])
 
   const print = async () => {
     const view = canvasRef.current

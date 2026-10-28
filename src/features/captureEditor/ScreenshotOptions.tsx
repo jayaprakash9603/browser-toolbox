@@ -264,7 +264,8 @@ export function ScreenshotOptions() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="editor">Open in the editor tab</SelectItem>
-                  <SelectItem value="clipboard">Copy to clipboard</SelectItem>
+                  <SelectItem value="clipboard">Open the editor and copy the image</SelectItem>
+                  <SelectItem value="autosave">Save to Downloads without asking</SelectItem>
                 </SelectContent>
               </Select>
             </Row>

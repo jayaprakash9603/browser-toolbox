@@ -1,0 +1,422 @@
+import { useEffect, useMemo, useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { CheckIcon, Trash2Icon, UploadIcon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+
+import { compareBlobs, hexWindow, type ByteComparison } from '@/core/engines/hash/compare'
+import {
+  compareExpected,
+  decodeInput,
+  digestBytes,
+  parseExpected,
+  type DigestFormat,
+  type InputEncoding,
+} from '@/core/engines/hash/digests'
+import { toManifest } from '@/core/engines/hash/manifest'
+import { formatBytes } from '@/core/engines/image'
+import { FileDropZone } from '@/shared/components/files'
+import { TextEditor } from '@/shared/components/TextEditor'
+import { Button } from '@/shared/components/ui/button'
+import { Input } from '@/shared/components/ui/input'
+import { Segmented } from '@/shared/components/ui/segmented'
+import { cn } from '@/shared/utils/cn'
+
+import { DigestList } from './DigestList'
+import { FileResultCard } from './FileResultCard'
+import type { HashQueueItem } from './types'
+
+const MODES = ['text', 'files', 'compare'] as const
+type Mode = (typeof MODES)[number]
+
+const ENCODINGS: { value: InputEncoding; labelKey: string }[] = [
+  { value: 'utf8', labelKey: 'hashToolkit.encoding.utf8' },
+  { value: 'hex', labelKey: 'hashToolkit.encoding.hex' },
+  { value: 'base64', labelKey: 'hashToolkit.encoding.base64' },
+]
+
+const FORMATS: { value: DigestFormat; label: string }[] = [
+  { value: 'hex', label: 'hex' },
+  { value: 'HEX', label: 'HEX' },
+  { value: 'base64', label: 'b64' },
+]
+
+function CompareSummary({ result }: { result: ByteComparison }) {
+  const { t } = useTranslation()
+  if (result.identical) {
+    return (
+      <p className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[12px] text-emerald-800 dark:text-emerald-200">
+        {t('hashToolkit.compare.identical')}
+      </p>
+    )
+  }
+  return (
+    <div className="space-y-2 rounded-xl border bg-muted/30 p-3 text-[12px]">
+      <p className="font-medium">{t('hashToolkit.compare.different')}</p>
+      <ul className="list-inside list-disc text-muted-foreground">
+        <li>
+          {t('hashToolkit.compare.sizes', {
+            a: formatBytes(result.sizeA),
+            b: formatBytes(result.sizeB),
+          })}
+        </li>
+        {result.firstDifference != null && (
+          <li>{t('hashToolkit.compare.firstAt', { offset: result.firstDifference })}</li>
+        )}
+        <li>
+          {t('hashToolkit.compare.diffBytes', { count: result.differingBytes.toLocaleString() })}
+        </li>
+        <li>
+          {t('hashToolkit.compare.regions', {
+            count: result.ranges.length,
+            truncated: result.rangesTruncated ? t('hashToolkit.compare.truncated') : '',
+          })}
+        </li>
+      </ul>
+    </div>
+  )
+}
+
+export function ChecksumPanel({
+  items,
+  onEnqueue,
+  onRemove,
+  onClear,
+  onPinBaseline,
+}: {
+  items: HashQueueItem[]
+  onEnqueue: (files: File[]) => void
+  onRemove: (id: string) => void
+  onClear: () => void
+  onPinBaseline: (item: HashQueueItem) => void
+}) {
+  const { t } = useTranslation()
+  const reduce = useReducedMotion()
+  const [mode, setMode] = useState<Mode>('files')
+  const [text, setText] = useState('')
+  const [encoding, setEncoding] = useState<InputEncoding>('utf8')
+  const [format, setFormat] = useState<DigestFormat>('hex')
+  const [textDigests, setTextDigests] = useState<Awaited<ReturnType<typeof digestBytes>> | null>(
+    null,
+  )
+  const [expectedRaw, setExpectedRaw] = useState('')
+  const expected = useMemo(() => parseExpected(expectedRaw), [expectedRaw])
+  const textVerdict = useMemo(
+    () => (textDigests ? compareExpected(expected, textDigests) : null),
+    [expected, textDigests],
+  )
+
+  const [fileA, setFileA] = useState<File | null>(null)
+  const [fileB, setFileB] = useState<File | null>(null)
+  const [compare, setCompare] = useState<ByteComparison | null>(null)
+  const [compareBusy, setCompareBusy] = useState(false)
+  const [hexRows, setHexRows] = useState<Awaited<ReturnType<typeof hexWindow>>>([])
+
+  useEffect(() => {
+    let live = true
+    if (!text.trim()) {
+      setTextDigests(null)
+      return
+    }
+    const decoded = decodeInput(text, encoding)
+    if (!decoded.ok) {
+      setTextDigests(null)
+      return
+    }
+    void digestBytes(decoded.bytes).then((digests) => {
+      if (live) setTextDigests(digests)
+    })
+    return () => {
+      live = false
+    }
+  }, [text, encoding])
+
+  const verifyHex = expected?.hex
+  const fileVerdict = useMemo(() => {
+    if (!expected || items.length === 0) return null
+    for (const item of items) {
+      if (item.status !== 'done' || !item.result) continue
+      const verdict = compareExpected(expected, item.result.digests)
+      if (verdict.state === 'match') return verdict
+    }
+    return items.find((i) => i.status === 'done' && i.result)
+      ? compareExpected(expected, items.find((i) => i.status === 'done')!.result!.digests)
+      : null
+  }, [expected, items])
+
+  const runCompare = () => {
+    if (!fileA || !fileB) return
+    setCompareBusy(true)
+    setCompare(null)
+    setHexRows([])
+    void compareBlobs(fileA, fileB)
+      .then(async (result) => {
+        setCompare(result)
+        if (!result.identical && result.firstDifference != null) {
+          setHexRows(await hexWindow(fileA, fileB, result.firstDifference))
+        }
+      })
+      .finally(() => setCompareBusy(false))
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <Segmented
+        value={mode}
+        onValueChange={(v) => setMode(v as Mode)}
+        ariaLabel={t('hashToolkit.mode.label')}
+        options={MODES.map((value) => ({
+          value,
+          label: t(`hashToolkit.mode.${value}`),
+        }))}
+      />
+
+      <div className="rounded-2xl border bg-background/80 p-3 shadow-xs">
+        <label className="text-[11px] font-medium text-muted-foreground" htmlFor="hash-verify">
+          {t('hashToolkit.verify.label')}
+        </label>
+        <div className="mt-1.5 flex gap-1.5">
+          <Input
+            id="hash-verify"
+            value={expectedRaw}
+            onChange={(e) => setExpectedRaw(e.target.value)}
+            placeholder={t('hashToolkit.verify.placeholder')}
+            className="font-mono text-xs"
+            spellCheck={false}
+          />
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="secondary"
+            aria-label={t('hashToolkit.verify.action')}
+            disabled={!expectedRaw.trim()}
+          >
+            <CheckIcon />
+          </Button>
+        </div>
+        {expectedRaw && fileVerdict?.state === 'invalid' && textVerdict?.state === 'invalid' && (
+          <p className="mt-1 text-[11px] text-amber-600 dark:text-amber-400">
+            {t('hashToolkit.verify.invalid')}
+          </p>
+        )}
+        {fileVerdict?.state === 'match' && (
+          <p className="mt-1 text-[11px] text-emerald-600 dark:text-emerald-400">
+            {t('hashToolkit.verify.fileMatch', { algorithm: fileVerdict.algorithm })}
+          </p>
+        )}
+        {fileVerdict?.state === 'mismatch' && (
+          <p className="mt-1 text-[11px] text-red-600 dark:text-red-400">
+            {t('hashToolkit.verify.mismatch')}
+          </p>
+        )}
+      </div>
+
+      <AnimatePresence mode="wait">
+        {mode === 'text' && (
+          <motion.div
+            key="text"
+            initial={reduce ? false : { opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className="flex flex-col gap-2"
+          >
+            <div className="flex flex-wrap gap-1.5">
+              {ENCODINGS.map((enc) => (
+                <Button
+                  key={enc.value}
+                  type="button"
+                  size="xs"
+                  variant={encoding === enc.value ? 'secondary' : 'outline'}
+                  onClick={() => setEncoding(enc.value)}
+                >
+                  {t(enc.labelKey)}
+                </Button>
+              ))}
+              <span className="mx-1 w-px bg-border" aria-hidden />
+              {FORMATS.map((f) => (
+                <Button
+                  key={f.value}
+                  type="button"
+                  size="xs"
+                  variant={format === f.value ? 'secondary' : 'outline'}
+                  className="font-mono"
+                  onClick={() => setFormat(f.value)}
+                >
+                  {f.label}
+                </Button>
+              ))}
+            </div>
+            <TextEditor
+              value={text}
+              onChange={setText}
+              placeholder={t('hashToolkit.textPlaceholder')}
+              ariaLabel={t('hashToolkit.textPlaceholder')}
+              minRows={4}
+            />
+            {textDigests && (
+              <DigestList
+                digests={textDigests}
+                format={format}
+                highlight={textVerdict?.state === 'match' ? expected?.hex : undefined}
+              />
+            )}
+          </motion.div>
+        )}
+
+        {mode === 'files' && (
+          <motion.div
+            key="files"
+            initial={reduce ? false : { opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className="flex flex-col gap-2"
+          >
+            {items.length === 0 ? (
+              <FileDropZone
+                title={t('hashToolkit.drop.title')}
+                hint={t('hashToolkit.drop.hint')}
+                multiple
+                onFiles={onEnqueue}
+                glyphs={['PDF', 'IMG', 'ZIP']}
+              />
+            ) : (
+              <>
+                <FileDropZone
+                  compact
+                  title={t('hashToolkit.drop.add')}
+                  multiple
+                  onFiles={onEnqueue}
+                />
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[11px] text-muted-foreground">
+                    {t('hashToolkit.queueCount', { count: items.length })}
+                  </p>
+                  <Button type="button" size="xs" variant="ghost" onClick={onClear}>
+                    <Trash2Icon className="size-3" />
+                    {t('hashToolkit.clearAll')}
+                  </Button>
+                </div>
+                <ul className="flex flex-col gap-2">
+                  <AnimatePresence initial={false}>
+                    {items.map((item) => (
+                      <li key={item.id}>
+                        <FileResultCard
+                          item={item}
+                          verifyHex={verifyHex}
+                          onRemove={() => onRemove(item.id)}
+                          onPinBaseline={() => onPinBaseline(item)}
+                        />
+                      </li>
+                    ))}
+                  </AnimatePresence>
+                </ul>
+                {items.some((i) => i.status === 'done') && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="self-start"
+                    onClick={() => {
+                      const manifest = toManifest(
+                        items
+                          .filter((i) => i.status === 'done' && i.result)
+                          .map((i) => ({
+                            id: i.id,
+                            path: i.path,
+                            digests: i.result!.digests,
+                          })),
+                        'SHA-256',
+                      )
+                      void navigator.clipboard.writeText(manifest)
+                    }}
+                  >
+                    <UploadIcon className="size-3.5" />
+                    {t('hashToolkit.copyManifest')}
+                  </Button>
+                )}
+              </>
+            )}
+          </motion.div>
+        )}
+
+        {mode === 'compare' && (
+          <motion.div
+            key="compare"
+            initial={reduce ? false : { opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className="grid gap-2 @md:grid-cols-2"
+          >
+            {(['A', 'B'] as const).map((slot) => {
+              const file = slot === 'A' ? fileA : fileB
+              const setFile = slot === 'A' ? setFileA : setFileB
+              return (
+                <div key={slot} className="rounded-xl border bg-muted/20 p-2">
+                  <p className="mb-1 text-[11px] font-medium">
+                    {t(`hashToolkit.compare.file${slot}`)}
+                  </p>
+                  {file ? (
+                    <div className="flex items-center justify-between gap-2 rounded-lg border bg-background px-2 py-1.5 text-[11px]">
+                      <span className="truncate">{file.name}</span>
+                      <Button
+                        type="button"
+                        size="icon-xs"
+                        variant="ghost"
+                        onClick={() => setFile(null)}
+                      >
+                        <Trash2Icon />
+                      </Button>
+                    </div>
+                  ) : (
+                    <FileDropZone
+                      compact
+                      title={t('hashToolkit.compare.pick')}
+                      onFiles={(files) => setFile(files[0] ?? null)}
+                    />
+                  )}
+                </div>
+              )
+            })}
+            <div className="col-span-full flex justify-center">
+              <Button type="button" disabled={!fileA || !fileB || compareBusy} onClick={runCompare}>
+                {compareBusy ? t('hashToolkit.compare.running') : t('hashToolkit.compare.run')}
+              </Button>
+            </div>
+            {compare && (
+              <div className="col-span-full space-y-2">
+                <CompareSummary result={compare} />
+                {hexRows.length > 0 && (
+                  <div className="overflow-x-auto rounded-xl border bg-background p-2 font-mono text-[10px]">
+                    {hexRows.map((row) => (
+                      <div
+                        key={row.offset}
+                        className="grid grid-cols-[auto_1fr_1fr] gap-2 border-b border-border/40 py-0.5 last:border-0"
+                      >
+                        <span className="text-muted-foreground">
+                          {row.offset.toString(16).padStart(8, '0')}
+                        </span>
+                        <span>
+                          {row.a.map((b, i) => (
+                            <span key={i} className={cn(row.a[i] !== row.b[i] && 'text-red-500')}>
+                              {b == null ? '  ' : b.toString(16).padStart(2, '0')}{' '}
+                            </span>
+                          ))}
+                        </span>
+                        <span>
+                          {row.b.map((b, i) => (
+                            <span key={i} className={cn(row.a[i] !== row.b[i] && 'text-red-500')}>
+                              {b == null ? '  ' : b.toString(16).padStart(2, '0')}{' '}
+                            </span>
+                          ))}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}

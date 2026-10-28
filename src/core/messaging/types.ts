@@ -192,9 +192,15 @@ export type ExtensionMessage =
   | { type: 'PAGE_INSPECTOR_STATE'; state: import('@/chrome/content/pageInspector/model').PageInspectorState }
   | { type: 'GET_READABLE_TEXT'; scope?: 'page' | 'selection' }
   | { type: 'GET_MARKDOWN_FROM_PAGE'; mode: 'selection' | 'article' }
-  | { type: 'CHECK_HTTP_URLS'; items: { href: string; text: string }[] }
+  | {
+      type: 'CHECK_HTTP_URLS'
+      items: { href: string; text: string }[]
+      options?: import('@/core/engines/linkChecker/check').LinkCheckRequestOptions
+    }
   | { type: 'GET_PAGE_LINKS' }
   | { type: 'LOCATE_PAGE_LINK'; index: number; href: string }
+  | { type: 'MARK_PAGE_LINKS'; marks: import('@/core/engines/linkChecker/report').PageLinkMark[] }
+  | { type: 'CLEAR_PAGE_LINK_MARKS' }
   | { type: 'REDIRECT_TRACE_GET'; tabId?: number }
   | { type: 'REDIRECT_TRACE_CLEAR'; tabId?: number }
   | { type: 'SCRAPER_DETECT'; candidateIndex?: number }
@@ -372,6 +378,8 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'CHECK_HTTP_URLS',
   'GET_PAGE_LINKS',
   'LOCATE_PAGE_LINK',
+  'MARK_PAGE_LINKS',
+  'CLEAR_PAGE_LINK_MARKS',
   'REDIRECT_TRACE_GET',
   'REDIRECT_TRACE_CLEAR',
   'SCRAPER_DETECT',

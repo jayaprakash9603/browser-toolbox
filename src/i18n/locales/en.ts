@@ -27,6 +27,13 @@ import { responsiveViewerStrings } from './responsiveViewerEn'
 import { saveImageAsStrings } from './saveImageAsEn'
 import { calculatorStrings } from './calculatorEn'
 import { htmlBundleStrings } from './htmlBundleEn'
+import { a11yStrings } from './a11yEn'
+import { hashToolkitStrings } from './hashToolkitEn'
+import { linkCheckerStrings } from './linkCheckerEn'
+import { bugReporterStrings } from './bugReporterEn'
+import { snippetsStrings } from './snippetsEn'
+import { bookmarksStrings } from './bookmarksEn'
+import { workspacesStrings } from './workspacesEn'
 
 const en = {
   'app.name': 'One Panel',
@@ -124,6 +131,9 @@ const en = {
   'home.stat.categories': 'Categories',
   'home.stat.favorites': 'Favorites',
   'home.quickActions': 'Quick actions',
+  'home.discover': 'New in One Panel',
+  'home.discoverBadge': 'New',
+  'home.discoverHint': 'Fresh productivity tools with search, export and smooth panel UX.',
   'home.popularTools': 'Popular tools',
   'home.topPick': 'Top pick',
   'home.allTools': 'Browse by category',
@@ -954,7 +964,8 @@ const en = {
   'tools.security.encoder-decoder.description':
     'Base64, URL, HTML, Unicode and Hex encoding and decoding.',
   'tools.security.hash-toolkit.name': 'Hash Toolkit',
-  'tools.security.hash-toolkit.description': 'SHA and MD5 hashing plus HMAC, all computed locally.',
+  'tools.security.hash-toolkit.description':
+    'Hash files for digital forensics: verify digests, compare bytes, baseline change detection, and sealed evidence export — all local.',
   'tools.security.jwt-toolkit.name': 'JWT Toolkit',
   'tools.security.jwt-toolkit.description':
     'Decode and inspect JSON Web Tokens: header, payload, claims and expiry.',
@@ -1323,6 +1334,15 @@ const en = {
   'tools.productivity.form-autofill.name': 'Form Autofill',
   'tools.productivity.form-autofill.description':
     'Review and fill web forms from your saved answers.',
+  'tools.productivity.snippets.name': 'Snippets',
+  'tools.productivity.snippets.description':
+    'Reusable text snippets with categories, pins and one-click copy for email, support and code.',
+  'tools.productivity.workspaces.name': 'Tab Sessions',
+  'tools.productivity.workspaces.description':
+    'Save open tabs as named sessions and restore them in a fresh window for projects or research.',
+  'tools.productivity.bookmarks.name': 'Bookmark Search',
+  'tools.productivity.bookmarks.description':
+    'Search Chrome bookmarks, open links quickly and export lists as Markdown or JSON.',
   'tools.privacy.web-protection.name': 'Web Protection',
   'tools.privacy.web-protection.description':
     'Block phishing, malware and scams. Detects fake login pages before you enter a password.',
@@ -1461,13 +1481,6 @@ const en = {
   'browser.duplicate': 'Duplicate tab',
   'storage.noAccess': 'Cannot read storage on this page.',
   'storage.empty': 'No entries.',
-  'a11y.noPage': 'Open a normal web page to check it.',
-  'a11y.errors': '{{count}} errors',
-  'a11y.warnings': '{{count}} warnings',
-  'a11y.noIssues': 'No obvious accessibility issues found.',
-  'a11y.contrastHint': 'For color contrast, use the',
-  'a11y.openContrast': 'Contrast Checker',
-  'a11y.disclaimer': 'Quick checks only — not a full accessibility audit.',
   'tools.files.file-toolkit.name': 'File Toolkit',
   'tools.files.file-toolkit.description':
     'Batch convert files, turn text into PDF or Word, combine images into a PDF, zip, gzip and inspect files — all locally.',
@@ -1520,6 +1533,13 @@ const en = {
   ...saveImageAsStrings,
   ...calculatorStrings,
   ...htmlBundleStrings,
+  ...hashToolkitStrings,
+  ...linkCheckerStrings,
+  ...bugReporterStrings,
+  ...a11yStrings,
+  ...snippetsStrings,
+  ...bookmarksStrings,
+  ...workspacesStrings,
 } as const
 
 export default en

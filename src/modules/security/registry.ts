@@ -21,7 +21,8 @@ export const securityTools = [
   defineTool({
     id: 'security.hash-toolkit',
     name: 'Hash Toolkit',
-    description: 'SHA and MD5 hashing plus HMAC, all computed locally.',
+    description:
+      'Hash files for digital forensics: verify digests, compare bytes, baseline tracking, and sealed evidence reports — all local.',
     category: 'security',
     icon: HashIcon,
     keywords: ['hash', 'sha', 'sha256', 'md5', 'hmac', 'digest', 'checksum'],
@@ -66,7 +67,8 @@ export const securityTools = [
   defineTool({
     id: 'security.totp',
     name: '2FA Authenticator',
-    description: 'Generate time-based one-time passwords (TOTP) from stored secrets — computed locally.',
+    description:
+      'Generate time-based one-time passwords (TOTP) from stored secrets — computed locally.',
     category: 'security',
     icon: ShieldIcon,
     keywords: ['totp', '2fa', 'authenticator', 'otp', 'mfa'],

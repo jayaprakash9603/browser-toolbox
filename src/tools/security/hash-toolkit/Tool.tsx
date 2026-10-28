@@ -1,111 +1,104 @@
-import { useEffect, useState } from 'react'
-
 import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
-import { AlertTriangleIcon } from 'lucide-react'
+import { motion, useReducedMotion } from 'motion/react'
+import { BadgeCheckIcon, FileSearchIcon, FingerprintIcon, KeyRoundIcon } from 'lucide-react'
 
-import {
-  HASH_ALGORITHMS,
-  hash,
-  hmac,
-  type HashAlgorithm,
-  type HmacAlgorithm,
-} from '@/core/engines/hash'
 import { ToolPage } from '@/shared/components/ToolPage'
-import { TextEditor } from '@/shared/components/TextEditor'
-import { Badge } from '@/shared/components/ui/badge'
-import { Input } from '@/shared/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
-import { CopyButton } from '@/shared/components/CopyButton'
+import { cn } from '@/shared/utils/cn'
 import { useSecurityTool } from '../_shared'
+
+import { ChecksumPanel } from './ChecksumPanel'
+import { EvidencePanel } from './EvidencePanel'
+import { HashHero } from './HashHero'
+import { HmacPanel } from './HmacPanel'
+import { IntegrityPanel } from './IntegrityPanel'
+import { useFileHashQueue } from './useFileHashQueue'
+
+const TABS = ['checksum', 'integrity', 'evidence', 'hmac'] as const
+
+const TAB_ICON = {
+  checksum: FingerprintIcon,
+  integrity: BadgeCheckIcon,
+  evidence: FileSearchIcon,
+  hmac: KeyRoundIcon,
+} as const
 
 export default function HashToolkitTool() {
   const { t } = useTranslation()
   const tool = useSecurityTool('security.hash-toolkit')
-  const [tab, setTab] = useDeepLinkTab('tab', ['hash', 'hmac'] as const, 'hash')
-  const [input, setInput] = useState('')
-  const [secret, setSecret] = useState('')
-  const [results, setResults] = useState<Record<string, string>>({})
-
-  useEffect(() => {
-    let live = true
-    if (!input) {
-      Promise.resolve().then(() => {
-        if (live) setResults({})
-      })
-      return () => {
-        live = false
-      }
-    }
-    const algorithms: (HashAlgorithm | HmacAlgorithm)[] =
-      tab === 'hmac' ? ['SHA-256', 'SHA-384', 'SHA-512'] : HASH_ALGORITHMS.map((a) => a.id)
-    void Promise.all(
-      algorithms.map(async (algorithm) => {
-        const result =
-          tab === 'hmac'
-            ? await hmac(algorithm as HmacAlgorithm, input, secret)
-            : await hash(algorithm as HashAlgorithm, input)
-        return [algorithm, result.ok ? result.value : result.error] as const
-      }),
-    ).then((entries) => {
-      if (live) setResults(Object.fromEntries(entries))
-    })
-    return () => {
-      live = false
-    }
-  }, [input, secret, tab])
+  const reduce = useReducedMotion()
+  const [tab, setTab] = useDeepLinkTab('tab', TABS, 'checksum')
+  const queue = useFileHashQueue()
 
   return (
-    <ToolPage tool={tool}>
-      <div className="flex flex-col gap-3">
-        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-          <TabsList>
-            <TabsTrigger value="hash">{t('security.tabHash')}</TabsTrigger>
-            <TabsTrigger value="hmac">HMAC</TabsTrigger>
-          </TabsList>
-        <TextEditor
-          value={input}
-          onChange={setInput}
-          placeholder={t('security.hashInput')}
-          ariaLabel={t('security.hashInput')}
-          minRows={4}
-        />
-        <TabsContent value="hmac" className="mt-0">
-          <Input
-            value={secret}
-            onChange={(e) => setSecret(e.target.value)}
-            placeholder={t('security.secret')}
-            aria-label={t('security.secret')}
-            className="font-mono"
-          />
+    <ToolPage
+      tool={tool}
+      contentClassName="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden @container"
+    >
+      <HashHero />
+      <Tabs
+        value={tab}
+        onValueChange={(v) => setTab(v as (typeof TABS)[number])}
+        className="flex min-h-0 flex-1 flex-col gap-3"
+      >
+        <TabsList className="scrollbar-styled h-auto w-full justify-start gap-0.5 overflow-x-auto p-0.5">
+          {TABS.map((value) => {
+            const Icon = TAB_ICON[value]
+            return (
+              <TabsTrigger
+                key={value}
+                value={value}
+                className={cn('gap-1.5 px-3 data-[state=active]:shadow-sm')}
+              >
+                <Icon className="size-3.5 shrink-0 opacity-70" aria-hidden />
+                {t(`hashToolkit.tab.${value}`)}
+              </TabsTrigger>
+            )
+          })}
+        </TabsList>
+
+        <TabsContent
+          value="checksum"
+          className="mt-0 min-h-0 flex-1 overflow-y-auto overscroll-contain"
+        >
+          <motion.div
+            key="checksum"
+            initial={reduce ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <ChecksumPanel
+              items={queue.items}
+              onEnqueue={queue.enqueue}
+              onRemove={queue.remove}
+              onClear={queue.clear}
+              onPinBaseline={queue.pinBaseline}
+            />
+          </motion.div>
         </TabsContent>
-        </Tabs>
-        {input && (
-          <div className="space-y-1.5">
-            {Object.entries(results).map(([algorithm, value]) => {
-              const meta = HASH_ALGORITHMS.find((a) => a.id === algorithm)
-              return (
-                <div key={algorithm} className="rounded border bg-muted/40 p-1.5">
-                  <div className="flex items-center justify-between gap-1">
-                    <div className="flex items-center gap-1">
-                      <Badge variant="outline" className="font-mono text-[11px]">
-                        {algorithm}
-                      </Badge>
-                      {meta?.legacy && (
-                        <span className="flex items-center gap-0.5 text-[11px] text-amber-600 dark:text-amber-400">
-                          <AlertTriangleIcon className="size-2.5" /> {t('security.legacy')}
-                        </span>
-                      )}
-                    </div>
-                    <CopyButton text={value} />
-                  </div>
-                  <code className="mt-0.5 block break-all font-mono text-[11px]">{value}</code>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
+
+        <TabsContent
+          value="integrity"
+          className="mt-0 min-h-0 flex-1 overflow-y-auto overscroll-contain"
+        >
+          <IntegrityPanel items={queue.hashedItems} />
+        </TabsContent>
+
+        <TabsContent
+          value="evidence"
+          className="mt-0 min-h-0 flex-1 overflow-y-auto overscroll-contain"
+        >
+          <EvidencePanel items={queue.items} />
+        </TabsContent>
+
+        <TabsContent
+          value="hmac"
+          className="mt-0 min-h-0 flex-1 overflow-y-auto overscroll-contain"
+        >
+          <HmacPanel />
+        </TabsContent>
+      </Tabs>
     </ToolPage>
   )
 }

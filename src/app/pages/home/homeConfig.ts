@@ -30,9 +30,16 @@ export const TAGLINE_INTERVAL_MS = 4500
 
 export const QUICK_ACTION_IDS = [
   'clipboard.manager',
-  'text.formatter',
+  'productivity.snippets',
   'developer.json-toolkit',
   'calculators.calculator',
+] as const
+
+/** Highlighted on the home page “New” row */
+export const DISCOVER_TOOL_IDS = [
+  'productivity.snippets',
+  'productivity.workspaces',
+  'productivity.bookmarks',
 ] as const
 
 export const POPULAR_TOOL_IDS = [
@@ -60,14 +67,18 @@ export function getQuickActionTools() {
   return resolveHomeTools(QUICK_ACTION_IDS)
 }
 
+export function getDiscoverTools() {
+  return resolveHomeTools(DISCOVER_TOOL_IDS)
+}
+
 export function getPopularTools() {
   return resolveHomeTools(POPULAR_TOOL_IDS)
 }
 
 /** Popular tools minus the ones already pinned as quick actions, so the home page never repeats a tool. */
 export function getHomePopularTools() {
-  const quick = new Set<string>(QUICK_ACTION_IDS)
-  return getPopularTools().filter((tool) => !quick.has(tool.id))
+  const hidden = new Set<string>([...QUICK_ACTION_IDS, ...DISCOVER_TOOL_IDS])
+  return getPopularTools().filter((tool) => !hidden.has(tool.id))
 }
 
 export const TILE_VARS = ['var(--tile-1)', 'var(--tile-2)', 'var(--tile-3)', 'var(--tile-4)'] as const

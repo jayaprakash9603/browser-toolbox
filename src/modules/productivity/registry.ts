@@ -1,4 +1,4 @@
-import { ListTodoIcon, NotebookPenIcon, TimerIcon, LayoutGridIcon, TextCursorInputIcon } from 'lucide-react'
+import { ListTodoIcon, NotebookPenIcon, TimerIcon, LayoutGridIcon, TextCursorInputIcon, BracesIcon, BookmarkIcon, ArchiveIcon } from 'lucide-react'
 
 import { defineTool } from '@/core/registry'
 
@@ -80,5 +80,44 @@ export const productivityTools = [
     capabilities: ['SIDE_PANEL', 'CONTENT_SCRIPT', 'PAGE_ACCESS', 'STORAGE'],
     status: 'beta',
     loader: () => import('@/tools/productivity/form-autofill/Tool'),
+  }),
+  defineTool({
+    id: 'productivity.snippets',
+    name: 'Snippets',
+    description: 'Reusable text snippets with categories, pins and one-click copy for email, support and code.',
+    category: 'productivity',
+    icon: BracesIcon,
+    keywords: ['snippets', 'templates', 'macros', 'text expander', 'email', 'support', 'clipboard', 'canned response'],
+    aliases: ['text snippets', 'snippet library', 'canned responses', 'message templates', 'macros'],
+    route: '/tools/productivity/snippets',
+    capabilities: ['SIDE_PANEL', 'STORAGE'],
+    status: 'active',
+    loader: () => import('@/tools/productivity/snippets/Tool'),
+  }),
+  defineTool({
+    id: 'productivity.workspaces',
+    name: 'Tab Sessions',
+    description: 'Save open tabs as named sessions and restore them in a fresh window for projects or research.',
+    category: 'productivity',
+    icon: ArchiveIcon,
+    keywords: ['tab session', 'workspace', 'save tabs', 'restore tabs', 'project', 'research', 'backup'],
+    aliases: ['tab sessions', 'save tab set', 'restore tabs', 'workspace tabs', 'session manager'],
+    route: '/tools/productivity/workspaces',
+    capabilities: ['SIDE_PANEL', 'STORAGE'],
+    status: 'active',
+    loader: () => import('@/tools/productivity/workspaces/Tool'),
+  }),
+  defineTool({
+    id: 'productivity.bookmarks',
+    name: 'Bookmark Search',
+    description: 'Search Chrome bookmarks, open links quickly and export lists as Markdown or JSON.',
+    category: 'productivity',
+    icon: BookmarkIcon,
+    keywords: ['bookmarks', 'search', 'favorites', 'export', 'markdown', 'links'],
+    aliases: ['bookmark search', 'find bookmark', 'export bookmarks', 'bookmark manager search'],
+    route: '/tools/productivity/bookmarks',
+    capabilities: ['SIDE_PANEL'],
+    status: 'active',
+    loader: () => import('@/tools/productivity/bookmarks/Tool'),
   }),
 ]

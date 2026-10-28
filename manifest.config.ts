@@ -54,7 +54,7 @@ export default defineManifest({
     'notifications',
     'webNavigation',
   ],
-  optional_permissions: ['clipboardRead', 'webRequest', 'userScripts', 'debugger', 'cookies'],
+  optional_permissions: ['clipboardRead', 'webRequest', 'userScripts', 'debugger', 'cookies', 'bookmarks'],
   optional_host_permissions: ['<all_urls>'],
   declarative_net_request: {
     rule_resources: [

@@ -32,6 +32,7 @@ The extension installs with no site access. Anything that runs on web pages or r
 | `userScripts` | Enabling Script Studio or HTTP Interceptor "Insert script" rules. Runs only scripts the user installs or writes, through `chrome.userScripts`. |
 | `cookies` | Enabling `GM_cookie` for Script Studio scripts. |
 | `debugger` | Turning on Deep intercept and attaching to a tab (Chrome shows its debugging banner). |
+| `bookmarks` | Opening Bookmark Search; reads Chrome bookmarks locally for search and export (nothing is uploaded). |
 
 `src/core/permissions/siteAccess.ts` holds the request helpers. The background worker listens to `chrome.permissions.onAdded` and re-syncs content script registrations, so features start working in open tabs without a reload.
 
@@ -62,4 +63,4 @@ The extension's own code and filter lists ship in the package. Script Studio and
 
 ## Deliberately not requested
 
-`history`, `bookmarks`, `sessions`, `identity`, `geolocation`.
+`history`, `sessions`, `identity`, `geolocation` (bookmarks is optional for Bookmark Search only).

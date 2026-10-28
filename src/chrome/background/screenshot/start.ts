@@ -20,28 +20,11 @@ function newSessionId(): string {
 
 export type ProgressCallback = (phase: string, current: number, total: number) => void
 
-async function openEditorForSession(sessionId: string): Promise<void> {
-  await chrome.tabs.create({ url: captureViewerUrl({ session: sessionId }) })
-}
-
-async function runAfterCapture(sessionId: string, dataUrl?: string): Promise<void> {
-  const settings = await loadScreenshotSettings()
-  if (settings.afterCapture === 'editor') {
-    await openEditorForSession(sessionId)
-    return
-  }
-  if (settings.afterCapture === 'clipboard' && dataUrl) {
-    try {
-      const res = await fetch(dataUrl)
-      const blob = await res.blob()
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
-    } catch (error) {
-      logger.warn('clipboard after capture failed', error)
-      await openEditorForSession(sessionId)
-    }
-    return
-  }
-  await openEditorForSession(sessionId)
+/** Service workers have no clipboard or canvas, so the editor tab copies or saves the capture itself. */
+async function runAfterCapture(sessionId: string): Promise<void> {
+  const { afterCapture } = await loadScreenshotSettings()
+  const auto = afterCapture === 'clipboard' ? 'copy' : afterCapture === 'autosave' ? 'save' : undefined
+  await chrome.tabs.create({ url: captureViewerUrl({ session: sessionId, auto }) })
 }
 
 export async function startScreenshot(
@@ -157,8 +140,7 @@ export async function startScreenshot(
     }
     createSession(session)
 
-    const preview = frames[0]?.dataUrl ?? frames[0]?.slices?.[0]?.dataUrl
-    await runAfterCapture(sessionId, preview)
+    await runAfterCapture(sessionId)
     return sessionId
   } catch (error) {
     logger.warn('screenshot failed', error)

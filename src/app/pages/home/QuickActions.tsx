@@ -5,7 +5,7 @@ import { Link } from '@/app/router'
 import type { ToolDefinition } from '@/core/registry'
 import { getQuickActionTools, tileColor } from '@/app/pages/home/homeConfig'
 import { SectionHeader } from '@/app/pages/home/SectionHeader'
-import { SlideUp } from '@/shared/components/motion'
+import { SlideUp, StaggerChildren, StaggerItem } from '@/shared/components/motion'
 import { useToolLabels } from '@/shared/hooks/useToolLabels'
 
 export function QuickActions({ delay = 0.06 }: { delay?: number }) {
@@ -15,13 +15,13 @@ export function QuickActions({ delay = 0.06 }: { delay?: number }) {
   return (
     <SlideUp delay={delay} className="mb-[var(--density-section-gap)]">
       <SectionHeader title={t('home.quickActions')} icon={ZapIcon} />
-      <ul className="grid grid-cols-4 gap-1 rounded-2xl border bg-card p-1.5 shadow-[var(--shadow-card)]">
+      <StaggerChildren className="grid grid-cols-4 gap-1 rounded-2xl border bg-card p-1.5 shadow-[var(--shadow-card)]" stagger={0.06}>
         {tools.map((tool, index) => (
-          <li key={tool.id} className="min-w-0">
+          <StaggerItem key={tool.id} className="min-w-0">
             <QuickActionTile tool={tool} color={tileColor(index)} />
-          </li>
+          </StaggerItem>
         ))}
-      </ul>
+      </StaggerChildren>
     </SlideUp>
   )
 }

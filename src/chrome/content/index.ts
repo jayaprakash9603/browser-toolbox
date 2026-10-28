@@ -1,6 +1,7 @@
 import { isExtensionMessage } from '@/core/messaging/types'
 
 import { bytesToBase64, type HtmlBundleProgress } from '@/core/engines/htmlArchive'
+import type { PageLinkMark } from '@/core/engines/linkChecker/report'
 
 import { cancelPicker, isPickerActive, startPicker } from './elementPicker'
 import { buildHtmlBundleInPage, scanHtmlBundleFromDom } from './htmlBundle'
@@ -10,6 +11,7 @@ import { applySeoHighlight, clearSeoHighlight } from './seoHighlight'
 import { collectTechStack } from './collectors/techStack'
 import { collectPageSvgs, svgToJsx } from './collectors/svgs'
 import { collectPageLinks, locatePageLink } from './collectors/links'
+import { clearPageLinkMarks, markPageLinks } from './collectors/linkMarks'
 import { setFontInspector, setWireframe } from './designModes'
 import { getInspectorState, runInspectorAction, setInspector } from './pageInspector/inspector'
 import type { InspectorAction, InspectorLabels, PageInspectorOptions } from './pageInspector/model'
@@ -177,6 +179,13 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
       sendResponse({ ok: true, data: locatePageLink(index, href) })
       return false
     }
+    case 'MARK_PAGE_LINKS':
+      sendResponse({ ok: true, data: markPageLinks((raw as { marks: PageLinkMark[] }).marks ?? []) })
+      return false
+    case 'CLEAR_PAGE_LINK_MARKS':
+      clearPageLinkMarks()
+      sendResponse({ ok: true, data: { cleared: true } })
+      return false
     case 'GET_TECH_STACK':
       sendResponse({ ok: true, data: collectTechStack() })
       return false

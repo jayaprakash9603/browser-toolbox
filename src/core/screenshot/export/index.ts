@@ -62,10 +62,14 @@ export function buildExportFilename(
   })
 }
 
-export async function downloadBlobInExtension(blob: Blob, filename: string): Promise<void> {
+export async function downloadBlobInExtension(
+  blob: Blob,
+  filename: string,
+  { saveAs = true }: { saveAs?: boolean } = {},
+): Promise<void> {
   const url = URL.createObjectURL(blob)
   try {
-    await chrome.downloads.download({ url, filename, saveAs: true })
+    await chrome.downloads.download({ url, filename, saveAs })
   } finally {
     setTimeout(() => URL.revokeObjectURL(url), 60_000)
   }
@@ -84,6 +88,21 @@ export async function zipBlobs(files: { name: string; blob: Blob }[]): Promise<B
 export async function copyCanvasToClipboard(canvas: HTMLCanvasElement): Promise<void> {
   const blob = await canvasToBlob(canvas, 'image/png')
   await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+}
+
+/** Copies a saved image of any raster type; the clipboard only accepts PNG. */
+export async function copyImageBlobToClipboard(blob: Blob): Promise<void> {
+  if (blob.type === 'image/png') {
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+    return
+  }
+  const bitmap = await createImageBitmap(blob)
+  const canvas = document.createElement('canvas')
+  canvas.width = bitmap.width
+  canvas.height = bitmap.height
+  canvas.getContext('2d')?.drawImage(bitmap, 0, 0)
+  bitmap.close()
+  await copyCanvasToClipboard(canvas)
 }
 
 export function openEmailHandoff(pageInfo: PageInfo | undefined, savedPathHint?: string): void {

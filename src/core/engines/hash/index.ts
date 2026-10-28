@@ -72,3 +72,9 @@ export async function hmac(
     return { ok: false, error: cause instanceof Error ? cause.message : 'HMAC failed.' }
   }
 }
+
+export * from './compare'
+export * from './digests'
+export * from './manifest'
+export * from './report'
+export { checkExtension, detectSignature, extensionOf } from './signature'

@@ -2,6 +2,8 @@ export type ScreenshotAfterCapture = 'editor' | 'autosave' | 'clipboard'
 
 export type ScreenshotAllTabsMode = 'visible' | 'entire'
 
+export const CAPTURE_DELAYS_SEC = [0, 3, 5, 10] as const
+
 export interface ScreenshotSettings {
   defaultFormat: 'png' | 'jpeg' | 'webp' | 'gif' | 'bmp' | 'pdf'
   jpegQuality: number
@@ -13,6 +15,8 @@ export interface ScreenshotSettings {
   batchUrlDelayMs: number
   pageInfoStamp: boolean
   pageInfoPosition: 'header' | 'footer'
+  /** Countdown before captures started from the Capture Toolkit panel. */
+  captureDelaySec: number
 }
 
 export const DEFAULT_SCREENSHOT_SETTINGS: ScreenshotSettings = {
@@ -26,6 +30,7 @@ export const DEFAULT_SCREENSHOT_SETTINGS: ScreenshotSettings = {
   batchUrlDelayMs: 1500,
   pageInfoStamp: false,
   pageInfoPosition: 'footer',
+  captureDelaySec: 0,
 }
 
 const STORAGE_KEY = 'screenshotSettings'

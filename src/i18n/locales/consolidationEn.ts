@@ -24,8 +24,6 @@ export const consolidationStrings = {
   'web.techStack.empty': 'No known technologies detected on this page.',
   'web.redirectTracer.empty': 'Navigate the tab to record redirect hops.',
   'web.linkChecker.run': 'Check links',
-  'web.linkChecker.running': 'Checking…',
-  'web.linkChecker.summary': '{{broken}} broken of {{total}} checked',
   'web.utm.base': 'Landing page URL',
   'web.utm.qr': 'Generate QR',
   'web.copyMarkdown.selection': 'From selection',

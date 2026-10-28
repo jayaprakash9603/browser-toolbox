@@ -1,6 +1,18 @@
+import { sanitizeFilenamePart } from './filename'
+
 const DB_NAME = 'toolbox-screenshots'
 const STORE = 'captures'
 const MAX_ENTRIES = 50
+const CHANNEL = 'toolbox-screenshot-history'
+
+const EXTENSION_BY_MIME: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+  'image/bmp': 'bmp',
+  'application/pdf': 'pdf',
+}
 
 export interface ScreenshotHistoryEntry {
   id: string
@@ -36,6 +48,30 @@ export async function addScreenshotHistory(entry: ScreenshotHistoryEntry): Promi
   })
   await trimHistory()
   db.close()
+  notifyHistoryChanged()
+}
+
+export function historyEntryExtension(entry: Pick<ScreenshotHistoryEntry, 'blob'>): string {
+  return EXTENSION_BY_MIME[entry.blob.type] ?? 'png'
+}
+
+export function historyEntryFilename(entry: Pick<ScreenshotHistoryEntry, 'blob' | 'title'>): string {
+  return `${sanitizeFilenamePart(entry.title)}.${historyEntryExtension(entry)}`
+}
+
+/** Calls `onChange` when any extension page adds or deletes a saved capture. */
+export function watchScreenshotHistory(onChange: () => void): () => void {
+  if (typeof BroadcastChannel === 'undefined') return () => undefined
+  const channel = new BroadcastChannel(CHANNEL)
+  channel.onmessage = onChange
+  return () => channel.close()
+}
+
+function notifyHistoryChanged(): void {
+  if (typeof BroadcastChannel === 'undefined') return
+  const channel = new BroadcastChannel(CHANNEL)
+  channel.postMessage('changed')
+  channel.close()
 }
 
 async function trimHistory(): Promise<void> {
@@ -85,6 +121,7 @@ export async function deleteScreenshotHistory(id: string): Promise<void> {
     tx.onerror = () => reject(tx.error)
   })
   db.close()
+  notifyHistoryChanged()
 }
 
 export async function getScreenshotHistory(id: string): Promise<ScreenshotHistoryEntry | undefined> {
