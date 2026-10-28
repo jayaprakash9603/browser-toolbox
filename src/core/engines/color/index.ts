@@ -81,6 +81,16 @@ export function parseColor(input: string): ColorResult<Rgb> {
     return { ok: true, value: { r, g, b } }
   }
 
+  const rgbSpace =
+    /^rgba?\(\s*(\d{1,3})\s+(\d{1,3})\s+(\d{1,3})(?:\s*\/\s*[\d.]+%?)?\s*\)$/.exec(text)
+  if (rgbSpace) {
+    const r = Number(rgbSpace[1])
+    const g = Number(rgbSpace[2])
+    const b = Number(rgbSpace[3])
+    if (r > 255 || g > 255 || b > 255) return { ok: false, error: 'RGB channels must be 0–255.' }
+    return { ok: true, value: { r, g, b } }
+  }
+
   const hslMatch =
     /^hsla?\(\s*(-?\d{1,3})(?:deg)?\s*,\s*(\d{1,3})%\s*,\s*(\d{1,3})%(?:\s*,\s*[\d.]+)?\s*\)$/.exec(
       text,

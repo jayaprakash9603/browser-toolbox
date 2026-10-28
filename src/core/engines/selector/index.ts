@@ -179,6 +179,8 @@ export interface CapturedElement extends ElementDescriptor {
   html: string
   dimensions: { width: number; height: number; x: number; y: number }
   computedStyles: Record<string, string>
+  childCount?: number
+  viewport?: { width: number; height: number }
 }
 
 export function describeElement(element: Element, computed: CSSStyleDeclaration): CapturedElement {
@@ -204,12 +206,19 @@ export function describeElement(element: Element, computed: CSSStyleDeclaration)
     'background-color',
     'font-size',
     'font-family',
+    'font-weight',
+    'line-height',
     'display',
     'position',
     'margin',
     'padding',
     'border',
     'z-index',
+    'opacity',
+    'overflow',
+    'visibility',
+    'cursor',
+    'box-sizing',
   ]
   const computedStyles: Record<string, string> = {}
   for (const prop of styleProps) {
@@ -227,5 +236,7 @@ export function describeElement(element: Element, computed: CSSStyleDeclaration)
     html: element.outerHTML.slice(0, 2000),
     dimensions: { width: rect.width, height: rect.height, x: rect.x, y: rect.y },
     computedStyles,
+    childCount: element.childElementCount,
+    viewport: { width: window.innerWidth, height: window.innerHeight },
   }
 }

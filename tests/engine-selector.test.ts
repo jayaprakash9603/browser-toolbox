@@ -130,5 +130,7 @@ describe('selector engine — describeElement', () => {
     expect(captured.parentChain[1].id).toBe('app')
     expect(captured.indexAmongSiblings).toBe(1)
     expect(captured.text).toContain('Go now')
+    expect(captured.childCount).toBe(0)
+    expect(captured.viewport?.width).toBeGreaterThan(0)
   })
 })

@@ -31,6 +31,7 @@ import { a11yStrings } from './a11yEn'
 import { hashToolkitStrings } from './hashToolkitEn'
 import { linkCheckerStrings } from './linkCheckerEn'
 import { bugReporterStrings } from './bugReporterEn'
+import { elementInspectorStrings } from './elementInspectorEn'
 import { snippetsStrings } from './snippetsEn'
 import { bookmarksStrings } from './bookmarksEn'
 import { workspacesStrings } from './workspacesEn'
@@ -132,6 +133,9 @@ const en = {
   'home.stat.categories': 'Categories',
   'home.stat.favorites': 'Favorites',
   'home.quickActions': 'Quick actions',
+  'home.discover': 'New in One Panel',
+  'home.discoverBadge': 'New',
+  'home.discoverHint': 'Fresh productivity tools with search, export and smooth panel UX.',
   'home.popularTools': 'Popular tools',
   'home.topPick': 'Top pick',
   'home.allTools': 'Browse by category',
@@ -787,7 +791,7 @@ const en = {
   'dev.refreshNow': 'Refresh now',
   'tools.qa.element-inspector.name': 'Element Inspector',
   'tools.qa.element-inspector.description':
-    'Pick a page element and inspect its tag, attributes, styles and dimensions.',
+    'Pick a page element and inspect its box model, styles, selectors, contrast and test locators.',
   'tools.qa.selector-generator.name': 'Selector Generator',
   'tools.qa.selector-generator.description':
     'Generate CSS and XPath selectors for any page element.',
@@ -1537,6 +1541,7 @@ const en = {
   ...hashToolkitStrings,
   ...linkCheckerStrings,
   ...bugReporterStrings,
+  ...elementInspectorStrings,
   ...a11yStrings,
   ...snippetsStrings,
   ...bookmarksStrings,

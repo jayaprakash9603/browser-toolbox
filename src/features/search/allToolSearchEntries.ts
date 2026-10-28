@@ -565,10 +565,13 @@ export const TOOL_SEARCH_ENTRIES: Record<string, ToolSearchEntry[]> = {
     { id: 'csv', labelKey: 'qa.formatCsv', fallbackLabel: 'CSV format', params: { format: 'csv' } },
   ],
   'qa.element-inspector': [
+    tab('overview', 'inspectorEl.tab.overview', 'Overview', 'overview'),
+    tab('box', 'inspectorEl.tab.box', 'Box model', 'box'),
+    tab('styles', 'qa.computedStyles', 'Computed styles', 'styles', { focus: 'section-computed' }),
+    tab('selectors', 'qa.selectors', 'Selectors', 'selectors', { focus: 'section-selectors' }),
+    tab('a11y', 'inspectorEl.tab.a11y', 'Accessibility', 'a11y'),
     focus('text', 'qa.text', 'Text', 'section-text'),
     focus('attributes', 'qa.attributes', 'Attributes', 'section-attributes'),
-    focus('selectors', 'qa.selectors', 'Selectors', 'section-selectors'),
-    focus('computed', 'qa.computedStyles', 'Computed styles', 'section-computed'),
   ],
   'privacy.ad-blocker': [
     focus('filterLists', 'adblock.filterLists', 'Filter lists', 'filterLists'),

@@ -25,6 +25,8 @@ describe('color engine', () => {
 
   it('parses rgb and hsl strings and named colors', () => {
     expect(parseColor('rgb(255, 0, 128)')).toEqual({ ok: true, value: { r: 255, g: 0, b: 128 } })
+    expect(parseColor('rgb(255 0 128)')).toEqual({ ok: true, value: { r: 255, g: 0, b: 128 } })
+    expect(parseColor('rgb(255 0 128 / 0.5)')).toEqual({ ok: true, value: { r: 255, g: 0, b: 128 } })
     expect(parseColor('hsl(120, 100%, 50%)')).toEqual({ ok: true, value: { r: 0, g: 255, b: 0 } })
     expect(parseColor('red')).toEqual({ ok: true, value: { r: 255, g: 0, b: 0 } })
   })

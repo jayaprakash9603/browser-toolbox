@@ -13,11 +13,11 @@ export const qaTools = [
   defineTool({
     id: 'qa.element-inspector',
     name: 'Element Inspector',
-    description: 'Pick a page element and inspect its tag, attributes, styles and dimensions.',
+    description: 'Pick a page element and inspect its box model, styles, selectors, contrast and test locators.',
     category: 'qa',
     icon: MousePointerClickIcon,
-    keywords: ['element', 'inspect', 'dom', 'attributes', 'styles', 'picker'],
-    aliases: ['inspect element', 'element picker', 'dom inspector', 'element info'],
+    keywords: ['element', 'inspect', 'dom', 'attributes', 'styles', 'picker', 'box model', 'contrast', 'xpath', 'locator'],
+    aliases: ['inspect element', 'element picker', 'dom inspector', 'element info', 'css inspector'],
     route: '/tools/qa/element-inspector',
     capabilities: [
       'SIDE_PANEL',

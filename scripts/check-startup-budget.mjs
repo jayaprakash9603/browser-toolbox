@@ -19,7 +19,8 @@ const assets = join(dist, 'assets')
 /** ~1.141 MB once the form autofill review strings joined the boot catalog. */
 /** ~1.176 MB after Snippets, Tab Sessions and Bookmark Search strings joined the boot catalog. */
 /** ~1.180 MB after reading-list / hash-toolkit catalog growth on the home boot i18n chunk. */
-const MAX_HOME_BOOT_JS = 1_182_000
+/** ~1.186 MB after Element Inspector strings joined the boot i18n catalog. */
+const MAX_HOME_BOOT_JS = 1_187_000
 /** After SW leak fix, measured ~423 KB static closure. */
 /** ~481 KB measured after interceptor optional-permission wiring in the SW graph. */
 /** ~496 KB after form autofill review and global values; service workers cannot lazy-load them. */

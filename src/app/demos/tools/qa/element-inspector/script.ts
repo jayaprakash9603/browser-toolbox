@@ -30,12 +30,19 @@ export const COMPUTED_PROPS = [
   'background-color',
   'font-size',
   'font-family',
+  'font-weight',
+  'line-height',
   'display',
   'position',
   'margin',
   'padding',
   'border',
   'z-index',
+  'opacity',
+  'overflow',
+  'visibility',
+  'cursor',
+  'box-sizing',
 ] as const
 
 /** The CTA's real styles in the mock page (px-3 py-1.5, 9.5px, white on #7c3aed). */
