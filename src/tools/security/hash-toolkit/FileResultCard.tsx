@@ -55,11 +55,13 @@ export function FileResultCard({
   onRemove,
   onPinBaseline,
   verifyHex,
+  duplicate = false,
 }: {
   item: HashQueueItem
   onRemove: () => void
   onPinBaseline: () => void
   verifyHex?: string
+  duplicate?: boolean
 }) {
   const { t } = useTranslation()
   const reduce = useReducedMotion()
@@ -83,6 +85,14 @@ export function FileResultCard({
           <div className="flex flex-wrap items-center gap-1.5">
             <p className="min-w-0 truncate text-[13px] font-medium">{item.path}</p>
             <BaselineBadge verdict={item.baseline} />
+            {duplicate ? (
+              <Badge
+                variant="outline"
+                className="border-violet-500/40 bg-violet-500/10 font-normal text-violet-800 dark:text-violet-200"
+              >
+                {t('hashToolkit.queue.duplicate')}
+              </Badge>
+            ) : null}
           </div>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
             {formatBytes(item.file.size)}

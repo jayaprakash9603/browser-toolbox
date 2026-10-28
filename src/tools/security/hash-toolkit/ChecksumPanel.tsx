@@ -31,6 +31,14 @@ import { DigestList } from './DigestList'
 import { FileResultCard } from './FileResultCard'
 import { ByteHistogramChart, CompareDiffBar, CompareRegionMap, EntropyGauge } from './ForensicsViz'
 import { DigestPresetBar } from './DigestPresetBar'
+import { QueueToolbar } from './QueueToolbar'
+import { SessionDashboard, SessionMetricPills } from './SessionDashboard'
+import {
+  collectSessionAnalytics,
+  filterAndSortQueue,
+  type QueueFilter,
+  type QueueSort,
+} from './sessionStats'
 import type { HashQueueItem } from './types'
 import type { DigestAlgorithm } from '@/core/engines/hash/digests'
 import type { DigestPreset } from './useDigestSettings'
@@ -148,6 +156,28 @@ export function ChecksumPanel({
   const [hexRows, setHexRows] = useState<Awaited<ReturnType<typeof hexWindow>>>([])
   const [notice, setNotice] = useState<string | null>(null)
   const folderRef = useRef<HTMLInputElement>(null)
+  const [queueQuery, setQueueQuery] = useState('')
+  const [queueSort, setQueueSort] = useState<QueueSort>('name')
+  const [queueFilter, setQueueFilter] = useState<QueueFilter>('all')
+
+  const sessionAnalytics = useMemo(() => collectSessionAnalytics(items), [items])
+  const duplicateIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const group of sessionAnalytics.duplicates) {
+      for (const id of group.ids) ids.add(id)
+    }
+    return ids
+  }, [sessionAnalytics.duplicates])
+  const visibleItems = useMemo(
+    () =>
+      filterAndSortQueue(items, {
+        query: queueQuery,
+        sort: queueSort,
+        filter: queueFilter,
+        duplicateIds,
+      }),
+    [items, queueQuery, queueSort, queueFilter, duplicateIds],
+  )
 
   const pickFolder = () => folderRef.current?.click()
 
@@ -395,35 +425,58 @@ export function ChecksumPanel({
               </>
             ) : (
               <>
+                <SessionDashboard analytics={sessionAnalytics} />
+                <SessionMetricPills
+                  analytics={sessionAnalytics}
+                  algorithmCount={algorithms.length}
+                />
                 <FileDropZone
                   compact
                   title={t('hashToolkit.drop.add')}
                   multiple
                   onFiles={onEnqueue}
                 />
-                <div className="flex items-center justify-between gap-2">
+                <QueueToolbar
+                  query={queueQuery}
+                  onQueryChange={setQueueQuery}
+                  sort={queueSort}
+                  onSortChange={setQueueSort}
+                  filter={queueFilter}
+                  onFilterChange={setQueueFilter}
+                />
+                <div className="flex items-center justify-between gap-2 px-0.5">
                   <p className="text-[11px] text-muted-foreground">
-                    {t('hashToolkit.queueCount', { count: items.length })}
+                    {t('hashToolkit.queueCount', { count: visibleItems.length })}
+                    {visibleItems.length !== items.length
+                      ? ` · ${items.length} total`
+                      : null}
                   </p>
                   <Button type="button" size="xs" variant="ghost" onClick={onClear}>
                     <Trash2Icon className="size-3" />
                     {t('hashToolkit.clearAll')}
                   </Button>
                 </div>
-                <ul className="flex flex-col gap-2">
-                  <AnimatePresence initial={false}>
-                    {items.map((item) => (
-                      <li key={item.id}>
-                        <FileResultCard
-                          item={item}
-                          verifyHex={verifyHex}
-                          onRemove={() => onRemove(item.id)}
-                          onPinBaseline={() => onPinBaseline(item)}
-                        />
-                      </li>
-                    ))}
-                  </AnimatePresence>
-                </ul>
+                {visibleItems.length === 0 ? (
+                  <p className="rounded-xl border border-dashed bg-muted/20 px-3 py-6 text-center text-[11px] text-muted-foreground">
+                    {t('hashToolkit.queue.emptyFilter')}
+                  </p>
+                ) : (
+                  <ul className="flex flex-col gap-2">
+                    <AnimatePresence initial={false}>
+                      {visibleItems.map((item) => (
+                        <li key={item.id}>
+                          <FileResultCard
+                            item={item}
+                            verifyHex={verifyHex}
+                            duplicate={duplicateIds.has(item.id)}
+                            onRemove={() => onRemove(item.id)}
+                            onPinBaseline={() => onPinBaseline(item)}
+                          />
+                        </li>
+                      ))}
+                    </AnimatePresence>
+                  </ul>
+                )}
                 {items.some((i) => i.status === 'done') && (
                   <Button
                     type="button"

@@ -107,7 +107,7 @@ export function IntegrityPanel({ items }: { items: HashedItem[] }) {
           animate={{ opacity: 1 }}
           className="flex flex-col gap-1.5"
         >
-          {verification.rows.map(({ entry, status, item }) => {
+          {verification.rows.map(({ entry, status, item }, index) => {
             const Icon = STATUS_ICON[status]
             const tone =
               status === 'verified'
@@ -116,8 +116,11 @@ export function IntegrityPanel({ items }: { items: HashedItem[] }) {
                   ? 'border-red-500/30 bg-red-500/5'
                   : 'border-border bg-muted/20'
             return (
-              <li
+              <motion.li
                 key={`${entry.line}-${entry.name}`}
+                initial={reduce ? false : { opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.28, delay: reduce ? 0 : index * 0.03, ease: [0.16, 1, 0.3, 1] }}
                 className={cn(
                   'flex items-start gap-2 rounded-xl border px-3 py-2 text-[12px]',
                   tone,
@@ -145,7 +148,7 @@ export function IntegrityPanel({ items }: { items: HashedItem[] }) {
                 <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                   {t(`hashToolkit.integrity.status.${status}`)}
                 </span>
-              </li>
+              </motion.li>
             )
           })}
         </motion.ul>
