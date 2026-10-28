@@ -32,7 +32,9 @@ export function HmacPanel() {
         live = false
       }
     }
-    setBusy(true)
+    queueMicrotask(() => {
+      if (live) setBusy(true)
+    })
     void Promise.all(
       ALGORITHMS.map(async (algorithm) => {
         const result = await hmac(algorithm, input, secret)

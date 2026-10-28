@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import {
+  ChevronDownIcon,
   CircleAlertIcon,
   CircleCheckIcon,
   HistoryIcon,
@@ -18,6 +20,7 @@ import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/utils/cn'
 
 import { DigestList } from './DigestList'
+import { ByteHistogramChart, EntropyGauge, HexHeadPreview } from './ForensicsViz'
 import type { HashQueueItem } from './types'
 
 function BaselineBadge({ verdict }: { verdict: HashQueueItem['baseline'] }) {
@@ -64,6 +67,7 @@ export function FileResultCard({
   const extCheck = result?.signature
     ? checkExtension(item.path, result.signature)
     : ('unknown' as const)
+  const [forensicsOpen, setForensicsOpen] = useState(true)
 
   return (
     <motion.article
@@ -147,7 +151,44 @@ export function FileResultCard({
       </div>
 
       {result && (
-        <div className="mt-3 border-t pt-3">
+        <div className="mt-3 space-y-3 border-t pt-3">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-1 py-0.5 text-left text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+            aria-expanded={forensicsOpen}
+            onClick={() => setForensicsOpen((open) => !open)}
+          >
+            {t('hashToolkit.viz.analysis')}
+            <ChevronDownIcon
+              className={cn(
+                'size-3.5 shrink-0 transition-transform duration-200 motion-reduce:transition-none',
+                forensicsOpen && 'rotate-180',
+              )}
+              aria-hidden
+            />
+          </button>
+          {forensicsOpen && (
+            <motion.div
+              initial={reduce ? false : { opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="grid items-start gap-3 @md:grid-cols-[minmax(0,7rem)_1fr]"
+            >
+              <EntropyGauge entropy={result.entropy} className="mx-auto @md:mx-0" />
+              <ByteHistogramChart histogram={result.byteHistogram} />
+              <div className="col-span-full">
+                <HexHeadPreview head={result.head} />
+              </div>
+              {Object.keys(result.skipped).length > 0 && (
+                <p className="col-span-full text-[10px] text-amber-700 dark:text-amber-300">
+                  {t('hashToolkit.viz.skipped', {
+                    list: Object.entries(result.skipped)
+                      .map(([alg, why]) => `${alg} (${why})`)
+                      .join(', '),
+                  })}
+                </p>
+              )}
+            </motion.div>
+          )}
           <DigestList digests={result.digests} highlight={verifyHex} />
           <div className="mt-2 flex justify-end">
             <CopyButton

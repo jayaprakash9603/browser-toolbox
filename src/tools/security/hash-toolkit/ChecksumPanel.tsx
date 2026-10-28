@@ -8,6 +8,8 @@ import {
   compareExpected,
   decodeInput,
   digestBytes,
+  entropyFromBytes,
+  byteHistogram,
   parseExpected,
   type DigestFormat,
   type InputEncoding,
@@ -23,6 +25,7 @@ import { cn } from '@/shared/utils/cn'
 
 import { DigestList } from './DigestList'
 import { FileResultCard } from './FileResultCard'
+import { ByteHistogramChart, CompareDiffBar, EntropyGauge } from './ForensicsViz'
 import type { HashQueueItem } from './types'
 
 const MODES = ['text', 'files', 'compare'] as const
@@ -40,18 +43,35 @@ const FORMATS: { value: DigestFormat; label: string }[] = [
   { value: 'base64', label: 'b64' },
 ]
 
-function CompareSummary({ result }: { result: ByteComparison }) {
+function CompareSummary({
+  result,
+  fileA,
+  fileB,
+}: {
+  result: ByteComparison
+  fileA: File
+  fileB: File
+}) {
   const { t } = useTranslation()
   if (result.identical) {
     return (
-      <p className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[12px] text-emerald-800 dark:text-emerald-200">
-        {t('hashToolkit.compare.identical')}
-      </p>
+      <div className="space-y-2">
+        <p className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[12px] text-emerald-800 dark:text-emerald-200">
+          {t('hashToolkit.compare.identical')}
+        </p>
+        <CompareDiffBar identical sizeA={fileA.size} sizeB={fileB.size} differingBytes={0} />
+      </div>
     )
   }
   return (
     <div className="space-y-2 rounded-xl border bg-muted/30 p-3 text-[12px]">
       <p className="font-medium">{t('hashToolkit.compare.different')}</p>
+      <CompareDiffBar
+        identical={false}
+        sizeA={result.sizeA}
+        sizeB={result.sizeB}
+        differingBytes={result.differingBytes}
+      />
       <ul className="list-inside list-disc text-muted-foreground">
         <li>
           {t('hashToolkit.compare.sizes', {
@@ -98,6 +118,9 @@ export function ChecksumPanel({
   const [textDigests, setTextDigests] = useState<Awaited<ReturnType<typeof digestBytes>> | null>(
     null,
   )
+  const [textBytes, setTextBytes] = useState(0)
+  const [textEntropy, setTextEntropy] = useState(0)
+  const [textHistogram, setTextHistogram] = useState<Uint32Array | null>(null)
   const [expectedRaw, setExpectedRaw] = useState('')
   const expected = useMemo(() => parseExpected(expectedRaw), [expectedRaw])
   const textVerdict = useMemo(
@@ -125,7 +148,12 @@ export function ChecksumPanel({
     let live = true
     if (!text.trim()) {
       queueMicrotask(() => {
-        if (live) setTextDigests(null)
+        if (live) {
+          setTextDigests(null)
+          setTextBytes(0)
+          setTextEntropy(0)
+          setTextHistogram(null)
+        }
       })
       return () => {
         live = false
@@ -134,14 +162,24 @@ export function ChecksumPanel({
     const decoded = decodeInput(text, encoding)
     if (!decoded.ok) {
       queueMicrotask(() => {
-        if (live) setTextDigests(null)
+        if (live) {
+          setTextDigests(null)
+          setTextBytes(0)
+          setTextEntropy(0)
+          setTextHistogram(null)
+        }
       })
       return () => {
         live = false
       }
     }
     void digestBytes(decoded.bytes).then((digests) => {
-      if (live) setTextDigests(digests)
+      if (live) {
+        setTextDigests(digests)
+        setTextBytes(decoded.bytes.length)
+        setTextEntropy(entropyFromBytes(decoded.bytes))
+        setTextHistogram(byteHistogram(decoded.bytes))
+      }
     })
     return () => {
       live = false
@@ -177,7 +215,7 @@ export function ChecksumPanel({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       <div role="status" aria-live="polite" className="sr-only">
         {notice ?? ''}
       </div>
@@ -196,17 +234,17 @@ export function ChecksumPanel({
         }))}
       />
 
-      <div className="rounded-2xl border bg-background/80 p-3 shadow-xs">
+      <div className="rounded-xl border bg-background/80 p-2 shadow-xs">
         <label className="text-[11px] font-medium text-muted-foreground" htmlFor="hash-verify">
           {t('hashToolkit.verify.label')}
         </label>
-        <div className="mt-1.5 flex gap-1.5">
+        <div className="mt-1 flex gap-1.5">
           <Input
             id="hash-verify"
             value={expectedRaw}
             onChange={(e) => setExpectedRaw(e.target.value)}
             placeholder={t('hashToolkit.verify.placeholder')}
-            className="font-mono text-xs"
+            className="h-8 font-mono text-xs"
             spellCheck={false}
           />
           <Button
@@ -278,6 +316,17 @@ export function ChecksumPanel({
               ariaLabel={t('hashToolkit.textPlaceholder')}
               minRows={4}
             />
+            {textDigests && textHistogram && (
+              <div className="grid items-start gap-3 rounded-xl border bg-muted/15 p-3 @md:grid-cols-[minmax(0,7rem)_1fr]">
+                <div className="text-center @md:text-left">
+                  <EntropyGauge entropy={textEntropy} />
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    {t('hashToolkit.viz.byteCount', { count: textBytes.toLocaleString() })}
+                  </p>
+                </div>
+                <ByteHistogramChart histogram={textHistogram} />
+              </div>
+            )}
             {textDigests && (
               <DigestList
                 digests={textDigests}
@@ -433,9 +482,9 @@ export function ChecksumPanel({
                 {compareBusy ? t('hashToolkit.compare.running') : t('hashToolkit.compare.run')}
               </Button>
             </div>
-            {compare && (
+            {compare && fileA && fileB && (
               <div className="col-span-full space-y-2">
-                <CompareSummary result={compare} />
+                <CompareSummary result={compare} fileA={fileA} fileB={fileB} />
                 {hexRows.length > 0 && (
                   <div className="overflow-x-auto rounded-xl border bg-background p-2 font-mono text-[10px]">
                     {hexRows.map((row) => (

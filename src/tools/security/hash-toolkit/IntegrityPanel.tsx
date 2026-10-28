@@ -15,6 +15,8 @@ import { Button } from '@/shared/components/ui/button'
 import { Textarea } from '@/shared/components/ui/textarea'
 import { cn } from '@/shared/utils/cn'
 
+import { IntegrityDonut } from './ForensicsViz'
+
 const STATUS_ICON = {
   verified: CircleCheckIcon,
   modified: CircleAlertIcon,
@@ -32,6 +34,19 @@ export function IntegrityPanel({ items }: { items: HashedItem[] }) {
     () => (manifestText.trim() ? verifyManifest(parsed, items) : null),
     [manifestText, parsed, items],
   )
+
+  const counts = useMemo(() => {
+    if (!verification) return null
+    let verified = 0
+    let modified = 0
+    let missing = 0
+    for (const row of verification.rows) {
+      if (row.status === 'verified') verified += 1
+      else if (row.status === 'modified') modified += 1
+      else if (row.status === 'missing') missing += 1
+    }
+    return { verified, modified, missing }
+  }, [verification])
 
   const loadFile = () => {
     const input = document.createElement('input')
@@ -76,6 +91,14 @@ export function IntegrityPanel({ items }: { items: HashedItem[] }) {
         <p className="text-center text-xs text-muted-foreground">
           {t('hashToolkit.integrity.empty')}
         </p>
+      )}
+
+      {verification && counts && (
+        <IntegrityDonut
+          verified={counts.verified}
+          modified={counts.modified}
+          missing={counts.missing}
+        />
       )}
 
       {verification && (

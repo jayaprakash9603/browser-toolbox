@@ -55,31 +55,16 @@ export default function HashToolkitTool() {
   return (
     <ToolPage
       tool={tool}
-      contentClassName="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden @container"
+      contentClassName="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden @container"
     >
-      <HashHero />
-
-      {(stats.hashed > 0 || stats.pending > 0) && (
-        <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] text-muted-foreground">
-          {stats.hashed > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full border bg-emerald-500/10 px-2 py-0.5 font-medium text-emerald-800 dark:text-emerald-300">
-              {t('hashToolkit.session.hashed', { count: stats.hashed })}
-            </span>
-          )}
-          {stats.pending > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full border bg-primary/10 px-2 py-0.5 font-medium text-primary">
-              {t('hashToolkit.session.pending', { count: stats.pending })}
-            </span>
-          )}
-        </div>
-      )}
+      <HashHero stats={stats} />
 
       <Tabs
         value={tab}
         onValueChange={(v) => setTab(v as (typeof TABS)[number])}
-        className="flex min-h-0 flex-1 flex-col gap-3"
+        className="flex min-h-0 flex-1 flex-col gap-2"
       >
-        <TabsList className="scrollbar-styled h-auto w-full justify-start gap-0.5 overflow-x-auto p-0.5">
+        <TabsList className="scrollbar-styled h-8 w-full shrink-0 justify-start gap-0.5 overflow-x-auto p-0.5">
           {TABS.map((value) => {
             const Icon = TAB_ICON[value]
             return (
@@ -87,7 +72,7 @@ export default function HashToolkitTool() {
                 key={value}
                 value={value}
                 className={cn(
-                  'gap-1.5 px-3 transition-[box-shadow,background-color] duration-200 motion-reduce:transition-none data-[state=active]:shadow-sm',
+                  'h-7 gap-1 px-2.5 text-xs transition-[box-shadow,background-color] duration-200 motion-reduce:transition-none data-[state=active]:shadow-sm',
                 )}
               >
                 <Icon className="size-3.5 shrink-0 opacity-70" aria-hidden />

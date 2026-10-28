@@ -33,6 +33,29 @@ export const MAX_SHA_BYTES = 2 * 1024 ** 3
 const SHA = new Set<DigestAlgorithm>(['SHA-1', 'SHA-256', 'SHA-384', 'SHA-512'])
 const CHUNK_BYTES = 4 * 1024 * 1024
 
+/** Builds a 256-bin histogram for entropy charts and anomaly hints. */
+export function byteHistogram(bytes: Uint8Array): Uint32Array {
+  const counts = new Uint32Array(256)
+  for (let i = 0; i < bytes.length; i += 1) counts[bytes[i]] += 1
+  return counts
+}
+
+export function entropyFromHistogram(histogram: Uint32Array, size: number): number {
+  if (size <= 0) return 0
+  let entropy = 0
+  for (let i = 0; i < histogram.length; i += 1) {
+    const count = histogram[i]
+    if (count === 0) continue
+    const p = count / size
+    entropy -= p * Math.log2(p)
+  }
+  return entropy
+}
+
+export function entropyFromBytes(bytes: Uint8Array): number {
+  return entropyFromHistogram(byteHistogram(bytes), bytes.length)
+}
+
 function toHex(buffer: ArrayBuffer): string {
   return [...new Uint8Array(buffer)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }
@@ -63,6 +86,8 @@ export interface BlobDigest {
   skipped: Partial<Record<DigestAlgorithm, string>>
   /** Shannon entropy in bits per byte, 0 (uniform) to 8 (random, compressed or encrypted). */
   entropy: number
+  /** Byte frequency counts for forensic charts (length 256). */
+  byteHistogram: Uint32Array
   signature: FileSignature | null
   head: Uint8Array
   durationMs: number
@@ -114,18 +139,14 @@ export async function digestBlob(blob: Blob, options: DigestOptions = {}): Promi
   }
   onProgress?.(1)
 
-  let entropy = 0
-  if (size > 0) {
-    for (const count of histogram) {
-      if (count === 0) continue
-      const p = count / size
-      entropy -= p * Math.log2(p)
-    }
-  }
+  const byteHistogramOut = new Uint32Array(256)
+  for (let i = 0; i < 256; i += 1) byteHistogramOut[i] = histogram[i]
+  const entropy = entropyFromHistogram(byteHistogramOut, size)
   return {
     digests,
     skipped,
     entropy,
+    byteHistogram: byteHistogramOut,
     signature: size > 0 ? detectSignature(head) : null,
     head: head.subarray(0, 64),
     durationMs: performance.now() - started,

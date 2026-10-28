@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { compareBlobs, hexWindow } from '@/core/engines/hash/compare'
 import { Crc32 } from '@/core/engines/hash/crc32'
-import { compareExpected, decodeInput, digestBlob, digestBytes, formatDigest, parseExpected } from '@/core/engines/hash/digests'
+import { compareExpected, decodeInput, digestBlob, digestBytes, formatDigest, parseExpected, byteHistogram, entropyFromBytes } from '@/core/engines/hash/digests'
 import { parseManifest, toManifest, verifyManifest } from '@/core/engines/hash/manifest'
 import { Md5 } from '@/core/engines/hash/md5'
 import { buildEvidenceReport, toCsv, verifyEvidenceSeal, type EvidenceItem } from '@/core/engines/hash/report'
@@ -44,6 +44,8 @@ describe('streaming digests', () => {
     expect(result.digests.MD5).toBe('900150983cd24fb0d6963f7d28e17f72')
     expect(result.digests.CRC32).toBe('352441c2')
     expect(result.signature?.id).toBe('text')
+    expect(result.byteHistogram).toHaveLength(256)
+    expect(result.byteHistogram[97]).toBe(1)
 
     expect((await digestBlob(new Blob([bytes('aaaa')]))).entropy).toBe(0)
     const everyByte = Uint8Array.from({ length: 256 }, (_, i) => i)
@@ -63,6 +65,13 @@ describe('streaming digests', () => {
     const controller = new AbortController()
     controller.abort()
     await expect(digestBlob(new Blob([bytes('x')]), { signal: controller.signal })).rejects.toThrow(/cancelled/)
+  })
+
+  it('builds byte histogram helpers for text forensics', () => {
+    const data = bytes('abc')
+    const histogram = byteHistogram(data)
+    expect(histogram[97]).toBe(1)
+    expect(entropyFromBytes(data)).toBeGreaterThan(0)
   })
 })
 
