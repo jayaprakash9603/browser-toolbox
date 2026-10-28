@@ -82,4 +82,16 @@ export const hashToolkitStrings = {
   'hashToolkit.evidence.exportCsv': 'Export CSV',
   'hashToolkit.evidence.sealOk': 'Report seal verified (SHA-256).',
   'hashToolkit.evidence.sealBad': 'Report seal does not match — file may have been edited.',
-}
+
+  'hashToolkit.hmac.title': 'HMAC signatures',
+  'hashToolkit.hmac.subtitle': 'Keyed hashes for API auth and message integrity — computed locally.',
+  'hashToolkit.hmac.messagePlaceholder': 'Message or payload to authenticate…',
+  'hashToolkit.hmac.secretPlaceholder': 'Shared secret or key material',
+  'hashToolkit.hmac.toggleSecret': 'Show secret',
+  'hashToolkit.hmac.empty': 'Enter a message and secret to compute HMAC-SHA digests.',
+  'hashToolkit.hmac.computing': 'Computing…',
+
+  'hashToolkit.session.hashed': '{{count}} hashed',
+  'hashToolkit.session.pending': '{{count}} in queue',
+  'hashToolkit.manifestCopied': 'Manifest copied to clipboard',
+} as const

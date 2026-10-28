@@ -1,3 +1,4 @@
+import { useMemo, type ReactNode } from 'react'
 import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'
 import { motion, useReducedMotion } from 'motion/react'
@@ -24,12 +25,32 @@ const TAB_ICON = {
   hmac: KeyRoundIcon,
 } as const
 
+function TabReveal({ children }: { children: ReactNode }) {
+  const reduce = useReducedMotion()
+  return (
+    <motion.div
+      initial={reduce ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
 export default function HashToolkitTool() {
   const { t } = useTranslation()
   const tool = useSecurityTool('security.hash-toolkit')
-  const reduce = useReducedMotion()
   const [tab, setTab] = useDeepLinkTab('tab', TABS, 'checksum')
   const queue = useFileHashQueue()
+
+  const stats = useMemo(() => {
+    const hashed = queue.items.filter((item) => item.status === 'done').length
+    const pending = queue.items.filter(
+      (item) => item.status === 'queued' || item.status === 'hashing',
+    ).length
+    return { hashed, pending }
+  }, [queue.items])
 
   return (
     <ToolPage
@@ -37,6 +58,22 @@ export default function HashToolkitTool() {
       contentClassName="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden @container"
     >
       <HashHero />
+
+      {(stats.hashed > 0 || stats.pending > 0) && (
+        <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] text-muted-foreground">
+          {stats.hashed > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full border bg-emerald-500/10 px-2 py-0.5 font-medium text-emerald-800 dark:text-emerald-300">
+              {t('hashToolkit.session.hashed', { count: stats.hashed })}
+            </span>
+          )}
+          {stats.pending > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full border bg-primary/10 px-2 py-0.5 font-medium text-primary">
+              {t('hashToolkit.session.pending', { count: stats.pending })}
+            </span>
+          )}
+        </div>
+      )}
+
       <Tabs
         value={tab}
         onValueChange={(v) => setTab(v as (typeof TABS)[number])}
@@ -49,7 +86,9 @@ export default function HashToolkitTool() {
               <TabsTrigger
                 key={value}
                 value={value}
-                className={cn('gap-1.5 px-3 data-[state=active]:shadow-sm')}
+                className={cn(
+                  'gap-1.5 px-3 transition-[box-shadow,background-color] duration-200 motion-reduce:transition-none data-[state=active]:shadow-sm',
+                )}
               >
                 <Icon className="size-3.5 shrink-0 opacity-70" aria-hidden />
                 {t(`hashToolkit.tab.${value}`)}
@@ -62,12 +101,7 @@ export default function HashToolkitTool() {
           value="checksum"
           className="mt-0 min-h-0 flex-1 overflow-y-auto overscroll-contain"
         >
-          <motion.div
-            key="checksum"
-            initial={reduce ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-          >
+          <TabReveal>
             <ChecksumPanel
               items={queue.items}
               onEnqueue={queue.enqueue}
@@ -75,28 +109,34 @@ export default function HashToolkitTool() {
               onClear={queue.clear}
               onPinBaseline={queue.pinBaseline}
             />
-          </motion.div>
+          </TabReveal>
         </TabsContent>
 
         <TabsContent
           value="integrity"
           className="mt-0 min-h-0 flex-1 overflow-y-auto overscroll-contain"
         >
-          <IntegrityPanel items={queue.hashedItems} />
+          <TabReveal>
+            <IntegrityPanel items={queue.hashedItems} />
+          </TabReveal>
         </TabsContent>
 
         <TabsContent
           value="evidence"
           className="mt-0 min-h-0 flex-1 overflow-y-auto overscroll-contain"
         >
-          <EvidencePanel items={queue.items} />
+          <TabReveal>
+            <EvidencePanel items={queue.items} />
+          </TabReveal>
         </TabsContent>
 
         <TabsContent
           value="hmac"
           className="mt-0 min-h-0 flex-1 overflow-y-auto overscroll-contain"
         >
-          <HmacPanel />
+          <TabReveal>
+            <HmacPanel />
+          </TabReveal>
         </TabsContent>
       </Tabs>
     </ToolPage>
