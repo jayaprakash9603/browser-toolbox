@@ -41,10 +41,20 @@ export interface FormPageResult {
  */
 export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageResult> {
   type Control = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+  /** Controls built from divs and ARIA roles instead of form elements. */
+  type WidgetType = 'check' | 'radios' | 'combo' | 'editable'
+  interface Widget {
+    type: WidgetType
+    host: HTMLElement
+    /** The radios of a `radios` widget. */
+    items: HTMLElement[]
+  }
   interface Entry {
     key: string
     kind: MemoryFieldKind
+    /** Native controls: one, or every radio of a group. Empty for widgets. */
     els: Control[]
+    widget?: Widget
   }
   interface NearbyLabel {
     text: string
@@ -62,29 +72,69 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
   const SENSITIVE_AUTO = /(^|\s)(cc-|one-time-code|current-password|new-password)/
   const FIELD_SELECTOR =
     'input:not([type=hidden]):not([type=submit]):not([type=button]):not([type=reset]):not([type=image]), textarea, select'
-  const NOT_LABEL = 'button, [role=button], script, style, noscript, template, svg, option, input, select, textarea'
+  const EDITABLE_SELECTOR = '[contenteditable=""], [contenteditable=true], [contenteditable=plaintext-only]'
+  const WIDGET_SELECTOR = `[role=checkbox], [role=switch], [role=radiogroup], [role=combobox], [aria-haspopup=listbox], ${EDITABLE_SELECTOR}`
+  const ANY_FIELD = `${FIELD_SELECTOR}, ${WIDGET_SELECTOR}`
+  /** Floating lists that belong to some other control. */
+  const POPUP_SELECTOR = '[role=listbox], [role=menu], [role=tree], [role=tooltip]'
+  const OPTION_SELECTOR = '[role=option], [role=menuitem], [role=menuitemradio], [role=treeitem]'
+  const NOT_LABEL = `button, [role=button], script, style, noscript, template, svg, option, input, select, textarea, ${POPUP_SELECTOR}, ${OPTION_SELECTOR}`
   /** Text this long is an instruction or paragraph, not the name of a field. */
   const MAX_LABEL_SOURCE = 120
   const MAX_SIBLING_STEPS = 4
   const MAX_LABEL_DEPTH = 5
+  /** More editable regions than this means a document editor, not a form. */
+  const MAX_EDITABLES = 10
   /** Keep in sync with MAX_FILE_BYTES in core/form-memory/files.ts. */
   const MAX_FILE_BYTES = 1024 * 1024
   const MAX_FILES = 5
+  /** A dropdown gets this many short waits to render its items after it is opened. */
+  const OPTION_TICKS = 8
+  const OPTION_WAIT_MS = 50
   const FILL_COLOR = 'rgb(16 185 129 / 0.55)'
   const CLEAR_COLOR = 'rgb(148 163 184 / 0.6)'
+  const WIDGET_KIND: Record<WidgetType, MemoryFieldKind> = {
+    check: 'checkbox',
+    radios: 'radio',
+    combo: 'select',
+    editable: 'textarea',
+  }
 
-  const scope = window as unknown as { __tbxFormMemory?: WatchScope; __tbxFormMemoryQuiet?: boolean }
+  const scope = window as unknown as { __tbxFormMemory?: WatchScope; __tbxFormMemoryQuiet?: number }
   // Frames get their own address in field keys so their fields never collide with the page's.
   const framePrefix = window.top === window ? '' : `${location.host}${location.pathname}>`
+  // Structural checks walk the DOM a lot; each collect starts these over.
+  const memo = {
+    aux: new Map<Element, boolean>(),
+    calendar: new Map<Element, boolean>(),
+    widget: new Map<Element, WidgetType | null>(),
+  }
+  let editablesAllowed = true
 
-  const clip = (value: string, max = 120) => value.replace(/\s+/g, ' ').trim().slice(0, max)
+  const clip = (value: string, max = 120) =>
+    value
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, max)
   const trimLabel = (value: string) => value.replace(/^[\s*]+|[\s:*\uFF1A]+$/gu, '')
   const hasWords = (value: string) => /[\p{L}\p{N}]/u.test(value)
   const norm = (value: string | undefined) => (value ?? '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
+  const same = (a: string, b: string) => clip(a, 500).toLowerCase() === clip(b, 500).toLowerCase()
+  const quote = (value: string) => value.replace(/["\\]/g, '\\$&')
+  const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms))
+  const looksLikeDate = (value: string) =>
+    value.length <= 40 && /\d{1,4}\s*[-/.,\s]\s*(\d{1,2}|\p{L}{3,9})\.?\s*[-/.,\s]\s*\d{2,4}/u.test(value)
 
-  function isSensitive(el: Control): boolean {
+  function forget(): void {
+    memo.aux.clear()
+    memo.calendar.clear()
+    memo.widget.clear()
+  }
+
+  function isSensitive(el: Element): boolean {
     if (SENSITIVE_AUTO.test((el.getAttribute('autocomplete') ?? '').toLowerCase())) return true
-    return SENSITIVE.test(el.name) || SENSITIVE.test(el.id)
+    return SENSITIVE.test(el.getAttribute('name') ?? '') || SENSITIVE.test(el.id)
   }
 
   function isControl(el: unknown): el is Control {
@@ -92,24 +142,137 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
     return el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement
   }
 
+  function isCheckable(el: Element): boolean {
+    if (el instanceof HTMLInputElement) return el.type === 'checkbox' || el.type === 'radio'
+    return ['checkbox', 'switch', 'radio'].includes(el.getAttribute('role') ?? '')
+  }
+
+  /** A text box whose value comes from a list or calendar the page opens for it. */
+  function isPicker(el: Element): el is HTMLInputElement {
+    if (!(el instanceof HTMLInputElement) || !isControl(el) || isCheckable(el) || el.type === 'file') return false
+    const autocomplete = el.getAttribute('aria-autocomplete') ?? ''
+    return (
+      el.readOnly ||
+      el.getAttribute('role') === 'combobox' ||
+      el.hasAttribute('aria-haspopup') ||
+      autocomplete === 'list' ||
+      autocomplete === 'both'
+    )
+  }
+
+  function shown(el: Element): boolean {
+    for (let node: Element | null = el; node && node !== document.documentElement; node = node.parentElement) {
+      if (node.hasAttribute('hidden') || node.getAttribute('aria-hidden') === 'true') return false
+      const style = getComputedStyle(node)
+      if (style.display === 'none' || style.visibility === 'hidden') return false
+    }
+    return true
+  }
+
+  function hidden(el: Element): boolean {
+    if (el.closest('[hidden], [aria-hidden="true"]')) return true
+    const style = getComputedStyle(el)
+    return style.display === 'none' || style.visibility === 'hidden'
+  }
+
+  /** A month grid: 28 or more day numbers in cells of their own. */
+  function holdsCalendar(node: Element): boolean {
+    const cached = memo.calendar.get(node)
+    if (cached !== undefined) return cached
+    const days = new Set<number>()
+    for (const cell of node.querySelectorAll('td, a, button, span, div, [role=gridcell]')) {
+      if (cell.childElementCount > 1) continue
+      const text = (cell.textContent ?? '').trim()
+      const day = /^\d{1,2}$/.test(text) ? Number(text) : 0
+      if (day >= 1 && day <= 31) days.add(day)
+    }
+    const found = days.size >= 28
+    memo.calendar.set(node, found)
+    return found
+  }
+
+  function controlledElsewhere(node: Element, el: Element): boolean {
+    if (!node.id) return false
+    const id = quote(node.id)
+    const owner = document.querySelector(`[aria-controls~="${id}"], [aria-owns~="${id}"]`)
+    return Boolean(owner && owner !== el && !owner.contains(el))
+  }
+
+  /**
+   * The search box inside a dropdown and the month and year selects of a calendar serve another
+   * control; they are never what the user wants remembered, and never a field of their own.
+   */
+  function auxiliary(el: Element): boolean {
+    const cached = memo.aux.get(el)
+    if (cached !== undefined) return cached
+    let found = Boolean(el.closest(POPUP_SELECTOR))
+    let node = el.parentElement
+    for (let depth = 0; !found && node && node !== document.body && depth < 6; depth += 1, node = node.parentElement) {
+      // A dropdown panel usually sits right after the box that opens it.
+      for (let sibling = node.previousElementSibling, steps = 0; sibling && steps < 6; sibling = sibling.previousElementSibling, steps += 1) {
+        if (isPicker(sibling)) found = true
+      }
+      if (controlledElsewhere(node, el)) found = true
+      if (depth < 4 && node.querySelectorAll(FIELD_SELECTOR).length <= 4 && holdsCalendar(node)) found = true
+    }
+    memo.aux.set(el, found)
+    return found
+  }
+
   function eligible(el: unknown): el is Control {
     if (!isControl(el)) return false
     if (el.closest('[data-tbx-form-memory-ignore]')) return false
-    return !isSensitive(el)
+    // Hidden proxy inputs behind styled widgets (MUI, Headless UI) mirror a value the widget owns.
+    if (el instanceof HTMLInputElement && el.getAttribute('aria-hidden') === 'true') return false
+    return !isSensitive(el) && !auxiliary(el)
   }
 
-  function kindOf(el: Control): MemoryFieldKind {
-    if (el instanceof HTMLSelectElement) return el.multiple ? 'multi' : 'select'
-    if (el instanceof HTMLTextAreaElement) return 'textarea'
-    const type = el.type.toLowerCase()
-    if (type === 'checkbox') return 'checkbox'
-    if (type === 'radio') return 'radio'
-    if (type === 'file') return 'file'
-    return 'text'
+  /** A styled shell around a hidden select or picker input (select2, Headless UI) repeats that control. */
+  function mirrorsNative(el: Element): boolean {
+    let node = el.parentElement
+    for (let depth = 0; node && node !== document.body && depth < 3; depth += 1, node = node.parentElement) {
+      for (const control of node.querySelectorAll('select, input')) {
+        if (control instanceof HTMLSelectElement || isPicker(control)) return true
+      }
+    }
+    return false
   }
 
-  function isCheckable(el: Control): boolean {
-    return el instanceof HTMLInputElement && (el.type === 'checkbox' || el.type === 'radio')
+  function detectWidget(el: Element): WidgetType | null {
+    if (!(el instanceof HTMLElement) || el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) return null
+    if (el instanceof HTMLSelectElement || el.closest('[data-tbx-form-memory-ignore]') || isSensitive(el)) return null
+    if (el.matches(EDITABLE_SELECTOR)) {
+      return editablesAllowed && !el.parentElement?.closest(EDITABLE_SELECTOR) ? 'editable' : null
+    }
+    if (el.closest(`${EDITABLE_SELECTOR}, ${POPUP_SELECTOR}`)) return null
+    // A role on a wrapper around a real control (ARIA 1.1 combobox) describes that control.
+    if (el.querySelector(FIELD_SELECTOR)) return null
+    const role = el.getAttribute('role')
+    if (role === 'checkbox' || role === 'switch') return 'check'
+    if (role === 'radiogroup') return el.querySelector('[role=radio]') ? 'radios' : null
+    if (role === 'combobox' || el.getAttribute('aria-haspopup') === 'listbox') return mirrorsNative(el) ? null : 'combo'
+    return null
+  }
+
+  function widgetType(el: Element): WidgetType | null {
+    if (!memo.widget.has(el)) memo.widget.set(el, detectWidget(el))
+    return memo.widget.get(el) ?? null
+  }
+
+  function widgetOf(host: HTMLElement, type: WidgetType): Widget {
+    return { type, host, items: type === 'radios' ? [...host.querySelectorAll<HTMLElement>('[role=radio]')] : [] }
+  }
+
+  /** Anything a caption search must not reach across. */
+  function isField(el: Element): boolean {
+    return (el.matches(FIELD_SELECTOR) && !auxiliary(el)) || widgetType(el) !== null
+  }
+
+  function fieldsWithin(container: Element, own: Element[]): boolean {
+    for (const el of container.querySelectorAll(ANY_FIELD)) {
+      if (!own.includes(el) && isField(el)) return true
+    }
+    return false
   }
 
   /** Generated ids (React `:r1:`, `ext-comp-1042`, hashes) change between loads, so they cannot key a field. */
@@ -134,10 +297,9 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
     return trimLabel(clip(copy.textContent ?? ''))
   }
 
-  function hidden(el: Element): boolean {
-    if (el.closest('[hidden], [aria-hidden="true"]')) return true
-    const style = getComputedStyle(el)
-    return style.display === 'none' || style.visibility === 'hidden'
+  function labelsOf(el: Element): Element[] {
+    if (isControl(el) && el.labels) return [...el.labels]
+    return el.id ? [...document.querySelectorAll(`label[for="${quote(el.id)}"]`)] : []
   }
 
   function shortText(raw: string): string {
@@ -151,12 +313,12 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
   function captionOf(node: Node): string {
     if (node.nodeType === Node.TEXT_NODE) return shortText(node.textContent ?? '')
     if (!(node instanceof Element) || node.matches(NOT_LABEL) || hidden(node)) return ''
-    if (node.querySelector(FIELD_SELECTOR)) return ''
+    if (isField(node) || fieldsWithin(node, [])) return ''
     return shortText(node.textContent ?? '') || shortText(node.getAttribute('title') ?? '')
   }
 
   /** The nearest caption beside `start`; `null` when another field sits in between. */
-  function siblingCaption(start: Node, forward: boolean, onlyLabels: boolean, skip: Set<string>): string | null {
+  function siblingCaption(start: Node, forward: boolean, onlyLabels: boolean, skip: Set<string>, own: Element[]): string | null {
     let steps = 0
     for (
       let node = forward ? start.nextSibling : start.previousSibling;
@@ -164,7 +326,7 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
       node = forward ? node.nextSibling : node.previousSibling
     ) {
       if (node.nodeType === Node.TEXT_NODE && !node.textContent?.trim()) continue
-      if (node instanceof Element && (node.matches(FIELD_SELECTOR) || node.querySelector(FIELD_SELECTOR))) return null
+      if (node instanceof Element && ((!own.includes(node) && isField(node)) || fieldsWithin(node, own))) return null
       steps += 1
       if (onlyLabels && !(node instanceof HTMLLabelElement)) continue
       const text = captionOf(node)
@@ -173,30 +335,23 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
     return ''
   }
 
-  function holdsOtherFields(container: Element, own: Control[]): boolean {
-    for (const field of container.querySelectorAll(FIELD_SELECTOR)) {
-      if (!own.includes(field as Control)) return true
-    }
-    return false
-  }
-
   /**
    * Walks outward from the field: a caption before it at each level (a sibling div, a table cell,
    * a heading text node), stopping once a level also holds another field, since anything beyond
    * that belongs to the group rather than this field.
    */
-  function nearbyLabel(own: Control[], start: Element, captionAfter: boolean, skip = new Set<string>()): NearbyLabel | null {
+  function nearbyLabel(own: Element[], start: Element, captionAfter: boolean, skip = new Set<string>()): NearbyLabel | null {
     let node = start
     for (let depth = 0; depth < MAX_LABEL_DEPTH; depth += 1) {
       // A checkbox caption follows it; looking back first would pick up the previous box's caption.
-      const after = captionAfter ? siblingCaption(node, true, false, skip) : ''
+      const after = captionAfter ? siblingCaption(node, true, false, skip, own) : ''
       if (after) return { text: after, depth }
-      const before = siblingCaption(node, false, false, skip)
+      const before = siblingCaption(node, false, false, skip, own)
       if (before) return { text: before, depth }
-      const label = captionAfter ? '' : siblingCaption(node, true, true, skip)
+      const label = captionAfter ? '' : siblingCaption(node, true, true, skip, own)
       if (label) return { text: label, depth }
       const parent = node.parentElement
-      if (before === null || !parent || parent === document.body || holdsOtherFields(parent, own)) return null
+      if (before === null || !parent || parent === document.body || fieldsWithin(parent, own)) return null
       node = parent
     }
     return null
@@ -219,65 +374,96 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
     return trimLabel(clip(by.split(/\s+/).map((id) => document.getElementById(id)?.textContent ?? '').join(' ')))
   }
 
-  function ownLabel(el: Control): string {
+  function placeholderOf(el: Element): string {
+    return clip(el.getAttribute('placeholder') ?? el.getAttribute('aria-placeholder') ?? el.getAttribute('data-placeholder') ?? '')
+  }
+
+  function ownLabel(el: Element): string {
     const aria = ariaLabel(el)
     if (aria) return aria
-    for (const label of el.labels ?? []) {
+    for (const label of labelsOf(el)) {
       const text = labelText(label)
       if (text) return text
     }
     const near = nearbyLabel([el], el, isCheckable(el))
-    const placeholder = clip(el.getAttribute('placeholder') ?? el.getAttribute('aria-placeholder') ?? '')
+    const placeholder = placeholderOf(el)
     // A caption several levels up may be a section title; a placeholder names the field itself.
     if (near && (near.depth < 2 || !placeholder)) return near.text
     if (placeholder) return placeholder
-    return columnLabel(el) || clip(el.title)
+    return columnLabel(el) || clip(el.getAttribute('title') ?? '')
   }
 
-  function groupLabel(el: Control): string {
+  function groupLabel(el: Element): string {
     const group = el.closest('fieldset, [role=radiogroup], [role=group]')
     if (!group) return ''
     return labelText(group.querySelector('legend')) || ariaLabel(group)
   }
 
-  function optionLabel(el: HTMLInputElement): string {
-    for (const label of el.labels ?? []) {
+  function isChecked(el: Element): boolean {
+    return el instanceof HTMLInputElement ? el.checked : el.getAttribute('aria-checked') === 'true'
+  }
+
+  function optionLabel(el: Element): string {
+    for (const label of labelsOf(el)) {
       const text = labelText(label)
       if (text) return text
     }
-    return ariaLabel(el) || siblingCaption(el, true, false, new Set()) || el.value
+    if (!(el instanceof HTMLInputElement)) return ariaLabel(el) || clip(el.textContent ?? '')
+    return ariaLabel(el) || siblingCaption(el, true, false, new Set(), [el]) || el.value
   }
 
+  function radioValue(el: Element): string {
+    if (el instanceof HTMLInputElement) return el.value
+    return el.getAttribute('data-value') ?? el.getAttribute('value') ?? optionLabel(el)
+  }
+
+  const nodesOf = (entry: Entry): Element[] => (entry.widget ? [entry.widget.host, ...entry.widget.items] : entry.els)
+  const firstNode = (entry: Entry): Element => entry.widget?.host ?? entry.els[0]
+  const radiosOf = (entry: Entry): Element[] => entry.widget?.items ?? entry.els
+
   function radioLabel(entry: Entry): string {
-    const first = entry.els[0]
-    const group = groupLabel(first)
+    const first = firstNode(entry)
+    const group = entry.widget ? ariaLabel(first) : groupLabel(first)
     if (group) return group
     // Option captions sit next to each radio, so they must not be mistaken for the question.
-    const options = new Set(entry.els.map((radio) => optionLabel(radio as HTMLInputElement)))
-    return nearbyLabel(entry.els, first, false, options)?.text || humanize(first.name) || 'Choice'
+    const options = new Set(radiosOf(entry).map(optionLabel))
+    return nearbyLabel(nodesOf(entry), first, false, options)?.text || humanize(first.getAttribute('name') ?? '') || 'Choice'
   }
 
   function fieldLabel(entry: Entry): string {
     if (entry.kind === 'radio') return radioLabel(entry)
-    const el = entry.els[0]
-    return ownLabel(el) || humanize(el.name) || humanize(stableId(el.id)) || el.name || entry.kind
+    const el = firstNode(entry)
+    const name = el.getAttribute('name') ?? ''
+    return ownLabel(el) || humanize(name) || humanize(stableId(el.id)) || name || entry.kind
   }
 
-  function controlsIn(root: Document | ShadowRoot, out: Control[]): void {
-    root.querySelectorAll('input, textarea, select').forEach((el) => {
-      if (eligible(el)) out.push(el)
+  function gather(root: Document | ShadowRoot, controls: Control[], widgets: Widget[]): void {
+    root.querySelectorAll(`input, textarea, select, ${WIDGET_SELECTOR}`).forEach((el) => {
+      if (eligible(el)) controls.push(el)
+      else if (el instanceof HTMLElement) {
+        const type = widgetType(el)
+        if (type) widgets.push(widgetOf(el, type))
+      }
     })
     root.querySelectorAll('*').forEach((el) => {
-      if (el.shadowRoot) controlsIn(el.shadowRoot, out)
+      if (el.shadowRoot) gather(el.shadowRoot, controls, widgets)
     })
   }
 
   function collect(): Entry[] {
+    forget()
+    editablesAllowed = document.querySelectorAll(EDITABLE_SELECTOR).length <= MAX_EDITABLES
     const controls: Control[] = []
-    controlsIn(document, controls)
+    const widgets: Widget[] = []
+    gather(document, controls, widgets)
     const entries: Entry[] = []
     const radios = new Map<string, Entry>()
     const used = new Map<string, number>()
+    const add = (key: string, entry: Omit<Entry, 'key'>) => {
+      const seen = used.get(key) ?? 0
+      used.set(key, seen + 1)
+      entries.push({ ...entry, key: seen > 0 ? `${key}#${seen + 1}` : key })
+    }
     for (const el of controls) {
       const kind = kindOf(el)
       const base = el.name || stableId(el.id) || ownLabel(el) || kind
@@ -293,20 +479,55 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
         entries.push(entry)
         continue
       }
-      let key = `${framePrefix}${kind}:${base}`
-      if (kind === 'checkbox' && el.value && el.value !== 'on') key += `=${el.value}`
-      const seen = used.get(key) ?? 0
-      used.set(key, seen + 1)
-      if (seen > 0) key += `#${seen + 1}`
-      entries.push({ key, kind, els: [el] })
+      const value = kind === 'checkbox' && el.value && el.value !== 'on' ? `=${el.value}` : ''
+      add(`${framePrefix}${kind}:${base}${value}`, { kind, els: [el] })
+    }
+    for (const widget of widgets) {
+      const kind = WIDGET_KIND[widget.type]
+      const entry = { key: '', kind, els: [], widget }
+      const host = widget.host
+      const named = host.getAttribute('name') || stableId(host.id)
+      const base = named || (widget.type === 'radios' ? radioLabel(entry) : ownLabel(host)) || kind
+      add(`${framePrefix}${kind}:${base}`, entry)
     }
     return entries
   }
 
+  function kindOf(el: Control): MemoryFieldKind {
+    if (el instanceof HTMLSelectElement) return el.multiple ? 'multi' : 'select'
+    if (el instanceof HTMLTextAreaElement) return 'textarea'
+    const type = el.type.toLowerCase()
+    if (type === 'checkbox') return 'checkbox'
+    if (type === 'radio') return 'radio'
+    if (type === 'file') return 'file'
+    return 'text'
+  }
+
+  function editableText(host: HTMLElement): string {
+    return (typeof host.innerText === 'string' ? host.innerText : (host.textContent ?? '')).trim()
+  }
+
+  /** What a div dropdown shows, minus a placeholder such as "Select…". */
+  function shownText(host: HTMLElement): string {
+    const text = clip(host.textContent ?? '', 300)
+    const placeholder = placeholderOf(host) || clip(host.querySelector('[class*="placeholder" i]')?.textContent ?? '')
+    return placeholder && same(text, placeholder) ? '' : text
+  }
+
+  function widgetValue({ type, host, items }: Widget): { value: MemoryValue; display?: string } {
+    if (type === 'check') return { value: isChecked(host) }
+    if (type === 'radios') {
+      const checked = items.find(isChecked)
+      return { value: checked ? radioValue(checked) : '', display: checked ? optionLabel(checked) : undefined }
+    }
+    return { value: type === 'combo' ? shownText(host) : editableText(host) }
+  }
+
   function currentValue(entry: Entry): { value: MemoryValue; display?: string } {
+    if (entry.widget) return widgetValue(entry.widget)
     const el = entry.els[0]
     if (entry.kind === 'radio') {
-      const checked = entry.els.find((radio) => (radio as HTMLInputElement).checked) as HTMLInputElement | undefined
+      const checked = entry.els.find(isChecked)
       return { value: checked?.value ?? '', display: checked ? optionLabel(checked) : undefined }
     }
     if (entry.kind === 'checkbox') return { value: (el as HTMLInputElement).checked }
@@ -326,11 +547,11 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
   }
 
   function read(entry: Entry): CapturedField {
-    const el = entry.els[0]
+    const el = firstNode(entry)
     return {
       key: entry.key,
       kind: entry.kind,
-      name: el.name || undefined,
+      name: el.getAttribute('name') || undefined,
       auto: el.getAttribute('autocomplete') || undefined,
       inputType: el instanceof HTMLInputElement ? el.type : undefined,
       label: fieldLabel(entry),
@@ -356,7 +577,7 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
     return Promise.all(
       entries.map(async (entry) => {
         const field = read(entry)
-        if (entry.kind !== 'file') return field
+        if (entry.kind !== 'file' || entry.widget) return field
         const files = await encodeFiles(entry.els[0] as HTMLInputElement)
         return { ...field, value: files.map((file) => file.name), files }
       }),
@@ -374,7 +595,19 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
     el.dispatchEvent(new Event('change', { bubbles: true, composed: true }))
   }
 
-  function flash(el: Control, color: string): void {
+  /** The pointer and mouse sequence of a real click; div widgets listen for any one of these. */
+  function press(el: Element): void {
+    const init = { bubbles: true, cancelable: true, composed: true, button: 0 }
+    const Pointer = typeof PointerEvent === 'function' ? PointerEvent : MouseEvent
+    el.dispatchEvent(new Pointer('pointerdown', init))
+    el.dispatchEvent(new MouseEvent('mousedown', init))
+    if (el instanceof HTMLElement) el.focus({ preventScroll: true })
+    el.dispatchEvent(new Pointer('pointerup', init))
+    el.dispatchEvent(new MouseEvent('mouseup', init))
+    el.dispatchEvent(new MouseEvent('click', init))
+  }
+
+  function flash(el: Element, color: string): void {
     try {
       el.animate([{ boxShadow: `0 0 0 3px ${color}` }, { boxShadow: '0 0 0 0 transparent' }], {
         duration: 1100,
@@ -392,12 +625,122 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
   }
 
   function hasValue(entry: Entry): boolean {
+    if (entry.widget) {
+      if (entry.widget.type === 'check') return isChecked(entry.widget.host)
+      if (entry.widget.type === 'radios') return entry.widget.items.some(isChecked)
+      return widgetValue(entry.widget).value !== ''
+    }
     const el = entry.els[0]
     if (entry.kind === 'text' || entry.kind === 'textarea') return el.value.trim() !== ''
     if (entry.kind === 'checkbox') return (el as HTMLInputElement).checked
-    if (entry.kind === 'radio') return entry.els.some((radio) => (radio as HTMLInputElement).checked)
+    if (entry.kind === 'radio') return entry.els.some(isChecked)
     if (entry.kind === 'file') return ((el as HTMLInputElement).files?.length ?? 0) > 0
     return false
+  }
+
+  /** The arrow or calendar icon beside a box, which often opens the list when the box does not. */
+  function toggleFor(trigger: Element): Element | null {
+    const next = trigger.nextElementSibling
+    for (const sibling of [next, next?.nextElementSibling, trigger.previousElementSibling]) {
+      if (!sibling || isField(sibling) || fieldsWithin(sibling, []) || !shown(sibling)) continue
+      if (sibling.matches('button, [role=button], [aria-haspopup]') || !clip(sibling.textContent ?? '')) return sibling
+    }
+    return null
+  }
+
+  function optionRoots(trigger: Element, added: Element[]): Element[] {
+    const roots: Element[] = []
+    for (const attr of ['aria-controls', 'aria-owns']) {
+      for (const id of (trigger.getAttribute(attr) ?? '').split(/\s+/)) {
+        const target = id ? document.getElementById(id) : null
+        if (target) roots.push(target)
+      }
+    }
+    let node = trigger.parentElement
+    for (let depth = 0; node && node !== document.body && depth < 2; depth += 1, node = node.parentElement) roots.push(node)
+    return [...roots, ...added]
+  }
+
+  /** The innermost visible element that reads `text`: in the list the box controls, beside it, or newly rendered. */
+  function findOption(trigger: Element, text: string, added: Element[]): HTMLElement | null {
+    const pool: Element[] = [...document.querySelectorAll(OPTION_SELECTOR)]
+    for (const root of optionRoots(trigger, added)) pool.push(root, ...root.querySelectorAll('*'))
+    const seen = new Set<Element>()
+    let best: HTMLElement | null = null
+    for (const el of pool) {
+      if (seen.has(el)) continue
+      seen.add(el)
+      if (!(el instanceof HTMLElement) || el === trigger || el.contains(trigger) || el.matches(ANY_FIELD)) continue
+      if (trigger.contains(el) && !el.closest(`${POPUP_SELECTOR}, ${OPTION_SELECTOR}`)) continue
+      if (!same(el.textContent ?? '', text) && !same(el.getAttribute('title') ?? '', text)) continue
+      if (best && !best.contains(el)) continue
+      if (shown(el)) best = el
+    }
+    return best
+  }
+
+  function dismiss(trigger: HTMLElement): void {
+    const init = { key: 'Escape', code: 'Escape', bubbles: true, cancelable: true, composed: true }
+    trigger.dispatchEvent(new KeyboardEvent('keydown', init))
+    trigger.dispatchEvent(new KeyboardEvent('keyup', init))
+    trigger.blur()
+  }
+
+  /** Opens a dropdown the way a user would and clicks the item that reads `text`. */
+  async function choose(trigger: HTMLElement, text: string, done: () => boolean): Promise<boolean> {
+    const added: Element[] = []
+    const observer = new MutationObserver((records) => {
+      for (const record of records) for (const node of record.addedNodes) if (node instanceof Element) added.push(node)
+    })
+    observer.observe(document.documentElement, { childList: true, subtree: true })
+    const openers = [
+      () => press(trigger),
+      () => {
+        const toggle = toggleFor(trigger)
+        if (toggle) press(toggle)
+      },
+    ]
+    try {
+      // Round 0 looks for a list that is already open; later rounds open it first.
+      for (let round = 0; round <= openers.length; round += 1) {
+        if (round > 0) openers[round - 1]()
+        for (let tick = 0; tick < (round === 0 ? 1 : OPTION_TICKS); tick += 1) {
+          if (round > 0) await wait(OPTION_WAIT_MS)
+          const option = findOption(trigger, text, added)
+          if (!option) continue
+          press(option)
+          for (let check = 0; check < 4 && !done(); check += 1) await wait(OPTION_WAIT_MS)
+          if (done()) return true
+          break
+        }
+      }
+      return false
+    } finally {
+      observer.disconnect()
+      if (!done()) dismiss(trigger)
+    }
+  }
+
+  function writeEditable(host: HTMLElement, text: string): boolean {
+    host.focus()
+    const selection = window.getSelection()
+    const range = document.createRange()
+    range.selectNodeContents(host)
+    selection?.removeAllRanges()
+    selection?.addRange(range)
+    let typed: boolean
+    try {
+      // Rich editors keep their own model in sync only with edits they see as typing.
+      typed = document.execCommand(text ? 'insertText' : 'delete', false, text)
+    } catch {
+      typed = false
+    }
+    if (!typed || !same(editableText(host), text)) {
+      host.textContent = text
+      host.dispatchEvent(new InputEvent('input', { bubbles: true, composed: true, inputType: 'insertText', data: text }))
+    }
+    flash(host, text ? FILL_COLOR : CLEAR_COLOR)
+    return true
   }
 
   function applyFiles(input: HTMLInputElement, field: MemoryField, overwrite: boolean): boolean {
@@ -416,9 +759,34 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
     return true
   }
 
-  function apply(entry: Entry, field: MemoryField, overwrite: boolean): boolean {
-    const el = entry.els[0]
+  async function applyWidget({ type, host, items }: Widget, field: MemoryField, overwrite: boolean): Promise<boolean> {
+    if (host.getAttribute('aria-disabled') === 'true') return false
+    if (type === 'check') {
+      if (isChecked(host) === field.value) return false
+      press(host)
+      flash(host, FILL_COLOR)
+      return true
+    }
+    if (type === 'radios') {
+      const target = items.find((item) => radioValue(item) === field.value)
+      if (!target || isChecked(target) || (!overwrite && items.some(isChecked))) return false
+      press(target)
+      flash(target, FILL_COLOR)
+      return true
+    }
+    const value = typeof field.value === 'string' ? field.value : ''
+    const current = type === 'combo' ? shownText(host) : editableText(host)
+    if (same(current, value) || (!overwrite && current !== '')) return false
+    if (type === 'editable') return writeEditable(host, value)
+    if (!(await choose(host, value, () => same(shownText(host), value)))) return false
+    flash(host, FILL_COLOR)
+    return true
+  }
+
+  async function apply(entry: Entry, field: MemoryField, overwrite: boolean): Promise<boolean> {
     if (entry.kind !== field.kind) return false
+    if (entry.widget) return applyWidget(entry.widget, field, overwrite)
+    const el = entry.els[0]
     if (entry.kind === 'radio') {
       const target = entry.els.find((radio) => radio.value === field.value) as HTMLInputElement | undefined
       if (!target || target.checked || !writable(target, true)) return false
@@ -468,17 +836,32 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
     const value = typeof field.value === 'string' ? field.value : ''
     if (el.value === value) return false
     if (!overwrite && el.value.trim() !== '') return false
-    setNative(el, 'value', value)
-    fire(el)
+    // A read-only dropdown box only changes the page's model when one of its items is clicked.
+    const picked =
+      isPicker(el) && el.readOnly && !looksLikeDate(value) && (await choose(el, value, () => same(el.value, value)))
+    if (!picked) {
+      setNative(el, 'value', value)
+      fire(el)
+    }
     flash(el, FILL_COLOR)
     return true
   }
 
-  /** Read-only controls are only cleared when the extension filled them, never the page's own values. */
+  /** Read-only controls and div widgets are only cleared when they hold a remembered value. */
   function clearEntry(entry: Entry, remembered: boolean): boolean {
+    if (entry.widget) {
+      const { type, host } = entry.widget
+      if (!remembered) return false
+      if (type === 'check' && isChecked(host)) {
+        press(host)
+        flash(host, CLEAR_COLOR)
+        return true
+      }
+      return type === 'editable' && editableText(host) !== '' && writeEditable(host, '')
+    }
     const el = entry.els[0]
     if (entry.kind === 'radio') {
-      const checked = entry.els.filter((radio) => (radio as HTMLInputElement).checked && writable(radio, remembered))
+      const checked = entry.els.filter((radio) => isChecked(radio) && writable(radio, remembered))
       for (const radio of checked) {
         setNative(radio, 'checked', false)
         fire(radio)
@@ -521,10 +904,10 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
   }
 
   function sharedFor(entry: Entry, shared: MemoryField[]): MemoryField | undefined {
-    const el = entry.els[0]
+    const el = firstNode(entry)
     const auto = (el.getAttribute('autocomplete') ?? '').toLowerCase()
     const usefulAuto = auto && !/^(on|off)$/.test(auto) ? auto : ''
-    const name = el.name.toLowerCase()
+    const name = (el.getAttribute('name') ?? '').toLowerCase()
     const label = norm(fieldLabel(entry))
     return shared.find(
       (field) =>
@@ -535,7 +918,16 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
     )
   }
 
-  function fillPass(fields: MemoryField[], shared: MemoryField[], overwrite: boolean, done: Set<string>): number {
+  /** One unusual widget must not stop the rest of the form from filling. */
+  async function applySafely(entry: Entry, field: MemoryField, overwrite: boolean): Promise<boolean> {
+    try {
+      return await apply(entry, field, overwrite)
+    } catch {
+      return false
+    }
+  }
+
+  async function fillPass(fields: MemoryField[], shared: MemoryField[], overwrite: boolean, done: Set<string>): Promise<number> {
     const entries = collect()
     const byKey = new Map(entries.map((entry) => [entry.key, entry]))
     let filled = 0
@@ -544,7 +936,7 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
       const entry = byKey.get(field.key)
       if (!entry) continue
       done.add(field.key)
-      if (apply(entry, field, overwrite)) filled += 1
+      if (await applySafely(entry, field, overwrite)) filled += 1
     }
     if (shared.length > 0) {
       for (const entry of entries) {
@@ -552,7 +944,7 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
         const field = sharedFor(entry, shared)
         if (!field) continue
         done.add(entry.key)
-        if (apply(entry, field, false)) filled += 1
+        if (await applySafely(entry, field, false)) filled += 1
       }
     }
     return filled
@@ -589,6 +981,14 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
     window.setTimeout(() => host.remove(), 2600)
   }
 
+  /** The field an event belongs to: the control itself, or the div widget it happened inside. */
+  function fieldFor(target: EventTarget | undefined): Element | null {
+    if (eligible(target)) return target
+    if (!(target instanceof Element)) return null
+    const host = target.closest('[role=radio]')?.closest('[role=radiogroup]') ?? target.closest(WIDGET_SELECTOR)
+    return host && widgetType(host) ? host : null
+  }
+
   function watch(): void {
     if (scope.__tbxFormMemory?.alive()) return
     const alive = () => {
@@ -598,19 +998,21 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
         return false
       }
     }
-    const touched = new Set<Control>()
+    const touched = new Set<Element>()
     // Fields the user clicked, focused or opened a picker beside, with the value they held then;
     // a script changing one of these (a date picker, a lookup) is acting for the user.
-    const armed = new Map<Control, string>()
+    const armed = new Map<Element, string>()
     let timer = 0
     let scanTimer = 0
-    const signature = (el: Control) => {
+    const signature = (el: Element): string => {
+      const type = widgetType(el)
+      if (type && el instanceof HTMLElement) return JSON.stringify(widgetValue(widgetOf(el, type)).value)
       if (el instanceof HTMLSelectElement) return [...el.selectedOptions].map((option) => option.value).join('\n')
-      if (isCheckable(el)) return String((el as HTMLInputElement).checked)
+      if (el instanceof HTMLInputElement && isCheckable(el)) return String(el.checked)
       if (el instanceof HTMLInputElement && el.type === 'file') return [...(el.files ?? [])].map((file) => file.name).join('\n')
-      return el.value
+      return isControl(el) ? el.value : ''
     }
-    const arm = (el: Control) => {
+    const arm = (el: Element) => {
       if (!armed.has(el)) armed.set(el, signature(el))
     }
     const rebase = () => {
@@ -644,7 +1046,7 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
       }
       const edited = new Set(touched)
       touched.clear()
-      const entries = collect().filter((entry) => entry.els.some((el) => edited.has(el)))
+      const entries = collect().filter((entry) => nodesOf(entry).some((node) => edited.has(node)))
       if (entries.length === 0) return
       const fields = await capture(entries)
       void chrome.runtime
@@ -663,6 +1065,11 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
         teardown()
         return
       }
+      if (scope.__tbxFormMemoryQuiet) {
+        scanTimer = window.setTimeout(scan, 400)
+        return
+      }
+      forget()
       for (const [el, before] of armed) {
         if (!el.isConnected) {
           armed.delete(el)
@@ -678,26 +1085,29 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
 
     function onEdit(event: Event): void {
       if (!event.isTrusted || scope.__tbxFormMemoryQuiet) return
-      const target = event.composedPath()[0]
-      if (!eligible(target)) return
-      touched.add(target)
-      armed.set(target, signature(target))
+      forget()
+      const field = fieldFor(event.composedPath()[0])
+      if (!field) return
+      touched.add(field)
+      armed.set(field, signature(field))
       schedule()
     }
 
     function onArm(event: Event): void {
       if (!event.isTrusted) return
+      forget()
       const target = event.composedPath()[0]
-      if (eligible(target)) {
-        arm(target)
+      const field = fieldFor(target)
+      if (field) {
+        arm(field)
         return
       }
       // A calendar button or icon usually sits right beside the field it fills.
       let node = target instanceof Element ? target : null
       for (let depth = 0; node && depth < 3; depth += 1, node = node.parentElement) {
-        const fields = [...node.querySelectorAll(FIELD_SELECTOR)].filter(eligible)
-        if (fields.length === 0) continue
-        if (fields.length <= 2) for (const field of fields) arm(field)
+        const fields = new Set([...node.querySelectorAll(ANY_FIELD)].map(fieldFor).filter((item) => item !== null))
+        if (fields.size === 0) continue
+        if (fields.size <= 2) for (const item of fields) arm(item)
         return
       }
     }
@@ -732,12 +1142,12 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
      * `click()` on a checkbox or radio makes the browser fire a trusted change event, so the watcher
      * is told to look away while the extension itself fills or clears.
      */
-    const quietly = <T>(change: () => T): T => {
-      scope.__tbxFormMemoryQuiet = true
+    const quietly = async <T>(change: () => T | Promise<T>): Promise<T> => {
+      scope.__tbxFormMemoryQuiet = (scope.__tbxFormMemoryQuiet ?? 0) + 1
       try {
-        return change()
+        return await change()
       } finally {
-        scope.__tbxFormMemoryQuiet = false
+        scope.__tbxFormMemoryQuiet = Math.max(0, (scope.__tbxFormMemoryQuiet ?? 1) - 1)
         // Watchers injected by an older build have no rebase.
         scope.__tbxFormMemory?.rebase?.()
       }
@@ -745,7 +1155,7 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
     if (args.action === 'fill') {
       const shared = args.shared ?? []
       const done = new Set<string>()
-      result.filled = quietly(() => fillPass(fields, shared, Boolean(args.overwrite), done))
+      result.filled = await quietly(() => fillPass(fields, shared, Boolean(args.overwrite), done))
       const pending = () => fields.some((field) => !done.has(field.key))
       if (args.retry && pending()) {
         const first = result.filled
@@ -753,13 +1163,14 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
         const delays = [600, 1500, 3200]
         const step = (index: number) => {
           window.setTimeout(
-            () => {
-              total += quietly(() => fillPass(fields, [], false, done))
-              if (index + 1 < delays.length && pending()) step(index + 1)
-              else if (total > first && args.late) {
-                toast((total === 1 ? args.late.one : args.late.other).replace('{count}', String(total)))
-              }
-            },
+            () =>
+              void quietly(() => fillPass(fields, [], false, done)).then((count) => {
+                total += count
+                if (index + 1 < delays.length && pending()) step(index + 1)
+                else if (total > first && args.late) {
+                  toast((total === 1 ? args.late.one : args.late.other).replace('{count}', String(total)))
+                }
+              }),
             delays[index] - (index > 0 ? delays[index - 1] : 0),
           )
         }
@@ -767,7 +1178,7 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
       }
     } else if (args.action === 'clear') {
       const remembered = new Set(fields.map((field) => field.key))
-      result.cleared = quietly(() => collect().filter((entry) => clearEntry(entry, remembered.has(entry.key))).length)
+      result.cleared = await quietly(() => collect().filter((entry) => clearEntry(entry, remembered.has(entry.key))).length)
     }
     const entries = collect()
     result.total = entries.length
@@ -778,6 +1189,7 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
       // Boxes left at their default say nothing about the user; only ticks and deliberate unticks count.
       const chosen = entries.filter((entry) => {
         if (entry.kind !== 'checkbox') return true
+        if (entry.widget) return isChecked(entry.widget.host)
         const box = entry.els[0] as HTMLInputElement
         return box.checked || box.checked !== box.defaultChecked
       })

@@ -95,6 +95,118 @@ describe('form memory label detection', () => {
   })
 })
 
+const ITEMS = ['GDC - BAU', 'GDC - DIS', 'RDC - TPM']
+
+/** The div dropdown from the user's portal: a read-only box, an icon and a popup list with its own filter box. */
+function divDropdown(value = '', popupStyle = '') {
+  const items = ITEMS.map(
+    (item) => `<div data-uxf-point="uxf-collection-item">
+      <div data-uxf-point="CodeDecodeItem" class="popupItem" title="${item}"><div class="popupItemText">${item}</div></div>
+      <div class="separator"></div>
+      <div data-uxf-point="validationMessages"><div class="validationMessages"><div></div></div></div>
+    </div>`,
+  )
+  return `<div class="field additionalDetails.deliveryResourceType">
+    <div class="label" title="Deliver Resource Type">Deliver Resource Type</div>
+    <div class="delimiter">:</div>
+    <div class="input inputWithIcon">
+      <input maxlength="256" readonly="" data-input="mandatory" class="combo" value="${value}">
+      <div class="icon" data-uxf-point="selectOptionsToggle"></div>
+      <div class="clear"></div>
+      <div data-uxf-point="filterSelectionOptions" class="popupHost" style="${popupStyle}">
+        <div class="filterSelectionList popup">
+          <div data-uxf-point="filters"><div class="filter string"><div class="label"></div>
+            <input type="text" class="string-input" value="gdc"></div></div>
+          <div class="selectionList">${items.join('')}</div>
+        </div>
+      </div>
+    </div>
+    <div class="clear"></div>
+    <div data-uxf-point="validationMessages"><div class="validationMessages"><div></div></div></div>
+  </div>`
+}
+
+function wireDropdown(opener: 'box' | 'icon') {
+  const box = document.querySelector<HTMLInputElement>('input.combo')!
+  const popup = document.querySelector<HTMLElement>('.popupHost')!
+  const picked: string[] = []
+  document.querySelector(opener === 'box' ? 'input.combo' : '.icon')!.addEventListener('click', () => {
+    popup.style.display = 'block'
+  })
+  for (const item of document.querySelectorAll<HTMLElement>('.popupItem')) {
+    item.addEventListener('click', () => {
+      picked.push(item.title)
+      box.value = item.title
+      popup.style.display = 'none'
+    })
+  }
+  return { box, picked }
+}
+
+const DROPDOWN_FIELD = { key: 'text:Deliver Resource Type', label: 'Deliver Resource Type', kind: 'text' as const, value: 'GDC - DIS', updatedAt: 1 }
+
+describe('form memory controls built from divs', () => {
+  it('labels a div dropdown and ignores the filter box inside its popup', async () => {
+    const fields = await snapshot(divDropdown('GDC - BAU', 'display:none'))
+    expect(fields).toEqual([
+      expect.objectContaining({ key: 'text:Deliver Resource Type', label: 'Deliver Resource Type', value: 'GDC - BAU' }),
+    ])
+  })
+
+  it.each(['box', 'icon'] as const)('fills a div dropdown by clicking its item, opened from the %s', async (opener) => {
+    document.body.innerHTML = divDropdown('', 'display:none')
+    const { box, picked } = wireDropdown(opener)
+    const result = await runFormMemoryPage({ action: 'fill', fields: [DROPDOWN_FIELD], overwrite: true })
+    expect(result.filled).toBe(1)
+    expect(picked).toEqual(['GDC - DIS'])
+    expect(box.value).toBe('GDC - DIS')
+  })
+
+  it('reads and toggles an ARIA checkbox', async () => {
+    const html = '<div><div role="checkbox" aria-checked="true" tabindex="0"></div><span>Hot Cutover</span></div>'
+    const fields = await snapshot(html)
+    expect(fields[0]).toMatchObject({ key: 'checkbox:Hot Cutover', kind: 'checkbox', label: 'Hot Cutover', value: true })
+    const box = document.querySelector<HTMLElement>('[role=checkbox]')!
+    box.addEventListener('click', () => box.setAttribute('aria-checked', String(box.getAttribute('aria-checked') !== 'true')))
+    await runFormMemoryPage({ action: 'fill', fields: [{ ...fields[0], value: false, updatedAt: 1 }] })
+    expect(box.getAttribute('aria-checked')).toBe('false')
+  })
+
+  it('reads a div combobox and picks from a list rendered elsewhere in the page', async () => {
+    const fields = await snapshot('<div><span>Colour</span><div role="combobox" aria-haspopup="listbox" tabindex="0">Red</div></div>')
+    expect(fields[0]).toMatchObject({ key: 'select:Colour', kind: 'select', label: 'Colour', value: 'Red' })
+    const combo = document.querySelector<HTMLElement>('[role=combobox]')!
+    combo.addEventListener('click', () => {
+      const list = document.createElement('ul')
+      list.setAttribute('role', 'listbox')
+      list.innerHTML = '<li role="option">Red</li><li role="option">Blue</li>'
+      list.addEventListener('click', (event) => {
+        combo.textContent = (event.target as HTMLElement).textContent
+        list.remove()
+      })
+      document.body.append(list)
+    })
+    const result = await runFormMemoryPage({ action: 'fill', fields: [{ ...fields[0], value: 'Blue', updatedAt: 1 }], overwrite: true })
+    expect(result.filled).toBe(1)
+    expect(combo.textContent).toBe('Blue')
+  })
+
+  it('reads a contenteditable text box', async () => {
+    const fields = await snapshot('<div><span id="n">Notes</span><div contenteditable="true" aria-labelledby="n">Call back</div></div>')
+    expect(fields[0]).toMatchObject({ kind: 'textarea', label: 'Notes', value: 'Call back' })
+  })
+
+  it('ignores the month and year selects of a calendar popup', async () => {
+    const days = Array.from({ length: 31 }, (_, index) => `<td><a href="#">${index + 1}</a></td>`).join('')
+    const fields = await snapshot(`
+      <div><label for="d">Date</label><input id="d" name="dob" readonly value="29-Oct-2026"></div>
+      <div class="calendar"><div class="title">
+        <select name="month"><option selected>Oct</option></select><select name="year"><option selected>2026</option></select>
+      </div><table><tbody><tr>${days}</tr></tbody></table></div>`)
+    expect(fields.map((field) => field.name)).toEqual(['dob'])
+  })
+})
+
 describe('form memory fill', () => {
   it('fills a read-only date picker input', async () => {
     document.body.innerHTML = '<div><label for="d">Date</label><input id="d" name="dob" readonly></div>'

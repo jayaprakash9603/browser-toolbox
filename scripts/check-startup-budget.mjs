@@ -22,7 +22,8 @@ const MAX_HOME_BOOT_JS = 1_144_000
 /** ~481 KB measured after interceptor optional-permission wiring in the SW graph. */
 /** ~496 KB after form autofill review and global values; service workers cannot lazy-load them. */
 /** ~503 KB once the injected form script learned label heuristics, files and date pickers. */
-const MAX_SERVICE_WORKER_JS = 508 * 1024
+/** ~512 KB with div-built dropdowns, ARIA widgets and contenteditable fields in that script. */
+const MAX_SERVICE_WORKER_JS = 516 * 1024
 
 /** `_gsap` is the cache property GSAP stamps on every target: the tool demos must stay lazy. */
 const BANNED_IN_HOME = [/postman-lite/i, /\bcmdk\b/, /\b_gsap\b/]
