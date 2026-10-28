@@ -124,7 +124,7 @@ export default function AccessibilityToolkitTool() {
               )}
             </div>
           }
-          bodyClassName="@container flex flex-col gap-2 py-2"
+          bodyClassName="@container flex flex-col gap-2 py-2 [&>*]:shrink-0"
         >
           <>
             <ScoreHero

@@ -152,7 +152,7 @@ export function ScoreHero({
   return (
     <section
       aria-label={t('a11y.summary')}
-      className="relative isolate overflow-hidden rounded-xl border bg-card px-2 py-2 shadow-xs"
+      className="relative isolate min-h-[5.5rem] shrink-0 overflow-hidden rounded-xl border bg-card px-2.5 py-2.5 shadow-xs"
     >
       <div
         aria-hidden
