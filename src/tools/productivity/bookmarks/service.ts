@@ -69,3 +69,26 @@ export function filterBookmarkRows(rows: BookmarkRow[], folderRoot: string | 'al
   if (folderRoot === 'all') return rows
   return rows.filter((row) => row.folderPath.startsWith(folderRoot))
 }
+
+export type BookmarkSort = 'recent' | 'title' | 'folder'
+
+export function sortBookmarkRows(rows: readonly BookmarkRow[], sort: BookmarkSort): BookmarkRow[] {
+  const next = [...rows]
+  if (sort === 'title') {
+    next.sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }))
+    return next
+  }
+  if (sort === 'folder') {
+    next.sort(
+      (a, b) =>
+        a.folderPath.localeCompare(b.folderPath, undefined, { sensitivity: 'base' }) ||
+        a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }),
+    )
+    return next
+  }
+  return next
+}
+
+export function folderMatchCount(rows: readonly BookmarkRow[], root: string): number {
+  return rows.filter((row) => (row.folderPath.split(' › ')[0]?.trim() || 'Bookmarks') === root).length
+}
