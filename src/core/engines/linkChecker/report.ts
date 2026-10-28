@@ -19,6 +19,8 @@ export const GROUP_KEYS: GroupKey[] = ['none', 'status', 'site']
 export const TIMEOUT_CHOICES = [5_000, 10_000, 20_000, 30_000] as const
 export const CONCURRENCY_CHOICES = [2, 4, 6, 10] as const
 export const MAX_TARGETS = 600
+/** Whole-site discovery can collect far more unique hrefs than a single page. */
+export const MAX_SITE_TARGETS = 5_000
 
 /** Sites that answer extension requests with these codes usually need a login or block bots. */
 const BLOCKED_STATUSES = new Set([401, 403, 407, 429, 999])

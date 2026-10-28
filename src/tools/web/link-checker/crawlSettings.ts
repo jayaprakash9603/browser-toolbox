@@ -1,5 +1,4 @@
 import {
-  clampCrawlOptions,
   DEFAULT_CRAWL_OPTIONS,
   parseExcludeList,
   type CrawlOptions,
@@ -7,6 +6,10 @@ import {
   type RenderMode,
 } from '@/core/engines/htmlArchive/crawl'
 import { DEFAULT_MAX_PAGES, MAX_PAGES_CEILING } from '@/core/engines/htmlArchive'
+import {
+  clampDiscoverOptions,
+  DEFAULT_DISCOVER_CONCURRENCY,
+} from '@/core/engines/linkChecker/discover'
 
 export type LinkScanMode = 'page' | 'site'
 
@@ -25,8 +28,8 @@ export const DEFAULT_LINK_CRAWL_SETTINGS: LinkCrawlSettings = {
   scope: 'site',
   maxDepth: DEFAULT_CRAWL_OPTIONS.maxDepth,
   maxPages: Math.min(150, DEFAULT_MAX_PAGES),
-  concurrency: DEFAULT_CRAWL_OPTIONS.concurrency,
-  render: DEFAULT_CRAWL_OPTIONS.render,
+  concurrency: DEFAULT_DISCOVER_CONCURRENCY,
+  render: 'off',
   excludeText: DEFAULT_CRAWL_OPTIONS.exclude.join(', '),
 }
 
@@ -36,7 +39,7 @@ export async function loadLinkCrawlSettings(): Promise<LinkCrawlSettings> {
   const stored = (await chrome.storage.local.get(SETTINGS_KEY))[SETTINGS_KEY] as Partial<LinkCrawlSettings> | undefined
   if (!stored || typeof stored !== 'object') return DEFAULT_LINK_CRAWL_SETTINGS
   const merged = { ...DEFAULT_LINK_CRAWL_SETTINGS, ...stored }
-  const clamped = clampCrawlOptions({ ...merged, maxPages: merged.maxPages, exclude: [] })
+  const clamped = clampDiscoverOptions({ ...merged, maxPages: merged.maxPages, exclude: [] })
   const maxPages = Math.min(
     MAX_PAGES_CEILING,
     Math.max(1, Number.isFinite(Number(merged.maxPages)) ? Math.round(Number(merged.maxPages)) : DEFAULT_LINK_CRAWL_SETTINGS.maxPages),
@@ -47,7 +50,7 @@ export async function loadLinkCrawlSettings(): Promise<LinkCrawlSettings> {
     maxDepth: clamped.maxDepth,
     maxPages,
     concurrency: clamped.concurrency,
-    render: clamped.render,
+    render: 'off',
     excludeText: typeof merged.excludeText === 'string' ? merged.excludeText : DEFAULT_LINK_CRAWL_SETTINGS.excludeText,
   }
 }
@@ -57,12 +60,12 @@ export async function saveLinkCrawlSettings(settings: LinkCrawlSettings): Promis
 }
 
 export function toLinkCrawlOptions(settings: LinkCrawlSettings): CrawlOptions {
-  return clampCrawlOptions({
+  return clampDiscoverOptions({
     scope: settings.scope,
     maxDepth: settings.maxDepth,
     maxPages: settings.maxPages,
     concurrency: settings.concurrency,
-    render: settings.render,
+    render: 'off',
     exclude: parseExcludeList(settings.excludeText),
   })
 }

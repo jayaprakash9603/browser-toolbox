@@ -1,17 +1,8 @@
-import { collectPageLinksFromHtml, mergePageLinkSnapshots } from '@/core/engines/links/collectFromHtml'
-import type { PageLinksSnapshot } from '@/core/engines/links/pageLinks'
 import { sameOrigin } from '@/core/engines/htmlArchive'
-import {
-  clampCrawlOptions,
-  crawlSite,
-  type CrawlOptions,
-  type CrawlProgress,
-  type CrawlSummary,
-  type FetchedPage,
-} from '@/core/engines/htmlArchive/crawl'
+import type { CrawlOptions, CrawlProgress, FetchedPage } from '@/core/engines/htmlArchive/crawl'
+import { discoverSiteLinks, type DiscoverResult } from '@/core/engines/linkChecker/discover'
 
 import { collectPageLinks } from './collectors/links'
-import { renderPageInFrame, serializeRenderedDocument } from './pageRender'
 
 async function fetchPageHtml(url: string, signal: AbortSignal): Promise<FetchedPage> {
   const response = await fetch(url, { credentials: 'include', signal })
@@ -25,11 +16,17 @@ async function fetchPageHtml(url: string, signal: AbortSignal): Promise<FetchedP
   return { kind: 'html', html: await response.text(), url: finalUrl }
 }
 
-export interface SiteLinksCrawlResult {
-  snapshot: PageLinksSnapshot
-  pageCount: number
-  summary: CrawlSummary
+async function fetchText(url: string, signal: AbortSignal): Promise<string | null> {
+  try {
+    const response = await fetch(url, { credentials: 'include', signal })
+    if (!response.ok) return null
+    return await response.text()
+  } catch {
+    return null
+  }
 }
+
+export type SiteLinksCrawlResult = DiscoverResult
 
 export async function crawlSiteForLinks(
   input: Partial<CrawlOptions>,
@@ -39,31 +36,28 @@ export async function crawlSiteForLinks(
     onProgress?: (progress: CrawlProgress) => void
   } = {},
 ): Promise<SiteLinksCrawlResult> {
-  const options = clampCrawlOptions(input)
-  const startUrl = window.location.href
-  const { pages, summary } = await crawlSite(
-    startUrl,
-    options,
+  const live = collectPageLinks()
+  const result = await discoverSiteLinks(
+    window.location.href,
+    input,
     {
       fetchPage: fetchPageHtml,
-      renderPage: options.render === 'off' ? undefined : renderPageInFrame,
+      fetchText,
+      startHrefs: () => live.links.map((link) => link.href),
     },
     {
       signal: hooks.signal,
       stopSignal: hooks.stopSignal,
-      startHtml: () => serializeRenderedDocument(document),
       onProgress: hooks.onProgress,
     },
   )
-
-  const snapshots: PageLinksSnapshot[] = []
-  for (const page of pages) {
-    if (page.depth === 0) {
-      snapshots.push(collectPageLinks())
-    } else {
-      snapshots.push(collectPageLinksFromHtml(page.html, page.url))
-    }
+  return {
+    ...result,
+    snapshot: {
+      ...result.snapshot,
+      url: live.url,
+      title: live.title || result.snapshot.title,
+      host: live.host || result.snapshot.host,
+    },
   }
-  const merged = mergePageLinkSnapshots(snapshots) ?? collectPageLinks()
-  return { snapshot: merged, pageCount: pages.length, summary }
 }

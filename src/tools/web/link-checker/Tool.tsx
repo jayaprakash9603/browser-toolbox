@@ -18,6 +18,7 @@ import {
   marksFor,
   matchesFilter,
   matchesQuery,
+  MAX_SITE_TARGETS,
   planTargets,
   sortEntries,
   summarize,
@@ -267,7 +268,7 @@ export default function LinkCheckerTool() {
             setDiscover((current) => (current ? { ...current, progress } : current)),
           )
           apply(result.snapshot)
-          const sitePlan = planTargets(result.snapshot.links, settings)
+          const sitePlan = planTargets(result.snapshot.links, settings, MAX_SITE_TARGETS)
           if (sitePlan.targets.length === 0) {
             setDiscover(null)
             showNotice(t('linkChecker.emptyHint'))
@@ -424,6 +425,7 @@ export default function LinkCheckerTool() {
               <DiscoverProgress
                 active
                 crawl={discover.progress}
+                maxPages={crawlSettings.maxPages}
                 startedAt={discover.startedAt}
                 stopRequested={discover.stopRequested}
                 onStop={requestDiscoverStop}
