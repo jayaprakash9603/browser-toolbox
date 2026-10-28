@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { AnimatePresence } from 'motion/react'
 import {
   DatabaseIcon,
   DownloadIcon,
@@ -29,9 +29,11 @@ import {
   type ValueKind,
 } from '@/core/storage-inspector/model'
 import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
+import { ConfirmDialog } from '@/shared/components/ConfirmDialog'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { ToolSearchLayout } from '@/shared/components/ToolSearchLayout'
+import { useToast } from '@/shared/components/toast/useToast'
 import { Button } from '@/shared/components/ui/button'
 import {
   DropdownMenu,
@@ -40,25 +42,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/shared/components/ui/dropdown-menu'
+import { Popover, PopoverContent, PopoverTrigger } from '@/shared/components/ui/popover'
 import { Segmented } from '@/shared/components/ui/segmented'
 import { Switch } from '@/shared/components/ui/switch'
 import { cn } from '@/shared/utils/cn'
 
 import { useStorageTool } from '../_shared'
-import { AddEntryDialog, ClearAreaDialog } from './Dialogs'
+import { AddEntryForm } from './Dialogs'
 import { EntryRow } from './EntryRow'
 import { useStorageData } from './hooks'
 import './i18n'
 
 const PAGE_SIZE = 60
 const AREAS = ['local', 'session'] as const
-
-interface Notice {
-  id: number
-  text: string
-  actionLabel?: string
-  onAction?: () => void
-}
 
 function download(text: string, filename: string) {
   const url = URL.createObjectURL(new Blob([text], { type: 'application/json;charset=utf-8' }))
@@ -72,7 +68,7 @@ function download(text: string, filename: string) {
 export default function StorageInspectorTool() {
   const { t } = useTranslation()
   const tool = useStorageTool('storage.inspector')
-  const reduce = useReducedMotion()
+  const { show: showToast } = useToast()
   const [area, setArea] = useDeepLinkTab('tab', AREAS, 'local')
   const [live, setLive] = useState(false)
   const { snapshot, loaded, refreshing, refresh, write } = useStorageData(live)
@@ -85,17 +81,14 @@ export default function StorageInspectorTool() {
   const [limit, setLimit] = useState(PAGE_SIZE)
   const [addOpen, setAddOpen] = useState(false)
   const [clearOpen, setClearOpen] = useState(false)
-  const [notice, setNotice] = useState<Notice | null>(null)
-  const noticeTimer = useRef(0)
   const importRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => () => window.clearTimeout(noticeTimer.current), [])
-
-  const say = useCallback((text: string, action?: Pick<Notice, 'actionLabel' | 'onAction'>) => {
-    window.clearTimeout(noticeTimer.current)
-    setNotice({ id: Date.now(), text, ...action })
-    noticeTimer.current = window.setTimeout(() => setNotice(null), action ? 6000 : 2200)
-  }, [])
+  const say = useCallback(
+    (text: string, options?: { undo?: () => void; variant?: 'success' | 'error' | 'info' }) => {
+      showToast(text, options)
+    },
+    [showToast],
+  )
 
   const record = useMemo(
     () => (snapshot ? (area === 'local' ? snapshot.localStorage : snapshot.sessionStorage) : {}),
@@ -126,7 +119,7 @@ export default function StorageInspectorTool() {
         await navigator.clipboard.writeText(text)
         say(t('storage.copied'))
       } catch {
-        say(t('storage.writeFailed'))
+        say(t('storage.writeFailed'), { variant: 'error' })
       }
     },
     [say, t],
@@ -136,7 +129,7 @@ export default function StorageInspectorTool() {
     async (key: string, value: string) => {
       const ok = await write({ area, op: 'set', key, value })
       if (ok) say(t('storage.saved', { key }))
-      else say(t('storage.writeFailed'))
+      else say(t('storage.writeFailed'), { variant: 'error' })
       return ok
     },
     [area, say, t, write],
@@ -152,13 +145,12 @@ export default function StorageInspectorTool() {
   const onDelete = useCallback(
     async (entry: StorageEntry) => {
       if (!(await write({ area, op: 'remove', key: entry.key }))) {
-        say(t('storage.writeFailed'))
+        say(t('storage.writeFailed'), { variant: 'error' })
         return
       }
       setEditing((current) => (current === entry.key ? null : current))
       say(t('storage.deleted', { key: entry.key }), {
-        actionLabel: t('storage.undo'),
-        onAction: () => {
+        undo: () => {
           void write({ area, op: 'set', key: entry.key, value: entry.value }).then(() =>
             say(t('storage.restored', { key: entry.key })),
           )
@@ -190,14 +182,12 @@ export default function StorageInspectorTool() {
   const clearArea = async () => {
     const previous = { ...record }
     const label = areaLabel
-    setClearOpen(false)
     if (!(await write({ area, op: 'clear' }))) {
-      say(t('storage.writeFailed'))
+      say(t('storage.writeFailed'), { variant: 'error' })
       return
     }
     say(t('storage.cleared', { area: label }), {
-      actionLabel: t('storage.undo'),
-      onAction: () => {
+      undo: () => {
         void write({ area, op: 'merge', entries: previous }).then(() =>
           say(t('storage.restoredAll', { count: Object.keys(previous).length })),
         )
@@ -209,12 +199,15 @@ export default function StorageInspectorTool() {
     if (!file) return
     const result = parseImport(await file.text())
     if (!result.ok) {
-      say(t(result.error === 'invalid' ? 'storage.importInvalid' : result.error === 'shape' ? 'storage.importShape' : 'storage.importEmpty'))
+      say(
+        t(result.error === 'invalid' ? 'storage.importInvalid' : result.error === 'shape' ? 'storage.importShape' : 'storage.importEmpty'),
+        { variant: 'error' },
+      )
       return
     }
     if (await write({ area, op: 'merge', entries: result.entries })) {
       say(t('storage.imported', { count: Object.keys(result.entries).length }))
-    } else say(t('storage.writeFailed'))
+    } else say(t('storage.writeFailed'), { variant: 'error' })
   }
 
   const exportName = () => `${area}Storage-${(snapshot?.origin ?? 'page').replace(/^https?:\/\//, '').replace(/[^a-z0-9.-]+/gi, '-')}.json`
@@ -222,56 +215,93 @@ export default function StorageInspectorTool() {
   const present = VALUE_KINDS.filter((k) => counts[k])
   const readable = loaded && snapshot !== null
 
+  const headerActions = readable ? (
+    <>
+      <Button
+        size="icon-sm"
+        variant="ghost"
+        onClick={() => void refresh()}
+        aria-label={t('storage.refresh')}
+        title={t('storage.refresh')}
+      >
+        <RefreshCwIcon className={cn('size-4', refreshing && 'animate-spin motion-reduce:animate-none')} />
+      </Button>
+      <Popover open={addOpen} onOpenChange={setAddOpen}>
+        <PopoverTrigger asChild>
+          <Button size="icon-sm" variant="ghost" aria-label={t('storage.add')} title={t('storage.add')}>
+            <PlusIcon className="size-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-72 max-w-[calc(100vw-1.5rem)] p-3">
+          <AddEntryForm
+            key={addOpen ? 'open' : 'closed'}
+            areaLabel={areaLabel}
+            existingKeys={new Set(Object.keys(record))}
+            onClose={() => setAddOpen(false)}
+            onSubmit={(key, value) => void addEntry(key, value)}
+          />
+        </PopoverContent>
+      </Popover>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button size="icon-sm" variant="ghost" aria-label={t('storage.more')} title={t('storage.more')}>
+            <MoreHorizontalIcon className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            disabled={entries.length === 0}
+            onSelect={() => {
+              const name = exportName()
+              download(exportJson(record), name)
+              say(t('storage.downloaded', { name }))
+            }}
+          >
+            <DownloadIcon className="size-4" />
+            {t('storage.exportJson')}
+          </DropdownMenuItem>
+          <DropdownMenuItem disabled={entries.length === 0} onSelect={() => void copy(exportJson(record))}>
+            <FileJsonIcon className="size-4" />
+            {t('storage.copyJson')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => importRef.current?.click()}>
+            <UploadIcon className="size-4" />
+            {t('storage.import')}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={entries.length === 0}
+            className="text-destructive focus:text-destructive"
+            onSelect={() => setClearOpen(true)}
+          >
+            <Trash2Icon className="size-4" />
+            {t('storage.clearArea', { area: areaLabel })}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <input
+        ref={importRef}
+        type="file"
+        accept="application/json,.json"
+        className="hidden"
+        onChange={(event) => {
+          void onImportFile(event.target.files?.[0])
+          event.target.value = ''
+        }}
+      />
+    </>
+  ) : null
+
   const header = readable ? (
     <>
-      <div className="flex items-center gap-1.5">
-        <SearchInput
-          value={query}
-          onChange={setQuery}
-          placeholder={t('storage.searchPlaceholder')}
-          ariaLabel={t('common.search')}
-          shortcut="/"
-          className="min-w-0 flex-1"
-        />
-        <Button size="icon-sm" variant="ghost" onClick={() => void refresh()} aria-label={t('storage.refresh')} title={t('storage.refresh')}>
-          <RefreshCwIcon className={cn(refreshing && 'animate-spin motion-reduce:animate-none')} />
-        </Button>
-        <Button size="icon-sm" variant="ghost" onClick={() => setAddOpen(true)} aria-label={t('storage.add')} title={t('storage.add')}>
-          <PlusIcon />
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="icon-sm" variant="ghost" aria-label={t('storage.more')} title={t('storage.more')}>
-              <MoreHorizontalIcon />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem onSelect={() => { const name = exportName(); download(exportJson(record), name); say(t('storage.downloaded', { name })) }} disabled={entries.length === 0}>
-              <DownloadIcon /> {t('storage.exportJson')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => void copy(exportJson(record))} disabled={entries.length === 0}>
-              <FileJsonIcon /> {t('storage.copyJson')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => importRef.current?.click()}>
-              <UploadIcon /> {t('storage.import')}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-500 focus:text-red-500" onSelect={() => setClearOpen(true)} disabled={entries.length === 0}>
-              <Trash2Icon /> {t('storage.clearArea', { area: areaLabel })}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <input
-          ref={importRef}
-          type="file"
-          accept="application/json,.json"
-          className="hidden"
-          onChange={(event) => {
-            void onImportFile(event.target.files?.[0])
-            event.target.value = ''
-          }}
-        />
-      </div>
+      <SearchInput
+        value={query}
+        onChange={setQuery}
+        placeholder={t('storage.searchPlaceholder')}
+        ariaLabel={t('common.search')}
+        shortcut="/"
+        className="min-w-0 w-full"
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <Segmented
@@ -341,42 +371,9 @@ export default function StorageInspectorTool() {
     </>
   ) : undefined
 
-  const footer = (
-    <>
-      <div role="status" aria-live="polite" className="sr-only">
-        {notice?.text ?? ''}
-      </div>
-      <AnimatePresence>
-        {notice && (
-          <motion.div
-            key={notice.id}
-            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 14, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, transition: { duration: 0.14 } }}
-            transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-            className="absolute inset-x-3 bottom-3 z-20 mx-auto flex w-fit max-w-full items-center gap-2 rounded-xl border bg-popover/95 py-1.5 pr-1.5 pl-3 text-xs shadow-lg backdrop-blur-md"
-          >
-            <span className="min-w-0 truncate">{notice.text}</span>
-            {notice.onAction && (
-              <Button
-                size="xs"
-                variant="secondary"
-                onClick={() => {
-                  notice.onAction?.()
-                }}
-              >
-                {notice.actionLabel}
-              </Button>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
-  )
-
   return (
-    <ToolPage tool={tool} contentClassName="overflow-hidden p-0">
-      <ToolSearchLayout header={header} footer={footer} bodyClassName="py-3">
+    <ToolPage tool={tool} actions={headerActions} contentClassName="overflow-hidden p-0">
+      <ToolSearchLayout header={header} bodyClassName="py-3 pb-4">
         {!loaded ? (
           <ul className="flex flex-col gap-2" aria-busy="true">
             {[0, 1, 2].map((i) => (
@@ -417,7 +414,7 @@ export default function StorageInspectorTool() {
             </Button>
           </div>
         ) : (
-          <ul className="flex flex-col gap-1.5 pb-14">
+          <ul className="flex flex-col gap-1.5">
             <AnimatePresence initial={false} mode="popLayout">
               {visible.slice(0, limit).map((entry) => (
                 <EntryRow
@@ -444,18 +441,13 @@ export default function StorageInspectorTool() {
         )}
       </ToolSearchLayout>
 
-      <AddEntryDialog
-        open={addOpen}
-        areaLabel={areaLabel}
-        existingKeys={new Set(Object.keys(record))}
-        onClose={() => setAddOpen(false)}
-        onSubmit={(key, value) => void addEntry(key, value)}
-      />
-      <ClearAreaDialog
+      <ConfirmDialog
         open={clearOpen}
-        areaLabel={areaLabel}
-        count={entries.length}
-        onClose={() => setClearOpen(false)}
+        onOpenChange={setClearOpen}
+        title={t('storage.clearTitle', { area: areaLabel })}
+        description={t('storage.clearDescription', { count: entries.length })}
+        confirmLabel={t('storage.clearConfirm')}
+        destructive
         onConfirm={() => void clearArea()}
       />
     </ToolPage>
