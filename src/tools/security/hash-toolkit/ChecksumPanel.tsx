@@ -3,7 +3,12 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { CheckIcon, FolderOpenIcon, Trash2Icon, UploadIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { compareBlobs, hexWindow, type ByteComparison } from '@/core/engines/hash/compare'
+import {
+  compareBlobs,
+  diffBuckets,
+  hexWindow,
+  type ByteComparison,
+} from '@/core/engines/hash/compare'
 import {
   compareExpected,
   decodeInput,
@@ -25,8 +30,11 @@ import { cn } from '@/shared/utils/cn'
 
 import { DigestList } from './DigestList'
 import { FileResultCard } from './FileResultCard'
-import { ByteHistogramChart, CompareDiffBar, EntropyGauge } from './ForensicsViz'
+import { ByteHistogramChart, CompareDiffBar, CompareRegionMap, EntropyGauge } from './ForensicsViz'
+import { DigestPresetBar } from './DigestPresetBar'
 import type { HashQueueItem } from './types'
+import type { DigestAlgorithm } from '@/core/engines/hash/digests'
+import type { DigestPreset } from './useDigestSettings'
 
 const MODES = ['text', 'files', 'compare'] as const
 type Mode = (typeof MODES)[number]
@@ -102,12 +110,18 @@ export function ChecksumPanel({
   onRemove,
   onClear,
   onPinBaseline,
+  algorithms,
+  digestPreset,
+  onDigestPresetChange,
 }: {
   items: HashQueueItem[]
   onEnqueue: (files: File[]) => void
   onRemove: (id: string) => void
   onClear: () => void
   onPinBaseline: (item: HashQueueItem) => void
+  algorithms: readonly DigestAlgorithm[]
+  digestPreset: DigestPreset
+  onDigestPresetChange: (preset: DigestPreset) => void
 }) {
   const { t } = useTranslation()
   const reduce = useReducedMotion()
@@ -173,7 +187,7 @@ export function ChecksumPanel({
         live = false
       }
     }
-    void digestBytes(decoded.bytes).then((digests) => {
+    void digestBytes(decoded.bytes, algorithms).then((digests) => {
       if (live) {
         setTextDigests(digests)
         setTextBytes(decoded.bytes.length)
@@ -184,7 +198,7 @@ export function ChecksumPanel({
     return () => {
       live = false
     }
-  }, [text, encoding])
+  }, [text, encoding, algorithms])
 
   const verifyHex = expected?.hex
   const fileVerdict = useMemo(() => {
@@ -224,6 +238,8 @@ export function ChecksumPanel({
           {notice}
         </p>
       )}
+      <DigestPresetBar value={digestPreset} onChange={onDigestPresetChange} />
+
       <Segmented
         value={mode}
         onValueChange={(v) => setMode(v as Mode)}
@@ -283,20 +299,23 @@ export function ChecksumPanel({
             exit={{ opacity: 0, y: -4 }}
             className="flex flex-col gap-2"
           >
-            <div className="flex flex-wrap gap-1.5">
-              {ENCODINGS.map((enc) => (
-                <Button
-                  key={enc.value}
-                  type="button"
-                  size="xs"
-                  variant={encoding === enc.value ? 'secondary' : 'outline'}
-                  onClick={() => setEncoding(enc.value)}
-                >
-                  {t(enc.labelKey)}
-                </Button>
-              ))}
-              <span className="mx-1 w-px bg-border" aria-hidden />
-              {FORMATS.map((f) => (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[11px] font-medium text-muted-foreground">
+                {t('hashToolkit.encoding.label')}
+              </span>
+              <Segmented
+                value={encoding}
+                onValueChange={(v) => setEncoding(v as InputEncoding)}
+                ariaLabel={t('hashToolkit.encoding.label')}
+                size="sm"
+                options={ENCODINGS.map((enc) => ({
+                  value: enc.value,
+                  label: t(enc.labelKey),
+                }))}
+              />
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] text-muted-foreground">{t('hashToolkit.output.label')}</span>
+                {FORMATS.map((f) => (
                 <Button
                   key={f.value}
                   type="button"
@@ -308,6 +327,7 @@ export function ChecksumPanel({
                   {f.label}
                 </Button>
               ))}
+            </div>
             </div>
             <TextEditor
               value={text}
@@ -485,6 +505,12 @@ export function ChecksumPanel({
             {compare && fileA && fileB && (
               <div className="col-span-full space-y-2">
                 <CompareSummary result={compare} fileA={fileA} fileB={fileB} />
+                {!compare.identical && compare.ranges.length > 0 && (
+                  <CompareRegionMap
+                    size={Math.max(fileA.size, fileB.size)}
+                    ranges={compare.ranges}
+                  />
+                )}
                 {hexRows.length > 0 && (
                   <div className="overflow-x-auto rounded-xl border bg-background p-2 font-mono text-[10px]">
                     {hexRows.map((row) => (

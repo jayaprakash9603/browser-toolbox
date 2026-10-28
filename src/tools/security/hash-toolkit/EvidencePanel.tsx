@@ -13,7 +13,9 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Textarea } from '@/shared/components/ui/textarea'
+import { cn } from '@/shared/utils/cn'
 
+import { EntropyMiniBar } from './ForensicsViz'
 import type { HashQueueItem } from './types'
 
 function download(name: string, mime: string, body: string) {
@@ -94,6 +96,57 @@ export function EvidencePanel({ items }: { items: HashQueueItem[] }) {
       <p className="text-[11px] text-muted-foreground">
         {t('hashToolkit.evidence.hint', { count: done.length })}
       </p>
+
+      {done.length > 0 && (
+        <motion.div
+          initial={reduce ? false : { opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="overflow-x-auto rounded-xl border bg-card/80"
+        >
+          <p className="border-b px-3 py-2 text-[11px] font-medium">{t('hashToolkit.evidence.preview')}</p>
+          <table className="w-full min-w-[28rem] text-left text-[11px]">
+            <thead className="text-muted-foreground">
+              <tr className="border-b">
+                <th className="px-3 py-1.5 font-medium">{t('hashToolkit.evidence.colFile')}</th>
+                <th className="px-3 py-1.5 font-medium tabular-nums">{t('hashToolkit.evidence.colSize')}</th>
+                <th className="px-3 py-1.5 font-medium">{t('hashToolkit.evidence.colEntropy')}</th>
+                <th className="hidden px-3 py-1.5 font-medium font-mono @md:table-cell">
+                  {t('hashToolkit.evidence.colSha256')}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {done.map((item, index) => (
+                <motion.tr
+                  key={item.id}
+                  initial={reduce ? false : { opacity: 0, x: -6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: reduce ? 0 : index * 0.04 }}
+                  className="border-b border-border/50 last:border-0"
+                >
+                  <td className="max-w-[12rem] truncate px-3 py-2" title={item.path}>
+                    {item.file.name}
+                  </td>
+                  <td className="px-3 py-2 tabular-nums">{item.file.size.toLocaleString()}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex min-w-[6rem] flex-col gap-0.5">
+                      <EntropyMiniBar entropy={item.result!.entropy} />
+                      <span className="text-[10px] tabular-nums text-muted-foreground">
+                        {item.result!.entropy.toFixed(2)}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="hidden px-3 py-2 font-mono text-[10px] @md:table-cell">
+                    <span className={cn('break-all', item.baseline === 'modified' && 'text-red-600')}>
+                      {item.result!.digests['SHA-256']?.slice(0, 16)}…
+                    </span>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        </motion.div>
+      )}
 
       <div className="flex flex-wrap gap-2">
         <Button

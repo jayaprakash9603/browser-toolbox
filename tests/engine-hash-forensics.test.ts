@@ -1,7 +1,7 @@
 import md5 from 'md5'
 import { describe, expect, it } from 'vitest'
 
-import { compareBlobs, hexWindow } from '@/core/engines/hash/compare'
+import { compareBlobs, diffBuckets, hexWindow } from '@/core/engines/hash/compare'
 import { Crc32 } from '@/core/engines/hash/crc32'
 import { compareExpected, decodeInput, digestBlob, digestBytes, formatDigest, parseExpected, byteHistogram, entropyFromBytes } from '@/core/engines/hash/digests'
 import { parseManifest, toManifest, verifyManifest } from '@/core/engines/hash/manifest'
@@ -153,6 +153,15 @@ describe('byte comparison', () => {
     const longer = new Uint8Array([...original, 1, 2, 3])
     const result = await compareBlobs(new Blob([original.slice()]), new Blob([longer]))
     expect(result).toMatchObject({ identical: false, firstDifference: 10_000, differingBytes: 0 })
+  })
+
+  it('maps diff ranges onto heatmap buckets', () => {
+    const buckets = diffBuckets(100, [{ start: 0, end: 10 }, { start: 90, end: 100 }], 10)
+    expect(buckets.filter(Boolean).length).toBeGreaterThan(0)
+    expect(buckets[0]).toBe(true)
+    expect(buckets[9]).toBe(true)
+    expect(buckets[4]).toBe(false)
+    expect(diffBuckets(0, [{ start: 0, end: 1 }])).toEqual(Array.from({ length: 48 }, () => false))
   })
 })
 

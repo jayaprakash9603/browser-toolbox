@@ -1,6 +1,8 @@
 import { motion, useReducedMotion } from 'motion/react'
 import { useTranslation } from 'react-i18next'
 
+import type { ByteRange } from '@/core/engines/hash/compare'
+import { diffBuckets } from '@/core/engines/hash/compare'
 import { cn } from '@/shared/utils/cn'
 
 export function EntropyGauge({ entropy, className }: { entropy: number; className?: string }) {
@@ -160,6 +162,60 @@ export function CompareDiffBar({
         )}
       </figcaption>
     </figure>
+  )
+}
+
+export function CompareRegionMap({
+  size,
+  ranges,
+  bucketCount = 48,
+}: {
+  size: number
+  ranges: readonly ByteRange[]
+  bucketCount?: number
+}) {
+  const { t } = useTranslation()
+  const reduce = useReducedMotion()
+  const buckets = diffBuckets(size, ranges, bucketCount)
+
+  return (
+    <figure className="space-y-1">
+      <div
+        className="flex h-4 overflow-hidden rounded-md border bg-muted/30"
+        role="img"
+        aria-label={t('hashToolkit.viz.regionMap')}
+      >
+        {buckets.map((hot, index) => (
+          <motion.span
+            key={index}
+            className={cn('min-w-0 flex-1 border-r border-background/40 last:border-r-0', hot ? 'bg-red-500/85' : 'bg-emerald-500/25')}
+            initial={reduce ? false : { scaleY: 0 }}
+            animate={{ scaleY: 1 }}
+            transition={{ duration: 0.25, delay: reduce ? 0 : index * 0.008 }}
+            style={{ transformOrigin: 'bottom' }}
+          />
+        ))}
+      </div>
+      <figcaption className="flex justify-between text-[9px] text-muted-foreground">
+        <span>{t('hashToolkit.viz.regionStart')}</span>
+        <span>{t('hashToolkit.viz.regionEnd')}</span>
+      </figcaption>
+    </figure>
+  )
+}
+
+export function EntropyMiniBar({ entropy, className }: { entropy: number; className?: string }) {
+  const ratio = Math.min(1, entropy / 8)
+  return (
+    <div
+      className={cn('h-1.5 w-full min-w-[4rem] overflow-hidden rounded-full bg-muted', className)}
+      role="presentation"
+    >
+      <div
+        className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-amber-500 to-violet-500"
+        style={{ width: `${ratio * 100}%` }}
+      />
+    </div>
   )
 }
 

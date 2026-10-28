@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { digestBlob } from '@/core/engines/hash/digests'
+import { digestBlob, ALL_DIGESTS } from '@/core/engines/hash/digests'
 import type { HashedItem } from '@/core/engines/hash/manifest'
 
 import { compareToBaseline, saveBaseline, type BaselineRecord } from './baselineStore'
 import { type HashQueueItem, toEvidencePath } from './types'
 
-export function useFileHashQueue() {
+import type { DigestAlgorithm } from '@/core/engines/hash/digests'
+
+export function useFileHashQueue(algorithms: readonly DigestAlgorithm[] = ALL_DIGESTS) {
   const [items, setItems] = useState<HashQueueItem[]>([])
   const controllers = useRef(new Map<string, AbortController>())
 
@@ -18,6 +20,7 @@ export function useFileHashQueue() {
     )
 
     void digestBlob(item.file, {
+      algorithms,
       signal: controller.signal,
       onProgress: (fraction) => {
         setItems((current) =>
@@ -58,7 +61,7 @@ export function useFileHashQueue() {
       .finally(() => {
         controllers.current.delete(item.id)
       })
-  }, [])
+  }, [algorithms])
 
   const remove = useCallback((id: string) => {
     controllers.current.get(id)?.abort()

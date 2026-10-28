@@ -15,6 +15,7 @@ import { HashHero } from './HashHero'
 import { HmacPanel } from './HmacPanel'
 import { IntegrityPanel } from './IntegrityPanel'
 import { useFileHashQueue } from './useFileHashQueue'
+import { useDigestSettings } from './useDigestSettings'
 
 const TABS = ['checksum', 'integrity', 'evidence', 'hmac'] as const
 
@@ -42,7 +43,8 @@ export default function HashToolkitTool() {
   const { t } = useTranslation()
   const tool = useSecurityTool('security.hash-toolkit')
   const [tab, setTab] = useDeepLinkTab('tab', TABS, 'checksum')
-  const queue = useFileHashQueue()
+  const { preset: digestPreset, setPreset: onDigestPresetChange, algorithms } = useDigestSettings()
+  const queue = useFileHashQueue(algorithms)
 
   const stats = useMemo(() => {
     const hashed = queue.items.filter((item) => item.status === 'done').length
@@ -93,6 +95,9 @@ export default function HashToolkitTool() {
               onRemove={queue.remove}
               onClear={queue.clear}
               onPinBaseline={queue.pinBaseline}
+              algorithms={algorithms}
+              digestPreset={digestPreset}
+              onDigestPresetChange={onDigestPresetChange}
             />
           </TabReveal>
         </TabsContent>

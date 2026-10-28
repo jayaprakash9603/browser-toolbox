@@ -22,6 +22,22 @@ export const MAX_RANGES = 200
 const MERGE_GAP = 16
 const CHUNK_BYTES = 4 * 1024 * 1024
 
+/** Maps changed byte ranges onto fixed buckets for a file-level diff heatmap. */
+export function diffBuckets(
+  size: number,
+  ranges: readonly ByteRange[],
+  bucketCount = 48,
+): boolean[] {
+  const buckets = Array.from({ length: bucketCount }, () => false)
+  if (size <= 0 || ranges.length === 0) return buckets
+  for (const range of ranges) {
+    const start = Math.max(0, Math.min(bucketCount - 1, Math.floor((range.start / size) * bucketCount)))
+    const end = Math.max(0, Math.min(bucketCount - 1, Math.floor(((range.end - 1) / size) * bucketCount)))
+    for (let i = start; i <= end; i += 1) buckets[i] = true
+  }
+  return buckets
+}
+
 /** Byte-for-byte comparison of two files, read side by side in chunks. */
 export async function compareBlobs(
   a: Blob,
