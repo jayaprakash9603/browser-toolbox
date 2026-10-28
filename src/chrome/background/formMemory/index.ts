@@ -189,8 +189,13 @@ export async function clearFormInTab(
     return { ok: false, reason: 'restricted', ...EMPTY, url: target.url }
   }
   const state = await loadFormMemory()
-  const plan = planFill(state, target.url, false)
-  const page = await runInTab(target.id, { action: 'clear', fields: plan.page, watch: state.settings.learn })
+  const plan = planFill(state, target.url, true)
+  const page = await runInTab(target.id, {
+    action: 'clear',
+    fields: plan.page,
+    shared: [...plan.global, ...plan.shared],
+    watch: state.settings.learn,
+  })
   const base = { ...EMPTY, saved: plan.page.length, learn: state.settings.learn, url: target.url }
   if (!page) {
     if (source === 'shortcut') await openPanelFallback(target.windowId)
@@ -224,7 +229,12 @@ async function inspectTab(tabId?: number): Promise<FormActionResult> {
   }
   if (ref && isHostBlocked(state.settings, ref.host)) return { ok: true, reason: 'blocked', ...base }
   const [page, frameAccess] = await Promise.all([
-    runInTab(target.id, { action: 'inspect', fields: plan.page, watch: state.settings.learn }),
+    runInTab(target.id, {
+      action: 'inspect',
+      fields: plan.page,
+      shared: [...plan.global, ...plan.shared],
+      watch: state.settings.learn,
+    }),
     blockedFrameOrigins(target.id, target.url),
   ])
   if (!page) return { ok: false, reason: 'no-access', ...base }

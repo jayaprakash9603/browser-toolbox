@@ -26,9 +26,9 @@ export interface FormPageResult {
   ok: boolean
   filled: number
   cleared: number
-  /** Fillable controls on the page. */
+  /** Fillable controls visible on the page. */
   total: number
-  /** Text controls that hold a value right now. */
+  /** Visible fields holding a value the extension remembers, i.e. what Clear would empty. */
   populated: number
   /** Saved fields that have a control on this page. */
   matched: number
@@ -167,6 +167,25 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
       if (style.display === 'none' || style.visibility === 'hidden') return false
     }
     return true
+  }
+
+  /** Laid out on the page: not inside a hidden tab, collapsed section, template or closed dialog. */
+  function rendered(el: Element): boolean {
+    if (typeof el.checkVisibility !== 'function') return shown(el)
+    if (!el.checkVisibility({ checkVisibilityCSS: true, visibilityProperty: true })) return false
+    // Zero-sized or parked far off the page: honeypots and stashed copies of a field.
+    const box = el.getBoundingClientRect()
+    if (box.width === 0 && box.height === 0) return false
+    return box.right + window.scrollX > 0 && box.bottom + window.scrollY > 0
+  }
+
+  /** Styled checkboxes, file pickers and selects (chosen.js) hide the real control behind a face of their own. */
+  function onScreen(el: Element): boolean {
+    if (rendered(el)) return true
+    const reskinned = el instanceof HTMLSelectElement || isCheckable(el) || (el instanceof HTMLInputElement && el.type === 'file')
+    if (!reskinned || !el.parentElement || !rendered(el.parentElement)) return false
+    if (labelsOf(el).some(rendered)) return true
+    return [el.nextElementSibling, el.previousElementSibling].some((face) => face && !isField(face) && rendered(face))
   }
 
   function hidden(el: Element): boolean {
@@ -418,6 +437,7 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
   }
 
   const nodesOf = (entry: Entry): Element[] => (entry.widget ? [entry.widget.host, ...entry.widget.items] : entry.els)
+  const visible = (entry: Entry): boolean => (entry.widget ? rendered(entry.widget.host) : entry.els.some(onScreen))
   const firstNode = (entry: Entry): Element => entry.widget?.host ?? entry.els[0]
   const radiosOf = (entry: Entry): Element[] => entry.widget?.items ?? entry.els
 
@@ -928,7 +948,8 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
   }
 
   async function fillPass(fields: MemoryField[], shared: MemoryField[], overwrite: boolean, done: Set<string>): Promise<number> {
-    const entries = collect()
+    // Fields on hidden screens stay pending, so a later pass fills them once they are shown.
+    const entries = collect().filter(visible)
     const byKey = new Map(entries.map((entry) => [entry.key, entry]))
     let filled = 0
     for (const field of fields) {
@@ -1152,8 +1173,11 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
         scope.__tbxFormMemory?.rebase?.()
       }
     }
+    const savedKeys = new Set(fields.map((field) => field.key))
+    const shared = args.shared ?? []
+    // Clear only undoes what the extension knows: this page's saved fields and fields a global value fits.
+    const remembered = (entry: Entry) => savedKeys.has(entry.key) || sharedFor(entry, shared) !== undefined
     if (args.action === 'fill') {
-      const shared = args.shared ?? []
       const done = new Set<string>()
       result.filled = await quietly(() => fillPass(fields, shared, Boolean(args.overwrite), done))
       const pending = () => fields.some((field) => !done.has(field.key))
@@ -1177,12 +1201,13 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
         step(0)
       }
     } else if (args.action === 'clear') {
-      const remembered = new Set(fields.map((field) => field.key))
-      result.cleared = await quietly(() => collect().filter((entry) => clearEntry(entry, remembered.has(entry.key))).length)
+      result.cleared = await quietly(
+        () => collect().filter((entry) => visible(entry) && remembered(entry) && clearEntry(entry, true)).length,
+      )
     }
-    const entries = collect()
+    const entries = collect().filter(visible)
     result.total = entries.length
-    result.populated = entries.filter((entry) => (entry.kind === 'text' || entry.kind === 'textarea') && hasValue(entry)).length
+    result.populated = entries.filter((entry) => remembered(entry) && hasValue(entry)).length
     const keys = new Set(entries.map((entry) => entry.key))
     result.matched = fields.filter((field) => keys.has(field.key)).length
     if (args.action === 'snapshot') {
@@ -1196,6 +1221,7 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
       result.fields = (await capture(chosen)).filter((field) =>
         Array.isArray(field.value) ? field.value.length > 0 : field.value !== '',
       )
+      result.populated = result.fields.length
     }
   } catch {
     result.ok = false

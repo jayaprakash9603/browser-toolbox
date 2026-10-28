@@ -254,6 +254,50 @@ describe('form memory fill', () => {
     }
   })
 
+  it('fills and counts only the fields shown on screen', async () => {
+    document.body.innerHTML = `
+      <label for="name">Name</label><input id="name" name="name">
+      <section style="display:none"><label for="code">Code</label><input id="code" name="code"></section>
+      <div hidden><label for="owner">Owner</label><input id="owner" name="owner"></div>`
+    const field = (name: string) => ({ key: `text:${name}`, label: name, kind: 'text' as const, value: `${name}-1`, updatedAt: 1 })
+    const result = await runFormMemoryPage({ action: 'fill', fields: ['name', 'code', 'owner'].map(field), overwrite: true })
+    expect(result).toMatchObject({ filled: 1, total: 1, matched: 1, populated: 1 })
+    expect(document.querySelector<HTMLInputElement>('#code')?.value).toBe('')
+    expect(document.querySelector<HTMLInputElement>('#owner')?.value).toBe('')
+  })
+
+  it('clears only visible fields holding saved or global values', async () => {
+    document.body.innerHTML = `
+      <label for="name">Name</label><input id="name" name="name" value="Ann">
+      <label for="note">Note</label><input id="note" name="note" value="typed by hand">
+      <label for="email">Email</label><input id="email" name="email" autocomplete="email" value="a@b.co">
+      <div style="display:none"><label for="code">Code</label><input id="code" name="code" value="X1"></div>`
+    const result = await runFormMemoryPage({
+      action: 'clear',
+      fields: [
+        { key: 'text:name', label: 'Name', kind: 'text', value: 'Ann', updatedAt: 1 },
+        { key: 'text:code', label: 'Code', kind: 'text', value: 'X1', updatedAt: 1 },
+      ],
+      shared: [{ key: 'text:email', label: 'Email', kind: 'text', value: 'a@b.co', auto: 'email', updatedAt: 1 }],
+    })
+    expect(result.cleared).toBe(2)
+    expect(document.querySelector<HTMLInputElement>('#name')?.value).toBe('')
+    expect(document.querySelector<HTMLInputElement>('#email')?.value).toBe('')
+    expect(document.querySelector<HTMLInputElement>('#note')?.value).toBe('typed by hand')
+    expect(document.querySelector<HTMLInputElement>('#code')?.value).toBe('X1')
+  })
+
+  it('treats a styled checkbox whose real input is hidden as visible', async () => {
+    document.body.innerHTML = `
+      <div><input type="checkbox" id="agree" name="agree" style="display:none"><label for="agree">I agree</label></div>`
+    const result = await runFormMemoryPage({
+      action: 'fill',
+      fields: [{ key: 'checkbox:agree', label: 'I agree', kind: 'checkbox', value: true, updatedAt: 1 }],
+    })
+    expect(result).toMatchObject({ filled: 1, total: 1 })
+    expect(document.querySelector<HTMLInputElement>('#agree')?.checked).toBe(true)
+  })
+
   it('captures picked files with their contents', async () => {
     document.body.innerHTML = '<div><span>Resume</span><input type="file" name="cv"></div>'
     const input = document.querySelector<HTMLInputElement>('input')!
