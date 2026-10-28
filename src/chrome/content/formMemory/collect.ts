@@ -5,6 +5,7 @@ import { EDITABLE_SELECTOR, MAX_EDITABLES, WIDGET_KIND, WIDGET_SELECTOR } from '
 import { eligible, isField, widgetOf, widgetType } from './detect'
 import { isCheckable, rendered } from './dom'
 import { groupLabel, labelsOf, ownLabel, radioLabel } from './labels'
+import { initialValue } from './scope'
 import { stableId } from './text'
 import type { Control, Entry, Widget } from './types'
 
@@ -30,6 +31,17 @@ function onScreen(el: Element): boolean {
   if (!reskinned || !el.parentElement || !rendered(el.parentElement)) return false
   if (labelsOf(el).some(rendered)) return true
   return [el.nextElementSibling, el.previousElementSibling].some((face) => face && !isField(face) && rendered(face))
+}
+
+/** Radios of a group, and checkboxes told apart by their value, share a name legitimately. */
+function repeatedNames(controls: Control[]): Set<string> {
+  const counts = new Map<string, number>()
+  for (const el of controls) {
+    const kind = kindOf(el)
+    if (!el.name || kind === 'radio' || (kind === 'checkbox' && el.value && el.value !== 'on')) continue
+    counts.set(el.name, (counts.get(el.name) ?? 0) + 1)
+  }
+  return new Set([...counts].filter(([, count]) => count > 1).map(([name]) => name))
 }
 
 export const visible = (entry: Entry): boolean => (entry.widget ? rendered(entry.widget.host) : entry.els.some(onScreen))
@@ -58,6 +70,7 @@ export function collect(): Entry[] {
   const controls: Control[] = []
   const widgets: Widget[] = []
   gather(document, controls, widgets)
+  memo.repeatedNames = repeatedNames(controls)
   const entries: Entry[] = []
   const radios = new Map<string, Entry>()
   const used = new Map<string, number>()
@@ -68,7 +81,9 @@ export function collect(): Entry[] {
   }
   for (const el of controls) {
     const kind = kindOf(el)
-    const base = el.name || stableId(el.id) || ownLabel(el) || kind
+    if (el instanceof HTMLSelectElement) initialValue(el)
+    const name = memo.repeatedNames.has(el.name) ? '' : el.name
+    const base = name || stableId(el.id) || ownLabel(el) || kind
     if (kind === 'radio') {
       const groupKey = `${prefix}radio:${el.name || groupLabel(el) || base}`
       const group = radios.get(groupKey)

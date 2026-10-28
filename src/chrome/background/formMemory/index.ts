@@ -93,7 +93,8 @@ export async function fillFormInTab(
     shared,
     files: await loadFormFiles([...plan.page, ...shared]),
     overwrite: source !== 'auto',
-    retry: source === 'auto',
+    // Dependent lists load their options only after the list above them is filled.
+    retry: true,
     watch: state.settings.learn,
     brand: getExtensionName(),
     late,

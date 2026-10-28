@@ -74,6 +74,8 @@ export interface FormMemoryPageScope {
   __tbxFormMemory?: WatchScope
   /** Above zero while the extension itself is filling or clearing. */
   __tbxFormMemoryQuiet?: number
+  /** What each select held when this page first showed it, so Clear can put it back. */
+  __tbxFormMemoryInitial?: WeakMap<Element, string>
   /** Set by the page script; the background calls it after injecting the script. */
   __tbxFormMemoryRun?: (args: FormPageArgs) => Promise<FormPageResult>
 }

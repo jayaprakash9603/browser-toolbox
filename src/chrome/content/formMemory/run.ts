@@ -6,7 +6,7 @@ import { collect, visible } from './collect'
 import { RETRY_DELAYS_MS } from './constants'
 import { isChecked } from './dom'
 import { fillPass } from './fill'
-import { rememberedBy } from './match'
+import { matchPage, rememberedBy } from './match'
 import { quietly } from './scope'
 import { toast } from './toast'
 import type { Entry, FormPageArgs, FormPageResult } from './types'
@@ -54,20 +54,19 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
     if (args.notice) toast(args.notice, args.brand)
     const fields = args.fields ?? []
     const shared = args.shared ?? []
-    const remembered = rememberedBy(fields, shared)
     if (args.action === 'fill') {
       const done = new Set<string>()
       const options = { overwrite: Boolean(args.overwrite), files: args.files }
       result.filled = await quietly(() => fillPass(fields, shared, options, done))
       if (args.retry) retryLate(args, done, result.filled)
     } else if (args.action === 'clear') {
-      result.cleared = await quietly(() => clearPass(remembered))
+      result.cleared = await quietly(() => clearPass(fields, shared))
     }
     const entries = collect().filter(visible)
+    const remembered = rememberedBy(entries, fields, shared)
     result.total = entries.length
     result.populated = entries.filter((entry) => remembered(entry) && hasValue(entry)).length
-    const keys = new Set(entries.map((entry) => entry.key))
-    result.matched = fields.filter((field) => keys.has(field.key)).length
+    result.matched = matchPage(entries, fields).size
     if (args.action === 'snapshot') {
       result.fields = (await capture(entries.filter(deliberate))).filter(nonEmpty)
       result.populated = result.fields.length

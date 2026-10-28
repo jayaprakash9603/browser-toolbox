@@ -7,9 +7,21 @@ export const clip = (value: string, max = 120) =>
     .trim()
     .slice(0, max)
 
-export const trimLabel = (value: string) => value.replace(/^[\s*]+|[\s:*\uFF1A]+$/gu, '')
+/** Required stars, colons, sort arrows and other symbols around a caption are decoration. */
+export const trimLabel = (value: string) => value.replace(/^[\s*\p{S}]+|[\s:*\uFF1A\p{S}]+$/gu, '')
 export const hasWords = (value: string) => /[\p{L}\p{N}]/u.test(value)
 export const norm = (value: string | undefined) => (value ?? '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
+
+/** Screen-reader suffixes such as "First Name . Required" or "Phone (optional)". */
+const REQUIRED_MARK = /[\s.,:;*()[\]-]*\b(required|optional|mandatory)\b[\s.,:;*()[\]-]*$/iu
+
+/** A caption as it is shown and stored: without decoration or a required marker. */
+export const cleanLabel = (value: string) => trimLabel(trimLabel(value).replace(REQUIRED_MARK, ''))
+
+/** How two captions are compared: case, punctuation and required markers do not tell fields apart. */
+export const labelKey = (value: string | undefined) => norm((value ?? '').replace(REQUIRED_MARK, ''))
+
+export const wordCount = (value: string) => value.split(/\s+/).filter(hasWords).length
 export const same = (a: string, b: string) => clip(a, 500).toLowerCase() === clip(b, 500).toLowerCase()
 export const quote = (value: string) => value.replace(/["\\]/g, '\\$&')
 export const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms))
@@ -35,6 +47,6 @@ export function humanize(raw: string): string {
 export function shortText(raw: string): string {
   const text = raw.replace(/\s+/g, ' ').trim()
   if (text.length > MAX_LABEL_SOURCE) return ''
-  const label = trimLabel(text)
+  const label = cleanLabel(text)
   return hasWords(label) ? label : ''
 }

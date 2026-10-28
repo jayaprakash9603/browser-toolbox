@@ -8,7 +8,7 @@ import { isChecked, isPicker, writable } from './dom'
 import { writeEditable } from './editable'
 import { fire, flash, press, setNative } from './events'
 import { radioValue } from './labels'
-import { sharedFor } from './match'
+import { matchPage, sharedFor } from './match'
 import { clip, looksLikeDate, same } from './text'
 import type { Control, Entry, Widget } from './types'
 import { editableText, hasValue, shownText } from './values'
@@ -141,9 +141,25 @@ async function applySafely(entry: Entry, field: MemoryField, options: FillOption
 }
 
 /**
+ * A dependent list (a city list loaded after the country is picked) may not offer the saved
+ * option yet, or may still be disabled; a later pass tries again.
+ */
+function awaitingOptions(entry: Entry, field: MemoryField): boolean {
+  if (entry.widget) return entry.widget.type === 'combo' && shownText(entry.widget.host) === ''
+  if (entry.kind !== 'select' && entry.kind !== 'multi') return false
+  const select = entry.els[0] as HTMLSelectElement
+  if (select.disabled) return true
+  const offered = [...select.options]
+  const wanted = Array.isArray(field.value) ? field.value : [String(field.value)]
+  return wanted.some(
+    (value) => !offered.some((option) => option.value === value || (field.display && clip(option.text, 120) === field.display)),
+  )
+}
+
+/**
  * Fills visible fields from this page's saved values, then empty ones a shared value fits.
- * Keys in `done` are skipped and added to; fields on hidden screens stay out of it, so a later
- * pass fills them once they are shown.
+ * Keys in `done` are skipped and added to; fields on hidden screens, and lists whose options
+ * have not loaded, stay out of it, so a later pass fills them once they are ready.
  */
 export async function fillPass(
   fields: MemoryField[],
@@ -152,18 +168,20 @@ export async function fillPass(
   done: Set<string>,
 ): Promise<number> {
   const entries = collect().filter(visible)
-  const byKey = new Map(entries.map((entry) => [entry.key, entry]))
+  const matched = matchPage(entries, fields)
+  const claimed = new Set(matched.values())
   let filled = 0
   for (const field of fields) {
-    if (done.has(field.key)) continue
-    const entry = byKey.get(field.key)
-    if (!entry) continue
-    done.add(field.key)
-    if (await applySafely(entry, field, options)) filled += 1
+    const entry = matched.get(field.key)
+    if (done.has(field.key) || !entry) continue
+    const changed = await applySafely(entry, field, options)
+    if (changed) filled += 1
+    if (changed || !awaitingOptions(entry, field)) done.add(field.key)
   }
+  const labels = new Map<Entry, string>()
   for (const entry of shared.length > 0 ? entries : []) {
-    if (done.has(entry.key) || hasValue(entry)) continue
-    const field = sharedFor(entry, shared)
+    if (claimed.has(entry) || done.has(entry.key) || hasValue(entry)) continue
+    const field = sharedFor(entry, shared, labels)
     if (!field) continue
     done.add(entry.key)
     if (await applySafely(entry, field, { ...options, overwrite: false })) filled += 1

@@ -558,6 +558,13 @@ function sharedIdentity(field: MemoryField): string | null {
   return auto || name || label ? `${auto}|${name}|${label}` : null
 }
 
+/** A name several fields of one page carry (Jenkins calls every parameter input `value`) says nothing about any of them. */
+function withoutRepeatedNames(fields: MemoryField[]): MemoryField[] {
+  const counts = new Map<string, number>()
+  for (const field of fields) if (field.name) counts.set(field.name, (counts.get(field.name) ?? 0) + 1)
+  return fields.map((field) => (field.name && (counts.get(field.name) ?? 0) > 1 ? { ...field, name: undefined } : field))
+}
+
 export function planFill(state: FormMemoryState, url: string | undefined, includeShared: boolean): FillPlan {
   const ref = pageRefFor(url)
   if (!ref || isHostBlocked(state.settings, ref.host)) return { pageId: null, page: [], global: [], shared: [] }
@@ -569,7 +576,7 @@ export function planFill(state: FormMemoryState, url: string | undefined, includ
   const shared: MemoryField[] = []
   const others = Object.values(state.pages)
     .filter((item) => item.id !== ref.id && !isHostBlocked(state.settings, item.host))
-    .flatMap((item) => Object.values(item.fields))
+    .flatMap((item) => withoutRepeatedNames(Object.values(item.fields).filter((field) => SHARED_KINDS.has(field.kind))))
     .sort((a, b) => b.updatedAt - a.updatedAt)
   for (const field of others) {
     const identity = sharedIdentity(field)

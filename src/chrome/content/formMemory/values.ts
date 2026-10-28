@@ -1,6 +1,7 @@
 import type { CapturedField, CapturedFile } from '@/core/form-memory/model'
 import { MAX_FILE_BYTES } from '@/core/form-memory/files'
 
+import { memo } from './cache'
 import { MAX_FILES } from './constants'
 import { isChecked } from './dom'
 import { firstNode } from './entry'
@@ -28,7 +29,7 @@ export function widgetValue({ type, host, items }: Widget): FieldValue {
   return { value: type === 'combo' ? shownText(host) : editableText(host) }
 }
 
-function currentValue(entry: Entry): FieldValue {
+export function currentValue(entry: Entry): FieldValue {
   if (entry.widget) return widgetValue(entry.widget)
   const el = entry.els[0]
   if (entry.kind === 'radio') {
@@ -67,10 +68,11 @@ export function hasValue(entry: Entry): boolean {
 
 function read(entry: Entry): CapturedField {
   const el = firstNode(entry)
+  const name = el.getAttribute('name') ?? ''
   return {
     key: entry.key,
     kind: entry.kind,
-    name: el.getAttribute('name') || undefined,
+    name: name && !memo.repeatedNames.has(name) ? name : undefined,
     auto: el.getAttribute('autocomplete') || undefined,
     inputType: el instanceof HTMLInputElement ? el.type : undefined,
     label: fieldLabel(entry),

@@ -1,8 +1,12 @@
+import type { MemoryField } from '@/core/form-memory/model'
+
 import { collect, visible } from './collect'
 import { CLEAR_COLOR } from './constants'
 import { isChecked, writable } from './dom'
 import { writeEditable } from './editable'
 import { fire, flash, press, setNative } from './events'
+import { rememberedBy } from './match'
+import { initialValue } from './scope'
 import type { Entry, Widget } from './types'
 import { editableText, hasValue } from './values'
 
@@ -25,9 +29,15 @@ function clearRadios(entry: Entry, remembered: boolean): boolean {
   return checked.length > 0
 }
 
+/** Back to the empty choice, else to what the page showed before anything was filled. */
 function clearSelect(select: HTMLSelectElement): boolean {
   const options = [...select.options]
-  const blank = options.find((item) => item.value === '') ?? options.find((item) => item.defaultSelected) ?? options[0]
+  const initial = initialValue(select)
+  const blank =
+    options.find((item) => item.value === '') ??
+    (initial !== select.value ? options.find((item) => item.value === initial) : undefined) ??
+    options.find((item) => item.defaultSelected) ??
+    options[0]
   if (!blank || select.value === blank.value) return false
   setNative(select, 'value', blank.value)
   fire(select)
@@ -66,7 +76,9 @@ export function clearEntry(entry: Entry, remembered: boolean): boolean {
   return true
 }
 
-/** Empties the visible fields `remembered` accepts and returns how many changed. */
-export function clearPass(remembered: (entry: Entry) => boolean): number {
-  return collect().filter((entry) => visible(entry) && remembered(entry) && clearEntry(entry, true)).length
+/** Empties the visible fields holding remembered values and returns how many changed. */
+export function clearPass(fields: MemoryField[], shared: MemoryField[]): number {
+  const entries = collect().filter(visible)
+  const remembered = rememberedBy(entries, fields, shared)
+  return entries.filter((entry) => remembered(entry) && clearEntry(entry, true)).length
 }

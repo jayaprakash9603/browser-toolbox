@@ -17,6 +17,35 @@ export const POPUP_SELECTOR = '[role=listbox], [role=menu], [role=tree], [role=t
 export const OPTION_SELECTOR = '[role=option], [role=menuitem], [role=menuitemradio], [role=treeitem]'
 export const NOT_LABEL = `button, [role=button], script, style, noscript, template, svg, option, input, select, textarea, ${POPUP_SELECTOR}, ${OPTION_SELECTOR}`
 export const IGNORE_SELECTOR = '[data-tbx-form-memory-ignore]'
+/**
+ * Words design systems use for the help text beside a field (Bootstrap `form-text`, MUI `helperText`,
+ * Ant `form-item-extra`, Material `mat-hint`, SLDS `__help`, Jenkins `form-description`).
+ */
+export const DESCRIPTION_WORDS = new Set([
+  'desc',
+  'description',
+  'descr',
+  'help',
+  'helper',
+  'helptext',
+  'hint',
+  'note',
+  'notes',
+  'instruction',
+  'instructions',
+  'extra',
+  'tip',
+  'tips',
+  'subtext',
+  'subtitle',
+  'explanation',
+  'assist',
+  'assistive',
+])
+/** Words that mark a caption as the field's name, outranking a help word beside them (`label help-sibling`). */
+export const LABEL_WORDS = new Set(['label', 'lbl', 'title', 'caption', 'legend', 'name', 'prompt', 'question'])
+/** A caption is not read through more text than this; longer blocks are content, not labels. */
+export const MAX_CAPTION_SOURCE = 400
 
 /** Text this long is an instruction or paragraph, not the name of a field. */
 export const MAX_LABEL_SOURCE = 120
