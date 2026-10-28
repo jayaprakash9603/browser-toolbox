@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { runFormMemoryPage } from '@/chrome/background/formMemory/page'
 
@@ -115,6 +115,31 @@ describe('form memory fill', () => {
     expect(result.cleared).toBe(1)
     expect(document.querySelector<HTMLInputElement>('[name=ref]')?.value).toBe('AB-1')
     expect(document.querySelector<HTMLInputElement>('[name=dob]')?.value).toBe('')
+  })
+
+  it('does not send its own fill or clear back as something the user typed', async () => {
+    vi.useFakeTimers()
+    const runtime = chrome.runtime as unknown as { id?: string; sendMessage: ReturnType<typeof vi.fn> }
+    runtime.id = 'test'
+    runtime.sendMessage.mockClear()
+    try {
+      document.body.innerHTML = '<div><input type="checkbox" name="cutover" checked><span>Hot Cutover</span></div>'
+      const saved = [{ key: 'checkbox:cutover', label: 'Hot Cutover', kind: 'checkbox' as const, value: true, updatedAt: 1 }]
+      await runFormMemoryPage({ action: 'inspect', watch: true })
+      await runFormMemoryPage({ action: 'clear', fields: saved })
+      await runFormMemoryPage({ action: 'fill', fields: saved, overwrite: true })
+      await vi.advanceTimersByTimeAsync(2000)
+      expect(runtime.sendMessage).not.toHaveBeenCalled()
+
+      document.querySelector<HTMLInputElement>('input')!.dispatchEvent(new Event('change', { bubbles: true }))
+      document.querySelector<HTMLInputElement>('input')!.click()
+      await vi.advanceTimersByTimeAsync(2000)
+      expect(runtime.sendMessage).toHaveBeenCalledTimes(1)
+    } finally {
+      delete runtime.id
+      delete (window as unknown as { __tbxFormMemory?: unknown }).__tbxFormMemory
+      vi.useRealTimers()
+    }
   })
 
   it('captures picked files with their contents', async () => {

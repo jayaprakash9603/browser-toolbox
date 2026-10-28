@@ -73,7 +73,7 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
   const FILL_COLOR = 'rgb(16 185 129 / 0.55)'
   const CLEAR_COLOR = 'rgb(148 163 184 / 0.6)'
 
-  const scope = window as unknown as { __tbxFormMemory?: WatchScope }
+  const scope = window as unknown as { __tbxFormMemory?: WatchScope; __tbxFormMemoryQuiet?: boolean }
   // Frames get their own address in field keys so their fields never collide with the page's.
   const framePrefix = window.top === window ? '' : `${location.host}${location.pathname}>`
 
@@ -677,7 +677,7 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
     }
 
     function onEdit(event: Event): void {
-      if (!event.isTrusted) return
+      if (!event.isTrusted || scope.__tbxFormMemoryQuiet) return
       const target = event.composedPath()[0]
       if (!eligible(target)) return
       touched.add(target)
@@ -728,13 +728,24 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
     if (args.watch) watch()
     if (args.notice) toast(args.notice)
     const fields = args.fields ?? []
-    // Watchers injected by an older build have no rebase.
-    const rebase = () => scope.__tbxFormMemory?.rebase?.()
+    /**
+     * `click()` on a checkbox or radio makes the browser fire a trusted change event, so the watcher
+     * is told to look away while the extension itself fills or clears.
+     */
+    const quietly = <T>(change: () => T): T => {
+      scope.__tbxFormMemoryQuiet = true
+      try {
+        return change()
+      } finally {
+        scope.__tbxFormMemoryQuiet = false
+        // Watchers injected by an older build have no rebase.
+        scope.__tbxFormMemory?.rebase?.()
+      }
+    }
     if (args.action === 'fill') {
       const shared = args.shared ?? []
       const done = new Set<string>()
-      result.filled = fillPass(fields, shared, Boolean(args.overwrite), done)
-      rebase()
+      result.filled = quietly(() => fillPass(fields, shared, Boolean(args.overwrite), done))
       const pending = () => fields.some((field) => !done.has(field.key))
       if (args.retry && pending()) {
         const first = result.filled
@@ -743,8 +754,7 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
         const step = (index: number) => {
           window.setTimeout(
             () => {
-              total += fillPass(fields, [], false, done)
-              rebase()
+              total += quietly(() => fillPass(fields, [], false, done))
               if (index + 1 < delays.length && pending()) step(index + 1)
               else if (total > first && args.late) {
                 toast((total === 1 ? args.late.one : args.late.other).replace('{count}', String(total)))
@@ -757,8 +767,7 @@ export async function runFormMemoryPage(args: FormPageArgs): Promise<FormPageRes
       }
     } else if (args.action === 'clear') {
       const remembered = new Set(fields.map((field) => field.key))
-      for (const entry of collect()) if (clearEntry(entry, remembered.has(entry.key))) result.cleared += 1
-      rebase()
+      result.cleared = quietly(() => collect().filter((entry) => clearEntry(entry, remembered.has(entry.key))).length)
     }
     const entries = collect()
     result.total = entries.length
