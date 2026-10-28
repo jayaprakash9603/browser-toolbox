@@ -47,8 +47,19 @@ import { ScanHero } from './ScanHero'
 import { ScanProgress } from './ScanProgress'
 import { SettingsPanel } from './SettingsPanel'
 import { SummaryPanel } from './SummaryPanel'
+import { DiscoverProgress } from './DiscoverProgress'
+import {
+  DEFAULT_LINK_CRAWL_SETTINGS,
+  loadLinkCrawlSettings,
+  saveLinkCrawlSettings,
+  toLinkCrawlOptions,
+  type LinkCrawlSettings,
+} from './crawlSettings'
+import { crawlSiteLinks, stopActiveSiteLinkCrawl } from './crawlService'
 import { useCheckSettings } from './settings'
 import { scanElapsedMs, useLinkScan } from './useLinkScan'
+import { requestAllSitesAccess } from '@/core/permissions/siteAccess'
+import type { CrawlProgress } from '@/core/engines/htmlArchive/crawl'
 
 type LoadState = { status: 'loading' } | { status: 'error' } | { status: 'ready'; snapshot: PageLinksSnapshot }
 
@@ -90,7 +101,25 @@ export default function LinkCheckerTool() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [marking, setMarking] = useState(false)
   const [notice, setNotice] = useState<{ id: number; text: string } | null>(null)
+  const [crawlSettings, setCrawlSettings] = useState<LinkCrawlSettings>(DEFAULT_LINK_CRAWL_SETTINGS)
+  const [discover, setDiscover] = useState<{
+    progress: CrawlProgress | null
+    startedAt: number
+    stopRequested: boolean
+  } | null>(null)
   const urlRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    void loadLinkCrawlSettings().then(setCrawlSettings)
+  }, [])
+
+  const patchCrawlSettings = useCallback((patch: Partial<LinkCrawlSettings>) => {
+    setCrawlSettings((current) => {
+      const next = { ...current, ...patch }
+      void saveLinkCrawlSettings(next)
+      return next
+    })
+  }, [])
 
   const showNotice = useCallback((text: string) => setNotice({ id: Date.now(), text }), [])
 
@@ -200,8 +229,8 @@ export default function LinkCheckerTool() {
   const resetKey = `${snapshot?.url ?? ''}|${filter}|${sort}|${group}|${query}`
   const filtersActive = filter !== 'all' || query.length > 0
   const hasResults = entryList.length > 0
-  const showHero = !scan.running && scan.phase === 'idle' && !hasResults
-  const showSummary = !scan.running && hasResults && (scan.phase === 'done' || scan.phase === 'stopped')
+  const showHero = !scan.running && scan.phase === 'idle' && !hasResults && !discover
+  const showSummary = !scan.running && hasResults && (scan.phase === 'done' || scan.phase === 'stopped') && !discover
   const remaining = useMemo(() => {
     if (freshTargets.length === 0) return 0
     return freshTargets.filter((target) => scan.entries.get(target.url)?.state.phase !== 'done').length
@@ -226,10 +255,46 @@ export default function LinkCheckerTool() {
   }, [marking, snapshot, entryList, settings.redirectsAsIssues])
 
   const startScan = () => {
-    if (!plan || plan.targets.length === 0) return
+    if (!plan) return
+    if (crawlSettings.mode === 'site') {
+      void (async () => {
+        setDiscover({ progress: null, startedAt: Date.now(), stopRequested: false })
+        setExpanded(null)
+        resetScan()
+        try {
+          await requestAllSitesAccess()
+          const result = await crawlSiteLinks(toLinkCrawlOptions(crawlSettings), (progress) =>
+            setDiscover((current) => (current ? { ...current, progress } : current)),
+          )
+          apply(result.snapshot)
+          const sitePlan = planTargets(result.snapshot.links, settings)
+          if (sitePlan.targets.length === 0) {
+            setDiscover(null)
+            showNotice(t('linkChecker.emptyHint'))
+            return
+          }
+          setFreshTargets(sitePlan.targets)
+          setDiscover(null)
+          showNotice(
+            t('linkChecker.crawl.pagesDone', { pages: result.pageCount, links: sitePlan.targets.length }),
+          )
+          void scan.start(sitePlan.targets, settings)
+        } catch {
+          setDiscover(null)
+          showNotice(t('linkChecker.crawl.failed'))
+        }
+      })()
+      return
+    }
+    if (plan.targets.length === 0) return
     setFreshTargets(plan.targets)
     setExpanded(null)
     void scan.start(plan.targets, settings)
+  }
+
+  const requestDiscoverStop = () => {
+    setDiscover((current) => (current ? { ...current, stopRequested: true } : current))
+    void stopActiveSiteLinkCrawl()
   }
 
   const checkAgain = () => {
@@ -297,7 +362,7 @@ export default function LinkCheckerTool() {
           aria-label={t('linkChecker.rescan')}
           title={t('linkChecker.rescan')}
           onClick={rescan}
-          disabled={refreshing || scan.running}
+          disabled={refreshing || scan.running || discover != null}
         >
           <RefreshCwIcon
             className={cn('size-4', refreshing && 'motion-safe:animate-spin motion-reduce:animate-none')}
@@ -345,9 +410,23 @@ export default function LinkCheckerTool() {
                 snapshot={snapshot}
                 plan={plan!}
                 settings={settings}
+                crawlSettings={crawlSettings}
                 onScopeChange={(scope) => patchSettings({ scope })}
+                onCrawlChange={patchCrawlSettings}
+                onScanModeChange={(mode) => patchCrawlSettings({ mode })}
                 onStart={startScan}
                 onOpenSettings={() => setSettingsOpen(true)}
+                busy={discover != null}
+              />
+            )}
+
+            {discover && (
+              <DiscoverProgress
+                active
+                crawl={discover.progress}
+                startedAt={discover.startedAt}
+                stopRequested={discover.stopRequested}
+                onStop={requestDiscoverStop}
               />
             )}
 

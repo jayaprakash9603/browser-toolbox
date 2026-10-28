@@ -198,6 +198,13 @@ export type ExtensionMessage =
       options?: import('@/core/engines/linkChecker/check').LinkCheckRequestOptions
     }
   | { type: 'GET_PAGE_LINKS' }
+  | { type: 'CRAWL_SITE_FOR_LINKS'; crawlId: string; crawl: import('@/core/engines/htmlArchive/crawl').CrawlOptions }
+  | { type: 'STOP_LINK_CRAWL'; crawlId: string }
+  | {
+      type: 'LINK_CRAWL_PROGRESS'
+      crawlId: string
+      progress: import('@/core/engines/htmlArchive/crawl').CrawlProgress
+    }
   | { type: 'LOCATE_PAGE_LINK'; index: number; href: string }
   | { type: 'MARK_PAGE_LINKS'; marks: import('@/core/engines/linkChecker/report').PageLinkMark[] }
   | { type: 'CLEAR_PAGE_LINK_MARKS' }
@@ -378,6 +385,9 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'GET_MARKDOWN_FROM_PAGE',
   'CHECK_HTTP_URLS',
   'GET_PAGE_LINKS',
+  'CRAWL_SITE_FOR_LINKS',
+  'STOP_LINK_CRAWL',
+  'LINK_CRAWL_PROGRESS',
   'LOCATE_PAGE_LINK',
   'MARK_PAGE_LINKS',
   'CLEAR_PAGE_LINK_MARKS',

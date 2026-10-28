@@ -18,14 +18,20 @@ import { Button } from '@/shared/components/ui/button'
 import { Segmented } from '@/shared/components/ui/segmented'
 
 import { SiteAvatar } from '../link-toolkit/LinkVisuals'
+import type { LinkCrawlSettings, LinkScanMode } from './crawlSettings'
+import { SiteCrawlPanel } from './SiteCrawlPanel'
 
 interface ScanHeroProps {
   snapshot: PageLinksSnapshot
   plan: TargetPlan
   settings: CheckSettings
+  crawlSettings: LinkCrawlSettings
   onScopeChange: (scope: CheckScope) => void
+  onCrawlChange: (patch: Partial<LinkCrawlSettings>) => void
+  onScanModeChange: (mode: LinkScanMode) => void
   onStart: () => void
   onOpenSettings: () => void
+  busy?: boolean
 }
 
 const FEATURES = [
@@ -35,9 +41,21 @@ const FEATURES = [
   { key: 'featureMark', icon: HighlighterIcon },
 ] as const
 
-export function ScanHero({ snapshot, plan, settings, onScopeChange, onStart, onOpenSettings }: ScanHeroProps) {
+export function ScanHero({
+  snapshot,
+  plan,
+  settings,
+  crawlSettings,
+  onScopeChange,
+  onCrawlChange,
+  onScanModeChange,
+  onStart,
+  onOpenSettings,
+  busy,
+}: ScanHeroProps) {
   const { t } = useTranslation()
   const reduce = useReducedMotion()
+  const siteMode = crawlSettings.mode === 'site'
   const count = plan.targets.length
 
   return (
@@ -67,8 +85,12 @@ export function ScanHero({ snapshot, plan, settings, onScopeChange, onStart, onO
             <ScanSearchIcon className="size-6" />
           </span>
         </div>
-        <h2 className="mt-4 text-[15px] leading-5 font-semibold tracking-tight text-balance">{t('linkChecker.hero.title')}</h2>
-        <p className="mt-1 max-w-80 text-xs leading-relaxed text-pretty text-muted-foreground">{t('linkChecker.hero.subtitle')}</p>
+        <h2 className="mt-4 text-[15px] leading-5 font-semibold tracking-tight text-balance">
+          {siteMode ? t('linkChecker.hero.titleSite') : t('linkChecker.hero.title')}
+        </h2>
+        <p className="mt-1 max-w-80 text-xs leading-relaxed text-pretty text-muted-foreground">
+          {siteMode ? t('linkChecker.hero.subtitleSite') : t('linkChecker.hero.subtitle')}
+        </p>
         <ul className="mt-3 flex flex-wrap justify-center gap-1.5">
           {FEATURES.map(({ key, icon: Icon }, index) => (
             <motion.li
@@ -95,27 +117,58 @@ export function ScanHero({ snapshot, plan, settings, onScopeChange, onStart, onO
         </div>
 
         <div className="space-y-1.5">
-          <p className="text-[11px] font-medium text-muted-foreground">{t('linkChecker.scopeLabel')}</p>
+          <p className="text-[11px] font-medium text-muted-foreground">{t('linkChecker.scanMode.label')}</p>
           <Segmented
-            value={settings.scope}
-            onValueChange={onScopeChange}
-            ariaLabel={t('linkChecker.scopeLabel')}
+            value={crawlSettings.mode}
+            onValueChange={onScanModeChange}
+            ariaLabel={t('linkChecker.scanMode.label')}
             className="flex h-9 w-full [&>button]:flex-1"
-            options={CHECK_SCOPES.map((scope) => ({
-              value: scope,
-              label: (
-                <>
-                  {t(`linkChecker.scope.${scope}`)}
-                  <span className="tabular-nums opacity-60">{plan.available[scope].toLocaleString()}</span>
-                </>
-              ),
-            }))}
+            options={[
+              { value: 'page', label: t('linkChecker.scanMode.page') },
+              { value: 'site', label: t('linkChecker.scanMode.site') },
+            ]}
           />
         </div>
 
-        <Button className="h-10 w-full text-[13px] shadow-md shadow-primary/20" onClick={onStart} disabled={count === 0}>
+        {siteMode ? (
+          <SiteCrawlPanel
+            settings={crawlSettings}
+            onChange={onCrawlChange}
+            pageUrl={snapshot.url}
+            disabled={busy}
+          />
+        ) : (
+          <div className="space-y-1.5">
+            <p className="text-[11px] font-medium text-muted-foreground">{t('linkChecker.scopeLabel')}</p>
+            <Segmented
+              value={settings.scope}
+              onValueChange={onScopeChange}
+              ariaLabel={t('linkChecker.scopeLabel')}
+              className="flex h-9 w-full [&>button]:flex-1"
+              options={CHECK_SCOPES.map((scope) => ({
+                value: scope,
+                label: (
+                  <>
+                    {t(`linkChecker.scope.${scope}`)}
+                    <span className="tabular-nums opacity-60">{plan.available[scope].toLocaleString()}</span>
+                  </>
+                ),
+              }))}
+            />
+          </div>
+        )}
+
+        <Button
+          className="h-10 w-full text-[13px] shadow-md shadow-primary/20"
+          onClick={onStart}
+          disabled={busy || (!siteMode && count === 0)}
+        >
           <ActivityIcon />
-          {count === 0 ? t('linkChecker.nothingToCheck') : t('linkChecker.start', { count })}
+          {siteMode
+            ? t('linkChecker.crawl.startCheck')
+            : count === 0
+              ? t('linkChecker.nothingToCheck')
+              : t('linkChecker.start', { count })}
         </Button>
 
         <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
@@ -133,13 +186,15 @@ export function ScanHero({ snapshot, plan, settings, onScopeChange, onStart, onO
           </Button>
         </div>
 
-        {plan.capped && (
+        {!siteMode && plan.capped && (
           <p className="flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-800 dark:text-amber-300">
             <AlertTriangleIcon className="size-3.5 shrink-0" aria-hidden />
             {t('linkChecker.capped', { count: MAX_TARGETS })}
           </p>
         )}
-        {count === 0 && <p className="text-center text-xs leading-relaxed text-muted-foreground">{t('linkChecker.emptyHint')}</p>}
+        {!siteMode && count === 0 && (
+          <p className="text-center text-xs leading-relaxed text-muted-foreground">{t('linkChecker.emptyHint')}</p>
+        )}
       </div>
     </motion.section>
   )

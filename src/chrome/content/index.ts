@@ -5,6 +5,7 @@ import type { PageLinkMark } from '@/core/engines/linkChecker/report'
 
 import { cancelPicker, isPickerActive, startPicker } from './elementPicker'
 import { buildHtmlBundleInPage, scanHtmlBundleFromDom } from './htmlBundle'
+import { crawlSiteForLinks } from './linkCheckerCrawl'
 import { scanImagesOnPage } from './scanImages'
 import { collectSeoData } from './seoCollect'
 import { applySeoHighlight, clearSeoHighlight } from './seoHighlight'
@@ -26,6 +27,7 @@ const builtBundles = new Map<string, Uint8Array>()
 const activeBuilds = new Map<string, AbortController>()
 /** Ends a crawl early and zips what it has; `activeBuilds` cancels without a ZIP. */
 const crawlStops = new Map<string, AbortController>()
+const linkCrawlStops = new Map<string, AbortController>()
 
 function throttledProgress(buildId: string) {
   let lastSent = 0
@@ -173,6 +175,32 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
       return false
     case 'GET_PAGE_LINKS':
       sendResponse({ ok: true, data: collectPageLinks() })
+      return false
+    case 'CRAWL_SITE_FOR_LINKS': {
+      const { crawlId, crawl } = raw as { crawlId: string; crawl: import('@/core/engines/htmlArchive/crawl').CrawlOptions }
+      const stop = new AbortController()
+      linkCrawlStops.set(crawlId, stop)
+      void crawlSiteForLinks(crawl, {
+        stopSignal: stop.signal,
+        onProgress: (progress) =>
+          void chrome.runtime.sendMessage({ type: 'LINK_CRAWL_PROGRESS', crawlId, progress }).catch(() => {}),
+      })
+        .then((data) => {
+          linkCrawlStops.delete(crawlId)
+          sendResponse({ ok: true, data })
+        })
+        .catch((error: unknown) => {
+          linkCrawlStops.delete(crawlId)
+          sendResponse({
+            ok: false,
+            error: error instanceof Error ? error.message : 'Could not crawl this site for links.',
+          })
+        })
+      return true
+    }
+    case 'STOP_LINK_CRAWL':
+      linkCrawlStops.get(raw.crawlId)?.abort()
+      sendResponse({ ok: true, data: { stopping: linkCrawlStops.has(raw.crawlId) } })
       return false
     case 'LOCATE_PAGE_LINK': {
       const { index, href } = raw as { index: number; href: string }
