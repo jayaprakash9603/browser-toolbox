@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 
-import { getSettings, type Settings } from '@/features/settings/settingsService'
+import { getSettings, SETTINGS_LOCAL_UPDATE_EVENT, type Settings } from '@/features/settings/settingsService'
 
 let cached: Settings | null = null
 let initialized = false
@@ -36,6 +36,12 @@ function initStore(): void {
       })
     }
   })
+  if (typeof window !== 'undefined') {
+    window.addEventListener(SETTINGS_LOCAL_UPDATE_EVENT, (event) => {
+      cached = (event as CustomEvent<Settings>).detail
+      notify()
+    })
+  }
 }
 
 export function useSettings(): Settings | null {

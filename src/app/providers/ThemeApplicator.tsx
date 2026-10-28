@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 
 import { STORAGE_KEYS } from '@/core/constants'
 import { TOOLBOX_RESTORE_THEME_EVENT } from '@/features/api-client/themeEvents'
@@ -25,8 +25,6 @@ function shareDark(dark: boolean): void {
 
 export function ThemeApplicator() {
   const settings = useSettings()
-  const previousTheme = useRef<boolean | null>(null)
-  const previousPalette = useRef<string | null>(null)
 
   useEffect(() => {
     const root = document.documentElement
@@ -34,31 +32,27 @@ export function ThemeApplicator() {
       root.dataset.density = 'comfortable'
       return
     }
-    let transitionTimer: number | undefined
     const apply = () => {
       const dark =
         settings.theme === 'dark' ||
         (settings.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
       const palette = settings.palette ?? DEFAULT_PALETTE
-      const themeChanged = previousTheme.current !== null && previousTheme.current !== dark
-      const paletteChanged = previousPalette.current !== null && previousPalette.current !== palette
-      if (themeChanged || paletteChanged) {
-        root.classList.add('theme-transition')
-        window.clearTimeout(transitionTimer)
-        transitionTimer = window.setTimeout(() => root.classList.remove('theme-transition'), 300)
-      }
+
       root.classList.toggle('dark', dark)
       root.dataset.palette = palette
-      applyFavicon(palette, dark)
-      shareDark(dark)
       root.dataset.density = settings.density ?? 'comfortable'
+      root.style.colorScheme = dark ? 'dark' : 'light'
+
       writeThemeBootCache({
         dark,
         palette,
         density: settings.density ?? 'comfortable',
       })
-      previousTheme.current = dark
-      previousPalette.current = palette
+
+      requestAnimationFrame(() => {
+        applyFavicon(palette, dark)
+        shareDark(dark)
+      })
     }
     apply()
     const media = window.matchMedia('(prefers-color-scheme: dark)')
@@ -67,7 +61,6 @@ export function ThemeApplicator() {
     return () => {
       media.removeEventListener('change', apply)
       window.removeEventListener(TOOLBOX_RESTORE_THEME_EVENT, apply)
-      window.clearTimeout(transitionTimer)
     }
   }, [settings])
 

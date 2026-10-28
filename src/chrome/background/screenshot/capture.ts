@@ -1,4 +1,4 @@
-import { fullPageOffsets } from '@/core/engines/capture/pageActions'
+import { fullPageOffsets, type AreaSelection } from '@/core/engines/capture/pageActions'
 import {
   collectPageMeta,
   disableSmoothScroll,
@@ -184,7 +184,7 @@ async function scrollAndCaptureTarget(
 /** Scrolls the window over a page-space rectangle and captures every viewport it spans. */
 async function captureWindowRegion(
   tab: chrome.tabs.Tab,
-  area: CaptureRect & { devicePixelRatio: number },
+  area: CaptureRect & { devicePixelRatio: number; savedScrollX?: number; savedScrollY?: number },
   notice?: string,
 ): Promise<ScreenshotFrame> {
   const tabId = tab.id!
@@ -219,6 +219,67 @@ async function captureWindowRegion(
     devicePixelRatio: area.devicePixelRatio,
     pageInfo: pageInfoFromTab(tab),
     notice,
+  }
+}
+
+async function captureFixedElementRegion(
+  tab: chrome.tabs.Tab,
+  area: CaptureRect & { devicePixelRatio: number },
+): Promise<ScreenshotFrame> {
+  if (tab.id == null || tab.windowId == null) throw new Error('Invalid tab.')
+  const tabId = tab.id
+  const windowId = tab.windowId
+  const viewport = await runInTab(tabId, readViewport)
+  const dataUrl = await captureVisiblePng(windowId)
+  return {
+    slices: [
+      {
+        dataUrl,
+        scrollX: 0,
+        scrollY: 0,
+        view: { x: 0, y: 0, width: viewport.width, height: viewport.height },
+      },
+    ],
+    region: { x: area.x, y: area.y, width: area.width, height: area.height },
+    stitchHeight: area.height,
+    devicePixelRatio: area.devicePixelRatio,
+    pageInfo: pageInfoFromTab(tab),
+  }
+}
+
+async function captureElementScrollerRegion(tab: chrome.tabs.Tab, area: AreaSelection): Promise<ScreenshotFrame> {
+  const tabId = tab.id!
+  const windowId = tab.windowId!
+  const settings = await loadScreenshotSettings()
+  const cs = area.captureScroll!
+  const view = cs.clip
+  const offsets = fullPageOffsets(cs.scrollHeight, cs.viewportHeight)
+  const slices: CaptureSlice[] = []
+  await runInTab(tabId, disableSmoothScroll)
+  try {
+    for (let i = 0; i < offsets.length; i++) {
+      if (i === 1 && settings.hideStickyHeaders) await runInTab(tabId, hideFixedStickyAfterFirst)
+      const reached = await runInTab(tabId, scrollCaptureTo, [offsets[i]])
+      await sleep(settings.scrollStepDelayMs)
+      const dataUrl = await captureVisiblePng(windowId)
+      slices.push({
+        dataUrl,
+        scrollY: reached ?? offsets[i],
+        view,
+      })
+    }
+  } finally {
+    await runInTab(tabId, restoreCapturePageState, [cs.savedScrollTop]).catch(() => undefined)
+    if (area.savedScrollX != null && area.savedScrollY != null) {
+      await runInTab(tabId, scrollWindowTo, [area.savedScrollX, area.savedScrollY]).catch(() => undefined)
+    }
+  }
+  return {
+    slices,
+    region: { x: area.x, y: area.y, width: area.width, height: area.height },
+    stitchHeight: area.height,
+    devicePixelRatio: area.devicePixelRatio,
+    pageInfo: pageInfoFromTab(tab),
   }
 }
 
@@ -288,5 +349,9 @@ export async function captureElementFrame(tab: chrome.tabs.Tab): Promise<Screens
   }
   const area = await runInTab(tab.id, pickElementRect)
   if (!area) return null
-  return withToolboxUiHidden(tab.id, () => captureWindowRegion(tab, area))
+  return withToolboxUiHidden(tab.id, () => {
+    if (area.captureScroll) return captureElementScrollerRegion(tab, area)
+    if (area.fixedViewport) return captureFixedElementRegion(tab, area)
+    return captureWindowRegion(tab, area)
+  })
 }

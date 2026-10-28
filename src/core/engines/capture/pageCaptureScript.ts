@@ -403,15 +403,111 @@ export function selectPageAreaWithScroll(): Promise<SelectionCaptureResult | nul
 export function pickElementRect(): Promise<AreaSelection | null> {
   return new Promise((resolve) => {
     const highlight = document.createElement('div')
+    highlight.setAttribute('data-tbx-element-picker', '1')
     highlight.style.cssText =
       'position:fixed;pointer-events:none;z-index:2147483646;border:2px solid #22c55e;background:rgba(34,197,94,.15);display:none'
     const hint = document.createElement('div')
+    hint.setAttribute('data-tbx-element-picker', '1')
     hint.textContent = 'Click element · Esc to cancel'
     hint.style.cssText =
       'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:2147483647;background:#111827;color:#fff;font:500 13px/1.2 system-ui,sans-serif;padding:8px 12px;border-radius:999px'
     document.documentElement.append(highlight, hint)
 
-    let target: Element | null = null
+    const store = window as unknown as Record<string, HTMLElement | null>
+    store.__tbxCaptureScrollEl = null
+
+    const isPickerUi = (node: Element | null) =>
+      !!node?.closest?.('[data-tbx-element-picker]')
+
+    const clipToViewport = (rect: DOMRect) => {
+      const left = Math.max(0, rect.left)
+      const top = Math.max(0, rect.top)
+      const right = Math.min(window.innerWidth, rect.right)
+      const bottom = Math.min(window.innerHeight, rect.bottom)
+      return {
+        x: left,
+        y: top,
+        width: Math.max(0, right - left),
+        height: Math.max(0, bottom - top),
+      }
+    }
+
+    const targetFromPoint = (clientX: number, clientY: number): HTMLElement | null => {
+      const raw = document.elementFromPoint(clientX, clientY)
+      if (!raw || isPickerUi(raw)) return null
+      return raw instanceof HTMLElement ? raw : null
+    }
+
+    const scrollableElement = (el: HTMLElement): HTMLElement | null => {
+      const overflowY = getComputedStyle(el).overflowY
+      if (overflowY !== 'auto' && overflowY !== 'scroll' && overflowY !== 'overlay') return null
+      if (el.scrollHeight <= el.clientHeight + 1) return null
+      return el
+    }
+
+    const buildPick = (el: HTMLElement): AreaSelection | null => {
+      const savedScrollX = window.scrollX
+      const savedScrollY = window.scrollY
+      const dpr = window.devicePixelRatio || 1
+      const scrollEl = scrollableElement(el)
+      store.__tbxCaptureScrollEl = scrollEl
+
+      if (scrollEl) {
+        const clip = clipToViewport(scrollEl.getBoundingClientRect())
+        if (clip.width < 8 || clip.height < 8) return null
+        return {
+          x: 0,
+          y: 0,
+          width: scrollEl.clientWidth,
+          height: scrollEl.scrollHeight,
+          devicePixelRatio: dpr,
+          captureScroll: {
+            scrollHeight: scrollEl.scrollHeight,
+            viewportHeight: scrollEl.clientHeight,
+            savedScrollTop: scrollEl.scrollTop,
+            clip,
+          },
+          savedScrollX,
+          savedScrollY,
+        }
+      }
+
+      const style = getComputedStyle(el)
+      const rect = el.getBoundingClientRect()
+      if (rect.width < 8 || rect.height < 8) return null
+
+      if (style.position === 'fixed' || style.position === 'sticky') {
+        return {
+          x: rect.left,
+          y: rect.top,
+          width: rect.width,
+          height: rect.height,
+          devicePixelRatio: dpr,
+          fixedViewport: true,
+          savedScrollX,
+          savedScrollY,
+        }
+      }
+
+      return {
+        x: rect.left + window.scrollX,
+        y: rect.top + window.scrollY,
+        width: rect.width,
+        height: rect.height,
+        devicePixelRatio: dpr,
+        savedScrollX,
+        savedScrollY,
+      }
+    }
+
+    const showHighlight = (el: HTMLElement) => {
+      const rect = el.getBoundingClientRect()
+      highlight.style.display = 'block'
+      highlight.style.left = `${rect.left}px`
+      highlight.style.top = `${rect.top}px`
+      highlight.style.width = `${rect.width}px`
+      highlight.style.height = `${rect.height}px`
+    }
 
     const cleanup = (value: AreaSelection | null) => {
       highlight.remove()
@@ -419,6 +515,7 @@ export function pickElementRect(): Promise<AreaSelection | null> {
       document.removeEventListener('mousemove', onMove, true)
       document.removeEventListener('click', onClick, true)
       window.removeEventListener('keydown', onKey, true)
+      if (!value) store.__tbxCaptureScrollEl = null
       resolve(value)
     }
 
@@ -430,32 +527,28 @@ export function pickElementRect(): Promise<AreaSelection | null> {
     }
 
     const onMove = (event: MouseEvent) => {
-      const el = document.elementFromPoint(event.clientX, event.clientY)
-      if (!el || el === highlight || el === hint) return
-      target = el
-      const rect = el.getBoundingClientRect()
-      highlight.style.display = 'block'
-      highlight.style.left = `${rect.left}px`
-      highlight.style.top = `${rect.top}px`
-      highlight.style.width = `${rect.width}px`
-      highlight.style.height = `${rect.height}px`
+      const el = targetFromPoint(event.clientX, event.clientY)
+      if (!el) {
+        highlight.style.display = 'none'
+        return
+      }
+      showHighlight(el)
     }
 
     const onClick = (event: MouseEvent) => {
       event.preventDefault()
       event.stopPropagation()
-      if (!target) {
+      const el = targetFromPoint(event.clientX, event.clientY)
+      if (!el) {
         cleanup(null)
         return
       }
-      const rect = target.getBoundingClientRect()
-      cleanup({
-        x: rect.left + window.scrollX,
-        y: rect.top + window.scrollY,
-        width: rect.width,
-        height: rect.height,
-        devicePixelRatio: window.devicePixelRatio || 1,
-      })
+      const pick = buildPick(el)
+      if (!pick) {
+        cleanup(null)
+        return
+      }
+      cleanup(pick)
     }
 
     document.addEventListener('mousemove', onMove, true)

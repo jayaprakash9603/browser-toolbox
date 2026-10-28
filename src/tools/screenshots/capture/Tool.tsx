@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { CameraIcon, KeyboardIcon, TimerIcon } from 'lucide-react'
 
 import { useRouter } from '@/app/router'
+import i18n from '@/i18n'
+import { captureStrings } from '@/i18n/locales/captureEn'
 import { useShortcutDisplay } from '@/features/shortcuts/useShortcutDisplay'
 import { isCaptureViewerSearch } from '@/core/screenshot/viewerUrl'
 import {
@@ -25,6 +27,9 @@ import { TargetHero } from './TargetHero'
 import { UrlBatch } from './UrlBatch'
 import { useCaptureRun, type RunMode } from './useCaptureRun'
 import { useCaptureTarget } from './useCaptureTarget'
+
+// Registered with the tool chunk rather than en.ts so the side panel startup bundle stays within budget.
+i18n.addResources('en', 'translation', captureStrings)
 
 function CaptureLauncher() {
   const { t } = useTranslation()

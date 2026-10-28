@@ -137,4 +137,14 @@ describe('planSliceDraw', () => {
     )
     expect(draw).toEqual({ sx: 250, sy: 60, width: 500, height: 700, dx: 0, dy: 0 })
   })
+
+  it('crops a fixed element from the viewport', () => {
+    const draw = planSliceDraw(
+      { dataUrl: '', scrollX: 0, scrollY: 0, view: { x: 0, y: 0, width: 1200, height: 800 } },
+      { x: 320, y: 180, width: 240, height: 120 },
+      { width: 1200, height: 800 },
+      1,
+    )
+    expect(draw).toEqual({ sx: 320, sy: 180, width: 240, height: 120, dx: 0, dy: 0 })
+  })
 })

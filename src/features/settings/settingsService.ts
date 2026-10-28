@@ -39,16 +39,24 @@ export async function getSettings(): Promise<Settings> {
   return merged
 }
 
+export const SETTINGS_LOCAL_UPDATE_EVENT = 'browser-toolbox:settings-local'
+
 export async function updateSettings(patch: Partial<Settings>): Promise<Settings> {
   const current = await getSettings()
   const next = { ...current, ...patch }
   const captureTurningOn = isPageClipboardCaptureOn(next) && !isPageClipboardCaptureOn(current)
   if (captureTurningOn && !(await requestAllSitesAccess())) return current
   await set(STORAGE_KEYS.settings, next)
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(SETTINGS_LOCAL_UPDATE_EVENT, { detail: next }))
+  }
   return next
 }
 
 export async function resetSettings(): Promise<Settings> {
   await set(STORAGE_KEYS.settings, DEFAULT_SETTINGS)
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(SETTINGS_LOCAL_UPDATE_EVENT, { detail: DEFAULT_SETTINGS }))
+  }
   return DEFAULT_SETTINGS
 }

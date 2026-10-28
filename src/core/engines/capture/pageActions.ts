@@ -12,6 +12,17 @@ export interface AreaSelection {
   width: number
   height: number
   devicePixelRatio: number
+  /** Scroll inside the picked element and crop each shot to `clip` (CSS px). */
+  captureScroll?: {
+    scrollHeight: number
+    viewportHeight: number
+    savedScrollTop: number
+    clip: { x: number; y: number; width: number; height: number }
+  }
+  /** Region is in viewport coordinates; use a single visible capture and crop. */
+  fixedViewport?: boolean
+  savedScrollX?: number
+  savedScrollY?: number
 }
 
 export function readPageCaptureMetrics(): PageCaptureMetrics {

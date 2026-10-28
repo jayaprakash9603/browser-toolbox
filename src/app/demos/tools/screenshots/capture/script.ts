@@ -10,7 +10,7 @@ export const MODES = [
   { id: 'all-tabs', label: 'All tabs' },
 ] as const
 
-/** Annotation tools from `capture.tool.*` in en.ts. */
+/** Annotation tools from `capture.tool.*` (reserved; editor labels may use these later). */
 export const ANNOT_TOOLS = [
   'Rectangle',
   'Circle',
