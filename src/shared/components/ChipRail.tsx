@@ -11,6 +11,8 @@ interface ChipRailProps {
   label?: string
   /** Two rows fill column by column, so neighbours in the list stay next to each other. */
   rows?: 1 | 2
+  /** Edge gradient mask; disable on opaque sticky bars so scrolling content does not show through. */
+  edgeFade?: boolean
   className?: string
 }
 
@@ -20,7 +22,7 @@ const FADE = 28
  * One or two rows of chips that never wrap. When the rows are wider than the space, they scroll
  * sideways inside itself; edges fade and arrow buttons appear only on the hidden side.
  */
-export function ChipRail({ children, role, label, rows = 1, className }: ChipRailProps) {
+export function ChipRail({ children, role, label, rows = 1, edgeFade = true, className }: ChipRailProps) {
   const reduce = useReducedMotion()
   const rail = useRef<HTMLDivElement>(null)
   const row = useRef<HTMLDivElement>(null)
@@ -68,7 +70,9 @@ export function ChipRail({ children, role, label, rows = 1, className }: ChipRai
     scroller.scrollBy({ left: direction * rtl * scroller.clientWidth * 0.7, behavior: reduce ? 'auto' : 'smooth' })
   }
 
-  const mask = `linear-gradient(to right, ${edges.start ? 'transparent' : '#000'} 0, #000 ${edges.start ? FADE : 0}px, #000 calc(100% - ${edges.end ? FADE : 0}px), ${edges.end ? 'transparent' : '#000'} 100%)`
+  const mask = edgeFade
+    ? `linear-gradient(to right, ${edges.start ? 'transparent' : '#000'} 0, #000 ${edges.start ? FADE : 0}px, #000 calc(100% - ${edges.end ? FADE : 0}px), ${edges.end ? 'transparent' : '#000'} 100%)`
+    : undefined
 
   const arrow = 'absolute top-1/2 z-[1] flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm transition-[opacity,color] duration-200 hover:text-foreground'
 
@@ -77,7 +81,7 @@ export function ChipRail({ children, role, label, rows = 1, className }: ChipRai
       <div
         ref={rail}
         className="scrollbar-none overflow-x-auto overscroll-x-contain scroll-px-1 py-0.5"
-        style={{ maskImage: mask, WebkitMaskImage: mask }}
+        style={mask ? { maskImage: mask, WebkitMaskImage: mask } : undefined}
       >
         <div
           ref={row}

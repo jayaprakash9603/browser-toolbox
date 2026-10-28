@@ -91,23 +91,22 @@ export default function AllToolsPage() {
         className="scrollbar-styled @container h-full overflow-x-clip overflow-y-auto px-[var(--density-page-pad)] pt-2 pb-6"
       >
         <div className="mx-auto flex max-w-3xl flex-col gap-2">
-          <div className="flex items-start gap-2 pb-0.5">
-            <BackButton to="/" className="mt-0.5 shrink-0" />
-            <div className="min-w-0 flex-1">
-              <div className="flex min-w-0 items-center gap-2">
-                <h1 className="truncate text-[15px] font-semibold tracking-tight">{t('allTools.title')}</h1>
-                <span className="shrink-0 rounded-full bg-muted px-1.5 text-[10px] leading-4 font-semibold text-muted-foreground tabular-nums">
-                  {rows.length}
-                </span>
-              </div>
-              <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-muted-foreground">
-                {t('allTools.heroBody', { categories: categories.length })}
-              </p>
-            </div>
-          </div>
-
-          <div className="sticky top-0 z-20 -mx-[var(--density-page-pad)] border-b bg-background/92 px-[var(--density-page-pad)] pt-1 pb-2 backdrop-blur-md supports-[backdrop-filter]:bg-background/80">
+          <div className="sticky top-0 z-10 -mx-[var(--density-page-pad)] border-b bg-background px-[var(--density-page-pad)] pt-1 pb-2 backdrop-blur-sm">
             <div className="flex flex-col gap-2">
+              <div className="flex items-start gap-2">
+                <BackButton to="/" className="mt-0.5 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <h1 className="truncate text-[15px] font-semibold tracking-tight">{t('allTools.title')}</h1>
+                    <span className="shrink-0 rounded-full bg-muted px-1.5 text-[10px] leading-4 font-semibold text-muted-foreground tabular-nums">
+                      {rows.length}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-muted-foreground">
+                    {t('allTools.heroBody', { categories: categories.length })}
+                  </p>
+                </div>
+              </div>
               <SearchInput
                 value={query}
                 onChange={setQuery}
@@ -116,7 +115,7 @@ export default function AllToolsPage() {
                 shortcut="/"
               />
               <div className="flex items-center gap-1.5">
-                <ChipRail role="group" label={t('allTools.filter')} className="min-w-0 flex-1">
+                <ChipRail role="group" label={t('allTools.filter')} edgeFade={false} className="min-w-0 flex-1">
                   <FilterChip active={filter === ALL} count={rows.length} onClick={() => setFilter(ALL)}>
                     {t('allTools.all')}
                   </FilterChip>
