@@ -3,9 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { motion, useReducedMotion } from 'motion/react'
 import { FileImageIcon, LoaderCircleIcon, Settings2Icon } from 'lucide-react'
 
-import { DEFAULT_DOCUMENT_SETTINGS, type DocBlock, type DocumentSettings } from '@/core/engines/files/document'
+import { DEFAULT_DOCUMENT_SETTINGS, type DocumentSettings } from '@/core/engines/files/document'
 import { docToDocx } from '@/core/engines/files/docx'
-import { canvasToBlob, extractPageImages, extractPageText, renderPdfPageBlob } from '@/core/engines/pdf/pdfjs'
+import { canvasToBlob, extractPageImages, extractPageText, readPageText, renderPdfPageBlob } from '@/core/engines/pdf/pdfjs'
+import { pagesToDocBlocks } from '@/core/engines/pdf/textLayout'
 import { bytesBlob, createArtifact, type FileArtifact } from '@/shared/components/files'
 import { ActionBar, OptionField, OptionSelect, OptionSwitch, PanelError, PanelSection } from '@/shared/components/toolkit'
 import { Input } from '@/shared/components/ui/input'
@@ -20,21 +21,12 @@ type Target = 'images' | 'text' | 'word'
 
 const DPIS = ['72', '150', '220', '300'] as const
 
-function toBlocks(pages: string[], headings: boolean): DocBlock[] {
-  const blocks: DocBlock[] = []
-  pages.forEach((text, index) => {
-    if (headings) blocks.push({ type: 'heading', level: 2, runs: [{ text: `Page ${index + 1}` }] })
-    for (const paragraph of text.split(/\n{2,}/)) {
-      const joined = paragraph
-        .split('\n')
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .join(' ')
-        .replace(/(\w)- (\w)/g, '$1$2')
-      if (joined) blocks.push({ type: 'paragraph', runs: [{ text: joined }] })
-    }
+function blocksHaveText(blocks: { type: string; runs?: { text: string }[]; text?: string }[]): boolean {
+  return blocks.some((block) => {
+    if ('text' in block && block.text?.trim()) return true
+    if ('runs' in block && block.runs?.some((run) => run.text.trim())) return true
+    return false
   })
-  return blocks
 }
 
 export function ConvertPanel({ target }: { target: Target }) {
@@ -117,20 +109,34 @@ export function ConvertPanel({ target }: { target: Target }) {
           const first = doc.pages[0]
           const settings: DocumentSettings = {
             ...DEFAULT_DOCUMENT_SETTINGS,
-            title: '',
+            title: stem,
             markdown: false,
             pageNumbers: false,
             pageSize: first && Math.abs(first.width - 612) < 3 ? 'letter' : 'a4',
             orientation: first && first.width > first.height ? 'landscape' : 'portrait',
           }
-          const blocks = toBlocks(texts, headings)
+          const pageTexts = []
+          for (const [position, page] of pages.entries()) {
+            pageTexts.push(await readPageText(doc.handle, page + 1, { fonts: true, links: true }))
+            setProgress({ done: position + 1, total: pages.length })
+          }
+          const blocks = pagesToDocBlocks(pageTexts, {
+            headings: true,
+            links: true,
+            tables: true,
+            pageBreaks: false,
+            pageHeadings: headings,
+            pageNumbers: pages.map((page) => page + 1),
+          })
+          const empty = !blocksHaveText(blocks)
+          if (empty) throw new Error(t('pdf.convert.noText'))
           artifacts.push(
             createArtifact({
               name: `${stem}.docx`,
               blob: bytesBlob(docToDocx(blocks, settings), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
               format: 'DOCX',
               preview: { kind: 'document', blocks, settings },
-              note: note ?? t('pdf.convert.wordNote'),
+              note: t('pdf.convert.wordNote'),
             }),
           )
         }

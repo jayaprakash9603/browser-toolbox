@@ -70,8 +70,10 @@ export default function ResponsiveViewerTool() {
 
   useEffect(() => {
     let active = true
-    void setFramingAllowed(settings.unblock).then(() => {
-      if (active) setAppliedUnblock(settings.unblock)
+    void setFramingAllowed(settings.unblock).then((ok) => {
+      if (!active) return
+      setAppliedUnblock(settings.unblock)
+      if (ok) setReloadKey((k) => k + 1)
     })
     return () => {
       active = false
@@ -127,6 +129,8 @@ export default function ResponsiveViewerTool() {
   const allRotated = rotatable.length > 0 && rotatable.every((d) => settings.rotated.includes(d.id))
   const maxHeight = Math.max(300, Math.round(windowHeight * 0.62))
   const framesReady = appliedUnblock === settings.unblock
+  const previewActive = framesReady
+  const embedEnabled = settings.unblock
   const secure = url?.startsWith('https:')
   const zoomLabel = settings.zoom === 'fit' ? t('rv.view.fit') : `${Number(settings.zoom) * 100}%`
 
@@ -416,7 +420,6 @@ export default function ResponsiveViewerTool() {
                 </Button>
               </motion.div>
             ) : (
-              framesReady &&
               !fullOpen && (
                 <div
                   className={cn(
@@ -438,6 +441,8 @@ export default function ResponsiveViewerTool() {
                         maxHeight={maxHeight}
                         frame={settings.frame}
                         reloadKey={reloadKey}
+                        previewReady={previewActive}
+                        embedEnabled={embedEnabled}
                         index={index}
                         onRotate={() => update({ rotated: toggleIn(settings.rotated, device.id) })}
                         onHide={() =>
@@ -466,6 +471,8 @@ export default function ResponsiveViewerTool() {
             rotated={settings.rotated}
             frame={settings.frame}
             reloadKey={reloadKey}
+            previewReady={previewActive}
+            embedEnabled={embedEnabled}
             onRotate={(id) => update({ rotated: toggleIn(settings.rotated, id) })}
             onClose={() => setFullOpen(false)}
           />

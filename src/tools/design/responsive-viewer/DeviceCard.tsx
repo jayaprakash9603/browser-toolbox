@@ -24,6 +24,8 @@ interface DeviceCardProps {
   maxHeight: number
   frame: boolean
   reloadKey: number
+  previewReady: boolean
+  embedEnabled: boolean
   index: number
   onRotate: () => void
   onHide: () => void
@@ -39,6 +41,8 @@ export function DeviceCard({
   maxHeight,
   frame,
   reloadKey,
+  previewReady,
+  embedEnabled,
   index,
   onRotate,
   onHide,
@@ -144,6 +148,8 @@ export function DeviceCard({
                 width={width}
                 height={height}
                 scale={scale}
+                previewReady={previewReady}
+                embedEnabled={embedEnabled}
               />
               {frame && device.kind === 'phone' && (
                 <span
@@ -196,24 +202,69 @@ export function DeviceShell({ kind, frame, hostname, children }: { kind: DeviceK
   )
 }
 
-export function Viewport({ src, title, width, height, scale }: { src: string; title: string; width: number; height: number; scale: number }) {
+export function Viewport({
+  src,
+  title,
+  width,
+  height,
+  scale,
+  previewReady,
+  embedEnabled,
+}: {
+  src: string
+  title: string
+  width: number
+  height: number
+  scale: number
+  previewReady: boolean
+  embedEnabled: boolean
+}) {
   const { t } = useTranslation()
-  const [state, setState] = useState<'loading' | 'slow' | 'loaded'>('loading')
+  const [state, setState] = useState<'preparing' | 'loading' | 'slow' | 'loaded' | 'blocked' | 'disabled'>(
+    !previewReady ? 'preparing' : !embedEnabled ? 'disabled' : 'loading',
+  )
 
   useEffect(() => {
+    if (!previewReady) {
+      setState('preparing')
+      return
+    }
+    if (!embedEnabled) {
+      setState('disabled')
+      return
+    }
+    setState('loading')
     const timer = setTimeout(() => setState((s) => (s === 'loading' ? 'slow' : s)), SLOW_LOAD_MS)
     return () => clearTimeout(timer)
-  }, [])
+  }, [previewReady, embedEnabled, src])
+
+  const inspectLoad = (iframe: HTMLIFrameElement) => {
+    try {
+      const href = iframe.contentWindow?.location.href ?? ''
+      if (!href || href === 'about:blank') return
+      if (href.startsWith('chrome-error:') || href.includes('chromewebdata')) {
+        setState('blocked')
+        return
+      }
+    } catch {
+      /* cross-origin success */
+    }
+    setState('loaded')
+  }
 
   return (
     <>
       <iframe
         title={title}
-        src={src}
+        src={previewReady && embedEnabled ? src : 'about:blank'}
         className="absolute left-0 top-0 origin-top-left border-0 bg-white"
         style={{ width, height, transform: `scale(${scale})` }}
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals"
-        onLoad={() => setState('loaded')}
+        referrerPolicy="no-referrer-when-downgrade"
+        onLoad={(event) => {
+          if (!previewReady || !embedEnabled) return
+          inspectLoad(event.currentTarget)
+        }}
       />
       <AnimatePresence>
         {state !== 'loaded' && (
@@ -224,25 +275,43 @@ export function Viewport({ src, title, width, height, scale }: { src: string; ti
             exit={{ opacity: 0, transition: { duration: 0.25 } }}
             role="status"
           >
-            <LoaderCircleIcon className="size-5 animate-spin text-primary motion-reduce:animate-none" aria-hidden />
-            <AnimatePresence>
-              {state === 'slow' && (
-                <motion.div
-                  className="flex flex-col items-center gap-2"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, ease: EASE_OUT }}
-                >
-                  <p className="max-w-56 text-[11px] leading-4 text-muted-foreground">{t('rv.card.slow')}</p>
-                  <Button variant="outline" size="xs" asChild>
-                    <a href={src} target="_blank" rel="noreferrer">
-                      <ExternalLinkIcon />
-                      {t('rv.card.openTab')}
-                    </a>
-                  </Button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {state === 'preparing' ? (
+              <p className="max-w-56 text-[11px] leading-4 text-muted-foreground">{t('rv.card.preparing')}</p>
+            ) : state === 'disabled' ? (
+              <p className="max-w-56 text-[11px] leading-4 text-muted-foreground">{t('rv.unblock.body')}</p>
+            ) : state === 'blocked' ? (
+              <div className="flex flex-col items-center gap-2">
+                <p className="max-w-56 text-[11px] leading-4 text-muted-foreground">{t('rv.card.blocked')}</p>
+                <Button variant="outline" size="xs" asChild>
+                  <a href={src} target="_blank" rel="noreferrer">
+                    <ExternalLinkIcon />
+                    {t('rv.card.openTab')}
+                  </a>
+                </Button>
+              </div>
+            ) : (
+              <>
+                <LoaderCircleIcon className="size-5 animate-spin text-primary motion-reduce:animate-none" aria-hidden />
+                <AnimatePresence>
+                  {state === 'slow' && (
+                    <motion.div
+                      className="flex flex-col items-center gap-2"
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25, ease: EASE_OUT }}
+                    >
+                      <p className="max-w-56 text-[11px] leading-4 text-muted-foreground">{t('rv.card.slow')}</p>
+                      <Button variant="outline" size="xs" asChild>
+                        <a href={src} target="_blank" rel="noreferrer">
+                          <ExternalLinkIcon />
+                          {t('rv.card.openTab')}
+                        </a>
+                      </Button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

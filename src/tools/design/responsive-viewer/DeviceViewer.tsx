@@ -35,6 +35,8 @@ interface DeviceViewerProps {
   rotated: readonly string[]
   frame: boolean
   reloadKey: number
+  previewReady: boolean
+  embedEnabled: boolean
   onRotate: (id: string) => void
   onClose: () => void
 }
@@ -75,6 +77,8 @@ function Panel({
   rotated,
   frame,
   reloadKey,
+  previewReady,
+  embedEnabled,
   onRotate,
   onClose,
   onOpened,
@@ -397,6 +401,8 @@ function Panel({
             active={order === index}
             mounted={Math.abs(order - index) <= 1}
             reloadKey={`${reloadKey}.${entry.id === device.id ? localReload : 0}`}
+            previewReady={previewReady}
+            embedEnabled={embedEnabled}
           />
         ))}
       </div>
@@ -440,6 +446,8 @@ function DevicePage({
   active,
   mounted,
   reloadKey,
+  previewReady,
+  embedEnabled,
 }: {
   device: Device
   url: string
@@ -448,6 +456,8 @@ function DevicePage({
   active: boolean
   mounted: boolean
   reloadKey: string
+  previewReady: boolean
+  embedEnabled: boolean
 }) {
   const [stage, setStage] = useState<{ width: number; height: number } | null>(null)
   const ref = useRef<HTMLElement>(null)
@@ -493,7 +503,16 @@ function DevicePage({
             )}
             style={{ width: Math.round(width * scale), height: Math.round(height * scale) }}
           >
-            <Viewport key={`${url}#${reloadKey}`} src={url} title={device.label} width={width} height={height} scale={scale} />
+            <Viewport
+              key={`${url}#${reloadKey}`}
+              src={url}
+              title={device.label}
+              width={width}
+              height={height}
+              scale={scale}
+              previewReady={previewReady}
+              embedEnabled={embedEnabled}
+            />
           </div>
         </DeviceShell>
       )}

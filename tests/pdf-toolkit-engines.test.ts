@@ -10,7 +10,7 @@ import { sheetsToXlsx } from '@/core/engines/files/xlsx'
 import { addFormFields, cropPdf, rebuildPdf, removePages, rotatePages } from '@/core/engines/pdf/edit'
 import { convertToPdfA } from '@/core/engines/pdf/pdfa'
 import type { PageText, TextRun } from '@/core/engines/pdf/pdfjs'
-import { compactTable, extractiveSummary, findText, groupLines, linesToTable, pagesToMarkdown, topKeywords } from '@/core/engines/pdf/textLayout'
+import { compactTable, extractiveSummary, findText, groupLines, linesToTable, pagesToDocBlocks, pagesToMarkdown, topKeywords } from '@/core/engines/pdf/textLayout'
 
 const PNG_1PX = Uint8Array.from(
   atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='),
@@ -71,6 +71,23 @@ describe('text layout', () => {
     expect(markdown).toContain('Sales grew in every region this quarter.')
     expect(markdown).toContain('- North up 12%')
     expect(markdown).toContain('| Region | Q1 |\n| --- | --- |\n| North | 12 |\n| South | 9 |')
+  })
+
+  it('builds Word blocks with headings, lists and page labels', () => {
+    const blocks = pagesToDocBlocks(
+      [
+        page([
+          run('Quarterly report', 20, 40, 22),
+          run('Sales grew in every region this quarter.', 20, 80),
+          run('• North up 12%', 20, 110),
+        ]),
+      ],
+      { headings: true, links: false, tables: false, pageBreaks: false, pageHeadings: true, pageNumbers: [3] },
+    )
+    expect(blocks.find((block) => block.type === 'heading')).toMatchObject({ level: 2, runs: [{ text: 'Page 3' }] })
+    expect(blocks.some((block) => block.type === 'list')).toBe(true)
+    const doc = readDocx(docToDocx(blocks, DEFAULT_DOCUMENT_SETTINGS))
+    expect(doc.blocks.map((block) => ('runs' in block ? block.runs.map((part) => part.text).join('') : '')).join(' ')).toContain('Quarterly report')
   })
 
   it('finds text case-insensitively and by whole word', () => {

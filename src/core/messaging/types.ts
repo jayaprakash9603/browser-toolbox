@@ -273,6 +273,7 @@ export type ExtensionMessage =
   | { type: 'SCRIPT_STUDIO_GET_STATE' }
   | { type: 'SCRIPT_STUDIO_CHECK_UPDATES'; scriptIds?: string[] }
   | { type: 'SCRIPT_STUDIO_SET_GLOBAL'; enabled: boolean }
+  | { type: 'RV_FRAMING_SET'; allowed: boolean }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
@@ -423,6 +424,7 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'SCRIPT_STUDIO_GET_STATE',
   'SCRIPT_STUDIO_CHECK_UPDATES',
   'SCRIPT_STUDIO_SET_GLOBAL',
+  'RV_FRAMING_SET',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {

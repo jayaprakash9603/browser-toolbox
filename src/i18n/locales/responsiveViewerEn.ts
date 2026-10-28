@@ -67,6 +67,8 @@ export const responsiveViewerStrings = {
   'rv.card.window': 'Open in a window at this size',
   'rv.card.hide': 'Hide device',
   'rv.card.slow': 'Still loading. Some sites refuse to appear inside frames.',
+  'rv.card.blocked': 'This site blocked the preview frame (or the network failed). Try “Open in tab” or turn on framing unblock below.',
+  'rv.card.preparing': 'Preparing preview…',
   'rv.card.openTab': 'Open in tab',
   'rv.empty.title': 'Preview a page on every screen',
   'rv.empty.body':

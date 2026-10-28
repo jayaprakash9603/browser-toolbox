@@ -1,4 +1,5 @@
 import type { PageText, TextRun } from './pdfjs'
+import { parseDocument, type DocBlock } from '../files/document'
 
 /** Runs that share a baseline, left to right. Coordinates are display points. */
 export interface TextLine {
@@ -279,6 +280,31 @@ export function pagesToMarkdown(pages: PageText[], options: MarkdownOptions): st
     flush()
   })
   return out.join('\n\n').replace(/\n{3,}/g, '\n\n').trim() + '\n'
+}
+
+/** Structured Word blocks with headings, lists, emphasis and links from positioned PDF text. */
+export function pagesToDocBlocks(
+  pages: PageText[],
+  options: MarkdownOptions & { pageHeadings?: boolean; pageNumbers?: number[] },
+): DocBlock[] {
+  if (pages.length === 0) return []
+  const layout: MarkdownOptions = {
+    headings: options.headings,
+    links: options.links,
+    tables: options.tables,
+    pageBreaks: false,
+  }
+  if (options.pageHeadings) {
+    const blocks: DocBlock[] = []
+    pages.forEach((page, index) => {
+      if (index > 0) blocks.push({ type: 'rule' })
+      const label = options.pageNumbers?.[index] ?? index + 1
+      blocks.push({ type: 'heading', level: 2, runs: [{ text: `Page ${label}` }] })
+      blocks.push(...parseDocument(pagesToMarkdown([page], layout), true))
+    })
+    return blocks
+  }
+  return parseDocument(pagesToMarkdown(pages, layout), true)
 }
 
 // ---------------------------------------------------------------------------

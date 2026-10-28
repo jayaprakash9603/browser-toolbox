@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
+import { buildResponsiveViewerFramingRules } from '@/chrome/background/responsiveViewerFraming'
 import {
   DEFAULT_SETTINGS,
   breakpointFor,
@@ -11,6 +12,18 @@ import {
 } from '@/tools/design/responsive-viewer/devices'
 
 describe('responsive viewer model', () => {
+  it('strips frame-blocking response headers in preview session rules', () => {
+    vi.stubGlobal('chrome', {
+      runtime: { id: 'test-extension-id' },
+      tabs: { TAB_ID_NONE: -1 },
+    })
+    const rules = buildResponsiveViewerFramingRules()
+    expect(rules).toHaveLength(2)
+    const headers = rules[0].action.responseHeaders?.map((h) => h.header)
+    expect(headers).toContain('x-frame-options')
+    expect(headers).toContain('cross-origin-resource-policy')
+  })
+
   it('normalizes typed addresses to http(s) URLs', () => {
     expect(normalizeUrl('example.com')).toBe('https://example.com/')
     expect(normalizeUrl('  https://cursor.com/dashboard?x=1 ')).toBe('https://cursor.com/dashboard?x=1')

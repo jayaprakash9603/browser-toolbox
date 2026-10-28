@@ -58,6 +58,7 @@ import { registerFormMemory } from './formMemory'
 import { registerReactDevtools, syncReactDevtoolsState } from './reactDevtools'
 import { registerScriptStudio } from './script-studio'
 import { registerSidePanelNavigation } from './panelNavigation'
+import { registerResponsiveViewerFraming } from './responsiveViewerFraming'
 import { setPanelRouteIntent } from '@/core/panel/navigationSession'
 
 const logger = createLogger('background')
@@ -211,4 +212,5 @@ safeRegister('formMemory', registerFormMemory)
 safeRegister('reactDevtools', registerReactDevtools)
 safeRegister('scriptStudio', registerScriptStudio)
 safeRegister('panelNavigation', registerSidePanelNavigation)
+safeRegister('responsiveViewerFraming', registerResponsiveViewerFraming)
 startMessageRouter()
