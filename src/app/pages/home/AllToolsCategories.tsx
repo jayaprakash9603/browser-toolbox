@@ -2,6 +2,7 @@ import { ArrowRightIcon, LayoutGridIcon, PauseIcon, PlayIcon } from 'lucide-reac
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useRememberedState } from '@/app/navigationMemory'
 import { CatalogFilterChips } from '@/app/pages/all-tools/CatalogFilterChips'
 import { CategoryViewerHost } from '@/app/pages/all-tools/CategoryViewerHost'
 import { ALL_CATALOG, useToolCatalog } from '@/app/pages/all-tools/useToolCatalog'
@@ -15,7 +16,7 @@ import { SlideUp } from '@/shared/components/motion'
 export function AllToolsCategories({ delay = 0.3 }: { delay?: number }) {
   const { t } = useTranslation()
   const { paused, toggle } = useDemoPlayback()
-  const [filter, setFilter] = useState(ALL_CATALOG)
+  const [filter, setFilter] = useRememberedState<string>('home.categoryFilter', ALL_CATALOG)
   const [viewerOpen, setViewerOpen] = useState(false)
   const { categories: catalogCategories, sections, toolTotal } = useToolCatalog()
 

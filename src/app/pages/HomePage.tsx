@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { InboxIcon } from 'lucide-react'
 
+import { useScrollMemory } from '@/app/navigationMemory'
 import { filterTools } from '@/features/search/filterTools'
 import { toolRegistry } from '@/core/registry'
 import { AllToolsCategories } from '@/app/pages/home/AllToolsCategories'
@@ -25,6 +26,7 @@ export default function HomePage({ section }: HomePageProps) {
   const { t } = useTranslation()
   const { favorites, isLoading: favoritesLoading } = useFavorites()
   const { recent, isLoading: recentLoading } = useRecentTools()
+  const scrollRef = useScrollMemory<HTMLDivElement>()
 
   const loading =
     section === 'favorites'
@@ -47,7 +49,10 @@ export default function HomePage({ section }: HomePageProps) {
     )
     const list = section === 'favorites' ? favoriteTools : recentTools
     return (
-      <div className="scrollbar-styled @container h-full overflow-x-clip overflow-y-auto px-[var(--density-page-pad)] pb-6 pt-3">
+      <div
+        ref={scrollRef}
+        className="scrollbar-styled @container h-full overflow-x-clip overflow-y-auto px-[var(--density-page-pad)] pb-6 pt-3"
+      >
         <div className="mb-3">
           <BackButton />
         </div>
@@ -69,7 +74,7 @@ export default function HomePage({ section }: HomePageProps) {
 
   return (
     <div className="@container flex h-full min-w-0 flex-col overflow-x-clip">
-      <div className="scrollbar-styled min-h-0 flex-1 overflow-y-auto overflow-x-clip px-3 pb-6 @[360px]:px-4">
+      <div ref={scrollRef} className="scrollbar-styled min-h-0 flex-1 overflow-y-auto overflow-x-clip px-3 pb-6 @[360px]:px-4">
         <div className="mx-auto max-w-3xl pt-3">
           <BundleJobBanner />
           <WelcomeStrip favoriteCount={favorites.length} />

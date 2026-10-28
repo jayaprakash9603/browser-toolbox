@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { MotionConfig, motion, useAnimate, useReducedMotion } from 'motion/react'
 import { BlocksIcon, GalleryHorizontalEndIcon, LayoutGridIcon, SearchXIcon } from 'lucide-react'
 
+import { useRememberedState, useScrollMemory } from '@/app/navigationMemory'
 import { CategoryViewer, type ViewerSection } from '@/app/pages/all-tools/CategoryViewer'
 import { ToolRow, type Row } from '@/app/pages/all-tools/ToolRow'
 import { categoryRegistry, toolRegistry, type ToolDefinition } from '@/core/registry'
@@ -19,9 +20,10 @@ const ALL = 'all'
 
 export default function AllToolsPage() {
   const { t, i18n } = useTranslation()
-  const [query, setQuery] = useState('')
-  const [filter, setFilter] = useState<string>(ALL)
+  const [query, setQuery] = useRememberedState('allTools.query', '')
+  const [filter, setFilter] = useRememberedState<string>('allTools.filter', ALL)
   const [viewerOpen, setViewerOpen] = useState(false)
+  const scrollRef = useScrollMemory<HTMLDivElement>()
 
   const categories = useMemo(
     () =>
@@ -85,7 +87,10 @@ export default function AllToolsPage() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="scrollbar-styled @container h-full overflow-x-clip overflow-y-auto px-[var(--density-page-pad)] pt-3 pb-6">
+      <div
+        ref={scrollRef}
+        className="scrollbar-styled @container h-full overflow-x-clip overflow-y-auto px-[var(--density-page-pad)] pt-3 pb-6"
+      >
         <div className="mx-auto flex max-w-3xl flex-col gap-3">
           <div className="flex items-center gap-2">
             <BackButton to="/" />

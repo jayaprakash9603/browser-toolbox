@@ -1,5 +1,6 @@
-import { useId, useMemo, useState } from 'react'
+import { useId, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useRememberedState, useScrollMemory } from '@/app/navigationMemory'
 import { DemoPanel, DemoToggle } from '@/app/pages/category/DemoDisclosure'
 import { useDemoOpen } from '@/app/pages/category/useDemoOpen'
 import { categoryRegistry, groupToolsByToolkit, toolRegistry } from '@/core/registry'
@@ -12,7 +13,8 @@ import { InboxIcon } from 'lucide-react'
 
 export default function CategoryPage({ categoryId }: { categoryId: string }) {
   const { t } = useTranslation()
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useRememberedState(`category.${categoryId}.query`, '')
+  const scrollRef = useScrollMemory<HTMLDivElement>()
   const [demoOpen, toggleDemo] = useDemoOpen(categoryId)
   const demoId = useId()
   const category = categoryRegistry.get(categoryId)
@@ -34,7 +36,7 @@ export default function CategoryPage({ categoryId }: { categoryId: string }) {
 
   const Icon = category.icon
   return (
-    <div className="@container h-full overflow-y-auto p-[var(--density-page-pad)]">
+    <div ref={scrollRef} className="@container h-full overflow-y-auto p-[var(--density-page-pad)]">
       <div className="mb-4 flex items-center gap-2.5">
         <BackButton />
         <div className="rounded-md border bg-muted p-1.5">

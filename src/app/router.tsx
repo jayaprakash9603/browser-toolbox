@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react'
 
+import { recordNavigation } from '@/app/navigationHistory'
 import { eventBus } from '@/core/events'
 import {
   consumeOpenHomeOnPanel,
@@ -62,7 +63,13 @@ export function RouterProvider({ children }: { children: ReactNode }) {
       }
     })()
 
-    const onHashChange = () => setLocation(readHash())
+    let current = readHash()
+    const onHashChange = () => {
+      const next = readHash()
+      recordNavigation(current.path + current.search, next.path + next.search)
+      current = next
+      setLocation(next)
+    }
     window.addEventListener('hashchange', onHashChange)
     const off = eventBus.on('OPEN_TOOL', ({ toolId }) => {
       import('@/core/registry').then(({ toolRegistry }) => {
