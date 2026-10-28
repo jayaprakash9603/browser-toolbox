@@ -29,4 +29,10 @@ export const snippetsStrings = {
   'snippets.fieldCategory': 'Category',
   'snippets.fieldBody': 'Text',
   'snippets.save': 'Save snippet',
+  'snippets.clearFilters': 'Clear filters',
+  'snippets.import': 'Import JSON',
+  'snippets.duplicate': 'Duplicate snippet',
+  'snippets.imported': 'Imported {{count}} snippets',
+  'snippets.importFailed': 'Could not import that file',
+  'snippets.stats': '{{words}} words · {{chars}} chars · {{lines}} lines',
 }

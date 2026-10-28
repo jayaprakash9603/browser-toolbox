@@ -38,6 +38,7 @@ export const QUICK_ACTION_IDS = [
 /** Highlighted on the home page “New” row */
 export const DISCOVER_TOOL_IDS = [
   'productivity.snippets',
+  'productivity.reading-list',
   'productivity.workspaces',
   'productivity.bookmarks',
 ] as const

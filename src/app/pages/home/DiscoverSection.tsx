@@ -18,7 +18,7 @@ export function DiscoverSection({ delay = 0.12 }: { delay?: number }) {
     <SlideUp delay={delay} className="mb-[var(--density-section-gap)]">
       <SectionHeader title={t('home.discover')} icon={SparklesIcon} />
       <p className="-mt-2 mb-3 text-xs leading-relaxed text-muted-foreground">{t('home.discoverHint')}</p>
-      <StaggerChildren className="grid grid-cols-1 gap-2 @[480px]:grid-cols-3" stagger={0.07}>
+      <StaggerChildren className="grid grid-cols-1 gap-2 sm:grid-cols-2 @[720px]:grid-cols-4" stagger={0.06}>
         {tools.map((tool, index) => (
           <StaggerItem key={tool.id}>
             <DiscoverTile tool={tool} color={tileColor(index + 2)} />
@@ -42,7 +42,7 @@ function DiscoverTile({ tool, color }: { tool: ToolDefinition; color: string }) 
       title={description}
       onPointerEnter={preload}
       onFocus={preload}
-      className="block h-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-xl"
+      className="block h-full min-h-[9.5rem] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-xl"
     >
       <AnimatedCard className="flex h-full flex-col gap-2 p-3">
         <div className="flex items-start gap-2.5">

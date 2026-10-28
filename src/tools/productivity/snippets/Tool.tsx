@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   CopyIcon,
   DownloadIcon,
+  FilesIcon,
   PencilIcon,
   PinIcon,
   PinOffIcon,
@@ -14,6 +15,7 @@ import {
 import { motion, useReducedMotion } from 'motion/react'
 
 import { ToolPage } from '@/shared/components/ToolPage'
+import { ToolSearchLayout } from '@/shared/components/ToolSearchLayout'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { Button } from '@/shared/components/ui/button'
 import {
@@ -32,13 +34,17 @@ import { downloadBlob } from '@/features/netmon/download'
 import { cn } from '@/shared/utils/cn'
 
 import { useProductivityTool } from '../_shared'
+import { ProductivityStatusBar } from '../_shared/ProductivityStatusBar'
 import {
   DEFAULT_SNIPPET_CATEGORIES,
+  duplicateSnippet,
   filterSnippets,
   loadSnippets,
+  mergeImportedSnippets,
   newSnippet,
   saveSnippets,
   snippetCategories,
+  snippetStats,
   sortSnippets,
   type Snippet,
   type SnippetSort,
@@ -55,6 +61,7 @@ export default function SnippetsTool() {
   const [loaded, setLoaded] = useState(false)
   const [editor, setEditor] = useState<Snippet | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const importRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     void loadSnippets().then((list) => {
@@ -111,61 +118,136 @@ export default function SnippetsTool() {
     notify(t('snippets.exported'))
   }
 
+  const importJson = async (file: File) => {
+    try {
+      const parsed = JSON.parse(await file.text()) as Snippet[] | Snippet
+      const rows = Array.isArray(parsed) ? parsed : [parsed]
+      await persist(mergeImportedSnippets(snippets, rows))
+      notify(t('snippets.imported', { count: rows.length }))
+    } catch {
+      notify(t('snippets.importFailed'))
+    }
+  }
+
+  const filtersActive = query.trim().length > 0 || category !== 'all'
+
   return (
-    <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col gap-2.5 overflow-hidden">
-      <div className="flex items-center gap-1.5">
-        <SearchInput
-          value={query}
-          onChange={setQuery}
-          placeholder={t('snippets.search')}
-          ariaLabel={t('snippets.search')}
-          className="flex-1"
-        />
-        <Button size="icon-sm" variant="secondary" aria-label={t('snippets.add')} title={t('snippets.add')} onClick={() => setEditor(newSnippet())}>
-          <PlusIcon />
-        </Button>
-        <Button size="icon-sm" variant="ghost" aria-label={t('snippets.export')} title={t('snippets.export')} onClick={exportAll} disabled={!snippets.length}>
-          <DownloadIcon />
-        </Button>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <Segmented
-          size="sm"
-          ariaLabel={t('snippets.sortBy')}
-          value={sort}
-          onValueChange={(v) => setSort(v as SnippetSort)}
-          options={[
-            { value: 'recent', label: t('snippets.sort.recent') },
-            { value: 'title', label: t('snippets.sort.title') },
-            { value: 'category', label: t('snippets.sort.category') },
-          ]}
-        />
-        <div role="tablist" aria-label={t('snippets.categories')} className="flex min-w-0 flex-1 flex-wrap gap-1">
-          {['all', ...categories].map((cat) => {
-            const active = category === cat
-            return (
-              <button
-                key={cat}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setCategory(cat)}
-                className={cn(
-                  'inline-flex h-7 cursor-pointer items-center rounded-full border px-2.5 text-[11px] font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  active
-                    ? 'border-primary/40 bg-primary/10 text-primary'
-                    : 'border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground',
-                )}
+    <ToolPage tool={tool} contentClassName="overflow-hidden p-0">
+      <ToolSearchLayout
+        header={
+          <>
+            <div className="flex items-center gap-1.5">
+              <SearchInput
+                value={query}
+                onChange={setQuery}
+                placeholder={t('snippets.search')}
+                ariaLabel={t('snippets.search')}
+                shortcut="/"
+                className="min-w-0 flex-1"
+              />
+              <Button
+                size="icon-sm"
+                variant="secondary"
+                aria-label={t('snippets.add')}
+                title={t('snippets.add')}
+                onClick={() => setEditor(newSnippet())}
               >
-                {cat === 'all' ? t('snippets.allCategories') : cat}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      <div className="scrollbar-styled -mr-1 min-h-0 flex-1 overflow-y-auto pr-1">
+                <PlusIcon />
+              </Button>
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label={t('snippets.import')}
+                title={t('snippets.import')}
+                onClick={() => importRef.current?.click()}
+              >
+                <FilesIcon />
+              </Button>
+              <input
+                ref={importRef}
+                type="file"
+                accept="application/json,.json"
+                className="sr-only"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  e.target.value = ''
+                  if (file) void importJson(file)
+                }}
+              />
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label={t('snippets.export')}
+                title={t('snippets.export')}
+                onClick={exportAll}
+                disabled={!snippets.length}
+              >
+                <DownloadIcon />
+              </Button>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Segmented
+                size="sm"
+                ariaLabel={t('snippets.sortBy')}
+                value={sort}
+                onValueChange={(v) => setSort(v as SnippetSort)}
+                options={[
+                  { value: 'recent', label: t('snippets.sort.recent') },
+                  { value: 'title', label: t('snippets.sort.title') },
+                  { value: 'category', label: t('snippets.sort.category') },
+                ]}
+              />
+              {filtersActive && (
+                <Button
+                  size="xs"
+                  variant="outline"
+                  className="shrink-0"
+                  onClick={() => {
+                    setQuery('')
+                    setCategory('all')
+                  }}
+                >
+                  {t('snippets.clearFilters')}
+                </Button>
+              )}
+            </div>
+            <div role="tablist" aria-label={t('snippets.categories')} className="flex flex-wrap gap-1">
+              {['all', ...categories].map((cat) => {
+                const active = category === cat
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setCategory(cat)}
+                    className={cn(
+                      'inline-flex h-7 cursor-pointer items-center rounded-full border px-2.5 text-[11px] font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                      active
+                        ? 'border-primary/40 bg-primary/10 text-primary'
+                        : 'border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground',
+                    )}
+                  >
+                    {cat === 'all' ? t('snippets.allCategories') : cat}
+                  </button>
+                )
+              })}
+            </div>
+          </>
+        }
+        bodyClassName="py-3"
+        footer={
+          toast ? (
+            <ProductivityStatusBar>
+              <p role="status" className="text-center text-xs text-foreground">
+                {toast}
+              </p>
+            </ProductivityStatusBar>
+          ) : loaded ? (
+            <ProductivityStatusBar>{t('snippets.summary', { count: snippets.length, visible: visible.length })}</ProductivityStatusBar>
+          ) : null
+        }
+      >
         {!loaded ? (
           <ul className="space-y-2" aria-hidden>
             {[0, 1, 2].map((i) => (
@@ -205,6 +287,9 @@ export default function SnippetsTool() {
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
+                      <Button size="icon-xs" variant="ghost" aria-label={t('snippets.duplicate')} onClick={() => void persist([duplicateSnippet(snippet), ...snippets])}>
+                        <CopyIcon className="size-3.5 opacity-70" />
+                      </Button>
                       <Button size="icon-xs" variant="ghost" aria-label={t('snippets.copy')} onClick={() => copyBody(snippet)}>
                         <CopyIcon />
                       </Button>
@@ -227,24 +312,17 @@ export default function SnippetsTool() {
                   <pre className="scrollbar-styled max-h-24 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-muted/50 p-2 font-mono text-[11px] leading-relaxed text-foreground/90">
                     {snippet.body || t('snippets.noBody')}
                   </pre>
+                  {snippet.body && (
+                    <p className="mt-1.5 text-[10px] text-muted-foreground tabular-nums">
+                      {t('snippets.stats', snippetStats(snippet.body))}
+                    </p>
+                  )}
                 </motion.article>
               </StaggerItem>
             ))}
           </StaggerChildren>
         )}
-      </div>
-
-      {toast ? (
-        <p role="status" className="rounded-lg border bg-foreground px-3 py-1.5 text-center text-xs text-background shadow-md">
-          {toast}
-        </p>
-      ) : (
-        loaded && (
-          <p className="text-[10.5px] text-muted-foreground tabular-nums">
-            {t('snippets.summary', { count: snippets.length, visible: visible.length })}
-          </p>
-        )
-      )}
+      </ToolSearchLayout>
 
       <Dialog open={Boolean(editor)} onOpenChange={(open) => !open && setEditor(null)}>
         <DialogContent className="max-h-[min(90vh,32rem)] overflow-y-auto">

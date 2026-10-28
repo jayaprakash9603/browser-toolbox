@@ -34,6 +34,7 @@ import { bugReporterStrings } from './bugReporterEn'
 import { snippetsStrings } from './snippetsEn'
 import { bookmarksStrings } from './bookmarksEn'
 import { workspacesStrings } from './workspacesEn'
+import { readingListStrings } from './readingListEn'
 
 const en = {
   'app.name': 'One Panel',
@@ -1343,6 +1344,9 @@ const en = {
   'tools.productivity.bookmarks.name': 'Bookmark Search',
   'tools.productivity.bookmarks.description':
     'Search Chrome bookmarks, open links quickly and export lists as Markdown or JSON.',
+  'tools.productivity.reading-list.name': 'Reading List',
+  'tools.productivity.reading-list.description':
+    'Save the current tab with a note, mark read/unread and export Markdown for research.',
   'tools.privacy.web-protection.name': 'Web Protection',
   'tools.privacy.web-protection.description':
     'Block phishing, malware and scams. Detects fake login pages before you enter a password.',
@@ -1540,6 +1544,7 @@ const en = {
   ...snippetsStrings,
   ...bookmarksStrings,
   ...workspacesStrings,
+  ...readingListStrings,
 } as const
 
 export default en

@@ -25,7 +25,7 @@ export function TestingAidsPanel({ state, counts, disabled, onChange, onReset }:
 
   return (
     <PanelSection title={t('a11y.aids.title')} icon={<EyeIcon />}>
-      <p className="-mt-1 text-xs text-muted-foreground">{t('a11y.aids.subtitle')}</p>
+      <p className="-mt-1 line-clamp-2 text-[10px] leading-snug text-muted-foreground">{t('a11y.aids.subtitle')}</p>
       <div className="space-y-1">
         <p className="text-[11px] font-medium text-muted-foreground">{t('a11y.aids.vision')}</p>
         <ChoiceChips

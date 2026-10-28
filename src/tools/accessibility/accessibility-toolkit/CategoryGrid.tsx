@@ -17,7 +17,7 @@ export function CategoryGrid({ report, active, onSelect }: CategoryGridProps) {
   const reduce = useReducedMotion()
 
   return (
-    <div className="grid grid-cols-3 gap-1.5" role="group" aria-label={t('a11y.categories')}>
+    <div className="grid grid-cols-3 gap-1" role="group" aria-label={t('a11y.categories')}>
       {report.categories.map((summary, index) => {
         const Icon = CATEGORY_ICON[summary.id]
         const tone = categoryTone(summary)
@@ -43,7 +43,7 @@ export function CategoryGrid({ report, active, onSelect }: CategoryGridProps) {
             whileHover={reduce ? undefined : { y: -1 }}
             whileTap={reduce ? undefined : { scale: 0.97 }}
             className={cn(
-              'group/tile relative flex min-w-0 cursor-pointer flex-col gap-1.5 overflow-hidden rounded-xl border bg-card p-2 text-left outline-none transition-[border-color,box-shadow,background-color] duration-200 hover:border-primary/40 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring',
+              'group/tile relative flex min-w-0 cursor-pointer flex-col gap-1 overflow-hidden rounded-lg border bg-card p-1.5 text-left outline-none transition-[border-color,box-shadow,background-color] duration-200 hover:border-primary/40 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring',
               selected && 'border-primary/60 bg-primary/5 ring-1 ring-primary/40',
               !applicable && 'opacity-55',
             )}

@@ -74,3 +74,36 @@ export function snippetCategories(snippets: Snippet[]): string[] {
   })
   return [...set].sort((a, b) => a.localeCompare(b))
 }
+
+export function duplicateSnippet(snippet: Snippet): Snippet {
+  const now = Date.now()
+  return {
+    ...snippet,
+    id: crypto.randomUUID(),
+    title: snippet.title.endsWith(' (copy)') ? `${snippet.title} 2` : `${snippet.title} (copy)`,
+    pinned: false,
+    createdAt: now,
+    updatedAt: now,
+  }
+}
+
+export function mergeImportedSnippets(existing: Snippet[], imported: Snippet[]): Snippet[] {
+  const ids = new Set(existing.map((s) => s.id))
+  const merged = [...existing]
+  for (const row of imported) {
+    if (!row.body?.trim()) continue
+    const item: Snippet = ids.has(row.id)
+      ? { ...row, id: crypto.randomUUID(), updatedAt: Date.now() }
+      : { ...row, updatedAt: Date.now() }
+    ids.add(item.id)
+    merged.push(item)
+  }
+  return merged
+}
+
+export function snippetStats(body: string) {
+  const lines = body.split(/\n/).length
+  const chars = body.length
+  const words = body.trim() ? body.trim().split(/\s+/).length : 0
+  return { lines, chars, words }
+}

@@ -1,11 +1,9 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { ListFilterIcon, SearchIcon } from 'lucide-react'
+import { ListFilterIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { A11yCategory, A11yReport, A11yRuleOutcome } from '@/core/engines/a11y'
-import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
 import { PanelSection } from '@/shared/components/toolkit'
 
 import { IssueRow } from './IssueRow'
@@ -14,12 +12,12 @@ import { PASS_ICON, SEVERITY_TONE } from './meta'
 
 interface IssueListProps {
   report: A11yReport
+  search: string
   severity: SeverityFilter
   category: A11yCategory | null
   showPassed: boolean
   busy: boolean
   onLocate: (outcome: A11yRuleOutcome) => void
-  onClearFilters: () => void
 }
 
 function matchesSearch(outcome: A11yRuleOutcome, query: string, t: (key: string) => string) {
@@ -34,10 +32,9 @@ function matchesSearch(outcome: A11yRuleOutcome, query: string, t: (key: string)
   return haystack.includes(query)
 }
 
-export function IssueList({ report, severity, category, showPassed, busy, onLocate, onClearFilters }: IssueListProps) {
+export function IssueList({ report, search, severity, category, showPassed, busy, onLocate }: IssueListProps) {
   const { t } = useTranslation()
   const reduce = useReducedMotion()
-  const [search, setSearch] = useState('')
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
   const query = search.trim().toLowerCase()
 
@@ -64,25 +61,7 @@ export function IssueList({ report, severity, category, showPassed, busy, onLoca
     <PanelSection
       title={showPassed ? t('a11y.issues.passedTitle') : t('a11y.issues.title')}
       icon={showPassed ? <PASS_ICON /> : <ListFilterIcon />}
-      actions={
-        filtersActive && (
-          <Button variant="ghost" size="xs" className="h-6 text-[11px]" onClick={() => { setSearch(''); onClearFilters() }}>
-            {t('a11y.clearFilters')}
-          </Button>
-        )
-      }
     >
-      <div className="relative">
-        <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={t('a11y.searchPlaceholder')}
-          className="h-8 pl-8 text-xs"
-          aria-label={t('a11y.searchPlaceholder')}
-        />
-      </div>
-
       {items.length === 0 ? (
         <motion.p
           initial={reduce ? false : { opacity: 0 }}
@@ -103,7 +82,7 @@ export function IssueList({ report, severity, category, showPassed, busy, onLoca
           )}
         </motion.p>
       ) : (
-        <ul className="flex max-h-[min(50vh,28rem)] flex-col gap-2 overflow-y-auto pr-0.5" aria-label={t('a11y.filtersLabel')}>
+        <ul className="flex flex-col gap-2" aria-label={t('a11y.filtersLabel')}>
           <AnimatePresence initial={false}>
             {items.map((outcome, index) => (
               <IssueRow

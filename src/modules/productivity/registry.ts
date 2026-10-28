@@ -1,4 +1,4 @@
-import { ListTodoIcon, NotebookPenIcon, TimerIcon, LayoutGridIcon, TextCursorInputIcon, BracesIcon, BookmarkIcon, ArchiveIcon } from 'lucide-react'
+import { ListTodoIcon, NotebookPenIcon, TimerIcon, LayoutGridIcon, TextCursorInputIcon, BracesIcon, BookmarkIcon, ArchiveIcon, LibraryIcon } from 'lucide-react'
 
 import { defineTool } from '@/core/registry'
 
@@ -119,5 +119,18 @@ export const productivityTools = [
     capabilities: ['SIDE_PANEL'],
     status: 'active',
     loader: () => import('@/tools/productivity/bookmarks/Tool'),
+  }),
+  defineTool({
+    id: 'productivity.reading-list',
+    name: 'Reading List',
+    description: 'Save the current tab with a note, mark read/unread and export Markdown for research.',
+    category: 'productivity',
+    icon: LibraryIcon,
+    keywords: ['reading list', 'read later', 'save page', 'research', 'bookmarks', 'queue'],
+    aliases: ['read later', 'reading queue', 'save for later', 'research list'],
+    route: '/tools/productivity/reading-list',
+    capabilities: ['SIDE_PANEL', 'STORAGE'],
+    status: 'active',
+    loader: () => import('@/tools/productivity/reading-list/Tool'),
   }),
 ]
