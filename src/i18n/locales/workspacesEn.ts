@@ -11,6 +11,11 @@ export const workspacesStrings = {
   'workspaces.restore': 'Restore',
   'workspaces.export': 'Export',
   'workspaces.delete': 'Delete',
+  'workspaces.duplicate': 'Duplicate',
+  'workspaces.duplicated': 'Session duplicated',
+  'workspaces.copySuffix': 'copy',
+  'workspaces.noMatch': 'No sessions match your search',
+  'workspaces.noMatchHint': 'Try another keyword or clear the search.',
   'workspaces.emptyTitle': 'No saved sessions',
   'workspaces.emptyHint': 'Capture your current research or project tabs and reopen them later in one click.',
   'workspaces.summary': '{{count}} saved sessions',
@@ -19,4 +24,6 @@ export const workspacesStrings = {
   'workspaces.fieldNote': 'Note (optional)',
   'workspaces.saveDialogHint': '{{count}} tabs will be saved from all windows.',
   'workspaces.confirmSave': 'Save session',
+  'workspaces.search': 'Search saved sessions…',
+  'workspaces.clearSearch': 'Clear',
 }

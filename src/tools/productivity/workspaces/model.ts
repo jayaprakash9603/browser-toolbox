@@ -36,3 +36,14 @@ export function newWorkspace(name: string, tabs: WorkspaceTab[], note?: string):
     updatedAt: now,
   }
 }
+
+export function filterWorkspaces(workspaces: TabWorkspace[], query: string): TabWorkspace[] {
+  const q = query.trim().toLowerCase()
+  if (!q) return workspaces
+  return workspaces.filter(
+    (w) =>
+      w.name.toLowerCase().includes(q) ||
+      (w.note?.toLowerCase().includes(q) ?? false) ||
+      w.tabs.some((t) => t.url.toLowerCase().includes(q) || (t.title?.toLowerCase().includes(q) ?? false)),
+  )
+}

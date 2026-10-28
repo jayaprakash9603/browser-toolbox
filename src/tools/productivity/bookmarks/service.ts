@@ -52,3 +52,20 @@ export function exportBookmarksMarkdown(rows: BookmarkRow[]): string {
 export function exportBookmarksJson(rows: BookmarkRow[]): string {
   return JSON.stringify(rows, null, 2)
 }
+
+export function bookmarkFolderRoots(rows: BookmarkRow[], limit = 8): string[] {
+  const counts = new Map<string, number>()
+  for (const row of rows) {
+    const root = row.folderPath.split(' › ')[0]?.trim() || 'Bookmarks'
+    counts.set(root, (counts.get(root) ?? 0) + 1)
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit)
+    .map(([name]) => name)
+}
+
+export function filterBookmarkRows(rows: BookmarkRow[], folderRoot: string | 'all'): BookmarkRow[] {
+  if (folderRoot === 'all') return rows
+  return rows.filter((row) => row.folderPath.startsWith(folderRoot))
+}

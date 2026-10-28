@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ArchiveIcon,
+  CopyIcon,
   DownloadIcon,
   LayersIcon,
   PlayIcon,
@@ -12,6 +13,8 @@ import { motion, useReducedMotion } from 'motion/react'
 
 import { downloadBlob } from '@/features/netmon/download'
 import { ToolPage } from '@/shared/components/ToolPage'
+import { ToolSearchLayout } from '@/shared/components/ToolSearchLayout'
+import { SearchInput } from '@/shared/components/SearchInput'
 import { Button } from '@/shared/components/ui/button'
 import {
   Dialog,
@@ -28,13 +31,16 @@ import { StaggerChildren, StaggerItem } from '@/shared/components/motion'
 import { readTabs } from '../tab-manager/tabActions'
 import { toTabInfo, type TabInfo } from '../tab-manager/tabModel'
 import { useProductivityTool } from '../_shared'
-import { loadWorkspaces, newWorkspace, saveWorkspaces, type TabWorkspace } from './model'
+import { ProductivityStatusBar } from '../_shared/ProductivityStatusBar'
+import { ProductivityToolActions } from '../_shared/ProductivityToolActions'
+import { filterWorkspaces, loadWorkspaces, newWorkspace, saveWorkspaces, type TabWorkspace } from './model'
 
 export default function WorkspacesTool() {
   const { t } = useTranslation()
   const tool = useProductivityTool('productivity.workspaces')
   const reduce = useReducedMotion()
   const [workspaces, setWorkspaces] = useState<TabWorkspace[]>([])
+  const [query, setQuery] = useState('')
   const [loaded, setLoaded] = useState(false)
   const [saving, setSaving] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -104,6 +110,12 @@ export default function WorkspacesTool() {
     notify(t('workspaces.deleted'))
   }
 
+  const duplicate = async (workspace: TabWorkspace) => {
+    const copy = newWorkspace(`${workspace.name} (${t('workspaces.copySuffix')})`, workspace.tabs, workspace.note)
+    await persist([copy, ...workspaces])
+    notify(t('workspaces.duplicated'))
+  }
+
   const exportOne = (workspace: TabWorkspace) => {
     downloadBlob(
       new Blob([JSON.stringify(workspace, null, 2)], { type: 'application/json' }),
@@ -112,47 +124,79 @@ export default function WorkspacesTool() {
   }
 
   const sorted = useMemo(() => [...workspaces].sort((a, b) => b.updatedAt - a.updatedAt), [workspaces])
+  const visible = useMemo(() => filterWorkspaces(sorted, query), [sorted, query])
 
   return (
-    <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col gap-2.5 overflow-hidden">
-      <div className="flex items-center gap-2">
-        <Button size="sm" className="flex-1" onClick={() => void captureCurrent()} disabled={saving}>
-          <PlusIcon />
-          {t('workspaces.saveCurrent')}
-        </Button>
-        <Button
-          size="icon-sm"
-          variant="outline"
-          aria-label={t('workspaces.exportAll')}
-          title={t('workspaces.exportAll')}
-          disabled={!workspaces.length}
-          onClick={() =>
-            downloadBlob(
-              new Blob([JSON.stringify(workspaces, null, 2)], { type: 'application/json' }),
-              `tab-sessions-${new Date().toISOString().slice(0, 10)}.json`,
-            )
-          }
-        >
-          <DownloadIcon />
-        </Button>
-      </div>
-
-      <div className="scrollbar-styled -mr-1 min-h-0 flex-1 overflow-y-auto pr-1">
+    <ToolPage tool={tool} contentClassName="overflow-hidden p-0">
+      <ToolSearchLayout
+        header={
+          <>
+            <div className="flex items-center gap-1.5">
+              <SearchInput
+                value={query}
+                onChange={setQuery}
+                placeholder={t('workspaces.search')}
+                ariaLabel={t('workspaces.search')}
+                shortcut="/"
+                className="min-w-0 flex-1"
+              />
+              <Button size="sm" className="shrink-0" onClick={() => void captureCurrent()} disabled={saving}>
+                <PlusIcon />
+                {t('workspaces.saveCurrent')}
+              </Button>
+              <Button
+                size="icon-sm"
+                variant="outline"
+                aria-label={t('workspaces.exportAll')}
+                title={t('workspaces.exportAll')}
+                disabled={!workspaces.length}
+                onClick={() =>
+                  downloadBlob(
+                    new Blob([JSON.stringify(workspaces, null, 2)], { type: 'application/json' }),
+                    `tab-sessions-${new Date().toISOString().slice(0, 10)}.json`,
+                  )
+                }
+              >
+                <DownloadIcon />
+              </Button>
+            </div>
+          </>
+        }
+        footer={
+          <ProductivityStatusBar>
+            {toast ? (
+              <p role="status" className="text-center text-xs font-medium text-foreground">
+                {toast}
+              </p>
+            ) : loaded ? (
+              t('workspaces.summary', { count: visible.length })
+            ) : null}
+          </ProductivityStatusBar>
+        }
+        bodyClassName="pb-3 pt-2.5"
+      >
         {!loaded ? (
           <ul className="space-y-2" aria-hidden>
             {[0, 1, 2].map((i) => (
               <li key={i} className="h-24 animate-pulse rounded-xl border bg-muted/40" />
             ))}
           </ul>
-        ) : sorted.length === 0 ? (
+        ) : visible.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed px-4 py-12 text-center">
             <ArchiveIcon className="size-9 text-primary/70" aria-hidden />
-            <p className="text-sm font-medium">{t('workspaces.emptyTitle')}</p>
-            <p className="max-w-xs text-xs text-muted-foreground">{t('workspaces.emptyHint')}</p>
+            <p className="text-sm font-medium">{query.trim() ? t('workspaces.noMatch') : t('workspaces.emptyTitle')}</p>
+            <p className="max-w-xs text-xs text-muted-foreground">
+              {query.trim() ? t('workspaces.noMatchHint') : t('workspaces.emptyHint')}
+            </p>
+            {query.trim() ? (
+              <Button size="sm" variant="outline" onClick={() => setQuery('')}>
+                {t('workspaces.clearSearch')}
+              </Button>
+            ) : null}
           </div>
         ) : (
           <StaggerChildren className="space-y-2" stagger={0.05}>
-            {sorted.map((workspace) => (
+            {visible.map((workspace) => (
               <StaggerItem key={workspace.id}>
                 <motion.div
                   layout={!reduce}
@@ -180,10 +224,12 @@ export default function WorkspacesTool() {
                       </li>
                     ))}
                     {workspace.tabs.length > 4 && (
-                      <li className="text-muted-foreground/80">{t('workspaces.moreTabs', { count: workspace.tabs.length - 4 })}</li>
+                      <li className="text-muted-foreground/80">
+                        {t('workspaces.moreTabs', { count: workspace.tabs.length - 4 })}
+                      </li>
                     )}
                   </ul>
-                  <div className="flex flex-wrap gap-1.5">
+                  <ProductivityToolActions>
                     <Button size="xs" onClick={() => void restore(workspace)}>
                       <PlayIcon />
                       {t('workspaces.restore')}
@@ -192,27 +238,21 @@ export default function WorkspacesTool() {
                       <DownloadIcon />
                       {t('workspaces.export')}
                     </Button>
+                    <Button size="xs" variant="outline" onClick={() => void duplicate(workspace)}>
+                      <CopyIcon />
+                      {t('workspaces.duplicate')}
+                    </Button>
                     <Button size="xs" variant="ghost" className="text-destructive" onClick={() => void remove(workspace.id)}>
                       <Trash2Icon />
                       {t('workspaces.delete')}
                     </Button>
-                  </div>
+                  </ProductivityToolActions>
                 </motion.div>
               </StaggerItem>
             ))}
           </StaggerChildren>
         )}
-      </div>
-
-      {toast ? (
-        <p role="status" className="rounded-lg border bg-foreground px-3 py-1.5 text-center text-xs text-background">
-          {toast}
-        </p>
-      ) : (
-        loaded && (
-          <p className="text-[10.5px] text-muted-foreground">{t('workspaces.summary', { count: workspaces.length })}</p>
-        )
-      )}
+      </ToolSearchLayout>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
