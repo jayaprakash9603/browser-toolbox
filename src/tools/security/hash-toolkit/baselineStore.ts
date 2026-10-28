@@ -61,9 +61,10 @@ export function compareToBaseline(
   const entries = Object.values(readAll()).filter((b) => b.path === path)
   if (entries.length === 0) return 'none'
   const latest = entries.sort((a, b) => b.savedAt.localeCompare(a.savedAt))[0]
-  if (latest.size !== size || latest.lastModified !== lastModified) return 'metadata-changed'
   const primary = digests['SHA-256'] ?? digests.MD5 ?? Object.values(digests)[0]
   const base = latest.digests['SHA-256'] ?? latest.digests.MD5 ?? Object.values(latest.digests)[0]
   if (!primary || !base) return 'modified'
-  return primary === base ? 'match' : 'modified'
+  if (primary !== base) return 'modified'
+  if (latest.size !== size || latest.lastModified !== lastModified) return 'metadata-changed'
+  return 'match'
 }

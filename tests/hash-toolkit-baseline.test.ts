@@ -27,5 +27,8 @@ describe('hash baseline store', () => {
     expect(compareToBaseline('evidence.bin', 5, 1000, { 'SHA-256': 'aa'.repeat(32) })).toBe(
       'metadata-changed',
     )
+    expect(compareToBaseline('evidence.bin', 4, 2000, { 'SHA-256': 'aa'.repeat(32) })).toBe(
+      'metadata-changed',
+    )
   })
 })

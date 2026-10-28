@@ -47,7 +47,7 @@ export default function HashToolkitTool() {
   const stats = useMemo(() => {
     const hashed = queue.items.filter((item) => item.status === 'done').length
     const pending = queue.items.filter(
-      (item) => item.status === 'queued' || item.status === 'hashing',
+      (item) => item.status === 'pending' || item.status === 'hashing',
     ).length
     return { hashed, pending }
   }, [queue.items])

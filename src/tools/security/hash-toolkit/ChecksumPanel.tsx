@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { CheckIcon, Trash2Icon, UploadIcon } from 'lucide-react'
+import { CheckIcon, FolderOpenIcon, Trash2Icon, UploadIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { compareBlobs, hexWindow, type ByteComparison } from '@/core/engines/hash/compare'
@@ -111,6 +111,9 @@ export function ChecksumPanel({
   const [compareBusy, setCompareBusy] = useState(false)
   const [hexRows, setHexRows] = useState<Awaited<ReturnType<typeof hexWindow>>>([])
   const [notice, setNotice] = useState<string | null>(null)
+  const folderRef = useRef<HTMLInputElement>(null)
+
+  const pickFolder = () => folderRef.current?.click()
 
   useEffect(() => {
     if (!notice) return
@@ -294,13 +297,34 @@ export function ChecksumPanel({
             className="flex flex-col gap-2"
           >
             {items.length === 0 ? (
-              <FileDropZone
-                title={t('hashToolkit.drop.title')}
-                hint={t('hashToolkit.drop.hint')}
-                multiple
-                onFiles={onEnqueue}
-                glyphs={['PDF', 'IMG', 'ZIP']}
-              />
+              <>
+                <FileDropZone
+                  title={t('hashToolkit.drop.title')}
+                  hint={t('hashToolkit.drop.hint')}
+                  multiple
+                  onFiles={onEnqueue}
+                  glyphs={['PDF', 'IMG', 'ZIP']}
+                />
+                <div className="flex justify-center">
+                  <Button type="button" size="sm" variant="outline" onClick={pickFolder}>
+                    <FolderOpenIcon className="size-3.5" />
+                    {t('hashToolkit.drop.folder')}
+                  </Button>
+                  <input
+                    ref={folderRef}
+                    type="file"
+                    className="sr-only"
+                    multiple
+                    {...({ webkitdirectory: '' } as ComponentProps<'input'>)}
+                    aria-label={t('hashToolkit.drop.folder')}
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files ?? [])
+                      e.target.value = ''
+                      if (files.length > 0) onEnqueue(files)
+                    }}
+                  />
+                </div>
+              </>
             ) : (
               <>
                 <FileDropZone

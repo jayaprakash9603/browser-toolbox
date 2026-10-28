@@ -32,6 +32,7 @@ export const hashToolkitStrings = {
 
   'hashToolkit.drop.title': 'Drop files to fingerprint',
   'hashToolkit.drop.hint': 'Or browse — multiple files, folders when supported',
+  'hashToolkit.drop.folder': 'Hash entire folder',
   'hashToolkit.drop.add': 'Add more files',
   'hashToolkit.queueCount': '{{count}} in queue',
   'hashToolkit.clearAll': 'Clear all',
@@ -46,7 +47,7 @@ export const hashToolkitStrings = {
   'hashToolkit.baseline.hint': 'Pin a baseline to detect changes on the next hash.',
   'hashToolkit.baseline.unchanged': 'Matches baseline',
   'hashToolkit.baseline.modified': 'Changed since baseline',
-  'hashToolkit.baseline.resized': 'Size or date changed',
+  'hashToolkit.baseline.resized': 'Same hash, metadata changed',
 
   'hashToolkit.compare.fileA': 'Original (A)',
   'hashToolkit.compare.fileB': 'Copy (B)',
