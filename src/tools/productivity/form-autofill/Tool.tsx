@@ -160,13 +160,12 @@ export default function FormAutofillTool() {
     [controller, profileIds, runPage, show, t],
   )
 
-  const allowAccess = useCallback(async () => {
-    const url = pageInfo?.url
-    if (!url) return
+  const allowAccess = useCallback(async (origins: string[]) => {
+    if (origins.length === 0) return
     setBusy('access')
     try {
       const granted = await chrome.permissions
-        .request({ origins: [`${new URL(url).origin}/*`] })
+        .request({ origins: origins.map((origin) => `${origin}/*`) })
         .catch(() => false)
       if (granted) {
         setPageScanEnabled(true)
@@ -176,7 +175,7 @@ export default function FormAutofillTool() {
     } finally {
       setBusy(null)
     }
-  }, [controller, pageInfo?.url, refreshPage])
+  }, [controller, refreshPage])
 
   const saveCurrent = useCallback(async () => {
     setBusy('save')
@@ -262,7 +261,7 @@ export default function FormAutofillTool() {
             busy={busy === 'save' ? null : busy}
             shortcut={{ fill: fillKey, clear: clearKey }}
             onAction={(action) => void act(action)}
-            onAllowAccess={() => void allowAccess()}
+            onAllowAccess={(origins) => void allowAccess(origins)}
             onOpenReview={() => changeView('review')}
           />
         </>

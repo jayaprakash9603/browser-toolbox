@@ -8,8 +8,9 @@ import {
   type CapturedField,
   type FormActionResult,
 } from '@/core/form-memory/model'
+import { loadFormFiles, pruneFormFiles, storeCapturedFiles } from '@/core/form-memory/files'
 import { applyReviewCapture, pageReviewCount, resolvePageReview } from '@/core/form-memory/review'
-import { loadFormMemory, updateFormMemory } from '@/core/form-memory/storage'
+import { loadFormMemory, updateFormMemory, watchFormMemory } from '@/core/form-memory/storage'
 import { getActiveWebTab } from '@/chrome/contentScriptClient'
 import { getChromeMessage, getExtensionName } from '@/core/i18n/chromeMessages'
 import { createLogger } from '@/core/logging'
@@ -134,10 +135,12 @@ export async function fillFormInTab(
     return { ok: false, reason: 'blocked', ...base }
   }
   const late = { one: getChromeMessage('formFilledOne'), other: getChromeMessage('formFilledOther') }
+  const shared = [...plan.global, ...plan.shared]
   const page = await runInTab(target.id, {
     action: 'fill',
     fields: plan.page,
-    shared: [...plan.global, ...plan.shared],
+    shared,
+    files: await loadFormFiles([...plan.page, ...shared]),
     overwrite: source !== 'auto',
     retry: source === 'auto',
     watch: state.settings.learn,
@@ -220,9 +223,30 @@ async function inspectTab(tabId?: number): Promise<FormActionResult> {
     url: target.url,
   }
   if (ref && isHostBlocked(state.settings, ref.host)) return { ok: true, reason: 'blocked', ...base }
-  const page = await runInTab(target.id, { action: 'inspect', fields: plan.page, watch: state.settings.learn })
+  const [page, frameAccess] = await Promise.all([
+    runInTab(target.id, { action: 'inspect', fields: plan.page, watch: state.settings.learn }),
+    blockedFrameOrigins(target.id, target.url),
+  ])
   if (!page) return { ok: false, reason: 'no-access', ...base }
-  return { ok: true, ...base, ...pick(page) }
+  return { ok: true, ...base, ...pick(page), ...(frameAccess.length > 0 ? { frameAccess } : {}) }
+}
+
+/** Embedded frames from other sites need their own site access before their fields can be read. */
+async function blockedFrameOrigins(tabId: number, topUrl: string): Promise<string[]> {
+  const frames = await chrome.webNavigation.getAllFrames({ tabId }).catch(() => null)
+  const topOrigin = new URL(topUrl).origin
+  const origins = new Set<string>()
+  for (const frame of frames ?? []) {
+    if (frame.frameId === 0 || !/^https?:/i.test(frame.url)) continue
+    const origin = new URL(frame.url).origin
+    if (origin !== topOrigin) origins.add(origin)
+  }
+  const blocked: string[] = []
+  for (const origin of origins) {
+    const allowed = await chrome.permissions.contains({ origins: [`${origin}/*`] }).catch(() => true)
+    if (!allowed) blocked.push(origin)
+  }
+  return blocked
 }
 
 /** "Remember this page now": stores every value currently on the page, typed by the user or not. */
@@ -234,8 +258,9 @@ async function saveTab(tabId?: number): Promise<FormActionResult> {
   if (!page) return { ok: false, reason: 'no-access', ...EMPTY, url: target.url }
   const url = target.url
   const ref = pageRefFor(url)
+  const fields = await storeCapturedFiles(page.fields ?? [])
   const next = await updateFormMemory((current) => {
-    const saved = applyCapture(current, { url, title: target.title, fields: page.fields ?? [] }, Date.now())
+    const saved = applyCapture(current, { url, title: target.title, fields }, Date.now())
     return ref ? resolvePageReview(saved, ref.id) : saved
   })
   const plan = planFill(next, url, false)
@@ -293,8 +318,9 @@ export function registerFormMemory(): void {
     if (message.type !== 'FORM_MEMORY_CAPTURE') return
     const url = sender.tab?.url ?? message.url
     if (!scriptable(url) || !Array.isArray(message.fields)) return
-    const fields = capturedFields(message.fields)
-    if (fields.length === 0) return
+    const captured = capturedFields(message.fields)
+    if (captured.length === 0 || !(await loadFormMemory()).settings.learn) return
+    const fields = await storeCapturedFiles(captured)
     await updateFormMemory((current) =>
       current.settings.learn
         ? applyReviewCapture(current, { url, title: sender.tab?.title ?? message.title, fields }, Date.now())
@@ -318,6 +344,15 @@ export function registerFormMemory(): void {
 
   chrome.tabs.onUpdated.addListener((tabId, info) => {
     if (info.status === 'complete') schedulePageReady(tabId)
+  })
+  // Frames often load after the page itself, and each needs its own watcher.
+  chrome.webNavigation.onCompleted.addListener((details) => {
+    if (details.frameId !== 0) schedulePageReady(details.tabId)
+  })
+  let pruneTimer: ReturnType<typeof setTimeout> | undefined
+  watchFormMemory((state) => {
+    clearTimeout(pruneTimer)
+    pruneTimer = setTimeout(() => void pruneFormFiles(state).catch((error) => logger.debug('prune failed', error)), 5000)
   })
   chrome.tabs.onRemoved.addListener((tabId) => {
     const timer = pending.get(tabId)

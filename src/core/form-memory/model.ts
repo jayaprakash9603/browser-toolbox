@@ -1,7 +1,8 @@
 export const FORM_MEMORY_KEY = 'tbx.formMemory'
 export const FORM_AUTOFILL_ROUTE = '/tools/productivity/form-autofill'
 
-export type MemoryFieldKind = 'text' | 'textarea' | 'select' | 'multi' | 'checkbox' | 'radio'
+/** `file` values are ids of files kept under their own storage keys (see `files.ts`). */
+export type MemoryFieldKind = 'text' | 'textarea' | 'select' | 'multi' | 'checkbox' | 'radio' | 'file'
 
 export type MemoryValue = string | boolean | string[]
 
@@ -76,6 +77,14 @@ export interface FormMemoryState {
   settings: FormMemorySettings
 }
 
+/** A file picked in a form, read in the page; `data` is base64. */
+export interface CapturedFile {
+  name: string
+  type: string
+  size: number
+  data: string
+}
+
 export interface CapturedField {
   key: string
   label: string
@@ -85,6 +94,8 @@ export interface CapturedField {
   inputType?: string
   name?: string
   auto?: string
+  /** File contents for `file` fields, swapped for stored ids before the capture is kept. */
+  files?: CapturedFile[]
 }
 
 export interface FormCapture {
@@ -114,6 +125,8 @@ export interface FormActionResult {
   shared: number
   /** Fields on this page with values waiting for review. */
   review: number
+  /** Origins of embedded frames on this page that the extension may not read yet. */
+  frameAccess?: string[]
   learn: boolean
   url?: string
 }
@@ -137,7 +150,7 @@ export const MAX_REVIEW_ENTRIES = 300
 export const MAX_REVIEW_CANDIDATES = 8
 const MAX_FIELDS_PER_PAGE = 200
 const MAX_VALUE_LENGTH = 4000
-const KINDS = new Set<MemoryFieldKind>(['text', 'textarea', 'select', 'multi', 'checkbox', 'radio'])
+const KINDS = new Set<MemoryFieldKind>(['text', 'textarea', 'select', 'multi', 'checkbox', 'radio', 'file'])
 
 export function isMemoryFieldKind(value: unknown): value is MemoryFieldKind {
   return typeof value === 'string' && KINDS.has(value as MemoryFieldKind)
@@ -178,7 +191,7 @@ export function isEmptyValue(field: Pick<MemoryField, 'kind' | 'value'>): boolea
 
 export function cleanValue(kind: MemoryFieldKind, value: unknown): MemoryValue | null {
   if (kind === 'checkbox') return typeof value === 'boolean' ? value : null
-  if (kind === 'multi') {
+  if (kind === 'multi' || kind === 'file') {
     return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string').slice(0, 50) : null
   }
   return typeof value === 'string' ? value.slice(0, MAX_VALUE_LENGTH) : null
@@ -239,7 +252,7 @@ export function reviewIdFor(pageId: string, key: string): string {
 /** Fields sharing kind, autocomplete hint, name and label ask the same question on any site. */
 export function globalKeyFor(field: Pick<MemoryField, 'kind' | 'auto' | 'name' | 'label'>): string {
   const auto = field.auto && !/^(on|off)$/i.test(field.auto) ? field.auto.toLowerCase() : ''
-  const label = field.label.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+  const label = field.label.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
   return `${field.kind}|${auto}|${field.name?.toLowerCase() ?? ''}|${label}`
 }
 
@@ -260,6 +273,7 @@ const PLACEHOLDER_VALUE: Record<MemoryFieldKind, MemoryValue> = {
   select: '',
   radio: '',
   multi: [],
+  file: [],
   checkbox: false,
 }
 
@@ -540,7 +554,7 @@ function sharedIdentity(field: MemoryField): string | null {
   if (!SHARED_KINDS.has(field.kind)) return null
   const auto = field.auto && !/^(on|off)$/i.test(field.auto) ? field.auto.toLowerCase() : ''
   const name = field.name?.toLowerCase() ?? ''
-  const label = field.label.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+  const label = field.label.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
   return auto || name || label ? `${auto}|${name}|${label}` : null
 }
 

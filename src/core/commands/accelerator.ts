@@ -34,6 +34,27 @@ export function parseAccelerator(accelerator: string): KeyModifiers | null {
   }
 }
 
+const MAC_MODIFIER_SYMBOLS: Record<string, keyof Omit<KeyModifiers, 'key'>> = {
+  '\u2318': 'meta',
+  '\u21E7': 'shift',
+  '\u2325': 'alt',
+  '\u2303': 'ctrl',
+}
+
+/** Parse the shortcut `chrome.commands.getAll()` reports: "Ctrl+Shift+F", or "⇧⌘F" on macOS. */
+export function parseChromeShortcut(shortcut: string | undefined): KeyModifiers | null {
+  if (!shortcut) return null
+  if (shortcut.includes('+')) return parseAccelerator(shortcut)
+  const parsed: KeyModifiers = { key: '', ctrl: false, alt: false, shift: false, meta: false }
+  let rest = shortcut
+  while (rest && MAC_MODIFIER_SYMBOLS[rest[0]]) {
+    parsed[MAC_MODIFIER_SYMBOLS[rest[0]]] = true
+    rest = rest.slice(1)
+  }
+  parsed.key = normalizeKeyToken(rest)
+  return parsed.key ? parsed : null
+}
+
 function normalizeKeyToken(token: string): string {
   const lower = token.toLowerCase()
   if (NAMED_KEYS[lower]) return NAMED_KEYS[lower]

@@ -7,8 +7,26 @@ import {
   findCommandForKeyEvent,
   DEFAULT_KEYBOARD_SHORTCUTS_STATE,
 } from '@/core/commands'
+import { parseChromeShortcut } from '@/core/commands/accelerator'
 import { buildManifestCommands, MANIFEST_COMMAND_IDS } from '@/core/commands/manifest'
 import { TOOLBOX_COMMANDS, GLOBAL_TOOLBOX_COMMANDS } from '@/core/commands/registry'
+
+describe('parseChromeShortcut', () => {
+  it('reads the shortcut Chrome reports on Windows and macOS', () => {
+    const windows = parseChromeShortcut('Ctrl+Shift+F')
+    const mac = parseChromeShortcut('\u21E7\u2318F')
+    expect(windows).toEqual({ key: 'F', ctrl: true, alt: false, shift: true, meta: false })
+    expect(mac).toEqual({ key: 'F', ctrl: false, alt: false, shift: true, meta: true })
+    expect(parseChromeShortcut('')).toBeNull()
+  })
+
+  it('maps a stale Chrome binding back to the command the app binds to that key', () => {
+    const pressed = parseChromeShortcut('Ctrl+Shift+F')!
+    expect(findCommandForKeyEvent(pressed, DEFAULT_KEYBOARD_SHORTCUTS_STATE, 'global', false)).toBe('form-fill')
+    const mac = parseChromeShortcut('\u21E7\u2318C')!
+    expect(findCommandForKeyEvent(mac, DEFAULT_KEYBOARD_SHORTCUTS_STATE, 'global', true)).toBe('form-clear')
+  })
+})
 
 describe('accelerator', () => {
   it('parses Ctrl+Shift+Space', () => {

@@ -36,7 +36,7 @@ import {
   registerPip,
   togglePipInTab,
 } from './pip'
-import { initShortcutsOnStartup, registerShortcuts } from './shortcuts'
+import { initShortcutsOnStartup, registerShortcuts, resolveChromeCommand } from './shortcuts'
 import { registerApiClientSendHandler } from './api-client-send'
 import { registerCaptureHandler } from './capture'
 import { registerScreenshotHandlers } from './screenshot'
@@ -174,7 +174,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 })
 
 chrome.commands.onCommand.addListener((command, tab) => {
-  void executeToolboxCommand(command, tab)
+  void resolveChromeCommand(command).then((resolved) => executeToolboxCommand(resolved, tab))
 })
 
 const rebuildMenus = () => enqueueContextMenuRebuild()

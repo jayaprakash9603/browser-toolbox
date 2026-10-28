@@ -4,6 +4,7 @@ import {
   getKeyboardShortcutsState,
   getToolboxCommand,
 } from '@/core/commands'
+import { parseChromeShortcut } from '@/core/commands/accelerator'
 import { registerMessageHandler } from '@/core/messaging'
 import { createLogger } from '@/core/logging'
 import { requestOpenCommandPalette } from '@/core/panel/navigationSession'
@@ -63,6 +64,22 @@ export function registerShortcuts(): void {
       void syncManifestShortcuts(next)
     }
   })
+}
+
+const FORM_COMMANDS = new Set(['form-fill', 'form-clear'])
+
+/**
+ * Chrome keeps the keys an install was first given, so after fill and clear swapped keys Chrome may
+ * still report Ctrl+Shift+F as "form-clear". The key actually pressed decides, as the app's settings bind it.
+ * Only the form pair is resolved: the extra await would cost panel-opening commands their user gesture.
+ */
+export async function resolveChromeCommand(command: string): Promise<string> {
+  if (!FORM_COMMANDS.has(command)) return command
+  const commands = await chrome.commands.getAll().catch(() => [] as chrome.commands.Command[])
+  const pressed = parseChromeShortcut(commands.find((item) => item.name === command)?.shortcut)
+  if (!pressed) return command
+  const bound = findCommandForKeyEvent(pressed, await getKeyboardShortcutsState(), 'global')
+  return bound && FORM_COMMANDS.has(bound) ? bound : command
 }
 
 export async function initShortcutsOnStartup(): Promise<void> {

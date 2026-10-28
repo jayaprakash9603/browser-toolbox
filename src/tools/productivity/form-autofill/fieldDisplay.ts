@@ -3,6 +3,7 @@ import {
   ChevronsUpDownIcon,
   CircleDotIcon,
   ListChecksIcon,
+  PaperclipIcon,
   SquareCheckIcon,
   TypeIcon,
   type LucideIcon,
@@ -17,6 +18,7 @@ export const KIND_ICON: Record<MemoryFieldKind, LucideIcon> = {
   multi: ListChecksIcon,
   checkbox: SquareCheckIcon,
   radio: CircleDotIcon,
+  file: PaperclipIcon,
 }
 
 /** Readable text for a stored value; checkboxes have none and are shown as a toggle instead. */

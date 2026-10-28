@@ -4,6 +4,7 @@ import {
   BookmarkCheckIcon,
   BrushCleaningIcon,
   CircleSlashIcon,
+  FrameIcon,
   InboxIcon,
   KeyRoundIcon,
   Loader2Icon,
@@ -24,13 +25,14 @@ interface FillBarProps {
   busy: FillBarAction | 'access' | null
   shortcut: Record<FillBarAction, string>
   onAction: (action: FillBarAction) => void
-  onAllowAccess: () => void
+  /** Asks for site access to these origins. */
+  onAllowAccess: (origins: string[]) => void
   onOpenReview: () => void
 }
 
-function hostOf(url: string | undefined): string {
+function urlPart(url: string | undefined, part: 'host' | 'origin'): string {
   try {
-    return url ? new URL(url).host : ''
+    return url ? new URL(url)[part] : ''
   } catch {
     return ''
   }
@@ -47,7 +49,9 @@ export function FillBar({ info, profileCount, busy, shortcut, onAction, onAllowA
   const unavailable = !info || reason === 'no-tab' || reason === 'restricted' || reason === 'unavailable'
   const needsAccess = reason === 'no-access'
   const action: FillBarAction = info && info.populated > 0 ? 'clear' : 'fill'
-  const host = hostOf(info?.url)
+  const host = urlPart(info?.url, 'host')
+  const frameAccess = info?.frameAccess ?? []
+  const topOrigin = urlPart(info?.url, 'origin')
 
   const status = (() => {
     if (!info) return { icon: Loader2Icon, text: t('formMemory.bar.checking'), spin: true }
@@ -95,8 +99,28 @@ export function FillBar({ info, profileCount, busy, shortcut, onAction, onAllowA
           <span className="shrink-0 underline-offset-2">{t('formMemory.bar.openReview')}</span>
         </button>
       )}
+      {!needsAccess && frameAccess.length > 0 && (
+        <p className="mb-2 flex min-h-6 items-center gap-1.5 text-xs text-muted-foreground">
+          <FrameIcon className="size-3.5 shrink-0" aria-hidden />
+          <span className="min-w-0 flex-1 truncate" title={frameAccess.join('\n')}>
+            {t('formMemory.bar.frames', { count: frameAccess.length })}
+          </span>
+          <button
+            type="button"
+            onClick={() => onAllowAccess(frameAccess)}
+            disabled={busy === 'access'}
+            className="shrink-0 cursor-pointer rounded-sm font-medium text-primary underline-offset-2 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+          >
+            {t('formMemory.bar.allowFrames')}
+          </button>
+        </p>
+      )}
       {needsAccess ? (
-        <Button className="h-11 w-full text-sm" onClick={onAllowAccess} disabled={busy === 'access'}>
+        <Button
+          className="h-11 w-full text-sm"
+          onClick={() => onAllowAccess([topOrigin, ...frameAccess].filter(Boolean))}
+          disabled={busy === 'access'}
+        >
           <KeyRoundIcon aria-hidden />
           {t('formMemory.bar.allow')}
         </Button>
