@@ -110,17 +110,32 @@ export function ChecksumPanel({
   const [compare, setCompare] = useState<ByteComparison | null>(null)
   const [compareBusy, setCompareBusy] = useState(false)
   const [hexRows, setHexRows] = useState<Awaited<ReturnType<typeof hexWindow>>>([])
+  const [notice, setNotice] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!notice) return
+    const timer = window.setTimeout(() => setNotice(null), 2800)
+    return () => window.clearTimeout(timer)
+  }, [notice])
 
   useEffect(() => {
     let live = true
     if (!text.trim()) {
-      setTextDigests(null)
-      return
+      queueMicrotask(() => {
+        if (live) setTextDigests(null)
+      })
+      return () => {
+        live = false
+      }
     }
     const decoded = decodeInput(text, encoding)
     if (!decoded.ok) {
-      setTextDigests(null)
-      return
+      queueMicrotask(() => {
+        if (live) setTextDigests(null)
+      })
+      return () => {
+        live = false
+      }
     }
     void digestBytes(decoded.bytes).then((digests) => {
       if (live) setTextDigests(digests)
@@ -160,6 +175,14 @@ export function ChecksumPanel({
 
   return (
     <div className="flex flex-col gap-3">
+      <div role="status" aria-live="polite" className="sr-only">
+        {notice ?? ''}
+      </div>
+      {notice && (
+        <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-center text-[11px] text-emerald-800 dark:text-emerald-200">
+          {notice}
+        </p>
+      )}
       <Segmented
         value={mode}
         onValueChange={(v) => setMode(v as Mode)}
@@ -315,7 +338,7 @@ export function ChecksumPanel({
                     size="sm"
                     variant="outline"
                     className="self-start"
-                    onClick={() => {
+                    onClick={async () => {
                       const manifest = toManifest(
                         items
                           .filter((i) => i.status === 'done' && i.result)
@@ -326,7 +349,12 @@ export function ChecksumPanel({
                           })),
                         'SHA-256',
                       )
-                      void navigator.clipboard.writeText(manifest)
+                      try {
+                        await navigator.clipboard.writeText(manifest)
+                        setNotice(t('hashToolkit.manifestCopied'))
+                      } catch {
+                        /* clipboard blocked */
+                      }
                     }}
                   >
                     <UploadIcon className="size-3.5" />

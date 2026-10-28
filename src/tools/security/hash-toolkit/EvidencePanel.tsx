@@ -49,20 +49,6 @@ export function EvidencePanel({ items }: { items: HashQueueItem[] }) {
       entropy: item.result!.entropy,
     }))
 
-  const exportJson = async () => {
-    const report = await buildEvidenceReport(toItems(), { caseReference: caseRef, examiner, note })
-    setSealOk(await verifyEvidenceSeal(report))
-    download(
-      `hash-evidence-${Date.now()}.json`,
-      'application/json',
-      `${JSON.stringify(report, null, 2)}\n`,
-    )
-  }
-
-  const exportCsv = () => {
-    download(`hash-evidence-${Date.now()}.csv`, 'text/csv', toCsv(toItems()))
-  }
-
   return (
     <div className="flex flex-col gap-3">
       <motion.div
@@ -110,11 +96,38 @@ export function EvidencePanel({ items }: { items: HashQueueItem[] }) {
       </p>
 
       <div className="flex flex-wrap gap-2">
-        <Button type="button" disabled={done.length === 0} onClick={() => void exportJson()}>
+        <Button
+          type="button"
+          disabled={done.length === 0}
+          onClick={() => {
+            void (async () => {
+              const stamp = Date.now()
+              const report = await buildEvidenceReport(toItems(), {
+                caseReference: caseRef,
+                examiner,
+                note,
+              })
+              setSealOk(await verifyEvidenceSeal(report))
+              download(
+                `hash-evidence-${stamp}.json`,
+                'application/json',
+                `${JSON.stringify(report, null, 2)}\n`,
+              )
+            })()
+          }}
+        >
           <FileJsonIcon className="size-3.5" />
           {t('hashToolkit.evidence.exportJson')}
         </Button>
-        <Button type="button" variant="outline" disabled={done.length === 0} onClick={exportCsv}>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={done.length === 0}
+          onClick={() => {
+            const stamp = Date.now()
+            download(`hash-evidence-${stamp}.csv`, 'text/csv', toCsv(toItems()))
+          }}
+        >
           <DownloadIcon className="size-3.5" />
           {t('hashToolkit.evidence.exportCsv')}
         </Button>
