@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next'
 
 import {
   compareBlobs,
-  diffBuckets,
   hexWindow,
   type ByteComparison,
 } from '@/core/engines/hash/compare'
