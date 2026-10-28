@@ -92,6 +92,30 @@ describe('ToolDemo', () => {
     expect(first).toHaveAttribute('aria-current', 'step')
     expect(within(figure).getByText('Paste Input A', { selector: 'p' })).toBeInTheDocument()
   }, 30_000)
+
+  it('seeks a productivity reading-list demo under reduced motion', async () => {
+    preferReducedMotion()
+    const onStep = vi.fn()
+    render(
+      <ToolDemo
+        tool={tool('productivity.reading-list')}
+        host={{ variant: 'player', loop: true, playing: true, onStep }}
+      />,
+    )
+
+    const figure = await screen.findByRole(
+      'figure',
+      { name: /reading list: save/i },
+      { timeout: 20_000 },
+    )
+    expect(within(figure).getByText('Mark read and export')).toBeInTheDocument()
+    expect(onStep).toHaveBeenLastCalledWith(2, expect.arrayContaining(['Save the open page', 'Filter unread']))
+
+    const first = within(figure).getByRole('button', { name: 'Step 1: Save the open page' })
+    fireEvent.click(first)
+    expect(first).toHaveAttribute('aria-current', 'step')
+    expect(within(figure).getByText('Save the open page', { selector: 'p' })).toBeInTheDocument()
+  }, 30_000)
 })
 
 describe('CategoryDemoPlayer', () => {

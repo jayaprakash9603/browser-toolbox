@@ -162,6 +162,10 @@ export const DEMOS: Record<string, DemoEntry> = {
     demo: () => import('./tools/privacy/web-protection/Demo'),
     steps: () => import('./tools/privacy/web-protection/script').then((module) => module.STEPS),
   },
+  'productivity.bookmarks': {
+    demo: () => import('./tools/productivity/bookmarks/Demo'),
+    steps: () => import('./tools/productivity/bookmarks/script').then((module) => module.STEPS),
+  },
   'productivity.form-autofill': {
     demo: () => import('./tools/productivity/form-autofill/Demo'),
     steps: () => import('./tools/productivity/form-autofill/script').then((module) => module.STEPS),
@@ -169,6 +173,14 @@ export const DEMOS: Record<string, DemoEntry> = {
   'productivity.notes': {
     demo: () => import('./tools/productivity/notes/Demo'),
     steps: () => import('./tools/productivity/notes/script').then((module) => module.STEPS),
+  },
+  'productivity.reading-list': {
+    demo: () => import('./tools/productivity/reading-list/Demo'),
+    steps: () => import('./tools/productivity/reading-list/script').then((module) => module.STEPS),
+  },
+  'productivity.snippets': {
+    demo: () => import('./tools/productivity/snippets/Demo'),
+    steps: () => import('./tools/productivity/snippets/script').then((module) => module.STEPS),
   },
   'productivity.tab-manager': {
     demo: () => import('./tools/productivity/tab-manager/Demo'),
@@ -181,6 +193,10 @@ export const DEMOS: Record<string, DemoEntry> = {
   'productivity.timer': {
     demo: () => import('./tools/productivity/timer/Demo'),
     steps: () => import('./tools/productivity/timer/script').then((module) => module.STEPS),
+  },
+  'productivity.workspaces': {
+    demo: () => import('./tools/productivity/workspaces/Demo'),
+    steps: () => import('./tools/productivity/workspaces/script').then((module) => module.STEPS),
   },
   'qa.bug-reporter': {
     demo: () => import('./tools/qa/bug-reporter/Demo'),
