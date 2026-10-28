@@ -202,6 +202,13 @@ export async function discoverSiteLinks(
 
   const report = () => hooks.onProgress?.(snapshotProgress())
 
+  const stopForUrlCap = () => {
+    if (stack.length === 0) return
+    stack.length = 0
+    limitHit = true
+    wake()
+  }
+
   const recordCheck = (href: string) => {
     if (checks.size >= maxTargets) return
     if (!/^https?:\/\//i.test(href)) return
@@ -210,6 +217,7 @@ export async function discoverSiteLinks(
     const link = hrefToPageLink(href, start, checks.size)
     if (link.kind !== 'internal' && link.kind !== 'external') return
     checks.set(key, link)
+    if (checks.size >= maxTargets) stopForUrlCap()
   }
 
   const canStack = () => reserved + stack.length < options.maxPages && checks.size < maxTargets
@@ -325,9 +333,10 @@ export async function discoverSiteLinks(
   const lane = async () => {
     for (;;) {
       if (halted()) return
-      if (stack.length === 0 || reserved >= options.maxPages) {
+      if (stack.length === 0 || reserved >= options.maxPages || checks.size >= maxTargets) {
         if (inFlight === 0) {
-          if (stack.length > 0) limitHit = true
+          if (stack.length > 0 || checks.size >= maxTargets) limitHit = true
+          stack.length = 0
           wake()
           return
         }

@@ -6,8 +6,60 @@ import {
 } from '@/core/engines/linkChecker/check'
 
 const MAX_ITEMS = 80
+/** Chrome multiplexes HTTP/2; HTTP/1.1 still caps around this per host. */
+const PER_HOST = 12
+const GLOBAL = 32
 
 type Probe = Omit<LinkCheckResult, 'href' | 'text' | 'ok'>
+type Waiter = { host: string; resume: () => void }
+
+let globalActive = 0
+const hostActive = new Map<string, number>()
+const waiting: Waiter[] = []
+
+function hostname(href: string): string {
+  try {
+    return new URL(href).hostname
+  } catch {
+    return ''
+  }
+}
+
+function allowed(host: string) {
+  return globalActive < GLOBAL && (hostActive.get(host) ?? 0) < PER_HOST
+}
+
+function take(host: string) {
+  globalActive += 1
+  hostActive.set(host, (hostActive.get(host) ?? 0) + 1)
+}
+
+function acquireHost(host: string): Promise<void> {
+  if (allowed(host)) {
+    take(host)
+    return Promise.resolve()
+  }
+  return new Promise((resolve) => {
+    waiting.push({
+      host,
+      resume: () => {
+        take(host)
+        resolve()
+      },
+    })
+  })
+}
+
+function releaseHost(host: string) {
+  globalActive = Math.max(0, globalActive - 1)
+  const next = Math.max(0, (hostActive.get(host) ?? 1) - 1)
+  if (next === 0) hostActive.delete(host)
+  else hostActive.set(host, next)
+  const index = waiting.findIndex((waiter) => allowed(waiter.host))
+  if (index < 0) return
+  const [waiter] = waiting.splice(index, 1)
+  waiter.resume()
+}
 
 async function probe(url: string, method: 'HEAD' | 'GET', timeoutMs: number): Promise<Probe> {
   const controller = new AbortController()
@@ -40,15 +92,24 @@ export async function checkUrl(href: string, options: LinkCheckRequestOptions = 
   return { ...final, ok: final.status != null && final.status < 400 }
 }
 
+async function checkItem(
+  item: { href: string; text: string },
+  options: LinkCheckRequestOptions | undefined,
+): Promise<LinkCheckResult> {
+  const host = hostname(item.href)
+  await acquireHost(host)
+  try {
+    const result = await checkUrl(item.href, options)
+    return { href: item.href, text: item.text, ...result }
+  } finally {
+    releaseHost(host)
+  }
+}
+
 export function registerLinkChecker(): void {
   registerMessageHandler('CHECK_HTTP_URLS', async (message) => {
     if (message.type !== 'CHECK_HTTP_URLS') return null
     const items = message.items.slice(0, MAX_ITEMS)
-    const results: LinkCheckResult[] = []
-    for (const item of items) {
-      const result = await checkUrl(item.href, message.options)
-      results.push({ href: item.href, text: item.text, ...result })
-    }
-    return results
+    return Promise.all(items.map((item) => checkItem(item, message.options)))
   })
 }

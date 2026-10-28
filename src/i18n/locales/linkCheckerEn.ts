@@ -202,4 +202,5 @@ export const linkCheckerStrings = {
   'linkChecker.crawl.statPages': 'Pages',
   'linkChecker.crawl.statUrls': 'Unique URLs',
   'linkChecker.crawl.statWaiting': 'Waiting',
+  'linkChecker.crawl.urlCap': 'Unique URL limit reached ({{count}}). Checking those next.',
 }

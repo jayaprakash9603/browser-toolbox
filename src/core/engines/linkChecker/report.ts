@@ -17,10 +17,10 @@ export const CHECK_SCOPES: CheckScope[] = ['all', 'internal', 'external']
 export const SORT_KEYS: SortKey[] = ['severity', 'page', 'slowest', 'url']
 export const GROUP_KEYS: GroupKey[] = ['none', 'status', 'site']
 export const TIMEOUT_CHOICES = [5_000, 10_000, 20_000, 30_000] as const
-export const CONCURRENCY_CHOICES = [2, 4, 6, 10] as const
+export const CONCURRENCY_CHOICES = [4, 6, 10, 16] as const
 export const MAX_TARGETS = 600
-/** Whole-site discovery can collect far more unique hrefs than a single page. */
-export const MAX_SITE_TARGETS = 5_000
+/** Safety ceiling for whole-site unique URLs (page limit is the crawl budget). */
+export const MAX_SITE_TARGETS = 50_000
 
 /** Sites that answer extension requests with these codes usually need a login or block bots. */
 const BLOCKED_STATUSES = new Set([401, 403, 407, 429, 999])
@@ -42,7 +42,7 @@ export interface CheckSettings {
 export const DEFAULT_CHECK_SETTINGS: CheckSettings = {
   scope: 'all',
   timeoutMs: DEFAULT_CHECK_TIMEOUT_MS,
-  concurrency: 6,
+  concurrency: 10,
   method: 'auto',
   includeFiles: true,
   retryFailures: true,
@@ -57,7 +57,7 @@ export function normalizeSettings(value: unknown): CheckSettings {
   return {
     scope: CHECK_SCOPES.includes(raw.scope) ? raw.scope : DEFAULT_CHECK_SETTINGS.scope,
     timeoutMs: clampTimeout(Number(raw.timeoutMs)),
-    concurrency: Number.isFinite(concurrency) ? Math.min(16, Math.max(1, Math.round(concurrency))) : DEFAULT_CHECK_SETTINGS.concurrency,
+    concurrency: Number.isFinite(concurrency) ? Math.min(24, Math.max(1, Math.round(concurrency))) : DEFAULT_CHECK_SETTINGS.concurrency,
     method: raw.method === 'get' ? 'get' : 'auto',
     includeFiles: raw.includeFiles !== false,
     retryFailures: raw.retryFailures !== false,

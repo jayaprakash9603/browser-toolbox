@@ -3,10 +3,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { LinkCheckRequestOptions, LinkCheckResult } from '@/core/engines/linkChecker/check'
 import {
   classifyResult,
+  emptyCounts,
   isRetryable,
   type CheckEntry,
   type CheckSettings,
   type CheckTarget,
+  type LinkHealth,
 } from '@/core/engines/linkChecker/report'
 import { sendMessage } from '@/core/messaging'
 import { requestAllSitesAccess } from '@/core/permissions/siteAccess'
@@ -17,6 +19,7 @@ export interface ScanProgress {
   done: number
   total: number
   retrying: boolean
+  counts: Record<LinkHealth, number>
 }
 
 export interface ScanTiming {
@@ -26,6 +29,7 @@ export interface ScanTiming {
 }
 
 const RETRY_DELAY_MS = 600
+const PROGRESS_FLUSH_MS = 80
 
 async function checkOne(target: CheckTarget, options: LinkCheckRequestOptions): Promise<LinkCheckResult> {
   const results = await sendMessage<LinkCheckResult[]>({
@@ -52,13 +56,39 @@ export function useLinkScan() {
   const [mode, setMode] = useState<'fresh' | 'recheck'>('fresh')
   const runRef = useRef(0)
   const gate = useRef<{ promise: Promise<void>; release: () => void } | null>(null)
-  const entriesRef = useRef(entries)
+  const live = useRef(new Map<string, CheckEntry>())
+  const countsRef = useRef(emptyCounts())
+  const doneRef = useRef(0)
+  const totalRef = useRef(0)
+  const retryingRef = useRef(false)
+  const flushTimer = useRef<number | null>(null)
   /** Results to put back if a re-check is stopped before it reaches them. */
   const restore = useRef(new Map<string, CheckEntry>())
 
-  useEffect(() => {
-    entriesRef.current = entries
-  })
+  const clearFlush = () => {
+    if (flushTimer.current == null) return
+    window.clearTimeout(flushTimer.current)
+    flushTimer.current = null
+  }
+
+  const publishProgress = () => {
+    setProgress({
+      done: doneRef.current,
+      total: totalRef.current,
+      retrying: retryingRef.current,
+      counts: { ...countsRef.current },
+    })
+  }
+
+  const scheduleProgress = () => {
+    if (flushTimer.current != null) return
+    flushTimer.current = window.setTimeout(() => {
+      flushTimer.current = null
+      publishProgress()
+    }, PROGRESS_FLUSH_MS)
+  }
+
+  const publishEntries = () => setEntries(new Map(live.current))
 
   useEffect(() => {
     const current = runRef
@@ -66,6 +96,7 @@ export function useLinkScan() {
     return () => {
       current.current += 1
       pauseGate.current?.release()
+      if (flushTimer.current != null) window.clearTimeout(flushTimer.current)
     }
   }, [])
 
@@ -75,18 +106,21 @@ export function useLinkScan() {
     setPausedSince(null)
   }, [])
 
-  const markChecking = useCallback((targets: CheckTarget[], fresh: boolean) => {
-    const previous = fresh ? new Map<string, CheckEntry>() : entriesRef.current
-    for (const target of targets) {
-      const old = previous.get(target.url)
-      if (old?.state.phase === 'done' && !restore.current.has(target.url)) restore.current.set(target.url, old)
+  const markChecking = (targets: CheckTarget[], fresh: boolean) => {
+    if (fresh) {
+      live.current = new Map()
+      countsRef.current = emptyCounts()
     }
-    setEntries((prev) => {
-      const next = fresh ? new Map<string, CheckEntry>() : new Map(prev)
-      for (const target of targets) next.set(target.url, { target, state: { phase: 'queued' } })
-      return next
-    })
-  }, [])
+    for (const target of targets) {
+      const old = live.current.get(target.url)
+      if (old?.state.phase === 'done') {
+        countsRef.current[old.state.health] -= 1
+        if (!restore.current.has(target.url)) restore.current.set(target.url, old)
+      }
+      live.current.set(target.url, { target, state: { phase: 'queued' } })
+    }
+    if (fresh) setEntries(new Map())
+  }
 
   const execute = useCallback(
     async (targets: CheckTarget[], settings: CheckSettings, fresh: boolean) => {
@@ -95,13 +129,18 @@ export function useLinkScan() {
       restore.current = new Map()
       markChecking(targets, fresh)
       setMode(fresh ? 'fresh' : 'recheck')
-      setProgress({ done: 0, total: targets.length, retrying: false })
+      doneRef.current = 0
+      totalRef.current = targets.length
+      retryingRef.current = false
+      publishProgress()
       setPhase('running')
       setTiming({ startedAt: Date.now(), finishedAt: null, pausedMs: 0 })
       const finish = () => {
         if (runRef.current !== run) return
         restore.current = new Map()
+        clearFlush()
         setProgress(null)
+        publishEntries()
         setPhase('done')
         setTiming((prev) => prev && { ...prev, finishedAt: Date.now() })
       }
@@ -116,31 +155,25 @@ export function useLinkScan() {
 
       const pass = async (items: CheckTarget[], retrying: boolean) => {
         let cursor = 0
-        let done = 0
-        setProgress({ done: 0, total: items.length, retrying })
+        doneRef.current = 0
+        totalRef.current = items.length
+        retryingRef.current = retrying
+        publishProgress()
         const worker = async () => {
           while (runRef.current === run) {
             if (gate.current) await gate.current.promise
             if (runRef.current !== run || cursor >= items.length) return
             const target = items[cursor]
             cursor += 1
-            setEntries((prev) => {
-              const next = new Map(prev)
-              next.set(target.url, { target, state: { phase: 'checking' } })
-              return next
-            })
             const result = await checkOne(target, options)
             if (runRef.current !== run) return
             const health = classifyResult(result)
             if (!retrying && settings.retryFailures && isRetryable(health)) failed.push(target)
             restore.current.delete(target.url)
-            setEntries((prev) => {
-              const next = new Map(prev)
-              next.set(target.url, { target, state: { phase: 'done', result, health, retried: retrying || undefined } })
-              return next
-            })
-            done += 1
-            setProgress({ done, total: items.length, retrying })
+            live.current.set(target.url, { target, state: { phase: 'done', result, health, retried: retrying || undefined } })
+            countsRef.current[health] += 1
+            doneRef.current += 1
+            scheduleProgress()
           }
         }
         await Promise.all(Array.from({ length: Math.min(settings.concurrency, items.length) }, worker))
@@ -156,7 +189,7 @@ export function useLinkScan() {
       }
       finish()
     },
-    [markChecking, openGate],
+    [openGate],
   )
 
   const start = useCallback(
@@ -176,6 +209,8 @@ export function useLinkScan() {
       release = resolve
     })
     gate.current = { promise, release }
+    clearFlush()
+    publishProgress()
     setPausedSince(Date.now())
     setPhase('paused')
   }, [])
@@ -194,26 +229,33 @@ export function useLinkScan() {
     openGate()
     const restored = restore.current
     restore.current = new Map()
+    clearFlush()
     setProgress(null)
     setPhase(mode === 'recheck' ? 'done' : 'stopped')
     setTiming(
       (prev) =>
         prev && { ...prev, finishedAt: Date.now(), pausedMs: prev.pausedMs + (since != null ? Date.now() - since : 0) },
     )
-    setEntries((prev) => {
-      const next = new Map<string, CheckEntry>()
-      for (const [url, entry] of prev) {
-        if (entry.state.phase === 'done') next.set(url, entry)
-        else if (restored.has(url)) next.set(url, restored.get(url)!)
-      }
-      return next
-    })
+    const next = new Map<string, CheckEntry>()
+    for (const [url, entry] of live.current) {
+      if (entry.state.phase === 'done') next.set(url, entry)
+      else if (restored.has(url)) next.set(url, restored.get(url)!)
+    }
+    live.current = next
+    countsRef.current = emptyCounts()
+    for (const entry of next.values()) {
+      if (entry.state.phase === 'done') countsRef.current[entry.state.health] += 1
+    }
+    setEntries(next)
   }, [mode, openGate, pausedSince])
 
   const reset = useCallback(() => {
     runRef.current += 1
     openGate()
     restore.current = new Map()
+    live.current = new Map()
+    countsRef.current = emptyCounts()
+    clearFlush()
     setEntries(new Map())
     setProgress(null)
     setPhase('idle')

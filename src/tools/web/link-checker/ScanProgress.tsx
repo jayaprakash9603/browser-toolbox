@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { PauseIcon, PlayIcon, SquareIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -33,6 +33,25 @@ function useNow(active: boolean) {
   return now
 }
 
+const RATE_WINDOW_MS = 2500
+
+function useRecentRate(done: number, paused: boolean, now: number) {
+  const samples = useRef<{ t: number; done: number }[]>([])
+  const [rate, setRate] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (paused) return
+    const next = [...samples.current, { t: now, done }].filter((sample) => now - sample.t <= RATE_WINDOW_MS)
+    samples.current = next
+    const first = next[0]
+    const span = now - first.t
+    if (span < 400) return
+    setRate(done > first.done ? (done - first.done) / (span / 1000) : 0)
+  }, [done, paused, now])
+
+  return rate
+}
+
 export function ScanProgress({ progress, phase, timing, pausedSince, counts, onPause, onResume, onStop }: ScanProgressProps) {
   const { t } = useTranslation()
   const reduce = useReducedMotion()
@@ -42,7 +61,9 @@ export function ScanProgress({ progress, phase, timing, pausedSince, counts, onP
   const ratio = progress.total > 0 ? progress.done / progress.total : 0
   const percent = Math.round(ratio * 100)
   const seconds = elapsedMs / 1000
-  const rate = seconds >= 1 && progress.done > 0 ? progress.done / seconds : null
+  const overallRate = seconds >= 1 && progress.done > 0 ? progress.done / seconds : null
+  const recentRate = useRecentRate(progress.done, paused, now)
+  const rate = recentRate && recentRate > 0 ? recentRate : overallRate
   const remaining = rate && progress.done < progress.total ? Math.max(1, Math.round((progress.total - progress.done) / rate)) : null
   const title = paused
     ? t('linkChecker.progress.paused')
@@ -83,6 +104,7 @@ export function ScanProgress({ progress, phase, timing, pausedSince, counts, onP
             size={64}
             stroke={6}
             orbit={!paused}
+            duration={0.2}
             className={paused ? 'stroke-amber-500' : 'stroke-primary'}
             trackClassName={paused ? 'stroke-amber-500/15' : 'stroke-primary/15'}
           >
@@ -134,15 +156,7 @@ export function ScanProgress({ progress, phase, timing, pausedSince, counts, onP
               >
                 <Icon className="size-3" aria-hidden />
                 {t(`linkChecker.health.${health}`)}
-                <motion.span
-                  key={counts[health]}
-                  initial={reduce ? false : { y: -6, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.16 }}
-                  className="font-semibold tabular-nums"
-                >
-                  {counts[health]}
-                </motion.span>
+                <span className="font-semibold tabular-nums">{counts[health]}</span>
               </motion.span>
             )
           })}

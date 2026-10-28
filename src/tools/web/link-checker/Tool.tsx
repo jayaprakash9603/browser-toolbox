@@ -211,14 +211,6 @@ export default function LinkCheckerTool() {
     () => filterCounts(entryList, settings.redirectsAsIssues),
     [entryList, settings.redirectsAsIssues],
   )
-  const progressCounts = useMemo(() => {
-    const tallies = emptyCounts()
-    for (const entry of entryList) {
-      if (entry.state.phase !== 'done') continue
-      tallies[entry.state.health] += 1
-    }
-    return tallies
-  }, [entryList])
 
   const query = search.trim().toLowerCase()
   const visible = useMemo(() => {
@@ -438,7 +430,7 @@ export default function LinkCheckerTool() {
                 phase={scan.phase}
                 timing={scan.timing}
                 pausedSince={scan.pausedSince}
-                counts={progressCounts}
+                counts={scan.progress.counts}
                 onPause={scan.pause}
                 onResume={scan.resume}
                 onStop={scan.stop}

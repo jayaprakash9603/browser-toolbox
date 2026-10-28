@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScanSearchIcon, SquareIcon } from 'lucide-react'
 
 import type { CrawlProgress } from '@/core/engines/htmlArchive/crawl'
+import { MAX_SITE_TARGETS } from '@/core/engines/linkChecker/report'
 import { LongTaskProgress } from '@/shared/components/LongTaskProgress'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/utils/cn'
@@ -34,12 +35,15 @@ export function DiscoverProgress({
   const fetched = crawl?.saved ?? 0
   const unique = crawl?.found ?? 0
   const queued = crawl?.queued ?? 0
-  const remaining = Math.max(0, Math.min(maxPages, fetched + queued) - fetched)
+  const urlCapped = unique >= MAX_SITE_TARGETS
+  const remaining = urlCapped ? 0 : Math.max(0, Math.min(maxPages, fetched + queued) - fetched)
   const total = Math.max(1, Math.min(maxPages, fetched + queued) || maxPages)
-  const percent = Math.min(100, Math.round((fetched / total) * 100))
+  const percent = urlCapped ? 100 : Math.min(100, Math.round((fetched / total) * 100))
   const detail = stopRequested
     ? t('linkChecker.crawl.stopping')
-    : t('linkChecker.crawl.detail', { depth: crawl?.depth ?? 0, queued: remaining })
+    : urlCapped
+      ? t('linkChecker.crawl.urlCap', { count: MAX_SITE_TARGETS })
+      : t('linkChecker.crawl.detail', { depth: crawl?.depth ?? 0, queued: remaining })
 
   return (
     <LongTaskProgress

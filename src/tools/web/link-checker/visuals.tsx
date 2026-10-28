@@ -119,9 +119,20 @@ interface RingProps {
   orbit?: boolean
   children?: ReactNode
   label?: string
+  duration?: number
 }
 
-export function Ring({ value, size = 76, stroke = 7, className, trackClassName, orbit, children, label }: RingProps) {
+export function Ring({
+  value,
+  size = 76,
+  stroke = 7,
+  className,
+  trackClassName,
+  orbit,
+  children,
+  label,
+  duration = 0.9,
+}: RingProps) {
   const reduce = useReducedMotion()
   const radius = (size - stroke) / 2
   const center = size / 2
@@ -153,7 +164,7 @@ export function Ring({ value, size = 76, stroke = 7, className, trackClassName, 
           className={className}
           initial={{ pathLength: 0 }}
           animate={{ pathLength: Math.max(0.001, Math.min(1, value)) }}
-          transition={reduce ? { duration: 0 } : { duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+          transition={reduce ? { duration: 0 } : { duration, ease: [0.22, 1, 0.36, 1] }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">{children}</div>
