@@ -10,13 +10,15 @@ const viewState = new Map<string, unknown>()
 
 /** Keeps a page's scroll position across visits; attach the returned ref to its scroll container. */
 export function useScrollMemory<T extends HTMLElement>() {
-  const { path } = useRouter()
+  const { path, search } = useRouter()
+  // A `?focus=` deep link scrolls to its own target, so restoring would fight it.
+  const focusing = Boolean(new URLSearchParams(search).get('focus'))
   return useCallback(
     (element: T | null) => {
       if (!element) return
       const target = scrollPositions.get(path) ?? 0
       const deadline = performance.now() + RESTORE_TIMEOUT_MS
-      let restoring = target > 0
+      let restoring = target > 0 && !focusing
       let restoreFrame = 0
       let saveFrame = 0
 
@@ -48,7 +50,7 @@ export function useScrollMemory<T extends HTMLElement>() {
         for (const type of USER_INPUT) element.removeEventListener(type, stopRestoring)
       }
     },
-    [path],
+    [path, focusing],
   )
 }
 

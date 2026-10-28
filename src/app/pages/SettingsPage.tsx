@@ -51,10 +51,12 @@ import { SiteAccessSettingsSection } from '@/app/pages/settings/SiteAccessSettin
 import { SitesSettingsSection } from '@/app/pages/settings/SitesSettingsSection'
 import { SettingsGroup, SettingsRow } from '@/app/pages/settings/ui'
 import { useFocusTarget } from '@/shared/hooks/useFocusTarget'
+import { useScrollMemory } from '@/app/navigationMemory'
 
 export default function SettingsPage() {
   const { t } = useTranslation()
   useFocusTarget()
+  const scrollRef = useScrollMemory<HTMLDivElement>()
   const [settings, setSettings] = useState<Settings | null>(null)
   const [confirm, setConfirm] = useState<'clipboard' | 'recent' | 'reset' | null>(null)
 
@@ -83,7 +85,7 @@ export default function SettingsPage() {
     document.getElementById(id)?.scrollIntoView({ block: 'start', behavior: 'smooth' })
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div ref={scrollRef} className="h-full overflow-y-auto">
       <div className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
         <div className="flex items-center gap-2 px-4 py-3">
           <BackButton />
