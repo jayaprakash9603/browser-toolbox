@@ -30,12 +30,14 @@ import {
   type NetMonitorBackup,
   type NetMonitorSettings,
   type NetMonitorSettingsPatch,
+  type NetStatus,
 } from '@/core/netmon'
 import { StatusBadge } from '@/features/netmon/components/StatusBadge'
 import { downloadBlob, exportFilename } from '@/features/netmon/download'
 import { useNow } from '@/features/netmon/hooks'
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog'
 import { Button } from '@/shared/components/ui/button'
+import { Input } from '@/shared/components/ui/input'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,6 +53,8 @@ import { Switch } from '@/shared/components/ui/switch'
 import { EmptyState, Panel } from './ui'
 
 const PAGE = 100
+const STATUS_FILTERS = ['all', 'online', 'lan', 'offline', 'nodata'] as const
+type StatusFilter = (typeof STATUS_FILTERS)[number]
 const DATE_FORMATS: { value: NetDateFormat; key: string }[] = [
   { value: 'default', key: 'netmon.log.dateDefault' },
   { value: 'us', key: 'netmon.log.dateUs' },
@@ -71,6 +75,17 @@ export function LogTab({
   const now = useNow(5000)
   const options = settings.log
   const rows = useMemo(() => logRows(events, now, options.simplify), [events, now, options.simplify])
+  const [filter, setFilter] = useState<StatusFilter>('all')
+  const [query, setQuery] = useState('')
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+    return rows.filter((row) => {
+      if (filter !== 'all' && row.status !== (filter as NetStatus)) return false
+      if (!needle) return true
+      const ip = row.ip?.toLowerCase() ?? ''
+      return ip.includes(needle)
+    })
+  }, [rows, filter, query])
   const [visible, setVisible] = useState(PAGE)
   const [confirmClear, setConfirmClear] = useState(false)
   const [pendingRestore, setPendingRestore] = useState<NetMonitorBackup | null>(null)
@@ -115,7 +130,7 @@ export function LogTab({
 
   return (
     <Panel
-      description={t('netmon.log.count', { count: rows.length })}
+      description={t('netmon.log.count', { count: filtered.length })}
       actions={
         <>
           <Popover>
@@ -222,6 +237,34 @@ export function LogTab({
         </>
       }
     >
+      <div className="mb-3 flex flex-col gap-2 @[520px]:flex-row @[520px]:items-center">
+        <Segmented
+          size="sm"
+          ariaLabel={t('netmon.log.filter')}
+          value={filter}
+          onValueChange={(v) => {
+            setFilter(v)
+            setVisible(PAGE)
+          }}
+          className="w-full min-w-0 @[520px]:w-auto"
+          options={STATUS_FILTERS.map((value) => ({
+            value,
+            label: value === 'all' ? t('netmon.log.filterAll') : t(`netmon.statusShort.${value}`),
+          }))}
+        />
+        <Input
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value)
+            setVisible(PAGE)
+          }}
+          placeholder={t('netmon.log.searchIp')}
+          aria-label={t('netmon.log.searchIp')}
+          className="h-8 min-w-0 flex-1 text-xs"
+          spellCheck={false}
+        />
+      </div>
+
       {notice && (
         <p
           role="status"
@@ -235,8 +278,10 @@ export function LogTab({
         </p>
       )}
 
-      {!rows.length ? (
-        <EmptyState icon={ListIcon}>{t('netmon.log.empty')}</EmptyState>
+      {!filtered.length ? (
+        <EmptyState icon={ListIcon}>
+          {rows.length ? t('netmon.log.filterEmpty') : t('netmon.log.empty')}
+        </EmptyState>
       ) : (
         <>
           <div className="max-h-[28rem] overflow-auto rounded-xl border">
@@ -250,7 +295,7 @@ export function LogTab({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
-                {rows.slice(0, visible).map((row) => (
+                {filtered.slice(0, visible).map((row) => (
                   <tr key={`${row.at}-${row.status}`} className="hover:bg-muted/40">
                     <td className="px-2.5 py-1.5 font-mono text-[11px] whitespace-nowrap tabular-nums">
                       {formatDateTime(row.at, options.dateFormat)}
@@ -271,7 +316,7 @@ export function LogTab({
               </tbody>
             </table>
           </div>
-          {rows.length > visible && (
+          {filtered.length > visible && (
             <Button variant="ghost" size="xs" className="mt-2 w-full" onClick={() => setVisible((v) => v + PAGE)}>
               {t('netmon.log.more')}
             </Button>

@@ -1,9 +1,10 @@
-import type { NetIntervalSec, NetMonitorSettings, NetSoundId, NetStatus } from './types'
+import type { NetIntervalSec, NetLatencyWarnMs, NetMonitorSettings, NetSoundId, NetStatus } from './types'
 
 export const NETMON_LIVE_KEY = 'netMonitorLive'
 export const NETMON_REALTIME_KEY = 'netMonitorRealtime'
 
 export const NETMON_INTERVALS: NetIntervalSec[] = [1, 2, 3, 5]
+export const LATENCY_WARN_MS: NetLatencyWarnMs[] = [0, 100, 150, 200, 300, 500]
 export const REALTIME_WINDOW_MS = 24 * 60 * 60 * 1000
 export const MAX_LOG_EVENTS = 20_000
 export const PROBE_TIMEOUT_MS = 4000
@@ -51,6 +52,7 @@ export const DEFAULT_NETMON_SETTINGS: NetMonitorSettings = {
   soundOffline: 'none',
   volume: 0.6,
   toolbarIcon: 'off',
+  latencyWarnMs: 200,
   log: { dateFormat: 'default', statusFormat: 'human', simplify: false, durationFormat: 'human' },
 }
 

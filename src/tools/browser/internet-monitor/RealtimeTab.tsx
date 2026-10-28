@@ -1,23 +1,26 @@
-import { ActivityIcon, RotateCcwIcon } from 'lucide-react'
+import { ActivityIcon, PauseIcon, PlayIcon, RotateCcwIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
   downsampleSamples,
   formatLatency,
-  latencySummary,
+  formatPercent,
+  latencyHealth,
+  latencyHistogram,
   outageSegments,
   type NetLive,
+  type NetSample,
   type NetStatus,
 } from '@/core/netmon'
 import { LatencyChart } from '@/features/netmon/components/LatencyChart'
 import { StatusBadge } from '@/features/netmon/components/StatusBadge'
 import { statusColor } from '@/features/netmon/statusStyle'
-import { useNetRealtime } from '@/features/netmon/hooks'
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog'
 import { Button } from '@/shared/components/ui/button'
 import { Segmented } from '@/shared/components/ui/segmented'
 
+import { LatencyHistogram } from './LatencyHistogram'
 import { EmptyState, Panel } from './ui'
 
 const RANGES = { '5m': 5 * 60_000, '1h': 3_600_000, '6h': 6 * 3_600_000, '24h': 24 * 3_600_000 } as const
@@ -26,20 +29,49 @@ const TABLE_LIMIT = 300
 const CHART_POINTS = 160
 const LEGEND: NetStatus[] = ['lan', 'offline', 'nodata']
 
-export function RealtimeTab({ live }: { live: NetLive | null }) {
+export function RealtimeTab({
+  live,
+  samples,
+  onReset,
+}: {
+  live: NetLive | null
+  samples: NetSample[]
+  onReset: () => void
+}) {
   const { t } = useTranslation()
-  const { samples, reset } = useNetRealtime(live)
   const [range, setRange] = useState<RangeKey>('1h')
   const [view, setView] = useState<'graph' | 'table'>('graph')
+  const [paused, setPaused] = useState(false)
+  const [frozen, setFrozen] = useState<NetSample[] | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
 
+  const active = paused && frozen ? frozen : samples
+
   const data = useMemo(() => {
-    const to = samples.at(-1)?.at ?? 0
+    const to = active.at(-1)?.at ?? live?.lastSampleAt ?? 0
     const from = to - RANGES[range]
-    const raw = samples.filter((s) => s.at >= from)
+    const raw = active.filter((s) => s.at >= from)
     const points = downsampleSamples(raw, from, to, CHART_POINTS)
-    return { from, to, raw, points, segments: outageSegments(points, to), summary: latencySummary(raw) }
-  }, [samples, range])
+    return {
+      from,
+      to,
+      raw,
+      points,
+      segments: outageSegments(points, to),
+      health: latencyHealth(raw),
+      bins: latencyHistogram(raw),
+    }
+  }, [active, range, live?.lastSampleAt])
+
+  const togglePause = () => {
+    if (paused) {
+      setPaused(false)
+      setFrozen(null)
+      return
+    }
+    setFrozen(samples)
+    setPaused(true)
+  }
 
   return (
     <Panel
@@ -63,6 +95,17 @@ export function RealtimeTab({ live }: { live: NetLive | null }) {
             ]}
           />
           <Button
+            variant={paused ? 'secondary' : 'ghost'}
+            size="sm"
+            className="h-7 gap-1 px-2 text-xs"
+            disabled={!samples.length}
+            onClick={togglePause}
+            aria-pressed={paused}
+          >
+            {paused ? <PlayIcon className="size-3.5" aria-hidden /> : <PauseIcon className="size-3.5" aria-hidden />}
+            {paused ? t('netmon.realtime.resume') : t('netmon.realtime.pause')}
+          </Button>
+          <Button
             variant="ghost"
             size="sm"
             className="h-7 gap-1 px-2 text-xs"
@@ -75,11 +118,13 @@ export function RealtimeTab({ live }: { live: NetLive | null }) {
         </>
       }
     >
-      <dl className="mb-3 grid grid-cols-4 gap-1.5 text-center">
-        <Summary label={t('netmon.realtime.avg')} value={formatLatency(data.summary.avg)} />
-        <Summary label={t('netmon.realtime.min')} value={formatLatency(data.summary.min)} />
-        <Summary label={t('netmon.realtime.max')} value={formatLatency(data.summary.max)} />
-        <Summary label={t('netmon.realtime.samples')} value={data.raw.length.toLocaleString()} />
+      <dl className="mb-3 grid grid-cols-3 gap-1.5 text-center @[560px]:grid-cols-6">
+        <Summary label={t('netmon.realtime.avg')} value={formatLatency(data.health.avg)} />
+        <Summary label={t('netmon.realtime.p50')} value={formatLatency(data.health.p50)} />
+        <Summary label={t('netmon.realtime.p95')} value={formatLatency(data.health.p95)} />
+        <Summary label={t('netmon.realtime.max')} value={formatLatency(data.health.max)} />
+        <Summary label={t('netmon.realtime.jitter')} value={formatLatency(data.health.jitter)} />
+        <Summary label={t('netmon.realtime.failed')} value={formatPercent(data.health.failureRate)} />
       </dl>
 
       {!data.raw.length ? (
@@ -87,6 +132,8 @@ export function RealtimeTab({ live }: { live: NetLive | null }) {
       ) : view === 'graph' ? (
         <>
           <LatencyChart points={data.points} segments={data.segments} from={data.from} to={data.to} />
+          <p className="mt-3 mb-1 text-[11px] font-medium text-muted-foreground">{t('netmon.realtime.histogram')}</p>
+          <LatencyHistogram bins={data.bins} />
           <ul className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
             <li className="flex items-center gap-1.5">
               <span aria-hidden className="h-0.5 w-3 rounded-full" style={{ backgroundColor: 'var(--netmon-latency)' }} />
@@ -107,7 +154,9 @@ export function RealtimeTab({ live }: { live: NetLive | null }) {
       ) : (
         <RealtimeTable samples={data.raw} />
       )}
-      <p className="mt-3 text-[11px] text-muted-foreground">{t('netmon.realtime.keep')}</p>
+      <p className="mt-3 text-[11px] text-muted-foreground">
+        {paused ? t('netmon.realtime.pausedHint') : t('netmon.realtime.keep')}
+      </p>
 
       <ConfirmDialog
         open={confirmReset}
@@ -116,7 +165,7 @@ export function RealtimeTab({ live }: { live: NetLive | null }) {
         description={t('netmon.realtime.resetBody')}
         confirmLabel={t('netmon.realtime.reset')}
         destructive
-        onConfirm={() => void reset()}
+        onConfirm={onReset}
       />
     </Panel>
   )
@@ -131,7 +180,7 @@ function Summary({ label, value }: { label: string; value: string }) {
   )
 }
 
-function RealtimeTable({ samples }: { samples: ReturnType<typeof useNetRealtime>['samples'] }) {
+function RealtimeTable({ samples }: { samples: NetSample[] }) {
   const { t } = useTranslation()
   const rows = useMemo(() => samples.slice(-TABLE_LIMIT).reverse(), [samples])
   return (

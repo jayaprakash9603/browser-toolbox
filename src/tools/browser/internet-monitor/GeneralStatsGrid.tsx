@@ -25,22 +25,27 @@ export function GeneralStatsGrid({ events }: { events: NetEvent[] }) {
   return (
     <Panel title={t('netmon.general.title')} description={t('netmon.general.hint')}>
       <div className="grid grid-cols-2 gap-2 @[560px]:grid-cols-4">
-        {WINDOWS.map((key) => (
-          <WindowCard key={key} label={t(`netmon.general.${key}`)} stats={stats[key]} />
+        {WINDOWS.map((key, index) => (
+          <WindowCard key={key} label={t(`netmon.general.${key}`)} stats={stats[key]} delay={index * 0.05} />
         ))}
       </div>
     </Panel>
   )
 }
 
-function WindowCard({ label, stats }: { label: string; stats: WindowStats }) {
+function WindowCard({ label, stats, delay = 0 }: { label: string; stats: WindowStats; delay?: number }) {
   const { t } = useTranslation()
   const reduceMotion = useReducedMotion()
   const color = availabilityColor(stats.availability)
   const pct = stats.availability === null ? 0 : stats.availability * 100
 
   return (
-    <div className="min-w-0 rounded-xl border bg-background/60 p-2.5">
+    <motion.div
+      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.32, delay: reduceMotion ? 0 : delay, ease: [0.16, 1, 0.3, 1] }}
+      className="min-w-0 rounded-xl border bg-background/60 p-2.5"
+    >
       <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
       <p className="mt-1 font-mono text-lg leading-none font-semibold tabular-nums" style={{ color }}>
         {formatAvailability(stats.availability)}
@@ -71,6 +76,6 @@ function WindowCard({ label, stats }: { label: string; stats: WindowStats }) {
           <dd className="font-mono font-medium tabular-nums">{formatClockDuration(stats.downtimeMs)}</dd>
         </div>
       </dl>
-    </div>
+    </motion.div>
   )
 }

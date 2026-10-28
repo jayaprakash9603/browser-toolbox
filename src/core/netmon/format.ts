@@ -41,3 +41,7 @@ export function formatAvailability(value: number | null): string {
 export function formatLatency(ms: number | null): string {
   return ms === null ? '—' : `${Math.round(ms)} ms`
 }
+
+export function formatPercent(value: number | null, digits = 1): string {
+  return value === null ? '—' : `${(value * 100).toFixed(digits)}%`
+}

@@ -1,14 +1,25 @@
-import { CheckIcon, CopyIcon, GaugeIcon, GlobeIcon, RadarIcon, TimerIcon } from 'lucide-react'
+import { CheckIcon, ClipboardCopyIcon, CopyIcon, GaugeIcon, GlobeIcon, RadarIcon, TimerIcon } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { formatClockDuration, formatLatency, type NetLive, type NetMonitorSettings } from '@/core/netmon'
+import {
+  formatClockDuration,
+  formatLatency,
+  latencyGrade,
+  latencyHealth,
+  type NetLive,
+  type NetMonitorSettings,
+  type NetSample,
+} from '@/core/netmon'
 import { StatusDot, StatusIconTile } from '@/features/netmon/components/StatusBadge'
-import { statusColor } from '@/features/netmon/statusStyle'
+import { latencyGradeColor, statusColor } from '@/features/netmon/statusStyle'
 import { useNow } from '@/features/netmon/hooks'
 import { useLiveStatusLabel } from '@/features/netmon/useLiveStatusLabel'
+import { Button } from '@/shared/components/ui/button'
+import { cn } from '@/shared/utils/cn'
 
+import { Sparkline } from './Sparkline'
 import { Fact } from './ui'
 
 function hostOf(url: string): string {
@@ -19,14 +30,43 @@ function hostOf(url: string): string {
   }
 }
 
-export function StatusHero({ live, settings }: { live: NetLive | null; settings: NetMonitorSettings }) {
+export function StatusHero({
+  live,
+  settings,
+  samples,
+}: {
+  live: NetLive | null
+  settings: NetMonitorSettings
+  samples: NetSample[]
+}) {
   const { t } = useTranslation()
   const now = useNow()
   const reduceMotion = useReducedMotion()
   const label = useLiveStatusLabel(live)
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState<'ip' | 'snap' | null>(null)
   const status = live?.status ?? null
   const color = statusColor(status)
+  const health = useMemo(() => latencyHealth(samples.slice(-120)), [samples])
+  const grade = latencyGrade(live?.latency ?? health.avg)
+  const warn =
+    settings.latencyWarnMs > 0 && live?.latency != null && live.latency >= settings.latencyWarnMs
+
+  const markCopied = (kind: 'ip' | 'snap') => {
+    setCopied(kind)
+    window.setTimeout(() => setCopied(null), 1400)
+  }
+
+  const copySnapshot = () => {
+    const lines = [
+      `${t('tools.browser.internet-monitor.name')} — ${label}`,
+      `${t('netmon.hero.latency')}: ${formatLatency(live?.latency ?? null)} (${t(`netmon.grade.${grade}`)})`,
+      `${t('netmon.hero.ip')}: ${settings.showIp ? (live?.ip ?? '—') : t('netmon.hero.hidden')}`,
+      `${t('netmon.hero.target')}: ${hostOf(settings.pingUrl)}`,
+      `${t('netmon.settings.interval')}: ${t('netmon.hero.every', { count: settings.intervalSec })}`,
+      `${t('netmon.realtime.p95')}: ${formatLatency(health.p95)} · ${t('netmon.realtime.jitter')}: ${formatLatency(health.jitter)}`,
+    ]
+    void navigator.clipboard.writeText(lines.join('\n')).then(() => markCopied('snap'))
+  }
 
   return (
     <section className="relative overflow-hidden rounded-2xl border bg-card p-4 shadow-xs">
@@ -41,7 +81,7 @@ export function StatusHero({ live, settings }: { live: NetLive | null; settings:
       <div className="relative flex items-center gap-3">
         <StatusIconTile status={status} size="lg" />
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <StatusDot status={status} pulse={status === 'online' || status === 'offline'} />
             <motion.p
               key={label}
@@ -53,15 +93,46 @@ export function StatusHero({ live, settings }: { live: NetLive | null; settings:
             >
               {label}
             </motion.p>
+            <span
+              className="rounded-full border px-2 py-0.5 text-[10px] font-medium"
+              style={{
+                color: latencyGradeColor(grade),
+                borderColor: `color-mix(in srgb, ${latencyGradeColor(grade)} 35%, transparent)`,
+                backgroundColor: `color-mix(in srgb, ${latencyGradeColor(grade)} 12%, transparent)`,
+              }}
+            >
+              {t(`netmon.grade.${grade}`)}
+            </span>
+            {warn && (
+              <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-800 dark:text-amber-200">
+                {t('netmon.hero.highLatency', { ms: settings.latencyWarnMs })}
+              </span>
+            )}
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
             {live ? t('netmon.hero.for', { duration: formatClockDuration(now - live.since) }) : '\u00a0'}
           </p>
         </div>
+        <div className="hidden shrink-0 flex-col items-end gap-1 @[480px]:flex">
+          <Sparkline samples={samples} />
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            className="gap-1 text-[11px]"
+            onClick={copySnapshot}
+            aria-label={t('netmon.hero.copySnapshot')}
+          >
+            {copied === 'snap' ? <CheckIcon className="size-3.5" /> : <ClipboardCopyIcon className="size-3.5" />}
+            {copied === 'snap' ? t('netmon.hero.copied') : t('netmon.hero.copySnapshot')}
+          </Button>
+        </div>
       </div>
       <dl className="relative mt-3 grid grid-cols-2 gap-2 @[520px]:grid-cols-4">
         <Fact icon={GaugeIcon} label={t('netmon.hero.latency')}>
-          {formatLatency(live?.latency ?? null)}
+          <span className={cn(warn && 'text-amber-700 dark:text-amber-300')}>
+            {formatLatency(live?.latency ?? null)}
+          </span>
         </Fact>
         <Fact icon={GlobeIcon} label={t('netmon.hero.ip')}>
           <span className="min-w-0 flex-1 truncate" title={live?.ip ?? undefined}>
@@ -71,15 +142,12 @@ export function StatusHero({ live, settings }: { live: NetLive | null; settings:
             <button
               type="button"
               aria-label={t('netmon.copyIp')}
-              className="-m-1 rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="-m-1 cursor-pointer rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               onClick={() => {
-                void navigator.clipboard.writeText(live.ip!).then(() => {
-                  setCopied(true)
-                  setTimeout(() => setCopied(false), 1200)
-                })
+                void navigator.clipboard.writeText(live.ip!).then(() => markCopied('ip'))
               }}
             >
-              {copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+              {copied === 'ip' ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
             </button>
           )}
         </Fact>

@@ -4,11 +4,13 @@ import { useTranslation } from 'react-i18next'
 
 import { SettingsGroup, SettingsRow } from '@/app/pages/settings/ui'
 import {
+  LATENCY_WARN_MS,
   NETMON_INTERVALS,
   PING_PRESETS,
   PROBE_TIMEOUT_MS,
   SOUND_OPTIONS,
   type NetIntervalSec,
+  type NetLatencyWarnMs,
   type NetMonitorSettings,
   type NetMonitorSettingsPatch,
   type NetSoundId,
@@ -72,6 +74,21 @@ export function SettingsTab({ settings, patch }: Props) {
             checked={settings.showIp}
             onCheckedChange={(on) => void patch({ showIp: on })}
             aria-label={t('netmon.settings.showIp')}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label={t('netmon.settings.latencyWarn')}
+          description={t('netmon.settings.latencyWarnHint')}
+          stacked
+        >
+          <Segmented
+            ariaLabel={t('netmon.settings.latencyWarn')}
+            value={String(settings.latencyWarnMs)}
+            onValueChange={(v) => void patch({ latencyWarnMs: Number(v) as NetLatencyWarnMs })}
+            options={LATENCY_WARN_MS.map((ms) => ({
+              value: String(ms),
+              label: ms === 0 ? t('netmon.settings.latencyWarnOff') : `${ms} ms`,
+            }))}
           />
         </SettingsRow>
       </SettingsGroup>

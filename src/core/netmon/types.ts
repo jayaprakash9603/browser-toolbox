@@ -29,6 +29,8 @@ export type NetIntervalSec = 1 | 2 | 3 | 5
 export type NetSoundId = 'none' | 'chime' | 'rise' | 'beep' | 'pop' | 'alert' | 'fall'
 export type NetToolbarIcon = 'off' | 'dot'
 export type NetDateFormat = 'default' | 'us' | 'eu' | 'iso'
+export type NetLatencyWarnMs = 0 | 100 | 150 | 200 | 300 | 500
+export type LatencyGrade = 'excellent' | 'good' | 'fair' | 'poor' | 'unknown'
 
 export interface NetLogOptions {
   dateFormat: NetDateFormat
@@ -48,6 +50,8 @@ export interface NetMonitorSettings {
   soundOffline: NetSoundId
   volume: number
   toolbarIcon: NetToolbarIcon
+  /** Highlight live latency at or above this many ms; 0 disables the warning. */
+  latencyWarnMs: NetLatencyWarnMs
   log: NetLogOptions
 }
 

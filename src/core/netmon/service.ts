@@ -1,7 +1,7 @@
 import { STORAGE_KEYS } from '@/core/constants'
 import { get, set } from '@/core/storage'
 
-import { DEFAULT_NETMON_SETTINGS, MAX_LOG_EVENTS, NETMON_INTERVALS } from './constants'
+import { DEFAULT_NETMON_SETTINGS, LATENCY_WARN_MS, MAX_LOG_EVENTS, NETMON_INTERVALS } from './constants'
 import type { NetEvent, NetLogOptions, NetMonitorSettings } from './types'
 
 export type NetMonitorSettingsPatch = Partial<Omit<NetMonitorSettings, 'log'>> & { log?: Partial<NetLogOptions> }
@@ -13,6 +13,7 @@ export function normalizeNetSettings(stored: Partial<NetMonitorSettings> | null 
     log: { ...DEFAULT_NETMON_SETTINGS.log, ...stored?.log },
   }
   if (!NETMON_INTERVALS.includes(merged.intervalSec)) merged.intervalSec = DEFAULT_NETMON_SETTINGS.intervalSec
+  if (!LATENCY_WARN_MS.includes(merged.latencyWarnMs)) merged.latencyWarnMs = DEFAULT_NETMON_SETTINGS.latencyWarnMs
   if (!/^https?:\/\//i.test(merged.pingUrl)) merged.pingUrl = DEFAULT_NETMON_SETTINGS.pingUrl
   merged.volume = Math.min(1, Math.max(0, Number(merged.volume) || 0))
   return merged

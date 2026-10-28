@@ -1,14 +1,22 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  currentStreak,
   dailyStats,
   downsampleSamples,
   generalStats,
+  hourHeatmap,
   hourStats,
+  incidents,
+  latencyGrade,
+  latencyHealth,
+  latencyHistogram,
   logRows,
+  longestIncident,
   outageSegments,
   simplifyEvents,
   statsForWindow,
+  statusMix,
   toIntervals,
   weekdayStats,
 } from '@/core/netmon/stats'
@@ -205,5 +213,50 @@ describe('formatting and settings', () => {
     expect(settings.pingUrl).toMatch(/^https:/)
     expect(settings.volume).toBe(1)
     expect(settings.log).toMatchObject({ simplify: true, dateFormat: 'default' })
+    expect(settings.latencyWarnMs).toBe(200)
+    expect(normalizeNetSettings({ latencyWarnMs: 999 as never }).latencyWarnMs).toBe(200)
+  })
+})
+
+describe('latency health and incidents', () => {
+  it('computes percentiles, jitter and failed-probe rate', () => {
+    const samples: NetSample[] = [
+      { at: 0, status: 'online', latency: 10 },
+      { at: 1, status: 'online', latency: 20 },
+      { at: 2, status: 'online', latency: 30 },
+      { at: 3, status: 'offline', latency: null },
+      { at: 4, status: 'nodata', latency: null },
+    ]
+    const health = latencyHealth(samples)
+    expect(health.p50).toBe(20)
+    expect(health.p95).toBeGreaterThanOrEqual(20)
+    expect(health.jitter).toBe(10)
+    expect(health.failed).toBe(1)
+    expect(health.probes).toBe(4)
+    expect(health.failureRate).toBeCloseTo(0.25)
+    expect(latencyGrade(20)).toBe('excellent')
+    expect(latencyGrade(80)).toBe('good')
+    expect(latencyGrade(150)).toBe('fair')
+    expect(latencyGrade(250)).toBe('poor')
+    expect(latencyHistogram(samples).some((bin) => bin.count > 0)).toBe(true)
+  })
+
+  it('builds status mix, incidents and heatmap cells', () => {
+    const events: NetEvent[] = [
+      { at: s(0), status: 'online' },
+      { at: s(60), status: 'offline' },
+      { at: s(90), status: 'online' },
+    ]
+    const mix = statusMix(events, s(120))
+    expect(mix.online).toBe(90_000)
+    expect(mix.offline).toBe(30_000)
+    const drops = incidents(events, s(120))
+    expect(drops).toHaveLength(1)
+    expect(drops[0].durationMs).toBe(30_000)
+    expect(longestIncident(drops)?.durationMs).toBe(30_000)
+    expect(currentStreak(events, s(120))).toMatchObject({ status: 'online', durationMs: 30_000 })
+    const heat = hourHeatmap(events, s(120))
+    expect(heat).toHaveLength(168)
+    expect(heat.some((cell) => cell.availability !== null)).toBe(true)
   })
 })
