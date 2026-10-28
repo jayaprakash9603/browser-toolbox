@@ -197,7 +197,7 @@ export function DemoStage({
       <div
         className={cn(
           'relative overflow-hidden bg-surface',
-          !card && 'rounded-[22px] border border-line-strong shadow-[0_30px_90px_-40px_rgb(0_0_0/0.9)]',
+          !card && 'rounded-[22px] border border-line-strong shadow-[var(--demo-stage-shadow)]',
         )}
       >
         <div ref={frameRef} className="relative w-full overflow-hidden" style={{ aspectRatio: `${width} / ${height}` }}>
@@ -224,8 +224,8 @@ export function DemoStage({
             >
               <path
                 d="M4 2.5 19.5 11l-6.6 1.9L9.6 19.8z"
-                fill="#fff"
-                stroke="#07070b"
+                fill="var(--demo-cursor-fill)"
+                stroke="var(--demo-cursor-stroke)"
                 strokeWidth="1.4"
                 strokeLinejoin="round"
               />
@@ -239,7 +239,7 @@ export function DemoStage({
               onClick={toggle}
               aria-label={playing ? t('demo.pause') : t('demo.play')}
               title={playing ? t('demo.pause') : t('demo.play')}
-              className="flex size-8 shrink-0 items-center justify-center rounded-full border border-line-strong text-ink-soft outline-none transition-colors hover:border-white/40 hover:text-ink focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+              className="flex size-8 shrink-0 items-center justify-center rounded-full border border-line-strong text-ink-soft outline-none transition-colors hover:border-[var(--demo-control-hover-border)] hover:text-ink focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
             >
               {playing ? (
                 <PauseIcon aria-hidden="true" className="size-3.5" />
@@ -266,7 +266,7 @@ export function DemoStage({
                   <span
                     className={cn(
                       'h-1.5 rounded-full transition-all duration-500 ease-[var(--ease-out-expo)]',
-                      index === active ? 'w-5 bg-[var(--accent)]' : 'w-1.5 bg-white/20 group-hover:bg-white/45',
+                      index === active ? 'w-5 bg-[var(--accent)]' : 'w-1.5 bg-[var(--demo-step-idle)] group-hover:bg-[var(--demo-step-hover)]',
                     )}
                   />
                 </button>
