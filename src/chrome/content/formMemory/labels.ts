@@ -1,8 +1,16 @@
-import { DESCRIPTION_WORDS, LABEL_WORDS, MAX_CAPTION_SOURCE, MAX_LABEL_DEPTH, MAX_SIBLING_STEPS, NOT_LABEL } from './constants'
+import {
+  DESCRIPTION_ATTRIBUTES,
+  DESCRIPTION_WORDS,
+  LABEL_WORDS,
+  MAX_CAPTION_SOURCE,
+  MAX_LABEL_DEPTH,
+  MAX_SIBLING_STEPS,
+  NOT_LABEL,
+} from './constants'
 import { fieldsWithin, isField } from './detect'
 import { hidden, isCheckable, isControl } from './dom'
 import { firstNode, nodesOf, radiosOf } from './entry'
-import { cleanLabel, clip, humanize, quote, shortText, stableId, wordCount } from './text'
+import { cleanLabel, clip, hintWords, humanize, labelKey, quote, shortText, stableId, wordCount } from './text'
 import type { Entry } from './types'
 
 interface NearbyLabel {
@@ -32,12 +40,16 @@ function unseen(el: Element): boolean {
   return style.display === 'none' || style.visibility === 'hidden' || screenReaderOnly(style)
 }
 
+const isInline = (el: Element) => /^(inline|contents)$/.test(getComputedStyle(el).display)
+
 /** The text a sighted user reads in `root`, without nested controls or screen-reader-only hints. */
 function visibleText(root: Element): string {
   let text = ''
   for (const node of root.childNodes) {
     if (node.nodeType === Node.TEXT_NODE) text += node.textContent ?? ''
-    else if (node instanceof Element && !node.matches(LABEL_NOISE) && !unseen(node)) text += visibleText(node)
+    else if (node instanceof Element && !node.matches(LABEL_NOISE) && !unseen(node)) {
+      text += isInline(node) ? visibleText(node) : ` ${visibleText(node)} `
+    }
   }
   return text
 }
@@ -47,14 +59,22 @@ function labelText(label: Element | null): string {
   return cleanLabel(clip(visibleText(label)))
 }
 
-function hintWords(el: Element): string[] {
-  return `${el.getAttribute('class') ?? ''} ${el.id}`
-    .split(/[\s_-]+|(?<=\p{Ll})(?=\p{Lu})/u)
-    .map((word) => word.toLowerCase())
+/** Descriptions the field or its wrappers state outright, e.g. `<div description="Select a branch">`. */
+function statedDescriptions(own: Element[]): Set<string> {
+  const texts = new Set<string>()
+  let node: Element | null = own[0] ?? null
+  for (let depth = 0; node && node !== document.body && depth < MAX_LABEL_DEPTH; depth += 1, node = node.parentElement) {
+    for (const name of DESCRIPTION_ATTRIBUTES) {
+      const value = labelKey(node.getAttribute(name) ?? '')
+      if (value) texts.add(value)
+    }
+  }
+  return texts
 }
 
-/** Help text for the field rather than its name: referenced by `aria-describedby`, or styled as a hint. */
-function describes(node: Node, own: Element[]): boolean {
+/** Help text for the field rather than its name: referenced or stated as its description, or styled as a hint. */
+function describes(node: Node, text: string, own: Element[]): boolean {
+  if (statedDescriptions(own).has(labelKey(text))) return true
   if (!(node instanceof Element)) return false
   const described = own.flatMap((el) => (el.getAttribute('aria-describedby') ?? '').split(/\s+/)).filter(Boolean)
   const only = node.childElementCount === 1 ? node.firstElementChild : null
@@ -73,13 +93,25 @@ export function labelsOf(el: Element): Element[] {
   return el.id ? [...document.querySelectorAll(`label[for="${quote(el.id)}"]`)] : []
 }
 
+/** A caption block that also holds the field's help text (`<label>Branch</label><small>Select a branch</small>`) is named by its other part. */
+function namedPart(node: Element, own: Element[]): string {
+  const parts = [...node.children]
+    .filter((child) => !child.matches(LABEL_NOISE) && !unseen(child))
+    .map((child) => ({ child, text: shortText(visibleText(child)) }))
+    .filter((part) => part.text)
+  if (parts.length < 2) return ''
+  const help = parts.filter((part) => describes(part.child, part.text, own))
+  if (help.length === 0) return ''
+  return parts.find((part) => !help.includes(part))?.text ?? ''
+}
+
 /** What a node beside a field says, when it reads like a caption rather than another control. */
-function captionOf(node: Node): string {
+function captionOf(node: Node, own: Element[] = []): string {
   if (node.nodeType === Node.TEXT_NODE) return shortText(node.textContent ?? '')
   if (!(node instanceof Element) || node.matches(NOT_LABEL) || hidden(node)) return ''
   if (isField(node) || fieldsWithin(node, [])) return ''
   if ((node.textContent ?? '').length > MAX_CAPTION_SOURCE) return ''
-  return shortText(visibleText(node)) || shortText(node.getAttribute('title') ?? '')
+  return namedPart(node, own) || shortText(visibleText(node)) || shortText(node.getAttribute('title') ?? '')
 }
 
 /**
@@ -101,10 +133,10 @@ function siblingCaption(start: Node, forward: boolean, onlyLabels: boolean, skip
     }
     steps += 1
     if (onlyLabels && !(node instanceof HTMLLabelElement)) continue
-    const text = captionOf(node)
+    const text = captionOf(node, own)
     if (!text || skip.has(text)) continue
     if (forward) return text
-    const described = describes(node, own)
+    const described = describes(node, text, own)
     if (!fallback) {
       if (!described && wordCount(text) < WORDY_CAPTION) return text
       fallback = { text, strict: !described }

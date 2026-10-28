@@ -22,6 +22,18 @@ export const cleanLabel = (value: string) => trimLabel(trimLabel(value).replace(
 export const labelKey = (value: string | undefined) => norm((value ?? '').replace(REQUIRED_MARK, ''))
 
 export const wordCount = (value: string) => value.split(/\s+/).filter(hasWords).length
+
+/** The words in an element's class, id and given attributes: `uno_choice_filter`, `MuiFormHelperText` and so on. */
+export function hintWords(el: Element, attributes: string[] = []): string[] {
+  const tokens = [el.getAttribute('class') ?? '', el.id, ...attributes.map((name) => el.getAttribute(name) ?? '')]
+    .join(' ')
+    .split(/\s+/)
+    .filter(Boolean)
+  // Whole tokens too, so compounds such as `form-text` and `help-block` read as `formtext` and `helpblock`.
+  const whole = tokens.map((token) => token.replace(/[^\p{L}\p{N}]+/gu, ''))
+  const parts = tokens.flatMap((token) => token.split(/[^\p{L}\p{N}]+|(?<=\p{Ll})(?=\p{Lu})/u))
+  return [...parts, ...whole].filter(Boolean).map((word) => word.toLowerCase())
+}
 export const same = (a: string, b: string) => clip(a, 500).toLowerCase() === clip(b, 500).toLowerCase()
 export const quote = (value: string) => value.replace(/["\\]/g, '\\$&')
 export const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms))

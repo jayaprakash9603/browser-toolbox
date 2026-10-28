@@ -40,6 +40,39 @@ describe('form memory labels and keys', () => {
     ])
   })
 
+  it('labels a select that has a filter box beside it, and leaves the filter box out', async () => {
+    document.body.innerHTML = `<div class="jenkins-form-item tr "><div class="jenkins-form-label help-sibling">branch_name</div>
+      <div class="jenkins-form-description">Select a branch</div><div class="setting-main">
+      <div id="choice-parameter-7012373449873923-spinner" class="ac-spinner"><p class="jenkins-spinner"></p></div>
+      <div name="parameter" description="Select a branch" id="choice-parameter-7012373449873923" class="active-choice">
+        <input name="name" type="hidden" value="branch_name">
+        <div class="jenkins-select ac-ignore"><select name="value" class="jenkins-select__input">
+          <option value="master">master</option><option value="develop" selected>develop</option></select></div>
+        <input class="uno_choice_filter jenkins-input jenkins-!-margin-top-1" type="text" value="dev" name="test" placeholder="Filter">
+      </div></div><div class="validation-error-area"></div></div>
+      ${jenkinsParam('glue_code', 'Enter path for step definition implementation')}`
+    document.querySelector<HTMLInputElement>('.jenkins-input:not(.uno_choice_filter)')!.value = 'com.telstra'
+    const result = await runFormMemoryPage({ action: 'snapshot' })
+    expect(result.fields?.map((field) => [field.key, field.label, field.value])).toEqual([
+      ['select:branch_name', 'branch_name', 'develop'],
+      ['text:glue_code', 'glue_code', 'com.telstra'],
+    ])
+  })
+
+  it('reads the name part of a caption block that also holds help text', async () => {
+    document.body.innerHTML = `<div><div class="field-head"><label>Branch</label><small class="form-text">Pick the release branch</small></div>
+      <div><input name="b" value="x"></div></div><div><input name="other"></div>`
+    const result = await runFormMemoryPage({ action: 'snapshot' })
+    expect(result.fields?.[0].label).toBe('Branch')
+  })
+
+  it('treats text the field states as its description as help text', async () => {
+    document.body.innerHTML = `<div><span>Region</span><span>Where the stack runs</span>
+      <div data-description="Where the stack runs"><input name="r" value="au"></div></div>`
+    const result = await runFormMemoryPage({ action: 'snapshot' })
+    expect(result.fields?.[0].label).toBe('Region')
+  })
+
   it('treats a caption referenced by aria-describedby as help text', async () => {
     document.body.innerHTML = `<div><span>Coupon</span><span id="h">Leave blank if none</span>
       <input name="c" aria-describedby="h" value="X"></div>`

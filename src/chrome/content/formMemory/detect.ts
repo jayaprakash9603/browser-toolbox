@@ -1,7 +1,7 @@
 import { memo } from './cache'
-import { ANY_FIELD, EDITABLE_SELECTOR, FIELD_SELECTOR, IGNORE_SELECTOR, POPUP_SELECTOR } from './constants'
+import { ANY_FIELD, EDITABLE_SELECTOR, FIELD_SELECTOR, FILTER_WORDS, IGNORE_SELECTOR, POPUP_SELECTOR } from './constants'
 import { isControl, isPicker, isSensitive } from './dom'
-import { quote } from './text'
+import { hintWords, quote } from './text'
 import type { Control, Widget, WidgetType } from './types'
 
 /** A month grid: 28 or more day numbers in cells of their own. */
@@ -27,14 +27,26 @@ function controlledElsewhere(node: Element, el: Element): boolean {
   return Boolean(owner && owner !== el && !owner.contains(el))
 }
 
+/** A filter or search box that narrows the select or list sitting beside it in the same small group. */
+function filtersList(el: Element): boolean {
+  if (!(el instanceof HTMLInputElement) || !['text', 'search'].includes(el.type)) return false
+  const words = hintWords(el, ['name', 'placeholder', 'aria-label', 'title'])
+  if (el.type !== 'search' && !words.some((word) => FILTER_WORDS.has(word))) return false
+  let node = el.parentElement
+  for (let depth = 0; node && node !== document.body && depth < 2; depth += 1, node = node.parentElement) {
+    if (node.querySelector('select, [role=listbox], [role=tree]') && node.querySelectorAll(FIELD_SELECTOR).length <= 3) return true
+  }
+  return false
+}
+
 /**
- * The search box inside a dropdown and the month and year selects of a calendar serve another
- * control; they are never what the user wants remembered, and never a field of their own.
+ * The search box inside or beside a dropdown and the month and year selects of a calendar serve
+ * another control; they are never what the user wants remembered, and never a field of their own.
  */
 function auxiliary(el: Element): boolean {
   const cached = memo.aux.get(el)
   if (cached !== undefined) return cached
-  let found = Boolean(el.closest(POPUP_SELECTOR))
+  let found = Boolean(el.closest(POPUP_SELECTOR)) || filtersList(el)
   let node = el.parentElement
   for (let depth = 0; !found && node && node !== document.body && depth < 6; depth += 1, node = node.parentElement) {
     // A dropdown panel usually sits right after the box that opens it.

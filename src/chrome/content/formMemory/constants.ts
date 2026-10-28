@@ -28,6 +28,9 @@ export const DESCRIPTION_WORDS = new Set([
   'help',
   'helper',
   'helptext',
+  'helpertext',
+  'helpblock',
+  'formtext',
   'hint',
   'note',
   'notes',
@@ -42,6 +45,10 @@ export const DESCRIPTION_WORDS = new Set([
   'assist',
   'assistive',
 ])
+/** Attributes in which a field or its wrapper states its own help text. */
+export const DESCRIPTION_ATTRIBUTES = ['aria-description', 'description', 'data-description', 'data-help', 'data-hint']
+/** Words naming a box that narrows the list beside it (a filter or search box) rather than a value of its own. */
+export const FILTER_WORDS = new Set(['filter', 'search', 'find', 'lookup', 'typeahead', 'quicksearch'])
 /** Words that mark a caption as the field's name, outranking a help word beside them (`label help-sibling`). */
 export const LABEL_WORDS = new Set(['label', 'lbl', 'title', 'caption', 'legend', 'name', 'prompt', 'question'])
 /** A caption is not read through more text than this; longer blocks are content, not labels. */
