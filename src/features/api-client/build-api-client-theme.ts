@@ -2,7 +2,11 @@ import { defaultTheme, type ApiClientTheme, type ApiClientThemeTokens } from 'po
 
 import type { ThemeMode } from '@/features/settings/settingsService'
 import { DEFAULT_PALETTE, type PaletteId } from '@/shared/lib/theme/palettes'
-import { TOOLBOX_PALETTE_BRANDS, TOOLBOX_SURFACES } from '@/shared/lib/theme/toolboxColors'
+import {
+  TOOLBOX_PALETTE_BRANDS,
+  TOOLBOX_SURFACES,
+  type ToolboxSurface,
+} from '@/shared/lib/theme/toolboxColors'
 
 const TOOLBOX_THEME_ID = 'browser-toolbox'
 const TOOLBOX_RADIUS = '0.625rem'
@@ -11,12 +15,11 @@ const TOOLBOX_FONT = "'Inter Variable', Inter, ui-sans-serif, system-ui, 'Segoe 
 type Scheme = 'light' | 'dark'
 type BrandToken = 'primary' | 'primaryForeground' | 'ring'
 type ColorToken = Exclude<keyof ApiClientThemeTokens, 'radius' | 'fontFamily'>
-type SurfaceTokens = Record<Exclude<ColorToken, BrandToken>, string>
 type BrandTokens = Record<BrandToken, string>
 
 // postman-lite writes its tokens onto <html> while it is mounted, so the toolbox colours cannot be
-// read back from the page; the shared hex tables must cover every postman-lite colour token.
-const SURFACES: Record<Scheme, SurfaceTokens> = TOOLBOX_SURFACES
+// read back from the page; shared hex tables override toolbox-aligned tokens — the rest come from defaultTheme.
+const SURFACES: Record<Scheme, ToolboxSurface> = TOOLBOX_SURFACES
 const BRANDS: Record<PaletteId, Record<Scheme, BrandTokens>> = TOOLBOX_PALETTE_BRANDS
 
 export { TOOLBOX_PALETTE_BRANDS, TOOLBOX_SURFACES }
