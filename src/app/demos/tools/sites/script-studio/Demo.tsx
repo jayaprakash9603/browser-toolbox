@@ -47,18 +47,18 @@ const TABS: { id: string; label?: string; icon: LucideIcon }[] = [
 ]
 const SHOWN = GALLERY.slice(0, 3)
 const ON = { backgroundColor: '#10b981' }
-const OFF = { backgroundColor: 'rgba(255,255,255,0.18)' }
+const OFF = { backgroundColor: 'var(--demo-tint-18)' }
 
 const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorOut }) => {
   const selectTab = (id: string) => {
     tl.to(
       qa('tab'),
-      { backgroundColor: 'rgba(255,255,255,0)', color: '#8b8b96', duration: 0.15 },
+      { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-muted)', duration: 0.15 },
       '<',
     )
     tl.to(
       q(`tab-${id}`),
-      { backgroundColor: 'rgba(255,255,255,0.1)', color: '#f4f4f5', duration: 0.15 },
+      { backgroundColor: 'var(--demo-tint-10)', color: 'var(--demo-ink)', duration: 0.15 },
       '<',
     )
   }
@@ -184,8 +184,8 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorO
   tl.set(q('global-label'), { text: 'Scripts on' }, 0)
   tl.set(q('bar'), { backgroundColor: '#f59e0b' }, 0)
   tl.set(q('container'), { width: '64%' }, 0)
-  tl.set(qa('tab'), { backgroundColor: 'rgba(255,255,255,0)', color: '#8b8b96' }, 0)
-  tl.set(q('tab-gallery'), { backgroundColor: 'rgba(255,255,255,0.1)', color: '#f4f4f5' }, 0)
+  tl.set(qa('tab'), { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-muted)' }, 0)
+  tl.set(q('tab-gallery'), { backgroundColor: 'var(--demo-tint-10)', color: 'var(--demo-ink)' }, 0)
 }
 
 function Stack({ children, className }: { children: ReactNode; className?: string }) {
@@ -194,7 +194,7 @@ function Stack({ children, className }: { children: ReactNode; className?: strin
 
 function GalleryCard({ script, dataD }: { script: (typeof GALLERY)[number]; dataD: string }) {
   return (
-    <div data-d={dataD} className="rounded-lg border border-line bg-white/[0.02] p-1.5">
+    <div data-d={dataD} className="rounded-lg border border-line bg-ink/[0.02] p-1.5">
       <div className="flex items-start gap-1.5">
         <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] text-[var(--accent)]">
           {script.category === 'developer' ? (
@@ -397,7 +397,7 @@ function Panel() {
             </span>
             <span
               data-d="pill-paused"
-              className="flex items-center gap-1 rounded-full bg-white/[0.06] px-1.5 py-px text-muted opacity-0"
+              className="flex items-center gap-1 rounded-full bg-ink/[0.06] px-1.5 py-px text-muted opacity-0"
             >
               <span className="size-1 rounded-full bg-muted" /> Paused
             </span>
@@ -426,7 +426,7 @@ function Panel() {
           </span>
         </p>
       </div>
-      <div className="flex gap-0.5 rounded-md bg-white/[0.04] p-0.5">
+      <div className="flex gap-0.5 rounded-md bg-ink/[0.04] p-0.5">
         {TABS.map((tab) => {
           const Icon = tab.icon
           return (
@@ -436,8 +436,8 @@ function Panel() {
               className="relative flex items-center gap-0.5 whitespace-nowrap rounded px-1 py-0.5 text-[7px]"
               style={
                 tab.id === 'gallery'
-                  ? { backgroundColor: 'rgba(255,255,255,0.1)', color: '#f4f4f5' }
-                  : { color: '#8b8b96' }
+                  ? { backgroundColor: 'var(--demo-tint-10)', color: 'var(--demo-ink)' }
+                  : { color: 'var(--demo-muted)' }
               }
             >
               <Icon className="size-2.5" />
@@ -445,7 +445,7 @@ function Panel() {
               {tab.id === 'library' ? (
                 <span
                   data-d="lib-count"
-                  className="rounded-full bg-white/10 px-1 text-[6.5px] opacity-0"
+                  className="rounded-full bg-ink/10 px-1 text-[6.5px] opacity-0"
                 >
                   1
                 </span>
@@ -465,15 +465,15 @@ function Panel() {
 function Page() {
   return (
     <div className="h-full bg-[#0d1117] text-[#c9d1d9]">
-      <div className="flex h-7 items-center gap-2 border-b border-white/10 bg-[#010409] px-3 text-[8px]">
-        <span className="size-3.5 rounded-full bg-white/80" />
+      <div className="flex h-7 items-center gap-2 border-b border-ink/10 bg-[#010409] px-3 text-[8px]">
+        <span className="size-3.5 rounded-full bg-ink/80" />
         <span className="text-white/80">northwind / trail-api</span>
       </div>
       <div data-d="page-body" className="h-[calc(100%-28px)] px-3 pt-2">
         <div data-d="container" className="mx-auto" style={{ width: '64%' }}>
           <p className="truncate text-[8px] text-[#8b949e]">trail-api / src / routes / orders.ts</p>
-          <div className="mt-1.5 overflow-hidden rounded-md border border-white/10">
-            <div className="h-5 border-b border-white/10 bg-[#161b22]" />
+          <div className="mt-1.5 overflow-hidden rounded-md border border-ink/10">
+            <div className="h-5 border-b border-ink/10 bg-[#161b22]" />
             <div className="space-y-[5px] p-2 font-mono text-[7px]">
               {[78, 92, 64, 88, 96, 52, 84, 70, 90, 60, 82, 74].map((width, line) => (
                 <span key={line} className="flex items-center gap-2">

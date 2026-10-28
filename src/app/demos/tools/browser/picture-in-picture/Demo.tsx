@@ -62,12 +62,12 @@ const build: Build = ({ tl, q, qa, pos, step, final, move, click, wait, cursorOu
   const showTab = (video: boolean) => {
     tl.to(
       q('tab-video'),
-      { backgroundColor: video ? '#0b0b11' : 'rgba(255,255,255,0.03)', duration: 0.15 },
+      { backgroundColor: video ? 'var(--demo-canvas)' : 'var(--demo-tint-3)', duration: 0.15 },
       '<',
     )
     tl.to(
       q('tab-code'),
-      { backgroundColor: video ? 'rgba(255,255,255,0.03)' : '#0b0b11', duration: 0.15 },
+      { backgroundColor: video ? 'var(--demo-tint-3)' : 'var(--demo-canvas)', duration: 0.15 },
       '<',
     )
     tl.set(q('url-text'), { text: video ? VIDEO_URL : CODE_URL }, '<')
@@ -92,7 +92,7 @@ const build: Build = ({ tl, q, qa, pos, step, final, move, click, wait, cursorOu
     '<',
   )
   move('menu-pip')
-  tl.to(q('menu-pip'), { backgroundColor: 'rgba(255,255,255,0.08)', duration: 0.1 })
+  tl.to(q('menu-pip'), { backgroundColor: 'var(--demo-tint-8)', duration: 0.1 })
   click('menu-pip')
   tl.to(q('menu'), { opacity: 0, duration: 0.12 }, '<')
   tl.set(q('menu-pip'), { backgroundColor: 'rgba(255,255,255,0)' })
@@ -153,10 +153,10 @@ const build: Build = ({ tl, q, qa, pos, step, final, move, click, wait, cursorOu
   tl.set([q('pip'), q('menu'), q('keys'), q('frame-note'), q('page-code')], { opacity: 0 }, 0)
   tl.set(q('pip'), { visibility: 'visible', ...docked }, 0)
   tl.set(q('frame-live'), { opacity: 1 }, 0)
-  tl.set(q('sw-auto'), { backgroundColor: 'rgba(255,255,255,0.12)' }, 0)
+  tl.set(q('sw-auto'), { backgroundColor: 'var(--demo-tint-12)' }, 0)
   tl.set(q('sw-auto-knob'), { x: 0 }, 0)
-  tl.set(q('tab-video'), { backgroundColor: '#0b0b11' }, 0)
-  tl.set(q('tab-code'), { backgroundColor: 'rgba(255,255,255,0.03)' }, 0)
+  tl.set(q('tab-video'), { backgroundColor: 'var(--demo-canvas)' }, 0)
+  tl.set(q('tab-code'), { backgroundColor: 'var(--demo-tint-3)' }, 0)
   tl.set(q('url-text'), { text: VIDEO_URL }, 0)
 }
 
@@ -174,15 +174,15 @@ function VideoArt({ compact = false }: { compact?: boolean }) {
         >
           {VIDEO.title}
         </p>
-        <span className="mt-1.5 block h-[3px] w-2/3 rounded-full bg-white/25" />
-        <span className="mt-1 block h-[3px] w-1/2 rounded-full bg-white/15" />
+        <span className="mt-1.5 block h-[3px] w-2/3 rounded-full bg-ink/25" />
+        <span className="mt-1 block h-[3px] w-1/2 rounded-full bg-ink/15" />
       </div>
       <div className="absolute bottom-0 right-[10%] h-[62%] w-[26%]">
         <span className="absolute left-1/2 top-0 aspect-square w-[46%] -translate-x-1/2 rounded-full bg-[#e8c4a8]" />
         <span className="absolute inset-x-0 bottom-0 h-[58%] rounded-t-[40%] bg-[#1f2937]" />
       </div>
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 pb-1 pt-3">
-        <span className="block h-[2px] rounded-full bg-white/25">
+        <span className="block h-[2px] rounded-full bg-ink/25">
           <span data-d="v-bar" className="block h-full rounded-full bg-[#ef4444]" />
         </span>
         <span
@@ -203,7 +203,7 @@ function Switch({ d, on }: { d?: string; on: boolean }) {
     <span
       data-d={d}
       className="flex h-3 w-[22px] shrink-0 items-center rounded-full px-0.5"
-      style={{ backgroundColor: on ? 'var(--accent)' : 'rgba(255,255,255,0.12)' }}
+      style={{ backgroundColor: on ? 'var(--accent)' : 'var(--demo-tint-12)' }}
     >
       <span
         data-d={d ? `${d}-knob` : undefined}
@@ -289,7 +289,7 @@ function VideoPage() {
       <p className="mt-0.5 text-[7.5px] text-white/55">{VIDEO.channel} · 12K views</p>
       <p
         data-d="page-desc"
-        className="mt-1.5 rounded-md bg-white/[0.06] p-1.5 text-[7.5px] leading-snug text-white/70"
+        className="mt-1.5 rounded-md bg-ink/[0.06] p-1.5 text-[7.5px] leading-snug text-white/70"
       >
         How we fit a whole toolbox into 400 pixels: layout, focus order and keyboard shortcuts.
       </p>
@@ -336,8 +336,8 @@ function CodePage() {
 
 function Chrome() {
   return (
-    <div className="relative flex h-full flex-col bg-[#0b0b11]">
-      <div className="flex items-end gap-1 bg-[#05050a] px-3 pt-2">
+    <div className="relative flex h-full flex-col bg-canvas">
+      <div className="flex items-end gap-1 bg-chrome px-3 pt-2">
         <span className="mb-2.5 mr-2 flex gap-1.5">
           <span className="size-2.5 rounded-full bg-[#ff5f57]/80" />
           <span className="size-2.5 rounded-full bg-[#febc2e]/80" />
@@ -345,7 +345,7 @@ function Chrome() {
         </span>
         <span
           data-d="tab-video"
-          className="flex w-36 items-center gap-1.5 truncate rounded-t-lg bg-[#0b0b11] px-3 py-1.5 text-[10px] text-ink-soft"
+          className="flex w-36 items-center gap-1.5 truncate rounded-t-lg bg-canvas px-3 py-1.5 text-[10px] text-ink-soft"
         >
           <span className="size-2 shrink-0 rounded-sm bg-[#ef4444]" />
           <span className="truncate">{VIDEO.title}</span>
@@ -353,7 +353,7 @@ function Chrome() {
         <span
           data-d="tab-code"
           className="flex w-32 items-center gap-1.5 truncate rounded-t-lg px-3 py-1.5 text-[10px] text-ink-soft"
-          style={{ backgroundColor: 'rgba(255,255,255,0.03)' }}
+          style={{ backgroundColor: 'var(--demo-tint-3)' }}
         >
           <span className="size-2 shrink-0 rounded-sm bg-[#3b82f6]" />
           <span className="truncate">{OTHER_TAB.title}</span>
@@ -361,7 +361,7 @@ function Chrome() {
       </div>
       <div className="flex items-center gap-2 border-b border-line px-3 py-1.5">
         <RotateCwIcon className="size-3 text-muted" />
-        <span className="flex h-6 flex-1 items-center gap-1.5 truncate rounded-full bg-white/[0.05] px-3 font-mono text-[10px] text-ink-soft">
+        <span className="flex h-6 flex-1 items-center gap-1.5 truncate rounded-full bg-ink/[0.05] px-3 font-mono text-[10px] text-ink-soft">
           <LockIcon className="size-2.5 shrink-0 text-muted" />
           <span data-d="url-text" className="truncate">
             {VIDEO_URL}
@@ -375,18 +375,18 @@ function Chrome() {
           <CodePage />
           <div
             data-d="menu"
-            className="absolute left-[46%] top-[62%] w-[150px] rounded-md border border-white/10 bg-[#2b2b30] py-1 text-[8.5px] text-[#e4e4e7] opacity-0 shadow-2xl"
+            className="absolute left-[46%] top-[62%] w-[150px] rounded-md border border-ink/10 bg-[#2b2b30] py-1 text-[8.5px] text-[#e4e4e7] opacity-0 shadow-2xl"
           >
             {['Back', 'Forward', 'Reload'].map((item) => (
               <p key={item} className="px-2.5 py-[3px]">
                 {item}
               </p>
             ))}
-            <span className="my-1 block h-px bg-white/10" />
+            <span className="my-1 block h-px bg-ink/10" />
             <p data-d="menu-pip" className="flex items-center gap-1.5 px-2.5 py-[3px]">
               <LogoMark className="size-2.5" /> {MENU_ITEM}
             </p>
-            <span className="my-1 block h-px bg-white/10" />
+            <span className="my-1 block h-px bg-ink/10" />
             <p className="px-2.5 py-[3px]">Inspect</p>
           </div>
           <div
@@ -398,7 +398,7 @@ function Chrome() {
                 {index > 0 ? <span className="text-[10px] text-white/50">+</span> : null}
                 <span
                   data-d="keycap"
-                  className="rounded-md border border-white/25 bg-white/10 px-2 py-1 font-mono text-[11px] font-semibold text-white shadow-[0_2px_0_rgba(255,255,255,0.18)]"
+                  className="rounded-md border border-ink/25 bg-ink/10 px-2 py-1 font-mono text-[11px] font-semibold text-white shadow-[0_2px_0_rgba(255,255,255,0.18)]"
                 >
                   {key}
                 </span>
@@ -412,7 +412,7 @@ function Chrome() {
       </div>
       <div
         data-d="pip"
-        className="absolute bottom-3 left-3 z-20 aspect-video origin-top-left w-[176px] overflow-hidden rounded-lg border border-white/15 opacity-0 shadow-[0_18px_40px_rgba(0,0,0,0.6)]"
+        className="absolute bottom-3 left-3 z-20 aspect-video origin-top-left w-[176px] overflow-hidden rounded-lg border border-ink/15 opacity-0 shadow-[0_18px_40px_rgba(0,0,0,0.6)]"
       >
         <VideoArt compact />
         <span className="absolute inset-x-0 top-0 flex items-center justify-between bg-gradient-to-b from-black/60 to-transparent px-1 pb-2 pt-1 text-white/85">

@@ -171,7 +171,7 @@ export default function Demo() {
         </div>
         <div
           data-d="spec"
-          className="absolute inset-x-2 bottom-10 rounded-lg border border-white/10 bg-[#0f172a] p-2 font-mono text-[8.5px] text-[#e2e8f0] opacity-0 shadow-xl"
+          className="absolute inset-x-2 bottom-10 rounded-lg border border-ink/10 bg-[#0f172a] p-2 font-mono text-[8.5px] text-[#e2e8f0] opacity-0 shadow-xl"
         >
           <p className="mb-1 text-[8px] text-[#94a3b8]">cart.spec.ts</p>
           <p data-d="spec-line" className="break-all" />

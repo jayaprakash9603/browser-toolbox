@@ -38,8 +38,8 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorO
     )
   }
   const tab = (which: 'local' | 'session') => {
-    const on = { backgroundColor: 'rgba(255,255,255,0.1)', color: '#fafafa', duration: 0.15 }
-    const off = { backgroundColor: 'rgba(255,255,255,0)', color: '#a1a1aa', duration: 0.15 }
+    const on = { backgroundColor: 'var(--demo-tint-10)', color: 'var(--demo-ink)', duration: 0.15 }
+    const off = { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-muted)', duration: 0.15 }
     tl.to(q('tab-local'), which === 'local' ? on : off, '<')
     tl.to(q('tab-session'), which === 'session' ? on : off, '<')
     tl.to(q('list-local'), { opacity: which === 'local' ? 1 : 0, duration: 0.15 }, '<')
@@ -124,8 +124,8 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorO
   tl.set(q('search-text'), { text: '' }, 0)
   tl.set(q('value-checkout-step'), { text: SESSION[1][1] }, 0)
   tl.set(q('refresh-icon'), { rotate: 0 }, 0)
-  tl.set(q('tab-local'), { backgroundColor: 'rgba(255,255,255,0.1)', color: '#fafafa' }, 0)
-  tl.set(q('tab-session'), { backgroundColor: 'rgba(255,255,255,0)', color: '#a1a1aa' }, 0)
+  tl.set(q('tab-local'), { backgroundColor: 'var(--demo-tint-10)', color: 'var(--demo-ink)' }, 0)
+  tl.set(q('tab-session'), { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-muted)' }, 0)
   tl.set(q('stage-ship'), { color: '#111827' }, 0)
   tl.set(q('stage-pay'), { color: '#9ca3af', fontWeight: 500 }, 0)
 }
@@ -191,7 +191,7 @@ function Panel() {
           Loading…
         </p>
         <div data-d="tabs" className="flex min-h-0 flex-1 flex-col opacity-0">
-          <div className="grid grid-cols-2 gap-0.5 rounded-md bg-white/[0.04] p-0.5">
+          <div className="grid grid-cols-2 gap-0.5 rounded-md bg-ink/[0.04] p-0.5">
             {(
               [
                 ['local', 'localStorage', LOCAL.length],
@@ -201,7 +201,7 @@ function Panel() {
               <span
                 key={which}
                 data-d={`tab-${which}`}
-                className={`flex items-center justify-center gap-1 rounded py-0.5 font-mono text-[8px] ${index === 0 ? 'bg-white/10 text-ink' : 'text-muted'}`}
+                className={`flex items-center justify-center gap-1 rounded py-0.5 font-mono text-[8px] ${index === 0 ? 'bg-ink/10 text-ink' : 'text-muted'}`}
               >
                 {label}
                 <span className="rounded border border-line-strong px-1 font-sans text-[7px]">
@@ -271,7 +271,7 @@ function Page() {
       </div>
       <div
         data-d="clip"
-        className="absolute inset-x-3 bottom-3 rounded-lg border border-white/10 bg-[#141419] p-2 opacity-0 shadow-2xl"
+        className="absolute inset-x-3 bottom-3 rounded-lg border border-ink/10 bg-elevated p-2 opacity-0 shadow-2xl"
       >
         <p className="flex items-center gap-1 text-[8px] font-medium text-ink">
           <CheckIcon className="size-2.5 text-emerald-400" /> Copied value of {COPIED[0]}

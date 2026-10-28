@@ -173,7 +173,7 @@ export default function Demo() {
                   <span
                     key={d}
                     data-d={d}
-                    className="rounded-md bg-white/[0.08] px-2 py-1 text-[9.5px] text-ink"
+                    className="rounded-md bg-ink/[0.08] px-2 py-1 text-[9.5px] text-ink"
                   >
                     {label}
                   </span>
@@ -220,7 +220,7 @@ export default function Demo() {
         <Page />
         <div
           data-d="source"
-          className="absolute inset-0 overflow-hidden bg-[#0f0f16] px-4 pt-3 font-mono text-[9px] leading-[14px] text-ink-soft [clip-path:inset(0_0_100%_0)]"
+          className="absolute inset-0 overflow-hidden bg-surface px-4 pt-3 font-mono text-[9px] leading-[14px] text-ink-soft [clip-path:inset(0_0_100%_0)]"
         >
           {LINES.map((line, index) => (
             <p

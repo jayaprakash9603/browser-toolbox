@@ -111,7 +111,7 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorO
   tl.fromTo(
     q('total'),
     { color: '#a78bfa' },
-    { color: '#8b8b96', duration: 0.8, immediateRender: false },
+    { color: 'var(--demo-muted)', duration: 0.8, immediateRender: false },
     '<',
   )
   move('merge-run', { at: '+=0.3' })
@@ -212,7 +212,7 @@ function Card({ id, dataD }: { id: string; dataD?: string }) {
   return (
     <span
       data-d={dataD}
-      className="flex items-start gap-1.5 rounded-lg border border-line bg-white/[0.03] p-1.5"
+      className="flex items-start gap-1.5 rounded-lg border border-line bg-ink/[0.03] p-1.5"
     >
       <Icon id={id} />
       <span className="min-w-0">
@@ -249,7 +249,7 @@ function Catalog() {
             {category.short}
             <span
               data-d={`chip-count-${category.id}`}
-              className="rounded-full bg-white/[0.08] px-1 tabular-nums"
+              className="rounded-full bg-ink/[0.08] px-1 tabular-nums"
             >
               {categoryCount(TOOLS, category.id)}
             </span>
@@ -340,7 +340,7 @@ function Merge() {
           <li
             key={file.name}
             data-d="file"
-            className="flex items-center gap-1.5 rounded-lg border border-line bg-white/[0.02] p-1"
+            className="flex items-center gap-1.5 rounded-lg border border-line bg-ink/[0.02] p-1"
           >
             <GripVerticalIcon className="size-3 text-muted/60" />
             <span className="w-3 text-center text-[8px] font-bold tabular-nums text-muted">
@@ -411,7 +411,7 @@ function Result() {
           </span>
         </span>
       </div>
-      <div className="flex justify-center gap-1.5 rounded-lg border border-line bg-white/[0.03] p-2">
+      <div className="flex justify-center gap-1.5 rounded-lg border border-line bg-ink/[0.03] p-2">
         {PAGE_TINTS.map((tint, index) => (
           <span key={index} data-d="result-page">
             <Thumb tint={tint} />
@@ -465,7 +465,7 @@ function Stamp() {
           <DropletIcon className="size-3" /> Stamp {TOTAL} pages
         </span>
       </div>
-      <div className="relative flex flex-1 items-center justify-center rounded-lg border border-line bg-white/[0.03]">
+      <div className="relative flex flex-1 items-center justify-center rounded-lg border border-line bg-ink/[0.03]">
         <span className="relative flex h-[150px] w-[106px] flex-col gap-1 overflow-hidden rounded-sm bg-white p-2.5 shadow-lg">
           <span className="block h-1.5 w-1/2 rounded-full" style={{ background: TINTS[0] }} />
           {Array.from({ length: 9 }, (_, line) => (
@@ -486,7 +486,7 @@ function Stamp() {
         <p className="absolute bottom-1 text-[7.5px] text-muted">Preview · page 1</p>
         <div
           data-d="done"
-          className="absolute inset-x-2 top-2 flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-[#101016] p-1.5 opacity-0 shadow-xl"
+          className="absolute inset-x-2 top-2 flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-elevated p-1.5 opacity-0 shadow-xl"
         >
           <span className="flex size-4 items-center justify-center rounded-full bg-emerald-500 text-white">
             <CheckIcon className="size-2.5" strokeWidth={3} />

@@ -177,11 +177,11 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorO
   click('more')
   tl.fromTo(q('menu'), pop, popIn, '<')
   move('export-as')
-  tl.to(q('export-as'), { backgroundColor: 'rgba(255,255,255,0.08)', duration: 0.1 }, '<0.2')
+  tl.to(q('export-as'), { backgroundColor: 'var(--demo-tint-8)', duration: 0.1 }, '<0.2')
   tl.fromTo(q('submenu'), pop, popIn, '<')
   move(`fmt-${PICKED_EXPORT}`)
   click(`fmt-${PICKED_EXPORT}`)
-  tl.to(q(`fmt-${PICKED_EXPORT}`), { backgroundColor: 'rgba(255,255,255,0.1)', duration: 0.1 }, '<')
+  tl.to(q(`fmt-${PICKED_EXPORT}`), { backgroundColor: 'var(--demo-tint-10)', duration: 0.1 }, '<')
   tl.to([q('menu'), q('submenu')], { opacity: 0, duration: 0.2 }, '+=0.15')
   tl.fromTo(
     q('toast'),
@@ -285,7 +285,7 @@ function EditorView() {
           <EllipsisVerticalIcon className="size-3.5" />
         </span>
       </div>
-      <div className="flex items-center gap-px rounded-lg border border-line bg-white/[0.03] p-0.5">
+      <div className="flex items-center gap-px rounded-lg border border-line bg-ink/[0.03] p-0.5">
         {TOOLBAR.map((item, index) => {
           if (item === '|') return <span key={index} className="mx-0.5 h-3.5 w-px bg-line-strong" />
           const Icon = ICONS[item]
@@ -396,7 +396,7 @@ function Overlays() {
     <>
       <div
         data-d="colors"
-        className="absolute right-6 top-8 z-10 rounded-lg border border-line-strong bg-[#17171c] p-1.5 opacity-0 shadow-2xl"
+        className="absolute right-6 top-8 z-10 rounded-lg border border-line-strong bg-elevated p-1.5 opacity-0 shadow-2xl"
       >
         <p className="px-0.5 pb-1 text-[9px] font-medium text-muted">Note color</p>
         <div className="grid grid-cols-4 gap-1">
@@ -405,7 +405,7 @@ function Overlays() {
               key={color.id}
               data-d={`color-${index}`}
               title={color.id}
-              className="flex size-5 items-center justify-center rounded-full border border-white/15"
+              className="flex size-5 items-center justify-center rounded-full border border-ink/15"
               style={{ backgroundColor: color.swatch }}
             >
               <CheckIcon
@@ -418,7 +418,7 @@ function Overlays() {
       </div>
       <div
         data-d="menu"
-        className="absolute right-0 top-8 z-10 w-40 rounded-lg border border-line-strong bg-[#17171c] p-1 text-[10px] text-ink-soft opacity-0 shadow-2xl"
+        className="absolute right-0 top-8 z-10 w-40 rounded-lg border border-line-strong bg-elevated p-1 text-[10px] text-ink-soft opacity-0 shadow-2xl"
       >
         {MENU.map(({ label, Icon, hint, d }) => (
           <span
@@ -439,7 +439,7 @@ function Overlays() {
       </div>
       <div
         data-d="submenu"
-        className="absolute right-[164px] top-8 z-10 w-36 rounded-lg border border-line-strong bg-[#17171c] p-1 text-[10px] text-ink-soft opacity-0 shadow-2xl"
+        className="absolute right-[164px] top-8 z-10 w-36 rounded-lg border border-line-strong bg-elevated p-1 text-[10px] text-ink-soft opacity-0 shadow-2xl"
       >
         {EXPORTS.map((label, index) => (
           <span key={label} data-d={`fmt-${index}`} className="block rounded px-1.5 py-[3px]">
@@ -449,12 +449,12 @@ function Overlays() {
       </div>
       <div
         data-d="toast"
-        className="absolute bottom-0 right-0 z-10 w-56 rounded-lg border border-line-strong bg-[#17171c] p-2 opacity-0 shadow-2xl"
+        className="absolute bottom-0 right-0 z-10 w-56 rounded-lg border border-line-strong bg-elevated p-2 opacity-0 shadow-2xl"
       >
         <p className="flex items-center gap-1.5 text-[10px] font-semibold text-ink">
           <DownloadIcon className="size-3 text-[var(--accent)]" /> {FILE}
         </p>
-        <pre className="mt-1 whitespace-pre-wrap rounded bg-white/[0.04] p-1.5 font-mono text-[8.5px] leading-snug text-ink-soft">
+        <pre className="mt-1 whitespace-pre-wrap rounded bg-ink/[0.04] p-1.5 font-mono text-[8.5px] leading-snug text-ink-soft">
           {MARKDOWN}
         </pre>
       </div>

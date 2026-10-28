@@ -163,7 +163,7 @@ export default function Demo() {
               <div className="flex items-center gap-1.5">
                 <span
                   data-d="crawl"
-                  className="flex h-6 items-center rounded-md bg-white/10 px-2 text-[9.5px] text-ink"
+                  className="flex h-6 items-center rounded-md bg-ink/10 px-2 text-[9.5px] text-ink"
                 >
                   Start crawl
                 </span>

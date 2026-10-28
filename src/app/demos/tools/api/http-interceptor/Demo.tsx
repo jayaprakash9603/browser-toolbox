@@ -132,7 +132,7 @@ function Packet({ d, children, className }: { d: string; children: string; class
     <span
       data-d={d}
       className={cn(
-        'absolute left-0 top-0 z-30 w-[104px] truncate rounded-full border border-white/25 bg-[#10141c] px-2 py-0.5 text-center font-mono text-[9px] text-ink opacity-0 shadow-lg',
+        'absolute left-0 top-0 z-30 w-[104px] truncate rounded-full border border-ink/25 bg-elevated px-2 py-0.5 text-center font-mono text-[9px] text-ink opacity-0 shadow-lg',
         className,
       )}
     >

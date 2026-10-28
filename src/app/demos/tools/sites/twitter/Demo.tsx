@@ -80,7 +80,7 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, count, wait, 
   tl.fromTo(
     q('stats'),
     { color: '#1d9bf0' },
-    { color: 'rgba(245,245,247,0.55)', duration: 0.8, immediateRender: false },
+    { color: 'var(--demo-muted)', duration: 0.8, immediateRender: false },
     '<',
   )
   cursorOut(start + 0.4)
@@ -120,7 +120,7 @@ function Panel() {
     <div className="flex h-full flex-col">
       <DockHeader />
       <div className="flex flex-col gap-2 p-2.5">
-        <div className="rounded-xl border border-line bg-white/[0.03] p-2">
+        <div className="rounded-xl border border-line bg-ink/[0.03] p-2">
           <p className="text-[10.5px] font-semibold text-ink">{UI.searchTitle}</p>
           <div className="mt-1 grid gap-1">
             <Input k="from" placeholder={UI.from} />
@@ -160,7 +160,7 @@ function Panel() {
             </span>
           </p>
         </div>
-        <div className="rounded-xl border border-line bg-white/[0.03] p-2">
+        <div className="rounded-xl border border-line bg-ink/[0.03] p-2">
           <p className="text-[10.5px] font-semibold text-ink">{UI.composeTitle}</p>
           <div
             data-d="draft"
@@ -189,21 +189,21 @@ export default function Demo() {
           <div data-d="home" className="space-y-3 p-3">
             {[0, 1, 2].map((row) => (
               <div key={row} className="flex gap-2">
-                <span className="size-6 shrink-0 rounded-full bg-white/15" />
+                <span className="size-6 shrink-0 rounded-full bg-ink/15" />
                 <div className="flex-1 space-y-1.5">
-                  <Bar w="40%" className="h-1.5 bg-white/25" />
-                  <Bar w="92%" className="h-1.5 bg-white/12" />
-                  <Bar w="70%" className="h-1.5 bg-white/12" />
+                  <Bar w="40%" className="h-1.5 bg-ink/25" />
+                  <Bar w="92%" className="h-1.5 bg-ink/12" />
+                  <Bar w="70%" className="h-1.5 bg-ink/12" />
                 </div>
               </div>
             ))}
           </div>
           <div data-d="results" className="absolute inset-0 p-2.5 opacity-0">
-            <div className="flex items-center gap-1.5 rounded-full border border-white/15 px-2 py-1">
+            <div className="flex items-center gap-1.5 rounded-full border border-ink/15 px-2 py-1">
               <SearchIcon className="size-3 shrink-0 text-white/60" />
               <span className="truncate text-[8.5px] text-white/90">{QUERY}</span>
             </div>
-            <div className="mt-1.5 flex gap-3 border-b border-white/10 text-[8.5px] text-white/50">
+            <div className="mt-1.5 flex gap-3 border-b border-ink/10 text-[8.5px] text-white/50">
               <span className="border-b-2 border-[#1d9bf0] pb-1 font-semibold text-white">Top</span>
               <span>Latest</span>
               <span>Media</span>

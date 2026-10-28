@@ -179,7 +179,7 @@ export default function Demo() {
                       <div
                         key={hit.name}
                         data-d="hit"
-                        className="mt-0.5 rounded-md border border-line bg-white/[0.03] px-2 py-0.5 opacity-0"
+                        className="mt-0.5 rounded-md border border-line bg-ink/[0.03] px-2 py-0.5 opacity-0"
                       >
                         <p className="text-[10px] font-medium text-ink">{hit.name}</p>
                         <p

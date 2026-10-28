@@ -96,11 +96,11 @@ export default function Demo() {
               data-d="rail"
               d="M 6 38 H 410"
               fill="none"
-              stroke="rgba(255,255,255,0.25)"
+              stroke="var(--demo-tint-25)"
               strokeWidth="1.5"
             />
-            <circle cx="6" cy="38" r="3.5" fill="#f4f4f6" />
-            <circle cx="410" cy="38" r="3.5" fill="#f4f4f6" />
+            <circle cx="6" cy="38" r="3.5" fill="var(--demo-ink)" />
+            <circle cx="410" cy="38" r="3.5" fill="var(--demo-ink)" />
             {NODES.map((node) => (
               <g key={node.label}>
                 {node.loop ? (

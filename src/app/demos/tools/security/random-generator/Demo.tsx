@@ -100,11 +100,11 @@ export default function Demo() {
         <div className="flex h-full flex-col gap-2.5">
           <div
             data-d="tabs"
-            className="relative flex w-fit rounded-lg border border-line bg-white/[0.03] p-0.5"
+            className="relative flex w-fit rounded-lg border border-line bg-ink/[0.03] p-0.5"
           >
             <span
               data-d="tab-pill"
-              className="absolute inset-y-0.5 left-0.5 w-12 rounded-md bg-white/10"
+              className="absolute inset-y-0.5 left-0.5 w-12 rounded-md bg-ink/10"
             />
             {TABS.map((label, index) => (
               <span
@@ -141,7 +141,7 @@ export default function Demo() {
           </span>
           <div
             data-d="output"
-            className="flex items-center justify-between gap-2 rounded border border-line bg-white/[0.03] px-2 py-1.5 opacity-0"
+            className="flex items-center justify-between gap-2 rounded border border-line bg-ink/[0.03] px-2 py-1.5 opacity-0"
           >
             <code
               data-d="output-text"

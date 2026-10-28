@@ -159,7 +159,7 @@ export default function Demo() {
                   key={mode.label}
                   data-d={`mode-${index}`}
                   title={mode.hint}
-                  className={`flex flex-col items-center gap-0.5 rounded-lg border border-line px-1 py-1 text-center ${index === 0 ? 'bg-white/[0.08]' : ''}`}
+                  className={`flex flex-col items-center gap-0.5 rounded-lg border border-line px-1 py-1 text-center ${index === 0 ? 'bg-ink/[0.08]' : ''}`}
                 >
                   <Icon className="size-3.5 text-ink-soft" />
                   <span className="text-[8.5px] font-semibold leading-tight text-ink">
@@ -211,9 +211,9 @@ export default function Demo() {
                     <div
                       key={scan.name}
                       data-d={`card card-${index}`}
-                      className="flex flex-col gap-0.5 rounded-lg border border-line bg-white/[0.03] p-1"
+                      className="flex flex-col gap-0.5 rounded-lg border border-line bg-ink/[0.03] p-1"
                     >
-                      <span className="relative flex h-12 items-center justify-center rounded-md bg-white/[0.06]">
+                      <span className="relative flex h-12 items-center justify-center rounded-md bg-ink/[0.06]">
                         <span data-d={`thumb-${index}`} className="flex">
                           <Scan index={index} />
                         </span>
@@ -256,7 +256,7 @@ export default function Demo() {
             </div>
             <div
               data-d="preview"
-              className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-xl border border-line-strong bg-[#101016] opacity-0 shadow-2xl"
+              className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-xl border border-line-strong bg-elevated opacity-0 shadow-2xl"
             >
               <div className="flex items-end gap-2">
                 {ORDER.map((source, page) => (

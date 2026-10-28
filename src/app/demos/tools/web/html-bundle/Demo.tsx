@@ -50,13 +50,13 @@ const build: Build = ({
     q(`box-${SKIP}`),
     {
       backgroundColor: 'rgba(255,255,255,0)',
-      borderColor: 'rgba(255,255,255,0.16)',
+      borderColor: 'var(--demo-tint-16)',
       duration: 0.15,
     },
     '<',
   )
   tl.to(q(`tick-${SKIP}`), { opacity: 0, duration: 0.1 }, '<')
-  tl.to(q(`page-row-${SKIP}`), { color: '#8b8b9a', duration: 0.2 }, '<')
+  tl.to(q(`page-row-${SKIP}`), { color: 'var(--demo-muted)', duration: 0.2 }, '<')
   count('selected-count', PICKED.length, { from: PAGES.length, at: '<', duration: 0.2 })
 
   step(2, '+=0.4')
@@ -239,7 +239,7 @@ export default function Demo() {
                     data-d="phase"
                     className="min-h-[24px] text-[8.5px] leading-snug text-ink-soft"
                   />
-                  <div className="mt-1 h-1 overflow-hidden rounded-full bg-white/10">
+                  <div className="mt-1 h-1 overflow-hidden rounded-full bg-ink/10">
                     <div
                       data-d="bar"
                       className="h-full origin-left scale-x-0 rounded-full bg-[var(--accent)]"
@@ -263,7 +263,7 @@ export default function Demo() {
         <span
           key={asset}
           data-d={`asset asset-${index}`}
-          className="absolute left-0 top-0 z-30 whitespace-nowrap rounded-md border border-[var(--accent)]/50 bg-[#0f1520] px-1.5 py-0.5 font-mono text-[8.5px] text-ink opacity-0 shadow-lg"
+          className="absolute left-0 top-0 z-30 whitespace-nowrap rounded-md border border-[var(--accent)]/50 bg-elevated px-1.5 py-0.5 font-mono text-[8.5px] text-ink opacity-0 shadow-lg"
         >
           {asset}
         </span>

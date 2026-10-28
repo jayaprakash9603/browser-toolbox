@@ -87,7 +87,7 @@ function Row({
   return (
     <div
       data-d={d}
-      className="flex items-start gap-1.5 rounded-md border border-line bg-white/[0.03] px-2 py-1"
+      className="flex items-start gap-1.5 rounded-md border border-line bg-ink/[0.03] px-2 py-1"
     >
       <div className="min-w-0 flex-1">
         <p className="text-[8.5px] text-muted">{label}</p>
@@ -138,7 +138,7 @@ export default function Demo() {
                 <div
                   key={item.label}
                   data-d="check"
-                  className="rounded-md border border-line bg-white/[0.03] px-2 py-1 opacity-0"
+                  className="rounded-md border border-line bg-ink/[0.03] px-2 py-1 opacity-0"
                 >
                   <p className="text-[8.5px] text-muted">{item.label}</p>
                   <p
@@ -155,7 +155,7 @@ export default function Demo() {
                 <div
                   key={item.label}
                   data-d="count"
-                  className="rounded-md border border-line bg-white/[0.03] py-1.5 text-center opacity-0"
+                  className="rounded-md border border-line bg-ink/[0.03] py-1.5 text-center opacity-0"
                 >
                   <p
                     data-d={`count-${index}`}

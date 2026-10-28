@@ -87,7 +87,7 @@ export default function Demo() {
               </Btn>
               <div
                 data-d="swatch"
-                className="h-16 rounded-xl border border-line-strong bg-white/5"
+                className="h-16 rounded-xl border border-line-strong bg-ink/5"
               />
               {[
                 ['HEX', 'v-hex', '—', 'copy-hex'],

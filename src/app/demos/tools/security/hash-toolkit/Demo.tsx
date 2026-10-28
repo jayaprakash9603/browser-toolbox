@@ -125,11 +125,11 @@ export default function Demo() {
         <div className="flex h-full flex-col gap-1.5">
           <div
             data-d="tabs"
-            className="relative flex w-fit rounded-lg border border-line bg-white/[0.03] p-0.5"
+            className="relative flex w-fit rounded-lg border border-line bg-ink/[0.03] p-0.5"
           >
             <span
               data-d="tab-pill"
-              className="absolute inset-y-0.5 left-0.5 w-10 rounded-md bg-white/10"
+              className="absolute inset-y-0.5 left-0.5 w-10 rounded-md bg-ink/10"
             />
             {['Hash', 'HMAC'].map((label, index) => (
               <span
@@ -164,7 +164,7 @@ export default function Demo() {
               <div
                 key={row.id}
                 data-d={row.legacy ? 'row legacy-row' : 'row'}
-                className="rounded border border-line bg-white/[0.03] px-1.5 py-1 opacity-0"
+                className="rounded border border-line bg-ink/[0.03] px-1.5 py-1 opacity-0"
               >
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5">

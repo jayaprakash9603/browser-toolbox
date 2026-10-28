@@ -70,7 +70,7 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorO
   click(`preset-${PICKED}`)
   tl.to(
     qa('preset'),
-    { backgroundColor: 'rgba(255,255,255,0)', color: 'rgba(212,212,216,1)', duration: 0.15 },
+    { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-ink-soft)', duration: 0.15 },
     '<',
   )
   tl.to(
@@ -107,12 +107,12 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorO
   click('tab-2')
   tl.to(
     qa('tab'),
-    { backgroundColor: 'rgba(255,255,255,0)', color: 'rgba(161,161,170,1)', duration: 0.15 },
+    { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-muted)', duration: 0.15 },
     '<',
   )
   tl.to(
     q('tab-2'),
-    { backgroundColor: 'rgba(255,255,255,0.1)', color: 'rgba(250,250,250,1)', duration: 0.15 },
+    { backgroundColor: 'var(--demo-tint-10)', color: 'var(--demo-ink)', duration: 0.15 },
     '<',
   )
   tl.to(q('view-countdown'), { opacity: 0, duration: 0.15 }, '<')
@@ -129,7 +129,7 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorO
   notice(POMODORO_NOTICE)
   tl.to(
     qa('phase'),
-    { backgroundColor: 'rgba(255,255,255,0)', color: 'rgba(212,212,216,1)', duration: 0.15 },
+    { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-ink-soft)', duration: 0.15 },
     '<',
   )
   tl.to(
@@ -273,7 +273,7 @@ function Countdown() {
       >
         {formatClock(5 * 60_000)}
       </p>
-      <span className="h-1 rounded-full bg-white/[0.08]" />
+      <span className="h-1 rounded-full bg-ink/[0.08]" />
       <Status d="cd-status" text={`Running in the background · ${LABEL}`} />
       <Actions name="cd" />
       <p className="text-center text-[7.5px] leading-snug text-muted">
@@ -316,7 +316,7 @@ function Pomodoro() {
       >
         {formatClock(WORK_MS)}
       </p>
-      <span className="h-1 rounded-full bg-white/[0.08]" />
+      <span className="h-1 rounded-full bg-ink/[0.08]" />
       <Status d="po-status" />
       <Actions name="po" />
     </div>
@@ -328,12 +328,12 @@ function Panel() {
     <div className="flex h-full flex-col" style={{ width: PANEL }}>
       <DockHeader />
       <div className="flex min-h-0 flex-1 flex-col gap-1.5 p-2">
-        <div className="grid grid-cols-3 gap-0.5 rounded-md bg-white/[0.04] p-0.5">
+        <div className="grid grid-cols-3 gap-0.5 rounded-md bg-ink/[0.04] p-0.5">
           {['Countdown', 'Stopwatch', 'Pomodoro'].map((label, index) => (
             <span
               key={label}
               data-d={`tab tab-${index}`}
-              className={`rounded py-1 text-center text-[9px] ${index === 0 ? 'bg-white/10 text-ink' : 'text-muted'}`}
+              className={`rounded py-1 text-center text-[9px] ${index === 0 ? 'bg-ink/10 text-ink' : 'text-muted'}`}
             >
               {label}
             </span>

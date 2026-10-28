@@ -139,7 +139,7 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorO
   step(2, '+=0.8')
   menu()
   move('copy-as', { at: '+=0.1' })
-  tl.to(q('copy-as'), { backgroundColor: 'rgba(255,255,255,0.08)', duration: 0.1 }, '<0.2')
+  tl.to(q('copy-as'), { backgroundColor: 'var(--demo-tint-8)', duration: 0.1 }, '<0.2')
   tl.fromTo(
     q('submenu'),
     { opacity: 0, x: 4 },
@@ -174,13 +174,13 @@ function Row({ tab }: { tab: (typeof TABS)[number] }) {
   return (
     <li
       data-d={`row row-${tab.id}`}
-      className="relative flex items-center gap-1.5 overflow-hidden rounded-md border border-line bg-white/[0.03] pl-1 pr-1"
+      className="relative flex items-center gap-1.5 overflow-hidden rounded-md border border-line bg-ink/[0.03] pl-1 pr-1"
       style={{ height: ROW, marginBottom: GAP }}
     >
       {tab.active ? (
         <span className="absolute inset-y-1.5 left-0 w-[2px] rounded-r-full bg-[var(--accent)]" />
       ) : null}
-      <span className="flex size-5 shrink-0 items-center justify-center rounded bg-white/[0.06]">
+      <span className="flex size-5 shrink-0 items-center justify-center rounded bg-ink/[0.06]">
         <span
           className="flex size-3 items-center justify-center rounded-sm text-[7px] font-bold text-white"
           style={{ backgroundColor: tab.color }}
@@ -199,7 +199,7 @@ function Row({ tab }: { tab: (typeof TABS)[number] }) {
             </span>
           ) : null}
           {tab.pinned ? (
-            <span className="rounded bg-white/10 px-0.5 text-[7px] text-ink-soft">Pinned</span>
+            <span className="rounded bg-ink/10 px-0.5 text-[7px] text-ink-soft">Pinned</span>
           ) : null}
           {tab.audible ? <Volume2Icon className="size-2.5 text-emerald-300" /> : null}
           {dupe ? (
@@ -221,7 +221,7 @@ function Menus() {
     <>
       <div
         data-d="menu"
-        className="absolute right-0 top-8 z-10 w-48 rounded-lg border border-line-strong bg-[#17171c] p-1 text-[9.5px] text-ink-soft opacity-0 shadow-2xl"
+        className="absolute right-0 top-8 z-10 w-48 rounded-lg border border-line-strong bg-elevated p-1 text-[9.5px] text-ink-soft opacity-0 shadow-2xl"
       >
         {MENU.map(({ label, Icon, d, sub, heading, off }) =>
           heading ? (
@@ -246,7 +246,7 @@ function Menus() {
       </div>
       <div
         data-d="submenu"
-        className="absolute right-[196px] top-[150px] z-10 w-32 rounded-lg border border-line-strong bg-[#17171c] p-1 text-[9.5px] text-ink-soft opacity-0 shadow-2xl"
+        className="absolute right-[196px] top-[150px] z-10 w-32 rounded-lg border border-line-strong bg-elevated p-1 text-[9.5px] text-ink-soft opacity-0 shadow-2xl"
       >
         {COPY_FORMATS.map((label, index) => (
           <span key={label} data-d={`fmt-${index}`} className="block rounded px-1.5 py-[3px]">
@@ -256,12 +256,12 @@ function Menus() {
       </div>
       <div
         data-d="clip"
-        className="absolute bottom-7 right-0 z-10 w-[300px] rounded-lg border border-line-strong bg-[#17171c] p-2 opacity-0 shadow-2xl"
+        className="absolute bottom-7 right-0 z-10 w-[300px] rounded-lg border border-line-strong bg-elevated p-2 opacity-0 shadow-2xl"
       >
         <p className="flex items-center gap-1.5 text-[9.5px] font-semibold text-ink">
           <ClipboardCheckIcon className="size-3 text-[var(--accent)]" /> Clipboard · Markdown links
         </p>
-        <pre className="mt-1 overflow-hidden whitespace-pre rounded bg-white/[0.04] p-1.5 font-mono text-[7.5px] leading-snug text-ink-soft">
+        <pre className="mt-1 overflow-hidden whitespace-pre rounded bg-ink/[0.04] p-1.5 font-mono text-[7.5px] leading-snug text-ink-soft">
           {MARKDOWN}
         </pre>
       </div>
@@ -313,7 +313,7 @@ export default function Demo() {
                 {filter.label}
                 <span
                   data-d={`count-${filter.id}`}
-                  className="rounded-full bg-white/10 px-1 text-[7.5px] tabular-nums"
+                  className="rounded-full bg-ink/10 px-1 text-[7.5px] tabular-nums"
                 >
                   {filter.count}
                 </span>
@@ -329,7 +329,7 @@ export default function Demo() {
               ].map(({ label, Icon }, index) => (
                 <span
                   key={label}
-                  className={`flex items-center gap-1 rounded px-1.5 py-px ${index === 0 ? 'bg-white/10 text-ink' : 'text-muted'}`}
+                  className={`flex items-center gap-1 rounded px-1.5 py-px ${index === 0 ? 'bg-ink/10 text-ink' : 'text-muted'}`}
                 >
                   <Icon className="size-2.5" /> {label}
                 </span>
@@ -345,7 +345,7 @@ export default function Demo() {
               <AppWindowIcon className="size-3 text-muted" /> This window
               <span
                 data-d="group-count"
-                className="rounded-full bg-white/10 px-1 text-[7.5px] font-normal tabular-nums text-muted"
+                className="rounded-full bg-ink/10 px-1 text-[7.5px] font-normal tabular-nums text-muted"
               >
                 {TABS.length}
               </span>

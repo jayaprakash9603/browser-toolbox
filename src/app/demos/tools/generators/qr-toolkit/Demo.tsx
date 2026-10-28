@@ -52,18 +52,18 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorO
     click(`${group}-${index}`)
     tl.to(
       qa(group),
-      { backgroundColor: 'rgba(255,255,255,0)', color: 'rgba(161,161,170,1)', duration: 0.15 },
+      { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-muted)', duration: 0.15 },
       '<',
     )
     tl.to(
       q(`${group}-${index}`),
-      { backgroundColor: active, color: 'rgba(250,250,250,1)', duration: 0.15 },
+      { backgroundColor: active, color: 'var(--demo-ink)', duration: 0.15 },
       '<',
     )
   }
 
   step(0)
-  pick('preset', WIFI_PRESET, 'rgba(255,255,255,0.12)')
+  pick('preset', WIFI_PRESET, 'var(--demo-tint-12)')
   tl.set(q('hint'), { text: HINTS.wifi }, '<')
   tl.fromTo(
     q('wifi-fields'),
@@ -88,9 +88,9 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorO
   tl.to(qa('theme-ring'), { opacity: 0, duration: 0.15 }, '<')
   tl.to(q(`theme-ring-${PICKED_THEME}`), { opacity: 1, duration: 0.15 }, '<')
   look(2)
-  pick('module', PICKED_MODULE, 'rgba(255,255,255,0.12)')
+  pick('module', PICKED_MODULE, 'var(--demo-tint-12)')
   look(3)
-  pick('eye', PICKED_EYE, 'rgba(255,255,255,0.12)')
+  pick('eye', PICKED_EYE, 'var(--demo-tint-12)')
   look(4)
   move('png', { at: '+=0.3' })
   click('png')
@@ -109,12 +109,12 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorO
   click('tab-1')
   tl.to(
     q('tab-0'),
-    { backgroundColor: 'rgba(255,255,255,0)', color: 'rgba(161,161,170,1)', duration: 0.2 },
+    { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-muted)', duration: 0.2 },
     '<',
   )
   tl.to(
     q('tab-1'),
-    { backgroundColor: 'rgba(255,255,255,0.1)', color: 'rgba(250,250,250,1)', duration: 0.2 },
+    { backgroundColor: 'var(--demo-tint-10)', color: 'var(--demo-ink)', duration: 0.2 },
     '<',
   )
   tl.to(q('view-generate'), { opacity: 0, duration: 0.2 }, '<')
@@ -192,7 +192,7 @@ function Segment({ group, items, active }: { group: string; items: string[]; act
         <span
           key={item}
           data-d={`${group} ${group}-${index}`}
-          className={`flex-1 rounded px-1 py-0.5 text-center text-[8.5px] capitalize ${index === active ? 'bg-white/10 text-ink' : 'text-muted'}`}
+          className={`flex-1 rounded px-1 py-0.5 text-center text-[8.5px] capitalize ${index === active ? 'bg-ink/10 text-ink' : 'text-muted'}`}
         >
           {item}
         </span>
@@ -219,7 +219,7 @@ function Generate() {
   return (
     <div data-d="view-generate" className="absolute inset-0 flex gap-3">
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <div className="rounded-lg border border-line bg-white/[0.02] p-2">
+        <div className="rounded-lg border border-line bg-ink/[0.02] p-2">
           <p className="text-[10px] font-semibold text-ink">Content</p>
           <p data-d="hint" className="mb-1.5 text-[8.5px] text-muted">
             {HINTS.text}
@@ -229,7 +229,7 @@ function Generate() {
               <span
                 key={preset}
                 data-d={`preset preset-${index}`}
-                className={`rounded-md border border-line px-1.5 py-0.5 text-[8.5px] ${index === 0 ? 'bg-white/10 text-ink' : 'text-muted'}`}
+                className={`rounded-md border border-line px-1.5 py-0.5 text-[8.5px] ${index === 0 ? 'bg-ink/10 text-ink' : 'text-muted'}`}
               >
                 {preset}
               </span>
@@ -247,7 +247,7 @@ function Generate() {
             <Segment group="enc" items={['WPA/WPA2', 'WEP', 'None']} active={0} />
           </div>
         </div>
-        <div className="space-y-1 rounded-lg border border-line bg-white/[0.02] p-1.5 px-2">
+        <div className="space-y-1 rounded-lg border border-line bg-ink/[0.02] p-1.5 px-2">
           <p className="text-[10px] font-semibold text-ink">Design</p>
           <div className="flex gap-1.5">
             {THEMES.map((theme, index) => (
@@ -255,7 +255,7 @@ function Generate() {
                 key={theme.id}
                 data-d={`theme-${index}`}
                 title={theme.id}
-                className="relative size-5 rounded-full border border-white/15"
+                className="relative size-5 rounded-full border border-ink/15"
                 style={{
                   background:
                     theme.gradient === 'none'
@@ -274,7 +274,7 @@ function Generate() {
           <Segment group="eye" items={EYES} active={0} />
         </div>
       </div>
-      <div className="flex w-[168px] shrink-0 flex-col items-center gap-1.5 rounded-lg border border-line bg-white/[0.02] p-2">
+      <div className="flex w-[168px] shrink-0 flex-col items-center gap-1.5 rounded-lg border border-line bg-ink/[0.02] p-2">
         <div className="relative size-[132px] overflow-hidden rounded-md">
           <div
             data-d="empty"
@@ -318,7 +318,7 @@ function Generate() {
 function Decode() {
   return (
     <div data-d="view-decode" className="absolute inset-0 flex flex-col gap-2 opacity-0">
-      <div className="relative h-[150px] overflow-hidden rounded-xl border border-line bg-white/[0.02]">
+      <div className="relative h-[150px] overflow-hidden rounded-xl border border-line bg-ink/[0.02]">
         <div
           data-d="idle"
           className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center"
@@ -392,7 +392,7 @@ function Decode() {
           </p>
         </div>
       </div>
-      <div data-d="result" className="rounded-lg border border-line bg-white/[0.02] p-2 opacity-0">
+      <div data-d="result" className="rounded-lg border border-line bg-ink/[0.02] p-2 opacity-0">
         <div className="flex items-center gap-2">
           <span className="flex size-6 items-center justify-center rounded-md bg-[var(--accent)]/15 text-[var(--accent)]">
             <LinkIcon className="size-3.5" />
@@ -405,7 +405,7 @@ function Decode() {
             <CopyIcon className="size-2.5" /> Copy
           </span>
         </div>
-        <code className="mt-1.5 block rounded-md bg-white/[0.05] px-2 py-1 font-mono text-[9.5px] text-ink">
+        <code className="mt-1.5 block rounded-md bg-ink/[0.05] px-2 py-1 font-mono text-[9.5px] text-ink">
           {SCANNED}
         </code>
         <div className="mt-1.5 flex gap-1.5 text-[9px]">
@@ -441,7 +441,7 @@ export default function Demo() {
               <span
                 key={label}
                 data-d={`tab-${index}`}
-                className={`flex flex-1 items-center justify-center gap-1 rounded-md py-1 text-[9.5px] font-medium ${index === 0 ? 'bg-white/10 text-ink' : 'text-muted'}`}
+                className={`flex flex-1 items-center justify-center gap-1 rounded-md py-1 text-[9.5px] font-medium ${index === 0 ? 'bg-ink/10 text-ink' : 'text-muted'}`}
               >
                 <Icon className="size-3" /> {label}
               </span>
@@ -455,7 +455,7 @@ export default function Demo() {
       </PanelChrome>
       <div
         data-d="toast"
-        className="absolute right-4 top-[60px] z-20 flex items-center gap-2 rounded-lg border border-line-strong bg-[#17171c] px-2.5 py-1.5 opacity-0 shadow-2xl"
+        className="absolute right-4 top-[60px] z-20 flex items-center gap-2 rounded-lg border border-line-strong bg-elevated px-2.5 py-1.5 opacity-0 shadow-2xl"
       >
         <DownloadIcon className="size-3.5 text-[var(--accent)]" />
         <span>

@@ -80,12 +80,12 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorO
     click(`sec-${id}`)
     tl.to(
       qa('sec'),
-      { backgroundColor: 'rgba(255,255,255,0)', color: '#8b8b96', duration: 0.15 },
+      { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-muted)', duration: 0.15 },
       '<',
     )
     tl.to(
       q(`sec-${id}`),
-      { backgroundColor: 'rgba(255,255,255,0.1)', color: '#f4f4f5', duration: 0.15 },
+      { backgroundColor: 'var(--demo-tint-10)', color: 'var(--demo-ink)', duration: 0.15 },
       '<',
     )
     tl.to(qa('view'), { opacity: 0, duration: 0.15 }, '<')
@@ -100,7 +100,7 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorO
   step(0)
   move(`harmony-${HARMONY_INDEX}`, { at: 0.4 })
   click(`harmony-${HARMONY_INDEX}`)
-  tl.set(qa('harmony'), { backgroundColor: 'transparent', color: '#8b8b96' }, '<')
+  tl.set(qa('harmony'), { backgroundColor: 'transparent', color: 'var(--demo-muted)' }, '<')
   tl.set(q(`harmony-${HARMONY_INDEX}`), { backgroundColor: 'var(--accent)', color: '#0b0b10' }, '<')
   paint(
     TRIADIC,
@@ -166,10 +166,10 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorO
     tl.set(q(`name-${index}`), { text: colorName(hex) }, 0)
     tl.set(q(`hex-${index}`), { text: hex.toUpperCase() }, 0)
   })
-  tl.set(qa('harmony'), { backgroundColor: 'transparent', color: '#8b8b96' }, 0)
+  tl.set(qa('harmony'), { backgroundColor: 'transparent', color: 'var(--demo-muted)' }, 0)
   tl.set(q('harmony-0'), { backgroundColor: 'var(--accent)', color: '#0b0b10' }, 0)
-  tl.set(qa('sec'), { backgroundColor: 'rgba(255,255,255,0)', color: '#8b8b96' }, 0)
-  tl.set(q('sec-inspect'), { backgroundColor: 'rgba(255,255,255,0.1)', color: '#f4f4f5' }, 0)
+  tl.set(qa('sec'), { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-muted)' }, 0)
+  tl.set(q('sec-inspect'), { backgroundColor: 'var(--demo-tint-10)', color: 'var(--demo-ink)' }, 0)
   tl.set(qa('view'), { opacity: 0 }, 0)
   tl.set(q('view-inspect'), { opacity: 1, y: 0 }, 0)
   tl.set([...qa('locked'), q('space')], { opacity: 0 }, 0)
@@ -263,7 +263,7 @@ function Views() {
             cy="16"
             r="13"
             fill="none"
-            stroke="rgba(255,255,255,0.1)"
+            stroke="var(--demo-tint-10)"
             strokeWidth="3"
           />
           <circle
@@ -293,7 +293,7 @@ function Views() {
           {FORMATS.map((format) => (
             <span
               key={format}
-              className={`rounded px-1 py-px text-[7px] ${format === 'Tailwind v4' ? 'bg-white/10 text-ink' : 'text-muted'}`}
+              className={`rounded px-1 py-px text-[7px] ${format === 'Tailwind v4' ? 'bg-ink/10 text-ink' : 'text-muted'}`}
             >
               {format}
             </span>
@@ -343,14 +343,14 @@ export default function Demo() {
                 style={
                   index === 0
                     ? { backgroundColor: 'var(--accent)', color: '#0b0b10' }
-                    : { color: '#8b8b96' }
+                    : { color: 'var(--demo-muted)' }
                 }
               >
                 {harmony.label}
               </span>
             ))}
           </div>
-          <div className="flex gap-0.5 rounded-md bg-white/[0.04] p-0.5">
+          <div className="flex gap-0.5 rounded-md bg-ink/[0.04] p-0.5">
             {SECTIONS.map((section) => {
               const Icon = section.icon
               return (
@@ -360,8 +360,8 @@ export default function Demo() {
                   className="flex flex-1 items-center justify-center gap-0.5 rounded px-1 py-0.5 text-[7px]"
                   style={
                     section.id === 'inspect'
-                      ? { backgroundColor: 'rgba(255,255,255,0.1)', color: '#f4f4f5' }
-                      : { color: '#8b8b96' }
+                      ? { backgroundColor: 'var(--demo-tint-10)', color: 'var(--demo-ink)' }
+                      : { color: 'var(--demo-muted)' }
                   }
                 >
                   <Icon className="size-2.5" /> {section.label}

@@ -50,7 +50,7 @@ const build: Build = ({ tl, q, qa, step, final, move, click, scramble, wait, cur
   step(3, '+=0.5')
   tl.to(q('peek'), { opacity: 0, duration: 0.2 })
   tl.to(q('jsx-ready'), { opacity: 0, duration: 0.2 }, '<')
-  tl.to(q(`card-${PICKED}`), { borderColor: 'rgba(255,255,255,0.08)', duration: 0.2 }, '<')
+  tl.to(q(`card-${PICKED}`), { borderColor: 'var(--demo-tint-8)', duration: 0.2 }, '<')
   tl.to(q(`card-${IMG}`), { borderColor: 'rgba(244,114,182,0.6)', duration: 0.3 }, '<')
   tl.to(
     q('page-logo-img'),
@@ -139,7 +139,7 @@ export default function Demo() {
                     className="rounded-lg border border-line p-1.5 opacity-0"
                   >
                     <p className="truncate text-[9px] font-medium text-ink">{item.label}</p>
-                    <div className="mt-1 flex h-8 items-center justify-center rounded bg-white/[0.04] text-[var(--accent)]">
+                    <div className="mt-1 flex h-8 items-center justify-center rounded bg-ink/[0.04] text-[var(--accent)]">
                       {item.icon ? (
                         <Glyph icon={item.icon} d="pv-path" className="size-5" />
                       ) : (

@@ -111,7 +111,7 @@ export default function Demo() {
           <div className="flex min-w-0 flex-1 flex-col gap-2">
             <p className="text-[10px] font-medium text-ink-soft">Your link</p>
             <div className="flex min-h-[92px] flex-wrap content-start gap-1 rounded-lg border border-line bg-canvas/80 p-2 font-mono text-[9.5px]">
-              <span data-d="piece-base" className="rounded-md bg-white/[0.06] px-1.5 py-1 text-ink">
+              <span data-d="piece-base" className="rounded-md bg-ink/[0.06] px-1.5 py-1 text-ink">
                 {DEFAULT_BASE}
               </span>
               {PIECES.map((piece, index) => (

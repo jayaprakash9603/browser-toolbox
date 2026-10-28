@@ -92,7 +92,7 @@ function Segment({ name, title, json }: { name: string; title: string; json: str
   return (
     <div
       data-d={`${name}-pane`}
-      className="min-w-0 rounded-md border border-line bg-white/[0.02] p-1.5 opacity-0"
+      className="min-w-0 rounded-md border border-line bg-ink/[0.02] p-1.5 opacity-0"
     >
       <div className="mb-0.5 flex items-center justify-between">
         <span className="text-[10px] font-medium text-ink">{title}</span>

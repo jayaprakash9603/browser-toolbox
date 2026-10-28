@@ -36,7 +36,7 @@ const build: Build = ({ tl, q, step, final, move, click, type, wait, cursorOut }
         q(`chip-${device.id}`),
         {
           backgroundColor: on ? 'rgba(244,114,182,0.18)' : 'rgba(255,255,255,0)',
-          borderColor: on ? 'rgba(244,114,182,0.6)' : 'rgba(255,255,255,0.16)',
+          borderColor: on ? 'rgba(244,114,182,0.6)' : 'var(--demo-tint-16)',
           duration: 0.2,
         },
         '<',

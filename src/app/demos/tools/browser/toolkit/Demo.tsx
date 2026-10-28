@@ -167,17 +167,17 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorO
     0,
   )
   tl.set(qa('tile-icon'), { opacity: 1 }, 0)
-  tl.set(qa('tile'), { borderColor: 'rgba(255,255,255,0.08)' }, 0)
+  tl.set(qa('tile'), { borderColor: 'var(--demo-tint-8)' }, 0)
   tl.set(q('body'), { y: 0 }, 0)
   tl.set(q('page-zoom'), { scale: 1 }, 0)
   tl.set(q('zoom-value'), { text: '100%' }, 0)
   tl.set(q('pin-label'), { text: 'Pin' }, 0)
   tl.set(q('pin-hint'), { text: 'Not pinned' }, 0)
-  tl.set(q('edit-switch'), { backgroundColor: 'rgba(255,255,255,0.12)' }, 0)
+  tl.set(q('edit-switch'), { backgroundColor: 'var(--demo-tint-12)' }, 0)
   tl.set(q('edit-knob'), { x: 0 }, 0)
   tl.set(
     q('edit-row'),
-    { borderColor: 'rgba(255,255,255,0.08)', backgroundColor: 'rgba(0,0,0,0)' },
+    { borderColor: 'var(--demo-tint-8)', backgroundColor: 'rgba(0,0,0,0)' },
     0,
   )
   tl.set(q('edit-hint'), { text: 'Click any text on the page to change it' }, 0)
@@ -204,8 +204,8 @@ function Tile({
   return (
     <span
       data-d={`tile tile-${d}`}
-      className="flex min-w-0 items-center gap-1.5 rounded-lg border bg-white/[0.02] px-1.5 py-1"
-      style={{ borderColor: 'rgba(255,255,255,0.08)' }}
+      className="flex min-w-0 items-center gap-1.5 rounded-lg border bg-ink/[0.02] px-1.5 py-1"
+      style={{ borderColor: 'var(--demo-tint-8)' }}
     >
       <span
         className="relative flex size-5 shrink-0 items-center justify-center rounded-md"
@@ -388,7 +388,7 @@ function Panel() {
             <div
               data-d="edit-row"
               className="mt-1 flex items-center gap-1.5 rounded-lg border px-1.5 py-1"
-              style={{ borderColor: 'rgba(255,255,255,0.08)' }}
+              style={{ borderColor: 'var(--demo-tint-8)' }}
             >
               <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-amber-500/15 text-amber-400">
                 <PencilLineIcon className="size-2.5" />
@@ -402,7 +402,7 @@ function Panel() {
               <span
                 data-d="edit-switch"
                 className="flex h-3 w-[22px] shrink-0 items-center rounded-full px-0.5"
-                style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}
+                style={{ backgroundColor: 'var(--demo-tint-12)' }}
               >
                 <span data-d="edit-knob" className="size-2 rounded-full bg-white" />
               </span>
@@ -452,7 +452,7 @@ function Page() {
       </div>
       <div
         data-d="clip"
-        className="absolute inset-x-3 bottom-3 rounded-lg border border-white/10 bg-[#141419] p-2 opacity-0 shadow-2xl"
+        className="absolute inset-x-3 bottom-3 rounded-lg border border-ink/10 bg-elevated p-2 opacity-0 shadow-2xl"
       >
         <p className="flex items-center gap-1 text-[8px] font-medium text-ink">
           <CheckIcon className="size-2.5 text-emerald-400" />

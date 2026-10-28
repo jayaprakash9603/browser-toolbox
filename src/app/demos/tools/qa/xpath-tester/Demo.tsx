@@ -147,7 +147,7 @@ export default function Demo() {
               <div data-d="result" className="space-y-1 opacity-0">
                 <span
                   data-d="match-count"
-                  className="inline-block rounded-full bg-white/10 px-2 py-0.5 text-[9.5px] text-ink"
+                  className="inline-block rounded-full bg-ink/10 px-2 py-0.5 text-[9.5px] text-ink"
                 >
                   0 matches
                 </span>

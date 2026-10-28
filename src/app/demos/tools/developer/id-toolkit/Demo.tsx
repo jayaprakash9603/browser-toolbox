@@ -14,12 +14,12 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, scramble, wai
     click(`tab-${index}`)
     tl.to(
       qa('tab'),
-      { backgroundColor: 'rgba(255,255,255,0)', color: '#8b8b9a', duration: 0.15 },
+      { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-muted)', duration: 0.15 },
       '<',
     )
     tl.to(
       q(`tab-${index}`),
-      { backgroundColor: 'rgba(99,102,241,0.22)', color: '#f4f4f6', duration: 0.15 },
+      { backgroundColor: 'rgba(99,102,241,0.22)', color: 'var(--demo-ink)', duration: 0.15 },
       '<',
     )
   }

@@ -119,7 +119,7 @@ function PlayerSkeleton({ count }: { count: number }) {
     <div aria-hidden className="rounded-2xl border bg-card p-2.5 @[720px]:p-3">
       {count > 1 ? <div className="mb-2.5 h-6" /> : null}
       <div className="grid gap-3 @[720px]:grid-cols-[minmax(0,1.45fr)_minmax(15rem,1fr)] @[720px]:items-start">
-        <div className="aspect-[520/469] animate-pulse rounded-[22px] bg-[#0f0f16] motion-reduce:animate-none" />
+        <div className="aspect-[520/469] animate-pulse rounded-[22px] bg-surface motion-reduce:animate-none" />
         <div className="flex flex-col gap-2.5">
           <div className="flex items-center gap-2.5">
             <div className="size-9 rounded-xl bg-muted" />

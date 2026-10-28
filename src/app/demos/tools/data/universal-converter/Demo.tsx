@@ -99,7 +99,7 @@ export default function Demo() {
                 {OUTPUTS.map((output, index) => (
                   <div
                     key={output.format}
-                    className="absolute inset-0 rounded-xl border border-[#60a5fa]/40 bg-[#0d121c] p-2.5 [backface-visibility:hidden]"
+                    className="absolute inset-0 rounded-xl border border-[#60a5fa]/40 bg-elevated p-2.5 [backface-visibility:hidden]"
                     style={{ transform: `rotateY(${index * 90}deg) translateZ(${FACE / 2}px)` }}
                   >
                     <p className="mb-1 text-[9px] uppercase tracking-[0.14em] text-[#60a5fa]">

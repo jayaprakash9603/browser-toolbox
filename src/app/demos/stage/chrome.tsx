@@ -55,14 +55,14 @@ interface BrowserChromeProps {
 
 export function BrowserChrome({ url, children, panel, panelWidth = 200, tab, className }: BrowserChromeProps) {
   return (
-    <div className={cn('flex h-full flex-col bg-[#0b0b11]', className)}>
-      <div className="flex items-end gap-2 bg-[#05050a] px-3 pt-2">
+    <div className={cn('flex h-full flex-col bg-canvas', className)}>
+      <div className="flex items-end gap-2 bg-chrome px-3 pt-2">
         <span className="mb-2.5 flex gap-1.5">
           <span className="size-2.5 rounded-full bg-[#ff5f57]/80" />
           <span className="size-2.5 rounded-full bg-[#febc2e]/80" />
           <span className="size-2.5 rounded-full bg-[#28c840]/80" />
         </span>
-        <span className="ml-2 max-w-40 truncate rounded-t-lg bg-[#0b0b11] px-3 py-1.5 text-[10px] text-ink-soft">
+        <span className="ml-2 max-w-40 truncate rounded-t-lg bg-canvas px-3 py-1.5 text-[10px] text-ink-soft">
           {tab ?? url.replace(/^https?:\/\//, '').split('/')[0]}
         </span>
       </div>
@@ -70,7 +70,7 @@ export function BrowserChrome({ url, children, panel, panelWidth = 200, tab, cla
         <RotateCwIcon className="size-3 text-muted" />
         <span
           data-d="url"
-          className="flex h-6 flex-1 items-center gap-1.5 truncate rounded-full bg-white/[0.05] px-3 font-mono text-[10px] text-ink-soft"
+          className="flex h-6 flex-1 items-center gap-1.5 truncate rounded-full bg-ink/[0.05] px-3 font-mono text-[10px] text-ink-soft"
         >
           <LockIcon className="size-2.5 shrink-0 text-muted" />
           <span data-d="url-text" className="truncate">

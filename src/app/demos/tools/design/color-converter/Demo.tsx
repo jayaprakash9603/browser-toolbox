@@ -83,7 +83,7 @@ export default function Demo() {
             <div className="flex items-center gap-2">
               <span
                 data-d="swatch"
-                className="size-8 shrink-0 rounded-md border border-white/10 bg-[#3b82f6] opacity-0"
+                className="size-8 shrink-0 rounded-md border border-ink/10 bg-[#3b82f6] opacity-0"
               />
               <span
                 data-d="input"
@@ -99,7 +99,7 @@ export default function Demo() {
                 <div
                   key={label}
                   data-d={`row-${index}`}
-                  className="flex h-7 items-center gap-2 rounded-md border border-line bg-white/[0.03] px-2"
+                  className="flex h-7 items-center gap-2 rounded-md border border-line bg-ink/[0.03] px-2"
                 >
                   <span className="w-9 text-[9.5px] font-medium text-muted">{label}</span>
                   <code

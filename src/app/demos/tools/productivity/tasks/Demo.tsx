@@ -43,8 +43,8 @@ const SEGMENTS = (() => {
 
 const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorOut }) => {
   const view = (index: number) => {
-    tl.to(qa('nav'), { backgroundColor: 'rgba(255,255,255,0)', color: '#8b8b9a', duration: 0.15 }, '<')
-    tl.to(q(`nav-${index}`), { backgroundColor: 'rgba(255,255,255,0.1)', color: '#f4f4f6', duration: 0.15 }, '<')
+    tl.to(qa('nav'), { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-muted)', duration: 0.15 }, '<')
+    tl.to(q(`nav-${index}`), { backgroundColor: 'var(--demo-tint-10)', color: 'var(--demo-ink)', duration: 0.15 }, '<')
   }
   const grow = (name: string, at?: string) =>
     tl.fromTo(
@@ -121,8 +121,8 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorO
   tl.set(q(`row-today-${BANK_INDEX}`), { opacity: 1 }, 0)
   tl.set(q('progress-text'), { text: `0 of ${TODAY.length} done` }, 0)
   tl.set(q('progress-bar'), { scaleX: 0 }, 0)
-  tl.set(qa('nav'), { backgroundColor: 'rgba(255,255,255,0)', color: '#8b8b9a' }, 0)
-  tl.set(q('nav-1'), { backgroundColor: 'rgba(255,255,255,0.1)', color: '#f4f4f6' }, 0)
+  tl.set(qa('nav'), { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-muted)' }, 0)
+  tl.set(q('nav-1'), { backgroundColor: 'var(--demo-tint-10)', color: 'var(--demo-ink)' }, 0)
 }
 
 function Row({ task, d, index, check }: { task: Parsed; d?: string; index?: number; check?: boolean }) {
@@ -198,12 +198,12 @@ function Panel() {
     <div className="flex h-full flex-col" style={{ width: PANEL }}>
       <DockHeader />
       <div className="flex min-h-0 flex-1 flex-col gap-1.5 p-2">
-        <div className="grid grid-cols-3 gap-0.5 rounded-md bg-white/[0.04] p-0.5">
+        <div className="grid grid-cols-3 gap-0.5 rounded-md bg-ink/[0.04] p-0.5">
           {['Today', 'Upcoming', 'Inbox'].map((label, index) => (
             <span
               key={label}
               data-d={`nav nav-${index}`}
-              className={`rounded py-1 text-center text-[9px] ${index === 1 ? 'bg-white/10 text-ink' : 'text-muted'}`}
+              className={`rounded py-1 text-center text-[9px] ${index === 1 ? 'bg-ink/10 text-ink' : 'text-muted'}`}
             >
               {label}
             </span>
@@ -236,15 +236,15 @@ function Panel() {
             </span>
           </span>
           <span className="mt-1 flex h-3.5 items-center gap-1 text-[7.5px]">
-            <span data-d="chip" className={`flex items-center gap-0.5 rounded bg-white/[0.05] px-1 py-px opacity-0 ${TONE_TEXT[dueTone(TYPED.due!, TYPED.allDay)]}`}>
+            <span data-d="chip" className={`flex items-center gap-0.5 rounded bg-ink/[0.05] px-1 py-px opacity-0 ${TONE_TEXT[dueTone(TYPED.due!, TYPED.allDay)]}`}>
               <CalendarIcon className="size-2" />
               {formatDue(TYPED.due!, TYPED.allDay)}
             </span>
-            <span data-d="chip" className="flex items-center gap-1 rounded bg-white/[0.05] px-1 py-px text-ink-soft opacity-0">
+            <span data-d="chip" className="flex items-center gap-1 rounded bg-ink/[0.05] px-1 py-px text-ink-soft opacity-0">
               <span className={`size-1.5 rounded-full ${PROJECT_DOT[TYPED.project!]}`} />
               {TYPED.project}
             </span>
-            <span data-d="chip" className="rounded bg-white/[0.05] px-1 py-px text-[#fb923c] opacity-0">
+            <span data-d="chip" className="rounded bg-ink/[0.05] px-1 py-px text-[#fb923c] opacity-0">
               P{TYPED.priority}
             </span>
           </span>
@@ -273,7 +273,7 @@ function Panel() {
           <div data-d="view-today" className="absolute inset-0 opacity-0">
             <div className="flex items-center gap-2 pb-1 text-[8px] text-muted">
               <span data-d="progress-text">0 of {TODAY.length} done</span>
-              <span className="h-1 flex-1 overflow-hidden rounded-full bg-white/[0.08]">
+              <span className="h-1 flex-1 overflow-hidden rounded-full bg-ink/[0.08]">
                 <span
                   data-d="progress-bar"
                   className="block h-full origin-left rounded-full bg-[var(--accent)]"
@@ -290,7 +290,7 @@ function Panel() {
 
           <div
             data-d="capture"
-            className="absolute inset-x-0 top-0 rounded-lg border border-line-strong bg-[#17171f] p-2 opacity-0 shadow-2xl"
+            className="absolute inset-x-0 top-0 rounded-lg border border-line-strong bg-elevated p-2 opacity-0 shadow-2xl"
           >
             <p className="text-[7.5px] font-medium uppercase tracking-[0.14em] text-muted">
               Current page

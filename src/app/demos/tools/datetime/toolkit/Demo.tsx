@@ -88,12 +88,12 @@ const build: Build = ({
     click(`tab-${index}`)
     tl.to(
       qa('tab'),
-      { backgroundColor: 'rgba(255,255,255,0)', color: 'rgba(161,161,170,1)', duration: 0.2 },
+      { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-muted)', duration: 0.2 },
       '<',
     )
     tl.to(
       q(`tab-${index}`),
-      { backgroundColor: 'rgba(255,255,255,0.1)', color: 'rgba(250,250,250,1)', duration: 0.2 },
+      { backgroundColor: 'var(--demo-tint-10)', color: 'var(--demo-ink)', duration: 0.2 },
       '<',
     )
     tl.to(q(`view-${index - 1}`), { opacity: 0, duration: 0.2 }, '<')
@@ -218,7 +218,7 @@ function Label({ children }: { children: ReactNode }) {
 function TimestampView() {
   return (
     <div data-d="view-0" className="absolute inset-0 flex flex-col gap-2">
-      <div className="flex items-center gap-3 rounded-lg border border-line bg-white/[0.03] px-3 py-2">
+      <div className="flex items-center gap-3 rounded-lg border border-line bg-ink/[0.03] px-3 py-2">
         <span className="flex size-7 items-center justify-center rounded-md bg-[var(--accent)]/15 text-[var(--accent)]">
           <ClockIcon className="size-4" />
         </span>
@@ -259,7 +259,7 @@ function TimestampView() {
           {['Auto', 's', 'ms', 'µs', 'ns'].map((unit, index) => (
             <span
               key={unit}
-              className={`rounded px-1.5 ${index === 0 ? 'bg-white/10 text-ink' : 'text-muted'}`}
+              className={`rounded px-1.5 ${index === 0 ? 'bg-ink/10 text-ink' : 'text-muted'}`}
             >
               {unit}
             </span>
@@ -274,7 +274,7 @@ function TimestampView() {
           <span
             key={format.label}
             data-d="ts-row"
-            className="rounded-md border border-line bg-white/[0.03] px-2 py-1 opacity-0"
+            className="rounded-md border border-line bg-ink/[0.03] px-2 py-1 opacity-0"
           >
             <Label>{format.label}</Label>
             <span className="block truncate font-mono text-[9.5px] text-ink">{format.value}</span>
@@ -289,7 +289,7 @@ function DiffView() {
   return (
     <div data-d="view-1" className="absolute inset-0 flex flex-col gap-2 opacity-0">
       <span className="flex rounded-md border border-line p-0.5 text-[9.5px]">
-        <span className="flex-1 rounded bg-white/10 py-0.5 text-center text-ink">Difference</span>
+        <span className="flex-1 rounded bg-ink/10 py-0.5 text-center text-ink">Difference</span>
         <span className="flex-1 py-0.5 text-center text-muted">Add &amp; subtract</span>
       </span>
       <div className="flex items-end gap-2">
@@ -325,7 +325,7 @@ function DiffView() {
             <span
               key={total.label}
               data-d={`card-${index}`}
-              className="rounded-md border border-line bg-white/[0.03] px-2 py-1"
+              className="rounded-md border border-line bg-ink/[0.03] px-2 py-1"
             >
               <Label>{total.label}</Label>
               <span
@@ -348,14 +348,14 @@ function DiffView() {
 function ZonesView() {
   return (
     <div data-d="view-2" className="absolute inset-0 flex flex-col gap-2 opacity-0">
-      <div className="rounded-lg border border-line bg-white/[0.03] px-3 py-2">
+      <div className="rounded-lg border border-line bg-ink/[0.03] px-3 py-2">
         <div className="flex justify-between text-[9px]">
           <span className="font-medium text-muted">Shift hours</span>
           <span data-d="shift-label" className="font-medium tabular-nums text-ink">
             No shift
           </span>
         </div>
-        <span data-d="track" className="relative mt-2 block h-1 rounded-full bg-white/15">
+        <span data-d="track" className="relative mt-2 block h-1 rounded-full bg-ink/15">
           <span
             data-d="fill"
             className="absolute left-1/2 top-0 block h-full w-0 rounded-full bg-[var(--accent)]"
@@ -377,7 +377,7 @@ function ZonesView() {
             <div
               key={zone.id}
               data-d={`zone-${index}`}
-              className={`rounded-lg border bg-white/[0.03] px-2 py-1.5 ${zone.id === 'UTC' ? 'border-[var(--accent)]/50' : 'border-line'}`}
+              className={`rounded-lg border bg-ink/[0.03] px-2 py-1.5 ${zone.id === 'UTC' ? 'border-[var(--accent)]/50' : 'border-line'}`}
             >
               <div className="flex items-center gap-1.5">
                 <span className="relative size-5 shrink-0">
@@ -398,7 +398,7 @@ function ZonesView() {
                   <span className="flex items-center gap-1 text-[9.5px] font-semibold text-ink">
                     {zone.label}
                     {zone.id === 'UTC' ? (
-                      <span className="rounded bg-white/10 px-1 text-[7.5px] font-medium">You</span>
+                      <span className="rounded bg-ink/10 px-1 text-[7.5px] font-medium">You</span>
                     ) : null}
                   </span>
                   <span className="block truncate text-[7.5px] text-muted">{zone.id}</span>
@@ -417,7 +417,7 @@ function ZonesView() {
                 <span data-d={`zd-${index}`}>{zone.date}</span>
                 <span
                   data-d={`next-${index}`}
-                  className="rounded bg-white/10 px-1 text-ink opacity-0"
+                  className="rounded bg-ink/10 px-1 text-ink opacity-0"
                 >
                   Next day
                 </span>
@@ -451,7 +451,7 @@ function CronView() {
         {CRON_START.fields.map((field, index) => (
           <span
             key={field.label}
-            className="rounded-md border border-line bg-white/[0.03] px-1.5 py-1"
+            className="rounded-md border border-line bg-ink/[0.03] px-1.5 py-1"
           >
             <Label>{field.label}</Label>
             <span
@@ -476,7 +476,7 @@ function CronView() {
             data-d={`run-row-${index}`}
             className="flex items-center gap-2 px-2.5 py-[3px] text-[9px]"
           >
-            <span className="flex size-3.5 items-center justify-center rounded-full bg-white/10 text-[7px] font-semibold text-muted">
+            <span className="flex size-3.5 items-center justify-center rounded-full bg-ink/10 text-[7px] font-semibold text-muted">
               {index + 1}
             </span>
             <span data-d={`run-${index}`} className="flex-1 font-mono tabular-nums text-ink">
@@ -508,7 +508,7 @@ export default function Demo() {
                 <span
                   key={tab}
                   data-d={`tab tab-${index}`}
-                  className={`flex flex-1 items-center justify-center gap-1 rounded-md py-1 text-[9.5px] font-medium ${index === 0 ? 'bg-white/10 text-ink' : 'text-muted'}`}
+                  className={`flex flex-1 items-center justify-center gap-1 rounded-md py-1 text-[9.5px] font-medium ${index === 0 ? 'bg-ink/10 text-ink' : 'text-muted'}`}
                 >
                   <Icon className="size-3" />
                   {tab}

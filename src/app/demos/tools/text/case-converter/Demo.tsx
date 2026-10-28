@@ -31,12 +31,12 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorO
     click(`case-${id}`)
     tl.to(
       qa('case'),
-      { backgroundColor: 'rgba(255,255,255,0.03)', color: '#8b8b9a', duration: 0.15 },
+      { backgroundColor: 'var(--demo-tint-3)', color: 'var(--demo-muted)', duration: 0.15 },
       '<',
     )
     tl.to(
       q(`case-${id}`),
-      { backgroundColor: 'rgba(129,140,248,0.2)', color: '#f4f4f6', duration: 0.15 },
+      { backgroundColor: 'rgba(129,140,248,0.2)', color: 'var(--demo-ink)', duration: 0.15 },
       '<',
     )
   }
@@ -119,7 +119,7 @@ export default function Demo() {
               <span
                 key={item.id}
                 data-d={`case case-${item.id}`}
-                className="flex h-8 items-center justify-center rounded-lg border border-line bg-white/[0.03] font-mono text-[10.5px] text-muted"
+                className="flex h-8 items-center justify-center rounded-lg border border-line bg-ink/[0.03] font-mono text-[10.5px] text-muted"
               >
                 {item.label}
               </span>

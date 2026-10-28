@@ -55,7 +55,7 @@ export function Btn({
         'inline-flex h-7 items-center justify-center gap-1.5 rounded-lg px-3 text-[11.5px] font-medium',
         primary
           ? 'bg-[var(--accent)] text-canvas'
-          : 'border border-line-strong bg-white/[0.04] text-ink-soft',
+          : 'border border-line-strong bg-ink/[0.04] text-ink-soft',
         className,
       )}
     >
@@ -106,7 +106,7 @@ export function Toggle({
   return (
     <span
       data-d={d}
-      className={cn('relative inline-flex h-4 w-7 shrink-0 rounded-full bg-white/15', className)}
+      className={cn('relative inline-flex h-4 w-7 shrink-0 rounded-full bg-ink/15', className)}
     >
       <span
         data-d={d ? `${d}-fill` : undefined}
@@ -177,7 +177,7 @@ export function Bar({
       className={cn(
         'block rounded-full',
         !/(^|\s)h-/.test(custom) && 'h-2',
-        !/(^|\s)bg-/.test(custom) && 'bg-white/10',
+        !/(^|\s)bg-/.test(custom) && 'bg-ink/10',
         className,
       )}
       style={{ width: w, ...style }}

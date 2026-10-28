@@ -156,7 +156,7 @@ function Panel() {
     <div className="flex h-full flex-col">
       <DockHeader />
       <div className="flex flex-col gap-2.5 p-2.5">
-        <div className="rounded-xl border border-line bg-white/[0.03] p-2.5">
+        <div className="rounded-xl border border-line bg-ink/[0.03] p-2.5">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-1.5">
               <span className="relative flex">
@@ -191,7 +191,7 @@ function Panel() {
                 <li
                   key={entry.host}
                   data-d={`recent-${index}`}
-                  className="flex items-center justify-between gap-2 rounded-md border border-line bg-white/[0.03] px-2 py-1 text-[9.5px] opacity-0"
+                  className="flex items-center justify-between gap-2 rounded-md border border-line bg-ink/[0.03] px-2 py-1 text-[9.5px] opacity-0"
                 >
                   <span className="truncate font-medium text-ink">{entry.host}</span>
                   <span className="shrink-0 text-muted">{entry.category}</span>
@@ -292,7 +292,7 @@ export default function Demo() {
           </div>
           <div
             data-d="scene-blocked"
-            className="absolute inset-0 bg-[#0b0b11] p-4 text-ink opacity-0"
+            className="absolute inset-0 bg-canvas p-4 text-ink opacity-0"
           >
             <span className="flex size-8 items-center justify-center rounded-full bg-rose/15 text-rose">
               <ShieldAlertIcon className="size-4" />
@@ -303,7 +303,7 @@ export default function Demo() {
             <p className="mt-2 text-[8px] uppercase tracking-[0.14em] text-muted">
               Blocked address
             </p>
-            <p className="mt-0.5 rounded-md border border-line bg-white/[0.04] px-2 py-1 font-mono text-[9px]">
+            <p className="mt-0.5 rounded-md border border-line bg-ink/[0.04] px-2 py-1 font-mono text-[9px]">
               {BLOCKED.url}
             </p>
             <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -332,7 +332,7 @@ export default function Demo() {
           </div>
           <div
             data-d="hold-card"
-            className="absolute inset-x-4 top-5 rounded-xl border border-line-strong bg-[#11111a] p-3 text-ink opacity-0 shadow-2xl"
+            className="absolute inset-x-4 top-5 rounded-xl border border-line-strong bg-elevated p-3 text-ink opacity-0 shadow-2xl"
           >
             <div className="flex items-center gap-2">
               <FileWarningIcon className="size-4 text-amber" />

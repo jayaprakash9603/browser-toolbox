@@ -23,7 +23,7 @@ function Ad({ h, text, tone }: { h: number; text: string; tone: string }) {
         style={{ background: tone }}
       >
         <span>{text}</span>
-        <span className="rounded bg-white/90 px-1.5 py-0.5 text-[8px] text-black">AD</span>
+        <span className="rounded bg-ink/90 px-1.5 py-0.5 text-[8px] text-black">AD</span>
       </div>
       <div className="pointer-events-none absolute inset-0 grid grid-cols-4 grid-rows-2">
         {Array.from({ length: 8 }, (_, index) => (
@@ -158,7 +158,7 @@ export default function Demo() {
                       0
                     </span>
                   </div>
-                  <span className="mt-1 block h-1 rounded-full bg-white/10">
+                  <span className="mt-1 block h-1 rounded-full bg-ink/10">
                     <span
                       data-d="stat-bar"
                       className="block h-full origin-left scale-x-0 rounded-full bg-[#4ade80]"

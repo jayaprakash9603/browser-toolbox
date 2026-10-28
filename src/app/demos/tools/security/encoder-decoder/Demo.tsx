@@ -10,8 +10,8 @@ import { BAD_HEX, CAPTIONS, HEX, HEX_ERROR, KINDS, OUTPUTS, TEXT } from './scrip
 const RAIN = Array.from({ length: 14 }, (_, index) =>
   Array.from({ length: 12 }, (_, row) => ((index * 7 + row * 3) % 5 > 1 ? '1' : '0')).join('\n'),
 )
-const ACTIVE = { backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0)' }
-const IDLE = { backgroundColor: 'rgba(255,255,255,0)', borderColor: 'rgba(255,255,255,0.14)' }
+const ACTIVE = { backgroundColor: 'var(--demo-tint-10)', borderColor: 'rgba(255,255,255,0)' }
+const IDLE = { backgroundColor: 'rgba(255,255,255,0)', borderColor: 'var(--demo-tint-14)' }
 
 const build: Build = ({
   tl,
@@ -93,7 +93,7 @@ const build: Build = ({
   click('swap')
   tl.to(q('input-text'), { text: { value: HEX, delimiter: '' }, duration: 0.5, ease: 'none' }, '<')
   tl.to(q('mode-encode'), { ...IDLE, color: 'rgba(245,245,247,0.6)', duration: 0.2 }, '<')
-  tl.to(q('mode-decode'), { ...ACTIVE, color: '#f5f5f7', duration: 0.2 }, '<')
+  tl.to(q('mode-decode'), { ...ACTIVE, color: 'var(--demo-ink)', duration: 0.2 }, '<')
   scramble('output-text', esc(TEXT), { at: '<0.2', duration: 0.8 })
   tl.fromTo(
     q('output-pane-box'),
@@ -169,11 +169,11 @@ export default function Demo() {
           <div className="flex items-center gap-2">
             <div
               data-d="tabs"
-              className="relative flex rounded-lg border border-line bg-white/[0.03] p-0.5"
+              className="relative flex rounded-lg border border-line bg-ink/[0.03] p-0.5"
             >
               <span
                 data-d="tab-pill"
-                className="absolute inset-y-0.5 left-0.5 w-12 rounded-md bg-white/10"
+                className="absolute inset-y-0.5 left-0.5 w-12 rounded-md bg-ink/10"
               />
               {KINDS.map((kind, index) => (
                 <span
@@ -189,7 +189,7 @@ export default function Demo() {
             <span
               data-d="mode-encode"
               className="rounded-md border px-2 py-1 text-[10.5px]"
-              style={{ ...ACTIVE, color: '#f5f5f7' }}
+              style={{ ...ACTIVE, color: 'var(--demo-ink)' }}
             >
               Encode
             </span>

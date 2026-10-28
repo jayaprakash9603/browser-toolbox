@@ -16,10 +16,10 @@ const build: Build = ({ tl, q, qa, step, final, move, click, scramble, wait, cur
   const tab = (index: number) => {
     move(`tab-${index}`)
     click(`tab-${index}`)
-    tl.to(qa('tab'), { color: '#8b8b9a', borderColor: 'rgba(99,102,241,0)', duration: 0.15 }, '<')
+    tl.to(qa('tab'), { color: 'var(--demo-muted)', borderColor: 'rgba(99,102,241,0)', duration: 0.15 }, '<')
     tl.to(
       q(`tab-${index}`),
-      { color: '#f4f4f6', borderColor: 'rgba(99,102,241,1)', duration: 0.15 },
+      { color: 'var(--demo-ink)', borderColor: 'rgba(99,102,241,1)', duration: 0.15 },
       '<',
     )
     tl.to(qa('pane'), { opacity: 0, duration: 0.2 }, '<')
@@ -108,7 +108,7 @@ export default function Demo() {
                 data-d={`tab tab-${index}`}
                 className="border-b-2 pb-1.5"
                 style={{
-                  color: index === 0 ? '#f4f4f6' : '#8b8b9a',
+                  color: index === 0 ? 'var(--demo-ink)' : 'var(--demo-muted)',
                   borderColor: index === 0 ? '#6366f1' : 'transparent',
                 }}
               >

@@ -22,12 +22,12 @@ const build: Build = ({ tl, q, qa, step, final, move, click, scramble, wait, cur
     click(`fmt-${name}`)
     tl.to(
       qa('fmt'),
-      { backgroundColor: 'rgba(255,255,255,0)', color: '#8b8b9a', duration: 0.15 },
+      { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-muted)', duration: 0.15 },
       '<',
     )
     tl.to(
       q(`fmt-${name}`),
-      { backgroundColor: 'rgba(45,212,191,0.2)', color: '#f4f4f6', duration: 0.15 },
+      { backgroundColor: 'rgba(45,212,191,0.2)', color: 'var(--demo-ink)', duration: 0.15 },
       '<',
     )
   }
@@ -113,7 +113,7 @@ export default function Demo() {
                 key={name}
                 className={cn(
                   'flex items-center gap-1 rounded-full px-2.5 py-1',
-                  index === 0 ? 'bg-white/10 text-ink' : 'text-muted',
+                  index === 0 ? 'bg-ink/10 text-ink' : 'text-muted',
                 )}
               >
                 <Icon className="size-3" /> {name}
@@ -142,7 +142,7 @@ export default function Demo() {
                 <span data-d="seed">{SEEDS[0]}</span>
                 <span
                   data-d="reseed"
-                  className="rounded-md bg-white/10 px-1.5 py-0.5 font-sans text-[9px] text-ink-soft"
+                  className="rounded-md bg-ink/10 px-1.5 py-0.5 font-sans text-[9px] text-ink-soft"
                 >
                   New seed
                 </span>
@@ -194,7 +194,7 @@ export default function Demo() {
               className="absolute inset-0 flex flex-col overflow-hidden rounded-xl border border-line bg-canvas/60 opacity-0"
             >
               <div className="flex items-center gap-1.5 border-b border-line px-2 py-1.5 text-[9px]">
-                <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-ink">
+                <span className="rounded-full bg-ink/10 px-1.5 py-0.5 text-ink">
                   {ROWS.length} rows
                 </span>
                 <span

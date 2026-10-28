@@ -43,10 +43,10 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorO
   click('tab-tree')
   tl.to(
     q('tab-tree'),
-    { color: '#f4f4f6', backgroundColor: 'rgba(255,255,255,0.1)', duration: 0.2 },
+    { color: 'var(--demo-ink)', backgroundColor: 'var(--demo-tint-10)', duration: 0.2 },
     '<',
   )
-  tl.to(q('tab-format'), { color: '#8b8b9a', backgroundColor: 'transparent', duration: 0.2 }, '<')
+  tl.to(q('tab-format'), { color: 'var(--demo-muted)', backgroundColor: 'transparent', duration: 0.2 }, '<')
   tl.to(q('fmt'), { opacity: 0, x: -40, duration: 0.4 }, '<0.1')
   tl.set(q('tree'), { opacity: 1 }, '<0.2')
   tl.fromTo(
@@ -113,7 +113,7 @@ export default function Demo() {
       >
         <div data-d="body" className="flex h-full flex-col">
           <div className="flex gap-1 rounded-full border border-line bg-canvas/70 p-1 text-[11px]">
-            <span data-d="tab-format" className="rounded-full bg-white/10 px-3 py-1 text-ink">
+            <span data-d="tab-format" className="rounded-full bg-ink/10 px-3 py-1 text-ink">
               Format
             </span>
             <span data-d="tab-tree" className="rounded-full px-3 py-1 text-muted">

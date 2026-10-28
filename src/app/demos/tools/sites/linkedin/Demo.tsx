@@ -110,7 +110,7 @@ function Panel() {
       <DockHeader />
       <div className="min-h-0 flex-1 overflow-hidden">
         <div data-d="panel-body" className="flex flex-col gap-2 p-2.5">
-          <div className="rounded-xl border border-line bg-white/[0.03] p-2">
+          <div className="rounded-xl border border-line bg-ink/[0.03] p-2">
             <p className="text-[10.5px] font-semibold text-ink">{UI.postTitle}</p>
             <div
               data-d="post"
@@ -120,14 +120,14 @@ function Panel() {
               <span data-d="body" className="text-ink-soft" />
             </div>
             <div className="mt-1 flex gap-1 text-[8.5px]">
-              <span className="rounded bg-white/10 px-1.5 py-0.5 text-ink-soft">{UI.spacing}</span>
+              <span className="rounded bg-ink/10 px-1.5 py-0.5 text-ink-soft">{UI.spacing}</span>
               <span
                 data-d="bold"
-                className="rounded bg-white/10 px-1.5 py-0.5 font-semibold text-ink"
+                className="rounded bg-ink/10 px-1.5 py-0.5 font-semibold text-ink"
               >
                 {UI.bold}
               </span>
-              <span className="rounded bg-white/10 px-1.5 py-0.5 italic text-ink-soft">
+              <span className="rounded bg-ink/10 px-1.5 py-0.5 italic text-ink-soft">
                 {UI.italic}
               </span>
             </div>
@@ -136,7 +136,7 @@ function Panel() {
               <Preview label={UI.desktop} text={DESKTOP} />
             </div>
           </div>
-          <div className="relative rounded-xl border border-line bg-white/[0.03] p-2">
+          <div className="relative rounded-xl border border-line bg-ink/[0.03] p-2">
             <p className="text-[10.5px] font-semibold text-ink">{UI.profileTitle}</p>
             <div className="mt-1 grid gap-1">
               <Input k="name" placeholder={UI.name} />
@@ -155,7 +155,7 @@ function Panel() {
             </span>
             <pre
               data-d="clipboard"
-              className="absolute bottom-1.5 left-9 rounded-md border border-line-strong bg-[#17171c] px-1.5 py-1 font-mono text-[7.5px] leading-[10px] text-[#7dd3fc] opacity-0 shadow-lg"
+              className="absolute bottom-1.5 left-9 rounded-md border border-line-strong bg-elevated px-1.5 py-1 font-mono text-[7.5px] leading-[10px] text-[#7dd3fc] opacity-0 shadow-lg"
             >
               {CSV}
             </pre>

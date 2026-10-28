@@ -264,7 +264,7 @@ function Page() {
       <p className="mt-2.5 text-[9.5px] font-semibold">Reviews</p>
       <div
         data-d="diff"
-        className="absolute inset-x-3 bottom-3 rounded-lg border border-white/10 bg-[#111116] p-2 font-mono text-[7px] leading-[13px] opacity-0 shadow-2xl"
+        className="absolute inset-x-3 bottom-3 rounded-lg border border-ink/10 bg-elevated p-2 font-mono text-[7px] leading-[13px] opacity-0 shadow-2xl"
       >
         <p className="mb-0.5 font-sans text-[7.5px] text-muted">product.html</p>
         {FIXES.map((fix) => (

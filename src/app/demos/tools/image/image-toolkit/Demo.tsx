@@ -11,12 +11,12 @@ const build: Build = ({ tl, q, step, final, move, click, type, scramble, wait, c
     click(`tab-${index}`)
     tl.to(
       q(`tab-${previous}`),
-      { backgroundColor: 'rgba(255,255,255,0)', color: 'rgba(245,245,247,0.55)', duration: 0.15 },
+      { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-muted)', duration: 0.15 },
       '<',
     )
     tl.to(
       q(`tab-${index}`),
-      { backgroundColor: 'rgba(255,255,255,0.12)', color: '#f5f5f7', duration: 0.15 },
+      { backgroundColor: 'var(--demo-tint-12)', color: 'var(--demo-ink)', duration: 0.15 },
       '<',
     )
   }
@@ -100,7 +100,7 @@ function Screenshot() {
     <div className="flex size-full gap-[4%] bg-[#f1f5f9] p-[4%]">
       <div className="w-[22%] space-y-[8%] rounded bg-[#1e293b] p-[4%]">
         {[0, 1, 2, 3].map((row) => (
-          <span key={row} className="block h-[6%] min-h-1 rounded-full bg-white/30" />
+          <span key={row} className="block h-[6%] min-h-1 rounded-full bg-ink/30" />
         ))}
       </div>
       <div className="flex flex-1 flex-col gap-[5%]">
@@ -138,12 +138,12 @@ export default function Demo() {
               <p className="text-[9.5px] text-muted">
                 {FILE.width}×{FILE.height} · {FILE.type} · {FILE.size}
               </p>
-              <div className="flex flex-wrap gap-0.5 rounded-md bg-white/[0.04] p-0.5 text-[9px]">
+              <div className="flex flex-wrap gap-0.5 rounded-md bg-ink/[0.04] p-0.5 text-[9px]">
                 {TABS.map((label, index) => (
                   <span
                     key={label}
                     data-d={`tab-${index}`}
-                    className={`rounded px-1.5 py-0.5 ${index === 0 ? 'bg-white/[0.12] text-ink' : 'text-ink-soft'}`}
+                    className={`rounded px-1.5 py-0.5 ${index === 0 ? 'bg-ink/[0.12] text-ink' : 'text-ink-soft'}`}
                   >
                     {label}
                   </span>
@@ -194,7 +194,7 @@ export default function Demo() {
                 </span>
               </span>
             </div>
-            <div className="relative flex flex-1 items-center justify-center rounded-lg border border-line bg-white/[0.02] p-3">
+            <div className="relative flex flex-1 items-center justify-center rounded-lg border border-line bg-ink/[0.02] p-3">
               <div data-d="out-image" className="w-[60%]">
                 <div className="aspect-[16/10] overflow-hidden rounded shadow-lg">
                   <Screenshot />
@@ -202,7 +202,7 @@ export default function Demo() {
               </div>
               <div
                 data-d="out-crop"
-                className="absolute inset-3 flex items-center justify-center bg-[#0b0b11] opacity-0"
+                className="absolute inset-3 flex items-center justify-center bg-canvas opacity-0"
               >
                 <div data-d="out-crop-inner" className="w-[60%]">
                   <div className="aspect-[16/10] overflow-hidden rounded shadow-lg">
@@ -214,7 +214,7 @@ export default function Demo() {
               </div>
               <pre
                 data-d="out-code"
-                className="absolute inset-3 overflow-hidden whitespace-pre-wrap break-all rounded bg-[#0b0b11] p-2 font-mono text-[9px] leading-relaxed text-ink-soft opacity-0"
+                className="absolute inset-3 overflow-hidden whitespace-pre-wrap break-all rounded bg-canvas p-2 font-mono text-[9px] leading-relaxed text-ink-soft opacity-0"
               >
                 <span data-d="out-code-text">{BASE64}…</span>
               </pre>

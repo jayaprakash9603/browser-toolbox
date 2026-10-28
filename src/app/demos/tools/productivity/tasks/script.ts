@@ -461,7 +461,7 @@ export const PRIORITY_RING: Record<number, string> = {
   1: 'border-[#f87171] bg-[#ef4444]/10',
   2: 'border-[#fb923c] bg-[#f97316]/10',
   3: 'border-[#60a5fa] bg-[#3b82f6]/10',
-  4: 'border-white/40',
+  4: 'border-ink/40',
 }
 
 /* ---------- Sample tasks ---------- */

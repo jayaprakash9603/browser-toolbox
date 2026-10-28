@@ -66,7 +66,7 @@ const build: Build = ({ tl, q, step, final, move, click, type, scramble, wait, c
   tl.to(q('row-1'), { borderColor: 'rgba(251,191,36,0.7)', duration: 0.25 }, '+=0.2')
 
   step(1, '+=0.5')
-  tl.to(q('row-1'), { borderColor: 'rgba(255,255,255,0.08)', duration: 0.2 }, '<')
+  tl.to(q('row-1'), { borderColor: 'var(--demo-tint-8)', duration: 0.2 }, '<')
   base(ERROR_CODE.base)
   selectAll()
   type('in-text', ERROR_CODE.input, { speed: 0.05 })
@@ -135,7 +135,7 @@ export default function Demo() {
               </span>
               <span
                 data-d="base-menu"
-                className="absolute right-0 top-full z-10 mt-1 w-32 rounded-md border border-line-strong bg-[#17171c] p-0.5 opacity-0 shadow-2xl"
+                className="absolute right-0 top-full z-10 mt-1 w-32 rounded-md border border-line-strong bg-elevated p-0.5 opacity-0 shadow-2xl"
               >
                 {BASES.map((entry, index) => (
                   <span
@@ -150,7 +150,7 @@ export default function Demo() {
             </span>
             <span
               data-d="key"
-              className="absolute -bottom-5 left-16 rounded border border-line-strong bg-[#17171c] px-1.5 py-px font-mono text-[8.5px] text-ink opacity-0 shadow-lg"
+              className="absolute -bottom-5 left-16 rounded border border-line-strong bg-elevated px-1.5 py-px font-mono text-[8.5px] text-ink opacity-0 shadow-lg"
             />
           </div>
           <div className="relative">
@@ -165,7 +165,7 @@ export default function Demo() {
                 <div
                   key={label}
                   data-d={`row-${index}`}
-                  className="flex h-7 items-center gap-2 rounded-md border border-line bg-white/[0.03] px-2"
+                  className="flex h-7 items-center gap-2 rounded-md border border-line bg-ink/[0.03] px-2"
                 >
                   <span className="w-[74px] shrink-0 text-[9.5px] font-medium text-muted">
                     {label}

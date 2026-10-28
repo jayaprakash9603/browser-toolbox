@@ -50,7 +50,7 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, count, wait, 
   tl.fromTo(
     qa('account'),
     { borderColor: 'rgba(52,211,153,0.6)' },
-    { borderColor: 'rgba(255,255,255,0.08)', duration: 0.8, immediateRender: false },
+    { borderColor: 'var(--demo-tint-8)', duration: 0.8, immediateRender: false },
     '<',
   )
 
@@ -106,7 +106,7 @@ export default function Demo() {
               <li
                 key={account.label}
                 data-d={`account account-${index}`}
-                className={`flex items-center justify-between rounded-lg border border-white/[0.08] px-3 py-1.5 ${
+                className={`flex items-center justify-between rounded-lg border border-ink/[0.08] px-3 py-1.5 ${
                   index === ADDED_INDEX ? 'opacity-0' : ''
                 }`}
               >

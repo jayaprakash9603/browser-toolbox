@@ -205,7 +205,7 @@ export default function Demo() {
         <span
           key={index}
           data-d={`ghost-${index}`}
-          className="absolute left-0 top-0 z-30 rounded-lg border border-[#a78bfa]/60 bg-[#1b1830] px-2.5 py-1.5 font-mono text-[10px] text-ink opacity-0 shadow-xl"
+          className="absolute left-0 top-0 z-30 rounded-lg border border-[#a78bfa]/60 bg-elevated px-2.5 py-1.5 font-mono text-[10px] text-ink opacity-0 shadow-xl"
         >
           {index === '1' ? SNIPPETS.install : SNIPPETS.key}
         </span>

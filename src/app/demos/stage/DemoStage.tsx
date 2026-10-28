@@ -239,7 +239,7 @@ export function DemoStage({
               onClick={toggle}
               aria-label={playing ? t('demo.pause') : t('demo.play')}
               title={playing ? t('demo.pause') : t('demo.play')}
-              className="flex size-8 shrink-0 items-center justify-center rounded-full border border-line-strong text-ink-soft outline-none transition-colors hover:border-[var(--demo-control-hover-border)] hover:text-ink focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+              className="flex size-8 shrink-0 items-center justify-center rounded-full border border-line-strong text-ink-soft outline-none transition-colors hover:border-ink/40 hover:text-ink focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
             >
               {playing ? (
                 <PauseIcon aria-hidden="true" className="size-3.5" />
@@ -266,7 +266,7 @@ export function DemoStage({
                   <span
                     className={cn(
                       'h-1.5 rounded-full transition-all duration-500 ease-[var(--ease-out-expo)]',
-                      index === active ? 'w-5 bg-[var(--accent)]' : 'w-1.5 bg-[var(--demo-step-idle)] group-hover:bg-[var(--demo-step-hover)]',
+                      index === active ? 'w-5 bg-[var(--accent)]' : 'w-1.5 bg-ink/20 group-hover:bg-ink/45',
                     )}
                   />
                 </button>

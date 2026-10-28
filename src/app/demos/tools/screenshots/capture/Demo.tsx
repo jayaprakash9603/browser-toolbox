@@ -175,7 +175,7 @@ export default function Demo() {
             </svg>
             <span
               data-d="blur"
-              className="absolute left-[18px] top-[52px] h-4 w-36 origin-left scale-x-0 rounded bg-white/50 opacity-0 backdrop-blur-md"
+              className="absolute left-[18px] top-[52px] h-4 w-36 origin-left scale-x-0 rounded bg-ink/50 opacity-0 backdrop-blur-md"
             />
           </div>
           <span

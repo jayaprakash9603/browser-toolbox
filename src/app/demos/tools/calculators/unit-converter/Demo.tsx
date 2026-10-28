@@ -30,7 +30,7 @@ const build: Build = ({ tl, q, step, final, move, click, type, scramble, wait, c
     click(`${menu}-item-${index}`)
     tl.to(
       q(`${menu}-item-${index}`),
-      { backgroundColor: 'rgba(255,255,255,0.12)', duration: 0.1 },
+      { backgroundColor: 'var(--demo-tint-12)', duration: 0.1 },
       '<',
     )
     tl.to(q(`${menu}-menu`), { opacity: 0, duration: 0.15 }, '+=0.1')
@@ -100,7 +100,7 @@ function Menu({ d, items, className }: { d: string; items: string[]; className?:
   return (
     <span
       data-d={`${d}-menu`}
-      className={`absolute top-full z-10 mt-1 rounded-md border border-line-strong bg-[#17171c] p-0.5 opacity-0 shadow-2xl ${className ?? ''}`}
+      className={`absolute top-full z-10 mt-1 rounded-md border border-line-strong bg-elevated p-0.5 opacity-0 shadow-2xl ${className ?? ''}`}
     >
       {items.map((item, index) => (
         <span
@@ -151,7 +151,7 @@ export default function Demo() {
               <Menu d="to" items={UNIT_NAMES} className="right-0 w-[132px]" />
             </span>
           </div>
-          <div className="flex items-center justify-between rounded-xl border border-line bg-white/[0.04] px-4 py-6">
+          <div className="flex items-center justify-between rounded-xl border border-line bg-ink/[0.04] px-4 py-6">
             <code data-d="result-value" className="font-mono text-[30px] font-semibold text-ink">
               {STATES.start.result}
             </code>

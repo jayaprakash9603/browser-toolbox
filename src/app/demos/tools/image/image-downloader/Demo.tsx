@@ -183,7 +183,7 @@ function Panel() {
         <div className="flex items-center gap-1 text-[8.5px]">
           <span
             data-d="visible-count"
-            className="rounded-md bg-white/10 px-1.5 py-0.5 font-semibold text-ink"
+            className="rounded-md bg-ink/10 px-1.5 py-0.5 font-semibold text-ink"
           >
             0
           </span>
@@ -208,7 +208,7 @@ function Panel() {
             {ITEMS.map((item) => (
               <span
                 key={item.name}
-                className="aspect-square animate-pulse rounded-md bg-white/10"
+                className="aspect-square animate-pulse rounded-md bg-ink/10"
               />
             ))}
           </div>
@@ -244,10 +244,10 @@ function Panel() {
           </div>
           <div
             data-d="popover"
-            className="absolute left-6 top-0 z-10 w-[176px] space-y-1.5 rounded-lg border border-line-strong bg-[#17171c] p-2 opacity-0 shadow-2xl"
+            className="absolute left-6 top-0 z-10 w-[176px] space-y-1.5 rounded-lg border border-line-strong bg-elevated p-2 opacity-0 shadow-2xl"
           >
             <p className="text-[8.5px] font-medium text-ink">Min width (px)</p>
-            <span data-d="slider" className="relative block h-1 rounded-full bg-white/15">
+            <span data-d="slider" className="relative block h-1 rounded-full bg-ink/15">
               <span data-d="slider-fill" className="block h-full w-0 rounded-full bg-ink" />
               <span
                 data-d="slider-knob"
@@ -256,7 +256,7 @@ function Panel() {
               />
             </span>
             <p className="text-[8.5px] font-medium text-ink">Min height (px)</p>
-            <span className="relative block h-1 rounded-full bg-white/15">
+            <span className="relative block h-1 rounded-full bg-ink/15">
               <span className="absolute top-1/2 -ml-1 -mt-1 size-2 rounded-full border border-ink bg-canvas" />
             </span>
             <div className="flex flex-wrap gap-0.5">
@@ -283,7 +283,7 @@ function Panel() {
               <p className="text-[8px] text-ink-soft">
                 Downloading… <span data-d="done">0</span> / {PICKED.length} (0 failed)
               </p>
-              <span className="mt-0.5 block h-1 rounded-full bg-white/10">
+              <span className="mt-0.5 block h-1 rounded-full bg-ink/10">
                 <span
                   data-d="progress-fill"
                   className="block h-full w-0 rounded-full bg-[#22c55e]"
@@ -301,7 +301,7 @@ function Panel() {
             </span>
             <div
               data-d="menu"
-              className="absolute bottom-full right-0 mb-1 w-[110px] rounded-md border border-line-strong bg-[#17171c] py-0.5 text-[8.5px] text-ink-soft opacity-0 shadow-xl"
+              className="absolute bottom-full right-0 mb-1 w-[110px] rounded-md border border-line-strong bg-elevated py-0.5 text-[8.5px] text-ink-soft opacity-0 shadow-xl"
             >
               <span className="block px-2 py-1">Separate files</span>
               <span data-d="mode-zip" className="block px-2 py-1 text-ink">

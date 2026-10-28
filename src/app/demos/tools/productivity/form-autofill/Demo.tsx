@@ -132,7 +132,7 @@ function StateBadge({ field }: { field: Field }) {
     <span className="grid justify-items-end">
       <span
         data-d={`state state-${field.id}`}
-        className={`[grid-area:1/1] rounded-full px-1.5 py-px text-[7.5px] font-medium ${field.state === 'matched' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/[0.07] text-muted'}`}
+        className={`[grid-area:1/1] rounded-full px-1.5 py-px text-[7.5px] font-medium ${field.state === 'matched' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-ink/[0.07] text-muted'}`}
       >
         {field.state === 'matched' ? 'Ready' : 'No answer'}
       </span>
@@ -150,7 +150,7 @@ function Tip({ d, text }: { d: string; text: string }) {
   return (
     <span
       data-d={`tip ${d}`}
-      className="absolute right-0 top-[calc(100%+4px)] z-10 w-36 rounded-md border border-line-strong bg-[#111116] px-2 py-1 text-[7.5px] leading-snug text-ink-soft opacity-0 shadow-xl"
+      className="absolute right-0 top-[calc(100%+4px)] z-10 w-36 rounded-md border border-line-strong bg-elevated px-2 py-1 text-[7.5px] leading-snug text-ink-soft opacity-0 shadow-xl"
     >
       {text}
     </span>
@@ -189,7 +189,7 @@ function Row({ field }: { field: Field }) {
         {field.answer ? (
           <span
             data-d={`card-${field.id}`}
-            className="mt-1 block rounded border-l-2 border-[var(--accent)]/50 bg-white/[0.04] px-1.5 py-0.5"
+            className="mt-1 block rounded border-l-2 border-[var(--accent)]/50 bg-ink/[0.04] px-1.5 py-0.5"
           >
             <span className="block truncate text-[8px] text-ink">
               <span className="font-medium">{field.answer}</span>
@@ -210,7 +210,7 @@ function Panel() {
       <DockHeader />
       <div className="flex min-h-0 flex-1 flex-col gap-1.5 p-2">
         <div className="flex items-center gap-1.5 rounded-md border border-line px-2 py-1.5">
-          <span className="flex size-5 shrink-0 items-center justify-center rounded bg-white/[0.06] text-ink-soft">
+          <span className="flex size-5 shrink-0 items-center justify-center rounded bg-ink/[0.06] text-ink-soft">
             <GlobeIcon className="size-3" />
           </span>
           <span className="min-w-0 flex-1">
@@ -226,11 +226,11 @@ function Panel() {
           </span>
           <RefreshCwIcon className="size-3 shrink-0 text-muted" />
         </div>
-        <div className="grid grid-cols-5 gap-0.5 rounded-md bg-white/[0.04] p-0.5">
+        <div className="grid grid-cols-5 gap-0.5 rounded-md bg-ink/[0.04] p-0.5">
           {['Page', 'Answers', 'Profiles', 'Data', 'Settings'].map((label, index) => (
             <span
               key={label}
-              className={`rounded py-0.5 text-center text-[8px] ${index === 0 ? 'bg-white/10 text-ink' : 'text-muted'}`}
+              className={`rounded py-0.5 text-center text-[8px] ${index === 0 ? 'bg-ink/10 text-ink' : 'text-muted'}`}
             >
               {label}
             </span>

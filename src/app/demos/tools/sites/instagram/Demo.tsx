@@ -73,7 +73,7 @@ function Panel() {
     <div className="flex h-full flex-col">
       <DockHeader />
       <div className="flex flex-col gap-2 p-2.5">
-        <div className="rounded-xl border border-line bg-white/[0.03] p-2.5">
+        <div className="rounded-xl border border-line bg-ink/[0.03] p-2.5">
           <div className="flex items-center justify-between gap-2">
             <span className="flex items-center gap-1.5">
               <ImageIcon className="size-4 text-pink-500" />
@@ -114,7 +114,7 @@ function Panel() {
           Ghost story viewing
           <Toggle d="ghostStories" />
         </div>
-        <div className="mt-2 rounded-lg border border-line bg-white/[0.03] p-2">
+        <div className="mt-2 rounded-lg border border-line bg-ink/[0.03] p-2">
           <p className="text-[9.5px] font-semibold text-ink">Caption formatter</p>
           <p
             data-d="caption-out"
@@ -125,7 +125,7 @@ function Panel() {
           <div className="mt-2 flex flex-wrap gap-1">
             <span
               data-d="caption-bold"
-              className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] text-ink"
+              className="rounded-md bg-ink/10 px-2 py-0.5 text-[9px] text-ink"
             >
               Bold Unicode
             </span>
@@ -145,10 +145,10 @@ export default function Demo() {
     >
       <BrowserChrome url="https://www.instagram.com/reels/" panel={<Panel />} panelWidth={220}>
         <div className="relative flex h-full items-center justify-center bg-[#0c0c0c] p-3">
-          <div className="relative aspect-[9/16] w-full max-w-[200px] overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(160deg,#312e81,#831843,#0c0c0c)]">
+          <div className="relative aspect-[9/16] w-full max-w-[200px] overflow-hidden rounded-2xl border border-ink/10 bg-[linear-gradient(160deg,#312e81,#831843,#0c0c0c)]">
             <div className="absolute inset-x-0 top-0 flex gap-1 p-2">
               {[0.35, 0.2, 0.15].map((w, index) => (
-                <span key={index} className="h-0.5 flex-1 overflow-hidden rounded-full bg-white/25">
+                <span key={index} className="h-0.5 flex-1 overflow-hidden rounded-full bg-ink/25">
                   <span className="block h-full bg-white" style={{ width: `${w * 100}%` }} />
                 </span>
               ))}
@@ -171,7 +171,7 @@ export default function Demo() {
                 className="origin-left opacity-0"
                 style={{ transform: 'scaleX(0.2)' }}
               >
-                <div className="relative h-1 rounded-full bg-white/30">
+                <div className="relative h-1 rounded-full bg-ink/30">
                   <span className="absolute inset-y-0 left-0 w-[38%] rounded-full bg-[var(--accent)]" />
                 </div>
                 <p data-d="time" className="mt-1 font-mono text-[8px] text-white/80 opacity-0">

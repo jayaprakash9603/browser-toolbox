@@ -149,7 +149,7 @@ export default function Demo() {
               </span>
               <span
                 data-d="enter"
-                className="absolute -bottom-4 left-24 rounded border border-line-strong bg-[#17171c] px-1.5 py-px font-mono text-[8.5px] text-ink opacity-0 shadow-lg"
+                className="absolute -bottom-4 left-24 rounded border border-line-strong bg-elevated px-1.5 py-px font-mono text-[8.5px] text-ink opacity-0 shadow-lg"
               >
                 Enter ↵
               </span>
@@ -157,7 +157,7 @@ export default function Demo() {
             <div className="relative h-9">
               <div
                 data-d="result"
-                className="absolute inset-0 flex items-center justify-between rounded-md border border-line bg-white/[0.04] px-2.5 opacity-0"
+                className="absolute inset-0 flex items-center justify-between rounded-md border border-line bg-ink/[0.04] px-2.5 opacity-0"
               >
                 <code
                   data-d="result-value"
@@ -177,7 +177,7 @@ export default function Demo() {
                 <span
                   key={key}
                   data-d={`key-${index}`}
-                  className="flex h-[23px] items-center justify-center rounded-md border border-line-strong bg-white/[0.04] font-mono text-[10.5px] text-ink"
+                  className="flex h-[23px] items-center justify-center rounded-md border border-line-strong bg-ink/[0.04] font-mono text-[10.5px] text-ink"
                 >
                   {key}
                 </span>
@@ -189,7 +189,7 @@ export default function Demo() {
               {FN.map((fn) => (
                 <span
                   key={fn}
-                  className="rounded px-1.5 py-0.5 font-mono text-[9.5px] text-ink-soft hover:bg-white/10"
+                  className="rounded px-1.5 py-0.5 font-mono text-[9.5px] text-ink-soft hover:bg-ink/10"
                 >
                   {fn}
                 </span>
@@ -204,7 +204,7 @@ export default function Demo() {
                   <span
                     key={entry.expr}
                     data-d={`hist-${index}`}
-                    className="flex h-6 items-center justify-between gap-2 rounded-md bg-white/[0.04] px-2 font-mono text-[9.5px] tabular-nums opacity-0"
+                    className="flex h-6 items-center justify-between gap-2 rounded-md bg-ink/[0.04] px-2 font-mono text-[9.5px] tabular-nums opacity-0"
                   >
                     <span className="truncate text-muted">{entry.expr}</span>
                     <span className="shrink-0 text-ink">= {entry.result}</span>

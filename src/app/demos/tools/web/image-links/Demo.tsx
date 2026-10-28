@@ -98,8 +98,8 @@ const build: Build = ({
     q('filter'),
     {
       backgroundColor: 'rgba(255,255,255,0)',
-      borderColor: 'rgba(255,255,255,0.08)',
-      color: '#c9c9d3',
+      borderColor: 'var(--demo-tint-8)',
+      color: 'var(--demo-ink-soft)',
       duration: 0.2,
     },
     '<',
@@ -155,7 +155,7 @@ export default function Demo() {
                     <p
                       data-d={`stat-${key}`}
                       className="text-[11px] font-semibold tabular-nums"
-                      style={{ color: key === 'missing' ? '#fb7185' : '#f4f4f6' }}
+                      style={{ color: key === 'missing' ? '#fb7185' : 'var(--demo-ink)' }}
                     >
                       0
                     </p>
@@ -164,7 +164,7 @@ export default function Demo() {
                 ))}
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/10">
+                <div className="h-1 flex-1 overflow-hidden rounded-full bg-ink/10">
                   <div
                     data-d="cover-bar"
                     className="h-full origin-left scale-x-0 rounded-full bg-[var(--accent)]"

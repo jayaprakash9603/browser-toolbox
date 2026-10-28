@@ -126,7 +126,7 @@ export default function Demo() {
                     </span>
                     <div
                       data-d={`hop hop-${index}`}
-                      className="min-w-0 flex-1 rounded-md border border-line bg-white/[0.03] px-2 py-1.5 opacity-0"
+                      className="min-w-0 flex-1 rounded-md border border-line bg-ink/[0.03] px-2 py-1.5 opacity-0"
                     >
                       <p className="flex items-center gap-1.5 text-[9px] text-muted">
                         #{index + 1}

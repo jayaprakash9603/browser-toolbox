@@ -147,12 +147,12 @@ const build: Build = ({ tl, q, qa, step, final, move, click, wait, cursorOut }) 
   click('tab-1')
   tl.to(
     qa('tab'),
-    { backgroundColor: 'rgba(255,255,255,0)', color: '#a1a1aa', duration: 0.15 },
+    { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-muted)', duration: 0.15 },
     '<',
   )
   tl.to(
     q('tab-1'),
-    { backgroundColor: 'rgba(255,255,255,0.1)', color: '#fafafa', duration: 0.15 },
+    { backgroundColor: 'var(--demo-tint-10)', color: 'var(--demo-ink)', duration: 0.15 },
     '<',
   )
   tl.to(q('view-rt'), { opacity: 0, duration: 0.15 }, '<')
@@ -172,7 +172,7 @@ const build: Build = ({ tl, q, qa, step, final, move, click, wait, cursorOut }) 
     '<',
   )
   move('menu-0')
-  tl.to(q('menu-0'), { backgroundColor: 'rgba(255,255,255,0.08)', duration: 0.1 })
+  tl.to(q('menu-0'), { backgroundColor: 'var(--demo-tint-8)', duration: 0.1 })
   click('menu-0')
   tl.to(q('menu'), { opacity: 0, duration: 0.12 }, '<')
   tl.fromTo(
@@ -190,8 +190,8 @@ const build: Build = ({ tl, q, qa, step, final, move, click, wait, cursorOut }) 
   tl.set([q('view-log'), q('menu'), q('toast'), q('icon-lan')], { opacity: 0 }, 0)
   tl.set([q('view-rt'), q('icon-online'), ...qa('log-row')], { opacity: 1 }, 0)
   tl.set(q('menu-0'), { backgroundColor: 'rgba(255,255,255,0)' }, 0)
-  tl.set(qa('tab'), { backgroundColor: 'rgba(255,255,255,0)', color: '#a1a1aa' }, 0)
-  tl.set(q('tab-0'), { backgroundColor: 'rgba(255,255,255,0.1)', color: '#fafafa' }, 0)
+  tl.set(qa('tab'), { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-muted)' }, 0)
+  tl.set(q('tab-0'), { backgroundColor: 'var(--demo-tint-10)', color: 'var(--demo-ink)' }, 0)
   tl.set(q('live-label'), { text: LIVE_LABEL.online, color: STATUS_COLOR.online }, 0)
   tl.set(
     q('tile'),
@@ -300,7 +300,7 @@ function Today() {
         >
           {formatAvailability(TODAY_BEFORE.availability)}
         </p>
-        <span className="mt-1 block h-1 overflow-hidden rounded-full bg-white/[0.08]">
+        <span className="mt-1 block h-1 overflow-hidden rounded-full bg-ink/[0.08]">
           <span data-d="avail-bar" className="block h-full origin-left rounded-full" />
         </span>
         <span className="mt-1 flex justify-between text-[7.5px]">
@@ -325,11 +325,11 @@ function Today() {
 
 function Seg({ items, active }: { items: string[]; active: number }) {
   return (
-    <span className="flex gap-px rounded bg-white/[0.05] p-px">
+    <span className="flex gap-px rounded bg-ink/[0.05] p-px">
       {items.map((item, index) => (
         <span
           key={item}
-          className={`rounded-[3px] px-1 text-[7px] ${index === active ? 'bg-white/10 text-ink' : 'text-muted'}`}
+          className={`rounded-[3px] px-1 text-[7px] ${index === active ? 'bg-ink/10 text-ink' : 'text-muted'}`}
         >
           {item}
         </span>
@@ -379,7 +379,7 @@ function Realtime() {
             x2={CHART.w}
             y1={CHART.h * f}
             y2={CHART.h * f}
-            stroke="rgba(255,255,255,0.05)"
+            stroke="var(--demo-tint-5)"
           />
         ))}
         <rect
@@ -441,7 +441,7 @@ function Log() {
         </span>
       </div>
       <div className="mt-1.5 overflow-hidden rounded-md border border-line">
-        <div className="grid grid-cols-[1fr_auto_auto] gap-x-2 bg-white/[0.05] px-1.5 py-1 text-[6.5px] text-muted">
+        <div className="grid grid-cols-[1fr_auto_auto] gap-x-2 bg-ink/[0.05] px-1.5 py-1 text-[6.5px] text-muted">
           <span>Date and time</span>
           <span>Status</span>
           <span className="text-right">Duration</span>
@@ -477,7 +477,7 @@ function Log() {
       </div>
       <div
         data-d="menu"
-        className="absolute right-0 top-5 z-10 w-28 rounded-md border border-line-strong bg-[#1b1b22] py-1 text-[7.5px] text-ink opacity-0 shadow-2xl"
+        className="absolute right-0 top-5 z-10 w-28 rounded-md border border-line-strong bg-elevated py-1 text-[7.5px] text-ink opacity-0 shadow-2xl"
       >
         {EXPORTS.map((label, index) => {
           const Icon = [FileSpreadsheetIcon, FileTextIcon, FileJsonIcon][index]
@@ -523,7 +523,7 @@ export default function Demo() {
             <Today />
           </div>
           <div className="flex min-w-0 flex-1 flex-col rounded-xl border border-line p-2">
-            <div className="grid grid-cols-4 gap-0.5 rounded-md bg-white/[0.04] p-0.5">
+            <div className="grid grid-cols-4 gap-0.5 rounded-md bg-ink/[0.04] p-0.5">
               {['Realtime', 'Log', 'Stats', 'Settings'].map((label, index) => (
                 <span
                   key={label}
@@ -542,7 +542,7 @@ export default function Demo() {
         </div>
         <div
           data-d="toast"
-          className="absolute bottom-3 right-4 z-20 w-[232px] rounded-lg border border-line-strong bg-[#141419] p-2 opacity-0 shadow-2xl"
+          className="absolute bottom-3 right-4 z-20 w-[232px] rounded-lg border border-line-strong bg-elevated p-2 opacity-0 shadow-2xl"
         >
           <p className="flex items-center gap-1 text-[8px] font-medium text-ink">
             <FileSpreadsheetIcon className="size-2.5 text-[var(--accent)]" /> {CSV_FILE}

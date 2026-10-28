@@ -20,7 +20,7 @@ const build: Build = ({ tl, q, step, final, move, click, scramble, wait, cursorO
   const pick = (index: number) => {
     const { format, color, file } = PICKS[index]
     move('menu-save', { ax: 0.4 })
-    tl.to(q('menu-save'), { backgroundColor: 'rgba(255,255,255,0.1)', duration: 0.1 }, '<0.3')
+    tl.to(q('menu-save'), { backgroundColor: 'var(--demo-tint-10)', duration: 0.1 }, '<0.3')
     tl.fromTo(
       q('submenu'),
       { opacity: 0, x: -4 },
@@ -68,11 +68,11 @@ function Panel() {
     <div className="flex h-full flex-col">
       <DockHeader />
       <div className="flex flex-col gap-2 p-2.5">
-        <div className="flex items-center justify-between rounded-xl border border-line bg-white/[0.03] p-2">
+        <div className="flex items-center justify-between rounded-xl border border-line bg-ink/[0.03] p-2">
           <span className="text-[10.5px] font-semibold text-ink">Save Image As Type</span>
           <Toggle on />
         </div>
-        <div className="rounded-xl border border-line bg-white/[0.03] p-2">
+        <div className="rounded-xl border border-line bg-ink/[0.03] p-2">
           <p className="mb-1.5 text-[9.5px] font-semibold text-ink">Formats in the menu</p>
           <div className="grid grid-cols-2 gap-1">
             {FORMATS.map((format) => (
@@ -88,11 +88,11 @@ function Panel() {
             ))}
           </div>
         </div>
-        <div className="rounded-xl border border-line bg-white/[0.03] p-2">
+        <div className="rounded-xl border border-line bg-ink/[0.03] p-2">
           <p className="flex justify-between text-[9.5px] font-semibold text-ink">
             JPG / WebP quality <span className="font-normal text-muted">{QUALITY}%</span>
           </p>
-          <span className="relative mt-1.5 block h-1 rounded-full bg-white/15">
+          <span className="relative mt-1.5 block h-1 rounded-full bg-ink/15">
             <span
               className="block h-full rounded-full bg-ink"
               style={{ width: `${((QUALITY - 10) / 90) * 100}%` }}
@@ -100,7 +100,7 @@ function Panel() {
           </span>
           <p className="mt-1 text-[8px] text-muted">Does not apply to PNG, GIF, or PDF.</p>
         </div>
-        <div className="flex items-center justify-between gap-2 rounded-xl border border-line bg-white/[0.03] p-2">
+        <div className="flex items-center justify-between gap-2 rounded-xl border border-line bg-ink/[0.03] p-2">
           <span className="text-[9.5px] text-ink-soft">Ask where to save each file</span>
           <Toggle />
         </div>
@@ -155,7 +155,7 @@ export default function Demo() {
 
           <div
             data-d="menu"
-            className="absolute left-[118px] top-[142px] w-[120px] origin-top-left rounded-md border border-white/10 bg-[#2b2b30] py-1 text-[9px] text-white/85 opacity-0 shadow-2xl"
+            className="absolute left-[118px] top-[142px] w-[120px] origin-top-left rounded-md border border-ink/10 bg-[#2b2b30] py-1 text-[9px] text-white/85 opacity-0 shadow-2xl"
           >
             {['Open image in new tab', 'Save image as…', 'Copy image', 'Copy image address'].map(
               (item) => (
@@ -164,7 +164,7 @@ export default function Demo() {
                 </span>
               ),
             )}
-            <span className="my-1 block h-px bg-white/10" />
+            <span className="my-1 block h-px bg-ink/10" />
             <span data-d="menu-save" className="flex items-center gap-1.5 px-2.5 py-0.5">
               <LogoMark className="size-2.5" />
               <span className="flex-1">{MENU_SAVE_AS}</span>
@@ -173,7 +173,7 @@ export default function Demo() {
           </div>
           <div
             data-d="submenu"
-            className="absolute left-[236px] top-[212px] w-[60px] rounded-md border border-white/10 bg-[#2b2b30] py-1 text-[9px] text-white/85 opacity-0 shadow-2xl"
+            className="absolute left-[236px] top-[212px] w-[60px] rounded-md border border-ink/10 bg-[#2b2b30] py-1 text-[9px] text-white/85 opacity-0 shadow-2xl"
           >
             {FORMATS.map((format, index) => (
               <span key={format} data-d={`format-${index}`} className="block px-2.5 py-0.5">

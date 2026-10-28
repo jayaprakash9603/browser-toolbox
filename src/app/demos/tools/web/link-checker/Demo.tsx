@@ -51,7 +51,7 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorO
     },
     '<',
   )
-  tl.to(qa('row-ok'), { borderColor: 'rgba(255,255,255,0.04)', duration: 0.3 }, '<')
+  tl.to(qa('row-ok'), { borderColor: 'var(--demo-tint-4)', duration: 0.3 }, '<')
   final('+=0.3')
   wait(1.8)
 }
@@ -108,14 +108,14 @@ export default function Demo() {
                     <li
                       key={link.href}
                       data-d={`row ${ok ? 'row-ok' : 'row-bad'}`}
-                      className="flex h-[18px] items-center gap-1.5 rounded border border-line bg-white/[0.03] px-1.5 opacity-0"
+                      className="flex h-[18px] items-center gap-1.5 rounded border border-line bg-ink/[0.03] px-1.5 opacity-0"
                     >
                       <span
                         data-d="badge"
                         className="w-7 shrink-0 rounded py-px text-center font-mono text-[8px] font-medium"
                         style={{
                           color: ok ? '#c9c9d3' : '#fff1f2',
-                          backgroundColor: ok ? 'rgba(255,255,255,0.08)' : '#be123c',
+                          backgroundColor: ok ? 'var(--demo-tint-8)' : '#be123c',
                         }}
                       >
                         {link.status ?? 'ERR'}

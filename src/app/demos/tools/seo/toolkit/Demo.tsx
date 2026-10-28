@@ -30,12 +30,12 @@ const build: Build = ({ tl, q, qa, step, final, move, click, count, wait, cursor
   const tab = (index: number) => {
     tl.to(
       qa('tab'),
-      { backgroundColor: 'rgba(255,255,255,0)', color: 'rgba(161,161,170,1)', duration: 0.15 },
+      { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-muted)', duration: 0.15 },
       '<',
     )
     tl.to(
       q(`tab-${index}`),
-      { backgroundColor: 'rgba(255,255,255,0.1)', color: 'rgba(250,250,250,1)', duration: 0.15 },
+      { backgroundColor: 'var(--demo-tint-10)', color: 'var(--demo-ink)', duration: 0.15 },
       '<',
     )
   }
@@ -216,7 +216,7 @@ function Page() {
 function Stat({ label, value, warn }: { label: string; value: number | string; warn?: boolean }) {
   return (
     <span
-      className={`rounded-md border px-1 py-1 text-center ${warn ? 'border-amber-400/40 bg-amber-400/5' : 'border-line bg-white/[0.03]'}`}
+      className={`rounded-md border px-1 py-1 text-center ${warn ? 'border-amber-400/40 bg-amber-400/5' : 'border-line bg-ink/[0.03]'}`}
     >
       <span className="block text-[11px] font-semibold tabular-nums text-ink">{value}</span>
       <span className="block text-[7.5px] text-muted">{label}</span>
@@ -246,7 +246,7 @@ function MetaRow({
   return (
     <span
       data-d={`overview-row ${d ?? ''}`}
-      className="block rounded-md border border-line bg-white/[0.03] px-2 py-1 opacity-0"
+      className="block rounded-md border border-line bg-ink/[0.03] px-2 py-1 opacity-0"
     >
       <span className="flex items-center gap-1">
         <span className="text-[7px] font-medium uppercase tracking-wide text-muted">{label}</span>
@@ -270,7 +270,7 @@ function IssueRow({ issue, index }: { issue: Issue; index: number }) {
   return (
     <span
       data-d={`issue issue-${index}`}
-      className={`flex items-start gap-1.5 rounded-md border border-l-2 border-line bg-white/[0.03] px-1.5 py-1 opacity-0 ${error ? 'border-l-rose-500/80' : 'border-l-amber-400/80'}`}
+      className={`flex items-start gap-1.5 rounded-md border border-l-2 border-line bg-ink/[0.03] px-1.5 py-1 opacity-0 ${error ? 'border-l-rose-500/80' : 'border-l-amber-400/80'}`}
     >
       <Icon className={`mt-px size-2.5 shrink-0 ${error ? 'text-rose-400' : 'text-amber-300'}`} />
       <span className="min-w-0">
@@ -289,10 +289,10 @@ function Panel() {
       <DockHeader />
       <div className="relative min-h-0 flex-1 p-2">
         <div data-d="skeleton" className="absolute inset-2 space-y-2">
-          <span data-d="skel" className="block h-[54px] rounded-lg bg-white/[0.07]" />
-          <span data-d="skel" className="block h-4 rounded bg-white/[0.07]" />
+          <span data-d="skel" className="block h-[54px] rounded-lg bg-ink/[0.07]" />
+          <span data-d="skel" className="block h-4 rounded bg-ink/[0.07]" />
           {[0, 1, 2].map((index) => (
-            <span key={index} data-d="skel" className="block h-8 rounded-md bg-white/[0.07]" />
+            <span key={index} data-d="skel" className="block h-8 rounded-md bg-ink/[0.07]" />
           ))}
         </div>
         <div data-d="report" className="flex h-full flex-col gap-1.5 opacity-0">
@@ -304,7 +304,7 @@ function Panel() {
                   cy="32"
                   r="28"
                   fill="none"
-                  stroke="rgba(255,255,255,0.08)"
+                  stroke="var(--demo-tint-8)"
                   strokeWidth="6"
                 />
                 <circle
@@ -352,16 +352,16 @@ function Panel() {
             </span>
           </div>
           <div className="overflow-hidden">
-            <div data-d="tabstrip" className="flex w-max gap-0.5 rounded-md bg-white/[0.04] p-0.5">
+            <div data-d="tabstrip" className="flex w-max gap-0.5 rounded-md bg-ink/[0.04] p-0.5">
               {TABS.map((label, index) => (
                 <span
                   key={label}
                   data-d={`tab tab-${index}`}
-                  className={`flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[8px] ${index === 0 ? 'bg-white/10 text-ink' : 'text-muted'}`}
+                  className={`flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[8px] ${index === 0 ? 'bg-ink/10 text-ink' : 'text-muted'}`}
                 >
                   {label}
                   {index === ISSUES_TAB ? (
-                    <span className="rounded-full bg-white/10 px-1 text-[7px] tabular-nums">
+                    <span className="rounded-full bg-ink/10 px-1 text-[7px] tabular-nums">
                       {BEFORE.issues.length}
                     </span>
                   ) : null}

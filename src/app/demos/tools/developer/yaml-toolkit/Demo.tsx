@@ -147,7 +147,7 @@ export default function Demo() {
           </div>
           <p
             data-d="status"
-            className="rounded-lg bg-white/[0.04] px-3 py-1.5 font-mono text-[10.5px] text-muted"
+            className="rounded-lg bg-ink/[0.04] px-3 py-1.5 font-mono text-[10.5px] text-muted"
           >
             <span data-d="status-text">Not validated</span>
           </p>

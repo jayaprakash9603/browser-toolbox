@@ -13,7 +13,7 @@ function Filler() {
   return (
     <div className="space-y-2 px-3 py-3" style={{ height: H }}>
       {[92, 80, 96, 70, 88, 64, 90, 76].map((width, index) => (
-        <Bar key={index} w={`${width}%`} className="h-2 bg-white/15" />
+        <Bar key={index} w={`${width}%`} className="h-2 bg-ink/15" />
       ))}
     </div>
   )
@@ -45,12 +45,12 @@ const build: Build = ({ tl, q, qa, step, final, move, click, wait, cursorOut }) 
     click(`unit-${unit}`)
     tl.to(
       qa('unit'),
-      { backgroundColor: 'rgba(255,255,255,0)', color: '#8b8b9a', duration: 0.15 },
+      { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-muted)', duration: 0.15 },
       '<',
     )
     tl.to(
       q(`unit-${unit}`),
-      { backgroundColor: 'rgba(129,140,248,0.22)', color: '#f4f4f6', duration: 0.15 },
+      { backgroundColor: 'rgba(129,140,248,0.22)', color: 'var(--demo-ink)', duration: 0.15 },
       '<',
     )
   }

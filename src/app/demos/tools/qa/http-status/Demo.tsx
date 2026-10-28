@@ -91,7 +91,7 @@ export default function Demo() {
                   <span
                     key={slot}
                     data-d={`flap flap-${slot}`}
-                    className="relative flex h-12 w-9 items-center justify-center rounded-md bg-[#17171f] font-mono text-[28px] font-semibold text-ink shadow-[inset_0_-1px_0_rgba(255,255,255,0.06)]"
+                    className="relative flex h-12 w-9 items-center justify-center rounded-md bg-elevated font-mono text-[28px] font-semibold text-ink shadow-[inset_0_-1px_0_rgba(255,255,255,0.06)]"
                   >
                     <span data-d={`flap-${slot}-text`}>0</span>
                     <span className="absolute inset-x-0 top-1/2 h-px bg-black/60" />

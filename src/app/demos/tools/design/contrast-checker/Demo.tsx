@@ -145,7 +145,7 @@ function ColorRow({
     <div className="flex items-center gap-1.5">
       <span
         data-d={`${name}-swatch`}
-        className="size-6 shrink-0 rounded border border-white/15"
+        className="size-6 shrink-0 rounded border border-ink/15"
         style={{ backgroundColor: hex }}
       />
       <span
@@ -194,7 +194,7 @@ export default function Demo() {
               <p className="text-[10px] font-medium">Normal text preview</p>
               <p className="text-[14px] font-bold">Large text</p>
             </div>
-            <div className="flex items-center justify-between rounded-md border border-line bg-white/[0.03] px-2 py-1.5">
+            <div className="flex items-center justify-between rounded-md border border-line bg-ink/[0.03] px-2 py-1.5">
               <span className="text-[10px] font-medium text-ink-soft">Contrast ratio</span>
               <span className="flex items-center gap-1.5">
                 <span data-d="copied" className="text-[9px] text-[var(--accent)] opacity-0">

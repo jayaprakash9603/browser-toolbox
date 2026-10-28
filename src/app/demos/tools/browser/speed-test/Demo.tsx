@@ -90,7 +90,7 @@ const build: Build = ({ tl, q, qa, step, final, move, click, wait, cursorOut }) 
     tl.to(
       q(`tile-${name}`),
       {
-        borderColor: on ? color : 'rgba(255,255,255,0.08)',
+        borderColor: on ? color : 'var(--demo-tint-8)',
         boxShadow: on ? `0 0 0 2px ${color}2e` : '0 0 0 0px rgba(0,0,0,0)',
         duration: 0.2,
       },
@@ -229,7 +229,7 @@ const build: Build = ({ tl, q, qa, step, final, move, click, wait, cursorOut }) 
   tl.set(q('phase-text'), { text: PHASE_LABEL.idle, color: '#e4e4e7' }, 0)
   tl.set(
     qa('tile'),
-    { borderColor: 'rgba(255,255,255,0.08)', boxShadow: '0 0 0 0px rgba(0,0,0,0)' },
+    { borderColor: 'var(--demo-tint-8)', boxShadow: '0 0 0 0px rgba(0,0,0,0)' },
     0,
   )
   reset()
@@ -242,7 +242,7 @@ function Gauge() {
         <path
           d={arc(R)}
           fill="none"
-          stroke="rgba(255,255,255,0.08)"
+          stroke="var(--demo-tint-8)"
           strokeWidth={STROKE}
           strokeLinecap="round"
         />
@@ -269,7 +269,7 @@ function Gauge() {
                 y1={a.y}
                 x2={b.x}
                 y2={b.y}
-                stroke="rgba(255,255,255,0.16)"
+                stroke="var(--demo-tint-16)"
                 strokeWidth={2}
                 strokeLinecap="round"
               />
@@ -292,7 +292,7 @@ function Gauge() {
             cx={C}
             cy={C}
             r={9}
-            fill="#111116"
+            fill="var(--demo-elevated)"
             stroke={DOWN_COLOR}
             strokeWidth={3}
           />
@@ -314,7 +314,7 @@ function Gauge() {
       </div>
       <div data-d="go" className="absolute inset-0 flex items-center justify-center">
         <span className="relative flex size-[70px] items-center justify-center rounded-full bg-[conic-gradient(from_200deg,#38bdf8,#c084fc,#38bdf8)] p-[2px]">
-          <span className="flex size-full items-center justify-center rounded-full bg-[#111116] text-[17px] font-bold tracking-wider text-ink">
+          <span className="flex size-full items-center justify-center rounded-full bg-elevated text-[17px] font-bold tracking-wider text-ink">
             GO
           </span>
         </span>
@@ -340,7 +340,7 @@ function Tile({
     <span
       data-d={`tile tile-${name}`}
       className="min-w-0 rounded-lg border bg-canvas/60 px-1.5 py-1"
-      style={{ borderColor: 'rgba(255,255,255,0.08)' }}
+      style={{ borderColor: 'var(--demo-tint-8)' }}
     >
       <span className="flex items-center gap-1 text-[7px] text-muted">
         <span style={{ color }}>{icon}</span>
@@ -365,7 +365,7 @@ function Stepper() {
         ['up', 'Upload', UP_COLOR],
       ].map(([name, label, color]) => (
         <span key={name} className="flex flex-col gap-0.5">
-          <span className="h-1 overflow-hidden rounded-full bg-white/[0.08]">
+          <span className="h-1 overflow-hidden rounded-full bg-ink/[0.08]">
             <span
               data-d={`bar-${name}`}
               className="block h-full origin-left rounded-full"
@@ -508,7 +508,7 @@ export default function Demo() {
                     x2={CHART.w}
                     y1={CHART.h * f}
                     y2={CHART.h * f}
-                    stroke="rgba(255,255,255,0.05)"
+                    stroke="var(--demo-tint-5)"
                   />
                 ))}
                 <g clipPath="url(#speed-test-clip)">
@@ -534,7 +534,7 @@ export default function Demo() {
                 <span className="font-medium text-ink">History</span>
                 <span className="text-muted">Your last 30 results, stored on this device</span>
               </div>
-              <div className="grid grid-cols-[1fr_36px_44px_40px] border-t border-line bg-white/[0.03] px-1.5 py-0.5 text-[6.5px] text-muted">
+              <div className="grid grid-cols-[1fr_36px_44px_40px] border-t border-line bg-ink/[0.03] px-1.5 py-0.5 text-[6.5px] text-muted">
                 <span>When</span>
                 <span className="text-right">Ping</span>
                 <span className="text-right">Download</span>

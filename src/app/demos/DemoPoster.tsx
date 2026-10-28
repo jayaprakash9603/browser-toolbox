@@ -74,8 +74,8 @@ export function DemoPoster({
                 <p className="m-0 max-w-[24rem] text-[13px] leading-relaxed text-ink-soft">{description}</p>
                 {loading ? (
                   <span className="flex w-40 flex-col items-center gap-1.5">
-                    <span className="h-1.5 w-full animate-pulse rounded-full bg-white/10 motion-reduce:animate-none" />
-                    <span className="h-1.5 w-2/3 animate-pulse rounded-full bg-white/10 motion-reduce:animate-none" />
+                    <span className="h-1.5 w-full animate-pulse rounded-full bg-ink/10 motion-reduce:animate-none" />
+                    <span className="h-1.5 w-2/3 animate-pulse rounded-full bg-ink/10 motion-reduce:animate-none" />
                   </span>
                 ) : (
                   <p className="m-0 text-[11px] text-muted">{t('demo.noDemo')}</p>

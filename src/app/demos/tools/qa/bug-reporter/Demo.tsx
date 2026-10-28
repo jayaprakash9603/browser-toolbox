@@ -107,7 +107,7 @@ export default function Demo() {
             <div className="relative flex min-h-0 flex-1 flex-col gap-1.5 p-2.5 [perspective:700px]">
               <div
                 data-d="page-meta field"
-                className="rounded-lg border border-line bg-white/[0.04] px-2 py-1 text-[9px] opacity-0"
+                className="rounded-lg border border-line bg-ink/[0.04] px-2 py-1 text-[9px] opacity-0"
               >
                 <p className="truncate font-medium text-ink">{PAGE.title}</p>
                 <p className="truncate text-muted">{PAGE.url}</p>

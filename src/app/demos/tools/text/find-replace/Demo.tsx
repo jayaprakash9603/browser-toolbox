@@ -30,7 +30,7 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, count, wait, 
   tl.to(q('case-knob'), { x: 12, duration: 0.25 }, '<')
   tl.to(
     q('m-upper'),
-    { backgroundColor: 'rgba(251,191,36,0)', color: '#8b8b9a', duration: 0.3 },
+    { backgroundColor: 'rgba(251,191,36,0)', color: 'var(--demo-muted)', duration: 0.3 },
     '<0.1',
   )
   count('count', CASE_MATCHES, { at: '<', from: MATCHES_LOOSE, duration: 0.3 })

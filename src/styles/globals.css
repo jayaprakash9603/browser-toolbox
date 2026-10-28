@@ -41,7 +41,19 @@
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* Demo accent hues (shared across light and dark stages). */
+/* Tool demo surfaces; the values switch with the extension theme below. */
+@theme inline {
+  --color-canvas: var(--demo-canvas);
+  --color-surface: var(--demo-surface);
+  --color-elevated: var(--demo-elevated);
+  --color-raised: var(--demo-raised);
+  --color-chrome: var(--demo-chrome);
+  --color-line: var(--demo-line);
+  --color-line-strong: var(--demo-line-strong);
+  --color-ink: var(--demo-ink);
+  --color-ink-soft: var(--demo-ink-soft);
+}
+
 @theme {
   --color-indigo: #6366f1;
   --color-indigo-deep: #4f46e5;
@@ -56,49 +68,72 @@
   border-color: var(--border);
 }
 
-/* Demo surfaces follow the extension light/dark theme (`html` / `.dark`). */
-[data-demo-stage] {
-  --color-canvas: #f3f5f9;
-  --color-surface: #ffffff;
-  --color-elevated: #eef2f7;
-  --color-raised: #e2e8f0;
-  --color-line: rgb(15 23 42 / 0.08);
-  --color-line-strong: rgb(15 23 42 / 0.14);
-  --color-ink: #111827;
-  --color-ink-soft: #475569;
-  --demo-track: rgb(15 23 42 / 0.1);
-  --demo-step-idle: rgb(15 23 42 / 0.16);
-  --demo-step-hover: rgb(15 23 42 / 0.32);
-  --demo-control-hover-border: rgb(15 23 42 / 0.22);
+:root {
+  --demo-canvas: #f1f4f9;
+  --demo-surface: #ffffff;
+  --demo-elevated: #ffffff;
+  --demo-raised: #e2e8f0;
+  --demo-chrome: #e4e8ef;
+  --demo-line: rgb(15 23 42 / 0.09);
+  --demo-line-strong: rgb(15 23 42 / 0.16);
+  --demo-ink: #111827;
+  --demo-ink-soft: #475569;
+  --demo-muted: #64748b;
   --demo-cursor-fill: #111827;
   --demo-cursor-stroke: #ffffff;
-  --demo-stage-shadow: 0 30px 90px -40px rgb(15 23 42 / 0.22);
-  --muted: #64748b;
-  --accent: var(--demo-accent, #6366f1);
-  --border: rgb(15 23 42 / 0.08);
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  color-scheme: light;
-  color: var(--color-ink);
+  --demo-stage-shadow: 0 30px 90px -40px rgb(15 23 42 / 0.25);
+  /* Comma rgba() so GSAP can read the values when demo scripts tween to `var(--demo-tint-*)`. */
+  --demo-tint-3: rgba(15, 23, 42, 0.03);
+  --demo-tint-4: rgba(15, 23, 42, 0.04);
+  --demo-tint-5: rgba(15, 23, 42, 0.05);
+  --demo-tint-6: rgba(15, 23, 42, 0.06);
+  --demo-tint-8: rgba(15, 23, 42, 0.08);
+  --demo-tint-10: rgba(15, 23, 42, 0.1);
+  --demo-tint-12: rgba(15, 23, 42, 0.12);
+  --demo-tint-14: rgba(15, 23, 42, 0.14);
+  --demo-tint-16: rgba(15, 23, 42, 0.16);
+  --demo-tint-18: rgba(15, 23, 42, 0.18);
+  --demo-tint-25: rgba(15, 23, 42, 0.25);
 }
 
-.dark [data-demo-stage] {
-  --color-canvas: #07070b;
-  --color-surface: #0f0f16;
-  --color-elevated: #161622;
-  --color-raised: #1d1d2b;
-  --color-line: rgb(255 255 255 / 0.08);
-  --color-line-strong: rgb(255 255 255 / 0.16);
-  --color-ink: #f4f4f6;
-  --color-ink-soft: #c9c9d3;
-  --demo-track: rgb(255 255 255 / 0.12);
-  --demo-step-idle: rgb(255 255 255 / 0.2);
-  --demo-step-hover: rgb(255 255 255 / 0.45);
-  --demo-control-hover-border: rgb(255 255 255 / 0.4);
+.dark {
+  --demo-canvas: #07070b;
+  --demo-surface: #0f0f16;
+  --demo-elevated: #17171c;
+  --demo-raised: #1d1d2b;
+  --demo-chrome: #05050a;
+  --demo-line: rgb(255 255 255 / 0.08);
+  --demo-line-strong: rgb(255 255 255 / 0.16);
+  --demo-ink: #f4f4f6;
+  --demo-ink-soft: #c9c9d3;
+  --demo-muted: #8b8b9a;
   --demo-cursor-fill: #ffffff;
   --demo-cursor-stroke: #07070b;
   --demo-stage-shadow: 0 30px 90px -40px rgb(0 0 0 / 0.9);
-  --muted: #8b8b9a;
-  --border: rgb(255 255 255 / 0.08);
+  --demo-tint-3: rgba(255, 255, 255, 0.03);
+  --demo-tint-4: rgba(255, 255, 255, 0.04);
+  --demo-tint-5: rgba(255, 255, 255, 0.05);
+  --demo-tint-6: rgba(255, 255, 255, 0.06);
+  --demo-tint-8: rgba(255, 255, 255, 0.08);
+  --demo-tint-10: rgba(255, 255, 255, 0.1);
+  --demo-tint-12: rgba(255, 255, 255, 0.12);
+  --demo-tint-14: rgba(255, 255, 255, 0.14);
+  --demo-tint-16: rgba(255, 255, 255, 0.16);
+  --demo-tint-18: rgba(255, 255, 255, 0.18);
+  --demo-tint-25: rgba(255, 255, 255, 0.25);
+}
+
+/* `muted`, `accent` and `border` mean something else in the extension, so the demo scope redefines them. */
+[data-demo-stage] {
+  --muted: var(--demo-muted);
+  --accent: var(--demo-accent, #6366f1);
+  --border: var(--demo-line);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  color-scheme: light;
+  color: var(--demo-ink);
+}
+
+.dark [data-demo-stage] {
   color-scheme: dark;
 }
 

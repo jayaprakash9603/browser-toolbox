@@ -158,7 +158,7 @@ export default function Demo() {
                     1.0×
                   </span>
                 </div>
-                <div className="relative mt-2 h-1 rounded-full bg-white/10">
+                <div className="relative mt-2 h-1 rounded-full bg-ink/10">
                   <span
                     data-d="knob"
                     className="absolute -top-1.5 left-[30%] size-4 rounded-full border-2 border-[var(--accent)] bg-canvas"

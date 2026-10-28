@@ -185,7 +185,7 @@ function Panel() {
             <OptionRow label="Quality">
               <span className="flex rounded-md border border-line-strong p-px text-[8.5px]">
                 <span className="px-1.5 py-px text-muted">720p</span>
-                <span className="rounded bg-white/15 px-1.5 py-px text-ink">1080p</span>
+                <span className="rounded bg-ink/15 px-1.5 py-px text-ink">1080p</span>
               </span>
             </OptionRow>
           </div>
@@ -246,10 +246,10 @@ function Panel() {
 
 function Viewer() {
   return (
-    <div data-d="viewer" className="absolute inset-0 flex bg-[#0b0b11] opacity-0">
+    <div data-d="viewer" className="absolute inset-0 flex bg-canvas opacity-0">
       <div className="w-[92px] shrink-0 border-r border-line p-2">
         <p className="mb-1.5 text-[9.5px] font-semibold text-ink">Recordings</p>
-        <div className="rounded-md bg-white/10 p-1">
+        <div className="rounded-md bg-ink/10 p-1">
           <span className="block h-8 rounded bg-[linear-gradient(135deg,#e2e8f0,#94a3b8)]" />
           <span className="mt-0.5 block truncate text-[7.5px] text-ink">{NAME}</span>
           <span className="block text-[7.5px] text-muted">{duration(ELAPSED)}</span>
@@ -352,7 +352,7 @@ export default function Demo() {
             <span data-d="pill-timer" className="min-w-7 tabular-nums">
               Starting
             </span>
-            <span data-d="pause" className="hidden rounded-full bg-white/15 px-1.5 py-0.5">
+            <span data-d="pause" className="hidden rounded-full bg-ink/15 px-1.5 py-0.5">
               Pause
             </span>
             <span data-d="pill-stop" className="rounded-full bg-[#ef4444] px-1.5 py-0.5">

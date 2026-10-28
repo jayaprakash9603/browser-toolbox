@@ -56,7 +56,7 @@ const build: Build = ({ tl, q, qa, step, final, move, click, type, count, wait, 
   click('diff')
   tl.to(
     q('diff'),
-    { backgroundColor: 'rgba(34,211,238,0.18)', color: '#f4f4f6', duration: 0.2 },
+    { backgroundColor: 'rgba(34,211,238,0.18)', color: 'var(--demo-ink)', duration: 0.2 },
     '<',
   )
   tl.fromTo(
@@ -120,7 +120,7 @@ export default function Demo() {
               {TIMING.map((phase) => (
                 <div key={phase.label} data-d="wf-row" className="opacity-25">
                   <span className="text-[9px] text-muted">{phase.label}</span>
-                  <span className="relative mt-0.5 block h-1.5 rounded-full bg-white/[0.06]">
+                  <span className="relative mt-0.5 block h-1.5 rounded-full bg-ink/[0.06]">
                     <span
                       data-d="wf-bar"
                       className="absolute inset-y-0 origin-left scale-x-0 rounded-full bg-[var(--accent)]"

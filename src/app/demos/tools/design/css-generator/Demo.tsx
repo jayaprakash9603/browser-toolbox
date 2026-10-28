@@ -40,10 +40,10 @@ import {
 } from './script'
 
 const LINE = 10
-const CHIP_ON = { borderColor: 'var(--accent)', color: '#f4f4f6' }
-const CHIP_OFF = { borderColor: 'rgba(255,255,255,0.1)', color: '#8b8b9a' }
-const SEG_ON = { backgroundColor: 'rgba(255,255,255,0.12)', color: '#f4f4f6' }
-const SEG_OFF = { backgroundColor: 'rgba(255,255,255,0)', color: '#8b8b9a' }
+const CHIP_ON = { borderColor: 'var(--accent)', color: 'var(--demo-ink)' }
+const CHIP_OFF = { borderColor: 'var(--demo-tint-10)', color: 'var(--demo-muted)' }
+const SEG_ON = { backgroundColor: 'var(--demo-tint-12)', color: 'var(--demo-ink)' }
+const SEG_OFF = { backgroundColor: 'rgba(255,255,255,0)', color: 'var(--demo-muted)' }
 
 const build: Build = ({ tl, q, qa, step, final, move, click, type, wait, cursorOut }) => {
   const swap = (from: string, to: string, at: number | string = '<') => {
@@ -218,7 +218,7 @@ function Field({ label, value, color }: { label: string; value: string; color?: 
       <span className="flex h-[17px] w-[92px] items-center gap-1 rounded border border-line bg-canvas/70 px-1.5 font-mono text-ink">
         {color ? (
           <span
-            className="size-2 rounded-sm border border-white/20"
+            className="size-2 rounded-sm border border-ink/20"
             style={{ backgroundColor: color }}
           />
         ) : null}
@@ -302,7 +302,7 @@ function Popover() {
                       ? 'gen-button'
                       : undefined
                 }
-                className="rounded border border-white/10 px-1.5 py-[2px] text-[7.5px] text-[#8b8b9a]"
+                className="rounded border border-ink/10 px-1.5 py-[2px] text-[7.5px] text-muted"
                 style={name === 'UI styles' ? CHIP_ON : undefined}
               >
                 {name}
@@ -391,7 +391,7 @@ function Preview() {
               key={index}
               className={cn(
                 'flex size-3.5 items-center justify-center rounded',
-                index === 0 ? 'bg-white/12 text-ink' : 'text-muted',
+                index === 0 ? 'bg-ink/12 text-ink' : 'text-muted',
               )}
             >
               <Icon className="size-2.5" />

@@ -86,7 +86,7 @@ export default function Demo() {
                 data-d={`tab-${['parse', 'encode', 'clean'][index]}`}
                 className={cn(
                   'rounded-full px-2.5 py-1 transition-opacity',
-                  index === 0 ? 'bg-white/10 text-ink' : 'text-muted',
+                  index === 0 ? 'bg-ink/10 text-ink' : 'text-muted',
                 )}
               >
                 {label}

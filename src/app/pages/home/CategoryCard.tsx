@@ -97,7 +97,7 @@ function CategoryDemo({
     <div
       ref={ref}
       aria-hidden
-      className={`${FRAME} bg-[#0f0f16] ring-1 ring-black/5 transition-shadow duration-200 ring-inset group-hover:shadow-[0_10px_30px_-14px_rgb(0_0_0/0.55)] dark:ring-white/5`}
+      className={`${FRAME} bg-surface ring-1 ring-black/5 transition-shadow duration-200 ring-inset group-hover:shadow-[0_10px_30px_-14px_rgb(0_0_0/0.55)] dark:ring-white/5`}
     >
       <Suspense fallback={<Poster tool={tools[index]} />}>
         <DemoReel category={category} tools={tools} index={index} running={running} advance={advance} />
@@ -112,13 +112,13 @@ function Poster({ tool }: { tool: ToolDefinition }) {
   const ToolIcon = tool.icon
   return (
     <>
-      <div className={`${CANVAS} flex flex-col items-center justify-center gap-2 text-[#f4f4f6]`}>
-        <span className="flex size-11 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] [&_svg]:size-5">
+      <div className={`${CANVAS} flex flex-col items-center justify-center gap-2 text-ink`}>
+        <span className="flex size-11 items-center justify-center rounded-2xl border border-ink/15 bg-ink/[0.06] [&_svg]:size-5">
           <ToolIcon />
         </span>
         <span className="max-w-[80%] truncate text-xs font-semibold">{name}</span>
       </div>
-      <div className={`${BAR} border-t border-white/10`} />
+      <div className={`${BAR} border-t border-ink/10`} />
     </>
   )
 }

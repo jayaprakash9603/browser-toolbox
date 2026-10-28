@@ -119,7 +119,7 @@ function Row({
   return (
     <div
       data-d={d}
-      className={`${className ?? ''} mb-1 flex h-[22px] items-center justify-between gap-1 overflow-hidden rounded border border-line bg-white/[0.03] px-2 opacity-0`}
+      className={`${className ?? ''} mb-1 flex h-[22px] items-center justify-between gap-1 overflow-hidden rounded border border-line bg-ink/[0.03] px-2 opacity-0`}
     >
       <code data-d={textD} className="min-w-0 flex-1 truncate font-mono text-[10.5px] text-ink" />
       {index == null ? (

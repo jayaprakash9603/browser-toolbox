@@ -137,7 +137,7 @@ export default function Demo() {
           <div className="flex h-full flex-col">
             <DockHeader />
             <div className="p-2.5">
-              <div className="flex items-center justify-between gap-2 rounded-xl border border-line bg-white/[0.03] p-3">
+              <div className="flex items-center justify-between gap-2 rounded-xl border border-line bg-ink/[0.03] p-3">
                 <div>
                   <p className="text-[11px] font-semibold text-ink">{LABELS.master}</p>
                   <p className="mt-0.5 text-[9.5px] leading-snug text-muted">{LABELS.outlines}</p>

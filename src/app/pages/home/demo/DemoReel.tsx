@@ -71,7 +71,7 @@ export default function DemoReel({ category, tools, index, running, advance }: D
       <div className="flex h-[34px] flex-col justify-center gap-[7px] border-t border-line px-2.5">
         <div className="flex gap-1">
           {tools.map((item, segment) => (
-            <span key={item.id} className="h-[3px] flex-1 overflow-hidden rounded-full bg-[var(--demo-track)]">
+            <span key={item.id} className="h-[3px] flex-1 overflow-hidden rounded-full bg-ink/12">
               {segment < index ? <span className="block h-full bg-[var(--accent)] opacity-60" /> : null}
               {segment === index ? (
                 <span
