@@ -59,6 +59,8 @@ export default defineVitestConfig({
   },
   build: {
     modulePreload: false,
+    // Gzipping ~800 chunks only to print their sizes adds seconds; check-startup-budget guards size instead.
+    reportCompressedSize: false,
     rollupOptions: {
       input: {
         offscreen: 'offscreen.html',

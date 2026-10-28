@@ -1,4 +1,5 @@
 import { build } from 'vite'
+import { rmSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -20,13 +21,29 @@ const protectionEntries = {
   'guard-notify': 'src/chrome/content/protection/guard-notify.ts',
 }
 
+const sitesEntries = {
+  'yt-isolated': 'src/chrome/content/sites/youtube/isolated.ts',
+  'yt-main': 'src/chrome/content/sites/youtube/main.ts',
+  'wa-isolated': 'src/chrome/content/sites/whatsapp/isolated.ts',
+  'wa-main': 'src/chrome/content/sites/whatsapp/main.ts',
+  'ig-isolated': 'src/chrome/content/sites/instagram/isolated.ts',
+  'ig-main': 'src/chrome/content/sites/instagram/main.ts',
+  'pip-auto': 'src/chrome/content/pip/auto.ts',
+}
+
+const interceptorEntries = {
+  isolated: 'src/chrome/content/interceptor/isolated.ts',
+  main: 'src/chrome/content/interceptor/main.ts',
+}
+
 async function buildEntry(name, entry, outDir, format = 'iife') {
   await build({
     configFile: resolve(root, 'vite.adblock.config.ts'),
     mode: name,
+    logLevel: 'warn',
     build: {
       outDir: resolve(root, outDir),
-      emptyOutDir: name === 'cosmetic',
+      emptyOutDir: false,
       rollupOptions: {
         input: resolve(root, entry),
         preserveEntrySignatures: format === 'es' ? 'exports-only' : false,
@@ -41,33 +58,20 @@ async function buildEntry(name, entry, outDir, format = 'iife') {
   console.log(`[page-scripts] built ${outDir}/${name}.js`)
 }
 
-for (const [name, entry] of Object.entries(adblockEntries)) {
-  await buildEntry(name, entry, 'public/adblock/scripts')
-}
-// Imported on demand by cosmetic.js, so it is an ES module rather than a content script.
-await buildEntry('procedural', 'src/chrome/content/adblock/procedural.ts', 'public/adblock/scripts', 'es')
-const sitesEntries = {
-  'yt-isolated': 'src/chrome/content/sites/youtube/isolated.ts',
-  'yt-main': 'src/chrome/content/sites/youtube/main.ts',
-  'wa-isolated': 'src/chrome/content/sites/whatsapp/isolated.ts',
-  'wa-main': 'src/chrome/content/sites/whatsapp/main.ts',
-  'ig-isolated': 'src/chrome/content/sites/instagram/isolated.ts',
-  'ig-main': 'src/chrome/content/sites/instagram/main.ts',
-  'pip-auto': 'src/chrome/content/pip/auto.ts',
-}
+const groups = [
+  [adblockEntries, 'public/adblock/scripts'],
+  [protectionEntries, 'public/protection/scripts'],
+  [sitesEntries, 'public/sites/scripts'],
+  [interceptorEntries, 'public/interceptor/scripts'],
+]
 
-for (const [name, entry] of Object.entries(protectionEntries)) {
-  await buildEntry(name, entry, 'public/protection/scripts')
-}
-for (const [name, entry] of Object.entries(sitesEntries)) {
-  await buildEntry(name, entry, 'public/sites/scripts')
-}
+// Every build writes into a shared folder, so stale adblock scripts are cleared once up front instead.
+rmSync(resolve(root, 'public/adblock/scripts'), { recursive: true, force: true })
 
-const interceptorEntries = {
-  isolated: 'src/chrome/content/interceptor/isolated.ts',
-  main: 'src/chrome/content/interceptor/main.ts',
-}
-
-for (const [name, entry] of Object.entries(interceptorEntries)) {
-  await buildEntry(name, entry, 'public/interceptor/scripts')
-}
+await Promise.all([
+  ...groups.flatMap(([entries, outDir]) =>
+    Object.entries(entries).map(([name, entry]) => buildEntry(name, entry, outDir)),
+  ),
+  // Imported on demand by cosmetic.js, so it is an ES module rather than a content script.
+  buildEntry('procedural', 'src/chrome/content/adblock/procedural.ts', 'public/adblock/scripts', 'es'),
+])
