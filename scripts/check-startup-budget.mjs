@@ -17,7 +17,8 @@ const assets = join(dist, 'assets')
 /** ~1.12 MB once site-access prompts and the HTML bundle strings joined the catalog. */
 /** ~1.14 MB after category demo disclosure and related home strings. */
 /** ~1.141 MB once the form autofill review strings joined the boot catalog. */
-const MAX_HOME_BOOT_JS = 1_144_000
+/** ~1.176 MB after Snippets, Tab Sessions and Bookmark Search strings joined the boot catalog. */
+const MAX_HOME_BOOT_JS = 1_180_000
 /** After SW leak fix, measured ~423 KB static closure. */
 /** ~481 KB measured after interceptor optional-permission wiring in the SW graph. */
 /** ~496 KB after form autofill review and global values; service workers cannot lazy-load them. */
