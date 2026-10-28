@@ -1,7 +1,7 @@
 import '@universal-form-autofill/sdk/style.css'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BookmarkIcon, ScanTextIcon } from 'lucide-react'
+import { BookmarkIcon, InboxIcon, ScanTextIcon } from 'lucide-react'
 import {
   AutofillPanel,
   cssVariableTheme,
@@ -19,6 +19,7 @@ import { cn } from '@/shared/utils/cn'
 import { useProductivityTool } from '../_shared'
 import { ConnectionBar } from './ConnectionBar'
 import { FillBar, type FillBarAction } from './FillBar'
+import { ReviewView } from './ReviewView'
 import { SavedView } from './SavedView'
 import { useFormPage } from './useFormPage'
 import { useReviewAutofillController } from './useReviewAutofillController'
@@ -39,7 +40,14 @@ const theme = cssVariableTheme({
 const DETAILS_KEY = 'tbx.autofill.details'
 const VIEW_KEY = 'tbx.autofill.view'
 
-type View = 'page' | 'saved'
+type View = 'page' | 'review' | 'saved'
+
+const VIEWS: readonly View[] = ['page', 'review', 'saved']
+
+function readView(): View {
+  const stored = readPreference(VIEW_KEY)
+  return VIEWS.find((view) => view === stored) ?? 'page'
+}
 
 function readPreference(key: string): string | null {
   try {
@@ -86,10 +94,11 @@ export default function FormAutofillTool() {
   const sdk = useAutofillState(controller)
   const memory = useFormMemory()
   const [detailsOpen, setDetailsOpen] = useState(() => readPreference(DETAILS_KEY) === '1')
-  const [view, setView] = useState<View>(() => (readPreference(VIEW_KEY) === 'saved' ? 'saved' : 'page'))
+  const [view, setView] = useState<View>(readView)
   const [busy, setBusy] = useState<FillBarAction | 'access' | 'save' | null>(null)
   const { info: pageInfo, refresh: refreshPage, run: runPage } = useFormPage(
-    pageScanEnabled && view === 'page',
+    view === 'page',
+    pageScanEnabled,
     sdk.page?.url,
   )
   const fillKey = useShortcutDisplay('form-fill')
@@ -181,6 +190,7 @@ export default function FormAutofillTool() {
   }, [runPage, show, t])
 
   const savedCount = memory.state ? memoryTotals(memory.state).pages : 0
+  const reviewCount = memory.state ? Object.keys(memory.state.review).length : 0
   const canSave = Boolean(pageInfo?.ok) && pageInfo?.reason !== 'blocked'
 
   return (
@@ -207,6 +217,20 @@ export default function FormAutofillTool() {
                 <>
                   <ScanTextIcon aria-hidden />
                   {t('formMemory.view.page')}
+                </>
+              ),
+            },
+            {
+              value: 'review',
+              label: (
+                <>
+                  <InboxIcon aria-hidden />
+                  {t('formMemory.view.review')}
+                  {reviewCount > 0 && (
+                    <span className="rounded-full bg-amber-500/15 px-1.5 text-[10px] leading-4 font-semibold tabular-nums text-amber-800 dark:text-amber-300">
+                      {reviewCount}
+                    </span>
+                  )}
                 </>
               ),
             },
@@ -239,8 +263,11 @@ export default function FormAutofillTool() {
             shortcut={{ fill: fillKey, clear: clearKey }}
             onAction={(action) => void act(action)}
             onAllowAccess={() => void allowAccess()}
+            onOpenReview={() => changeView('review')}
           />
         </>
+      ) : view === 'review' ? (
+        <ReviewView state={memory.state} update={memory.update} currentUrl={pageInfo?.url} />
       ) : (
         <SavedView
           state={memory.state}

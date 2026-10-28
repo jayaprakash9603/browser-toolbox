@@ -16,10 +16,12 @@ const assets = join(dist, 'assets')
 /** ~1.10 MB after the Tasks, Diff, Color picker and Responsive viewer strings joined the boot i18n catalog. */
 /** ~1.12 MB once site-access prompts and the HTML bundle strings joined the catalog. */
 /** ~1.14 MB after category demo disclosure and related home strings. */
-const MAX_HOME_BOOT_JS = 1_140_000
+/** ~1.141 MB once the form autofill review strings joined the boot catalog. */
+const MAX_HOME_BOOT_JS = 1_144_000
 /** After SW leak fix, measured ~423 KB static closure. */
 /** ~481 KB measured after interceptor optional-permission wiring in the SW graph. */
-const MAX_SERVICE_WORKER_JS = 492 * 1024
+/** ~496 KB after form autofill review and global values; service workers cannot lazy-load them. */
+const MAX_SERVICE_WORKER_JS = 500 * 1024
 
 /** `_gsap` is the cache property GSAP stamps on every target: the tool demos must stay lazy. */
 const BANNED_IN_HOME = [/postman-lite/i, /\bcmdk\b/, /\b_gsap\b/]

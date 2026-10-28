@@ -8,6 +8,7 @@ import {
   type CapturedField,
   type FormActionResult,
 } from '@/core/form-memory/model'
+import { applyReviewCapture, pageReviewCount, resolvePageReview } from '@/core/form-memory/review'
 import { loadFormMemory, updateFormMemory } from '@/core/form-memory/storage'
 import { getActiveWebTab } from '@/chrome/contentScriptClient'
 import { getChromeMessage, getExtensionName } from '@/core/i18n/chromeMessages'
@@ -30,6 +31,7 @@ const EMPTY: Omit<FormActionResult, 'ok'> = {
   matched: 0,
   saved: 0,
   shared: 0,
+  review: 0,
   learn: true,
 }
 
@@ -124,7 +126,7 @@ export async function fillFormInTab(
   const base = {
     ...EMPTY,
     saved: plan.page.length,
-    shared: plan.shared.length,
+    shared: plan.global.length + plan.shared.length,
     learn: state.settings.learn,
     url: target.url,
   }
@@ -135,7 +137,7 @@ export async function fillFormInTab(
   const page = await runInTab(target.id, {
     action: 'fill',
     fields: plan.page,
-    shared: plan.shared,
+    shared: [...plan.global, ...plan.shared],
     overwrite: source !== 'auto',
     retry: source === 'auto',
     watch: state.settings.learn,
@@ -154,7 +156,7 @@ export async function fillFormInTab(
     const notice =
       page.filled > 0
         ? filledText(page.filled)
-        : plan.page.length + plan.shared.length === 0
+        : plan.page.length + plan.global.length + plan.shared.length === 0
           ? getChromeMessage('formNothingSaved')
           : getChromeMessage('formAlreadyFilled')
     notify(target.id, notice)
@@ -212,7 +214,8 @@ async function inspectTab(tabId?: number): Promise<FormActionResult> {
   const base = {
     ...EMPTY,
     saved: plan.page.length,
-    shared: plan.shared.length,
+    shared: plan.global.length + plan.shared.length,
+    review: pageReviewCount(state, ref?.id),
     learn: state.settings.learn,
     url: target.url,
   }
@@ -230,9 +233,11 @@ async function saveTab(tabId?: number): Promise<FormActionResult> {
   const page = await runInTab(target.id, { action: 'snapshot', watch: true })
   if (!page) return { ok: false, reason: 'no-access', ...EMPTY, url: target.url }
   const url = target.url
-  const next = await updateFormMemory((current) =>
-    applyCapture(current, { url, title: target.title, fields: page.fields ?? [] }, Date.now()),
-  )
+  const ref = pageRefFor(url)
+  const next = await updateFormMemory((current) => {
+    const saved = applyCapture(current, { url, title: target.title, fields: page.fields ?? [] }, Date.now())
+    return ref ? resolvePageReview(saved, ref.id) : saved
+  })
   const plan = planFill(next, url, false)
   return { ok: true, ...EMPTY, ...pick(page), saved: plan.page.length, learn: next.settings.learn, url }
 }
@@ -279,19 +284,8 @@ export async function runFormCommand(command: 'form-fill' | 'form-clear', tab?: 
   const now = Date.now()
   if (now - (recent.get(command) ?? 0) < 500) return
   recent.set(command, now)
-  if (command === 'form-clear') {
-    await clearFormInTab('shortcut', tab)
-    return
-  }
-  const target = await resolveTab(tab, undefined)
-  if (target?.id != null) {
-    const inspection = await inspectTab(target.id)
-    if (inspection.ok && inspection.populated > 0) {
-      await clearFormInTab('shortcut', tab)
-      return
-    }
-  }
-  await fillFormInTab('shortcut', tab)
+  if (command === 'form-clear') await clearFormInTab('shortcut', tab)
+  else await fillFormInTab('shortcut', tab)
 }
 
 export function registerFormMemory(): void {
@@ -303,7 +297,7 @@ export function registerFormMemory(): void {
     if (fields.length === 0) return
     await updateFormMemory((current) =>
       current.settings.learn
-        ? applyCapture(current, { url, title: sender.tab?.title ?? message.title, fields }, Date.now())
+        ? applyReviewCapture(current, { url, title: sender.tab?.title ?? message.title, fields }, Date.now())
         : current,
     )
   })

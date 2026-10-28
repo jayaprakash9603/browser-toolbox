@@ -4,6 +4,7 @@ import {
   BookmarkCheckIcon,
   BrushCleaningIcon,
   CircleSlashIcon,
+  InboxIcon,
   KeyRoundIcon,
   Loader2Icon,
   SparklesIcon,
@@ -24,6 +25,7 @@ interface FillBarProps {
   shortcut: Record<FillBarAction, string>
   onAction: (action: FillBarAction) => void
   onAllowAccess: () => void
+  onOpenReview: () => void
 }
 
 function hostOf(url: string | undefined): string {
@@ -38,11 +40,11 @@ function hostOf(url: string | undefined): string {
  * The single action under the field list. It fills when the form is empty and clears once it holds
  * values, so one button (and one shortcut pair) covers the whole flow.
  */
-export function FillBar({ info, profileCount, busy, shortcut, onAction, onAllowAccess }: FillBarProps) {
+export function FillBar({ info, profileCount, busy, shortcut, onAction, onAllowAccess, onOpenReview }: FillBarProps) {
   const { t } = useTranslation()
   const reduceMotion = useReducedMotion()
   const reason = info?.reason
-  const unavailable = !info || reason === 'no-tab' || reason === 'restricted'
+  const unavailable = !info || reason === 'no-tab' || reason === 'restricted' || reason === 'unavailable'
   const needsAccess = reason === 'no-access'
   const action: FillBarAction = info && info.populated > 0 ? 'clear' : 'fill'
   const host = hostOf(info?.url)
@@ -50,6 +52,7 @@ export function FillBar({ info, profileCount, busy, shortcut, onAction, onAllowA
   const status = (() => {
     if (!info) return { icon: Loader2Icon, text: t('formMemory.bar.checking'), spin: true }
     if (reason === 'no-tab' || reason === 'restricted') return { icon: CircleSlashIcon, text: t('formMemory.bar.restricted') }
+    if (reason === 'unavailable') return { icon: CircleSlashIcon, text: t('formMemory.bar.unavailable') }
     if (needsAccess) return { icon: KeyRoundIcon, text: t('formMemory.bar.needsAccess', { host }) }
     if (reason === 'blocked') return { icon: CircleSlashIcon, text: t('formMemory.bar.blocked', { host }) }
     if (info.saved > 0) {
@@ -66,6 +69,7 @@ export function FillBar({ info, profileCount, busy, shortcut, onAction, onAllowA
     }
   })()
   const StatusIcon = status.icon
+  const pendingReview = info?.ok && reason !== 'blocked' ? info.review : 0
 
   const label = action === 'clear' ? t('formMemory.bar.clear') : t('formMemory.bar.fill')
   const Icon = action === 'clear' ? BrushCleaningIcon : WandSparklesIcon
@@ -80,6 +84,17 @@ export function FillBar({ info, profileCount, busy, shortcut, onAction, onAllowA
         <StatusIcon className={cn('size-3.5 shrink-0', status.spin && 'motion-safe:animate-spin')} aria-hidden />
         <span className="min-w-0 truncate">{status.text}</span>
       </p>
+      {pendingReview > 0 && (
+        <button
+          type="button"
+          onClick={onOpenReview}
+          className="mb-2 flex min-h-8 w-full cursor-pointer items-center gap-1.5 rounded-md bg-amber-500/10 px-2 text-left text-xs font-medium text-amber-800 outline-none transition-colors hover:bg-amber-500/15 focus-visible:ring-2 focus-visible:ring-ring dark:text-amber-300"
+        >
+          <InboxIcon className="size-3.5 shrink-0" aria-hidden />
+          <span className="min-w-0 flex-1 truncate">{t('formMemory.bar.review', { count: pendingReview })}</span>
+          <span className="shrink-0 underline-offset-2">{t('formMemory.bar.openReview')}</span>
+        </button>
+      )}
       {needsAccess ? (
         <Button className="h-11 w-full text-sm" onClick={onAllowAccess} disabled={busy === 'access'}>
           <KeyRoundIcon aria-hidden />

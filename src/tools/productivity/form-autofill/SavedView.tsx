@@ -2,37 +2,35 @@ import { useDeferredValue, useId, useMemo, useState, type KeyboardEvent } from '
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import {
-  AlignLeftIcon,
   BookmarkIcon,
   BookmarkPlusIcon,
   ChevronDownIcon,
-  ChevronsUpDownIcon,
-  CircleDotIcon,
-  ListChecksIcon,
+  GlobeIcon,
   Loader2Icon,
   SearchIcon,
   SquareCheckIcon,
   SquareIcon,
   Trash2Icon,
-  TypeIcon,
   XIcon,
-  type LucideIcon,
 } from 'lucide-react'
 
 import { Link } from '@/app/router'
 import {
+  globalKeyFor,
   groupMemoryByHost,
   memoryTotals,
   pageRefFor,
+  removeGlobalField,
   removeMemoryField,
   removeMemoryHost,
   removeMemoryPage,
+  restoreGlobalFields,
   restoreMemoryPages,
   setHostBlocked,
+  updateGlobalField,
   updateMemoryField,
   type FormMemoryState,
   type MemoryField,
-  type MemoryFieldKind,
   type MemoryHostGroup,
   type MemoryPage,
 } from '@/core/form-memory/model'
@@ -41,23 +39,9 @@ import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Switch } from '@/shared/components/ui/switch'
 import { cn } from '@/shared/utils/cn'
+import { KIND_ICON, valueText } from './fieldDisplay'
 
 type Update = (mutate: (current: FormMemoryState) => FormMemoryState) => Promise<FormMemoryState>
-
-const KIND_ICON: Record<MemoryFieldKind, LucideIcon> = {
-  text: TypeIcon,
-  textarea: AlignLeftIcon,
-  select: ChevronsUpDownIcon,
-  multi: ListChecksIcon,
-  checkbox: SquareCheckIcon,
-  radio: CircleDotIcon,
-}
-
-function valueText(field: MemoryField): string {
-  if (Array.isArray(field.value)) return field.display || field.value.join(', ')
-  if (typeof field.value === 'boolean') return ''
-  return field.display || field.value
-}
 
 function matches(query: string, ...parts: (string | undefined)[]): boolean {
   return parts.some((part) => part?.toLowerCase().includes(query))
@@ -101,7 +85,15 @@ export function SavedView({ state, update, currentUrl, canSave, saving, onSave }
     return all
   }, [state, currentId])
   const visible = useMemo(() => filterGroups(groups, deferred), [groups, deferred])
+  const globals = useMemo(
+    () =>
+      Object.values(state?.global ?? {})
+        .filter((field) => !deferred || matches(deferred, field.label, valueText(field)))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [state, deferred],
+  )
   const totals = state ? memoryTotals(state) : { sites: 0, pages: 0, fields: 0 }
+  const hasGlobal = Object.keys(state?.global ?? {}).length > 0
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -142,9 +134,10 @@ export function SavedView({ state, update, currentUrl, canSave, saving, onSave }
       </div>
 
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 pb-3">
-        {!state ? null : groups.length === 0 ? (
+        {state && globals.length > 0 && <GlobalCard fields={globals} update={update} />}
+        {!state ? null : groups.length === 0 && !hasGlobal ? (
           <SavedEmpty learn={state.settings.learn} />
-        ) : visible.length === 0 ? (
+        ) : visible.length === 0 && globals.length === 0 ? (
           <p className="px-1 py-6 text-center text-xs text-muted-foreground">
             {t('formMemory.saved.noMatch', { query: query.trim() })}
           </p>
@@ -181,6 +174,43 @@ function SavedEmpty({ learn }: { learn: boolean }) {
         </Link>
       )}
     </div>
+  )
+}
+
+function GlobalCard({ fields, update }: { fields: MemoryField[]; update: Update }) {
+  const { t } = useTranslation()
+  const { show } = useToast()
+
+  const removeField = (field: MemoryField) => {
+    void update((state) => removeGlobalField(state, globalKeyFor(field)))
+    show(t('formMemory.saved.forgotField', { label: field.label }), {
+      variant: 'info',
+      undo: () => void update((state) => restoreGlobalFields(state, [field])),
+    })
+  }
+
+  return (
+    <section className="overflow-hidden rounded-xl border bg-card shadow-xs">
+      <header className="flex items-center gap-2.5 px-3 py-2">
+        <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <GlobeIcon className="size-4" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[13px] font-semibold">{t('formMemory.global.title')}</span>
+          <span className="block truncate text-xs text-muted-foreground">{t('formMemory.global.hint')}</span>
+        </span>
+      </header>
+      <ul className="mx-2 mb-2.5 divide-y divide-border/70 overflow-hidden rounded-lg border bg-background/60">
+        {fields.map((field) => (
+          <FieldRow
+            key={globalKeyFor(field)}
+            field={field}
+            onRemove={() => removeField(field)}
+            onChange={(value) => void update((state) => updateGlobalField(state, globalKeyFor(field), value, Date.now()))}
+          />
+        ))}
+      </ul>
+    </section>
   )
 }
 

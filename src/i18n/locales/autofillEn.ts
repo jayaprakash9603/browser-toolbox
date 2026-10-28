@@ -13,11 +13,12 @@ export const autofillStrings = {
   'autofill.status.idle': 'Idle',
   'autofill.status.destroyed': 'Closed',
 
-  'shortcuts.commands.formFill': 'Fill the form, or clear it when it already has values',
+  'shortcuts.commands.formFill': 'Fill the form with saved values',
   'shortcuts.commands.formClear': 'Clear the form on this page',
 
   'formMemory.view.label': 'Form autofill view',
   'formMemory.view.page': 'This page',
+  'formMemory.view.review': 'Review',
   'formMemory.view.saved': 'Saved',
 
   'formMemory.bar.fill': 'Fill form',
@@ -26,13 +27,17 @@ export const autofillStrings = {
   'formMemory.bar.checking': 'Checking this page…',
   'formMemory.bar.scanToStart': 'Scan this page (refresh)',
   'formMemory.bar.restricted': 'Open a web page to fill its form',
+  'formMemory.bar.unavailable': 'This page could not be checked. Rescan to try again.',
+  'formMemory.bar.review_one': '1 entry on this page is waiting for review',
+  'formMemory.bar.review_other': '{{count}} entries on this page are waiting for review',
+  'formMemory.bar.openReview': 'Review',
   'formMemory.bar.needsAccess': 'Allow access so {{host}} can be filled and remembered',
   'formMemory.bar.blocked': 'Remembering is paused for {{host}}',
   'formMemory.bar.saved_one': '1 saved value for this page',
   'formMemory.bar.saved_other': '{{count}} saved values for this page',
   'formMemory.bar.profile_one': '1 profile answer fits this page',
   'formMemory.bar.profile_other': '{{count}} profile answers fit this page',
-  'formMemory.bar.learning': 'Nothing saved here yet. What you enter is remembered.',
+  'formMemory.bar.learning': 'Nothing saved here yet. What you enter waits in Review until you approve it.',
   'formMemory.bar.learningOff': 'Remembering form entries is off in Settings',
 
   'formMemory.toast.filled_one': 'Filled 1 field',
@@ -57,7 +62,7 @@ export const autofillStrings = {
   'formMemory.saved.noMatch': 'No saved values match “{{query}}”',
   'formMemory.saved.emptyTitle': 'Nothing remembered yet',
   'formMemory.saved.emptyHint':
-    'Fill a form on any site and its values show up here, grouped by site, ready to fill next time.',
+    'Values you approve in Review show up here, grouped by site, ready to fill next time.',
   'formMemory.saved.emptyOff': 'Remembering form entries is turned off.',
   'formMemory.saved.openSettings': 'Turn it on in Settings',
   'formMemory.saved.thisTab': 'This tab',
@@ -78,8 +83,39 @@ export const autofillStrings = {
   'formMemory.saved.filledTimes_one': 'Filled once',
   'formMemory.saved.filledTimes_other': 'Filled {{count}} times',
 
+  'formMemory.review.hint':
+    'What you type into forms waits here first. Pick the value to keep, then save it for its page or make it global so matching fields on any site get it.',
+  'formMemory.review.summary_one': '1 entry waiting',
+  'formMemory.review.summary_other': '{{count}} entries waiting',
+  'formMemory.review.saveAll': 'Save all',
+  'formMemory.review.saveAllHint': 'Save the newest value of every entry for its page',
+  'formMemory.review.savedAll_one': 'Saved 1 entry',
+  'formMemory.review.savedAll_other': 'Saved {{count}} entries',
+  'formMemory.review.dismissAll': 'Dismiss all',
+  'formMemory.review.dismissedAll_one': 'Dismissed 1 entry',
+  'formMemory.review.dismissedAll_other': 'Dismissed {{count}} entries',
+  'formMemory.review.emptyTitle': 'Nothing to review',
+  'formMemory.review.emptyHint':
+    'Values you type into forms show up here before they are saved, so you decide what gets filled next time.',
+  'formMemory.review.values_one': '1 value',
+  'formMemory.review.values_other': '{{count}} values entered',
+  'formMemory.review.times_one': 'Entered once',
+  'formMemory.review.times_other': 'Entered {{count}} times',
+  'formMemory.review.pick': 'Value to keep for {{label}}',
+  'formMemory.review.removeValue': 'Remove {{value}}',
+  'formMemory.review.savePage': 'Save for page',
+  'formMemory.review.saveGlobal': 'Make global',
+  'formMemory.review.saveGlobalHint': 'Fill this value into matching fields on every site',
+  'formMemory.review.dismiss': 'Dismiss',
+  'formMemory.review.savedPage': 'Saved {{label}} for this page',
+  'formMemory.review.savedGlobal': '{{label}} now fills on every site',
+  'formMemory.review.dismissed': 'Dismissed {{label}}',
+
+  'formMemory.global.title': 'Global values',
+  'formMemory.global.hint': 'Filled into matching fields on any site',
+
   'formMemory.settings.learn': 'Remember form entries',
   'formMemory.settings.learnHint':
-    'Saves what you type, tick and pick in forms, per page. Passwords and card numbers are never saved. Filling is manual only: {{fill}} fills (or clears when the form already has values) and {{clear}} clears.',
+    'Keeps what you type, tick and pick in forms for review before anything is saved. Passwords and card numbers are never kept. Filling is manual only: {{fill}} fills and {{clear}} clears.',
   'formMemory.settings.manage': 'Review saved form entries',
 } as const

@@ -332,12 +332,11 @@ export function runFormMemoryPage(args: FormPageArgs): FormPageResult {
   const norm = (value: string | undefined) => (value ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 
   function sharedFor(entry: Entry, shared: MemoryField[]): MemoryField | undefined {
-    if (entry.kind !== 'text' && entry.kind !== 'textarea') return undefined
     const el = entry.els[0]
     const auto = (el.getAttribute('autocomplete') ?? '').toLowerCase()
     const usefulAuto = auto && !/^(on|off)$/.test(auto) ? auto : ''
     const name = el.name.toLowerCase()
-    const label = norm(ownLabel(el))
+    const label = norm(read(entry).label)
     return shared.find(
       (field) =>
         field.kind === entry.kind &&

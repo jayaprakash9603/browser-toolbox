@@ -44,8 +44,35 @@ export interface FormMemorySettings {
   blockedHosts: string[]
 }
 
+/** One distinct value the user entered into a field, waiting for review. */
+export interface ReviewCandidate {
+  value: MemoryValue
+  display?: string
+  seenAt: number
+  /** How many separate times this value was entered. */
+  count: number
+}
+
+/** A field on one page whose newly entered values have not been approved yet. */
+export interface ReviewEntry {
+  id: string
+  pageId: string
+  url: string
+  host: string
+  path: string
+  title: string
+  field: Omit<MemoryField, 'value' | 'display' | 'updatedAt'>
+  /** Newest first. */
+  values: ReviewCandidate[]
+  updatedAt: number
+}
+
 export interface FormMemoryState {
   pages: Record<string, MemoryPage>
+  /** Approved values that fill a matching field on any site, keyed by `globalKeyFor`. */
+  global: Record<string, MemoryField>
+  /** Captured values waiting for approval, keyed by `reviewIdFor`. */
+  review: Record<string, ReviewEntry>
   settings: FormMemorySettings
 }
 
@@ -71,7 +98,8 @@ export interface FormCapture {
 /** Outcome of a fill, clear, save or inspect on a tab, as reported to the panel. */
 export interface FormActionResult {
   ok: boolean
-  reason?: 'no-tab' | 'restricted' | 'no-access' | 'blocked'
+  /** `unavailable`: the background did not answer, so the page state is unknown. */
+  reason?: 'no-tab' | 'restricted' | 'no-access' | 'blocked' | 'unavailable'
   filled: number
   cleared: number
   /** Fillable controls on the page. */
@@ -82,8 +110,10 @@ export interface FormActionResult {
   matched: number
   /** Values remembered for this exact page. */
   saved: number
-  /** Values from other pages this one could borrow. */
+  /** Values from other pages and global values this one could borrow. */
   shared: number
+  /** Fields on this page with values waiting for review. */
+  review: number
   learn: boolean
   url?: string
 }
@@ -96,10 +126,15 @@ export const DEFAULT_FORM_MEMORY_SETTINGS: FormMemorySettings = {
 
 export const DEFAULT_FORM_MEMORY_STATE: FormMemoryState = {
   pages: {},
+  global: {},
+  review: {},
   settings: DEFAULT_FORM_MEMORY_SETTINGS,
 }
 
 const MAX_PAGES = 400
+const MAX_GLOBAL_FIELDS = 200
+export const MAX_REVIEW_ENTRIES = 300
+export const MAX_REVIEW_CANDIDATES = 8
 const MAX_FIELDS_PER_PAGE = 200
 const MAX_VALUE_LENGTH = 4000
 const KINDS = new Set<MemoryFieldKind>(['text', 'textarea', 'select', 'multi', 'checkbox', 'radio'])
@@ -141,7 +176,7 @@ export function isEmptyValue(field: Pick<MemoryField, 'kind' | 'value'>): boolea
   return typeof field.value === 'string' ? field.value.trim() === '' : false
 }
 
-function cleanValue(kind: MemoryFieldKind, value: unknown): MemoryValue | null {
+export function cleanValue(kind: MemoryFieldKind, value: unknown): MemoryValue | null {
   if (kind === 'checkbox') return typeof value === 'boolean' ? value : null
   if (kind === 'multi') {
     return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string').slice(0, 50) : null
@@ -149,11 +184,11 @@ function cleanValue(kind: MemoryFieldKind, value: unknown): MemoryValue | null {
   return typeof value === 'string' ? value.slice(0, MAX_VALUE_LENGTH) : null
 }
 
-function cleanText(value: unknown, max = 120): string | undefined {
+export function cleanText(value: unknown, max = 120): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim().slice(0, max) : undefined
 }
 
-function normalizeField(raw: unknown, fallbackTime: number): MemoryField | null {
+export function normalizeField(raw: unknown, fallbackTime: number): MemoryField | null {
   if (!raw || typeof raw !== 'object') return null
   const item = raw as Record<string, unknown>
   if (typeof item.key !== 'string' || !item.key || !isMemoryFieldKind(item.kind)) return null
@@ -197,6 +232,96 @@ function normalizePage(raw: unknown): MemoryPage | null {
   }
 }
 
+export function reviewIdFor(pageId: string, key: string): string {
+  return `${pageId}#${key}`
+}
+
+/** Fields sharing kind, autocomplete hint, name and label ask the same question on any site. */
+export function globalKeyFor(field: Pick<MemoryField, 'kind' | 'auto' | 'name' | 'label'>): string {
+  const auto = field.auto && !/^(on|off)$/i.test(field.auto) ? field.auto.toLowerCase() : ''
+  const label = field.label.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+  return `${field.kind}|${auto}|${field.name?.toLowerCase() ?? ''}|${label}`
+}
+
+export function fieldShape(field: MemoryField): ReviewEntry['field'] {
+  return {
+    key: field.key,
+    label: field.label,
+    kind: field.kind,
+    inputType: field.inputType,
+    name: field.name,
+    auto: field.auto,
+  }
+}
+
+const PLACEHOLDER_VALUE: Record<MemoryFieldKind, MemoryValue> = {
+  text: '',
+  textarea: '',
+  select: '',
+  radio: '',
+  multi: [],
+  checkbox: false,
+}
+
+function normalizeGlobal(raw: unknown): Record<string, MemoryField> {
+  const global: Record<string, MemoryField> = {}
+  if (!raw || typeof raw !== 'object') return global
+  for (const value of Object.values(raw as Record<string, unknown>)) {
+    const field = normalizeField(value, 0)
+    if (field && !isEmptyValue(field)) global[globalKeyFor(field)] = field
+  }
+  return global
+}
+
+function normalizeCandidate(kind: MemoryFieldKind, raw: unknown): ReviewCandidate | null {
+  if (!raw || typeof raw !== 'object') return null
+  const item = raw as Record<string, unknown>
+  const value = cleanValue(kind, item.value)
+  if (value === null || isEmptyValue({ kind, value })) return null
+  return {
+    value,
+    display: cleanText(item.display, 300),
+    seenAt: typeof item.seenAt === 'number' ? item.seenAt : 0,
+    count: typeof item.count === 'number' && item.count >= 1 ? Math.floor(item.count) : 1,
+  }
+}
+
+function normalizeReviewEntry(raw: unknown): ReviewEntry | null {
+  if (!raw || typeof raw !== 'object') return null
+  const item = raw as Record<string, unknown>
+  const ref = pageRefFor(typeof item.url === 'string' ? item.url : undefined)
+  const shape = item.field && typeof item.field === 'object' ? (item.field as Record<string, unknown>) : null
+  if (!ref || !shape || !isMemoryFieldKind(shape.kind)) return null
+  const field = normalizeField({ ...shape, value: PLACEHOLDER_VALUE[shape.kind] }, 0)
+  if (!field) return null
+  const values = (Array.isArray(item.values) ? item.values : [])
+    .map((value) => normalizeCandidate(field.kind, value))
+    .filter((value): value is ReviewCandidate => value !== null)
+    .slice(0, MAX_REVIEW_CANDIDATES)
+  if (values.length === 0) return null
+  return {
+    id: reviewIdFor(ref.id, field.key),
+    pageId: ref.id,
+    url: ref.url,
+    host: ref.host,
+    path: ref.path,
+    title: cleanText(item.title, 200) ?? ref.host,
+    field: fieldShape(field),
+    values,
+    updatedAt: typeof item.updatedAt === 'number' ? item.updatedAt : 0,
+  }
+}
+
+function normalizeReview(raw: unknown): Record<string, ReviewEntry> {
+  const review: Record<string, ReviewEntry> = {}
+  if (!raw || typeof raw !== 'object') return review
+  for (const value of Object.values(raw as Record<string, unknown>)) {
+    const entry = normalizeReviewEntry(value)
+    if (entry) review[entry.id] = entry
+  }
+  return review
+}
+
 export function normalizeFormMemoryState(raw: unknown): FormMemoryState {
   if (!raw || typeof raw !== 'object') return DEFAULT_FORM_MEMORY_STATE
   const item = raw as Record<string, unknown>
@@ -210,6 +335,8 @@ export function normalizeFormMemoryState(raw: unknown): FormMemoryState {
   const settings = (item.settings ?? {}) as Partial<FormMemorySettings>
   return {
     pages,
+    global: normalizeGlobal(item.global),
+    review: normalizeReview(item.review),
     settings: {
       learn: settings.learn !== false,
       autoFill: settings.autoFill === true,
@@ -364,10 +491,44 @@ export function markPageFilled(state: FormMemoryState, pageId: string, now: numb
   }
 }
 
+export function setGlobalField(state: FormMemoryState, field: MemoryField): FormMemoryState {
+  if (isEmptyValue(field)) return state
+  const global = { ...state.global, [globalKeyFor(field)]: field }
+  const list = Object.values(global)
+  if (list.length <= MAX_GLOBAL_FIELDS) return { ...state, global }
+  list.sort((a, b) => b.updatedAt - a.updatedAt)
+  return {
+    ...state,
+    global: Object.fromEntries(list.slice(0, MAX_GLOBAL_FIELDS).map((item) => [globalKeyFor(item), item])),
+  }
+}
+
+export function removeGlobalField(state: FormMemoryState, key: string): FormMemoryState {
+  if (!state.global[key]) return state
+  const global = { ...state.global }
+  delete global[key]
+  return { ...state, global }
+}
+
+export function updateGlobalField(state: FormMemoryState, key: string, value: MemoryValue, now: number): FormMemoryState {
+  const field = state.global[key]
+  if (!field) return state
+  const next = cleanValue(field.kind, value)
+  if (next === null) return state
+  if (isEmptyValue({ kind: field.kind, value: next })) return removeGlobalField(state, key)
+  return { ...state, global: { ...state.global, [key]: { ...field, value: next, display: undefined, updatedAt: now } } }
+}
+
+export function restoreGlobalFields(state: FormMemoryState, fields: MemoryField[]): FormMemoryState {
+  return fields.reduce(setGlobalField, state)
+}
+
 export interface FillPlan {
   pageId: string | null
   /** Values remembered for exactly this page. */
   page: MemoryField[]
+  /** Values approved for every site, newest first; any matching field on this page takes them. */
+  global: MemoryField[]
   /** Values from other pages a matching field on this page can borrow (newest first, text only). */
   shared: MemoryField[]
 }
@@ -385,10 +546,11 @@ function sharedIdentity(field: MemoryField): string | null {
 
 export function planFill(state: FormMemoryState, url: string | undefined, includeShared: boolean): FillPlan {
   const ref = pageRefFor(url)
-  if (!ref || isHostBlocked(state.settings, ref.host)) return { pageId: null, page: [], shared: [] }
+  if (!ref || isHostBlocked(state.settings, ref.host)) return { pageId: null, page: [], global: [], shared: [] }
   const page = state.pages[ref.id]
   const own = page ? Object.values(page.fields) : []
-  if (!includeShared) return { pageId: page ? ref.id : null, page: own, shared: [] }
+  const global = Object.values(state.global).sort((a, b) => b.updatedAt - a.updatedAt)
+  if (!includeShared) return { pageId: page ? ref.id : null, page: own, global, shared: [] }
   const seen = new Set<string>()
   const shared: MemoryField[] = []
   const others = Object.values(state.pages)
@@ -402,7 +564,7 @@ export function planFill(state: FormMemoryState, url: string | undefined, includ
     shared.push(field)
     if (shared.length >= SHARED_LIMIT) break
   }
-  return { pageId: page ? ref.id : null, page: own, shared }
+  return { pageId: page ? ref.id : null, page: own, global, shared }
 }
 
 export interface MemoryHostGroup {

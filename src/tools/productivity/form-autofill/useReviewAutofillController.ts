@@ -12,10 +12,7 @@ export function useReviewAutofillController(host: AutofillHost, enabled: boolean
   const [controller, setController] = useState<AutofillController | null>(null)
 
   useEffect(() => {
-    if (!enabled) {
-      setController(null)
-      return
-    }
+    if (!enabled) return
 
     const instance = host.createController()
     let cancelled = false
@@ -40,5 +37,5 @@ export function useReviewAutofillController(host: AutofillHost, enabled: boolean
     }
   }, [host, enabled])
 
-  return controller
+  return enabled ? controller : null
 }
