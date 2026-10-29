@@ -71,7 +71,7 @@ export function Segmented<T extends string>({
               }
             }}
             className={cn(
-              'inline-flex cursor-pointer items-center justify-center gap-1 whitespace-nowrap rounded-[5px] font-medium text-muted-foreground outline-none transition-[color,background-color] duration-150 hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:size-3.5',
+              'inline-flex cursor-pointer items-center justify-center gap-1 whitespace-nowrap rounded-[5px] font-medium text-muted-foreground outline-none transition-[color,background-color,transform,filter] duration-150 hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:size-3.5',
               size === 'sm' ? 'h-6 px-2 text-xs' : 'h-7 px-2.5 text-[13px]',
               selected && 'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary',
             )}
