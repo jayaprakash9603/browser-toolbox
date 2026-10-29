@@ -102,8 +102,8 @@ export function WelcomeStrip({ delay = 0 }: { delay?: number }) {
           className="pointer-events-none absolute -top-10 -right-8 size-28 rounded-full opacity-25 blur-2xl"
           style={{ background: 'linear-gradient(135deg, var(--hero-from), var(--hero-to))' }}
         />
-        {/* Narrow cards give the tagline its own full-width line instead of squeezing it beside the clock. */}
-        <div className="relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-2.5 gap-y-0.5 @[560px]:gap-y-0">
+        {/* Tagline + dots only when the card is wide enough (@560px); narrow view is greeting + clock only. */}
+        <div className="relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2.5 @[560px]:items-start @[560px]:gap-y-0">
           <span
             aria-hidden
             className="relative col-start-1 row-start-1 flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-xl text-white shadow-sm @[560px]:row-span-2 @[560px]:self-center"
@@ -125,12 +125,11 @@ export function WelcomeStrip({ delay = 0 }: { delay?: number }) {
 
           <h1
             id="home-welcome-title"
-            className="col-start-2 row-start-1 min-w-0 self-center text-[15px] leading-tight font-semibold tracking-tight text-balance @[560px]:self-start"
+            className="col-start-2 row-start-1 min-w-0 text-[15px] leading-tight font-semibold tracking-tight text-balance @[560px]:self-start"
           >
             {t(greetingKey)}
           </h1>
-          {/* Invisible copies reserve height; keep lines tight so the card stays short. */}
-          <div className="col-span-3 col-start-1 row-start-2 grid min-w-0 -mt-0.5 text-xs leading-tight text-pretty text-muted-foreground @[560px]:col-span-1 @[560px]:col-start-2 @[560px]:mt-0">
+          <div className="hidden min-w-0 text-xs leading-tight text-pretty text-muted-foreground @[560px]:col-start-2 @[560px]:row-start-2 @[560px]:grid">
             {HOME_TAGLINES.map((item) => (
               <span key={item.id} aria-hidden className="invisible col-start-1 row-start-1">
                 {t(`home.tagline.${item.id}`)}
@@ -172,7 +171,7 @@ export function WelcomeStrip({ delay = 0 }: { delay?: number }) {
           </time>
 
           <div
-            className="col-span-3 col-start-1 row-start-3 flex items-center gap-1 ps-[46px] @[560px]:col-span-1 @[560px]:col-start-2 @[560px]:row-start-3 @[560px]:ps-0 @[560px]:-mt-0.5"
+            className="hidden items-center gap-1 @[560px]:col-start-2 @[560px]:row-start-3 @[560px]:-mt-0.5 @[560px]:flex"
             role="group"
             aria-label={t('home.taglines')}
           >
