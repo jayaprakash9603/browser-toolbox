@@ -86,7 +86,7 @@ export function UrlBatch({
         placeholder={t('capture.launcher.urlBatchPlaceholder')}
         rows={4}
         spellCheck={false}
-        className="min-h-24 resize-y font-mono text-xs"
+        className="min-h-24 font-mono text-xs"
       />
       <p id={`${id}-help`} className="-mt-1 text-[11px] leading-4 text-muted-foreground">
         {t('capture.urls.help', { seconds: Math.round(waitMs / 100) / 10 })}
