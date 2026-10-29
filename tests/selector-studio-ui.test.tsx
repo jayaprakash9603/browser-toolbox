@@ -257,17 +257,12 @@ describe('Selector Studio UI', () => {
     document.documentElement.classList.remove('dark')
   })
 
-  it('shows pick progress in the side panel hub', async () => {
-    const pick = vi.fn()
-    renderStudio(<SelectorStudioPanelView model={model({ picking: true, pick })} />)
-    expect(screen.getByText(/click an element on the page/i)).toBeInTheDocument()
-  })
-
-  it('renders side panel with settings column and selector hub', () => {
+  it('renders extension side panel as settings-only', () => {
     renderStudio(<SelectorStudioPanelView model={model()} />)
     expect(screen.getByLabelText(/studio enabled/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /pick element/i })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Attributes' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /pick element/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Attributes' })).not.toBeInTheDocument()
+    expect(screen.getByText(/devtools.*elements/i)).toBeInTheDocument()
   })
 
   it('renders DevTools Elements sidebar with selector hub', () => {
