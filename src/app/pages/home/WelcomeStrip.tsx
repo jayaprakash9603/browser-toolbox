@@ -85,7 +85,7 @@ export function WelcomeStrip({ delay = 0 }: { delay?: number }) {
     <SlideUp delay={delay} className="@container mb-[var(--density-section-gap)]">
       <section
         aria-labelledby="home-welcome-title"
-        className="relative overflow-hidden rounded-2xl border p-3 shadow-[var(--shadow-card)]"
+        className="relative overflow-hidden rounded-2xl border px-3 pt-2.5 pb-2 shadow-[var(--shadow-card)]"
         style={{
           background:
             'linear-gradient(135deg, color-mix(in srgb, var(--hero-from) 16%, var(--card)) 0%, color-mix(in srgb, var(--hero-to) 8%, var(--card)) 55%, var(--card) 100%)',
@@ -103,10 +103,10 @@ export function WelcomeStrip({ delay = 0 }: { delay?: number }) {
           style={{ background: 'linear-gradient(135deg, var(--hero-from), var(--hero-to))' }}
         />
         {/* Narrow cards give the tagline its own full-width line instead of squeezing it beside the clock. */}
-        <div className="relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-2 @[560px]:items-start @[560px]:gap-y-0.5">
+        <div className="relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-2.5 gap-y-0.5 @[560px]:gap-y-0">
           <span
             aria-hidden
-            className="relative col-start-1 row-start-1 flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-xl text-white shadow-sm @[560px]:row-span-2"
+            className="relative col-start-1 row-start-1 flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-xl text-white shadow-sm @[560px]:row-span-2 @[560px]:self-center"
             style={{ background: 'linear-gradient(135deg, var(--hero-from), var(--hero-to))' }}
           >
             <AnimatePresence mode="popLayout" initial={false}>
@@ -125,12 +125,12 @@ export function WelcomeStrip({ delay = 0 }: { delay?: number }) {
 
           <h1
             id="home-welcome-title"
-            className="col-start-2 row-start-1 min-w-0 text-[15px] leading-tight font-semibold tracking-tight text-balance"
+            className="col-start-2 row-start-1 min-w-0 self-center text-[15px] leading-tight font-semibold tracking-tight text-balance @[560px]:self-start"
           >
             {t(greetingKey)}
           </h1>
-          {/* Every message is laid out invisibly in the same cell so the card never changes height. */}
-          <div className="col-span-3 col-start-1 row-start-2 grid min-w-0 text-xs leading-snug text-pretty text-muted-foreground @[560px]:col-span-1 @[560px]:col-start-2">
+          {/* Invisible copies reserve height; keep lines tight so the card stays short. */}
+          <div className="col-span-3 col-start-1 row-start-2 grid min-w-0 -mt-0.5 text-xs leading-tight text-pretty text-muted-foreground @[560px]:col-span-1 @[560px]:col-start-2 @[560px]:mt-0">
             {HOME_TAGLINES.map((item) => (
               <span key={item.id} aria-hidden className="invisible col-start-1 row-start-1">
                 {t(`home.tagline.${item.id}`)}
@@ -154,10 +154,10 @@ export function WelcomeStrip({ delay = 0 }: { delay?: number }) {
             dateTime={now.toISOString()}
             aria-label={clock.full}
             title={clock.full}
-            className="col-start-3 row-start-1 flex shrink-0 items-center gap-2 rounded-2xl border bg-background/50 py-1.5 ps-2.5 pe-2.5 shadow-sm backdrop-blur-sm @[360px]:py-1 @[360px]:ps-1 @[560px]:row-span-2"
+            className="col-start-3 row-start-1 flex shrink-0 items-center gap-2 rounded-2xl border bg-background/50 py-1 ps-2 pe-2 shadow-sm backdrop-blur-sm @[360px]:py-0.5 @[360px]:ps-1 @[560px]:row-span-2 @[560px]:self-center"
           >
             <WallClock now={now} className="hidden size-10 @[360px]:block @[560px]:size-[46px]" />
-            <span className="flex flex-col items-end gap-1" aria-hidden>
+            <span className="flex flex-col items-end gap-0.5" aria-hidden>
               <span className="flex items-baseline gap-0.5 text-[15px] leading-none font-semibold tracking-tight tabular-nums">
                 <RollingTime time={clock.time} />
                 {clock.period ? (
@@ -170,32 +170,36 @@ export function WelcomeStrip({ delay = 0 }: { delay?: number }) {
               </span>
             </span>
           </time>
-        </div>
 
-        <div className="relative mt-1.5 flex items-center gap-1 @[560px]:mt-2 @[560px]:ps-[46px]" role="group" aria-label={t('home.taglines')}>
-          {HOME_TAGLINES.map((item, i) => {
-            const active = i === taglineIndex
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setTaglineIndex(i)}
-                aria-label={t('home.taglineShow', { topic: t(`home.taglineTopic.${item.id}`) })}
-                aria-current={active ? 'true' : undefined}
-                className="group/dot flex h-4 cursor-pointer items-center rounded-full px-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <motion.span
-                  aria-hidden
-                  animate={{ width: active ? 14 : 5 }}
-                  transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 500, damping: 34 }}
-                  className={cn(
-                    'block h-[5px] rounded-full transition-colors',
-                    active ? 'bg-[var(--hero-from)]' : 'bg-muted-foreground/30 group-hover/dot:bg-muted-foreground/60',
-                  )}
-                />
-              </button>
-            )
-          })}
+          <div
+            className="col-span-3 col-start-1 row-start-3 flex items-center gap-1 ps-[46px] @[560px]:col-span-1 @[560px]:col-start-2 @[560px]:row-start-3 @[560px]:ps-0 @[560px]:-mt-0.5"
+            role="group"
+            aria-label={t('home.taglines')}
+          >
+            {HOME_TAGLINES.map((item, i) => {
+              const active = i === taglineIndex
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setTaglineIndex(i)}
+                  aria-label={t('home.taglineShow', { topic: t(`home.taglineTopic.${item.id}`) })}
+                  aria-current={active ? 'true' : undefined}
+                  className="group/dot flex h-3.5 cursor-pointer items-center rounded-full px-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <motion.span
+                    aria-hidden
+                    animate={{ width: active ? 14 : 5 }}
+                    transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 500, damping: 34 }}
+                    className={cn(
+                      'block h-[5px] rounded-full transition-colors',
+                      active ? 'bg-[var(--hero-from)]' : 'bg-muted-foreground/30 group-hover/dot:bg-muted-foreground/60',
+                    )}
+                  />
+                </button>
+              )
+            })}
+          </div>
         </div>
       </section>
     </SlideUp>
