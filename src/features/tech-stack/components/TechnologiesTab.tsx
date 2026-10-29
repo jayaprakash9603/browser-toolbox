@@ -1,4 +1,4 @@
-import { ChevronDownIcon, ExternalLinkIcon, SearchIcon } from 'lucide-react'
+import { ChevronDownIcon, ExternalLinkIcon } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -6,50 +6,11 @@ import { useTranslation } from 'react-i18next'
 import { categoryLabel } from '@/core/engines/techStack/categories'
 import { groupHitsByCategory } from '@/core/engines/techStack/detect'
 import type { ConfidenceLevel, TechCategoryId, TechHit } from '@/core/engines/techStack/types'
-import { ChipRail } from '@/shared/components/ChipRail'
 import { StaggerChildren, StaggerItem } from '@/shared/components/motion'
-import { Input } from '@/shared/components/ui/input'
-import { Segmented } from '@/shared/components/ui/segmented'
 import { cn } from '@/shared/utils/cn'
 
 import { categoryColor } from '../categoryStyle'
 import { TechIcon } from './TechIcon'
-
-type ViewFilter = 'all' | 'high' | 'observed' | 'implied' | 'versioned'
-type SortMode = 'name' | 'confidence' | 'version'
-
-function matchesQuery(hit: TechHit, query: string): boolean {
-  if (!query) return true
-  const haystack = [
-    hit.name,
-    hit.category,
-    categoryLabel(hit.category),
-    hit.evidence,
-    hit.version ?? '',
-    hit.description ?? '',
-    hit.website ?? '',
-    ...hit.evidenceItems.map((item) => `${item.type} ${item.detail}`),
-  ]
-    .join(' ')
-    .toLowerCase()
-  return haystack.includes(query)
-}
-
-function matchesView(hit: TechHit, view: ViewFilter): boolean {
-  if (view === 'high') return hit.confidenceLevel === 'high'
-  if (view === 'observed') return !hit.implied
-  if (view === 'implied') return Boolean(hit.implied)
-  if (view === 'versioned') return Boolean(hit.version)
-  return true
-}
-
-function sortHits(hits: TechHit[], sort: SortMode): TechHit[] {
-  return [...hits].sort((left, right) => {
-    if (sort === 'confidence') return right.confidence - left.confidence || left.name.localeCompare(right.name)
-    if (sort === 'version') return Number(Boolean(right.version)) - Number(Boolean(left.version)) || left.name.localeCompare(right.name)
-    return left.name.localeCompare(right.name)
-  })
-}
 
 function confidenceClass(level: ConfidenceLevel): string {
   if (level === 'high') return 'text-foreground'
@@ -152,131 +113,23 @@ function CategoryBlock({ category, groupHits }: { category: TechCategoryId; grou
   )
 }
 
-function FilterChip({
-  label,
-  count,
-  selected,
-  onClick,
-}: {
-  label: string
-  count: number
-  selected: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'inline-flex h-8 shrink-0 cursor-pointer items-center gap-1 rounded-full border px-2.5 text-xs font-medium transition-[color,background-color,border-color] duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-        selected
-          ? 'border-primary/45 bg-primary/10 text-foreground'
-          : 'border-border bg-card text-muted-foreground hover:border-foreground/20 hover:text-foreground',
-      )}
-    >
-      {label}
-      <span className="font-mono tabular-nums opacity-80">{count}</span>
-    </button>
-  )
-}
-
 export function TechnologiesTab({ hits }: { hits: TechHit[] }) {
-  const { t } = useTranslation()
-  const [query, setQuery] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState<TechCategoryId | 'all'>('all')
-  const [view, setView] = useState<ViewFilter>('all')
-  const [sort, setSort] = useState<SortMode>('name')
-  const normalizedQuery = query.trim().toLowerCase()
-  const groups = useMemo(() => groupHitsByCategory(hits), [hits])
-  const filteredGroups = useMemo(
+  const groups = useMemo(
     () =>
-      groups
-        .map(({ category, hits: groupHits }) => ({
-          category,
-          hits: sortHits(
-            groupHits.filter(
-              (hit) =>
-                (categoryFilter === 'all' || hit.category === categoryFilter) &&
-                matchesView(hit, view) &&
-                matchesQuery(hit, normalizedQuery),
-            ),
-            sort,
-          ),
-        }))
-        .filter((group) => group.hits.length > 0),
-    [groups, categoryFilter, view, sort, normalizedQuery],
+      groupHitsByCategory(hits).map(({ category, hits: groupHits }) => ({
+        category,
+        hits: [...groupHits].sort((left, right) => left.name.localeCompare(right.name)),
+      })),
+    [hits],
   )
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="relative">
-        <SearchIcon className="pointer-events-none absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
-        <Input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder={t('techStack.filter.placeholder')}
-          aria-label={t('techStack.filter.placeholder')}
-          className="h-8 border-border bg-background ps-8 text-xs text-foreground"
-        />
-      </div>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <Segmented
-          size="sm"
-          ariaLabel={t('techStack.filter.views')}
-          value={view}
-          onValueChange={setView}
-          options={[
-            { value: 'all', label: t('techStack.filter.all') },
-            { value: 'high', label: t('techStack.filter.high') },
-            { value: 'observed', label: t('techStack.filter.observed') },
-            { value: 'implied', label: t('techStack.filter.implied') },
-            { value: 'versioned', label: t('techStack.filter.versioned') },
-          ]}
-        />
-        <Segmented
-          size="sm"
-          ariaLabel={t('techStack.sort.label')}
-          value={sort}
-          onValueChange={setSort}
-          options={[
-            { value: 'name', label: t('techStack.sort.name') },
-            { value: 'confidence', label: t('techStack.sort.confidence') },
-            { value: 'version', label: t('techStack.sort.version') },
-          ]}
-        />
-      </div>
-      {groups.length > 1 && (
-        <ChipRail role="group" label={t('techStack.filter.categories')} className="min-w-0">
-          <FilterChip
-            label={t('techStack.filter.all')}
-            count={hits.length}
-            selected={categoryFilter === 'all'}
-            onClick={() => setCategoryFilter('all')}
-          />
-          {groups.map(({ category, hits: groupHits }) => (
-            <FilterChip
-              key={category}
-              label={categoryLabel(category)}
-              count={groupHits.length}
-              selected={categoryFilter === category}
-              onClick={() => setCategoryFilter(categoryFilter === category ? 'all' : category)}
-            />
-          ))}
-        </ChipRail>
-      )}
-      {filteredGroups.length === 0 ? (
-        <p className="rounded-xl border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
-          {t('techStack.filter.noMatches')}
-        </p>
-      ) : (
-        <StaggerChildren stagger={0.035} className="columns-1 gap-x-3 @[480px]:columns-2">
-          {filteredGroups.map(({ category, hits: groupHits }) => (
-            <StaggerItem key={category}>
-              <CategoryBlock category={category} groupHits={groupHits} />
-            </StaggerItem>
-          ))}
-        </StaggerChildren>
-      )}
-    </div>
+    <StaggerChildren stagger={0.035} className="columns-1 gap-x-3 @[480px]:columns-2">
+      {groups.map(({ category, hits: groupHits }) => (
+        <StaggerItem key={category}>
+          <CategoryBlock category={category} groupHits={groupHits} />
+        </StaggerItem>
+      ))}
+    </StaggerChildren>
   )
 }

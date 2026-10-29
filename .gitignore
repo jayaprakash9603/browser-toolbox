@@ -40,3 +40,4 @@ scripts/react-devtools/build-log.txt
 
 # Local scratch files
 .tmp/
+.reference-repos/

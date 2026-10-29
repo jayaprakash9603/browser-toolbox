@@ -88,7 +88,7 @@ describe('tech stack category colors', () => {
 })
 
 describe('TechStackView', () => {
-  it('renders grouped technologies with versions, tabs and metrics', () => {
+  it('renders grouped technologies with versions and tabs', () => {
     render(<TechStackView />)
 
     expect(screen.getByText('example.com')).toBeInTheDocument()
@@ -99,7 +99,6 @@ describe('TechStackView', () => {
     expect(screen.getByRole('link', { name: 'Open React website' })).toHaveAttribute('href', 'https://react.dev')
     expect(screen.getByRole('tab', { name: /Technologies/ })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'More info' })).toBeInTheDocument()
-    expect(screen.getAllByText('HTTP/2').length).toBeGreaterThan(0)
   })
 
   it('shows scan details on the More info tab', () => {
@@ -127,7 +126,7 @@ describe('TechStackView', () => {
 })
 
 describe('TechnologiesTab', () => {
-  it('filters the list from the search field', () => {
+  it('renders technologies grouped by category', () => {
     render(
       <TechnologiesTab
         hits={[
@@ -137,8 +136,8 @@ describe('TechnologiesTab', () => {
       />,
     )
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Filter technologies…' }), { target: { value: 'vue' } })
-    expect(screen.queryByText('React')).not.toBeInTheDocument()
+    expect(screen.getByText('React')).toBeInTheDocument()
     expect(screen.getByText('Vue')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'JavaScript frameworks' })).toBeInTheDocument()
   })
 })

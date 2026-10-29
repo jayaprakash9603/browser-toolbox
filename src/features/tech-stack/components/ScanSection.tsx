@@ -5,11 +5,21 @@ export function ScanSection({
   className,
   style,
   children,
+  /** Header/footer chrome should not fade in behind scrollable content. */
+  instant = false,
 }: {
   className?: string
   style?: CSSProperties
   children: ReactNode
+  instant?: boolean
 }) {
+  if (instant) {
+    return (
+      <div className={className} style={style}>
+        {children}
+      </div>
+    )
+  }
   return (
     <motion.div
       className={className}

@@ -30,7 +30,7 @@ export function TechStackButton() {
 
   return (
     <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
-      <Tooltip>
+      <Tooltip open={open ? false : undefined}>
         <TooltipTrigger asChild>
           <PopoverPrimitive.Trigger asChild>
             <Button
@@ -62,7 +62,7 @@ export function TechStackButton() {
           <PopoverPrimitive.Portal forceMount>
             <PopoverPrimitive.Content forceMount asChild align="end" sideOffset={8} collisionPadding={8}>
               <motion.div
-                className="z-50 flex max-h-[min(36rem,calc(100dvh-4.5rem))] w-[min(24rem,calc(100vw-1rem))] origin-(--radix-popover-content-transform-origin) flex-col overflow-hidden rounded-2xl border bg-popover text-popover-foreground shadow-xl outline-none"
+                className="z-[100] isolate flex max-h-[min(36rem,calc(100dvh-4.5rem))] w-[min(24rem,calc(100vw-1rem))] origin-(--radix-popover-content-transform-origin) flex-col overflow-hidden rounded-2xl border bg-popover text-popover-foreground shadow-xl outline-none"
                 initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: -8 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: -4, transition: { duration: 0.12 } }}

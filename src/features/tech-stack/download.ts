@@ -1,6 +1,3 @@
-export const TECH_STACK_FEEDBACK_URL =
-  'https://github.com/jayaprakash9603/browser-toolbox/issues/new?title=Tech%20stack%3A%20wrong%20or%20missing%20technology'
-
 function downloadText(text: string, filename: string, type: string): void {
   const url = URL.createObjectURL(new Blob([text], { type }))
   const link = document.createElement('a')

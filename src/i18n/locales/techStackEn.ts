@@ -14,7 +14,6 @@ export const techStackStrings = {
   'techStack.impliedHint': 'Implied by another detected technology',
   'techStack.observed': 'Observed',
   'techStack.openSite': 'Open {{name}} website',
-  'techStack.missing': 'Something wrong or missing?',
   'techStack.coverage': 'Checks {{count}} known technologies in {{categories}} categories.',
   'techStack.more.overview': 'Overview',
   'techStack.more.title': 'Title',

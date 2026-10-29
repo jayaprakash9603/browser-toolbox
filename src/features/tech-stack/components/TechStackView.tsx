@@ -1,11 +1,8 @@
 import { RefreshCwIcon } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
-import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { groupHitsByCategory } from '@/core/engines/techStack/detect'
 import { techScanFilename, techScanToCsv, techScanToJson } from '@/core/engines/techStack/export'
-import { httpVersionLabel } from '@/core/engines/techStack/moreInfo'
 import { SiteAccessBar } from '@/features/site-access/SiteAccessBar'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/utils/cn'
@@ -45,7 +42,6 @@ export function TechStackView({
   const scan = state.scan
   const isLoading = state.status === 'loading'
   const accent = scanAccent(state.status === 'error' ? 'error' : isLoading ? 'loading' : 'ready', scan?.hits.length ?? 0)
-  const categoryCount = useMemo(() => (scan ? groupHitsByCategory(scan.hits).length : 0), [scan])
 
   const exportCsv = () => {
     if (scan) downloadCsv(techScanToCsv(scan), techScanFilename(scan, 'csv'))
@@ -56,7 +52,11 @@ export function TechStackView({
 
   return (
     <div className={cn('@container flex min-h-0 flex-1 flex-col', !scrollable && 'p-3')}>
-      {showAccessPrompt && <SiteAccessBar />}
+      {showAccessPrompt && (
+        <div className="relative z-10 shrink-0">
+          <SiteAccessBar />
+        </div>
+      )}
       <motion.div
         className="flex min-h-0 flex-1 flex-col"
         initial={reduce ? false : 'hidden'}
@@ -68,15 +68,8 @@ export function TechStackView({
           count={scan?.hits.length ?? null}
           loading={isLoading}
           accent={accent}
-          metrics={
-            scan && !isLoading
-              ? {
-                  technologies: scan.hits.length,
-                  categories: categoryCount,
-                  protocol: httpVersionLabel(scan.protocol) ?? '—',
-                }
-              : null
-          }
+          inPopover={scrollable}
+          pinned={!scrollable}
           actions={
             <Button
               size="icon-sm"
@@ -90,12 +83,18 @@ export function TechStackView({
             </Button>
           }
         />
-        <div className={cn('px-3.5 pt-3 pb-1', scrollable && 'min-h-0 flex-1 overflow-y-auto overscroll-contain')}>
+        <div
+          className={cn(
+            'relative min-h-0 px-3.5 pt-3 pb-1',
+            scrollable && 'z-0 flex-1 overflow-y-auto overscroll-contain',
+          )}
+        >
           <ScanBody state={state} onRetry={rescan} />
         </div>
         <ScanFooter
           canExport={Boolean(scan && scan.hits.length > 0)}
           showOpen={Boolean(onNavigate)}
+          inPopover={scrollable}
           onExportCsv={exportCsv}
           onExportJson={exportJson}
           onNavigate={onNavigate}
