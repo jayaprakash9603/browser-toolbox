@@ -11,6 +11,11 @@ import {
 } from '@/core/screenshot/settings'
 import { Button } from '@/shared/components/ui/button'
 import {
+  NumberField,
+  parseNumberInRange,
+  sanitizeNumberText,
+} from '@/shared/components/NumberField'
+import {
   Card,
   CardContent,
   CardDescription,
@@ -90,9 +95,10 @@ function NumberInput({
   value,
   min,
   max,
-  step,
+  step: _step,
   suffix,
   onChange,
+  ariaLabel,
 }: {
   id: string
   value: number
@@ -100,22 +106,46 @@ function NumberInput({
   max: number
   step: number
   suffix: string
+  ariaLabel: string
   onChange: (value: number) => void
 }) {
+  const [text, setText] = useState(String(value))
+
+  useEffect(() => {
+    setText(String(value))
+  }, [value])
+
+  const commit = (raw: string) => {
+    if (raw === '') {
+      setText(String(value))
+      return
+    }
+    const parsed = parseNumberInRange(raw, min, max)
+    if (parsed === null) {
+      setText(String(value))
+      return
+    }
+    onChange(parsed)
+    setText(String(parsed))
+  }
+
   return (
     <div className="flex items-center gap-2">
-      <Input
+      <NumberField
         id={id}
-        type="number"
-        inputMode="numeric"
+        ariaLabel={ariaLabel}
+        value={text}
         min={min}
         max={max}
-        step={step}
-        value={value}
-        onChange={(event) => {
-          const next = Number(event.target.value)
-          if (Number.isFinite(next)) onChange(Math.min(max, Math.max(min, next)))
+        className="max-w-[6.5rem]"
+        onChange={(raw) => {
+          const next = sanitizeNumberText(raw)
+          setText(next)
+          if (next === '') return
+          const parsed = parseNumberInRange(next, min, max)
+          if (parsed !== null) onChange(parsed)
         }}
+        onBlur={() => commit(text)}
       />
       <span className="shrink-0 text-xs text-muted-foreground">{suffix}</span>
     </div>
@@ -320,6 +350,7 @@ export function ScreenshotOptions() {
             >
               <NumberInput
                 id="screenshot-scroll-delay"
+                ariaLabel="Delay between scroll steps in milliseconds"
                 value={settings.scrollStepDelayMs}
                 min={0}
                 max={5000}
@@ -353,6 +384,7 @@ export function ScreenshotOptions() {
             >
               <NumberInput
                 id="screenshot-batch-delay"
+                ariaLabel="Wait after each URL loads in milliseconds"
                 value={settings.batchUrlDelayMs}
                 min={0}
                 max={30000}

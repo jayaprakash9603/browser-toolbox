@@ -2,26 +2,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import {
-  ArrowUpRightIcon,
-  CircleIcon,
   ClipboardCopyIcon,
   DownloadIcon,
-  DropletsIcon,
   FileTextIcon,
   FolderArchiveIcon,
-  HighlighterIcon,
-  ListOrderedIcon,
+  ImageIcon,
+  Loader2Icon,
   MailIcon,
   PrinterIcon,
-  Redo2Icon,
   SettingsIcon,
-  SquareIcon,
   TriangleAlertIcon,
-  TypeIcon,
-  Undo2Icon,
-  ZoomInIcon,
-  ZoomOutIcon,
-  type LucideIcon,
 } from 'lucide-react'
 
 import { useRouter } from '@/app/router'
@@ -53,9 +43,9 @@ import { addScreenshotHistory } from '@/core/screenshot/history'
 import { LongTaskProgress } from '@/shared/components/LongTaskProgress'
 import { useToast } from '@/shared/components/toast/useToast'
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
+import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
-import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import {
   Select,
@@ -66,19 +56,11 @@ import {
 } from '@/shared/components/ui/select'
 import { Separator } from '@/shared/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip'
+import { cn } from '@/shared/utils/cn'
 
 import { CaptureHistory } from './CaptureHistory'
+import { CaptureEditorToolbar } from './CaptureEditorToolbar'
 import { IMAGE_FORMATS, ScreenshotOptions } from './ScreenshotOptions'
-
-const TOOLS: { id: AnnotationTool; label: string; icon: LucideIcon }[] = [
-  { id: 'rect', label: 'Rectangle', icon: SquareIcon },
-  { id: 'circle', label: 'Ellipse', icon: CircleIcon },
-  { id: 'arrow', label: 'Arrow', icon: ArrowUpRightIcon },
-  { id: 'highlight', label: 'Highlight', icon: HighlighterIcon },
-  { id: 'blur', label: 'Blur', icon: DropletsIcon },
-  { id: 'marker', label: 'Numbered step', icon: ListOrderedIcon },
-  { id: 'text', label: 'Text', icon: TypeIcon },
-]
 
 const MIN_ZOOM = 0.1
 const MAX_ZOOM = 4
@@ -134,12 +116,25 @@ function CaptureExportProgress({ exportJob, t }: { exportJob: CaptureExportJob; 
 }
 
 function CenteredMessage({ children, destructive }: { children: string; destructive?: boolean }) {
+  if (destructive) {
+    return (
+      <div className="flex h-full min-h-0 items-center justify-center bg-gradient-to-b from-muted/40 to-background p-6">
+        <Alert variant="destructive" className="max-w-md border-destructive/30 shadow-lg">
+          <TriangleAlertIcon />
+          <AlertDescription>{children}</AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-6">
-      <Alert variant={destructive ? 'destructive' : 'default'} className="max-w-md">
-        {destructive && <TriangleAlertIcon />}
-        <AlertDescription>{children}</AlertDescription>
-      </Alert>
+    <div className="flex h-full min-h-0 flex-col items-center justify-center gap-4 bg-gradient-to-b from-muted/30 to-background p-8">
+      <div
+        className="relative flex size-14 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 shadow-[0_0_28px_color-mix(in_srgb,var(--primary)_22%,transparent)]"
+        aria-hidden
+      >
+        <Loader2Icon className="size-6 animate-spin text-primary" />
+      </div>
+      <p className="text-sm font-medium text-foreground">{children}</p>
     </div>
   )
 }
@@ -177,6 +172,7 @@ function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: Ca
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const editorRef = useRef<HTMLDivElement>(null)
   const [baseSize, setBaseSize] = useState({ width: 0, height: 0 })
   const [viewport, setViewport] = useState({ width: 0, height: 0 })
   const effectiveZoomRef = useRef(1)
@@ -451,6 +447,18 @@ function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: Ca
   )
 
   useEffect(() => {
+    const editor = editorRef.current
+    if (!editor || loading || !session) return
+    const blockBrowserZoom = (event: WheelEvent) => {
+      if (!(event.ctrlKey || event.metaKey)) return
+      if (!editor.contains(event.target as Node)) return
+      event.preventDefault()
+    }
+    document.addEventListener('wheel', blockBrowserZoom, { passive: false, capture: true })
+    return () => document.removeEventListener('wheel', blockBrowserZoom, { capture: true })
+  }, [loading, session])
+
+  useEffect(() => {
     const box = scrollRef.current
     if (!box) return
     const measure = () => setViewport({ width: box.clientWidth, height: box.clientHeight })
@@ -553,115 +561,48 @@ function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: Ca
   const zoomPercent = Math.round(effectiveZoom * 100)
 
   return (
-    <div className="flex h-screen flex-col bg-muted/40 lg:flex-row">
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div className="flex flex-wrap items-center gap-1.5 border-b bg-background px-3 py-2">
-          {TOOLS.map(({ id, label, icon: Icon }) => (
-            <Tooltip key={id}>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon-sm"
-                  variant={activeTool === id ? 'secondary' : 'ghost'}
-                  aria-label={label}
-                  aria-pressed={activeTool === id}
-                  onClick={() => setActiveTool(id)}
-                >
-                  <Icon />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{label}</TooltipContent>
-            </Tooltip>
-          ))}
-          {activeTool === 'text' && (
-            <Input
-              value={text}
-              onChange={(event) => setText(event.target.value)}
-              placeholder="Text, then click the image"
-              aria-label="Annotation text"
-              className="h-8 w-48"
-            />
-          )}
-          <Separator orientation="vertical" className="mx-1 h-6" />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Input
-                type="color"
-                value={color}
-                onChange={(event) => setColor(event.target.value)}
-                aria-label="Annotation color"
-                className="h-8 w-10 cursor-pointer p-1"
-              />
-            </TooltipTrigger>
-            <TooltipContent>Color</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button size="icon-sm" variant="ghost" aria-label="Undo" onClick={undo}>
-                <Undo2Icon />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Undo (Ctrl+Z)</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button size="icon-sm" variant="ghost" aria-label="Redo" onClick={redo}>
-                <Redo2Icon />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Redo (Ctrl+Y)</TooltipContent>
-          </Tooltip>
-          <div className="ml-auto flex items-center gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  aria-label="Zoom out"
-                  disabled={effectiveZoom <= MIN_ZOOM}
-                  onClick={() => zoomBy(1 / ZOOM_STEP)}
-                >
-                  <ZoomOutIcon />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Zoom out (Ctrl+-)</TooltipContent>
-            </Tooltip>
-            <span className="w-12 text-center text-xs tabular-nums" aria-live="polite">
-              {zoomPercent}%
-            </span>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  aria-label="Zoom in"
-                  disabled={effectiveZoom >= MAX_ZOOM}
-                  onClick={() => zoomBy(ZOOM_STEP)}
-                >
-                  <ZoomInIcon />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Zoom in (Ctrl++)</TooltipContent>
-            </Tooltip>
-            <Button size="sm" variant={zoom === 'fit' ? 'secondary' : 'ghost'} onClick={() => setZoom('fit')}>
-              Fit
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => zoomTo(1)}>
-              100%
-            </Button>
-          </div>
-        </div>
+    <div
+      ref={editorRef}
+      data-capture-editor
+      className="flex h-full min-h-0 flex-col overflow-hidden bg-gradient-to-br from-muted/35 via-background to-muted/20 lg:flex-row"
+    >
+      <div className="@container flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <CaptureEditorToolbar
+          activeTool={activeTool}
+          onToolChange={setActiveTool}
+          color={color}
+          onColorChange={setColor}
+          text={text}
+          onTextChange={setText}
+          effectiveZoom={effectiveZoom}
+          zoom={zoom}
+          zoomPercent={zoomPercent}
+          onZoomIn={() => zoomBy(ZOOM_STEP)}
+          onZoomOut={() => zoomBy(1 / ZOOM_STEP)}
+          onZoomFit={() => setZoom('fit')}
+          onZoom100={() => zoomTo(1)}
+          onUndo={undo}
+          onRedo={redo}
+          minZoom={MIN_ZOOM}
+          maxZoom={MAX_ZOOM}
+        />
         {frame.notice && (
-          <Alert className="rounded-none border-x-0 border-t-0">
-            <TriangleAlertIcon />
+          <Alert className="rounded-none border-x-0 border-t-0 border-amber-500/30 bg-amber-500/10">
+            <TriangleAlertIcon className="text-amber-600 dark:text-amber-400" />
             <AlertDescription>{frame.notice}</AlertDescription>
           </Alert>
         )}
-        <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto p-6" style={{ touchAction: "pan-x pan-y" }}>
-          <canvas
-            ref={canvasRef}
-            className="mx-auto block max-w-none cursor-crosshair rounded-md border bg-background shadow-sm"
-            style={canvasStyle}
-            onMouseDown={(event) => {
+        <div
+          ref={scrollRef}
+          className="scrollbar-styled min-h-0 flex-1 overflow-auto overscroll-contain p-4 sm:p-6 [background-image:radial-gradient(color-mix(in_srgb,var(--foreground)_7%,transparent)_1px,transparent_1px)] [background-size:16px_16px] bg-muted/20"
+          style={{ touchAction: 'pan-x pan-y' }}
+        >
+          <div className="mx-auto w-fit rounded-xl p-1 ring-1 ring-border/70 bg-background/40 shadow-[0_8px_32px_color-mix(in_srgb,var(--foreground)_12%,transparent)] backdrop-blur-[2px]">
+            <canvas
+              ref={canvasRef}
+              className="mx-auto block max-w-none cursor-crosshair rounded-lg border border-border/50 bg-background shadow-inner"
+              style={canvasStyle}
+              onMouseDown={(event) => {
               const point = imagePoint(event)
               if (activeTool === 'text') {
                 if (text.trim()) {
@@ -692,38 +633,68 @@ function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: Ca
               pushAnnotation({ tool: activeTool, color, x1: start.x, y1: start.y, x2: end.x, y2: end.y })
             }}
           />
+          </div>
         </div>
         {session.frames.length > 1 && (
-          <div className="flex gap-2 overflow-x-auto border-t bg-background p-2">
+          <div className="flex gap-2 overflow-x-auto border-t border-border/60 bg-background/90 p-2.5 backdrop-blur-sm">
             {session.frames.map((item, index) => (
               <Button
                 key={index}
-                variant={index === frameIndex ? 'secondary' : 'outline'}
-                className="h-auto shrink-0 flex-col gap-1 p-1"
+                variant="ghost"
+                className={cn(
+                  'h-auto shrink-0 flex-col gap-1.5 rounded-xl border p-1.5 transition-shadow duration-200',
+                  index === frameIndex
+                    ? 'border-primary/40 bg-primary/5 shadow-[0_0_0_1px_color-mix(in_srgb,var(--primary)_35%,transparent)]'
+                    : 'border-transparent hover:border-border/80 hover:bg-muted/40',
+                )}
                 title={item.label ?? item.pageInfo?.title}
+                aria-pressed={index === frameIndex}
                 onClick={() => setFrameIndex(index)}
               >
                 <img
                   src={item.dataUrl ?? item.slices?.[0]?.dataUrl}
                   alt=""
-                  className="h-12 w-20 rounded-sm object-cover object-top"
+                  className="h-12 w-20 rounded-md object-cover object-top ring-1 ring-border/60"
                 />
-                <span className="w-20 truncate text-[10px]">{item.label ?? item.pageInfo?.title}</span>
+                <span className="w-20 truncate text-[10px] font-medium text-muted-foreground">
+                  {item.label ?? item.pageInfo?.title}
+                </span>
               </Button>
             ))}
           </div>
         )}
       </div>
 
-      <aside className="w-full shrink-0 overflow-y-auto border-l bg-background p-4 lg:w-80">
-        <Card>
-          <CardHeader className="flex-row items-center justify-between">
-            <CardTitle>Actions</CardTitle>
+      <aside className="relative w-full shrink-0 overflow-y-auto border-l border-border/60 bg-gradient-to-b from-background via-background to-muted/25 lg:w-[19rem]">
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-[radial-gradient(120%_100%_at_50%_0%,color-mix(in_srgb,var(--primary)_14%,transparent),transparent)]"
+          aria-hidden
+        />
+        <div className="relative flex flex-col gap-4 p-4">
+          <header className="flex items-start justify-between gap-2">
+            <div className="min-w-0 space-y-1">
+              <div className="flex items-center gap-1.5 text-primary">
+                <ImageIcon className="size-3.5 shrink-0" aria-hidden />
+                <span className="text-[10px] font-semibold uppercase tracking-widest">Export studio</span>
+              </div>
+              <h2 className="truncate text-sm font-semibold leading-snug text-foreground">
+                {frame.pageInfo?.title ?? 'Screenshot'}
+              </h2>
+              {frame.pageInfo?.domain && (
+                <Badge
+                  variant="outline"
+                  className="max-w-full truncate border-primary/25 bg-primary/5 font-normal text-[10px] text-muted-foreground"
+                >
+                  {frame.pageInfo.domain}
+                </Badge>
+              )}
+            </div>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  size="icon-xs"
-                  variant="ghost"
+                  size="icon-sm"
+                  variant="outline"
+                  className="shrink-0 rounded-lg border-border/70 bg-background/80 shadow-sm"
                   aria-label="Screenshot options"
                   onClick={() => navigate('/tools/screenshots/capture?options=1')}
                 >
@@ -732,108 +703,135 @@ function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: Ca
               </TooltipTrigger>
               <TooltipContent>Options</TooltipContent>
             </Tooltip>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="capture-image-format">Save as image</Label>
-              <div className="flex gap-2">
-                <Select value={format} onValueChange={(value) => setFormat(value as ImageFormat)}>
-                  <SelectTrigger id="capture-image-format" className="w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {IMAGE_FORMATS.filter((item) => item.value !== 'pdf').map((item) => (
-                      <SelectItem key={item.value} value={item.value}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  className="flex-1"
-                  disabled={busy}
-                  onClick={() => void runExport('Saved', 'image', () => save(format, 'image'))}
-                >
-                  <DownloadIcon /> Save image
-                </Button>
+          </header>
+
+          <Card className="gap-0 overflow-hidden border-border/70 bg-card/95 py-0 shadow-md backdrop-blur-sm">
+            <CardHeader className="border-b border-border/50 bg-muted/20 px-4 py-3">
+              <CardTitle className="text-sm font-semibold">Save & share</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4 px-4 py-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="capture-image-format" className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Image file
+                </Label>
+                <div className="flex gap-2">
+                  <Select value={format} onValueChange={(value) => setFormat(value as ImageFormat)}>
+                    <SelectTrigger id="capture-image-format" className="w-24 border-border/70 bg-background shadow-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {IMAGE_FORMATS.filter((item) => item.value !== 'pdf').map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    className="flex-1 shadow-md shadow-primary/15"
+                    disabled={busy}
+                    onClick={() => void runExport('Saved', 'image', () => save(format, 'image'))}
+                  >
+                    <DownloadIcon /> Save image
+                  </Button>
+                </div>
+                {exportJob?.anchor === 'image' && (
+                  <CaptureExportProgress exportJob={exportJob} t={t} />
+                )}
               </div>
-              {exportJob?.anchor === 'image' && (
-                <CaptureExportProgress exportJob={exportJob} t={t} />
-              )}
-            </div>
-            <Separator />
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="capture-pdf-split">Save to PDF</Label>
-              <div className="flex gap-2">
-                <Select value={pdfSplit} onValueChange={(value) => setPdfSplit(value as PdfSplit)}>
-                  <SelectTrigger id="capture-pdf-split" className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Single page</SelectItem>
-                    <SelectItem value="a4">A4 pages</SelectItem>
-                    <SelectItem value="letter">Letter pages</SelectItem>
-                  </SelectContent>
-                </Select>
+              <Separator className="bg-border/60" />
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="capture-pdf-split" className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  PDF document
+                </Label>
+                <div className="flex gap-2">
+                  <Select value={pdfSplit} onValueChange={(value) => setPdfSplit(value as PdfSplit)}>
+                    <SelectTrigger id="capture-pdf-split" className="w-32 border-border/70 bg-background shadow-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Single page</SelectItem>
+                      <SelectItem value="a4">A4 pages</SelectItem>
+                      <SelectItem value="letter">Letter pages</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    className="flex-1 border-primary/25 bg-primary/5 hover:bg-primary/10"
+                    disabled={busy}
+                    onClick={() => void runExport('PDF saved', 'pdf', () => save('pdf', 'pdf'))}
+                  >
+                    <FileTextIcon /> Save PDF
+                  </Button>
+                </div>
+                {exportJob?.anchor === 'pdf' && (
+                  <CaptureExportProgress exportJob={exportJob} t={t} />
+                )}
+              </div>
+              <Separator className="bg-border/60" />
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Quick actions</p>
+              <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
-                  className="flex-1"
+                  className="h-auto flex-col gap-1.5 rounded-xl border-border/70 py-3 text-xs shadow-sm"
                   disabled={busy}
-                  onClick={() => void runExport('PDF saved', 'pdf', () => save('pdf', 'pdf'))}
+                  onClick={() =>
+                    void runQuickAction('Copied to clipboard', async () => {
+                      if (canvasRef.current) await copyCanvasToClipboard(canvasRef.current)
+                    })
+                  }
                 >
-                  <FileTextIcon /> Save PDF
+                  <ClipboardCopyIcon className="size-4 text-primary" />
+                  Copy
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-auto flex-col gap-1.5 rounded-xl border-border/70 py-3 text-xs shadow-sm"
+                  disabled={busy}
+                  onClick={() => void runQuickAction('Print dialog opened', print)}
+                >
+                  <PrinterIcon className="size-4 text-primary" />
+                  Print
+                </Button>
+                <Button
+                  variant="outline"
+                  className="col-span-2 h-auto flex-row gap-2 rounded-xl border-border/70 py-2.5 text-xs shadow-sm"
+                  disabled={busy}
+                  onClick={() =>
+                    void runExport('Saved — attach it in the Gmail draft', 'image', async () => {
+                      await save(format, 'image')
+                      openEmailHandoff(frame.pageInfo)
+                    })
+                  }
+                >
+                  <MailIcon className="size-4 shrink-0 text-primary" />
+                  Email with Gmail
                 </Button>
               </div>
-              {exportJob?.anchor === 'pdf' && (
+              {session.frames.length > 1 && (
+                <Button
+                  variant="secondary"
+                  className="rounded-xl shadow-sm"
+                  disabled={busy}
+                  onClick={() => void runExport('ZIP saved', 'zip', saveAllAsZip)}
+                >
+                  <FolderArchiveIcon /> Save all as ZIP
+                </Button>
+              )}
+              {exportJob?.anchor === 'zip' && (
                 <CaptureExportProgress exportJob={exportJob} t={t} />
               )}
-            </div>
-            <Separator />
-            <Button
-              variant="outline"
-              disabled={busy}
-              onClick={() =>
-                void runQuickAction('Copied to clipboard', async () => {
-                  if (canvasRef.current) await copyCanvasToClipboard(canvasRef.current)
-                })
-              }
-            >
-              <ClipboardCopyIcon /> Copy to clipboard
-            </Button>
-            <Button variant="outline" disabled={busy} onClick={() => void runQuickAction('Print dialog opened', print)}>
-              <PrinterIcon /> Print
-            </Button>
-            <Button
-              variant="outline"
-              disabled={busy}
-              onClick={() =>
-                void runExport('Saved — attach it in the Gmail draft', 'image', async () => {
-                  await save(format, 'image')
-                  openEmailHandoff(frame.pageInfo)
-                })
-              }
-            >
-              <MailIcon /> Email with Gmail
-            </Button>
-            {session.frames.length > 1 && (
-              <Button
-                variant="secondary"
-                disabled={busy}
-                onClick={() => void runExport('ZIP saved', 'zip', saveAllAsZip)}
-              >
-                <FolderArchiveIcon /> Save all as ZIP
-              </Button>
-            )}
-            {exportJob?.anchor === 'zip' && (
-              <CaptureExportProgress exportJob={exportJob} t={t} />
-            )}
-            {status && (
-              <p role="status" className="text-xs text-muted-foreground">
-                {status}
-              </p>
-            )}
-          </CardContent>
-        </Card>
+              {status && (
+                <p
+                  role="status"
+                  className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs font-medium text-foreground"
+                >
+                  {status}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </aside>
     </div>
   )

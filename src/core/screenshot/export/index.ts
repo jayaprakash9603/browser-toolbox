@@ -38,7 +38,8 @@ export async function exportCanvas(
         splitPages: opts?.pdfSplit ?? 'none',
         links: opts?.links,
         textRuns: opts?.textRuns,
-        jpegQuality: opts?.jpegQuality,
+        imageType: 'JPEG',
+        jpegQuality: opts?.jpegQuality ?? 0.92,
       })
     }
     default:

@@ -105,6 +105,8 @@ userScripts (optional): Requested when the user enables the user script manager 
 cookies (optional): Requested only when a user script the user installed asks for cookie access.
 
 debugger (optional): Requested when the user turns on the HTTP interceptor's deep intercept mode for a tab. Chrome shows its debugging banner while it is attached.
+
+bookmarks (optional): Requested only when the user opens the Bookmark Search tool. Reads Chrome bookmarks on this device so the user can search titles and URLs, open a bookmark, and export a list as Markdown or JSON. One Panel does not create, edit or delete bookmarks, and bookmark data is never uploaded or shared.
 ```
 
 ## Remote code
