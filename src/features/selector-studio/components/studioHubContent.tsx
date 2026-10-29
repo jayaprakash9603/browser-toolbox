@@ -20,7 +20,7 @@ import { clearHistory, exportHistory, importHistory } from '../history'
 import type { SelectorStudioModel } from '../useSelectorStudio'
 import { HubSelectorLine } from './HubSelectorLine'
 
-export const HUB_TABS = ['attributes', 'css', 'xpath', 'relCss', 'relXpath', 'code'] as const
+export const HUB_TABS = ['attributes', 'relCss', 'relXpath', 'css', 'xpath', 'code'] as const
 export const HUB_FULL_TABS = [...HUB_TABS, 'history', 'inspect'] as const
 
 const REL_STRATEGIES = new Set<SelectorCandidate['strategy']>([

@@ -38,7 +38,13 @@ function FieldRow({
   )
 }
 
-export function HubSelectorFields({ model }: { model: SelectorStudioModel }) {
+export function HubSelectorFields({
+  model,
+  variant = 'compact',
+}: {
+  model: SelectorStudioModel
+  variant?: 'compact' | 'panel'
+}) {
   const { t } = useTranslation()
   const { auto, css, xpath } = useMemo(() => {
     const list = model.candidates
@@ -54,7 +60,13 @@ export function HubSelectorFields({ model }: { model: SelectorStudioModel }) {
   if (!model.snapshot) return null
 
   return (
-    <section className="mb-2 space-y-1.5 border-b border-border/60 pb-2" aria-label={t('studio.hub.selectorFields')}>
+    <section
+      className={cn(
+        'mb-2 space-y-1.5 border-b border-border/60 pb-2',
+        variant === 'panel' && 'rounded-md border border-border/70 bg-card/80 px-2 py-2',
+      )}
+      aria-label={t('studio.hub.selectorFields')}
+    >
       <FieldRow
         label={t('studio.hub.auto')}
         candidate={auto}

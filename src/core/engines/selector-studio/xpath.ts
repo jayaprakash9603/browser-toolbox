@@ -119,6 +119,19 @@ export function generateXPathCandidates(snapshot: SelectorSnapshot): SelectorCan
     )
   }
 
+  const semanticPairs = semanticAttrs
+    .map((name) => (snapshot.attributes[name] ? ([name, snapshot.attributes[name]] as const) : null))
+    .filter(Boolean) as [string, string][]
+  if (semanticPairs.length >= 2) {
+    const top = semanticPairs.slice(0, 2)
+    const predicates = top.map(([name, value]) => attrPredicate(name, value)).join(' and ')
+    add(
+      draft(snapshot, 'compound', `//${htmlTag}[${predicates}]`, [
+        `Combined ${top.map(([name]) => name).join(' + ')}`,
+      ]),
+    )
+  }
+
   for (const name of ['type', 'href', 'value'] as const) {
     const value = snapshot.attributes[name]
     if (!value) continue

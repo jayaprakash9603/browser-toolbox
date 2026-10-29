@@ -263,11 +263,12 @@ describe('Selector Studio UI', () => {
     expect(screen.getByText(/click an element on the page/i)).toBeInTheDocument()
   })
 
-  it('renders side panel layout with settings in the sidebar', () => {
+  it('renders side panel hub with settings sidebar', () => {
     renderStudio(<SelectorStudioPanelView model={model()} />)
-    expect(screen.getByRole('navigation', { name: /sections/i })).toBeInTheDocument()
     expect(screen.getByLabelText(/studio enabled/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /pick element/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Attributes' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Rel CSS' })).toBeInTheDocument()
   })
 
   it('shows computed styles and listeners under Inspect', async () => {

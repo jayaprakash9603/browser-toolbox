@@ -21,6 +21,7 @@ export function HubSideRail({
   onEdit,
   onOpenHistory,
   showHistory,
+  disabled = false,
 }: {
   model: SelectorStudioModel
   settingsOpen: boolean
@@ -28,6 +29,7 @@ export function HubSideRail({
   onEdit: () => void
   onOpenHistory: () => void
   showHistory: boolean
+  disabled?: boolean
 }) {
   const { t } = useTranslation()
 
@@ -39,6 +41,7 @@ export function HubSideRail({
       active: model.picking,
       onClick: () => void model.pick(),
       icon: CrosshairIcon,
+      disabled,
     },
     {
       id: 'refresh',
@@ -46,18 +49,19 @@ export function HubSideRail({
       onClick: () => void model.reanalyze(),
       icon: RefreshCwIcon,
       spin: model.analyzing,
+      disabled,
     },
     {
       id: 'highlight',
       label: t('studio.highlight'),
-      disabled: !model.active,
+      disabled: disabled || !model.active,
       onClick: () => model.active && void model.highlight(model.active),
       icon: HighlighterIcon,
     },
     {
       id: 'edit',
       label: t('studio.edit'),
-      disabled: !model.active,
+      disabled: disabled || !model.active,
       onClick: onEdit,
       icon: PencilIcon,
     },
