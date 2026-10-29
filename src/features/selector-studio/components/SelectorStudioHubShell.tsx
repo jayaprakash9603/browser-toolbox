@@ -12,7 +12,6 @@ import { HubSelectorFields } from './HubSelectorFields'
 import { HubSettingsPanel } from './HubSettingsPanel'
 import { HubSideRail } from './HubSideRail'
 import { InspectPanel, type InspectSection } from './InspectPanel'
-import { PanelSettingsSidebar } from './PanelSettingsSidebar'
 import { Playground } from './Playground'
 import {
   CodePanel,
@@ -46,7 +45,7 @@ export function SelectorStudioHubShell({
   const defaultTab = panel ? 'attributes' : 'css'
   const [tab, setTab] = useDeepLinkTab('tab', tabs, defaultTab)
   const [inspectSection, setInspectSection] = useDeepLinkTab('inspect', INSPECT_SECTIONS, 'styles')
-  const [settingsOpen, setSettingsOpen] = useState(panel)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [playground, setPlayground] = useState(false)
   const [name, setName] = useHistoryNameState()
   const { snapshot, settings } = model
@@ -268,7 +267,7 @@ export function SelectorStudioHubShell({
               panel ? 'w-52 @[520px]:w-56' : 'w-44 @[480px]:w-52',
             )}
           >
-            {panel ? <PanelSettingsSidebar model={model} /> : <HubSettingsPanel model={model} />}
+            <HubSettingsPanel model={model} />
           </aside>
         )}
       </div>

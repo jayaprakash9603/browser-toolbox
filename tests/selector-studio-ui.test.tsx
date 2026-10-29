@@ -4,8 +4,9 @@ import type { ReactElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { SelectorCandidate, SelectorSnapshot } from '@/core/engines/selector-studio'
-import { SelectorStudioView } from '@/features/selector-studio/components/SelectorStudioView'
+import { SelectorStudioElementsSidebar } from '@/features/selector-studio/components/SelectorStudioElementsSidebar'
 import { SelectorStudioPanelView } from '@/features/selector-studio/components/SelectorStudioPanelView'
+import { SelectorStudioView } from '@/features/selector-studio/components/SelectorStudioView'
 import '@/features/selector-studio/i18n'
 import type { SelectorStudioModel } from '@/features/selector-studio/useSelectorStudio'
 import { TooltipProvider } from '@/shared/components/ui/tooltip'
@@ -257,18 +258,23 @@ describe('Selector Studio UI', () => {
     document.documentElement.classList.remove('dark')
   })
 
-  it('shows pick progress in pane mode', async () => {
+  it('shows pick progress in the side panel hub', async () => {
     const pick = vi.fn()
-    renderStudio(<SelectorStudioView model={model({ picking: true, pick })} pane />)
+    renderStudio(<SelectorStudioPanelView model={model({ picking: true, pick })} />)
     expect(screen.getByText(/click an element on the page/i)).toBeInTheDocument()
   })
 
-  it('renders side panel hub with settings sidebar', () => {
+  it('renders side panel hub without persistent settings column', () => {
     renderStudio(<SelectorStudioPanelView model={model()} />)
-    expect(screen.getByLabelText(/studio enabled/i)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/studio enabled/i)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /pick element/i })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Attributes' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Rel CSS' })).toBeInTheDocument()
+  })
+
+  it('renders DevTools Elements sidebar with enable toggle and settings', () => {
+    renderStudio(<SelectorStudioElementsSidebar model={model()} />)
+    expect(screen.getByLabelText(/studio enabled/i)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /open selector studio/i })).toBeInTheDocument()
   })
 
   it('shows computed styles and listeners under Inspect', async () => {
