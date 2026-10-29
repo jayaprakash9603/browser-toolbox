@@ -119,6 +119,12 @@ export async function collectDomSignals(selectors: string[]): Promise<DomScan> {
 
   const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
 
+  const styleText = [...document.querySelectorAll('style')]
+    .map((node) => node.textContent ?? '')
+    .join('\n')
+    .slice(0, 40_000)
+  const htmlBlob = styleText ? `${styleText}\n${document.documentElement.outerHTML}` : document.documentElement.outerHTML
+
   return {
     signals: {
       scripts,
@@ -128,7 +134,7 @@ export async function collectDomSignals(selectors: string[]): Promise<DomScan> {
       headers: await readHeaders(),
       cookies: document.cookie.split(';').map((cookie) => cookie.split('=')[0].trim()).filter(Boolean),
       domMatches,
-      html: document.documentElement.outerHTML.slice(0, MAX_HTML_CHARS),
+      html: htmlBlob.slice(0, MAX_HTML_CHARS),
       protocol: navigation?.nextHopProtocol,
     },
     facts: {

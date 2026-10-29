@@ -98,6 +98,24 @@ describe('detectTechnologies', () => {
     expect(hits.some((hit) => hit.name === 'PHP')).toBe(true)
   })
 
+  it('detects UI frameworks from DOM selectors and markup like Wappalyzer', () => {
+    expect(find({ domMatches: ['.MuiButton-root'] }, 'Material UI')).toBeDefined()
+    expect(find({ domMatches: ['body[data-bs-theme]'] }, 'Bootstrap')).toBeDefined()
+    expect(find({ domMatches: ['[data-bs-toggle]'] }, 'Bootstrap')).toBeDefined()
+    expect(
+      find(
+        {
+          html: '/*! Bootstrap v5.3.2 */',
+          jsValues: { 'bootstrap.Alert.VERSION': '5.3.2' },
+        },
+        'Bootstrap',
+      )?.version,
+    ).toBe('5.3.2')
+    expect(find({ html: '/*! tailwindcss v4.0.0 */' }, 'Tailwind CSS')).toBeDefined()
+    expect(find({ scripts: ['https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4'] }, 'Tailwind CSS')).toBeDefined()
+    expect(find({ domMatches: ['.ant-table'] }, 'Ant Design')).toBeDefined()
+  })
+
   it('detects the negotiated protocol, markup patterns and DOM selectors', () => {
     const hits = detectTechnologies(
       signals({
