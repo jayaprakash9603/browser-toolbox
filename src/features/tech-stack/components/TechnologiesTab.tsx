@@ -1,4 +1,4 @@
-import { SearchIcon } from 'lucide-react'
+import { ExternalLinkIcon, SearchIcon } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -8,64 +8,75 @@ import { groupHitsByCategory } from '@/core/engines/techStack/detect'
 import type { TechCategoryId, TechHit } from '@/core/engines/techStack/types'
 import { ChipRail } from '@/shared/components/ChipRail'
 import { StaggerChildren, StaggerItem } from '@/shared/components/motion'
-import { Badge } from '@/shared/components/ui/badge'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/utils/cn'
 
+import { categoryColor, mixTint } from '../categoryStyle'
 import { TechIcon } from './TechIcon'
 
 function TechRow({ hit }: { hit: TechHit }) {
   const { t } = useTranslation()
+  const color = categoryColor(hit.category)
   const title = hit.implied ? t('techStack.impliedHint') : hit.evidence
-
-  return (
-    <motion.li
-      layout="position"
-      className="flex min-w-0 items-center gap-2.5 rounded-xl border border-transparent px-1.5 py-1.5 transition-[border-color,background-color] duration-150 hover:border-border/80 hover:bg-accent/30"
-      title={title}
-    >
-      <TechIcon name={hit.name} />
-      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-0.5">
-        {hit.website ? (
-          <a
-            href={hit.website}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={t('techStack.openSite', { name: hit.name })}
-            className="min-w-0 text-[13px] leading-tight text-primary underline underline-offset-2 hover:text-primary/80 focus-visible:rounded focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
-            {hit.name}
-          </a>
-        ) : (
-          <span className="min-w-0 text-[13px] leading-tight font-medium">{hit.name}</span>
-        )}
-        {hit.version && (
-          <Badge variant="secondary" className="px-1 py-0 text-[10px] font-normal">
-            {hit.version}
-          </Badge>
-        )}
-        {hit.implied && (
-          <span className="text-[10px] tracking-wide text-muted-foreground uppercase">{t('techStack.implied')}</span>
+  const body = (
+    <>
+      <TechIcon name={hit.name} color={color} />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <span className="flex min-w-0 items-center gap-1">
+          <span className="truncate text-[13px] leading-tight font-medium">{hit.name}</span>
+          {hit.website && <ExternalLinkIcon className="size-3 shrink-0 text-muted-foreground" aria-hidden />}
+        </span>
+        {(hit.version || hit.implied) && (
+          <span className="flex flex-wrap items-center gap-x-1.5 text-[10px] text-muted-foreground">
+            {hit.version && <span className="font-mono tabular-nums">{hit.version}</span>}
+            {hit.implied && <span className="tracking-wide uppercase">{t('techStack.implied')}</span>}
+          </span>
         )}
       </div>
+    </>
+  )
+
+  const rowClass =
+    'flex min-w-0 items-center gap-2.5 rounded-xl px-1.5 py-1.5 transition-colors duration-200 hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+
+  if (hit.website) {
+    return (
+      <motion.li layout="position">
+        <a
+          href={hit.website}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={t('techStack.openSite', { name: hit.name })}
+          title={title}
+          className={rowClass}
+        >
+          {body}
+        </a>
+      </motion.li>
+    )
+  }
+
+  return (
+    <motion.li layout="position" className={rowClass} title={title}>
+      {body}
     </motion.li>
   )
 }
 
-function matchesQuery(hit: TechHit, query: string): boolean {
-  if (!query) return true
-  const hay = `${hit.name} ${hit.category} ${hit.evidence}`.toLowerCase()
-  return hay.includes(query)
-}
-
 function CategoryBlock({ category, groupHits }: { category: TechCategoryId; groupHits: TechHit[] }) {
+  const color = categoryColor(category)
   return (
-    <section className="mb-4 break-inside-avoid overflow-hidden rounded-xl border bg-card/60 shadow-xs">
-      <header className="flex items-center justify-between gap-2 border-b bg-muted/30 px-3 py-2">
-        <h3 className="text-xs font-semibold tracking-tight text-foreground/90">{categoryLabel(category)}</h3>
-        <Badge variant="outline" className="h-5 px-1.5 text-[10px] font-normal tabular-nums">
+    <section className="mb-2 overflow-hidden rounded-xl border bg-card">
+      <header
+        className="flex items-center justify-between gap-2 px-3 py-2"
+        style={{ background: `linear-gradient(90deg, ${mixTint(color, 16)}, transparent 72%)` }}
+      >
+        <h3 className="text-[11px] font-medium tracking-wide uppercase" style={{ color }}>
+          {categoryLabel(category)}
+        </h3>
+        <span className="font-mono text-[11px] tabular-nums" style={{ color }}>
           {groupHits.length}
-        </Badge>
+        </span>
       </header>
       <ul className="px-1.5 py-1">
         {groupHits.map((hit) => (
@@ -76,38 +87,66 @@ function CategoryBlock({ category, groupHits }: { category: TechCategoryId; grou
   )
 }
 
+function FilterChip({
+  label,
+  count,
+  selected,
+  color,
+  onClick,
+}: {
+  label: string
+  count: number
+  selected: boolean
+  color: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'inline-flex h-8 shrink-0 cursor-pointer items-center gap-1 rounded-full border px-2.5 text-xs font-medium transition-[color,background-color,border-color] duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+        selected ? 'text-foreground' : 'border-border bg-card text-muted-foreground hover:text-foreground',
+      )}
+      style={
+        selected
+          ? { color, borderColor: mixTint(color, 40), backgroundColor: mixTint(color, 12) }
+          : undefined
+      }
+    >
+      {label}
+      <span className="font-mono tabular-nums opacity-80">{count}</span>
+    </button>
+  )
+}
+
+function matchesQuery(hit: TechHit, query: string): boolean {
+  if (!query) return true
+  return `${hit.name} ${hit.category} ${hit.evidence}`.toLowerCase().includes(query)
+}
+
 export function TechnologiesTab({ hits }: { hits: TechHit[] }) {
   const { t } = useTranslation()
   const [query, setQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<TechCategoryId | 'all'>('all')
-
   const normalizedQuery = query.trim().toLowerCase()
   const groups = useMemo(() => groupHitsByCategory(hits), [hits])
-
-  const filteredGroups = useMemo(() => {
-    return groups
-      .map(({ category, hits: groupHits }) => ({
-        category,
-        hits: groupHits.filter(
-          (hit) =>
-            (categoryFilter === 'all' || hit.category === categoryFilter) && matchesQuery(hit, normalizedQuery),
-        ),
-      }))
-      .filter((group) => group.hits.length > 0)
-  }, [groups, categoryFilter, normalizedQuery])
-
-  const chipCategories = useMemo(
+  const filteredGroups = useMemo(
     () =>
-      groups.map(({ category, hits: groupHits }) => ({
-        id: category,
-        name: categoryLabel(category),
-        count: groupHits.length,
-      })),
-    [groups],
+      groups
+        .map(({ category, hits: groupHits }) => ({
+          category,
+          hits: groupHits.filter(
+            (hit) =>
+              (categoryFilter === 'all' || hit.category === categoryFilter) && matchesQuery(hit, normalizedQuery),
+          ),
+        }))
+        .filter((group) => group.hits.length > 0),
+    [groups, categoryFilter, normalizedQuery],
   )
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       <div className="relative">
         <SearchIcon className="pointer-events-none absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
         <Input
@@ -118,45 +157,33 @@ export function TechnologiesTab({ hits }: { hits: TechHit[] }) {
           className="h-8 ps-8 text-xs"
         />
       </div>
-      {chipCategories.length > 1 ? (
+      {groups.length > 1 && (
         <ChipRail role="group" label={t('techStack.filter.categories')} className="min-w-0">
-          <button
-            type="button"
+          <FilterChip
+            label={t('techStack.filter.all')}
+            count={hits.length}
+            selected={categoryFilter === 'all'}
+            color="var(--hero-from)"
             onClick={() => setCategoryFilter('all')}
-            className={cn(
-              'inline-flex h-7 shrink-0 items-center gap-1 rounded-full border px-2.5 text-xs font-medium transition-[color,background-color,border-color] duration-150',
-              categoryFilter === 'all'
-                ? 'border-primary/40 bg-primary/10 text-primary'
-                : 'border-border bg-card text-muted-foreground hover:border-primary/25 hover:text-foreground',
-            )}
-          >
-            {t('techStack.filter.all')}
-            <span className="tabular-nums opacity-80">{hits.length}</span>
-          </button>
-          {chipCategories.map(({ id, name, count }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setCategoryFilter(categoryFilter === id ? 'all' : id)}
-              className={cn(
-                'inline-flex h-7 shrink-0 items-center gap-1 rounded-full border px-2.5 text-xs font-medium transition-[color,background-color,border-color] duration-150',
-                categoryFilter === id
-                  ? 'border-primary/40 bg-primary/10 text-primary'
-                  : 'border-border bg-card text-muted-foreground hover:border-primary/25 hover:text-foreground',
-              )}
-            >
-              {name}
-              <span className="tabular-nums opacity-80">{count}</span>
-            </button>
+          />
+          {groups.map(({ category, hits: groupHits }) => (
+            <FilterChip
+              key={category}
+              label={categoryLabel(category)}
+              count={groupHits.length}
+              selected={categoryFilter === category}
+              color={categoryColor(category)}
+              onClick={() => setCategoryFilter(categoryFilter === category ? 'all' : category)}
+            />
           ))}
         </ChipRail>
-      ) : null}
+      )}
       {filteredGroups.length === 0 ? (
         <p className="rounded-xl border border-dashed px-3 py-6 text-center text-xs text-muted-foreground">
           {t('techStack.filter.noMatches')}
         </p>
       ) : (
-        <StaggerChildren stagger={0.04} className="columns-1 gap-x-6 @[480px]:columns-2">
+        <StaggerChildren stagger={0.035} className="columns-1 gap-x-3 @[480px]:columns-2">
           {filteredGroups.map(({ category, hits: groupHits }) => (
             <StaggerItem key={category}>
               <CategoryBlock category={category} groupHits={groupHits} />

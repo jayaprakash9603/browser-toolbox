@@ -1,5 +1,5 @@
 import { TechStackView } from './TechStackView'
 
-export default function TechStackPopoverBody() {
-  return <TechStackView scrollable showAccessPrompt />
+export default function TechStackPopoverBody({ onNavigate }: { onNavigate: () => void }) {
+  return <TechStackView scrollable showAccessPrompt onNavigate={onNavigate} />
 }
