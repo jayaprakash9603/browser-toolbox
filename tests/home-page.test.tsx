@@ -30,7 +30,17 @@ afterEach(() => {
 describe('homeConfig', () => {
   it('resolves quick and popular tools from the registry', () => {
     expect(getQuickActionTools()).toHaveLength(QUICK_ACTION_IDS.length)
-    expect(getPopularTools()).toHaveLength(12)
+    expect(getPopularTools().map((tool) => tool.id)).toEqual([
+      'privacy.ad-blocker',
+      'privacy.web-protection',
+      'design.responsive-viewer',
+      'generators.qr-toolkit',
+      'api.request-builder',
+      'design.color-picker',
+      'browser.picture-in-picture',
+      'browser.internet-monitor',
+      'productivity.form-autofill',
+    ])
     getQuickActionTools().forEach((tool) => {
       expect(toolRegistry.get(tool.id)).toBeDefined()
     })
@@ -41,7 +51,8 @@ describe('home landing helpers', () => {
   it('never repeats quick actions inside popular tools', () => {
     const quick = new Set<string>(QUICK_ACTION_IDS)
     const popular = getHomePopularTools()
-    expect(popular.length).toBeGreaterThan(0)
+    expect(popular[0]?.id).toBe('privacy.ad-blocker')
+    expect(popular).toHaveLength(9)
     popular.forEach((tool) => expect(quick.has(tool.id)).toBe(false))
   })
 

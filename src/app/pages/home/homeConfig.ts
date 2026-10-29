@@ -36,18 +36,15 @@ export const QUICK_ACTION_IDS = [
 ] as const
 
 export const POPULAR_TOOL_IDS = [
-  'clipboard.manager',
-  'text.formatter',
-  'text.analyzer',
-  'text.case-converter',
-  'text.find-replace',
-  'text.diff',
-  'developer.json-toolkit',
-  'security.encoder-decoder',
-  'design.color-picker',
-  'screenshots.capture',
+  'privacy.ad-blocker',
+  'privacy.web-protection',
+  'design.responsive-viewer',
   'generators.qr-toolkit',
-  'security.password-generator',
+  'api.request-builder',
+  'design.color-picker',
+  'browser.picture-in-picture',
+  'browser.internet-monitor',
+  'productivity.form-autofill',
 ] as const
 
 export function resolveHomeTools(ids: readonly string[]): ToolDefinition[] {
