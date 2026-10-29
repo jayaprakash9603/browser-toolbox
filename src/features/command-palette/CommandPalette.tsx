@@ -23,7 +23,7 @@ import { CornerDownLeftIcon, SearchIcon, SearchXIcon, XIcon } from 'lucide-react
 import { useNavigate } from '@/app/navigation'
 
 import { toolRegistry } from '@/core/registry'
-import { getToolName } from '@/i18n/toolLabels'
+import { getToolDescription, getToolName } from '@/i18n/toolLabels'
 import { searchAll, toolsVisibleForQuery, type SearchItem } from '@/features/search/searchIndex'
 import { useFavorites } from '@/shared/hooks/useFavorites'
 import { useRecentTools } from '@/shared/hooks/useRecentTools'
@@ -38,7 +38,7 @@ interface CommandPaletteProps {
 type Tool = ReturnType<typeof toolRegistry.getAll>[number]
 
 const MAX_RECENT = 4
-const MAX_OPTION_RESULTS = 40
+const MAX_OPTION_RESULTS = 60
 const MAX_SETTING_RESULTS = 10
 const SUGGESTIONS = ['json', 'color', 'timer', 'screenshot', 'regex']
 const GROUP_CLASS =
@@ -347,6 +347,8 @@ const PaletteResults = memo(function PaletteResults({
       <Command.Group heading={heading} className={GROUP_CLASS}>
         {items.map((item) => {
           const value = `${item.title} ${item.breadcrumb} ${item.id}`
+          const toolDef = item.toolId ? toolRegistry.get(item.toolId) : undefined
+          const toolDesc = toolDef ? getToolDescription(toolDef, t) : ''
           return (
             <PaletteItem
               key={item.id}
@@ -355,9 +357,17 @@ const PaletteResults = memo(function PaletteResults({
               icon={item.icon}
               title={<HighlightedText text={item.title} query={query} />}
               subtitle={
-                item.kind !== 'tool' ? <HighlightedText text={item.breadcrumb} query={query} /> : undefined
+                item.kind === 'tool' ? (
+                  <HighlightedText text={toolDesc} query={query} />
+                ) : (
+                  <HighlightedText text={item.breadcrumb} query={query} />
+                )
               }
-              meta={item.kind === 'tool' ? <span className="truncate">{item.breadcrumb}</span> : undefined}
+              meta={
+                item.kind === 'tool' ? (
+                  <HighlightedText text={item.breadcrumb} query={query} />
+                ) : undefined
+              }
               index={nextIndex()}
               stagger={false}
               reduce={reduce}

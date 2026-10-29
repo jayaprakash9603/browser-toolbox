@@ -369,16 +369,53 @@ export const TOOL_SEARCH_ENTRIES: Record<string, ToolSearchEntry[]> = {
     tab('grid', 'css.gen.grid', 'Grid', 'grid'),
   ],
   'generators.qr-toolkit': [
-    tab('generate', 'qr.generate', 'Generate', 'generate'),
-    tab('decode', 'qr.decode', 'Decode', 'decode'),
+    {
+      id: 'generate',
+      labelKey: 'qr.generate',
+      fallbackLabel: 'Generate QR code',
+      keywords: ['qr', 'qrcode', 'generate', 'wifi'],
+      params: { tab: 'generate' },
+    },
+    {
+      id: 'decode',
+      labelKey: 'qr.decode',
+      fallbackLabel: 'Decode QR image',
+      keywords: ['qr', 'scan', 'decode', 'read'],
+      params: { tab: 'decode' },
+    },
+    {
+      id: 'barcode',
+      labelKey: 'qr.generate',
+      fallbackLabel: 'Linear barcode',
+      keywords: ['barcode', 'bar code', 'ean', 'upc', 'code128', 'code39', 'scan'],
+      aliases: ['bar code generator', 'ean13', 'upc-a'],
+      params: { tab: 'barcode' },
+    },
+    ...(['EAN13', 'UPC', 'CODE128', 'CODE39'] as const).map((format) => ({
+      id: `barcode-${format.toLowerCase()}`,
+      labelKey: 'qr.generate',
+      fallbackLabel: `${format} barcode`,
+      keywords: ['barcode', 'bar code', format.toLowerCase()],
+      params: { tab: 'barcode' },
+    })),
     ...(['text', 'url', 'wifi', 'email', 'phone', 'sms', 'contact', 'geo', 'event'] as const).map(
       (preset) => ({
         id: `preset-${preset}`,
         labelKey: `qr.preset.${preset}`,
-        fallbackLabel: preset,
+        fallbackLabel: `QR ${preset}`,
+        keywords: ['qr', preset],
         params: { tab: 'generate', preset },
       }),
     ),
+  ],
+  'api.request-builder': [
+    {
+      id: 'open',
+      labelKey: 'tools.api.request-builder.name',
+      fallbackLabel: 'New HTTP request',
+      keywords: ['api', 'request', 'http', 'rest', 'postman', 'endpoint'],
+      params: {},
+    },
   ],
   'web.url-toolkit': [
     tab('parse', 'web.tabParse', 'Parse', 'parse'),
