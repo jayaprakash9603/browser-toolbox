@@ -61,6 +61,20 @@ describe('detectTechnologies', () => {
     expect(find({ scripts: ['https://code.jquery.com/jquery-3.7.1.min.js'] }, 'jQuery')?.version).toBe('3.7.1')
   })
 
+  it('detects React without window.React via DevTools hook, markup, and bundles', () => {
+    expect(find({ jsValues: { __REACT_DEVTOOLS_GLOBAL_HOOK__: '' } }, 'React')).toBeDefined()
+    expect(find({ jsValues: { __REACT_DEVTOOLS_GLOBAL_HOOK__: '', 'React.version': '19.1.0' } }, 'React')?.version).toBe(
+      '19.1.0',
+    )
+    expect(find({ domMatches: ['div[id*="react-root"]'] }, 'React')).toBeDefined()
+    expect(find({ domMatches: ['body > div._reactRootContainer'] }, 'React')).toBeDefined()
+    expect(find({ html: '<div id="root" data-reactroot="">' }, 'React')).toBeDefined()
+    expect(
+      find({ inlineScripts: 'import{createRoot}from"react-dom/client";__REACT_DEVTOOLS_GLOBAL_HOOK__' }, 'React'),
+    ).toBeDefined()
+    expect(find({ meta: { description: 'Web site created using create-react-app' } }, 'React')).toBeDefined()
+  })
+
   it('does not mistake similarly named files for a technology', () => {
     expect(find({ scripts: ['https://cdn.example.com/preact.min.js'] }, 'React')).toBeUndefined()
     expect(find({ scripts: ['https://cdn.example.com/image/photo.js'] }, 'Magento')).toBeUndefined()

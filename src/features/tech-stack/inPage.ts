@@ -83,6 +83,8 @@ export async function collectDomSignals(selectors: string[]): Promise<DomScan> {
       return false
     }
   })
+  const bodyRoot = document.querySelector('body > div')
+  if (bodyRoot && '_reactRootContainer' in bodyRoot) domMatches.push('body > div._reactRootContainer')
 
   const social: { network: string; url: string }[] = []
   const seenSocial = new Set<string>()
@@ -189,5 +191,21 @@ export function collectJsValues(paths: string[]): Record<string, string> {
       /* a getter on the page threw; treat the path as absent */
     }
   }
+
+  type DevtoolsRenderer = { version?: string }
+  type DevtoolsHook = { renderers?: Map<number, DevtoolsRenderer> }
+  const hook = (window as unknown as { __REACT_DEVTOOLS_GLOBAL_HOOK__?: DevtoolsHook }).__REACT_DEVTOOLS_GLOBAL_HOOK__
+  if (hook?.renderers && hook.renderers.size > 0) {
+    found.__REACT_DEVTOOLS_GLOBAL_HOOK__ ??= ''
+    if (!found['React.version']) {
+      for (const renderer of hook.renderers.values()) {
+        if (renderer?.version) {
+          found['React.version'] = String(renderer.version)
+          break
+        }
+      }
+    }
+  }
+
   return found
 }

@@ -5,7 +5,8 @@ import { collectDomSignals, collectJsValues } from '@/features/tech-stack/inPage
 afterEach(() => {
   document.head.innerHTML = ''
   document.body.innerHTML = ''
-  for (const key of ['React', 'webpackChunkapp', 'Shopify']) delete (window as unknown as Record<string, unknown>)[key]
+  for (const key of ['React', 'webpackChunkapp', 'Shopify', '__REACT_DEVTOOLS_GLOBAL_HOOK__'])
+    delete (window as unknown as Record<string, unknown>)[key]
 })
 
 describe('collectJsValues', () => {
@@ -13,6 +14,19 @@ describe('collectJsValues', () => {
     Object.assign(window, { React: { version: '18.2.0' }, webpackChunkapp: [], Shopify: { theme: {} } })
     const found = collectJsValues(['React.version', 'webpackChunk*', 'Shopify', 'Vue.version', 'Shopify.theme.name'])
     expect(found).toEqual({ 'React.version': '18.2.0', 'webpackChunk*': '', Shopify: '' })
+  })
+
+  it('infers React from the DevTools hook when globals are stripped', () => {
+    Object.assign(window, {
+      __REACT_DEVTOOLS_GLOBAL_HOOK__: {
+        renderers: new Map([[1, { version: '19.1.0' }]]),
+      },
+    })
+    expect(collectJsValues(['React.version', '__REACT_DEVTOOLS_GLOBAL_HOOK__'])).toEqual({
+      'React.version': '19.1.0',
+      __REACT_DEVTOOLS_GLOBAL_HOOK__: '',
+    })
+    delete (window as unknown as Record<string, unknown>).__REACT_DEVTOOLS_GLOBAL_HOOK__
   })
 
   it('treats a throwing getter as absent', () => {
