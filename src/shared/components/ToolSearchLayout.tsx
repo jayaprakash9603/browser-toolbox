@@ -31,9 +31,9 @@ export function ToolSearchLayout({
   onKeyDown,
 }: ToolSearchLayoutProps) {
   return (
-    <div className={cn('relative flex h-full min-h-0 flex-col', className)} onKeyDown={onKeyDown}>
+    <div className={cn('@container relative flex h-full min-h-0 flex-col', className)} onKeyDown={onKeyDown}>
       {header && (
-        <div className="flex shrink-0 flex-col gap-2 border-b bg-background px-[var(--density-page-pad)] pt-[var(--density-page-pad)] pb-2.5">
+        <div className="flex shrink-0 flex-col gap-2 border-b bg-background/95 px-[var(--density-page-pad)] pt-[var(--density-page-pad)] pb-2.5 backdrop-blur-xs">
           {header}
         </div>
       )}

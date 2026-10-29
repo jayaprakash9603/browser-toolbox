@@ -53,6 +53,7 @@ export default defineManifest({
     'alarms',
     'notifications',
     'webNavigation',
+    'favicon',
   ],
   optional_permissions: ['clipboardRead', 'webRequest', 'userScripts', 'debugger', 'cookies', 'bookmarks'],
   optional_host_permissions: ['<all_urls>'],

@@ -10,7 +10,7 @@ import {
   SETTINGS_SEARCH_ICON,
   settingsSearchRoute,
 } from '@/app/pages/settings/settingsSearchEntries'
-import { getToolName } from '@/i18n/toolLabels'
+import { getToolDescription, getToolName } from '@/i18n/toolLabels'
 import { buildRoute } from '@/features/search/buildRoute'
 import { scoreMatch } from '@/features/search/scoreMatch'
 
@@ -58,11 +58,15 @@ function translate(key: string, fallback: string): string {
 
 function toolHaystack(tool: ToolDefinition, t: typeof i18n.t): string {
   const name = getToolName(tool, t)
+  const description = getToolDescription(tool, t)
   return [
     name,
     tool.name,
+    description,
     tool.description,
     tool.category,
+    tool.id.replace(/\./g, ' '),
+    wordsFromId(tool.id.split('.').pop() ?? tool.id),
     ...tool.keywords,
     ...(tool.aliases ?? []),
   ]
@@ -267,6 +271,13 @@ export function searchAll(query: string): SearchItem[] {
   return scored.map((row) => row.item)
 }
 
+/** When sub-options match, hide generic tool rows unless every token appears in the tool title. */
+function toolTitleMatchesAllTokens(item: SearchItem, tokens: string[]): boolean {
+  if (tokens.length === 0) return true
+  const title = item.title.toLowerCase()
+  return tokens.every((token) => title.includes(token))
+}
+
 export function toolsVisibleForQuery(
   tools: SearchItem[],
   optionCount: number,
@@ -274,7 +285,10 @@ export function toolsVisibleForQuery(
 ): SearchItem[] {
   const tokens = query.trim().split(/\s+/).filter(Boolean)
   if (optionCount === 0) return tools
-  if (tokens.length >= 2) return []
+  if (tokens.length >= 2) {
+    const strong = tools.filter((tool) => toolTitleMatchesAllTokens(tool, tokens))
+    return strong.length > 0 ? strong.slice(0, 8) : []
+  }
   return tools.slice(0, 3)
 }
 

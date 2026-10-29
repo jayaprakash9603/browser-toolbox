@@ -19,6 +19,7 @@ The extension installs with no site access. Anything that runs on web pages or r
 | `declarativeNetRequest` | Bundled static rules block ads and trackers, and dynamic rules block known threat hosts, only after the user turns ad blocking or web protection on (both are off by default).                                       |
 | `declarativeNetRequestFeedback` | Per-tab blocked-request counts on the badge and in the Ad Blocker tool.                                                                                                                                      |
 | `webNavigation`  | Redirect Tracer follows navigation hops; web protection checks tabs that pages open on their own.                                                                                                                           |
+| `favicon`        | Shows site icons next to bookmarks in Bookmark Search. Icons come from Chrome's local favicon cache; nothing is fetched from the web. |
 | `alarms`         | Timers, Tasks reminders, the internet monitor, scheduled WhatsApp messages and Script Studio update checks.                                                                                                                 |
 | `notifications`  | Timer, task reminder and "saved" notifications.                                                                                                                                                                             |
 

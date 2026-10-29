@@ -57,6 +57,14 @@ describe('searchIndex', () => {
     expect(results.some((item) => item.id === 'sites.youtube:hideLive')).toBe(true)
   })
 
+  it('still shows API Request Builder when options also match api request', () => {
+    const results = searchAll('api request')
+    const grouped = groupSearchResults(results)
+    expect(grouped.options.length).toBeGreaterThan(0)
+    const visible = toolsVisibleForQuery(grouped.tools, grouped.options.length, 'api request')
+    expect(visible.some((item) => item.id === 'api.request-builder')).toBe(true)
+  })
+
   it('ranks JSON format option above JSON Toolkit for format json', () => {
     const results = searchAll('format json')
     const grouped = groupSearchResults(results)

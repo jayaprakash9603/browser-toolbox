@@ -32,10 +32,6 @@ import { hashToolkitStrings } from './hashToolkitEn'
 import { linkCheckerStrings } from './linkCheckerEn'
 import { bugReporterStrings } from './bugReporterEn'
 import { elementInspectorStrings } from './elementInspectorEn'
-import { snippetsStrings } from './snippetsEn'
-import { bookmarksStrings } from './bookmarksEn'
-import { workspacesStrings } from './workspacesEn'
-import { readingListStrings } from './readingListEn'
 
 const en = {
   'app.name': 'One Panel',
@@ -1497,10 +1493,6 @@ const en = {
   ...bugReporterStrings,
   ...elementInspectorStrings,
   ...a11yStrings,
-  ...snippetsStrings,
-  ...bookmarksStrings,
-  ...workspacesStrings,
-  ...readingListStrings,
 } as const
 
 export default en
