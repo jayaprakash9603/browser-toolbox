@@ -1,12 +1,5 @@
 import {
-  CrosshairIcon,
   DownloadIcon,
-  HighlighterIcon,
-  KeyboardIcon,
-  MoreHorizontalIcon,
-  PencilIcon,
-  RefreshCwIcon,
-  SettingsIcon,
   StarIcon,
   Trash2Icon,
   UploadIcon,
@@ -15,23 +8,13 @@ import { useMemo, useState, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
-  FRAMEWORK_LABELS,
-  RANK_MODES,
   frameworkSnippets,
-  type FrameworkId,
   type SelectorCandidate,
   type SelectorSnapshot,
 } from '@/core/engines/selector-studio'
 import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { CopyButton } from '@/shared/components/CopyButton'
 import { Button } from '@/shared/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/shared/components/ui/dropdown-menu'
 import { Input } from '@/shared/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { cn } from '@/shared/utils/cn'
@@ -39,7 +22,10 @@ import { cn } from '@/shared/utils/cn'
 import { clearHistory, exportHistory, importHistory } from '../history'
 import type { SelectorStudioModel } from '../useSelectorStudio'
 import { HubAttributesTable } from './HubAttributesTable'
+import { HubSelectorFields } from './HubSelectorFields'
 import { HubSelectorLine } from './HubSelectorLine'
+import { HubSettingsPanel } from './HubSettingsPanel'
+import { HubSideRail } from './HubSideRail'
 import { InspectPanel, type InspectSection } from './InspectPanel'
 import { Playground } from './Playground'
 
@@ -101,7 +87,7 @@ export function SelectorStudioView({
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [playground, setPlayground] = useState(false)
   const [name, setName] = useState('')
-  const { snapshot, active } = model
+  const { snapshot } = model
 
   const onKeyDown = (event: KeyboardEvent) => {
     if (!(event.altKey && event.shiftKey)) return
@@ -110,7 +96,7 @@ export function SelectorStudioView({
       void model.pick()
     } else if (event.code === 'KeyY') {
       event.preventDefault()
-      if (active) void navigator.clipboard.writeText(active.expression)
+      if (model.active) void navigator.clipboard.writeText(model.active.expression)
     } else if (event.code === 'KeyX') {
       event.preventDefault()
       setTab('xpath')
@@ -128,233 +114,147 @@ export function SelectorStudioView({
 
   return (
     <div
-      className={cn('@container flex h-full min-h-0 flex-col outline-none', compact || pane ? 'p-1.5' : 'p-2.5')}
+      className={cn('@container flex h-full min-h-0 outline-none', compact || pane ? 'p-1' : 'p-2')}
       tabIndex={0}
       onKeyDown={onKeyDown}
     >
-      <header className="shrink-0 space-y-1 border-b border-border/80 pb-1.5">
-        <div className="flex items-center gap-1">
-          {!embedded && (
-            <h1 className="min-w-0 flex-1 truncate text-[12px] font-semibold tracking-tight">
-              {pane ? t('studio.hub.titlePane') : t('studio.hub.title')}
-            </h1>
-          )}
-          {embedded && <div className="flex-1" />}
-          <Button
-            size="xs"
-            variant={model.picking ? 'default' : 'outline'}
-            className="h-7 gap-1 px-2 text-[11px]"
-            aria-keyshortcuts="Alt+Shift+P"
-            aria-pressed={model.picking}
-            onClick={() => void model.pick()}
-          >
-            <CrosshairIcon className="size-3.5" aria-hidden />
-            {model.picking ? t('studio.cancelPick') : t('studio.pick')}
-          </Button>
-          <Button
-            size="icon-xs"
-            variant="ghost"
-            aria-label={t('studio.refresh')}
-            onClick={() => void model.reanalyze()}
-          >
-            <RefreshCwIcon className={cn('size-3.5', model.analyzing && 'animate-spin')} />
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="icon-xs" variant="ghost" aria-label={t('studio.more')}>
-                <MoreHorizontalIcon className="size-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => setSettingsOpen((v) => !v)}>
-                <SettingsIcon /> {t('studio.settings')}
-              </DropdownMenuItem>
-              {active && (
+      <HubSideRail
+        model={model}
+        settingsOpen={settingsOpen}
+        onToggleSettings={() => setSettingsOpen((open) => !open)}
+        onEdit={() => setPlayground(true)}
+        onOpenHistory={() => setTab('history')}
+        showHistory={!pane}
+      />
+
+      <div className="flex min-h-0 min-w-0 flex-1">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col px-1.5">
+          <header className="shrink-0 space-y-1 border-b border-border/80 pb-1.5">
+            {!embedded && (
+              <h1 className="truncate text-[12px] font-semibold tracking-tight">
+                {pane ? t('studio.hub.titlePane') : t('studio.hub.title')}
+              </h1>
+            )}
+            <p className="truncate font-mono text-[10px] text-muted-foreground">
+              {snapshot ? elementChip(snapshot) : t('studio.noElement')}
+              {!pane && (
                 <>
-                  <DropdownMenuItem onClick={() => setPlayground(true)}>
-                    <PencilIcon /> {t('studio.edit')}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => void model.highlight(active)}>
-                    <HighlighterIcon /> {t('studio.highlight')}
-                  </DropdownMenuItem>
+                  {' · '}
+                  {hostOf(snapshot?.pageUrl || model.pageUrl)}
                 </>
               )}
-              <DropdownMenuItem onClick={() => void model.clearHighlight()}>
-                {t('studio.clearHighlight')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => void model.clearSelection()}>{t('studio.clear')}</DropdownMenuItem>
-              {model.client.kind === 'devtools' && (
-                <DropdownMenuItem onClick={model.inspect}>{t('studio.inspect')}</DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem disabled>
-                <KeyboardIcon /> {t('studio.shortcuts')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        <p className="truncate font-mono text-[10px] text-muted-foreground">
-          {snapshot ? elementChip(snapshot) : t('studio.noElement')}
-          {!pane && (
-            <>
-              {' · '}
-              {hostOf(snapshot?.pageUrl || model.pageUrl)}
-            </>
-          )}
-        </p>
-      </header>
+            </p>
+          </header>
 
-      {settingsOpen && (
-        <div className="mt-1.5 flex flex-wrap items-center gap-2 border-b border-border/60 pb-2 text-[11px]">
-          <label className="flex items-center gap-1.5">
-            {t('studio.rank')}
-            <select
-              className="h-7 rounded-md border bg-background px-2"
-              value={model.settings.rankMode}
-              onChange={(event) => void model.setRankMode(event.target.value as (typeof RANK_MODES)[number])}
-            >
-              {RANK_MODES.map((mode) => (
-                <option key={mode} value={mode}>
-                  {t(`studio.rank.${mode}`)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex items-center gap-1.5">
-            {t('studio.defaultFramework')}
-            <select
-              className="h-7 rounded-md border bg-background px-2"
-              value={model.settings.defaultFramework}
-              onChange={(event) =>
-                void model.patchSettings({ defaultFramework: event.target.value as FrameworkId })
-              }
-            >
-              {Object.entries(FRAMEWORK_LABELS).map(([id, label]) => (
-                <option key={id} value={id}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex items-center gap-1.5">
-            <input
-              type="checkbox"
-              checked={model.settings.autoHighlight}
-              onChange={(event) => void model.patchSettings({ autoHighlight: event.target.checked })}
-            />
-            {t('studio.autoHighlight')}
-          </label>
-        </div>
-      )}
+          <div className="min-h-0 flex-1 overflow-y-auto pt-1.5">
+            {model.picking && (
+              <p role="status" aria-busy="true" className="mb-1.5 text-[11px] text-primary">
+                {t('studio.pickProgress')}
+              </p>
+            )}
+            {model.stale && !model.picking && (
+              <p className="mb-1.5 text-[11px] text-muted-foreground">{t('studio.stale')}</p>
+            )}
+            {model.error && <p className="mb-1.5 text-[11px] text-destructive">{model.error}</p>}
 
-      <div className="min-h-0 flex-1 overflow-y-auto pt-1.5">
-        {model.picking && (
-          <p role="status" aria-busy="true" className="mb-1.5 text-[11px] text-primary">
-            {t('studio.pickProgress')}
-          </p>
-        )}
-        {model.stale && !model.picking && (
-          <p className="mb-1.5 text-[11px] text-muted-foreground">{t('studio.stale')}</p>
-        )}
-        {model.error && (
-          <p className="mb-1.5 text-[11px] text-destructive">{model.error}</p>
-        )}
+            <HubSelectorFields model={model} />
 
-        {snapshot && active && (
-          <div className="mb-2 flex items-start gap-1 rounded border border-border/80 bg-muted/30 px-2 py-1.5">
-            <code className="min-w-0 flex-1 break-all font-mono text-[11px] leading-5">{active.expression}</code>
-            <CopyButton text={active.expression} />
-          </div>
-        )}
-
-        {playground && active && (
-          <div className="mb-2">
-            <Playground
-              candidate={active}
-              onValidate={model.validateExpression}
-              onReset={() => snapshot && void model.reanalyze()}
-            />
-          </div>
-        )}
-
-        <Tabs
-          value={tab}
-          onValueChange={(value) => setTab(value as HubTab)}
-          className="gap-1.5"
-        >
-          <TabsList variant="underline" scrollButtons="auto" className="h-8 w-full max-w-full justify-start">
-            {tabs.map((id) => (
-              <TabsTrigger key={id} value={id} className="h-8 px-2.5 text-[11px]">
-                {t(`studio.tab.${id}`)}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          <TabsContent value="attributes" className="mt-0">
-            {snapshot ? <HubAttributesTable snapshot={snapshot} /> : <HubEmpty />}
-          </TabsContent>
-
-          <TabsContent value="css" className="mt-0">
-            <HubSelectorList
-              model={model}
-              items={filterHubCandidates(model.candidates, 'css', false)}
-            />
-          </TabsContent>
-
-          <TabsContent value="xpath" className="mt-0">
-            <HubSelectorList
-              model={model}
-              items={filterHubCandidates(model.candidates, 'xpath', false)}
-            />
-          </TabsContent>
-
-          <TabsContent value="relCss" className="mt-0">
-            <HubSelectorList
-              model={model}
-              items={filterHubCandidates(model.candidates, 'css', true)}
-            />
-          </TabsContent>
-
-          <TabsContent value="relXpath" className="mt-0">
-            <HubSelectorList
-              model={model}
-              items={filterHubCandidates(model.candidates, 'xpath', true)}
-            />
-          </TabsContent>
-
-          <TabsContent value="code" className="mt-0">
-            <CodePanel model={model} />
-          </TabsContent>
-
-          <TabsContent value="history" className="mt-0">
-            <HistoryPanel model={model} name={name} setName={setName} />
-          </TabsContent>
-
-          <TabsContent value="inspect" className="mt-0">
-            <div className="flex flex-col gap-2">
-              <div className="flex flex-wrap gap-1">
-                {INSPECT_SECTIONS.map((section) => (
-                  <Button
-                    key={section}
-                    size="xs"
-                    variant={inspectSection === section ? 'default' : 'outline'}
-                    aria-pressed={inspectSection === section}
-                    onClick={() => setInspectSection(section)}
-                  >
-                    {t(`studio.tab.${section}`)}
-                  </Button>
-                ))}
+            {playground && model.active && (
+              <div className="mb-2">
+                <Playground
+                  candidate={model.active}
+                  onValidate={model.validateExpression}
+                  onReset={() => snapshot && void model.reanalyze()}
+                />
               </div>
-              <InspectPanel inspect={model.elementInspect} inspecting={model.inspecting} section={inspectSection} />
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+            )}
 
-      <p className="sr-only" role="status">
-        {!model.picking &&
-          (active ? active.expression : t('studio.noElement'))}
-      </p>
+            <Tabs value={tab} onValueChange={(value) => setTab(value as HubTab)} className="gap-1.5">
+              <TabsList variant="chips" scrollButtons="auto" className="h-auto w-full max-w-full justify-start gap-1">
+                {tabs.map((id) => (
+                  <TabsTrigger key={id} value={id} className="h-7 px-2.5 text-[10px]">
+                    {t(`studio.tab.${id}`)}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
+              <TabsContent value="attributes" className="mt-1">
+                {snapshot ? <HubAttributesTable snapshot={snapshot} /> : <HubEmpty />}
+              </TabsContent>
+
+              <TabsContent value="css" className="mt-1">
+                <HubSelectorList
+                  model={model}
+                  items={filterHubCandidates(model.candidates, 'css', false)}
+                />
+              </TabsContent>
+
+              <TabsContent value="xpath" className="mt-1">
+                <HubSelectorList
+                  model={model}
+                  items={filterHubCandidates(model.candidates, 'xpath', false)}
+                />
+              </TabsContent>
+
+              <TabsContent value="relCss" className="mt-1">
+                <HubSelectorList
+                  model={model}
+                  items={filterHubCandidates(model.candidates, 'css', true)}
+                />
+              </TabsContent>
+
+              <TabsContent value="relXpath" className="mt-1">
+                <HubSelectorList
+                  model={model}
+                  items={filterHubCandidates(model.candidates, 'xpath', true)}
+                />
+              </TabsContent>
+
+              <TabsContent value="code" className="mt-1">
+                <CodePanel model={model} />
+              </TabsContent>
+
+              <TabsContent value="history" className="mt-1">
+                <HistoryPanel model={model} name={name} setName={setName} />
+              </TabsContent>
+
+              <TabsContent value="inspect" className="mt-1">
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-wrap gap-1">
+                    {INSPECT_SECTIONS.map((section) => (
+                      <Button
+                        key={section}
+                        size="xs"
+                        variant={inspectSection === section ? 'default' : 'outline'}
+                        aria-pressed={inspectSection === section}
+                        onClick={() => setInspectSection(section)}
+                      >
+                        {t(`studio.tab.${section}`)}
+                      </Button>
+                    ))}
+                  </div>
+                  <InspectPanel
+                    inspect={model.elementInspect}
+                    inspecting={model.inspecting}
+                    section={inspectSection}
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+
+          <p className="sr-only" role="status">
+            {!model.picking &&
+              (model.active ? model.active.expression : t('studio.noElement'))}
+          </p>
+        </div>
+
+        {settingsOpen && (
+          <aside className="w-44 shrink-0 overflow-y-auto border-l border-border/80 bg-muted/20 p-2 @[480px]:w-52">
+            <HubSettingsPanel model={model} />
+          </aside>
+        )}
+      </div>
     </div>
   )
 }
@@ -406,7 +306,10 @@ function CodePanel({ model }: { model: SelectorStudioModel }) {
   return (
     <div className="flex flex-col gap-2">
       {snippets.map((snippet) => (
-        <article key={`${snippet.framework}-${snippet.api}-${snippet.locator}`} className="border-b border-border/60 pb-2 last:border-0">
+        <article
+          key={`${snippet.framework}-${snippet.api}-${snippet.locator}`}
+          className="border-b border-border/60 pb-2 last:border-0"
+        >
           <p className="text-[11px] font-medium">{snippet.label}</p>
           <pre className="mt-1 overflow-x-auto font-mono text-[10px] leading-5 text-muted-foreground">
             {snippet.code}

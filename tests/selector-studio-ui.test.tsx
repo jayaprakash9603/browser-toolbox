@@ -171,18 +171,24 @@ describe('Selector Studio UI', () => {
     const user = userEvent.setup()
     renderStudio(<SelectorStudioView model={model()} />)
     await user.click(screen.getByRole('tab', { name: 'XPath' }))
-    expect(screen.getByText('//*[@id="login-button"]')).toBeInTheDocument()
+    expect(screen.getAllByText('//*[@id="login-button"]').length).toBeGreaterThan(0)
     await user.click(screen.getByRole('tab', { name: 'Code' }))
     expect(screen.getByText('Playwright · getByTestId')).toBeInTheDocument()
   })
 
-  it('highlights from the overflow menu', async () => {
+  it('highlights from the side rail', async () => {
     const user = userEvent.setup()
     const highlight = vi.fn()
     renderStudio(<SelectorStudioView model={model({ highlight })} />)
-    await user.click(screen.getByRole('button', { name: /more actions/i }))
-    await user.click(screen.getByRole('menuitem', { name: /highlight matches/i }))
+    await user.click(screen.getByRole('button', { name: /highlight matches/i }))
     expect(highlight).toHaveBeenCalled()
+  })
+
+  it('opens settings in the side panel when the gear is clicked', async () => {
+    const user = userEvent.setup()
+    renderStudio(<SelectorStudioView model={model()} />)
+    await user.click(screen.getByRole('button', { name: /^settings$/i }))
+    expect(screen.getByText(/^Rank by$/i)).toBeInTheDocument()
   })
 
   it('saves history and restores a named locator', async () => {
@@ -218,11 +224,10 @@ describe('Selector Studio UI', () => {
     expect(restoreHistory).toHaveBeenCalled()
   })
 
-  it('opens the playground from the overflow menu', async () => {
+  it('opens the playground from the side rail', async () => {
     const user = userEvent.setup()
     renderStudio(<SelectorStudioView model={model()} />)
-    await user.click(screen.getByRole('button', { name: /more actions/i }))
-    await user.click(screen.getByRole('menuitem', { name: /edit selector/i }))
+    await user.click(screen.getByRole('button', { name: /edit selector/i }))
     expect(screen.getByText(/playground/i)).toBeInTheDocument()
   })
 

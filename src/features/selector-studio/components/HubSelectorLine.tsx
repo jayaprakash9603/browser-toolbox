@@ -47,7 +47,7 @@ export function HubSelectorLine({
         <Button
           size="icon-xs"
           variant="ghost"
-          aria-label={t('studio.highlight')}
+          aria-label={t('studio.highlightRow')}
           onClick={onHighlight}
         >
           <HighlighterIcon />
