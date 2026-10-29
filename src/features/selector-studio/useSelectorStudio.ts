@@ -87,43 +87,15 @@ export function useSelectorStudio(client: StudioPageClient) {
       setAnalyzing(true)
       setError(null)
       const drafts = generateCandidates(next, mode)
-      setCandidates(drafts)
-      setActive(drafts[0] ?? null)
+      const scored = rankCandidates(applyScores(drafts, next), mode)
+      setCandidates(scored)
+      setActive(scored[0] ?? null)
+      setMatchNotice('')
       void loadInspect(next)
-      try {
-        const results = await client.evaluate(
-          drafts.map((item) => ({ kind: item.kind, expression: item.expression })),
-          next.identityPath || null,
-        )
-        if (id !== request.current) return
-        if (!results.length) {
-          setError('Could not validate selectors on the page yet.')
-        }
-        const scored = rankCandidates(
-          applyScores(
-            drafts.map((item, index) =>
-              results[index] ? applyEvaluation(item, results[index]) : item,
-            ),
-            next,
-          ),
-          mode,
-        )
-        setCandidates(scored)
-        setActive(scored[0] ?? null)
-        setMatchNotice(
-          scored[0]?.matchCount == null
-            ? ''
-            : `${scored[0].matchCount} matching elements`,
-        )
-        if (settings.autoHighlight && scored[0] && results.length) {
-          void client.highlight(scored[0].kind, scored[0].expression, next.identityPath || null)
-        }
-      } catch (cause) {
-        if (id !== request.current) return
-        setError(cause instanceof Error ? cause.message : 'Could not talk to the page.')
-      } finally {
-        if (id === request.current) setAnalyzing(false)
+      if (settings.autoHighlight && scored[0]) {
+        void client.highlight(scored[0].kind, scored[0].expression, next.identityPath || null)
       }
+      if (id === request.current) setAnalyzing(false)
     },
     [client, loadInspect, settings.autoHighlight, settings.rankMode],
   )

@@ -35,7 +35,6 @@ const CategoryPage = lazy(() => import('@/app/pages/CategoryPage'))
 const AllToolsPage = lazy(() => import('@/app/pages/AllToolsPage'))
 const DevToolsPage = lazy(() => import('@/app/pages/DevToolsPage'))
 const DevToolsInterceptorPage = lazy(() => import('@/app/pages/DevToolsInterceptorPage'))
-const DevToolsSelectorStudioPage = lazy(() => import('@/app/pages/DevToolsSelectorStudioPage'))
 const DevToolsSelectorStudioSidebarPage = lazy(() => import('@/app/pages/DevToolsSelectorStudioSidebarPage'))
 const CommandPalette = lazy(() =>
   import('@/features/command-palette/CommandPalette').then((m) => ({ default: m.CommandPalette })),
@@ -129,12 +128,11 @@ export function AppShell({ children }: { children?: ReactNode }) {
   }, [path])
 
   const content = renderRoute(path)
-  // Dedicated DevTools panels (Interceptor, Selector Studio) are chromeless workspaces.
+  // Dedicated DevTools panels (Interceptor) and Elements sidebar panes are chromeless.
   const captureFullPage =
     path === '/tools/screenshots/capture' && isCaptureViewerSearch(search)
   const chromeless =
     path === '/devtools/interceptor' ||
-    path === '/devtools/selector-studio' ||
     path === '/devtools/selector-studio-sidebar' ||
     captureFullPage
 
@@ -231,7 +229,6 @@ function renderRoute(path: string) {
   if (path === '/tools') return <AllToolsPage />
   if (path === '/devtools') return <DevToolsPage />
   if (path === '/devtools/interceptor') return <DevToolsInterceptorPage />
-  if (path === '/devtools/selector-studio') return <DevToolsSelectorStudioPage />
   if (path === '/devtools/selector-studio-sidebar') return <DevToolsSelectorStudioSidebarPage />
   const legacyToolId = LEGACY_TOOL_ROUTES[path]
   if (legacyToolId) return <ToolHost toolId={legacyToolId} />
@@ -248,7 +245,6 @@ function getLoadingVariant(path: string): AppLoadingSkeletonVariant {
   if (
     path === '/devtools' ||
     path === '/devtools/interceptor' ||
-    path === '/devtools/selector-studio' ||
     path === '/devtools/selector-studio-sidebar'
   )
     return 'category'

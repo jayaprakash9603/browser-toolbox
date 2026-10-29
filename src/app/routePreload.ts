@@ -27,10 +27,6 @@ export function preloadRouteFromHash(): void {
     void import('@/app/pages/DevToolsPage')
     return
   }
-  if (path === '/devtools/selector-studio') {
-    void import('@/app/pages/DevToolsSelectorStudioPage')
-    return
-  }
   if (path === '/devtools/selector-studio-sidebar') {
     void import('@/app/pages/DevToolsSelectorStudioSidebarPage')
     return

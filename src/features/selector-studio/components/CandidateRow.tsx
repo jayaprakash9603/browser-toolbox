@@ -71,7 +71,9 @@ export function CandidateRow({
       </button>
       <div className="flex flex-wrap items-center gap-1.5">
         <CandidateBadges candidate={candidate} />
-        <span className="text-[10px] text-muted-foreground">{statusLabel(candidate)}</span>
+        {candidate.matchCount != null && (
+          <span className="text-[10px] text-muted-foreground">{statusLabel(candidate)}</span>
+        )}
         <span className="ml-auto flex items-center gap-0.5">
           <CopyButton text={candidate.expression} />
           <Button size="icon-xs" variant="ghost" aria-label={t('studio.test')} onClick={onTest}>

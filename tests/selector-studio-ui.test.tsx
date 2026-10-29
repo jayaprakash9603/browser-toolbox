@@ -136,15 +136,30 @@ function model(partial: Partial<SelectorStudioModel> = {}): SelectorStudioModel 
 afterEach(cleanup)
 
 describe('Selector Studio UI', () => {
-  it('renders the recommended selector and live match status', () => {
+  it('renders hub layout with primary selector and CSS tab', () => {
     renderStudio(<SelectorStudioView model={model()} />)
     expect(screen.getByRole('heading', { name: 'Selector Studio' })).toBeInTheDocument()
     expect(screen.getAllByText('button[data-testid="submit"]').length).toBeGreaterThan(0)
-    expect(screen.getByRole('status')).toHaveTextContent(/matching elements/i)
-    expect(screen.getByText('Unique')).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'CSS' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Attributes' })).toBeInTheDocument()
   })
 
-  it('starts the picker and copies the recommended selector', async () => {
+  it('does not show page-validation status when selectors are untested', () => {
+    const untested = {
+      ...recommended,
+      uniqueness: 'unknown' as const,
+      matchCount: null,
+      intendedMatched: null,
+      syntaxValid: null,
+    }
+    renderStudio(<SelectorStudioView model={model({ active: untested, candidates: [untested] })} pane />)
+    expect(screen.queryByText(/could not validate/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/not yet tested/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/could not be verified/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/0 matching elements/i)).not.toBeInTheDocument()
+  })
+
+  it('starts the picker from the hub toolbar', async () => {
     const user = userEvent.setup()
     const pick = vi.fn()
     renderStudio(<SelectorStudioView model={model({ pick })} />)
@@ -152,24 +167,22 @@ describe('Selector Studio UI', () => {
     expect(pick).toHaveBeenCalled()
   })
 
-  it('switches to XPath and Frameworks tabs', async () => {
+  it('switches to XPath and Code tabs', async () => {
     const user = userEvent.setup()
     renderStudio(<SelectorStudioView model={model()} />)
     await user.click(screen.getByRole('tab', { name: 'XPath' }))
     expect(screen.getByText('//*[@id="login-button"]')).toBeInTheDocument()
-    await user.click(screen.getByRole('tab', { name: 'Frameworks' }))
+    await user.click(screen.getByRole('tab', { name: 'Code' }))
     expect(screen.getByText('Playwright · getByTestId')).toBeInTheDocument()
   })
 
-  it('highlights and clears matches', async () => {
+  it('highlights from the overflow menu', async () => {
     const user = userEvent.setup()
     const highlight = vi.fn()
-    const clearHighlight = vi.fn()
-    renderStudio(<SelectorStudioView model={model({ highlight, clearHighlight, highlighting: true })} />)
-    await user.click(screen.getByRole('button', { name: /highlight matches/i }))
+    renderStudio(<SelectorStudioView model={model({ highlight })} />)
+    await user.click(screen.getByRole('button', { name: /more actions/i }))
+    await user.click(screen.getByRole('menuitem', { name: /highlight matches/i }))
     expect(highlight).toHaveBeenCalled()
-    await user.click(screen.getByRole('button', { name: /clear highlights/i }))
-    expect(clearHighlight).toHaveBeenCalled()
   })
 
   it('saves history and restores a named locator', async () => {
@@ -205,11 +218,11 @@ describe('Selector Studio UI', () => {
     expect(restoreHistory).toHaveBeenCalled()
   })
 
-  it('opens the playground to edit a selector', async () => {
+  it('opens the playground from the overflow menu', async () => {
     const user = userEvent.setup()
-    const validateExpression = vi.fn()
-    renderStudio(<SelectorStudioView model={model({ validateExpression })} />)
-    await user.click(screen.getByRole('button', { name: /edit selector/i }))
+    renderStudio(<SelectorStudioView model={model()} />)
+    await user.click(screen.getByRole('button', { name: /more actions/i }))
+    await user.click(screen.getByRole('menuitem', { name: /edit selector/i }))
     expect(screen.getByText(/playground/i)).toBeInTheDocument()
   })
 
@@ -232,16 +245,13 @@ describe('Selector Studio UI', () => {
     document.documentElement.classList.remove('dark')
   })
 
-  it('cancels picking from the same control', async () => {
-    const user = userEvent.setup()
+  it('shows pick progress in pane mode', async () => {
     const pick = vi.fn()
-    renderStudio(<SelectorStudioView model={model({ picking: true, pick })} />)
-    expect(screen.getAllByText(/click an element on the page/i).length).toBeGreaterThan(0)
-    await user.click(screen.getAllByRole('button', { name: /cancel pick/i })[0])
-    expect(pick).toHaveBeenCalled()
+    renderStudio(<SelectorStudioView model={model({ picking: true, pick })} pane />)
+    expect(screen.getByText(/click an element on the page/i)).toBeInTheDocument()
   })
 
-  it('shows computed styles and listeners for the selected element', async () => {
+  it('shows computed styles and listeners under Inspect', async () => {
     const user = userEvent.setup()
     renderStudio(
       <SelectorStudioView

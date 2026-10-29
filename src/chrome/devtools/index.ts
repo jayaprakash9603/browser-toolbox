@@ -4,13 +4,7 @@
 
 chrome.devtools?.panels.create('One Panel', '', 'index.html#/devtools', () => undefined)
 chrome.devtools?.panels.create('Interceptor', '', 'index.html#/devtools/interceptor', () => undefined)
-chrome.devtools?.panels.create(
-  'Selector Studio',
-  'icons/icon32.png',
-  'index.html#/devtools/selector-studio',
-  () => undefined,
-)
-chrome.devtools?.panels.elements.createSidebarPane('Selector Studio', (pane) => {
+chrome.devtools?.panels.elements.createSidebarPane('Selectors hub', (pane) => {
   pane.setPage('index.html#/devtools/selector-studio-sidebar')
   pane.setHeight('420px')
 })
