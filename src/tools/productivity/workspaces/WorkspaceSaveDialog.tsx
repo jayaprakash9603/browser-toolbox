@@ -59,9 +59,13 @@ export function WorkspaceSaveDialog({
       <DialogContent className="max-h-[min(92vh,40rem)] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {request?.mode === 'edit' ? t('workspaces.editDialogTitle') : t('workspaces.saveDialogTitle')}
+            {request?.mode === 'edit'
+              ? t('workspaces.editDialogTitle')
+              : t('workspaces.saveDialogTitle')}
           </DialogTitle>
-          <DialogDescription className="sr-only">{t('workspaces.saveDialogTitle')}</DialogDescription>
+          <DialogDescription className="sr-only">
+            {t('workspaces.saveDialogTitle')}
+          </DialogDescription>
         </DialogHeader>
         {request && (
           <SaveForm
@@ -113,7 +117,9 @@ function SaveForm({
       <div className="grid gap-3">
         {isCreate && (
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-xs font-medium text-muted-foreground">{t('workspaces.scopeLabel')}</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              {t('workspaces.scopeLabel')}
+            </span>
             <Segmented
               size="sm"
               ariaLabel={t('workspaces.scopeLabel')}
@@ -153,10 +159,18 @@ function SaveForm({
           <fieldset className="grid gap-1.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <legend className="text-xs font-medium">
-                {t('workspaces.selectTabs', { selected: request.tabs.length - unchecked.size, total: request.tabs.length })}
+                {t('workspaces.selectTabs', {
+                  selected: request.tabs.length - unchecked.size,
+                  total: request.tabs.length,
+                })}
               </legend>
               <div className="flex items-center gap-1">
-                <Button type="button" size="xs" variant="ghost" onClick={() => setUnchecked(new Set())}>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant="ghost"
+                  onClick={() => setUnchecked(new Set())}
+                >
                   {t('workspaces.selectAll')}
                 </Button>
                 <Button
@@ -196,7 +210,9 @@ function SaveForm({
               />
               {t('workspaces.dedupeToggle')}
             </label>
-            <p className="text-xs text-muted-foreground">{t('workspaces.saveDialogHint', { count: selected.length })}</p>
+            <p className="text-xs text-muted-foreground">
+              {t('workspaces.saveDialogHint', { count: selected.length })}
+            </p>
           </fieldset>
         )}
       </div>
@@ -209,7 +225,12 @@ function SaveForm({
           disabled={isCreate && !selected.length}
           onClick={() =>
             onConfirm(
-              { name, note, tags: parseWorkspaceTags(tagsText), tabs: isCreate ? selected : request.tabs },
+              {
+                name,
+                note,
+                tags: parseWorkspaceTags(tagsText),
+                tabs: isCreate ? selected : request.tabs,
+              },
               request,
             )
           }

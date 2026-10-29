@@ -83,9 +83,12 @@ export function sortReadingList(items: readonly ReadingItem[], sort: ReadingSort
   const next = [...items]
   const byDate = (a: ReadingItem, b: ReadingItem) => b.savedAt - a.savedAt
   if (sort === 'oldest') return next.sort((a, b) => a.savedAt - b.savedAt)
-  if (sort === 'title') return next.sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }))
+  if (sort === 'title')
+    return next.sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }))
   if (sort === 'domain') {
-    return next.sort((a, b) => readingDomain(a.url).localeCompare(readingDomain(b.url)) || byDate(a, b))
+    return next.sort(
+      (a, b) => readingDomain(a.url).localeCompare(readingDomain(b.url)) || byDate(a, b),
+    )
   }
   return next.sort(byDate)
 }
@@ -100,7 +103,11 @@ export function readingTags(items: readonly ReadingItem[]): { tag: string; count
     .map(([tag, count]) => ({ tag, count }))
 }
 
-export function readingProgress(items: readonly ReadingItem[]): { read: number; total: number; pct: number } {
+export function readingProgress(items: readonly ReadingItem[]): {
+  read: number
+  total: number
+  pct: number
+} {
   const total = items.length
   const read = items.filter((item) => item.read).length
   return { read, total, pct: total ? Math.round((read / total) * 100) : 0 }
@@ -151,10 +158,19 @@ export function mergeImportedReading(existing: ReadingItem[], imported: unknown)
   for (const row of rows) {
     if (!row || typeof row !== 'object') continue
     const candidate = row as Partial<ReadingItem>
-    if (typeof candidate.url !== 'string' || !/^https?:\/\//i.test(candidate.url) || urls.has(candidate.url)) continue
+    if (
+      typeof candidate.url !== 'string' ||
+      !/^https?:\/\//i.test(candidate.url) ||
+      urls.has(candidate.url)
+    )
+      continue
     urls.add(candidate.url)
     merged.push({
-      ...newReadingItem({ url: candidate.url, title: candidate.title ?? candidate.url, note: candidate.note }),
+      ...newReadingItem({
+        url: candidate.url,
+        title: candidate.title ?? candidate.url,
+        note: candidate.note,
+      }),
       tags: Array.isArray(candidate.tags) ? candidate.tags : [],
       read: candidate.read === true,
       starred: candidate.starred === true,

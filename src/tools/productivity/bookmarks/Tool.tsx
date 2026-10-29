@@ -128,10 +128,15 @@ export default function BookmarksTool() {
     [library, query, folderId, domain, view, sort],
   )
   const domains = useMemo(() => topBookmarkDomains(list.scopeRows), [list.scopeRows])
-  const trail = useMemo(() => (list.current ? folderTrail(library.folders, list.current.id) : []), [library.folders, list.current])
-  const defaultFolderId = list.current?.id ?? library.folders.find((folder) => !folder.editable)?.id ?? '1'
+  const trail = useMemo(
+    () => (list.current ? folderTrail(library.folders, list.current.id) : []),
+    [library.folders, list.current],
+  )
+  const defaultFolderId =
+    list.current?.id ?? library.folders.find((folder) => !folder.editable)?.id ?? '1'
 
-  const filtersActive = query.trim() !== '' || folderId !== 'all' || domain !== 'all' || view !== 'all'
+  const filtersActive =
+    query.trim() !== '' || folderId !== 'all' || domain !== 'all' || view !== 'all'
   const nothingToShow = list.rows.length === 0 && list.subfolders.length === 0
 
   const resetFilters = () => {
@@ -143,7 +148,9 @@ export default function BookmarksTool() {
   }
 
   const selectFolder = (id: string | 'all') => {
-    setSort((prev) => (id === 'all' ? (prev === 'manual' ? 'recent' : prev) : folderId === 'all' ? 'manual' : prev))
+    setSort((prev) =>
+      id === 'all' ? (prev === 'manual' ? 'recent' : prev) : folderId === 'all' ? 'manual' : prev,
+    )
     setFolderId(id)
   }
 
@@ -171,7 +178,10 @@ export default function BookmarksTool() {
     )
 
   const download = (text: string, mime: string, ext: string) => {
-    downloadBlob(new Blob([text], { type: mime }), `bookmarks-${new Date().toISOString().slice(0, 10)}.${ext}`)
+    downloadBlob(
+      new Blob([text], { type: mime }),
+      `bookmarks-${new Date().toISOString().slice(0, 10)}.${ext}`,
+    )
     showToast(t('bookmarks.copied'))
   }
 
@@ -215,12 +225,16 @@ export default function BookmarksTool() {
     if (draft.mode === 'edit' && row) {
       void attempt(async () => {
         await updateBookmark(row.id, { title: values.title, url: values.url })
-        if (values.parentId !== row.parentId) await moveBookmark(row.id, { parentId: values.parentId })
+        if (values.parentId !== row.parentId)
+          await moveBookmark(row.id, { parentId: values.parentId })
         flashRow(row.id)
       }, 'bookmarks.updated')
       return
     }
-    void attempt(() => createBookmark(values.parentId, values.title, values.url), 'bookmarks.created')
+    void attempt(
+      () => createBookmark(values.parentId, values.title, values.url),
+      'bookmarks.created',
+    )
   }
 
   const deleteRow = (row: BookmarkRow) =>
@@ -246,7 +260,8 @@ export default function BookmarksTool() {
   const confirmDeleteFolder = () => {
     const folder = folderToDelete
     if (!folder) return
-    if (folderId === folder.id) selectFolder(folder.parentId && folder.parentId !== '0' ? folder.parentId : 'all')
+    if (folderId === folder.id)
+      selectFolder(folder.parentId && folder.parentId !== '0' ? folder.parentId : 'all')
     void attempt(() => removeFolder(folder.id), 'bookmarks.folderDeleted')
   }
 
@@ -258,7 +273,11 @@ export default function BookmarksTool() {
     const targetIndex = list.rows[to].index ?? to
     const fromIndex = list.rows[from].index ?? from
     void attempt(
-      () => moveBookmark(movedId, { parentId: parent.id, index: chromeMoveIndex(fromIndex, targetIndex, true) }),
+      () =>
+        moveBookmark(movedId, {
+          parentId: parent.id,
+          index: chromeMoveIndex(fromIndex, targetIndex, true),
+        }),
       'bookmarks.moved',
     )
     flashRow(movedId)
@@ -291,7 +310,12 @@ export default function BookmarksTool() {
 
   return (
     <ToolPage tool={tool} contentClassName="overflow-hidden p-0">
-      <PermissionNotice active permissions={['bookmarks']} origins={[]} message={t('bookmarks.permission')} />
+      <PermissionNotice
+        active
+        permissions={['bookmarks']}
+        origins={[]}
+        message={t('bookmarks.permission')}
+      />
 
       <ToolSearchLayout
         header={
@@ -310,7 +334,12 @@ export default function BookmarksTool() {
                 onNewBookmark={() => startBookmarkDraft()}
                 onBookmarkTab={() => void startTabDraft()}
                 onNewFolder={() =>
-                  setFolderDraft({ key: crypto.randomUUID(), mode: 'create', name: '', parentId: defaultFolderId })
+                  setFolderDraft({
+                    key: crypto.randomUUID(),
+                    mode: 'create',
+                    name: '',
+                    parentId: defaultFolderId,
+                  })
                 }
               />
               <MoreMenu
@@ -367,9 +396,16 @@ export default function BookmarksTool() {
           <ProductivityStatusBar
             trailing={
               list.reorderable ? (
-                <span className="hidden text-[10.5px] @[560px]:inline">{t('bookmarks.reorderHint')}</span>
+                <span className="hidden text-[10.5px] @[560px]:inline">
+                  {t('bookmarks.reorderHint')}
+                </span>
               ) : filtersActive ? (
-                <Button size="xs" variant="ghost" className="h-6 px-2 text-primary" onClick={resetFilters}>
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  className="h-6 px-2 text-primary"
+                  onClick={resetFilters}
+                >
                   {t('bookmarks.clearFilters')}
                 </Button>
               ) : undefined
@@ -387,7 +423,11 @@ export default function BookmarksTool() {
             ))}
           </ul>
         ) : nothingToShow ? (
-          <EmptyList browsing={list.browsing && !filtersActive} inFolder={list.browsing} onReset={resetFilters} />
+          <EmptyList
+            browsing={list.browsing && !filtersActive}
+            inFolder={list.browsing}
+            onReset={resetFilters}
+          />
         ) : (
           <div className="flex flex-col gap-1.5">
             <AnimatePresence initial={false}>
@@ -397,7 +437,13 @@ export default function BookmarksTool() {
                   folder={folder}
                   onOpen={(target) => selectFolder(target.id)}
                   onRename={(target) =>
-                    setFolderDraft({ key: target.id, mode: 'rename', folder: target, name: target.title, parentId: target.parentId ?? defaultFolderId })
+                    setFolderDraft({
+                      key: target.id,
+                      mode: 'rename',
+                      folder: target,
+                      name: target.title,
+                      parentId: target.parentId ?? defaultFolderId,
+                    })
                   }
                   onDelete={setFolderToDelete}
                 />
@@ -462,7 +508,15 @@ export default function BookmarksTool() {
   )
 }
 
-function EmptyList({ browsing, inFolder, onReset }: { browsing: boolean; inFolder: boolean; onReset: () => void }) {
+function EmptyList({
+  browsing,
+  inFolder,
+  onReset,
+}: {
+  browsing: boolean
+  inFolder: boolean
+  onReset: () => void
+}) {
   const { t } = useTranslation()
   const Icon = inFolder ? FolderOpenIcon : SearchIcon
   return (
@@ -470,7 +524,9 @@ function EmptyList({ browsing, inFolder, onReset }: { browsing: boolean; inFolde
       <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10">
         <Icon className="size-6 text-primary" aria-hidden />
       </span>
-      <p className="text-sm font-semibold">{browsing ? t('bookmarks.folderEmpty') : t('bookmarks.emptyTitle')}</p>
+      <p className="text-sm font-semibold">
+        {browsing ? t('bookmarks.folderEmpty') : t('bookmarks.emptyTitle')}
+      </p>
       <p className="max-w-xs text-xs text-muted-foreground">
         {browsing ? t('bookmarks.folderEmptyHint') : t('bookmarks.emptyHint')}
       </p>

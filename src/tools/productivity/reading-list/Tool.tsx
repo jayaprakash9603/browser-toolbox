@@ -134,7 +134,8 @@ export default function ReadingListTool() {
 
   const toggleRead = (id: string) => {
     const target = items.find((item) => item.id === id)
-    if (target) void patchItem(id, { read: !target.read, readAt: target.read ? undefined : Date.now() })
+    if (target)
+      void patchItem(id, { read: !target.read, readAt: target.read ? undefined : Date.now() })
   }
 
   const toggleStar = (id: string) => {
@@ -151,14 +152,20 @@ export default function ReadingListTool() {
   const markAllRead = () => {
     const before = items
     const shownIds = new Set(visible.map((item) => item.id))
-    void persist(items.map((item) => (shownIds.has(item.id) ? { ...item, read: true, readAt: Date.now() } : item)))
+    void persist(
+      items.map((item) =>
+        shownIds.has(item.id) ? { ...item, read: true, readAt: Date.now() } : item,
+      ),
+    )
     showToast(t('readingList.markedAllRead'), { undo: () => void persist(before) })
   }
 
   const clearRead = () => {
     const before = items
     void persist(items.filter((item) => !item.read))
-    showToast(t('readingList.clearedRead', { count: counts.read }), { undo: () => void persist(before) })
+    showToast(t('readingList.clearedRead', { count: counts.read }), {
+      undo: () => void persist(before),
+    })
   }
 
   const saveEdit = (id: string, changes: Pick<ReadingItem, 'title' | 'url' | 'note' | 'tags'>) => {
@@ -218,15 +225,26 @@ export default function ReadingListTool() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem disabled={!visible.length} onSelect={() => download(exportReadingMarkdown(visible), 'text/markdown', 'md')}>
+                  <DropdownMenuItem
+                    disabled={!visible.length}
+                    onSelect={() => download(exportReadingMarkdown(visible), 'text/markdown', 'md')}
+                  >
                     <FileDownIcon className="size-4" />
                     {t('readingList.export')}
                   </DropdownMenuItem>
-                  <DropdownMenuItem disabled={!visible.length} onSelect={() => download(JSON.stringify(visible, null, 2), 'application/json', 'json')}>
+                  <DropdownMenuItem
+                    disabled={!visible.length}
+                    onSelect={() =>
+                      download(JSON.stringify(visible, null, 2), 'application/json', 'json')
+                    }
+                  >
                     <FileJsonIcon className="size-4" />
                     {t('readingList.exportJson')}
                   </DropdownMenuItem>
-                  <DropdownMenuItem disabled={!visible.length} onSelect={() => download(exportReadingCsv(visible), 'text/csv', 'csv')}>
+                  <DropdownMenuItem
+                    disabled={!visible.length}
+                    onSelect={() => download(exportReadingCsv(visible), 'text/csv', 'csv')}
+                  >
                     <FileSpreadsheetIcon className="size-4" />
                     {t('readingList.exportCsv')}
                   </DropdownMenuItem>
@@ -236,7 +254,10 @@ export default function ReadingListTool() {
                     {t('readingList.importJson')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem disabled={!visible.some((item) => !item.read)} onSelect={markAllRead}>
+                  <DropdownMenuItem
+                    disabled={!visible.some((item) => !item.read)}
+                    onSelect={markAllRead}
+                  >
                     <CheckCheckIcon className="size-4" />
                     {t('readingList.markAllRead')}
                   </DropdownMenuItem>
@@ -271,7 +292,12 @@ export default function ReadingListTool() {
                 onClick={() => setDetailsOpen((open) => !open)}
                 className="flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <ChevronDownIcon className={cn('size-3.5 transition-transform duration-200', detailsOpen && 'rotate-180')} />
+                <ChevronDownIcon
+                  className={cn(
+                    'size-3.5 transition-transform duration-200',
+                    detailsOpen && 'rotate-180',
+                  )}
+                />
                 {detailsOpen ? t('readingList.closeCapture') : t('readingList.addCustom')}
               </button>
               <AnimatePresence initial={false}>
@@ -329,8 +355,14 @@ export default function ReadingListTool() {
                 onValueChange={(v) => setFilter(v as ReadingFilter)}
                 options={[
                   { value: 'all', label: t('readingList.filter.all', { count: counts.all }) },
-                  { value: 'unread', label: t('readingList.filter.unread', { count: counts.unread }) },
-                  { value: 'starred', label: t('readingList.filter.starred', { count: counts.starred }) },
+                  {
+                    value: 'unread',
+                    label: t('readingList.filter.unread', { count: counts.unread }),
+                  },
+                  {
+                    value: 'starred',
+                    label: t('readingList.filter.starred', { count: counts.starred }),
+                  },
                   { value: 'read', label: t('readingList.filter.read', { count: counts.read }) },
                 ]}
               />
@@ -350,7 +382,12 @@ export default function ReadingListTool() {
 
             {tags.length > 0 && (
               <ChipRail role="tablist" label={t('readingList.allTags')} edgeFade={false}>
-                <TagChip active={tag === 'all'} label={t('readingList.allTags')} count={items.length} onClick={() => setTag('all')} />
+                <TagChip
+                  active={tag === 'all'}
+                  label={t('readingList.allTags')}
+                  count={items.length}
+                  onClick={() => setTag('all')}
+                />
                 {tags.map(({ tag: name, count }) => (
                   <TagChip
                     key={name}
@@ -369,7 +406,12 @@ export default function ReadingListTool() {
           <ProductivityStatusBar
             trailing={
               filtersActive ? (
-                <Button size="xs" variant="ghost" className="h-6 px-2 text-primary" onClick={resetFilters}>
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  className="h-6 px-2 text-primary"
+                  onClick={resetFilters}
+                >
                   {t('readingList.clearFilters')}
                 </Button>
               ) : undefined
@@ -377,7 +419,11 @@ export default function ReadingListTool() {
           >
             <div className="flex items-center gap-2">
               <span className="min-w-0 truncate">
-                {t('readingList.summary', { total: items.length, unread: counts.unread, shown: visible.length })}
+                {t('readingList.summary', {
+                  total: items.length,
+                  unread: counts.unread,
+                  shown: visible.length,
+                })}
               </span>
               {progress.total > 0 && (
                 <span
@@ -439,7 +485,9 @@ export default function ReadingListTool() {
                   onToggleStar={toggleStar}
                   onOpen={(entry) => void chrome.tabs.create({ url: entry.url })}
                   onCopyLink={(entry) => copyText(entry.url, 'readingList.copiedLink')}
-                  onCopyMarkdown={(entry) => copyText(exportReadingMarkdown([entry]), 'readingList.copiedMd')}
+                  onCopyMarkdown={(entry) =>
+                    copyText(exportReadingMarkdown([entry]), 'readingList.copiedMd')
+                  }
                   onEdit={setEditing}
                   onDelete={remove}
                   onTagClick={setTag}

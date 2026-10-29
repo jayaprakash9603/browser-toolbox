@@ -32,16 +32,27 @@ export interface BookmarkList {
   duplicates: Set<string>
 }
 
-export function deriveBookmarkList(library: BookmarkLibrary, state: BookmarkListState): BookmarkList {
+export function deriveBookmarkList(
+  library: BookmarkLibrary,
+  state: BookmarkListState,
+): BookmarkList {
   const duplicates = duplicateBookmarkIds(library.rows)
-  const current = state.folderId === 'all' ? undefined : library.folders.find((f) => f.id === state.folderId)
+  const current =
+    state.folderId === 'all' ? undefined : library.folders.find((f) => f.id === state.folderId)
   const browsing = Boolean(current) && state.query.trim() === ''
 
-  const scopeRows = browsing && current
-    ? directRows(library.rows, current.id)
-    : searchBookmarkRows(current ? rowsInFolderTree(library.rows, current) : library.rows, state.query)
+  const scopeRows =
+    browsing && current
+      ? directRows(library.rows, current.id)
+      : searchBookmarkRows(
+          current ? rowsInFolderTree(library.rows, current) : library.rows,
+          state.query,
+        )
 
-  const filtered = filterBookmarkDomain(filterBookmarkView(scopeRows, state.view, duplicates), state.domain)
+  const filtered = filterBookmarkDomain(
+    filterBookmarkView(scopeRows, state.view, duplicates),
+    state.domain,
+  )
   const sort = state.sort === 'manual' && !browsing ? 'recent' : state.sort
 
   return {

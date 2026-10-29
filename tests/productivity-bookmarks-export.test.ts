@@ -49,7 +49,13 @@ describe('bookmark insights and exports', () => {
   const rows = [
     { id: '1', title: 'A', url: 'https://www.a.com/x/', folderPath: 'Work', dateAdded: Date.now() },
     { id: '2', title: 'A again', url: 'https://a.com/x#top', folderPath: 'Read', dateAdded: 1 },
-    { id: '3', title: '=cmd', url: 'https://b.com/?q="1"', folderPath: 'Read', dateAdded: Date.now() },
+    {
+      id: '3',
+      title: '=cmd',
+      url: 'https://b.com/?q="1"',
+      folderPath: 'Read',
+      dateAdded: Date.now(),
+    },
   ]
 
   it('detects duplicate urls ignoring hash and trailing slash', () => {
@@ -75,8 +81,22 @@ describe('bookmark insights and exports', () => {
   it('flattens the bookmark tree with folder paths', () => {
     expect(flattenBookmarkTree(TREE)).toEqual([
       { id: '3', title: 'Docs', url: 'https://d.test', folderPath: 'Bar', parentId: '1', index: 0 },
-      { id: '4', title: 'Mail', url: 'https://m.test', folderPath: 'Bar › Work', parentId: '2', index: 0 },
-      { id: '5', title: 'Chat', url: 'https://c.test', folderPath: 'Bar › Work', parentId: '2', index: 1 },
+      {
+        id: '4',
+        title: 'Mail',
+        url: 'https://m.test',
+        folderPath: 'Bar › Work',
+        parentId: '2',
+        index: 0,
+      },
+      {
+        id: '5',
+        title: 'Chat',
+        url: 'https://c.test',
+        folderPath: 'Bar › Work',
+        parentId: '2',
+        index: 1,
+      },
     ])
   })
 })
@@ -132,7 +152,12 @@ describe('bookmark folders and browsing', () => {
   })
 
   it('searches the whole subtree and disables reordering', () => {
-    const list = deriveBookmarkList(library, { ...state, folderId: '1', sort: 'manual', query: 'mail' })
+    const list = deriveBookmarkList(library, {
+      ...state,
+      folderId: '1',
+      sort: 'manual',
+      query: 'mail',
+    })
     expect(list.rows.map((r) => r.id)).toEqual(['4'])
     expect(list.subfolders).toEqual([])
     expect(list.reorderable).toBe(false)

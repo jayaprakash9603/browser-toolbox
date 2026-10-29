@@ -35,7 +35,11 @@ export function FolderSelect({
   const { t } = useTranslation()
   return (
     <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger id={id} aria-label={ariaLabel ?? t('bookmarks.fieldFolder')} className={cn('w-full', className)}>
+      <SelectTrigger
+        id={id}
+        aria-label={ariaLabel ?? t('bookmarks.fieldFolder')}
+        className={cn('w-full', className)}
+      >
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

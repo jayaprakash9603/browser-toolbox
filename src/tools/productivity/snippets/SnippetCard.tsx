@@ -18,7 +18,12 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/utils/cn'
 
-import { extractCustomVariables, extractSnippetVariables, snippetStats, type Snippet } from './model'
+import {
+  extractCustomVariables,
+  extractSnippetVariables,
+  snippetStats,
+  type Snippet,
+} from './model'
 
 interface SnippetCardProps {
   snippet: Snippet
@@ -121,7 +126,8 @@ export function SnippetCard({
               variant={copied ? 'secondary' : 'default'}
               className={cn(
                 'h-7 gap-1 px-2.5 text-[11px] transition-colors',
-                copied && 'border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+                copied &&
+                  'border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
               )}
               aria-label={t('snippets.copy')}
               onClick={() => onCopy(snippet)}
@@ -194,7 +200,9 @@ export function SnippetCard({
               aria-label={expanded ? t('snippets.collapse') : t('snippets.expand')}
               className="inline-flex shrink-0 cursor-pointer items-center gap-0.5 font-medium text-primary hover:underline"
             >
-              <ChevronDownIcon className={cn('size-3 transition-transform duration-200', expanded && 'rotate-180')} />
+              <ChevronDownIcon
+                className={cn('size-3 transition-transform duration-200', expanded && 'rotate-180')}
+              />
             </button>
           )}
         </div>
@@ -207,7 +215,11 @@ export function SnippetCard({
             title={snippet.pinned ? t('snippets.unpin') : t('snippets.pin')}
             onClick={() => onTogglePin(snippet.id)}
           >
-            {snippet.pinned ? <PinOffIcon className="size-3.5 text-primary" /> : <PinIcon className="size-3.5" />}
+            {snippet.pinned ? (
+              <PinOffIcon className="size-3.5 text-primary" />
+            ) : (
+              <PinIcon className="size-3.5" />
+            )}
           </Button>
           <Button
             size="icon-xs"

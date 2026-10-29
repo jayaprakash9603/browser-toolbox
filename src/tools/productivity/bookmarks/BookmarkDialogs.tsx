@@ -48,7 +48,8 @@ interface BookmarkFormDialogProps {
 
 export function BookmarkFormDialog({ draft, folders, onClose, onSubmit }: BookmarkFormDialogProps) {
   const { t } = useTranslation()
-  const title = draft?.mode === 'edit' ? t('bookmarks.editDialogTitle') : t('bookmarks.createDialogTitle')
+  const title =
+    draft?.mode === 'edit' ? t('bookmarks.editDialogTitle') : t('bookmarks.createDialogTitle')
   return (
     <Dialog open={Boolean(draft)} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
@@ -56,7 +57,15 @@ export function BookmarkFormDialog({ draft, folders, onClose, onSubmit }: Bookma
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription className="sr-only">{title}</DialogDescription>
         </DialogHeader>
-        {draft && <BookmarkForm key={draft.key} draft={draft} folders={folders} onClose={onClose} onSubmit={onSubmit} />}
+        {draft && (
+          <BookmarkForm
+            key={draft.key}
+            draft={draft}
+            folders={folders}
+            onClose={onClose}
+            onSubmit={onSubmit}
+          />
+        )}
       </DialogContent>
     </Dialog>
   )
@@ -87,7 +96,12 @@ function BookmarkForm({
     >
       <div className="grid gap-1.5">
         <Label htmlFor="bookmark-title">{t('bookmarks.fieldTitle')}</Label>
-        <Input id="bookmark-title" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} />
+        <Input
+          id="bookmark-title"
+          autoFocus
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
       </div>
       <div className="grid gap-1.5">
         <Label htmlFor="bookmark-url">{t('bookmarks.fieldUrl')}</Label>
@@ -110,7 +124,12 @@ function BookmarkForm({
       </div>
       <div className="grid gap-1.5">
         <Label htmlFor="bookmark-folder">{t('bookmarks.fieldFolder')}</Label>
-        <FolderSelect id="bookmark-folder" folders={folders} value={parentId} onValueChange={setParentId} />
+        <FolderSelect
+          id="bookmark-folder"
+          folders={folders}
+          value={parentId}
+          onValueChange={setParentId}
+        />
       </div>
       <DialogFooter>
         <Button type="button" variant="outline" size="sm" onClick={onClose}>
@@ -133,7 +152,8 @@ interface FolderFormDialogProps {
 
 export function FolderFormDialog({ draft, folders, onClose, onSubmit }: FolderFormDialogProps) {
   const { t } = useTranslation()
-  const title = draft?.mode === 'rename' ? t('bookmarks.folderDialogRename') : t('bookmarks.folderDialogCreate')
+  const title =
+    draft?.mode === 'rename' ? t('bookmarks.folderDialogRename') : t('bookmarks.folderDialogCreate')
   return (
     <Dialog open={Boolean(draft)} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-sm">
@@ -141,7 +161,15 @@ export function FolderFormDialog({ draft, folders, onClose, onSubmit }: FolderFo
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription className="sr-only">{title}</DialogDescription>
         </DialogHeader>
-        {draft && <FolderForm key={draft.key} draft={draft} folders={folders} onClose={onClose} onSubmit={onSubmit} />}
+        {draft && (
+          <FolderForm
+            key={draft.key}
+            draft={draft}
+            folders={folders}
+            onClose={onClose}
+            onSubmit={onSubmit}
+          />
+        )}
       </DialogContent>
     </Dialog>
   )
@@ -172,7 +200,12 @@ function FolderForm({
       {draft.mode === 'create' && (
         <div className="grid gap-1.5">
           <Label htmlFor="folder-parent">{t('bookmarks.fieldParentFolder')}</Label>
-          <FolderSelect id="folder-parent" folders={folders} value={parentId} onValueChange={setParentId} />
+          <FolderSelect
+            id="folder-parent"
+            folders={folders}
+            value={parentId}
+            onValueChange={setParentId}
+          />
         </div>
       )}
       <DialogFooter>

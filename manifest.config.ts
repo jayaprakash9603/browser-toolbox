@@ -5,7 +5,9 @@ import { defineManifest } from '@crxjs/vite-plugin'
 import { buildManifestCommands } from './src/core/commands/manifest.ts'
 
 /** package.json is the single source of the version; release.bat bumps it. */
-const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string }
+const { version } = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
+) as { version: string }
 
 export default defineManifest({
   manifest_version: 3,
@@ -55,7 +57,14 @@ export default defineManifest({
     'webNavigation',
     'favicon',
   ],
-  optional_permissions: ['clipboardRead', 'webRequest', 'userScripts', 'debugger', 'cookies', 'bookmarks'],
+  optional_permissions: [
+    'clipboardRead',
+    'webRequest',
+    'userScripts',
+    'debugger',
+    'cookies',
+    'bookmarks',
+  ],
   optional_host_permissions: ['<all_urls>'],
   declarative_net_request: {
     rule_resources: [

@@ -60,7 +60,11 @@ describe('snippets model', () => {
 
   it('resolves built-in and custom variables, leaving unknown tokens intact', () => {
     const body = 'Hi {{name}}, see {{url}} on {{date}} {{missing}}'
-    const out = resolveSnippetBody(body, { name: 'Dana' }, { url: 'https://a.test', now: new Date('2026-01-02T10:00:00Z') })
+    const out = resolveSnippetBody(
+      body,
+      { name: 'Dana' },
+      { url: 'https://a.test', now: new Date('2026-01-02T10:00:00Z') },
+    )
     expect(out).toContain('Hi Dana')
     expect(out).toContain('https://a.test')
     expect(out).toContain('2026-01-02')
@@ -68,7 +72,10 @@ describe('snippets model', () => {
   })
 
   it('lists only custom variables for the fill dialog', () => {
-    expect(extractCustomVariables('{{date}} {{name}} {{name}} {{topic}}')).toEqual(['name', 'topic'])
+    expect(extractCustomVariables('{{date}} {{name}} {{name}} {{topic}}')).toEqual([
+      'name',
+      'topic',
+    ])
   })
 
   it('parses tags, filters by tag and shortcut, and tracks usage', () => {

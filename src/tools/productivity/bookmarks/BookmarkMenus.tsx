@@ -83,7 +83,14 @@ interface MoreMenuProps {
   onOpenBatch: () => void
 }
 
-export function MoreMenu({ rows, loading, onRefresh, onCopy, onDownload, onOpenBatch }: MoreMenuProps) {
+export function MoreMenu({
+  rows,
+  loading,
+  onRefresh,
+  onCopy,
+  onDownload,
+  onOpenBatch,
+}: MoreMenuProps) {
   const { t } = useTranslation()
   const empty = rows.length === 0
   return (
@@ -108,22 +115,33 @@ export function MoreMenu({ rows, loading, onRefresh, onCopy, onDownload, onOpenB
         <DropdownMenuLabel className="text-[10px] tracking-wide text-muted-foreground uppercase">
           {t('bookmarks.copyUrls')}
         </DropdownMenuLabel>
-        <DropdownMenuItem disabled={empty} onSelect={() => onCopy(rows.map((r) => r.url).join('\n'), 'bookmarks.copied')}>
+        <DropdownMenuItem
+          disabled={empty}
+          onSelect={() => onCopy(rows.map((r) => r.url).join('\n'), 'bookmarks.copied')}
+        >
           <FileTextIcon className="size-4" />
           {t('bookmarks.copyUrls')}
         </DropdownMenuItem>
         <DropdownMenuItem
           disabled={empty}
-          onSelect={() => onCopy(rows.map((r) => `${r.title}\t${r.url}`).join('\n'), 'bookmarks.copied')}
+          onSelect={() =>
+            onCopy(rows.map((r) => `${r.title}\t${r.url}`).join('\n'), 'bookmarks.copied')
+          }
         >
           <FileTextIcon className="size-4" />
           {t('bookmarks.copyTitles')}
         </DropdownMenuItem>
-        <DropdownMenuItem disabled={empty} onSelect={() => onCopy(exportBookmarksMarkdown(rows), 'bookmarks.markdownCopied')}>
+        <DropdownMenuItem
+          disabled={empty}
+          onSelect={() => onCopy(exportBookmarksMarkdown(rows), 'bookmarks.markdownCopied')}
+        >
           <FileTextIcon className="size-4" />
           {t('bookmarks.copyMarkdown')}
         </DropdownMenuItem>
-        <DropdownMenuItem disabled={empty} onSelect={() => onCopy(exportBookmarksCsv(rows), 'bookmarks.copied')}>
+        <DropdownMenuItem
+          disabled={empty}
+          onSelect={() => onCopy(exportBookmarksCsv(rows), 'bookmarks.copied')}
+        >
           <FileSpreadsheetIcon className="size-4" />
           {t('bookmarks.copyCsv')}
         </DropdownMenuItem>
@@ -131,19 +149,31 @@ export function MoreMenu({ rows, loading, onRefresh, onCopy, onDownload, onOpenB
         <DropdownMenuLabel className="text-[10px] tracking-wide text-muted-foreground uppercase">
           {t('bookmarks.downloadAs')}
         </DropdownMenuLabel>
-        <DropdownMenuItem disabled={empty} onSelect={() => onDownload(exportBookmarksMarkdown(rows), 'text/markdown', 'md')}>
+        <DropdownMenuItem
+          disabled={empty}
+          onSelect={() => onDownload(exportBookmarksMarkdown(rows), 'text/markdown', 'md')}
+        >
           <DownloadIcon className="size-4" />
           {t('bookmarks.exportMd')}
         </DropdownMenuItem>
-        <DropdownMenuItem disabled={empty} onSelect={() => onDownload(exportBookmarksJson(rows), 'application/json', 'json')}>
+        <DropdownMenuItem
+          disabled={empty}
+          onSelect={() => onDownload(exportBookmarksJson(rows), 'application/json', 'json')}
+        >
           <FileJsonIcon className="size-4" />
           JSON
         </DropdownMenuItem>
-        <DropdownMenuItem disabled={empty} onSelect={() => onDownload(exportBookmarksCsv(rows), 'text/csv', 'csv')}>
+        <DropdownMenuItem
+          disabled={empty}
+          onSelect={() => onDownload(exportBookmarksCsv(rows), 'text/csv', 'csv')}
+        >
           <FileSpreadsheetIcon className="size-4" />
           {t('bookmarks.exportCsv')}
         </DropdownMenuItem>
-        <DropdownMenuItem disabled={empty} onSelect={() => onDownload(exportBookmarksHtml(rows), 'text/html', 'html')}>
+        <DropdownMenuItem
+          disabled={empty}
+          onSelect={() => onDownload(exportBookmarksHtml(rows), 'text/html', 'html')}
+        >
           <FileCodeIcon className="size-4" />
           {t('bookmarks.exportHtml')}
         </DropdownMenuItem>

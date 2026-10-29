@@ -60,7 +60,9 @@ async function captureTabs(scope: CaptureScope): Promise<WorkspaceTab[]> {
   const raw = await chrome.tabs.query(scope === 'window' ? { currentWindow: true } : {})
   return raw
     .map(toTabInfo)
-    .filter((tab): tab is TabInfo => tab !== null && Boolean(tab.url) && !SKIPPED_PROTOCOL.test(tab.url))
+    .filter(
+      (tab): tab is TabInfo => tab !== null && Boolean(tab.url) && !SKIPPED_PROTOCOL.test(tab.url),
+    )
     .map((tab) => ({ url: tab.url, title: tab.title }))
 }
 
@@ -102,7 +104,10 @@ export default function WorkspacesTool() {
     () => sortWorkspaces(filterWorkspaces(workspaces, query, tag), sort),
     [workspaces, query, tag, sort],
   )
-  const totalTabs = useMemo(() => workspaces.reduce((sum, w) => sum + w.tabs.length, 0), [workspaces])
+  const totalTabs = useMemo(
+    () => workspaces.reduce((sum, w) => sum + w.tabs.length, 0),
+    [workspaces],
+  )
   const filtersActive = query.trim().length > 0 || tag !== 'all'
 
   const resetFilters = () => {
@@ -119,7 +124,8 @@ export default function WorkspacesTool() {
         setRequest({
           key: keep?.key ?? crypto.randomUUID(),
           mode: 'create',
-          name: keep?.name ?? t('workspaces.defaultName', { date: new Date().toLocaleDateString() }),
+          name:
+            keep?.name ?? t('workspaces.defaultName', { date: new Date().toLocaleDateString() }),
           note: keep?.note ?? '',
           tags: keep?.tags ?? [],
           tabs,
@@ -155,7 +161,10 @@ export default function WorkspacesTool() {
       }))
       showToast(t('workspaces.updated'))
     } else {
-      void persist([newWorkspace(result.name, result.tabs, result.note, result.tags), ...workspaces])
+      void persist([
+        newWorkspace(result.name, result.tabs, result.note, result.tags),
+        ...workspaces,
+      ])
       showToast(t('workspaces.saved', { count: result.tabs.length }))
     }
     setRequest(null)
@@ -255,7 +264,10 @@ export default function WorkspacesTool() {
     )
 
   const exportAllMarkdown = () =>
-    downloadBlob(new Blob([workspacesToMarkdown(workspaces)], { type: 'text/markdown' }), `tab-sessions-${stamp()}.md`)
+    downloadBlob(
+      new Blob([workspacesToMarkdown(workspaces)], { type: 'text/markdown' }),
+      `tab-sessions-${stamp()}.md`,
+    )
 
   const importJson = async (file: File) => {
     try {
@@ -281,7 +293,12 @@ export default function WorkspacesTool() {
                 shortcut="/"
                 className="min-w-0 flex-1"
               />
-              <Button size="sm" className="shrink-0" onClick={() => void openCapture(scope)} disabled={busy}>
+              <Button
+                size="sm"
+                className="shrink-0"
+                onClick={() => void openCapture(scope)}
+                disabled={busy}
+              >
                 <PlusIcon />
                 <span className="hidden @[380px]:inline">{t('workspaces.saveCurrent')}</span>
                 <span className="sr-only @[380px]:hidden">{t('workspaces.saveCurrent')}</span>
@@ -345,7 +362,12 @@ export default function WorkspacesTool() {
                   ]}
                 />
                 {filtersActive && (
-                  <Button size="xs" variant="ghost" className="shrink-0 text-primary" onClick={resetFilters}>
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    className="shrink-0 text-primary"
+                    onClick={resetFilters}
+                  >
                     {t('workspaces.clearSearch')}
                   </Button>
                 )}
@@ -354,7 +376,12 @@ export default function WorkspacesTool() {
 
             {tags.length > 0 && (
               <ChipRail role="tablist" label={t('workspaces.fieldTags')} edgeFade={false}>
-                <TagChip active={tag === 'all'} label={t('workspaces.allTags')} count={workspaces.length} onClick={() => setTag('all')} />
+                <TagChip
+                  active={tag === 'all'}
+                  label={t('workspaces.allTags')}
+                  count={workspaces.length}
+                  onClick={() => setTag('all')}
+                />
                 {tags.map(({ tag: name, count }) => (
                   <TagChip
                     key={name}
@@ -388,7 +415,9 @@ export default function WorkspacesTool() {
             <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10">
               <ArchiveIcon className="size-6 text-primary" aria-hidden />
             </span>
-            <p className="text-sm font-semibold">{filtersActive ? t('workspaces.noMatch') : t('workspaces.emptyTitle')}</p>
+            <p className="text-sm font-semibold">
+              {filtersActive ? t('workspaces.noMatch') : t('workspaces.emptyTitle')}
+            </p>
             <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
               {filtersActive ? t('workspaces.noMatchHint') : t('workspaces.emptyHint')}
             </p>
@@ -397,7 +426,12 @@ export default function WorkspacesTool() {
                 {t('workspaces.clearSearch')}
               </Button>
             ) : (
-              <Button size="sm" className="mt-1" onClick={() => void openCapture(scope)} disabled={busy}>
+              <Button
+                size="sm"
+                className="mt-1"
+                onClick={() => void openCapture(scope)}
+                disabled={busy}
+              >
                 <PlusIcon />
                 {t('workspaces.saveCurrent')}
               </Button>
@@ -412,10 +446,14 @@ export default function WorkspacesTool() {
                   onRestore={(w, mode) => void restore(w, mode)}
                   onAddActiveTab={(w) => void addActiveTab(w)}
                   onDedupe={dedupeWorkspace}
-                  onTogglePin={(w) => void patch(w.id, (item) => ({ ...item, pinned: !item.pinned }))}
+                  onTogglePin={(w) =>
+                    void patch(w.id, (item) => ({ ...item, pinned: !item.pinned }))
+                  }
                   onEdit={edit}
                   onDuplicate={duplicate}
-                  onCopyMarkdown={(w) => copyText(workspaceToMarkdown(w), 'workspaces.markdownCopied')}
+                  onCopyMarkdown={(w) =>
+                    copyText(workspaceToMarkdown(w), 'workspaces.markdownCopied')
+                  }
                   onExport={exportOne}
                   onDelete={remove}
                   onOpenTab={(url) => void chrome.tabs.create({ url, active: true })}

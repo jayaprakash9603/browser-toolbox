@@ -29,7 +29,9 @@ export function ReadingEditDialog({ item, onClose, onSave }: ReadingEditDialogPr
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t('readingList.editDialogTitle')}</DialogTitle>
-          <DialogDescription className="sr-only">{t('readingList.editDialogTitle')}</DialogDescription>
+          <DialogDescription className="sr-only">
+            {t('readingList.editDialogTitle')}
+          </DialogDescription>
         </DialogHeader>
         {item && <EditForm key={item.id} item={item} onClose={onClose} onSave={onSave} />}
       </DialogContent>
@@ -84,7 +86,12 @@ function EditForm({
       </div>
       <div className="grid gap-1.5">
         <Label htmlFor="reading-note">{t('readingList.fieldNote')}</Label>
-        <Textarea id="reading-note" value={note} onChange={(e) => setNote(e.target.value)} className="min-h-20 text-xs" />
+        <Textarea
+          id="reading-note"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          className="min-h-20 text-xs"
+        />
       </div>
       <div className="grid gap-1.5">
         <Label htmlFor="reading-tags">{t('readingList.fieldTags')}</Label>

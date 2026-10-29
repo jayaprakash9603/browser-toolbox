@@ -1,5 +1,11 @@
 import { useTranslation } from 'react-i18next'
-import { ChevronRightIcon, FolderIcon, MoreVerticalIcon, PencilIcon, Trash2Icon } from 'lucide-react'
+import {
+  ChevronRightIcon,
+  FolderIcon,
+  MoreVerticalIcon,
+  PencilIcon,
+  Trash2Icon,
+} from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 
 import { Button } from '@/shared/components/ui/button'
@@ -43,7 +49,9 @@ export function BookmarkFolderRow({ folder, onOpen, onRename, onDelete }: Bookma
           <FolderIcon className="size-4" aria-hidden />
         </span>
         <span className="min-w-0 flex-1 leading-tight">
-          <span className="block truncate text-[13px] font-semibold text-foreground">{folder.title}</span>
+          <span className="block truncate text-[13px] font-semibold text-foreground">
+            {folder.title}
+          </span>
           <span className="mt-0.5 block text-[10.5px] text-muted-foreground tabular-nums">
             {t('bookmarks.itemCount', { count: folder.count })}
           </span>
@@ -56,7 +64,12 @@ export function BookmarkFolderRow({ folder, onOpen, onRename, onDelete }: Bookma
       {folder.editable ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="icon-xs" variant="ghost" className="size-8 shrink-0" aria-label={t('bookmarks.exportMenu')}>
+            <Button
+              size="icon-xs"
+              variant="ghost"
+              className="size-8 shrink-0"
+              aria-label={t('bookmarks.exportMenu')}
+            >
               <MoreVerticalIcon className="size-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -66,7 +79,10 @@ export function BookmarkFolderRow({ folder, onOpen, onRename, onDelete }: Bookma
               {t('bookmarks.renameFolder')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => onDelete(folder)}>
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onSelect={() => onDelete(folder)}
+            >
               <Trash2Icon className="size-4" />
               {t('bookmarks.deleteFolder')}
             </DropdownMenuItem>

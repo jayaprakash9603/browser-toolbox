@@ -37,7 +37,8 @@ export const readingListStrings = {
   'readingList.copiedMd': 'Markdown citation copied',
   'readingList.copyFailed': 'Copy failed',
   'readingList.emptyTitle': 'Nothing saved yet',
-  'readingList.emptyHint': 'Save the current tab with a note and tags — ideal for deep research and read-later queues.',
+  'readingList.emptyHint':
+    'Save the current tab with a note and tags — ideal for deep research and read-later queues.',
   'readingList.noMatchTitle': 'No matching items',
   'readingList.noMatchHint': 'Try clearing your search or switching the status filter.',
   'readingList.clearFilters': 'Reset filters',

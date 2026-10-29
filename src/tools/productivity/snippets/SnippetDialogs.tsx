@@ -35,7 +35,12 @@ interface SnippetEditorDialogProps {
   onSave: (tagsInput: string) => void
 }
 
-export function SnippetEditorDialog({ editor, isEditing, onChange, onSave }: SnippetEditorDialogProps) {
+export function SnippetEditorDialog({
+  editor,
+  isEditing,
+  onChange,
+  onSave,
+}: SnippetEditorDialogProps) {
   const { t } = useTranslation()
   const [tagsText, setTagsText] = useState('')
   const [trackedId, setTrackedId] = useState<string | null>(null)
@@ -52,7 +57,9 @@ export function SnippetEditorDialog({ editor, isEditing, onChange, onSave }: Sni
     const addition = `{{${token}}}`
     onChange({
       ...editor,
-      body: editor.body ? `${editor.body}${editor.body.endsWith(' ') ? '' : ' '}${addition}` : addition,
+      body: editor.body
+        ? `${editor.body}${editor.body.endsWith(' ') ? '' : ' '}${addition}`
+        : addition,
     })
   }
 
@@ -226,7 +233,9 @@ export function VariableFillDialog({
               ))}
             </div>
             <div className="grid gap-1">
-              <span className="text-[11px] font-medium text-muted-foreground">{t('snippets.fillPreview')}</span>
+              <span className="text-[11px] font-medium text-muted-foreground">
+                {t('snippets.fillPreview')}
+              </span>
               <pre className="scrollbar-styled max-h-36 overflow-auto whitespace-pre-wrap break-words rounded-lg border bg-muted/45 p-2.5 font-mono text-xs leading-relaxed text-foreground">
                 {preview}
               </pre>

@@ -76,7 +76,10 @@ export function parseBookmarkTree(
   return { rows, folders: withFolderCounts(folders, rows) }
 }
 
-function withFolderCounts(folders: BookmarkFolder[], rows: readonly BookmarkRow[]): BookmarkFolder[] {
+function withFolderCounts(
+  folders: BookmarkFolder[],
+  rows: readonly BookmarkRow[],
+): BookmarkFolder[] {
   const byId = new Map(folders.map((folder) => [folder.id, { ...folder }]))
   for (const row of rows) {
     const direct = row.parentId ? byId.get(row.parentId) : undefined
@@ -90,7 +93,10 @@ function withFolderCounts(folders: BookmarkFolder[], rows: readonly BookmarkRow[
   return folders.map((folder) => byId.get(folder.id) ?? folder)
 }
 
-export function flattenBookmarkTree(nodes: readonly chrome.bookmarks.BookmarkTreeNode[], limit = 1000): BookmarkRow[] {
+export function flattenBookmarkTree(
+  nodes: readonly chrome.bookmarks.BookmarkTreeNode[],
+  limit = 1000,
+): BookmarkRow[] {
   return parseBookmarkTree(nodes, limit).rows
 }
 
@@ -108,7 +114,12 @@ export function bookmarkDomain(url: string): string {
 }
 
 export function normalizeBookmarkUrl(url: string): string {
-  return url.trim().replace(/#.*$/, '').replace(/^https?:\/\/(www\.)?/i, '').replace(/\/+$/, '').toLowerCase()
+  return url
+    .trim()
+    .replace(/#.*$/, '')
+    .replace(/^https?:\/\/(www\.)?/i, '')
+    .replace(/\/+$/, '')
+    .toLowerCase()
 }
 
 export function duplicateBookmarkIds(rows: readonly BookmarkRow[]): Set<string> {
@@ -146,19 +157,36 @@ export function searchBookmarkRows(rows: readonly BookmarkRow[], query: string):
   )
 }
 
-export function rowsInFolderTree(rows: readonly BookmarkRow[], folder: BookmarkFolder): BookmarkRow[] {
-  return rows.filter((row) => row.folderPath === folder.path || row.folderPath.startsWith(`${folder.path}${FOLDER_SEPARATOR}`))
+export function rowsInFolderTree(
+  rows: readonly BookmarkRow[],
+  folder: BookmarkFolder,
+): BookmarkRow[] {
+  return rows.filter(
+    (row) =>
+      row.folderPath === folder.path ||
+      row.folderPath.startsWith(`${folder.path}${FOLDER_SEPARATOR}`),
+  )
 }
 
 export function directRows(rows: readonly BookmarkRow[], folderId: string): BookmarkRow[] {
-  return rows.filter((row) => row.parentId === folderId).sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
+  return rows
+    .filter((row) => row.parentId === folderId)
+    .sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
 }
 
-export function childFolders(folders: readonly BookmarkFolder[], folderId: string): BookmarkFolder[] {
-  return folders.filter((folder) => folder.parentId === folderId).sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
+export function childFolders(
+  folders: readonly BookmarkFolder[],
+  folderId: string,
+): BookmarkFolder[] {
+  return folders
+    .filter((folder) => folder.parentId === folderId)
+    .sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
 }
 
-export function folderTrail(folders: readonly BookmarkFolder[], folderId: string): BookmarkFolder[] {
+export function folderTrail(
+  folders: readonly BookmarkFolder[],
+  folderId: string,
+): BookmarkFolder[] {
   const byId = new Map(folders.map((folder) => [folder.id, folder]))
   const trail: BookmarkFolder[] = []
   let cursor = byId.get(folderId)
@@ -170,7 +198,10 @@ export function folderTrail(folders: readonly BookmarkFolder[], folderId: string
 }
 
 /** Descendant folder ids including the folder itself; a folder cannot be moved into these. */
-export function folderSubtreeIds(folders: readonly BookmarkFolder[], folderId: string): Set<string> {
+export function folderSubtreeIds(
+  folders: readonly BookmarkFolder[],
+  folderId: string,
+): Set<string> {
   const ids = new Set([folderId])
   let grew = true
   while (grew) {
@@ -259,7 +290,10 @@ export function filterBookmarkRows(rows: BookmarkRow[], folderRoot: string | 'al
   return rows.filter((row) => row.folderPath.startsWith(folderRoot))
 }
 
-export function topBookmarkDomains(rows: readonly BookmarkRow[], limit = 12): { domain: string; count: number }[] {
+export function topBookmarkDomains(
+  rows: readonly BookmarkRow[],
+  limit = 12,
+): { domain: string; count: number }[] {
   const counts = new Map<string, number>()
   for (const row of rows) {
     const domain = bookmarkDomain(row.url)
@@ -272,7 +306,10 @@ export function topBookmarkDomains(rows: readonly BookmarkRow[], limit = 12): { 
     .map(([domain, count]) => ({ domain, count }))
 }
 
-export function filterBookmarkDomain(rows: readonly BookmarkRow[], domain: string | 'all'): BookmarkRow[] {
+export function filterBookmarkDomain(
+  rows: readonly BookmarkRow[],
+  domain: string | 'all',
+): BookmarkRow[] {
   if (domain === 'all') return [...rows]
   return rows.filter((row) => bookmarkDomain(row.url) === domain)
 }
@@ -283,7 +320,9 @@ export function sortBookmarkRows(rows: readonly BookmarkRow[], sort: BookmarkSor
     a.title.localeCompare(b.title, undefined, { sensitivity: 'base' })
   if (sort === 'title') return next.sort(byTitle)
   if (sort === 'domain') {
-    return next.sort((a, b) => bookmarkDomain(a.url).localeCompare(bookmarkDomain(b.url)) || byTitle(a, b))
+    return next.sort(
+      (a, b) => bookmarkDomain(a.url).localeCompare(bookmarkDomain(b.url)) || byTitle(a, b),
+    )
   }
   if (sort === 'manual') return next
   return next.sort((a, b) => (b.dateAdded ?? 0) - (a.dateAdded ?? 0))

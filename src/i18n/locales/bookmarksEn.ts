@@ -86,7 +86,8 @@ export const bookmarksStrings = {
   'bookmarks.fieldParentFolder': 'Create inside',
   'bookmarks.createFolder': 'Create folder',
   'bookmarks.deleteFolderTitle': 'Delete "{{name}}"?',
-  'bookmarks.deleteFolderBody': 'This removes the folder and the {{count}} bookmarks inside it. This cannot be undone.',
+  'bookmarks.deleteFolderBody':
+    'This removes the folder and the {{count}} bookmarks inside it. This cannot be undone.',
   'bookmarks.deleteFolderConfirm': 'Delete folder',
 
   'bookmarks.emptyTitle': 'No bookmarks found',

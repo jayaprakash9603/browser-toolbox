@@ -78,7 +78,10 @@ export function ReadingItemCard({
           transition={{ type: 'spring', stiffness: 520, damping: 26 }}
           className="flex"
         >
-          <CheckIcon className={cn('size-4', !item.read && 'opacity-40')} strokeWidth={item.read ? 3 : 2} />
+          <CheckIcon
+            className={cn('size-4', !item.read && 'opacity-40')}
+            strokeWidth={item.read ? 3 : 2}
+          />
         </motion.span>
       </button>
 
@@ -103,7 +106,10 @@ export function ReadingItemCard({
             ·
           </span>
           <span className="shrink-0 tabular-nums">
-            {new Date(item.savedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            {new Date(item.savedAt).toLocaleDateString(undefined, {
+              month: 'short',
+              day: 'numeric',
+            })}
           </span>
         </p>
         {item.note && (
@@ -141,7 +147,12 @@ export function ReadingItemCard({
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="icon-xs" variant="ghost" className="size-8" aria-label={t('nav.moreOptions')}>
+            <Button
+              size="icon-xs"
+              variant="ghost"
+              className="size-8"
+              aria-label={t('nav.moreOptions')}
+            >
               <MoreVerticalIcon className="size-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -163,7 +174,10 @@ export function ReadingItemCard({
               {t('readingList.edit')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => onDelete(item)}>
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onSelect={() => onDelete(item)}
+            >
               <Trash2Icon className="size-4" />
               {t('readingList.delete')}
             </DropdownMenuItem>

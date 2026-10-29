@@ -50,7 +50,10 @@ export interface WorkspaceCardActions {
   onTagClick: (tag: string) => void
 }
 
-export function WorkspaceCard({ workspace, ...actions }: { workspace: TabWorkspace } & WorkspaceCardActions) {
+export function WorkspaceCard({
+  workspace,
+  ...actions
+}: { workspace: TabWorkspace } & WorkspaceCardActions) {
   const { t } = useTranslation()
   const reduce = useReducedMotion()
   const [expanded, setExpanded] = useState(false)
@@ -77,9 +80,14 @@ export function WorkspaceCard({ workspace, ...actions }: { workspace: TabWorkspa
           </div>
           <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
             {t('workspaces.tabCount', { count: workspace.tabs.length })} ·{' '}
-            {new Date(workspace.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            {new Date(workspace.updatedAt).toLocaleDateString(undefined, {
+              month: 'short',
+              day: 'numeric',
+            })}
           </p>
-          {workspace.note && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{workspace.note}</p>}
+          {workspace.note && (
+            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{workspace.note}</p>
+          )}
           {!!workspace.tags?.length && (
             <div className="mt-1.5 flex flex-wrap gap-1">
               {workspace.tags.map((tag) => (
@@ -155,8 +163,12 @@ export function WorkspaceCard({ workspace, ...actions }: { workspace: TabWorkspa
               onClick={() => setExpanded((value) => !value)}
               className="flex w-full cursor-pointer items-center justify-center gap-1 rounded-md py-1 text-[10.5px] font-medium text-primary transition-colors hover:bg-background/70"
             >
-              <ChevronDownIcon className={cn('size-3 transition-transform duration-200', expanded && 'rotate-180')} />
-              {expanded ? t('workspaces.hideTabs') : t('workspaces.showAllTabs', { count: workspace.tabs.length })}
+              <ChevronDownIcon
+                className={cn('size-3 transition-transform duration-200', expanded && 'rotate-180')}
+              />
+              {expanded
+                ? t('workspaces.hideTabs')
+                : t('workspaces.showAllTabs', { count: workspace.tabs.length })}
             </button>
           </li>
         )}
@@ -176,7 +188,12 @@ export function WorkspaceCard({ workspace, ...actions }: { workspace: TabWorkspa
           {t('workspaces.addActiveTab')}
         </Button>
         {duplicates > 0 && (
-          <Button size="xs" variant="ghost" className="text-amber-600 dark:text-amber-400" onClick={() => actions.onDedupe(workspace)}>
+          <Button
+            size="xs"
+            variant="ghost"
+            className="text-amber-600 dark:text-amber-400"
+            onClick={() => actions.onDedupe(workspace)}
+          >
             {t('workspaces.dedupeTabs', { count: duplicates })}
           </Button>
         )}
@@ -190,7 +207,12 @@ function CardMenu({ workspace, ...actions }: { workspace: TabWorkspace } & Works
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button size="icon-xs" variant="ghost" className="shrink-0" aria-label={t('nav.moreOptions')}>
+        <Button
+          size="icon-xs"
+          variant="ghost"
+          className="shrink-0"
+          aria-label={t('nav.moreOptions')}
+        >
           <MoreVerticalIcon />
         </Button>
       </DropdownMenuTrigger>
@@ -221,7 +243,10 @@ function CardMenu({ workspace, ...actions }: { workspace: TabWorkspace } & Works
           {t('workspaces.restore')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => actions.onDelete(workspace)}>
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive"
+          onSelect={() => actions.onDelete(workspace)}
+        >
           <Trash2Icon className="size-4" />
           {t('workspaces.delete')}
         </DropdownMenuItem>

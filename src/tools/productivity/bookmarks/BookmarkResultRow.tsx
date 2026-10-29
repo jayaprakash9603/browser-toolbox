@@ -50,7 +50,13 @@ interface BookmarkResultRowProps extends BookmarkRowActions {
 const ROW_CLASS =
   'group flex min-h-14 items-center gap-2 rounded-xl border bg-card py-1.5 pr-1.5 pl-2 transition-[border-color,background-color,box-shadow] duration-150 hover:border-primary/30 hover:bg-muted/20'
 
-export function BookmarkResultRow({ row, highlighted, reorderable, onDragEnd, ...rest }: BookmarkResultRowProps) {
+export function BookmarkResultRow({
+  row,
+  highlighted,
+  reorderable,
+  onDragEnd,
+  ...rest
+}: BookmarkResultRowProps) {
   const reduce = useReducedMotion()
   const controls = useDragControls()
   const className = cn(ROW_CLASS, highlighted && 'border-primary/40 bg-primary/[0.05]')
@@ -142,7 +148,9 @@ function RowBody({
             )}
           </span>
           <span className="mt-0.5 flex min-w-0 items-center gap-1 text-[10.5px] text-muted-foreground">
-            <span className="shrink-0 font-mono text-[10px] text-foreground/70">{bookmarkDomain(row.url)}</span>
+            <span className="shrink-0 font-mono text-[10px] text-foreground/70">
+              {bookmarkDomain(row.url)}
+            </span>
             {showFolder && (
               <>
                 <span aria-hidden className="shrink-0 text-muted-foreground/50">
@@ -167,7 +175,12 @@ function RowBody({
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="icon-xs" variant="ghost" className="size-8 shrink-0" aria-label={t('bookmarks.exportMenu')}>
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            className="size-8 shrink-0"
+            aria-label={t('bookmarks.exportMenu')}
+          >
             <MoreVerticalIcon className="size-4" />
           </Button>
         </DropdownMenuTrigger>

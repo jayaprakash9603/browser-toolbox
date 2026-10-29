@@ -47,7 +47,8 @@ export const snippetsStrings = {
   'snippets.fieldTags': 'Tags (comma separated)',
   'snippets.fieldTagsPlaceholder': 'email, follow-up, template',
   'snippets.fieldBody': 'Template text',
-  'snippets.fieldBodyHint': 'Use {{date}}, {{time}}, {{url}}, {{title}} or custom {{name}} placeholders.',
+  'snippets.fieldBodyHint':
+    'Use {{date}}, {{time}}, {{url}}, {{title}} or custom {{name}} placeholders.',
   'snippets.insertToken': 'Insert token:',
   'snippets.save': 'Save snippet',
   'snippets.clearFilters': 'Reset',

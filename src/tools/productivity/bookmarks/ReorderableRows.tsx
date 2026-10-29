@@ -27,7 +27,13 @@ export function ReorderableRows({ rows, renderRow, onCommit }: ReorderableRowsPr
   }
 
   return (
-    <Reorder.Group as="div" axis="y" values={order} onReorder={handleReorder} className="flex select-none flex-col gap-1.5">
+    <Reorder.Group
+      as="div"
+      axis="y"
+      values={order}
+      onReorder={handleReorder}
+      className="flex select-none flex-col gap-1.5"
+    >
       {order.map((id, index) => {
         const row = byId.get(id)
         return row ? renderRow(row, index, () => onCommit(id, latest.current)) : null

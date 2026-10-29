@@ -127,7 +127,11 @@ export default function SnippetsTool() {
   }
 
   const copySnippet = (snippet: Snippet) =>
-    void writeClipboard(resolveSnippetBody(snippet.body, {}, pageContext), snippet, 'snippets.copied')
+    void writeClipboard(
+      resolveSnippetBody(snippet.body, {}, pageContext),
+      snippet,
+      'snippets.copied',
+    )
 
   const copyResolved = (resolved: string, snippet: Snippet) => {
     setFillTarget(null)
@@ -140,7 +144,9 @@ export default function SnippetsTool() {
   }
 
   const togglePin = (id: string) => {
-    void persist(snippets.map((s) => (s.id === id ? { ...s, pinned: !s.pinned, updatedAt: Date.now() } : s)))
+    void persist(
+      snippets.map((s) => (s.id === id ? { ...s, pinned: !s.pinned, updatedAt: Date.now() } : s)),
+    )
   }
 
   const duplicate = (snippet: Snippet) => {
@@ -164,7 +170,9 @@ export default function SnippetsTool() {
       updatedAt: Date.now(),
     }
     const exists = snippets.some((s) => s.id === trimmed.id)
-    void persist(exists ? snippets.map((s) => (s.id === trimmed.id ? trimmed : s)) : [trimmed, ...snippets])
+    void persist(
+      exists ? snippets.map((s) => (s.id === trimmed.id ? trimmed : s)) : [trimmed, ...snippets],
+    )
     setEditor(null)
     showToast(t('snippets.saved'))
   }
@@ -276,7 +284,12 @@ export default function SnippetsTool() {
                 ]}
               />
               {filtersActive && (
-                <Button size="xs" variant="ghost" className="shrink-0 text-primary" onClick={resetFilters}>
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  className="shrink-0 text-primary"
+                  onClick={resetFilters}
+                >
                   {t('snippets.clearFilters')}
                 </Button>
               )}
@@ -425,7 +438,10 @@ function FilterChip({
         'transition-[color,background-color,border-color] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring',
         active
           ? 'border-primary/40 bg-primary/10 text-primary'
-          : cn('text-muted-foreground hover:border-foreground/20 hover:text-foreground', subtle ? 'border-transparent bg-muted/60' : 'border-border'),
+          : cn(
+              'text-muted-foreground hover:border-foreground/20 hover:text-foreground',
+              subtle ? 'border-transparent bg-muted/60' : 'border-border',
+            ),
       )}
     >
       <span className="max-w-[9rem] truncate">{label}</span>

@@ -20,7 +20,14 @@ export type SnippetSort = 'recent' | 'popular' | 'title' | 'category'
 
 export const DEFAULT_SNIPPET_CATEGORIES = ['General', 'Email', 'Support', 'Code', 'Social'] as const
 
-export const BUILTIN_SNIPPET_TOKENS = ['date', 'time', 'datetime', 'url', 'title', 'domain'] as const
+export const BUILTIN_SNIPPET_TOKENS = [
+  'date',
+  'time',
+  'datetime',
+  'url',
+  'title',
+  'domain',
+] as const
 
 const BUILTIN_SET = new Set<string>(BUILTIN_SNIPPET_TOKENS)
 const TOKEN_PATTERN = /\{\{\s*([a-zA-Z0-9_-]+)\s*\}\}/g
@@ -100,7 +107,10 @@ export function snippetCategories(snippets: Snippet[]): string[] {
   return [...set].sort((a, b) => a.localeCompare(b))
 }
 
-export function categorySnippetCount(snippets: readonly Snippet[], category: string | 'all'): number {
+export function categorySnippetCount(
+  snippets: readonly Snippet[],
+  category: string | 'all',
+): number {
   if (category === 'all') return snippets.length
   return snippets.filter((s) => s.category === category).length
 }
@@ -180,7 +190,11 @@ export function resolveSnippetBody(
   })
 }
 
-export function recordSnippetUse(snippets: readonly Snippet[], id: string, now = Date.now()): Snippet[] {
+export function recordSnippetUse(
+  snippets: readonly Snippet[],
+  id: string,
+  now = Date.now(),
+): Snippet[] {
   return snippets.map((s) =>
     s.id === id ? { ...s, useCount: (s.useCount ?? 0) + 1, lastUsedAt: now } : s,
   )
@@ -205,7 +219,12 @@ export function mergeImportedSnippets(existing: Snippet[], imported: Snippet[]):
   for (const row of imported) {
     if (!row.body?.trim()) continue
     const item: Snippet = ids.has(row.id)
-      ? { ...row, id: crypto.randomUUID(), tags: Array.isArray(row.tags) ? row.tags : [], updatedAt: Date.now() }
+      ? {
+          ...row,
+          id: crypto.randomUUID(),
+          tags: Array.isArray(row.tags) ? row.tags : [],
+          updatedAt: Date.now(),
+        }
       : { ...row, tags: Array.isArray(row.tags) ? row.tags : [], updatedAt: Date.now() }
     ids.add(item.id)
     merged.push(item)
@@ -223,7 +242,9 @@ export function snippetStats(body: string) {
 export function exportSnippetsMarkdown(snippets: readonly Snippet[]): string {
   return snippets
     .map((s) => {
-      const meta = [s.category, s.shortcut, ...s.tags.map((t) => `#${t}`)].filter(Boolean).join(' · ')
+      const meta = [s.category, s.shortcut, ...s.tags.map((t) => `#${t}`)]
+        .filter(Boolean)
+        .join(' · ')
       return `## ${s.title}\n${meta ? `_${meta}_\n\n` : '\n'}\`\`\`\n${s.body}\n\`\`\``
     })
     .join('\n\n')
