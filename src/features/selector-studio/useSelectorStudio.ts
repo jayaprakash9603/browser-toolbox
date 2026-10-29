@@ -53,6 +53,13 @@ export function useSelectorStudio(client: StudioPageClient) {
   const [inspecting, setInspecting] = useState(false)
   const request = useRef(0)
   const lastPickKey = useRef('')
+  const settingsRef = useRef(settings)
+  settingsRef.current = settings
+
+  const shouldSyncPick = useCallback(() => {
+    const current = settingsRef.current
+    return current.enabled && current.livePageSync
+  }, [])
 
   const loadInspect = useCallback(
     async (next: SelectorSnapshot | null) => {
@@ -73,7 +80,8 @@ export function useSelectorStudio(client: StudioPageClient) {
   )
 
   const applySnapshot = useCallback(
-    async (next: SelectorSnapshot | null, mode = settings.rankMode) => {
+    async (next: SelectorSnapshot | null, mode = settingsRef.current.rankMode) => {
+      if (!settingsRef.current.enabled) return
       setSnapshot(next)
       setPicking(false)
       if (!next) {
@@ -92,12 +100,12 @@ export function useSelectorStudio(client: StudioPageClient) {
       setActive(scored[0] ?? null)
       setMatchNotice('')
       void loadInspect(next)
-      if (settings.autoHighlight && scored[0]) {
+      if (settingsRef.current.autoHighlight && scored[0]) {
         void client.highlight(scored[0].kind, scored[0].expression, next.identityPath || null)
       }
       if (id === request.current) setAnalyzing(false)
     },
-    [client, loadInspect, settings.autoHighlight, settings.rankMode],
+    [client, loadInspect],
   )
 
   useEffect(() => {
@@ -119,10 +127,12 @@ export function useSelectorStudio(client: StudioPageClient) {
           return
         }
       }
+      if (!shouldSyncPick()) return
       const next = snapshotOf(picked, pageUrl)
       if (next) void applySnapshot(next)
     })
     const stopPicked = client.subscribePicked((picked) => {
+      if (!shouldSyncPick()) return
       setStale(false)
       void client.resolveTab().then((tab) => {
         if (tab?.url) setPageUrl(tab.url)
@@ -195,9 +205,18 @@ export function useSelectorStudio(client: StudioPageClient) {
     const next = { ...settings, ...patch }
     setSettings(next)
     await saveStudioSettings(next)
-  }, [settings])
+    if (patch.enabled === false) {
+      await client.cancelPicker()
+      setPicking(false)
+      await client.clearHighlights()
+    }
+  }, [client, settings])
 
   const pick = useCallback(async () => {
+    if (!settingsRef.current.enabled) {
+      setError('Selector Studio is disabled. Turn it on in the sidebar settings.')
+      return
+    }
     if (picking) {
       await client.cancelPicker()
       setPicking(false)

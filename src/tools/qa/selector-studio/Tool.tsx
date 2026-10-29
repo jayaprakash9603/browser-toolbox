@@ -1,4 +1,4 @@
-import { SelectorStudioView } from '@/features/selector-studio/components/SelectorStudioView'
+import { SelectorStudioPanelView } from '@/features/selector-studio/components/SelectorStudioPanelView'
 import '@/features/selector-studio/i18n'
 import { createSidePanelClient } from '@/features/selector-studio/pageClient'
 import { useSelectorStudio } from '@/features/selector-studio/useSelectorStudio'
@@ -14,7 +14,7 @@ export default function SelectorStudioTool() {
 
   return (
     <ToolPage tool={tool} contentClassName="p-0">
-      <SelectorStudioView model={model} embedded />
+      <SelectorStudioPanelView model={model} />
     </ToolPage>
   )
 }

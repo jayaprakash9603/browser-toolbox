@@ -22,6 +22,10 @@ export interface StudioSettings {
   rankMode: RankMode
   defaultFramework: FrameworkId
   autoHighlight: boolean
+  /** Master switch for side-panel / tool behavior */
+  enabled: boolean
+  /** Apply element picks from the page automatically */
+  livePageSync: boolean
 }
 
 export interface StudioStore {
@@ -33,6 +37,8 @@ export const DEFAULT_SETTINGS: StudioSettings = {
   rankMode: 'stable',
   defaultFramework: 'playwright',
   autoHighlight: false,
+  enabled: true,
+  livePageSync: true,
 }
 
 function normalize(store?: Partial<StudioStore>): StudioStore {

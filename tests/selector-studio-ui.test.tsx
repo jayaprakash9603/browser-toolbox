@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { SelectorCandidate, SelectorSnapshot } from '@/core/engines/selector-studio'
 import { SelectorStudioView } from '@/features/selector-studio/components/SelectorStudioView'
+import { SelectorStudioPanelView } from '@/features/selector-studio/components/SelectorStudioPanelView'
 import '@/features/selector-studio/i18n'
 import type { SelectorStudioModel } from '@/features/selector-studio/useSelectorStudio'
 import { TooltipProvider } from '@/shared/components/ui/tooltip'
@@ -87,7 +88,13 @@ function model(partial: Partial<SelectorStudioModel> = {}): SelectorStudioModel 
     ]),
     active: recommended,
     setActive: vi.fn(),
-    settings: { rankMode: 'stable', defaultFramework: 'playwright', autoHighlight: false },
+    settings: {
+      rankMode: 'stable',
+      defaultFramework: 'playwright',
+      autoHighlight: false,
+      enabled: true,
+      livePageSync: true,
+    },
     setRankMode: vi.fn(),
     patchSettings: vi.fn(),
     history: [],
@@ -254,6 +261,13 @@ describe('Selector Studio UI', () => {
     const pick = vi.fn()
     renderStudio(<SelectorStudioView model={model({ picking: true, pick })} pane />)
     expect(screen.getByText(/click an element on the page/i)).toBeInTheDocument()
+  })
+
+  it('renders side panel layout with settings in the sidebar', () => {
+    renderStudio(<SelectorStudioPanelView model={model()} />)
+    expect(screen.getByRole('navigation', { name: /sections/i })).toBeInTheDocument()
+    expect(screen.getByLabelText(/studio enabled/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /pick element/i })).toBeInTheDocument()
   })
 
   it('shows computed styles and listeners under Inspect', async () => {
