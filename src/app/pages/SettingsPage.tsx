@@ -17,7 +17,6 @@ import { clearHistory } from '@/core/clipboard'
 import { clearAll as clearStorage, initStorage } from '@/core/storage'
 import { clearRecentTools } from '@/features/recent-tools/recentToolsService'
 import {
-  getSettings,
   resetSettings,
   updateSettings,
   type Density,
@@ -51,23 +50,24 @@ import { SiteAccessSettingsSection } from '@/app/pages/settings/SiteAccessSettin
 import { SitesSettingsSection } from '@/app/pages/settings/SitesSettingsSection'
 import { SettingsGroup, SettingsRow } from '@/app/pages/settings/ui'
 import { useFocusTarget } from '@/shared/hooks/useFocusTarget'
+import { useSettings } from '@/shared/hooks/useSettings'
 import { useScrollMemory } from '@/app/navigationMemory'
 
 export default function SettingsPage() {
   const { t } = useTranslation()
   useFocusTarget()
   const scrollRef = useScrollMemory<HTMLDivElement>()
-  const [settings, setSettings] = useState<Settings | null>(null)
+  const settings = useSettings()
   const [confirm, setConfirm] = useState<'clipboard' | 'recent' | 'reset' | null>(null)
 
   useEffect(() => {
-    void initStorage().then(() => getSettings().then(setSettings))
+    void initStorage()
   }, [])
 
   if (!settings) return <AppLoadingSkeleton variant="settings" label={t('nav.loading')} />
 
   const update = async (patch: Partial<Settings>) => {
-    setSettings(await updateSettings(patch))
+    await updateSettings(patch)
   }
 
   const sections: { id: string; icon: LucideIcon; label: string }[] = [
@@ -301,9 +301,7 @@ export default function SettingsPage() {
         confirmLabel={t('settings.resetConfirm')}
         destructive
         onConfirm={() => {
-          void clearStorage()
-            .then(() => resetSettings())
-            .then(setSettings)
+          void clearStorage().then(() => resetSettings())
         }}
       />
     </div>

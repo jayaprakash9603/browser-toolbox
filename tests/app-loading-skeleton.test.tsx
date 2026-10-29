@@ -24,7 +24,7 @@ describe('application loading skeleton', () => {
   it('renders the home tool grid shape', () => {
     const { container } = render(<AppLoadingSkeleton variant="home" label="Loading" />)
 
-    expect(container.querySelectorAll('[data-skeleton-grid]')).toHaveLength(2)
-    expect(container.querySelectorAll('[data-skeleton-grid] > div')).toHaveLength(6)
+    expect(container.querySelectorAll('[data-skeleton-grid]')).toHaveLength(1)
+    expect(container.querySelectorAll('[data-skeleton-grid] > div')).toHaveLength(3)
   })
 })
