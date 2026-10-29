@@ -42,3 +42,13 @@ export function preloadRouteFromHash(): void {
   if (tool) void tool.loader()
   else void import('@/app/pages/HomePage')
 }
+
+/** Warm every page chunk once the panel is idle so later navigation never waits on the network. */
+export function preloadAppPages(): void {
+  void import('@/app/pages/HomePage')
+  void import('@/app/pages/SettingsPage')
+  void import('@/app/pages/settings/KeyboardShortcutsPage')
+  void import('@/app/pages/CategoryPage')
+  void import('@/app/pages/AllToolsPage')
+  void import('@/app/pages/DevToolsPage')
+}

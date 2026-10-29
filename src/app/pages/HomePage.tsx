@@ -77,7 +77,7 @@ export default function HomePage({ section }: HomePageProps) {
       <div ref={scrollRef} className="scrollbar-styled min-h-0 flex-1 overflow-y-auto overflow-x-clip px-3 pb-6 @[360px]:px-4">
         <div className="mx-auto max-w-3xl pt-3">
           <BundleJobBanner />
-          <WelcomeStrip favoriteCount={favorites.length} />
+          <WelcomeStrip />
           <QuickActions />
           <RecentSection />
           <FavoritesSection />

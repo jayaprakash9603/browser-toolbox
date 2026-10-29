@@ -255,8 +255,58 @@ button:not(:disabled),
 [role='radio']:not([aria-disabled='true']),
 [role='checkbox']:not([aria-disabled='true']),
 [data-slot='button'],
-[data-slot='select-trigger'] {
+[data-slot='select-trigger'],
+[data-slot='checkbox'],
+[data-slot='switch'] {
   cursor: pointer;
+}
+
+/* Tactile press feedback on clickable controls (respects reduced motion). */
+@layer base {
+  :is(
+    button:not(:disabled),
+    input[type='button']:not(:disabled),
+    input[type='submit']:not(:disabled),
+    input[type='reset']:not(:disabled),
+    [role='button']:not([aria-disabled='true']),
+    [role='tab']:not([aria-disabled='true']),
+    [role='menuitem']:not([data-disabled]),
+    [role='menuitemcheckbox']:not([data-disabled]),
+    [role='menuitemradio']:not([data-disabled]),
+    [role='radio']:not([aria-disabled='true']),
+    [role='switch']:not([data-disabled]),
+    [data-slot='button'],
+    [data-slot='select-trigger'],
+    [data-slot='checkbox'],
+    [data-slot='switch']
+  ):not([data-no-press]) {
+    transition-property: transform, filter, box-shadow, background-color, border-color, color;
+    transition-duration: 150ms;
+    transition-timing-function: var(--ease-out);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :is(
+      button:not(:disabled),
+      input[type='button']:not(:disabled),
+      input[type='submit']:not(:disabled),
+      input[type='reset']:not(:disabled),
+      [role='button']:not([aria-disabled='true']),
+      [role='tab']:not([aria-disabled='true']),
+      [role='menuitem']:not([data-disabled]),
+      [role='menuitemcheckbox']:not([data-disabled]),
+      [role='menuitemradio']:not([data-disabled]),
+      [role='radio']:not([aria-disabled='true']),
+      [role='switch']:not([data-disabled]),
+      [data-slot='button'],
+      [data-slot='select-trigger'],
+      [data-slot='checkbox'],
+      [data-slot='switch']
+    ):not([data-no-press]):active {
+      transform: scale(0.97) translateY(1px);
+      filter: brightness(0.96);
+    }
+  }
 }
 
 button:disabled,

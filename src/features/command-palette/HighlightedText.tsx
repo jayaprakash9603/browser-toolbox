@@ -45,9 +45,23 @@ export function HighlightedText({ text, query }: HighlightedTextProps) {
 
 function getMatchIndices(text: string, query: string): number[] {
   const searchableText = text.toLowerCase()
-  const searchableQuery = query.trim().toLowerCase()
+  const tokens = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
+  if (tokens.length === 0) return []
 
-  for (let length = searchableQuery.length; length > 0; length--) {
+  const indices = new Set<number>()
+  for (const token of tokens) {
+    let start = 0
+    while (start <= searchableText.length - token.length) {
+      const at = searchableText.indexOf(token, start)
+      if (at < 0) break
+      for (let offset = 0; offset < token.length; offset += 1) indices.add(at + offset)
+      start = at + 1
+    }
+  }
+  if (indices.size > 0) return [...indices].sort((a, b) => a - b)
+
+  const searchableQuery = query.trim().toLowerCase()
+  for (let length = searchableQuery.length; length > 0; length -= 1) {
     const candidate = searchableQuery.slice(0, length)
     const start = searchableText.indexOf(candidate)
     if (start >= 0) {

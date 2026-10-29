@@ -1,0 +1,133 @@
+import type { TechRule } from '../types'
+
+const VERSION = '(?<v>\\d+(?:\\.\\d+)+)'
+
+export const SERVER_RULES: TechRule[] = [
+  { name: 'Nginx', category: 'web-server', website: 'https://nginx.org', headers: { server: `^nginx(?:/${VERSION})?` } },
+  { name: 'Apache HTTP Server', category: 'web-server', website: 'https://httpd.apache.org', headers: { server: `^Apache(?:/${VERSION})?` } },
+  { name: 'LiteSpeed', category: 'web-server', website: 'https://www.litespeedtech.com', headers: { server: '^LiteSpeed' } },
+  { name: 'Microsoft IIS', category: 'web-server', website: 'https://www.iis.net', implies: ['Windows Server'], headers: { server: `^Microsoft-IIS(?:/${VERSION})?` } },
+  { name: 'Caddy', category: 'web-server', website: 'https://caddyserver.com', headers: { server: '^Caddy' } },
+  { name: 'OpenResty', category: 'web-server', website: 'https://openresty.org', implies: ['Nginx'], headers: { server: `^openresty(?:/${VERSION})?` } },
+  { name: 'Envoy', category: 'web-server', website: 'https://www.envoyproxy.io', headers: { server: '^envoy' } },
+  { name: 'Gunicorn', category: 'web-server', website: 'https://gunicorn.org', implies: ['Python'], headers: { server: `^gunicorn(?:/${VERSION})?` } },
+  { name: 'Kestrel', category: 'web-server', website: 'https://learn.microsoft.com/aspnet/core/fundamentals/servers/kestrel', implies: ['ASP.NET'], headers: { server: '^Kestrel' } },
+  { name: 'Apache Tomcat', category: 'web-server', website: 'https://tomcat.apache.org', implies: ['Java'], headers: { server: '^Apache-Coyote' } },
+  { name: 'Phusion Passenger', category: 'web-server', website: 'https://www.phusionpassenger.com', headers: { server: 'Phusion Passenger', 'x-powered-by': 'Phusion Passenger' } },
+  { name: 'Ubuntu', category: 'os', website: 'https://ubuntu.com', headers: { server: '\\(Ubuntu\\)' } },
+  { name: 'Debian', category: 'os', website: 'https://www.debian.org', headers: { server: '\\(Debian\\)' } },
+  { name: 'CentOS', category: 'os', website: 'https://www.centos.org', headers: { server: '\\(CentOS\\)' } },
+  { name: 'Red Hat', category: 'os', website: 'https://www.redhat.com', headers: { server: '\\(Red Hat' } },
+  { name: 'Windows Server', category: 'os', website: 'https://www.microsoft.com/windows-server' },
+]
+
+export const LANGUAGE_RULES: TechRule[] = [
+  {
+    name: 'PHP',
+    category: 'programming-language',
+    website: 'https://www.php.net',
+    headers: { 'x-powered-by': `^PHP(?:/(?<v>\\d+(?:\\.\\d+)*))?` },
+    cookies: ['^PHPSESSID$'],
+  },
+  { name: 'Node.js', category: 'programming-language', website: 'https://nodejs.org' },
+  { name: 'Python', category: 'programming-language', website: 'https://www.python.org', headers: { server: '^(?:Python|WSGIServer|Werkzeug)' } },
+  { name: 'Ruby', category: 'programming-language', website: 'https://www.ruby-lang.org' },
+  { name: 'Java', category: 'programming-language', website: 'https://www.java.com', cookies: ['^JSESSIONID$'] },
+  { name: 'MySQL', category: 'database', website: 'https://www.mysql.com' },
+]
+
+export const HOSTING_RULES: TechRule[] = [
+  { name: 'Vercel', category: 'hosting', website: 'https://vercel.com', headers: { 'x-vercel-id': '', server: '^Vercel$' } },
+  { name: 'Netlify', category: 'hosting', website: 'https://www.netlify.com', headers: { 'x-nf-request-id': '', server: '^Netlify$' } },
+  { name: 'GitHub Pages', category: 'hosting', website: 'https://pages.github.com', headers: { server: '^GitHub\\.com$', 'x-github-request-id': '' } },
+  { name: 'Heroku', category: 'hosting', website: 'https://www.heroku.com', headers: { via: 'vegur' } },
+  { name: 'Render', category: 'hosting', website: 'https://render.com', headers: { 'x-render-origin-server': '' } },
+  { name: 'Fly.io', category: 'hosting', website: 'https://fly.io', headers: { 'fly-request-id': '' } },
+  { name: 'Firebase Hosting', category: 'hosting', website: 'https://firebase.google.com/products/hosting', headers: { 'x-firebase-hosting': '' } },
+  { name: 'Amazon S3', category: 'hosting', website: 'https://aws.amazon.com/s3', headers: { server: '^AmazonS3$' } },
+  { name: 'Amazon Web Services', category: 'hosting', website: 'https://aws.amazon.com', headers: { 'x-amz-request-id': '', 'x-amzn-requestid': '' } },
+  { name: 'Google Cloud', category: 'hosting', website: 'https://cloud.google.com', headers: { 'x-cloud-trace-context': '', via: '1\\.1 google' } },
+  { name: 'Microsoft Azure', category: 'hosting', website: 'https://azure.microsoft.com', headers: { 'x-azure-ref': '', 'x-ms-request-id': '', server: '^Microsoft-Azure' } },
+  { name: 'WP Engine', category: 'hosting', website: 'https://wpengine.com', headers: { 'x-powered-by': 'WP Engine', 'x-wpe-loopback-upstream-addr': '' } },
+  { name: 'Kinsta', category: 'hosting', website: 'https://kinsta.com', headers: { 'x-kinsta-cache': '' } },
+]
+
+export const CDN_RULES: TechRule[] = [
+  {
+    name: 'Cloudflare',
+    category: 'cdn',
+    website: 'https://www.cloudflare.com',
+    headers: { 'cf-ray': '', server: '^cloudflare$' },
+    cookies: ['^__cf_bm$', '^__cfduid$', '^cf_clearance$'],
+    src: ['/cdn-cgi/'],
+  },
+  { name: 'Cloudflare Turnstile', category: 'security', website: 'https://www.cloudflare.com/products/turnstile', src: ['challenges\\.cloudflare\\.com/turnstile'] },
+  { name: 'Amazon CloudFront', category: 'cdn', website: 'https://aws.amazon.com/cloudfront', headers: { 'x-amz-cf-id': '', via: 'CloudFront', server: '^CloudFront$' } },
+  { name: 'Fastly', category: 'cdn', website: 'https://www.fastly.com', headers: { 'x-fastly-request-id': '', 'fastly-debug-digest': '', 'x-served-by': '^cache-' } },
+  { name: 'Akamai', category: 'cdn', website: 'https://www.akamai.com', headers: { 'x-akamai-transformed': '', 'akamai-grn': '', server: '^AkamaiGHost' } },
+  { name: 'Sucuri', category: 'security', website: 'https://sucuri.net', headers: { 'x-sucuri-id': '', server: '^Sucuri' } },
+  { name: 'Imperva', category: 'security', website: 'https://www.imperva.com', headers: { 'x-iinfo': '' }, cookies: ['^incap_ses_', '^visid_incap_'] },
+  { name: 'Varnish', category: 'caching', website: 'https://varnish-cache.org', headers: { 'x-varnish': '', via: 'varnish' } },
+  { name: 'jsDelivr', category: 'cdn', website: 'https://www.jsdelivr.com', src: ['cdn\\.jsdelivr\\.net'] },
+  { name: 'cdnjs', category: 'cdn', website: 'https://cdnjs.com', src: ['cdnjs\\.cloudflare\\.com'] },
+  { name: 'unpkg', category: 'cdn', website: 'https://unpkg.com', src: ['unpkg\\.com'] },
+  { name: 'Google Hosted Libraries', category: 'cdn', website: 'https://developers.google.com/speed/libraries', src: ['ajax\\.googleapis\\.com/ajax/libs/'] },
+  { name: 'Bootstrap CDN', category: 'cdn', website: 'https://www.bootstrapcdn.com', src: ['(?:maxcdn|stackpath)\\.bootstrapcdn\\.com'] },
+  { name: 'Cloudinary', category: 'asset-management', website: 'https://cloudinary.com', src: ['res\\.cloudinary\\.com', 'widget\\.cloudinary\\.com'] },
+  { name: 'imgix', category: 'asset-management', website: 'https://imgix.com', src: ['\\.imgix\\.net'] },
+]
+
+export const PLATFORM_RULES: TechRule[] = [
+  { name: 'reCAPTCHA', category: 'security', website: 'https://www.google.com/recaptcha', src: ['google\\.com/recaptcha/', 'gstatic\\.com/recaptcha/'], js: { grecaptcha: '' } },
+  { name: 'hCaptcha', category: 'security', website: 'https://www.hcaptcha.com', src: ['hcaptcha\\.com'], js: { hcaptcha: '' } },
+  { name: 'HSTS', category: 'security', website: 'https://developer.mozilla.org/docs/Web/HTTP/Headers/Strict-Transport-Security', headers: { 'strict-transport-security': '' } },
+  { name: 'Content Security Policy', category: 'security', website: 'https://developer.mozilla.org/docs/Web/HTTP/CSP', headers: { 'content-security-policy': '' } },
+  { name: 'Cookiebot', category: 'cookie-compliance', website: 'https://www.cookiebot.com', src: ['consent\\.cookiebot\\.com'], js: { Cookiebot: '' } },
+  { name: 'OneTrust', category: 'cookie-compliance', website: 'https://www.onetrust.com', src: ['cdn\\.cookielaw\\.org', 'onetrust\\.com'], js: { OneTrust: '' } },
+  { name: 'CookieYes', category: 'cookie-compliance', website: 'https://www.cookieyes.com', src: ['cdn-cookieyes\\.com'] },
+  { name: 'Termly', category: 'cookie-compliance', website: 'https://termly.io', src: ['app\\.termly\\.io'] },
+  { name: 'iubenda', category: 'cookie-compliance', website: 'https://www.iubenda.com', src: ['cdn\\.iubenda\\.com'], js: { _iub: '' } },
+  { name: 'Complianz', category: 'cookie-compliance', website: 'https://complianz.io', implies: ['WordPress'], html: ['complianz'] },
+  { name: 'Quantcast Choice', category: 'cookie-compliance', website: 'https://www.quantcast.com/products/choice-consent-management-platform', src: ['quantcast\\.mgr\\.consensu\\.org', 'cmp\\.quantcast\\.com'] },
+  { name: 'Didomi', category: 'cookie-compliance', website: 'https://www.didomi.io', src: ['sdk\\.privacy-center\\.org'], js: { Didomi: '' } },
+  { name: 'Usercentrics', category: 'cookie-compliance', website: 'https://usercentrics.com', src: ['app\\.usercentrics\\.eu'] },
+]
+
+export const EMBED_RULES: TechRule[] = [
+  { name: 'Google Fonts', category: 'font', website: 'https://fonts.google.com', src: ['fonts\\.googleapis\\.com', 'fonts\\.gstatic\\.com'] },
+  { name: 'Font Awesome', category: 'font', website: 'https://fontawesome.com', src: ['font-?awesome', 'use\\.fontawesome\\.com'], html: ['class="fa[sbrl]? fa-'] },
+  { name: 'Adobe Fonts', category: 'font', website: 'https://fonts.adobe.com', src: ['use\\.typekit\\.(?:net|com)'] },
+  { name: 'Material Icons', category: 'font', website: 'https://fonts.google.com/icons', src: ['fonts\\.googleapis\\.com/icon\\?family=Material'] },
+  { name: 'Google Maps', category: 'maps', website: 'https://developers.google.com/maps', src: ['maps\\.googleapis\\.com/maps/api/js', 'google\\.com/maps/embed'], js: { 'google.maps.version': VERSION } },
+  { name: 'Leaflet', category: 'maps', website: 'https://leafletjs.com', js: { 'L.version': VERSION }, dom: ['.leaflet-container'] },
+  { name: 'Mapbox GL JS', category: 'maps', website: 'https://www.mapbox.com/mapbox-gljs', src: ['api\\.mapbox\\.com'], js: { 'mapboxgl.version': VERSION }, dom: ['.mapboxgl-map'] },
+  { name: 'OpenStreetMap', category: 'maps', website: 'https://www.openstreetmap.org', src: ['openstreetmap\\.org/export/embed'] },
+  { name: 'YouTube', category: 'video', website: 'https://www.youtube.com', src: ['youtube(?:-nocookie)?\\.com/embed', 'youtube\\.com/iframe_api'] },
+  { name: 'Vimeo', category: 'video', website: 'https://vimeo.com', src: ['player\\.vimeo\\.com'] },
+  { name: 'Wistia', category: 'video', website: 'https://wistia.com', src: ['fast\\.wistia\\.(?:com|net)'] },
+  { name: 'Video.js', category: 'video', website: 'https://videojs.com', js: { 'videojs.VERSION': VERSION }, dom: ['.video-js'] },
+  { name: 'JW Player', category: 'video', website: 'https://www.jwplayer.com', src: ['jwplayer'], js: { jwplayer: '' } },
+  { name: 'Plyr', category: 'video', website: 'https://plyr.io', src: ['plyr(?:\\.polyfilled)?(?:\\.min)?\\.js'], dom: ['.plyr'] },
+  { name: 'Disqus', category: 'comments', website: 'https://disqus.com', src: ['disqus\\.com/embed\\.js'], js: { DISQUS: '' } },
+  { name: 'Facebook SDK', category: 'widget', website: 'https://developers.facebook.com/docs/javascript', src: ['connect\\.facebook\\.net/[a-zA-Z_]+/sdk\\.js'], js: { FB: '' } },
+  { name: 'X Widgets', category: 'widget', website: 'https://developer.x.com', src: ['platform\\.twitter\\.com/widgets\\.js'], js: { twttr: '' } },
+  { name: 'AddThis', category: 'widget', website: 'https://www.addthis.com', src: ['addthis\\.com'], js: { addthis: '' } },
+  { name: 'ShareThis', category: 'widget', website: 'https://sharethis.com', src: ['sharethis\\.com'] },
+  { name: 'Calendly', category: 'widget', website: 'https://calendly.com', src: ['assets\\.calendly\\.com'], js: { Calendly: '' } },
+  { name: 'Typeform', category: 'widget', website: 'https://www.typeform.com', src: ['embed\\.typeform\\.com'] },
+  { name: 'Gravatar', category: 'widget', website: 'https://gravatar.com', src: ['gravatar\\.com/avatar'] },
+]
+
+export const MISC_RULES: TechRule[] = [
+  { name: 'PWA', category: 'misc', website: 'https://web.dev/progressive-web-apps', dom: ['link[rel="manifest"]'] },
+  { name: 'Open Graph', category: 'misc', website: 'https://ogp.me', meta: { 'og:title': '', 'og:type': '', 'og:image': '' } },
+  { name: 'Twitter Cards', category: 'misc', website: 'https://developer.x.com/en/docs/twitter-for-websites/cards', meta: { 'twitter:card': '' } },
+  { name: 'Schema.org', category: 'misc', website: 'https://schema.org', dom: ['script[type="application/ld+json"]', '[itemscope]'] },
+  { name: 'RSS', category: 'misc', website: 'https://www.rssboard.org/rss-specification', dom: ['link[type="application/rss+xml"]'] },
+  { name: 'Atom', category: 'misc', website: 'https://datatracker.ietf.org/doc/html/rfc4287', dom: ['link[type="application/atom+xml"]'] },
+  { name: 'HTTP/2', category: 'misc', website: 'https://httpwg.org/specs/rfc9113.html', protocol: 'h2' },
+  { name: 'HTTP/3', category: 'misc', website: 'https://httpwg.org/specs/rfc9114.html', protocol: 'h3' },
+  { name: 'Priority Hints', category: 'performance', website: 'https://web.dev/articles/fetch-priority', html: ['fetchpriority=["\'](?:high|low)["\']'] },
+  { name: 'Brotli', category: 'performance', website: 'https://github.com/google/brotli', headers: { 'content-encoding': '^br$' } },
+  { name: 'Service Worker', category: 'performance', website: 'https://developer.mozilla.org/docs/Web/API/Service_Worker_API', js: { 'navigator.serviceWorker.controller': '' } },
+]

@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useState,
+  startTransition,
   type AnchorHTMLAttributes,
   type ReactNode,
 } from 'react'
@@ -66,9 +67,11 @@ export function RouterProvider({ children }: { children: ReactNode }) {
     let current = readHash()
     const onHashChange = () => {
       const next = readHash()
+      const pathChanged = next.path !== current.path
       recordNavigation(current.path + current.search, next.path + next.search)
       current = next
-      setLocation(next)
+      if (pathChanged) startTransition(() => setLocation(next))
+      else setLocation(next)
     }
     window.addEventListener('hashchange', onHashChange)
     const off = eventBus.on('OPEN_TOOL', ({ toolId }) => {
@@ -124,9 +127,10 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const navigate = useCallback((to: string) => {
-    setNavKey((key) => key + 1)
     window.location.hash = to
     const next = readHash()
+    const run = next.path === location.path ? (update: () => void) => update() : startTransition
+    run(() => setNavKey((key) => key + 1))
     if (next.path === location.path && next.search === location.search) {
       setLocation(next)
     }

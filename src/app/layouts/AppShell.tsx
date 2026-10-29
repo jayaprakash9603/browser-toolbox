@@ -11,6 +11,7 @@ import { toolRegistry } from '@/core/registry'
 import { trackRecentTool } from '@/features/recent-tools/recentToolsService'
 import { NetStatusIndicator } from '@/features/netmon/components/NetStatusIndicator'
 import { SiteAccessBar } from '@/features/site-access/SiteAccessBar'
+import { TechStackButton } from '@/features/tech-stack/components/TechStackButton'
 import {
   AppLoadingSkeleton,
   type AppLoadingSkeletonVariant,
@@ -64,6 +65,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
     scheduleIdle(() => {
       void import('@/features/command-palette/CommandPalette')
       void import('@/features/search/searchIndex').then((m) => m.warmSearchIndex())
+      void import('@/app/routePreload').then((m) => m.preloadAppPages())
     })
   }, [])
 
@@ -165,6 +167,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
             <TooltipContent>{t('nav.commandPalette')}</TooltipContent>
           </Tooltip>
           {isHomePath(path) && <NetStatusIndicator />}
+          <TechStackButton />
           <ThemeToggle />
           <Tooltip>
             <TooltipTrigger asChild>
@@ -184,23 +187,23 @@ export function AppShell({ children }: { children?: ReactNode }) {
         tabIndex={-1}
         className="@container relative min-h-0 min-w-0 flex-1 overflow-clip outline-none"
       >
-        <motion.div
-          key={path}
-          className="h-full"
-          initial={reduceMotion ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: reduceMotion ? 0.1 : 0.15, ease: 'easeOut' }}
-        >
-          <ErrorBoundary resetKey={path} showHomeLink>
-            <Suspense
-              fallback={
-                <AppLoadingSkeleton variant={getLoadingVariant(path)} label={t('nav.loading')} />
-              }
+        <ErrorBoundary resetKey={path} showHomeLink>
+          <Suspense
+            fallback={
+              <AppLoadingSkeleton variant={getLoadingVariant(path)} label={t('nav.loading')} />
+            }
+          >
+            <motion.div
+              key={path}
+              className="h-full"
+              initial={reduceMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: reduceMotion ? 0.1 : 0.15, ease: 'easeOut' }}
             >
               {content}
-            </Suspense>
-          </ErrorBoundary>
-        </motion.div>
+            </motion.div>
+          </Suspense>
+        </ErrorBoundary>
       </main>
 
       {paletteMounted && (
@@ -245,19 +248,14 @@ function getLoadingVariant(path: string): AppLoadingSkeletonVariant {
 const TOOLS_WITH_OWN_ACCESS_PROMPT = new Set(['privacy.ad-blocker', 'api.http-interceptor'])
 
 function ToolHost({ toolId }: { toolId: string }) {
-  const { t } = useTranslation()
   const tool = toolRegistry.get(toolId)
   if (!tool) return <HomePage />
   const Component = getToolComponent(toolId, tool.loader)
   const readsPage =
     !TOOLS_WITH_OWN_ACCESS_PROMPT.has(toolId) &&
     tool.capabilities.some((c) => c === 'PAGE_ACCESS' || c === 'CONTENT_SCRIPT')
-  const body = (
-    <Suspense fallback={<AppLoadingSkeleton variant="tool" label={t('nav.loading')} />}>
-      {/* eslint-disable-next-line react-hooks/static-components */}
-      <Component />
-    </Suspense>
-  )
+  // eslint-disable-next-line react-hooks/static-components
+  const body = <Component />
   if (!readsPage) return body
   return (
     <div className="flex h-full flex-col">

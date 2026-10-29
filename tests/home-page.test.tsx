@@ -29,7 +29,12 @@ afterEach(() => {
 
 describe('homeConfig', () => {
   it('resolves quick and popular tools from the registry', () => {
-    expect(getQuickActionTools()).toHaveLength(QUICK_ACTION_IDS.length)
+    expect(getQuickActionTools().map((tool) => tool.id)).toEqual([
+      'clipboard.manager',
+      'productivity.tasks',
+      'productivity.notes',
+      'productivity.tab-manager',
+    ])
     expect(getPopularTools().map((tool) => tool.id)).toEqual([
       'privacy.ad-blocker',
       'privacy.web-protection',

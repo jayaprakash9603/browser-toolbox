@@ -52,12 +52,9 @@ function LibrarySkeleton({ variant }: { variant: 'home' | 'collection' | 'catego
       )}
       {(isHome || isCategory) && <SearchSkeleton />}
       {isHome ? (
-        <>
-          <ToolSectionSkeleton />
-          <ToolSectionSkeleton />
-        </>
+        <ToolSectionSkeleton />
       ) : (
-        <ToolGridSkeleton count={6} />
+        <ToolGridSkeleton count={4} />
       )}
     </div>
   )

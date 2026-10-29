@@ -5,17 +5,17 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/shared/utils/cn'
 
 const buttonVariants = cva(
-  "inline-flex select-none items-center justify-center gap-1.5 whitespace-nowrap rounded-md text-sm font-medium transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 cursor-pointer",
+  "inline-flex select-none items-center justify-center gap-1.5 whitespace-nowrap rounded-md text-sm font-medium transition-[color,background-color,border-color,box-shadow,transform,filter] duration-150 ease-out outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 cursor-pointer",
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow',
-        destructive: 'bg-destructive text-white shadow-sm hover:bg-destructive/90 hover:shadow',
+        default: 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow active:shadow-sm',
+        destructive: 'bg-destructive text-white shadow-sm hover:bg-destructive/90 hover:shadow active:shadow-sm',
         outline:
-          'border border-input bg-background shadow-xs hover:border-foreground/20 hover:bg-accent hover:text-accent-foreground',
+          'border border-input bg-background shadow-xs hover:border-foreground/20 hover:bg-accent hover:text-accent-foreground active:shadow-none',
         secondary: 'bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80',
         ghost: 'text-foreground/80 hover:bg-accent hover:text-accent-foreground',
-        link: 'text-primary underline-offset-4 hover:underline active:scale-100',
+        link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
         default: 'h-9 px-3.5',
@@ -42,6 +42,7 @@ function Button({
   return (
     <Comp
       data-slot="button"
+      data-no-press={variant === 'link' ? '' : undefined}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />

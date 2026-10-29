@@ -56,6 +56,7 @@ function scoreToolSearch(
     name.toLowerCase(),
     tool.description.toLowerCase(),
     tool.category,
+    tool.id.replace(/\./g, ' '),
     ...tool.keywords.map((keyword) => keyword.toLowerCase()),
     ...(tool.aliases ?? []).map((alias) => alias.toLowerCase()),
   ].join(' ')

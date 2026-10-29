@@ -1,4 +1,152 @@
 <!doctype html><meta charset="utf-8"><script>
+function isMaskedSecretPlaceholder(value) {
+  if (!value) return false;
+  if (value === "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" || value === "********") return true;
+  if (/^\*+$/.test(value)) return true;
+  if (/^•+$/.test(value)) return true;
+  return false;
+}
+function readHeaderValue(headers, headerOverrides, headerRemovals, name) {
+  const lower = name.toLowerCase();
+  if (headerRemovals.includes(lower)) return void 0;
+  if (lower in headerOverrides) return headerOverrides[lower];
+  const row = headers.find(
+    (item) => item.enabled && item.key.toLowerCase() === lower
+  );
+  return row?.value;
+}
+function upsertPostmanHeader(entry, headerOverrides, headerOverrideNames, headerRemovals) {
+  const lower = entry.key.toLowerCase();
+  headerOverrides[lower] = entry.value;
+  headerOverrideNames[lower] = entry.key;
+  const index = headerRemovals.indexOf(lower);
+  if (index >= 0) headerRemovals.splice(index, 1);
+}
+function createPostmanRequestHeadersApi(headers, headerOverrides, headerOverrideNames, headerRemovals) {
+  const readHeader = (name) => readHeaderValue(headers, headerOverrides, headerRemovals, name);
+  return {
+    get(name) {
+      return readHeader(name) ?? null;
+    },
+    add(entry) {
+      upsertPostmanHeader(entry, headerOverrides, headerOverrideNames, headerRemovals);
+    },
+    upsert(entry) {
+      upsertPostmanHeader(entry, headerOverrides, headerOverrideNames, headerRemovals);
+    },
+    remove(name) {
+      const lower = name.toLowerCase();
+      delete headerOverrides[lower];
+      if (!headerRemovals.includes(lower)) headerRemovals.push(lower);
+    },
+    has(name) {
+      return readHeader(name) !== void 0;
+    },
+    toObject() {
+      const result = {};
+      for (const row of headers) {
+        if (!row.enabled || !row.key.trim()) continue;
+        const lower = row.key.toLowerCase();
+        if (headerRemovals.includes(lower)) continue;
+        result[row.key] = headerOverrides[lower] ?? row.value;
+      }
+      for (const [key, value] of Object.entries(headerOverrides)) {
+        const existing = headers.find((row) => row.key.toLowerCase() === key);
+        if (!existing) result[headerOverrideNames[key] ?? key] = value;
+      }
+      return result;
+    }
+  };
+}
+function defaultRawLanguage(body) {
+  if (body?.type === "raw") return body.language;
+  return "text";
+}
+function parseRawLanguage(value) {
+  if (value === "json" || value === "text" || value === "xml" || value === "html") {
+    return value;
+  }
+  if (value === "javascript") return "javascript";
+  return void 0;
+}
+function inferRawLanguage(text, fallback) {
+  const trimmed = text.trim();
+  if (trimmed.startsWith("{") && trimmed.endsWith("}") || trimmed.startsWith("[") && trimmed.endsWith("]")) {
+    try {
+      JSON.parse(trimmed);
+      return "json";
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+}
+function createPostmanRequestBody(body) {
+  if (!body || body.type === "none") return { mode: "raw", raw: "" };
+  if (body.type === "raw") return { mode: "raw", raw: body.text };
+  if (body.type === "urlencoded") {
+    const raw = body.fields.filter((field) => field.enabled && field.key.trim()).map((field) => `${field.key}=${field.value}`).join("&");
+    return { mode: "urlencoded", raw, urlencoded: body.fields };
+  }
+  if (body.type === "formData") {
+    return { mode: "formdata", raw: "", formdata: body.fields };
+  }
+  if (body.type === "graphql") {
+    return {
+      mode: "graphql",
+      raw: JSON.stringify({ query: body.query, variables: body.variables }),
+      graphql: { query: body.query, variables: body.variables }
+    };
+  }
+  return { mode: "file", raw: body.fileName };
+}
+function createScriptBodyProxy(sourceBody, onOverride) {
+  let override;
+  const activeBody = () => override ?? sourceBody;
+  const snapshot = () => createPostmanRequestBody(activeBody());
+  const applyRaw = (raw, languageHint) => {
+    const language = languageHint ?? inferRawLanguage(raw, defaultRawLanguage(sourceBody));
+    override = { type: "raw", language, text: raw };
+    onOverride(override);
+  };
+  return {
+    get mode() {
+      return snapshot().mode;
+    },
+    get raw() {
+      return snapshot().raw ?? "";
+    },
+    set raw(value) {
+      applyRaw(value);
+    },
+    get urlencoded() {
+      const body = snapshot();
+      return body.urlencoded;
+    },
+    get formdata() {
+      const body = snapshot();
+      return body.formdata;
+    },
+    update(options) {
+      if (options.mode === "raw" || options.raw !== void 0) {
+        const raw = options.raw ?? snapshot().raw ?? "";
+        const hinted = parseRawLanguage(options.options?.raw?.language);
+        applyRaw(raw, hinted);
+        return;
+      }
+      if (options.mode === "urlencoded" && Array.isArray(options.urlencoded)) {
+        const fields = options.urlencoded.filter((row) => row?.key).map((row) => ({
+          id: crypto.randomUUID(),
+          key: row.key ?? "",
+          value: row.value ?? "",
+          enabled: row.enabled !== false
+        }));
+        override = { type: "urlencoded", fields };
+        onOverride(override);
+      }
+    }
+  };
+}
 function sandboxChannel() {
   return "postman-lite-script";
 }
@@ -23,18 +171,27 @@ function createFrameStore(initial) {
 function replaceSandboxTemplate(template, resolve) {
   return template.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (match, rawKey) => {
     const value = resolve(String(rawKey).trim());
-    return value === void 0 ? match : value;
+    if (value === void 0) return match;
+    if (isMaskedSecretPlaceholder(value)) return "";
+    return value;
   });
 }
 function createFrameVariableApi(store) {
   const set = (key, value) => store.set(key, value);
+  const read = (key) => {
+    const value = store.get(key) ?? "";
+    return isMaskedSecretPlaceholder(value) ? "" : value;
+  };
   return {
-    get: (key) => store.get(key) ?? "",
+    get: read,
     set,
     replace: set,
     unset: (key) => store.unset(key),
     remove: (key) => store.unset(key),
-    has: (key) => store.get(key) !== void 0,
+    has: (key) => {
+      const value = store.get(key);
+      return value !== void 0 && !isMaskedSecretPlaceholder(value);
+    },
     clear: () => store.clear(),
     toObject: () => store.toObject(),
     replaceIn: (template) => replaceSandboxTemplate(template, (key) => store.get(key))
@@ -50,13 +207,21 @@ function resolveFrameValue(stores, key) {
 function createFrameScopedApi(stores) {
   const writable = stores[0];
   const set = (key, value) => writable?.set(key, value);
+  const read = (key) => {
+    const value = resolveFrameValue(stores, key);
+    if (value === void 0) return "";
+    return isMaskedSecretPlaceholder(value) ? "" : value;
+  };
   return {
-    get: (key) => resolveFrameValue(stores, key) ?? "",
+    get: read,
     set,
     replace: set,
     unset: (key) => writable?.unset(key),
     remove: (key) => writable?.unset(key),
-    has: (key) => resolveFrameValue(stores, key) !== void 0,
+    has: (key) => {
+      const value = resolveFrameValue(stores, key);
+      return value !== void 0 && !isMaskedSecretPlaceholder(value);
+    },
     clear: () => writable?.clear(),
     toObject: () => {
       const result = {};
@@ -174,41 +339,21 @@ function createSandboxBody(body) {
   return { mode: "file", raw: body.fileName };
 }
 function createSandboxHeadersApi(headers, headerOverrides, headerOverrideNames, headerRemovals) {
-  const readHeader = (name) => {
-    const lower = name.toLowerCase();
-    if (headerRemovals.includes(lower)) return void 0;
-    if (lower in headerOverrides) return headerOverrides[lower];
-    const row = headers.find(
-      (item) => item.enabled && item.key.toLowerCase() === lower
-    );
-    return row?.value;
-  };
+  const api = createPostmanRequestHeadersApi(
+    headers,
+    headerOverrides,
+    headerOverrideNames,
+    headerRemovals
+  );
   return {
-    get(name) {
-      return readHeader(name) ?? null;
-    },
-    add(entry) {
-      upsertSandboxHeader(entry, headerOverrides, headerOverrideNames, headerRemovals);
-    },
-    upsert(entry) {
-      upsertSandboxHeader(entry, headerOverrides, headerOverrideNames, headerRemovals);
-    },
-    remove(name) {
-      const lower = name.toLowerCase();
-      delete headerOverrides[lower];
-      if (!headerRemovals.includes(lower)) headerRemovals.push(lower);
-    },
+    ...api,
     toObject() {
       return sandboxHeadersObject(headers, headerOverrides, headerRemovals);
     }
   };
 }
 function upsertSandboxHeader(entry, headerOverrides, headerOverrideNames, headerRemovals) {
-  const lower = entry.key.toLowerCase();
-  headerOverrides[lower] = entry.value;
-  headerOverrideNames[lower] = entry.key;
-  const index = headerRemovals.indexOf(lower);
-  if (index >= 0) headerRemovals.splice(index, 1);
+  upsertPostmanHeader(entry, headerOverrides, headerOverrideNames, headerRemovals);
 }
 function sandboxHeadersObject(headers, headerOverrides, headerRemovals) {
   const result = {};
@@ -458,6 +603,7 @@ ${script}
 function createSandboxRequestProxy(request, headerOverrides, headerOverrideNames, headerRemovals) {
   let urlOverride;
   let methodOverride;
+  let bodyOverride;
   return {
     proxy: {
       get url() {
@@ -473,7 +619,9 @@ function createSandboxRequestProxy(request, headerOverrides, headerOverrideNames
         methodOverride = value.toUpperCase();
       },
       get body() {
-        return createSandboxBody(request.body);
+        return createScriptBodyProxy(request.body, (body) => {
+          bodyOverride = body;
+        });
       },
       headers: createSandboxHeadersApi(
         request.headers,
@@ -483,7 +631,7 @@ function createSandboxRequestProxy(request, headerOverrides, headerOverrideNames
       )
     },
     getOverrides() {
-      return { urlOverride, methodOverride };
+      return { urlOverride, methodOverride, bodyOverride };
     }
   };
 }
@@ -531,14 +679,12 @@ async function finishSandboxVm(payload, variableApis, postman, stores, sendReque
       url: createSandboxUrl(payload.request.url),
       method: payload.request.method,
       body: createSandboxBody(payload.request.body),
-      headers: {
-        get(name) {
-          const row = payload.request?.headers.find(
-            (item) => item.enabled && item.key.toLowerCase() === name.toLowerCase()
-          );
-          return row?.value;
-        }
-      }
+      headers: createSandboxHeadersApi(
+        payload.request.headers,
+        {},
+        {},
+        []
+      )
     } : void 0,
     response: payload.response ? createSandboxResponseApi(payload.response) : void 0
   };
@@ -553,7 +699,8 @@ async function finishSandboxVm(payload, variableApis, postman, stores, sendReque
   );
   const overrides = requestState?.getOverrides() ?? {
     urlOverride: void 0,
-    methodOverride: void 0
+    methodOverride: void 0,
+    bodyOverride: void 0
   };
   return {
     ...outcome,
@@ -564,6 +711,7 @@ async function finishSandboxVm(payload, variableApis, postman, stores, sendReque
     headerRemovals,
     urlOverride: overrides.urlOverride,
     methodOverride: overrides.methodOverride,
+    bodyOverride: overrides.bodyOverride,
     environment: stores.environment.toObject(),
     globals: stores.globals.toObject(),
     collection: stores.collection.toObject(),

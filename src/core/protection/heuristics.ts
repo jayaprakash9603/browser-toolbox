@@ -22,9 +22,9 @@ export interface RiskVerdict {
 export const BRAND_OFFICIAL: Record<string, string[]> = {
   paypal: ['paypal.com'],
   apple: ['apple.com', 'icloud.com'],
-  microsoft: ['microsoft.com', 'live.com', 'office.com', 'office365.com', 'outlook.com'],
-  office: ['microsoft.com', 'office.com', 'office365.com'],
-  outlook: ['outlook.com', 'live.com', 'microsoft.com'],
+  microsoft: ['microsoft.com', 'microsoftonline.com', 'live.com', 'office.com', 'office365.com', 'outlook.com'],
+  office: ['microsoft.com', 'microsoftonline.com', 'office.com', 'office365.com'],
+  outlook: ['outlook.com', 'live.com', 'microsoft.com', 'microsoftonline.com'],
   google: ['google.com', 'google.co.uk', 'googleapis.com', 'gmail.com'],
   gmail: ['gmail.com', 'google.com'],
   amazon: ['amazon.com', 'amazon.co.uk', 'amazon.in', 'aws.amazon.com'],
@@ -68,7 +68,9 @@ function levenshtein(a: string, b: string): number {
 
 function hostContainsBrand(host: string, brand: string): boolean {
   const labels = host.split('.')
-  return labels.some((label) => label === brand || label.includes(brand))
+  return labels.some((label) =>
+    brand.length <= 4 ? label.split('-').includes(brand) : label.includes(brand),
+  )
 }
 
 function isOfficialDomain(registrable: string, official: string[]): boolean {
@@ -217,8 +219,12 @@ export function assessPage(signals: PageSignals): RiskVerdict {
   }
 
   const titleLower = signals.title.toLowerCase()
-  for (const brand of Object.keys(BRAND_OFFICIAL)) {
-    if (titleLower.includes(brand) && !hostContainsBrand(host, brand)) {
+  for (const [brand, official] of Object.entries(BRAND_OFFICIAL)) {
+    if (
+      new RegExp(`\\b${brand}\\b`).test(titleLower) &&
+      !hostContainsBrand(host, brand) &&
+      !isOfficialDomain(registrable, official)
+    ) {
       return { level: 'low', reason: 'title_brand_mismatch' }
     }
   }

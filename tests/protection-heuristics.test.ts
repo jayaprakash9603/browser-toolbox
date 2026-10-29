@@ -48,6 +48,39 @@ describe('protection heuristics', () => {
     ).toBe('none')
   })
 
+  it.each([
+    ['eportal.incometax.gov.in', 'Income Tax Portal'],
+    ['login.microsoftonline.com', 'Sign in to Microsoft'],
+    ['login.microsoftonline.com', 'Sign in to Office'],
+    ['login.microsoftonline.com', 'Sign in to Outlook'],
+    ['www.icloud.com', 'Sign in to Apple'],
+    ['metabolic.example', 'Account login'],
+    ['accounts.example', 'Metabolic research portal'],
+  ])('does not flag legitimate password pages at %s titled %s', (host, title) => {
+    expect(assessPage({ host, title, protocol: 'https:', hasPassword: true, formActions: [] }))
+      .toEqual({ level: 'none' })
+  })
+
+  it.each([
+    'paypal.evil.test', 'meta-login.example', 'login.microsoftonline.com.evil.test',
+    'login.microsoftonline.com.evil.co.in', 'microsoftonline-login.example',
+  ])
+    ('still flags deceptive login hosts at %s', (host) => {
+      expect(assessPage({
+        host, title: 'Sign in', protocol: 'https:', hasPassword: true, formActions: [],
+      }).level).toBe('high')
+    })
+
+  it.each([
+    ['http:', [], 'http_password'],
+    ['https:', ['https://unrelated.example/submit'], 'cross_domain_form'],
+  ] as const)('retains %s credential warnings on official hosts', (protocol, formActions, reason) => {
+    expect(assessPage({
+      host: 'login.microsoftonline.com', title: 'Microsoft', protocol,
+      hasPassword: true, formActions: [...formActions],
+    })).toEqual({ level: 'low', reason })
+  })
+
   it('flags fake virus alerts with a support number', () => {
     const text = `WINDOWS DEFENDER SECURITY WARNING
       Access to this PC has been blocked for security reasons.

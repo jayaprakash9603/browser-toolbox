@@ -30,9 +30,9 @@ export const TAGLINE_INTERVAL_MS = 4500
 
 export const QUICK_ACTION_IDS = [
   'clipboard.manager',
-  'productivity.snippets',
-  'developer.json-toolkit',
-  'calculators.calculator',
+  'productivity.tasks',
+  'productivity.notes',
+  'productivity.tab-manager',
 ] as const
 
 export const POPULAR_TOOL_IDS = [

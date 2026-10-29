@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest'
 
 import {
   duplicateSnippet,
+  extractCustomVariables,
   filterSnippets,
   mergeImportedSnippets,
+  parseSnippetTags,
+  recordSnippetUse,
+  resolveSnippetBody,
   snippetStats,
   sortSnippets,
   type Snippet,
@@ -52,5 +56,38 @@ describe('snippets model', () => {
 
   it('counts snippet stats', () => {
     expect(snippetStats('one two\nthree')).toEqual({ words: 3, chars: 13, lines: 2 })
+  })
+
+  it('resolves built-in and custom variables, leaving unknown tokens intact', () => {
+    const body = 'Hi {{name}}, see {{url}} on {{date}} {{missing}}'
+    const out = resolveSnippetBody(
+      body,
+      { name: 'Dana' },
+      { url: 'https://a.test', now: new Date('2026-01-02T10:00:00Z') },
+    )
+    expect(out).toContain('Hi Dana')
+    expect(out).toContain('https://a.test')
+    expect(out).toContain('2026-01-02')
+    expect(out).toContain('{{missing}}')
+  })
+
+  it('lists only custom variables for the fill dialog', () => {
+    expect(extractCustomVariables('{{date}} {{name}} {{name}} {{topic}}')).toEqual([
+      'name',
+      'topic',
+    ])
+  })
+
+  it('parses tags, filters by tag and shortcut, and tracks usage', () => {
+    expect(parseSnippetTags('#Email, follow-up  email')).toEqual(['email', 'follow-up'])
+    const list = [sample({ tags: ['email'], shortcut: '/hi' }), sample({ id: 'b', tags: [] })]
+    expect(filterSnippets(list, '', 'all', 'email')).toHaveLength(1)
+    expect(filterSnippets(list, '/hi', 'all')).toHaveLength(1)
+    expect(recordSnippetUse(list, 'a')[0].useCount).toBe(1)
+  })
+
+  it('sorts by popularity after pinned', () => {
+    const list = [sample({ id: 'x', useCount: 1 }), sample({ id: 'y', useCount: 9 })]
+    expect(sortSnippets(list, 'popular').map((s) => s.id)).toEqual(['y', 'x'])
   })
 })

@@ -10,8 +10,9 @@ import {
   SETTINGS_SEARCH_ICON,
   settingsSearchRoute,
 } from '@/app/pages/settings/settingsSearchEntries'
-import { getToolName } from '@/i18n/toolLabels'
+import { getToolDescription, getToolName } from '@/i18n/toolLabels'
 import { buildRoute } from '@/features/search/buildRoute'
+import { queryTokens, tokenInText, tokensMatchText } from '@/features/search/searchMatch'
 import { scoreMatch } from '@/features/search/scoreMatch'
 
 export type SearchItemKind = 'tool' | 'option' | 'setting'
@@ -58,11 +59,15 @@ function translate(key: string, fallback: string): string {
 
 function toolHaystack(tool: ToolDefinition, t: typeof i18n.t): string {
   const name = getToolName(tool, t)
+  const description = getToolDescription(tool, t)
   return [
     name,
     tool.name,
+    description,
     tool.description,
     tool.category,
+    tool.id.replace(/\./g, ' '),
+    wordsFromId(tool.id.split('.').pop() ?? tool.id),
     ...tool.keywords,
     ...(tool.aliases ?? []),
   ]
@@ -109,13 +114,20 @@ function buildToolItem(tool: ToolDefinition, t: typeof i18n.t): SearchItem {
   }
 }
 
+function optionDisplayLabel(entry: ToolSearchEntry): string {
+  const localized = translate(entry.labelKey, entry.fallbackLabel)
+  if (/^(encode|decode)\s/i.test(entry.fallbackLabel)) return entry.fallbackLabel
+  if (entry.fallbackLabel.length > localized.length + 2) return entry.fallbackLabel
+  return localized
+}
+
 function buildOptionItem(
   tool: ToolDefinition,
   entry: ToolSearchEntry,
   t: typeof i18n.t,
 ): SearchItem {
   const toolName = getToolName(tool, t)
-  const optionLabel = translate(entry.labelKey, entry.fallbackLabel)
+  const optionLabel = optionDisplayLabel(entry)
   return {
     id: `${tool.id}:${entry.id}`,
     kind: 'option',
@@ -218,11 +230,11 @@ function optionMatchesTokens(
   label: string,
   tokens: string[],
 ): boolean {
-  if (tokens.every((token) => haystack.includes(token))) return true
+  if (tokensMatchText(haystack, tokens)) return true
   if (tokens.length < 2) return false
   const labelLower = label.toLowerCase()
-  const toolHit = tokens.filter((token) => toolHaystackText.includes(token))
-  const labelHit = tokens.filter((token) => labelLower.includes(token))
+  const toolHit = tokens.filter((token) => tokenInText(token, toolHaystackText))
+  const labelHit = tokens.filter((token) => tokenInText(token, labelLower))
   return toolHit.length > 0 && labelHit.length > 0 && toolHit.length + labelHit.length >= tokens.length
 }
 
@@ -230,12 +242,12 @@ export function searchAll(query: string): SearchItem[] {
   const q = query.trim().toLowerCase()
   if (!q) return []
 
-  const tokens = q.split(/\s+/).filter(Boolean)
+  const tokens = queryTokens(query)
   const scored: { item: SearchItem; score: number }[] = []
 
   for (const row of getSearchIndex()) {
     const { item, haystack, name, nameLower: label, aliases } = row
-    const allTokensHit = tokens.every((token) => haystack.includes(token))
+    const allTokensHit = tokensMatchText(haystack, tokens)
 
     if (item.kind === 'tool') {
       if (!allTokensHit) continue
@@ -267,15 +279,38 @@ export function searchAll(query: string): SearchItem[] {
   return scored.map((row) => row.item)
 }
 
+/** When sub-options match, hide weak tool rows unless the title or tool keywords fit every token. */
+function toolStrongMatch(item: SearchItem, tokens: string[]): boolean {
+  if (tokensMatchText(item.title, tokens)) return true
+  if (!item.toolId) return false
+  const def = toolRegistry.get(item.toolId)
+  if (!def) return false
+  const haystack = [
+    getToolName(def),
+    getToolDescription(def),
+    def.name,
+    def.description,
+    def.category,
+    def.id.replace(/\./g, ' '),
+    ...(def.aliases ?? []),
+  ].join(' ')
+  if (tokensMatchText(haystack, tokens)) return true
+  const keywords = (def.keywords ?? []).join(' ')
+  return tokens.some((token) => tokenInText(token, item.title)) && tokensMatchText(keywords, tokens)
+}
+
 export function toolsVisibleForQuery(
   tools: SearchItem[],
   optionCount: number,
   query: string,
 ): SearchItem[] {
-  const tokens = query.trim().split(/\s+/).filter(Boolean)
+  const tokens = queryTokens(query)
   if (optionCount === 0) return tools
-  if (tokens.length >= 2) return []
-  return tools.slice(0, 3)
+  if (tokens.length >= 2) {
+    const strong = tools.filter((tool) => toolStrongMatch(tool, tokens))
+    return strong.length > 0 ? strong.slice(0, 8) : []
+  }
+  return tools.slice(0, 6)
 }
 
 export function groupSearchResults(items: SearchItem[]) {

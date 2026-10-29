@@ -1,3 +1,5 @@
+import { tokensMatchText } from '@/features/search/searchMatch'
+
 export function scoreMatch(
   haystack: string,
   name: string,
@@ -9,7 +11,7 @@ export function scoreMatch(
   const normalizedAliases = aliases.map((alias) => alias.toLowerCase())
   const q = fullQuery.trim().toLowerCase()
 
-  if (!tokens.every((token) => haystack.includes(token))) return 0
+  if (!tokensMatchText(haystack, tokens)) return 0
 
   let score = 10
   if (normalizedName === q || normalizedAliases.includes(q)) score += 100

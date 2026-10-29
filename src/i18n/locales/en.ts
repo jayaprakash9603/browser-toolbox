@@ -32,10 +32,6 @@ import { hashToolkitStrings } from './hashToolkitEn'
 import { linkCheckerStrings } from './linkCheckerEn'
 import { bugReporterStrings } from './bugReporterEn'
 import { elementInspectorStrings } from './elementInspectorEn'
-import { snippetsStrings } from './snippetsEn'
-import { bookmarksStrings } from './bookmarksEn'
-import { workspacesStrings } from './workspacesEn'
-import { readingListStrings } from './readingListEn'
 
 const en = {
   'app.name': 'One Panel',
@@ -48,6 +44,7 @@ const en = {
   'nav.favorites': 'Favorites',
   'nav.recent': 'Recent',
   'nav.settings': 'Settings',
+  'nav.techStack': 'Technologies on this page',
   'nav.categories': 'Categories',
   'nav.searchTools': 'Search tools…',
   'nav.searchToolsShortcut': 'Search tools… (Ctrl+K)',
@@ -151,7 +148,8 @@ const en = {
   'allTools.title': 'All tools',
   'allTools.eyebrow': 'The full catalog',
   'allTools.heroTitle': '{{count}} tools, one panel',
-  'allTools.heroBody': 'Everything across {{categories}} categories, A to Z. Search, filter by category, and jump straight in.',
+  'allTools.heroBody':
+    'Everything across {{categories}} categories, A to Z. Search, filter by category, and jump straight in.',
   'allTools.search': 'Search all tools',
   'allTools.filter': 'Filter by category',
   'allTools.all': 'All',
@@ -209,23 +207,30 @@ const en = {
   'siteAccess.allowSite': 'Allow on this site',
   'siteAccess.allowAll': 'All sites',
   'siteAccess.allow': 'Allow access',
-  'siteAccess.adblockNeeded': 'Ad blocking is on but can’t reach websites yet. Allow access so it can hide ads and pop-ups.',
-  'siteAccess.protectionNeeded': 'Web protection is on but can’t reach websites yet. Allow access so it can warn you on dangerous pages.',
-  'siteAccess.interceptorNeeded': 'The interceptor needs access to websites and network events to show and change requests.',
-  'siteAccess.scriptStudioNeeded': 'Your scripts can only run on sites One Panel can access. Allow access to all websites to run them.',
+  'siteAccess.adblockNeeded':
+    'Ad blocking is on but can’t reach websites yet. Allow access so it can hide ads and pop-ups.',
+  'siteAccess.protectionNeeded':
+    'Web protection is on but can’t reach websites yet. Allow access so it can warn you on dangerous pages.',
+  'siteAccess.interceptorNeeded':
+    'The interceptor needs access to websites and network events to show and change requests.',
+  'siteAccess.scriptStudioNeeded':
+    'Your scripts can only run on sites One Panel can access. Allow access to all websites to run them.',
   'settings.siteAccess': 'Website access',
   'settings.siteAccessDescription':
     'One Panel starts with no access to websites. Features that run on pages ask for it when you turn them on.',
   'settings.siteAccessAll': 'Access to all websites',
-  'settings.siteAccessAllOn': 'Granted. Ad blocking, web protection and page features can run on any site.',
-  'settings.siteAccessAllOff': 'Not granted. Page tools work on the tab you open One Panel from, or on sites you allow.',
+  'settings.siteAccessAllOn':
+    'Granted. Ad blocking, web protection and page features can run on any site.',
+  'settings.siteAccessAllOff':
+    'Not granted. Page tools work on the tab you open One Panel from, or on sites you allow.',
   'settings.siteAccessGrant': 'Allow',
   'settings.siteAccessRevoke': 'Revoke',
   'settings.clipboard': 'Clipboard',
   'settings.clipboardPrivacy':
     'Clipboard history can contain sensitive information. All data stays on this device and is never sent anywhere.',
   'settings.clipboardHistory': 'Clipboard history',
-  'settings.clipboardHistoryDescription': 'Record text you copy inside One Panel or save to history.',
+  'settings.clipboardHistoryDescription':
+    'Record text you copy inside One Panel or save to history.',
   'settings.clipboardCapturePages': 'Capture copies on websites',
   'settings.clipboardCapturePagesDescription':
     'Also record text you copy on web pages. Off by default; needs access to all websites.',
@@ -251,7 +256,8 @@ const en = {
   'settings.adblockSectionDescription':
     'Blocks ads, trackers and page clutter on the sites you allow. Off until you turn it on.',
   'settings.adblockEnabled': 'Block ads',
-  'settings.adblockEnabledDescription': 'Use filter lists and cosmetic rules on websites you visit.',
+  'settings.adblockEnabledDescription':
+    'Use filter lists and cosmetic rules on websites you visit.',
   'settings.adblockYoutube': 'Block YouTube ads',
   'settings.adblockYoutubeDescription':
     'Strip video ads before the player sees them, including in background tabs.',
@@ -260,7 +266,8 @@ const en = {
   'settings.protectionSectionDescription':
     'Block known phishing, malware and scam sites. Warns on suspicious sign-in pages.',
   'settings.protectionEnabled': 'Web protection',
-  'settings.protectionEnabledDescription': 'Block dangerous sites and show warnings for risky login pages.',
+  'settings.protectionEnabledDescription':
+    'Block dangerous sites and show warnings for risky login pages.',
   'settings.protectionOpenTool': 'Open Web Protection tool',
   'settings.adblockReloadHint': 'Reload the page to apply this change.',
   'adblock.reloadTab': 'Reload tab',
@@ -301,7 +308,8 @@ const en = {
   'protection.toggle.malware': 'Malware hosts',
   'protection.toggle.scams': 'Scams and badware',
   'protection.toggle.lookalike': 'Look-alike login detection',
-  'protection.toggle.lookalikeDescription': 'Warn when a page mimics a known brand on the wrong domain.',
+  'protection.toggle.lookalikeDescription':
+    'Warn when a page mimics a known brand on the wrong domain.',
   'protection.toggle.known': '{{count}} known hosts in list',
   'protection.toggle.miners': 'Cryptominers',
   'protection.toggle.scamGuard': 'Tech-support scam guard',
@@ -326,7 +334,8 @@ const en = {
   'protection.suite.trackers': 'Block trackers',
   'protection.suite.trackersDescription': 'Third-party analytics and tracking scripts.',
   'protection.suite.cookies': 'Auto-decline cookie consent',
-  'protection.suite.cookiesDescription': 'Clicks "reject all" on GDPR consent banners and hides the rest.',
+  'protection.suite.cookiesDescription':
+    'Clicks "reject all" on GDPR consent banners and hides the rest.',
   'protection.category.phishing': 'Phishing',
   'protection.category.malware': 'Malware',
   'protection.category.scam': 'Scam',
@@ -340,7 +349,8 @@ const en = {
   'protection.redirect.title': 'Redirect stopped',
   'protection.redirect.reason':
     'A tab opened by {{opener}} tried to switch to a different site on its own, without a click from you.',
-  'protection.redirect.tipSafe': 'Genuine sites rarely send a tab they opened to another site minutes later.',
+  'protection.redirect.tipSafe':
+    'Genuine sites rarely send a tab they opened to another site minutes later.',
   'protection.redirect.tipProceed': 'Continue only if you expected to go to this site.',
   'protection.redirect.openerLabel': 'Opened by',
   'protection.redirect.close': 'Close this tab',
@@ -361,7 +371,8 @@ const en = {
   'protection.download.ok': 'Close',
   'protection.download.footerHint': 'Recommended: delete if you did not expect this file.',
   'protection.download.tipHeld': 'Nothing has been saved to your computer yet.',
-  'protection.download.tipCloseDeletes': 'Closing this window without choosing deletes the download.',
+  'protection.download.tipCloseDeletes':
+    'Closing this window without choosing deletes the download.',
   'protection.download.tipBlockedSafe': 'Your files were not changed. You can close this window.',
   'protection.recent.title': 'Recently blocked',
   'protection.recent.empty': 'No threats blocked yet in this session.',
@@ -374,7 +385,8 @@ const en = {
   'protection.resetTotals': 'Reset counter',
   'protection.blocked.title': 'Dangerous site blocked',
   'protection.blocked.subtitle': 'One Panel stopped this page from loading.',
-  'protection.blocked.reason': 'This address is on our {{category}} blocklist. Navigation was stopped before the page loaded.',
+  'protection.blocked.reason':
+    'This address is on our {{category}} blocklist. Navigation was stopped before the page loaded.',
   'protection.blocked.addressLabel': 'Blocked address',
   'protection.blocked.tipSafe': 'Going back is the safest option.',
   'protection.blocked.tipProceed': 'Proceed only if you fully trust this site.',
@@ -574,7 +586,8 @@ const en = {
   'text.words': 'Words',
   'text.count': 'Count',
   'text.countRange': '1–{{max}}',
-  'text.dummyEmpty': 'Set the options above or pick a preset, then generate. Your text appears here.',
+  'text.dummyEmpty':
+    'Set the options above or pick a preset, then generate. Your text appears here.',
   'text.dummyOptions': 'Options',
   'text.dummyShowOptions': 'Show options',
   'text.dummyHideOptions': 'Hide options',
@@ -912,8 +925,7 @@ const en = {
     'You can close this panel — the ZIP keeps building and saves to Downloads automatically.',
   'htmlBundle.keepOpenHint': 'Keep this panel open while files are read from the folder.',
   'htmlBundle.jobCancelled': 'ZIP preparation was cancelled.',
-  'htmlBundle.jobStalled':
-    'The ZIP stopped making progress. Reload the report tab and try again.',
+  'htmlBundle.jobStalled': 'The ZIP stopped making progress. Reload the report tab and try again.',
   'htmlBundle.bannerPreparing_one': 'Preparing ZIP · {{count}} page',
   'htmlBundle.bannerPreparing_other': 'Preparing ZIP · {{count}} pages',
   'htmlBundle.bannerDone': 'ZIP saved to Downloads',
@@ -936,8 +948,7 @@ const en = {
   'htmlBundle.remaining': 'About {{time}} left',
   'htmlBundle.estimating': 'Estimating time…',
   'htmlBundle.selectedCount': '{{count}} of {{total}} selected',
-  'htmlBundle.tooManySelected':
-    '{{count}} pages selected — the current limit is {{max}} per ZIP.',
+  'htmlBundle.tooManySelected': '{{count}} pages selected — the current limit is {{max}} per ZIP.',
   'htmlBundle.done': 'Downloaded {{pages}} page(s) and {{assets}} asset(s).',
   'htmlBundle.doneFolder': 'Downloaded bundle from selected folder.',
   'htmlBundle.doneWithMissing':
@@ -1068,7 +1079,8 @@ const en = {
   'recorder.window.micHint': 'Allow the microphone once so recordings can include your voice.',
   'recorder.window.micAllow': 'Allow microphone',
   'recorder.window.micGranted': 'Microphone allowed. You can close this window.',
-  'recorder.window.micDenied': 'Microphone was blocked. Allow it from the site settings icon in the address bar.',
+  'recorder.window.micDenied':
+    'Microphone was blocked. Allow it from the site settings icon in the address bar.',
   'recorder.viewer.library': 'Recordings',
   'recorder.viewer.name': 'Recording name',
   'recorder.viewer.download': 'Download {{ext}}',
@@ -1167,7 +1179,8 @@ const en = {
   'pip.entered': 'Picture-in-Picture started.',
   'pip.exited': 'Picture-in-Picture closed.',
   'pip.autoPip': 'Auto PiP when switching tabs',
-  'pip.autoPipHint': 'Leave a tab and the video floats on top of other tabs and windows. On YouTube the full player moves with you; return to the tab and it goes back. Chrome may ask once to allow it.',
+  'pip.autoPipHint':
+    'Leave a tab and the video floats on top of other tabs and windows. On YouTube the full player moves with you; return to the tab and it goes back. Chrome may ask once to allow it.',
   'pip.showContextMenu': 'Show in right-click menu',
   'pip.showContextMenuHint': 'Adds Picture-in-Picture on pages and videos.',
   'pip.limits':
@@ -1283,7 +1296,8 @@ const en = {
   'tools.productivity.tasks.description':
     'To-do list with due dates and reminders. Save the current page as a task, type dates in plain words, sort into projects and labels.',
   'tools.productivity.timer.name': 'Timer',
-  'tools.productivity.timer.description': 'Countdown, stopwatch and Pomodoro. Keeps running when the panel is closed.',
+  'tools.productivity.timer.description':
+    'Countdown, stopwatch and Pomodoro. Keeps running when the panel is closed.',
   'tools.productivity.tab-manager.name': 'Tab Manager',
   'tools.productivity.tab-manager.description':
     'Find, group, pin, mute, sleep, close and export your open tabs.',
@@ -1414,7 +1428,8 @@ const en = {
   'timer.reset': 'Reset',
   'timer.dismiss': 'Dismiss',
   'timer.done': "Time's up",
-  'timer.background': 'Keeps running if you close this panel. A popup appears on the page when it finishes.',
+  'timer.background':
+    'Keeps running if you close this panel. A popup appears on the page when it finishes.',
   'timer.running': 'Running in the background',
   'timer.paused': 'Paused',
   'timer.lap': 'Lap',
@@ -1497,10 +1512,6 @@ const en = {
   ...bugReporterStrings,
   ...elementInspectorStrings,
   ...a11yStrings,
-  ...snippetsStrings,
-  ...bookmarksStrings,
-  ...workspacesStrings,
-  ...readingListStrings,
 } as const
 
 export default en
