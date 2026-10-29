@@ -1,6 +1,6 @@
 export const selectorStudioStrings = {
   'studio.hub.title': 'Selector Studio',
-  'studio.hub.titlePane': 'Selectors hub',
+  'studio.hub.titlePane': 'Selector Studio',
   'studio.hub.attrName': 'Name',
   'studio.hub.attrValue': 'Value',
   'studio.hub.noAttributes': 'No attributes on this element.',

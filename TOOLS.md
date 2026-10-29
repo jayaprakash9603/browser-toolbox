@@ -121,7 +121,7 @@ Engines: `src/core/engines/` (`json`, `xml`, `yaml`, `sql`, `regex`, `id`, `date
 | ---- | ----- | ---------- |
 | Element Inspector | `/tools/qa/element-inspector` | Pick element → DOM, styles, dimensions |
 | Selector Generator | `/tools/qa/selector-generator` | CSS + XPath |
-| Selector Studio | `/tools/qa/selector-studio` | Elements sidebar, Styles/Computed/Listeners |
+| Selector Studio | `/tools/qa/selector-studio` | Elements panel tab **Selector Studio** (beside Styles / Computed; use » if tabs are hidden), plus side panel |
 | XPath Tester | `/tools/qa/xpath-tester` | Live page XPath |
 | Test Data Generator | `/tools/qa/test-data-generator` | Names, emails, etc. → JSON/CSV |
 | HTTP Status Codes | `/tools/qa/http-status` | Reference lookup |
