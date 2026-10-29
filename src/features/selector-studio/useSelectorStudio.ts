@@ -58,8 +58,9 @@ export function useSelectorStudio(client: StudioPageClient) {
 
   const shouldSyncPick = useCallback(() => {
     const current = settingsRef.current
+    if (client.kind === 'devtools') return current.livePageSync
     return current.enabled && current.livePageSync
-  }, [])
+  }, [client.kind])
 
   const loadInspect = useCallback(
     async (next: SelectorSnapshot | null) => {
@@ -81,7 +82,7 @@ export function useSelectorStudio(client: StudioPageClient) {
 
   const applySnapshot = useCallback(
     async (next: SelectorSnapshot | null, mode = settingsRef.current.rankMode) => {
-      if (!settingsRef.current.enabled) return
+      if (!settingsRef.current.enabled && client.kind === 'side-panel') return
       setSnapshot(next)
       setPicking(false)
       if (!next) {
@@ -213,7 +214,7 @@ export function useSelectorStudio(client: StudioPageClient) {
   }, [client, settings])
 
   const pick = useCallback(async () => {
-    if (!settingsRef.current.enabled) {
+    if (!settingsRef.current.enabled && client.kind === 'side-panel') {
       setError('Selector Studio is disabled. Turn it on in the sidebar settings.')
       return
     }
