@@ -177,7 +177,6 @@ export type ExtensionMessage =
   | { type: 'INTERCEPTOR_SYNC' }
   | { type: 'INTERCEPTOR_DEEP_ATTACH'; tabId: number }
   | { type: 'INTERCEPTOR_DEEP_DETACH'; tabId: number }
-  | { type: 'GET_TECH_STACK' }
   | { type: 'GET_PAGE_SVGS' }
   | { type: 'SVG_TO_JSX'; markup: string }
   | { type: 'WIREFRAME_TOGGLE'; enabled: boolean }
@@ -372,7 +371,6 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'INTERCEPTOR_SYNC',
   'INTERCEPTOR_DEEP_ATTACH',
   'INTERCEPTOR_DEEP_DETACH',
-  'GET_TECH_STACK',
   'GET_PAGE_SVGS',
   'SVG_TO_JSX',
   'WIREFRAME_TOGGLE',

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { formatCaptionForInstagram } from '@/core/sites/instagram/captionFormat'
-import { detectTechFromPage } from '@/core/engines/techStack/detect'
+import { detectTechnologies } from '@/core/engines/techStack/detect'
 import { generateTotp, normalizeBase32Secret } from '@/core/security/totp'
 import { htmlToMarkdown } from '@/core/text/htmlToMarkdown'
 import { isBrokenStatus } from '@/core/engines/linkChecker/check'
@@ -13,11 +13,17 @@ describe('consolidation core', () => {
   })
 
   it('detects react from script src', () => {
-    const hits = detectTechFromPage({
+    const hits = detectTechnologies({
+      url: 'https://example.com',
       scripts: ['https://cdn.example.com/react.production.min.js'],
+      resources: [],
+      inlineScripts: '',
       meta: {},
-      globals: [],
-      htmlSnippet: '',
+      headers: {},
+      cookies: [],
+      jsValues: {},
+      domMatches: [],
+      html: '',
     })
     expect(hits.some((h) => h.name === 'React')).toBe(true)
   })

@@ -9,7 +9,6 @@ import { crawlSiteForLinks } from './linkCheckerCrawl'
 import { scanImagesOnPage } from './scanImages'
 import { collectSeoData } from './seoCollect'
 import { applySeoHighlight, clearSeoHighlight } from './seoHighlight'
-import { collectTechStack } from './collectors/techStack'
 import { collectPageSvgs, svgToJsx } from './collectors/svgs'
 import { collectPageLinks, locatePageLink } from './collectors/links'
 import { clearPageLinkMarks, markPageLinks } from './collectors/linkMarks'
@@ -213,9 +212,6 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
     case 'CLEAR_PAGE_LINK_MARKS':
       clearPageLinkMarks()
       sendResponse({ ok: true, data: { cleared: true } })
-      return false
-    case 'GET_TECH_STACK':
-      sendResponse({ ok: true, data: collectTechStack() })
       return false
     case 'GET_PAGE_SVGS':
       sendResponse({ ok: true, data: collectPageSvgs() })

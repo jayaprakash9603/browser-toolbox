@@ -11,6 +11,7 @@ import { toolRegistry } from '@/core/registry'
 import { trackRecentTool } from '@/features/recent-tools/recentToolsService'
 import { NetStatusIndicator } from '@/features/netmon/components/NetStatusIndicator'
 import { SiteAccessBar } from '@/features/site-access/SiteAccessBar'
+import { TechStackButton } from '@/features/tech-stack/components/TechStackButton'
 import {
   AppLoadingSkeleton,
   type AppLoadingSkeletonVariant,
@@ -166,6 +167,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
             <TooltipContent>{t('nav.commandPalette')}</TooltipContent>
           </Tooltip>
           {isHomePath(path) && <NetStatusIndicator />}
+          <TechStackButton />
           <ThemeToggle />
           <Tooltip>
             <TooltipTrigger asChild>

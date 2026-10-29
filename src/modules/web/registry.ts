@@ -1,4 +1,4 @@
-import { ArchiveIcon, InfoIcon, ImageIcon, Link2Icon, LinkIcon } from 'lucide-react'
+import { ArchiveIcon, InfoIcon, ImageIcon, LayersIcon, Link2Icon, LinkIcon } from 'lucide-react'
 
 import { defineTool } from '@/core/registry'
 
@@ -70,10 +70,10 @@ export const webTools = [
   defineTool({
     id: 'web.tech-stack',
     name: 'Tech Stack Detective',
-    description: 'Detect frameworks, CMS, analytics, and CDNs used on the active page.',
+    description: 'Find the CMS, frameworks, analytics, CDN, hosting and more behind the active page, and export them to CSV.',
     category: 'web',
-    icon: InfoIcon,
-    keywords: ['wappalyzer', 'tech stack', 'react', 'wordpress', 'shopify', 'framework'],
+    icon: LayersIcon,
+    keywords: ['wappalyzer', 'tech stack', 'react', 'wordpress', 'shopify', 'framework', 'builtwith', 'technology profiler', 'cms detector', 'what runs'],
     aliases: ['technology lookup', 'stack detector'],
     route: '/tools/web/tech-stack',
     capabilities: ['SIDE_PANEL', 'CONTENT_SCRIPT', 'PAGE_ACCESS'],

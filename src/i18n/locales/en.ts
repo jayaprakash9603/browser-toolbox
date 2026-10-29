@@ -44,6 +44,7 @@ const en = {
   'nav.favorites': 'Favorites',
   'nav.recent': 'Recent',
   'nav.settings': 'Settings',
+  'nav.techStack': 'Technologies on this page',
   'nav.categories': 'Categories',
   'nav.searchTools': 'Search tools…',
   'nav.searchToolsShortcut': 'Search tools… (Ctrl+K)',
