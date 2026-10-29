@@ -7,6 +7,8 @@ export const FRAMEWORK_RULES: TechRule[] = [
     name: 'React',
     category: 'js-framework',
     website: 'https://react.dev',
+    description: 'A library for building user interfaces from components.',
+    excludes: ['Preact'],
     src: [
       '(?:^|[/@._-])react(?:-dom)?(?:\\.production|\\.development)?(?:\\.min)?\\.js',
       'react(?:-with-addons)?[.-]\\d',
@@ -48,6 +50,7 @@ export const FRAMEWORK_RULES: TechRule[] = [
     website: 'https://nextjs.org',
     implies: ['React', 'Node.js'],
     src: ['/_next/static/'],
+    url: ['/_next/'],
     js: { __NEXT_DATA__: '', 'next.version': VERSION },
     dom: ['#__next'],
     headers: { 'x-powered-by': '^Next\\.js' },
@@ -81,6 +84,7 @@ export const FRAMEWORK_RULES: TechRule[] = [
     website: 'https://nuxt.com',
     implies: ['Vue.js', 'Node.js'],
     src: ['/_nuxt/'],
+    url: ['/_nuxt/'],
     js: { __NUXT__: '', $nuxt: '' },
     dom: ['#__nuxt'],
   },
@@ -443,4 +447,7 @@ export const BUILD_RULES: TechRule[] = [
     meta: { generator: `^Docusaurus(?: v?${VERSION})?` },
   },
   { name: 'VitePress', category: 'ssg', website: 'https://vitepress.dev', implies: ['Vue.js'], meta: { generator: `^VitePress(?: v?${VERSION})?` } },
+  { name: 'VuePress', category: 'ssg', website: 'https://vuepress.vuejs.org', implies: ['Vue.js'], meta: { generator: `^VuePress(?: v?${VERSION})?` } },
+  { name: 'Nextra', category: 'ssg', website: 'https://nextra.site', implies: ['Next.js', 'React'], meta: { generator: `^Nextra(?: v?${VERSION})?` } },
+  { name: 'Starlight', category: 'ssg', website: 'https://starlight.astro.build', implies: ['Astro'], meta: { generator: `^Starlight(?: v?${VERSION})?` } },
 ]

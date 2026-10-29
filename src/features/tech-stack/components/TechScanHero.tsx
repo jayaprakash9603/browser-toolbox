@@ -6,15 +6,22 @@ import { useTranslation } from 'react-i18next'
 import { mixTint } from '../categoryStyle'
 import { ScanSection } from './ScanSection'
 
+interface HeroMetrics {
+  technologies: number
+  categories: number
+  protocol: string
+}
+
 interface TechScanHeroProps {
   host: string
   count: number | null
   loading: boolean
   accent: string
+  metrics?: HeroMetrics | null
   actions?: ReactNode
 }
 
-export function TechScanHero({ host, count, loading, accent, actions }: TechScanHeroProps) {
+export function TechScanHero({ host, count, loading, accent, metrics, actions }: TechScanHeroProps) {
   const { t } = useTranslation()
   const reduce = useReducedMotion()
   const title = host || (loading ? t('techStack.scanning') : t('techStack.hero.unknownHost'))
@@ -64,6 +71,22 @@ export function TechScanHero({ host, count, loading, accent, actions }: TechScan
           {actions}
         </div>
       </div>
+      {metrics && !loading && (
+        <dl className="mt-3 grid grid-cols-3 divide-x divide-border/70 overflow-hidden rounded-xl border bg-card/80 text-center">
+          <div className="min-w-0 px-1.5 py-2">
+            <dt className="truncate text-[10px] text-muted-foreground">{t('techStack.metric.technologies')}</dt>
+            <dd className="font-mono text-[13px] font-semibold tabular-nums">{metrics.technologies}</dd>
+          </div>
+          <div className="min-w-0 px-1.5 py-2">
+            <dt className="truncate text-[10px] text-muted-foreground">{t('techStack.metric.categories')}</dt>
+            <dd className="font-mono text-[13px] font-semibold tabular-nums">{metrics.categories}</dd>
+          </div>
+          <div className="min-w-0 px-1.5 py-2">
+            <dt className="truncate text-[10px] text-muted-foreground">{t('techStack.metric.protocol')}</dt>
+            <dd className="truncate font-mono text-[13px] font-semibold tabular-nums">{metrics.protocol}</dd>
+          </div>
+        </dl>
+      )}
     </ScanSection>
   )
 }

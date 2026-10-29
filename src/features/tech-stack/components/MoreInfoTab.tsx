@@ -2,7 +2,9 @@ import { CheckIcon, ExternalLinkIcon, XIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { hasResponseHeaders, httpVersionLabel, securityHeaderRows } from '@/core/engines/techStack/moreInfo'
+import { TECH_CATEGORIES } from '@/core/engines/techStack/categories'
+import { TECH_RULE_COUNT } from '@/core/engines/techStack/detect'
+import { httpVersionLabel, securityHeaderRows } from '@/core/engines/techStack/moreInfo'
 import type { TechScan } from '@/core/engines/techStack/types'
 
 import { mixTint } from '../categoryStyle'
@@ -87,6 +89,9 @@ function OverviewSection({ scan }: { scan: TechScan }) {
       <Row label={t('techStack.more.charset')} value={facts.charset} />
       <Row label={t('techStack.more.canonical')} value={facts.canonical} />
       <Row label={t('techStack.more.generator')} value={facts.generator} />
+      <p className="text-[11px] text-muted-foreground">
+        {t('techStack.coverage', { count: TECH_RULE_COUNT, categories: TECH_CATEGORIES.length })}
+      </p>
     </InfoCard>
   )
 }
@@ -97,6 +102,10 @@ function ConnectionSection({ scan }: { scan: TechScan }) {
   return (
     <InfoCard title={t('techStack.more.connection')} color="var(--speed-down)">
       <Row label={t('techStack.more.protocol')} value={httpVersionLabel(scan.protocol) ?? ''} />
+      <Row
+        label={t('techStack.more.duration')}
+        value={scan.durationMs != null ? `${scan.durationMs} ms` : ''}
+      />
       <Row label={t('techStack.more.secure')} value={secure ? t('techStack.more.yes') : t('techStack.more.no')} />
       <Row label={t('techStack.more.server')} value={scan.headers.server ?? ''} />
       <Row label={t('techStack.more.poweredBy')} value={scan.headers['x-powered-by'] ?? ''} />
@@ -108,7 +117,7 @@ function SecurityHeadersSection({ scan }: { scan: TechScan }) {
   const { t } = useTranslation()
   return (
     <InfoCard title={t('techStack.more.securityHeaders')} color="var(--success)">
-      {hasResponseHeaders(scan.headers) ? (
+      {scan.headersAvailable !== false ? (
         securityHeaderRows(scan.headers).map(({ label, present }) => (
           <StatusRow
             key={label}

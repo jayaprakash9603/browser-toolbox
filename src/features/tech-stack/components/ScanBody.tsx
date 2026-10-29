@@ -3,8 +3,10 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/shared/components/ui/button'
 import { Skeleton } from '@/shared/components/ui/skeleton'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 
 import type { TechScanState } from '../useTechScan'
+import { MoreInfoTab } from './MoreInfoTab'
 import { ScanSection } from './ScanSection'
 import { TechnologiesTab } from './TechnologiesTab'
 
@@ -38,7 +40,20 @@ export function ScanBody({ state, onRetry }: { state: TechScanState; onRetry: ()
     }
     return (
       <ScanSection>
-        <TechnologiesTab hits={state.scan.hits} />
+        <Tabs defaultValue="technologies">
+          <TabsList variant="chips">
+            <TabsTrigger value="technologies" count={state.scan.hits.length}>
+              {t('techStack.tab.technologies')}
+            </TabsTrigger>
+            <TabsTrigger value="more">{t('techStack.tab.moreInfo')}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="technologies" className="mt-0">
+            <TechnologiesTab hits={state.scan.hits} />
+          </TabsContent>
+          <TabsContent value="more" className="mt-0">
+            <MoreInfoTab scan={state.scan} />
+          </TabsContent>
+        </Tabs>
       </ScanSection>
     )
   }

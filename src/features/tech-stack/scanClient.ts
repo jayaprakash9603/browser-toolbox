@@ -3,11 +3,27 @@ import {
   getActiveBrowserTab,
   isFileUrlTab,
 } from '@/chrome/contentScriptClient'
-import { collectLookups, detectTechnologies } from '@/core/engines/techStack/detect'
+import { collectLookups, detectTechnologies, DETECTION_ENGINE_VERSION } from '@/core/engines/techStack/detect'
 import type { TechScan } from '@/core/engines/techStack/types'
 import type { PageLoadResult } from '@/tools/seo/pageDataClient'
 
 import { collectDomSignals, collectJsValues } from './inPage'
+
+const SCAN_TIMEOUT_MS = 8000
+
+async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('Scan timed out')), ms)
+      }),
+    ])
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
+}
 
 export async function scanActiveTabTech(): Promise<PageLoadResult<TechScan>> {
   const tab = await getActiveBrowserTab()
@@ -17,13 +33,17 @@ export async function scanActiveTabTech(): Promise<PageLoadResult<TechScan>> {
 
   const { jsPaths, selectors } = collectLookups()
   const target = { tabId: tab.id }
+  const started = performance.now()
   try {
-    const [dom, main] = await Promise.all([
-      chrome.scripting.executeScript({ target, func: collectDomSignals, args: [selectors] }),
-      chrome.scripting
-        .executeScript({ target, world: 'MAIN', func: collectJsValues, args: [jsPaths] })
-        .catch(() => []),
-    ])
+    const [dom, main] = await withTimeout(
+      Promise.all([
+        chrome.scripting.executeScript({ target, func: collectDomSignals, args: [selectors] }),
+        chrome.scripting
+          .executeScript({ target, world: 'MAIN', func: collectJsValues, args: [jsPaths] })
+          .catch(() => []),
+      ]),
+      SCAN_TIMEOUT_MS,
+    )
     const domScan = dom[0]?.result
     if (!domScan) return { ok: false, code: 'CONTENT_SCRIPT_UNAVAILABLE' }
 
@@ -36,6 +56,9 @@ export async function scanActiveTabTech(): Promise<PageLoadResult<TechScan>> {
       facts: domScan.facts,
       headers: signals.headers,
       protocol: signals.protocol,
+      durationMs: Math.round(performance.now() - started),
+      headersAvailable: domScan.headersAvailable,
+      engineVersion: DETECTION_ENGINE_VERSION,
     }
     return { ok: true, data: scan, tabId: tab.id, tabUrl: url }
   } catch (error: unknown) {

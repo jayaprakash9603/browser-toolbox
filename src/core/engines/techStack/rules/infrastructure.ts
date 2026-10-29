@@ -33,6 +33,8 @@ export const LANGUAGE_RULES: TechRule[] = [
   { name: 'Python', category: 'programming-language', website: 'https://www.python.org', headers: { server: '^(?:Python|WSGIServer|Werkzeug)' } },
   { name: 'Ruby', category: 'programming-language', website: 'https://www.ruby-lang.org' },
   { name: 'Java', category: 'programming-language', website: 'https://www.java.com', cookies: ['^JSESSIONID$'] },
+  { name: 'Elixir', category: 'programming-language', website: 'https://elixir-lang.org' },
+  { name: 'Go', category: 'programming-language', website: 'https://go.dev' },
   { name: 'MySQL', category: 'database', website: 'https://www.mysql.com' },
 ]
 

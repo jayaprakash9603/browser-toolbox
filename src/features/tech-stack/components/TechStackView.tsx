@@ -1,14 +1,17 @@
 import { RefreshCwIcon } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { techScanFilename, techScanToCsv } from '@/core/engines/techStack/export'
+import { groupHitsByCategory } from '@/core/engines/techStack/detect'
+import { techScanFilename, techScanToCsv, techScanToJson } from '@/core/engines/techStack/export'
+import { httpVersionLabel } from '@/core/engines/techStack/moreInfo'
 import { SiteAccessBar } from '@/features/site-access/SiteAccessBar'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/utils/cn'
 
 import { scanAccent } from '../categoryStyle'
-import { downloadCsv } from '../download'
+import { downloadCsv, downloadJson } from '../download'
 import '../i18n'
 import { useTechScan } from '../useTechScan'
 import { ScanBody } from './ScanBody'
@@ -42,9 +45,13 @@ export function TechStackView({
   const scan = state.scan
   const isLoading = state.status === 'loading'
   const accent = scanAccent(state.status === 'error' ? 'error' : isLoading ? 'loading' : 'ready', scan?.hits.length ?? 0)
+  const categoryCount = useMemo(() => (scan ? groupHitsByCategory(scan.hits).length : 0), [scan])
 
   const exportCsv = () => {
-    if (scan) downloadCsv(techScanToCsv(scan), techScanFilename(scan))
+    if (scan) downloadCsv(techScanToCsv(scan), techScanFilename(scan, 'csv'))
+  }
+  const exportJson = () => {
+    if (scan) downloadJson(techScanToJson(scan), techScanFilename(scan, 'json'))
   }
 
   return (
@@ -61,6 +68,15 @@ export function TechStackView({
           count={scan?.hits.length ?? null}
           loading={isLoading}
           accent={accent}
+          metrics={
+            scan && !isLoading
+              ? {
+                  technologies: scan.hits.length,
+                  categories: categoryCount,
+                  protocol: httpVersionLabel(scan.protocol) ?? '—',
+                }
+              : null
+          }
           actions={
             <Button
               size="icon-sm"
@@ -80,7 +96,8 @@ export function TechStackView({
         <ScanFooter
           canExport={Boolean(scan && scan.hits.length > 0)}
           showOpen={Boolean(onNavigate)}
-          onExport={exportCsv}
+          onExportCsv={exportCsv}
+          onExportJson={exportJson}
           onNavigate={onNavigate}
         />
       </motion.div>
