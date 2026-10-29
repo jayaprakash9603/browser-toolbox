@@ -157,38 +157,39 @@ export function ScreenshotOptions() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto flex max-w-3xl flex-col gap-4 p-6">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Back to capture"
-              onClick={() => navigate('/tools/screenshots/capture')}
-            >
-              <ArrowLeftIcon />
-            </Button>
-            <h1 className="text-xl font-semibold">Screenshot options</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            {justSaved && !dirty && (
-              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                <CheckIcon className="size-3.5" /> Saved
-              </span>
-            )}
-            <Button
-              variant="outline"
-              onClick={() => patch({ ...DEFAULT_SCREENSHOT_SETTINGS })}
-            >
-              Reset to defaults
-            </Button>
-            <Button disabled={!dirty} onClick={() => void save()}>
-              Save changes
-            </Button>
-          </div>
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
+      <div className="mx-auto flex w-full max-w-3xl shrink-0 items-center justify-between gap-3 px-6 pt-6 pb-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Back to capture"
+            onClick={() => navigate('/tools/screenshots/capture')}
+          >
+            <ArrowLeftIcon />
+          </Button>
+          <h1 className="truncate text-xl font-semibold">Screenshot options</h1>
         </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {justSaved && !dirty && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <CheckIcon className="size-3.5" /> Saved
+            </span>
+          )}
+          <Button
+            variant="outline"
+            onClick={() => patch({ ...DEFAULT_SCREENSHOT_SETTINGS })}
+          >
+            Reset to defaults
+          </Button>
+          <Button disabled={!dirty} onClick={() => void save()}>
+            Save changes
+          </Button>
+        </div>
+      </div>
 
+      <div className="scrollbar-styled min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div className="mx-auto flex max-w-3xl flex-col gap-4 px-6 pb-8">
         <Card>
           <CardHeader>
             <CardTitle>Saving</CardTitle>
@@ -362,6 +363,7 @@ export function ScreenshotOptions() {
             </Row>
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   )
