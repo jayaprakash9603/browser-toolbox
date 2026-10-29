@@ -808,6 +808,9 @@ const en = {
   'tools.qa.selector-generator.name': 'Selector Generator',
   'tools.qa.selector-generator.description':
     'Generate CSS and XPath selectors for any page element.',
+  'tools.qa.selector-studio.name': 'Selector Studio',
+  'tools.qa.selector-studio.description':
+    'Inspect, generate, validate and copy XPath and CSS locators for automation.',
   'tools.qa.xpath-tester.name': 'XPath Tester',
   'tools.qa.xpath-tester.description':
     'Evaluate an XPath on the current page and see matching elements.',

@@ -40,6 +40,7 @@ export const STORAGE_KEYS = {
   scriptStudioSettings: 'scriptStudioSettings',
   cssGeneratorLibrary: 'cssGeneratorLibrary',
   pageInspector: 'pageInspector',
+  selectorStudio: 'selectorStudio',
   bugReporterDraft: 'bugReporterDraft',
   bugReporterHistory: 'bugReporterHistory',
   bugReporterPrefs: 'bugReporterPrefs',

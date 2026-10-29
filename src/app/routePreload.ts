@@ -27,6 +27,18 @@ export function preloadRouteFromHash(): void {
     void import('@/app/pages/DevToolsPage')
     return
   }
+  if (path === '/devtools/selector-studio') {
+    void import('@/app/pages/DevToolsSelectorStudioPage')
+    return
+  }
+  if (path === '/devtools/selector-studio-sidebar') {
+    void import('@/app/pages/DevToolsSelectorStudioSidebarPage')
+    return
+  }
+  if (path === '/devtools/interceptor') {
+    void import('@/app/pages/DevToolsInterceptorPage')
+    return
+  }
   const legacyToolId = LEGACY_TOOL_ROUTES[path]
   if (legacyToolId) {
     const tool = toolRegistry.get(legacyToolId)

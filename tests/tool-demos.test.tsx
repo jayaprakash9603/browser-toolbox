@@ -13,7 +13,7 @@ import { TooltipProvider } from '@/shared/components/ui/tooltip'
 registerModules()
 
 /** Tools whose website page has no walkthrough yet; they show a still poster. */
-const WITHOUT_DEMO = ['developer.timestamp-toolkit']
+const WITHOUT_DEMO = ['developer.timestamp-toolkit', 'qa.selector-studio']
 
 const originalMatchMedia = window.matchMedia
 

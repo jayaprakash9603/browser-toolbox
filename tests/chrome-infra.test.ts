@@ -100,6 +100,10 @@ describe('command registry', () => {
 describe('message validation', () => {
   it('accepts known message types with required fields', () => {
     expect(isExtensionMessage({ type: 'PICK_ELEMENT_START' })).toBe(true)
+    expect(isExtensionMessage({ type: 'SELECTOR_STUDIO_HIGHLIGHT', kind: 'css', expression: '#a' })).toBe(
+      true,
+    )
+    expect(isExtensionMessage({ type: 'SELECTOR_STUDIO_CLEAR' })).toBe(true)
     expect(isExtensionMessage({ type: 'OPEN_TOOL', toolId: 'text.analyzer' })).toBe(true)
     expect(isExtensionMessage({ type: 'GET_PAGE_INFO' })).toBe(true)
     expect(isExtensionMessage({ type: 'GET_SEO_DATA' })).toBe(true)

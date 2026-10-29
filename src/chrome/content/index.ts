@@ -4,6 +4,7 @@ import { bytesToBase64, type HtmlBundleProgress } from '@/core/engines/htmlArchi
 import type { PageLinkMark } from '@/core/engines/linkChecker/report'
 
 import { cancelPicker, isPickerActive, startPicker } from './elementPicker'
+import { clearStudioHighlights, highlightStudioSelector } from './selectorStudioHighlight'
 import { buildHtmlBundleInPage, scanHtmlBundleFromDom } from './htmlBundle'
 import { crawlSiteForLinks } from './linkCheckerCrawl'
 import { scanImagesOnPage } from './scanImages'
@@ -155,7 +156,11 @@ function writeStorage(message: {
   }
 }
 
-chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
+const contentScope = window as unknown as { __toolboxContentScript?: boolean }
+const contentAlreadyInstalled = Boolean(contentScope.__toolboxContentScript)
+contentScope.__toolboxContentScript = true
+
+if (!contentAlreadyInstalled) chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
   if (!isExtensionMessage(raw)) return false
   switch (raw.type) {
     case 'CONTENT_SCRIPT_PING':
@@ -168,6 +173,16 @@ chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
     case 'PICK_ELEMENT_CANCEL':
       cancelPicker()
       sendResponse({ ok: true, data: { active: false } })
+      return false
+    case 'SELECTOR_STUDIO_HIGHLIGHT':
+      sendResponse({
+        ok: true,
+        data: highlightStudioSelector(raw.kind, raw.expression, raw.identityPath ?? null),
+      })
+      return false
+    case 'SELECTOR_STUDIO_CLEAR':
+      clearStudioHighlights()
+      sendResponse({ ok: true, data: { cleared: true } })
       return false
     case 'GET_PAGE_INFO':
       sendResponse({ ok: true, data: collectPageInfo() })

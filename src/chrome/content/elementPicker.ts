@@ -4,6 +4,8 @@ import {
   type CapturedElement,
   type SelectorSet,
 } from '@/core/engines/selector'
+import { captureSelectorSnapshot } from '@/core/engines/selector-studio/capture'
+import type { SelectorSnapshot } from '@/core/engines/selector-studio/types'
 
 const OVERLAY_ID = 'toolbox-element-picker-overlay'
 const LABEL_ID = 'toolbox-element-picker-label'
@@ -11,6 +13,7 @@ const LABEL_ID = 'toolbox-element-picker-label'
 export interface PickedElementResult {
   element: CapturedElement
   selectors: SelectorSet
+  snapshot?: SelectorSnapshot
 }
 
 let active = false
@@ -81,10 +84,18 @@ function highlight(element: Element): void {
   })
 }
 
+function eventElement(event: Event): Element | null {
+  for (const node of event.composedPath()) {
+    if (!(node instanceof Element)) continue
+    if (node.id === OVERLAY_ID || node.id === LABEL_ID) continue
+    return node
+  }
+  return event.target instanceof Element ? event.target : null
+}
+
 function onMouseMove(event: MouseEvent): void {
-  const target = event.target
-  if (!(target instanceof Element)) return
-  if (target.id === OVERLAY_ID || target.id === LABEL_ID) return
+  const target = eventElement(event)
+  if (!target) return
   highlight(target)
 }
 
@@ -98,14 +109,18 @@ function onKeyDown(event: KeyboardEvent): void {
 function onClick(event: MouseEvent): void {
   event.preventDefault()
   event.stopPropagation()
-  const target = hovered
+  const target = eventElement(event) ?? hovered
   if (!target) {
     stopPicker()
     return
   }
   const computed = window.getComputedStyle(target)
   const element = describeElement(target, computed)
-  const result: PickedElementResult = { element, selectors: generateSelectors(element) }
+  const result: PickedElementResult = {
+    element,
+    selectors: generateSelectors(element),
+    snapshot: captureSelectorSnapshot(target),
+  }
   stopPicker()
   void persistResult(result)
 }

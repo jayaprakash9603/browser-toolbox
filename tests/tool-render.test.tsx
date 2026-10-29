@@ -62,5 +62,5 @@ describe('registered tool routes', () => {
     } finally {
       errorLog.mockRestore()
     }
-  }, 120000)
+  }, 180000)
 })

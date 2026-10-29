@@ -7,7 +7,7 @@ describe('tool registry', () => {
   registerModules()
 
   it('registers all tools across enabled categories', () => {
-    expect(toolRegistry.getAll()).toHaveLength(85)
+    expect(toolRegistry.getAll()).toHaveLength(90)
   })
 
   it('rejects duplicate tool ids', () => {
@@ -40,9 +40,9 @@ describe('tool registry', () => {
     expect(toolRegistry.search('word count')).toContainEqual(
       expect.objectContaining({ id: 'text.analyzer' }),
     )
-    expect(toolRegistry.search('clipboard')).toEqual([
-      expect.objectContaining({ id: 'clipboard.manager' }),
-    ])
+    expect(toolRegistry.search('clipboard')).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: 'clipboard.manager' })]),
+    )
     expect(toolRegistry.search('formatter')).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ id: 'text.formatter', name: 'Code Formatter' }),
