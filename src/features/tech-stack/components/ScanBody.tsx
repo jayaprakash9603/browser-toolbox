@@ -1,13 +1,10 @@
 import { RefreshCwIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import type { TechScan } from '@/core/engines/techStack/types'
 import { Button } from '@/shared/components/ui/button'
 import { Skeleton } from '@/shared/components/ui/skeleton'
-import { TabsContent } from '@/shared/components/ui/tabs'
 
 import type { TechScanState } from '../useTechScan'
-import { MoreInfoTab } from './MoreInfoTab'
 import { ScanSection } from './ScanSection'
 import { TechnologiesTab } from './TechnologiesTab'
 
@@ -27,32 +24,27 @@ function LoadingRows() {
   )
 }
 
-function ScanResult({ scan }: { scan: TechScan }) {
-  const { t } = useTranslation()
-  return (
-    <>
-      <TabsContent value="technologies" className="gap-0">
-        {scan.hits.length > 0 ? (
-          <TechnologiesTab hits={scan.hits} />
-        ) : (
-          <p className="rounded-xl border border-dashed px-3 py-6 text-center text-xs text-muted-foreground">
-            {t('web.techStack.empty')}
-          </p>
-        )}
-      </TabsContent>
-      <TabsContent value="more" className="gap-0">
-        <MoreInfoTab scan={scan} />
-      </TabsContent>
-    </>
-  )
-}
-
 export function ScanBody({ state, onRetry }: { state: TechScanState; onRetry: () => void }) {
   const { t } = useTranslation()
-  if (state.scan) return <ScanResult scan={state.scan} />
+  if (state.scan) {
+    if (state.scan.hits.length === 0) {
+      return (
+        <ScanSection>
+          <p className="rounded-xl border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
+            {t('web.techStack.empty')}
+          </p>
+        </ScanSection>
+      )
+    }
+    return (
+      <ScanSection>
+        <TechnologiesTab hits={state.scan.hits} />
+      </ScanSection>
+    )
+  }
   if (state.status === 'error') {
     return (
-      <ScanSection className="flex flex-col items-start gap-2 text-xs text-muted-foreground">
+      <ScanSection className="flex flex-col items-start gap-2 text-sm text-muted-foreground">
         <p>{t(state.errorKey)}</p>
         <Button size="xs" variant="outline" onClick={onRetry}>
           <RefreshCwIcon /> {t('common.tryAgain')}

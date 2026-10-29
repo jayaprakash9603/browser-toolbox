@@ -70,7 +70,7 @@ describe('TechStackView', () => {
     expect(screen.getByText('18.2.0')).toBeInTheDocument()
     expect(screen.getByText('Google Analytics')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Open React website' })).toHaveAttribute('href', 'https://react.dev')
-    expect(screen.getByText('HTTP/2')).toBeInTheDocument()
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument()
   })
 })
 

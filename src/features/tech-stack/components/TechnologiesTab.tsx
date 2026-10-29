@@ -11,7 +11,7 @@ import { StaggerChildren, StaggerItem } from '@/shared/components/motion'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/utils/cn'
 
-import { categoryColor, mixTint } from '../categoryStyle'
+import { categoryColor } from '../categoryStyle'
 import { TechIcon } from './TechIcon'
 
 function TechRow({ hit }: { hit: TechHit }) {
@@ -23,7 +23,7 @@ function TechRow({ hit }: { hit: TechHit }) {
       <TechIcon name={hit.name} color={color} />
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="flex min-w-0 items-center gap-1">
-          <span className="truncate text-[13px] leading-tight font-medium">{hit.name}</span>
+          <span className="truncate text-[13px] leading-tight font-medium text-foreground">{hit.name}</span>
           {hit.website && <ExternalLinkIcon className="size-3 shrink-0 text-muted-foreground" aria-hidden />}
         </span>
         {(hit.version || hit.implied) && (
@@ -37,7 +37,7 @@ function TechRow({ hit }: { hit: TechHit }) {
   )
 
   const rowClass =
-    'flex min-w-0 items-center gap-2.5 rounded-xl px-1.5 py-1.5 transition-colors duration-200 hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+    'flex min-w-0 items-center gap-2.5 rounded-xl px-1.5 py-1.5 text-foreground transition-colors duration-200 hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
 
   if (hit.website) {
     return (
@@ -64,19 +64,17 @@ function TechRow({ hit }: { hit: TechHit }) {
 }
 
 function CategoryBlock({ category, groupHits }: { category: TechCategoryId; groupHits: TechHit[] }) {
-  const color = categoryColor(category)
+  const accent = categoryColor(category)
   return (
-    <section className="mb-2 overflow-hidden rounded-xl border bg-card">
+    <section className="mb-2 overflow-hidden rounded-xl border border-border bg-card">
       <header
-        className="flex items-center justify-between gap-2 px-3 py-2"
-        style={{ background: `linear-gradient(90deg, ${mixTint(color, 16)}, transparent 72%)` }}
+        className="flex items-center justify-between gap-2 border-b border-border/80 border-s-[3px] bg-muted/40 px-3 py-2"
+        style={{ borderInlineStartColor: accent }}
       >
-        <h3 className="text-[11px] font-medium tracking-wide uppercase" style={{ color }}>
+        <h3 className="text-[11px] font-semibold tracking-wide text-foreground uppercase">
           {categoryLabel(category)}
         </h3>
-        <span className="font-mono text-[11px] tabular-nums" style={{ color }}>
-          {groupHits.length}
-        </span>
+        <span className="font-mono text-[11px] tabular-nums text-muted-foreground">{groupHits.length}</span>
       </header>
       <ul className="px-1.5 py-1">
         {groupHits.map((hit) => (
@@ -91,13 +89,11 @@ function FilterChip({
   label,
   count,
   selected,
-  color,
   onClick,
 }: {
   label: string
   count: number
   selected: boolean
-  color: string
   onClick: () => void
 }) {
   return (
@@ -106,13 +102,10 @@ function FilterChip({
       onClick={onClick}
       className={cn(
         'inline-flex h-8 shrink-0 cursor-pointer items-center gap-1 rounded-full border px-2.5 text-xs font-medium transition-[color,background-color,border-color] duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-        selected ? 'text-foreground' : 'border-border bg-card text-muted-foreground hover:text-foreground',
-      )}
-      style={
         selected
-          ? { color, borderColor: mixTint(color, 40), backgroundColor: mixTint(color, 12) }
-          : undefined
-      }
+          ? 'border-primary/45 bg-primary/10 text-foreground'
+          : 'border-border bg-card text-muted-foreground hover:border-foreground/20 hover:text-foreground',
+      )}
     >
       {label}
       <span className="font-mono tabular-nums opacity-80">{count}</span>
@@ -154,7 +147,7 @@ export function TechnologiesTab({ hits }: { hits: TechHit[] }) {
           onChange={(event) => setQuery(event.target.value)}
           placeholder={t('techStack.filter.placeholder')}
           aria-label={t('techStack.filter.placeholder')}
-          className="h-8 ps-8 text-xs"
+          className="h-8 border-border bg-background ps-8 text-xs text-foreground"
         />
       </div>
       {groups.length > 1 && (
@@ -163,7 +156,6 @@ export function TechnologiesTab({ hits }: { hits: TechHit[] }) {
             label={t('techStack.filter.all')}
             count={hits.length}
             selected={categoryFilter === 'all'}
-            color="var(--hero-from)"
             onClick={() => setCategoryFilter('all')}
           />
           {groups.map(({ category, hits: groupHits }) => (
@@ -172,14 +164,13 @@ export function TechnologiesTab({ hits }: { hits: TechHit[] }) {
               label={categoryLabel(category)}
               count={groupHits.length}
               selected={categoryFilter === category}
-              color={categoryColor(category)}
               onClick={() => setCategoryFilter(categoryFilter === category ? 'all' : category)}
             />
           ))}
         </ChipRail>
       )}
       {filteredGroups.length === 0 ? (
-        <p className="rounded-xl border border-dashed px-3 py-6 text-center text-xs text-muted-foreground">
+        <p className="rounded-xl border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
           {t('techStack.filter.noMatches')}
         </p>
       ) : (
