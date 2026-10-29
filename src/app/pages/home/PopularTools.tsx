@@ -1,6 +1,6 @@
 import { ArrowRightIcon, FlameIcon } from 'lucide-react'
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'motion/react'
-import { useState, type MouseEvent } from 'react'
+import { useMemo, useState, type MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Link } from '@/app/router'
@@ -15,20 +15,31 @@ const DISPLAY_LIMIT = 9
 const LAYOUT_SLOW = { duration: 1.05, ease: [0.22, 1, 0.36, 1] as const }
 const CONTENT_SLOW = { duration: 0.75, ease: [0.22, 1, 0.36, 1] as const }
 
+function orderToolsWithFeaturedFirst(tools: ToolDefinition[], activeId: string) {
+  const featured = tools.find((tool) => tool.id === activeId)
+  if (!featured) return tools
+  return [featured, ...tools.filter((tool) => tool.id !== activeId)]
+}
+
 export function PopularTools({ delay = 0.24 }: { delay?: number }) {
   const { t } = useTranslation()
   const tools = getHomePopularTools().slice(0, DISPLAY_LIMIT)
-  const defaultFeaturedId = tools[0]?.id ?? null
-  const [featuredId, setFeaturedId] = useState<string | null>(defaultFeaturedId)
+  const topPickId = tools[0]?.id ?? null
+  const [featuredId, setFeaturedId] = useState<string | null>(topPickId)
 
-  if (!tools[0] || !defaultFeaturedId) return null
+  if (!tools[0] || !topPickId) return null
 
-  const activeId = featuredId ?? defaultFeaturedId
+  const activeId = featuredId ?? topPickId
 
   return (
     <SlideUp delay={delay} className="mb-[var(--density-section-gap)]">
       <SectionHeader title={t('home.popularTools')} icon={FlameIcon} />
-      <PopularToolsGrid tools={tools} activeId={activeId} onSelect={setFeaturedId} />
+      <PopularToolsGrid
+        tools={tools}
+        activeId={activeId}
+        topPickId={topPickId}
+        onSelect={setFeaturedId}
+      />
     </SlideUp>
   )
 }
@@ -36,32 +47,46 @@ export function PopularTools({ delay = 0.24 }: { delay?: number }) {
 function PopularToolsGrid({
   tools,
   activeId,
+  topPickId,
   onSelect,
 }: {
   tools: ToolDefinition[]
   activeId: string
+  topPickId: string
   onSelect: (id: string) => void
 }) {
   const reduce = useReducedMotion()
   const layoutTransition = reduce ? { duration: 0 } : LAYOUT_SLOW
+  const orderedTools = useMemo(
+    () => orderToolsWithFeaturedFirst(tools, activeId),
+    [tools, activeId],
+  )
+  const colorIndexById = useMemo(
+    () => new Map(tools.map((tool, index) => [tool.id, index])),
+    [tools],
+  )
 
   return (
     <LayoutGroup id="popular-tools">
       <motion.div
         layout
-        className="grid grid-cols-2 gap-2 overflow-x-clip @[560px]:grid-cols-4 @[560px]:auto-rows-[minmax(3.25rem,auto)] @[960px]:grid-cols-6"
+        className="relative isolate grid w-full grid-flow-row-dense grid-cols-2 gap-2 overflow-hidden @[560px]:grid-cols-4 @[560px]:auto-rows-[minmax(3.25rem,auto)] @[960px]:grid-cols-6"
       >
-        {tools.map((tool, index) => (
-          <PopularToolTile
-            key={tool.id}
-            tool={tool}
-            expanded={tool.id === activeId}
-            showTopPick={index === 0 && tool.id === activeId}
-            color={tileColor(index)}
-            onSelect={() => onSelect(tool.id)}
-            layoutTransition={layoutTransition}
-          />
-        ))}
+        {orderedTools.map((tool) => {
+          const expanded = tool.id === activeId
+          const colorIndex = colorIndexById.get(tool.id) ?? 0
+          return (
+            <PopularToolTile
+              key={tool.id}
+              tool={tool}
+              expanded={expanded}
+              showTopPick={expanded && tool.id === topPickId}
+              color={tileColor(colorIndex)}
+              onSelect={() => onSelect(tool.id)}
+              layoutTransition={layoutTransition}
+            />
+          )
+        })}
       </motion.div>
     </LayoutGroup>
   )
@@ -106,8 +131,10 @@ function PopularToolTile({
       layoutDependency={expanded}
       transition={{ layout: layoutTransition }}
       className={cn(
-        'relative min-h-0 min-w-0 self-stretch overflow-hidden rounded-2xl',
-        expanded && 'z-[1] col-span-2 @[560px]:row-span-2',
+        'relative min-h-0 min-w-0 max-w-full',
+        expanded
+          ? 'col-span-2 row-span-1 @[560px]:row-span-2'
+          : 'col-span-1 row-span-1',
       )}
     >
       <Link
@@ -118,9 +145,9 @@ function PopularToolTile({
         onPointerEnter={preload}
         onFocus={preload}
         className={cn(
-          'group relative flex h-full min-h-0 w-full min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+          'group relative flex h-full min-h-0 w-full max-w-full min-w-0 overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
           expanded
-            ? 'box-border grid h-full min-h-[4.5rem] grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[auto_auto_auto] items-center gap-x-2.5 gap-y-0.5 overflow-hidden rounded-2xl border p-3 shadow-[var(--shadow-card)] transition-shadow duration-300 hover:shadow-[var(--shadow-card-hover)] @[560px]:min-h-0 @[560px]:p-3.5'
+            ? 'box-border grid min-h-[4.75rem] grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[auto_auto_auto] items-center gap-x-2.5 gap-y-0.5 rounded-2xl border p-3 shadow-[var(--shadow-card)] transition-shadow duration-300 hover:shadow-[var(--shadow-card-hover)] @[560px]:h-full @[560px]:min-h-0 @[560px]:p-3.5'
             : 'min-h-12 items-center gap-2 rounded-xl border bg-card p-2 shadow-xs transition-[border-color,background-color,box-shadow] duration-200 hover:border-primary/35 hover:bg-accent/40 hover:shadow-sm active:scale-[0.98] @[560px]:min-h-14',
         )}
         style={
@@ -135,14 +162,14 @@ function PopularToolTile({
           <>
             <Icon
               aria-hidden
-              className="pointer-events-none absolute end-0 bottom-0 hidden size-24 translate-x-1/4 translate-y-1/4 -rotate-12 opacity-[0.08] motion-reduce:transition-none @[560px]:block"
+              className="pointer-events-none absolute end-0 bottom-0 hidden size-20 translate-x-1/5 translate-y-1/5 -rotate-12 opacity-[0.08] motion-reduce:transition-none @[560px]:block"
               style={{ color }}
             />
             <span
               className="col-start-1 row-start-1 flex size-10 shrink-0 items-center justify-center rounded-xl text-white shadow-sm @[560px]:size-9"
               style={{ background: `linear-gradient(145deg, ${color}, color-mix(in srgb, ${color} 55%, black))` }}
             >
-              <Icon className="size-4 @[560px]:size-4" aria-hidden />
+              <Icon className="size-4" aria-hidden />
             </span>
             <AnimatePresence mode="popLayout" initial={false}>
               {showTopPick ? (
