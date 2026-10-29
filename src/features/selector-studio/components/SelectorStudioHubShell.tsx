@@ -34,9 +34,12 @@ export type SelectorStudioHubVariant = 'panel' | 'devtools' | 'pane'
 export function SelectorStudioHubShell({
   model,
   variant,
+  hideSettingsGear = false,
 }: {
   model: SelectorStudioModel
   variant: SelectorStudioHubVariant
+  /** Side panel uses a dedicated settings column instead of the gear rail. */
+  hideSettingsGear?: boolean
 }) {
   const { t } = useTranslation()
   const pane = variant === 'pane'
@@ -93,6 +96,7 @@ export function SelectorStudioHubShell({
         onOpenHistory={() => setTab('history')}
         showHistory={!pane}
         disabled={disabled}
+        hideSettings={hideSettingsGear || panel}
       />
 
       <div className="flex min-h-0 min-w-0 flex-1">
@@ -260,7 +264,7 @@ export function SelectorStudioHubShell({
           </p>
         </div>
 
-        {settingsOpen && (
+        {settingsOpen && !hideSettingsGear && !panel && (
           <aside
             className={cn(
               'shrink-0 overflow-y-auto border-l border-border/80 bg-muted/15 p-2',

@@ -22,6 +22,7 @@ export function HubSideRail({
   onOpenHistory,
   showHistory,
   disabled = false,
+  hideSettings = false,
 }: {
   model: SelectorStudioModel
   settingsOpen: boolean
@@ -30,6 +31,7 @@ export function HubSideRail({
   onOpenHistory: () => void
   showHistory: boolean
   disabled?: boolean
+  hideSettings?: boolean
 }) {
   const { t } = useTranslation()
 
@@ -75,14 +77,18 @@ export function HubSideRail({
           },
         ]
       : []),
-    {
-      id: 'settings',
-      label: t('studio.settings'),
-      pressed: settingsOpen,
-      active: settingsOpen,
-      onClick: onToggleSettings,
-      icon: SettingsIcon,
-    },
+    ...(hideSettings
+      ? []
+      : [
+          {
+            id: 'settings',
+            label: t('studio.settings'),
+            pressed: settingsOpen,
+            active: settingsOpen,
+            onClick: onToggleSettings,
+            icon: SettingsIcon,
+          },
+        ]),
   ] as const
 
   return (

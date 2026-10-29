@@ -9,7 +9,7 @@ export const selectorStudioStrings = {
   'studio.panel.enabledHelp': 'Turn off to pause picking, sync, and highlights on this tab.',
   'studio.panel.liveSync': 'Live page sync',
   'studio.panel.liveSyncHelp': 'Update selectors when you pick an element on the page.',
-  'studio.panel.disabledBanner': 'Selector Studio is off. Turn it on in the Elements sidebar (Selector Studio pane), then use Pick here.',
+  'studio.panel.disabledBanner': 'Selector Studio is off. Turn on Studio enabled in the settings column on the left.',
   'studio.sidebar.openTool': 'Open Selector Studio',
   'studio.hub.attrName': 'Name',
   'studio.hub.attrValue': 'Value',

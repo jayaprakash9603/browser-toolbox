@@ -4,7 +4,6 @@ import type { ReactElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { SelectorCandidate, SelectorSnapshot } from '@/core/engines/selector-studio'
-import { SelectorStudioElementsSidebar } from '@/features/selector-studio/components/SelectorStudioElementsSidebar'
 import { SelectorStudioPanelView } from '@/features/selector-studio/components/SelectorStudioPanelView'
 import { SelectorStudioView } from '@/features/selector-studio/components/SelectorStudioView'
 import '@/features/selector-studio/i18n'
@@ -264,17 +263,18 @@ describe('Selector Studio UI', () => {
     expect(screen.getByText(/click an element on the page/i)).toBeInTheDocument()
   })
 
-  it('renders side panel hub without persistent settings column', () => {
+  it('renders side panel with settings column and selector hub', () => {
     renderStudio(<SelectorStudioPanelView model={model()} />)
-    expect(screen.queryByLabelText(/studio enabled/i)).not.toBeInTheDocument()
+    expect(screen.getByLabelText(/studio enabled/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /pick element/i })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Attributes' })).toBeInTheDocument()
   })
 
-  it('renders DevTools Elements sidebar with enable toggle and settings', () => {
-    renderStudio(<SelectorStudioElementsSidebar model={model()} />)
-    expect(screen.getByLabelText(/studio enabled/i)).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /open selector studio/i })).toBeInTheDocument()
+  it('renders DevTools Elements sidebar with selector hub', () => {
+    renderStudio(<SelectorStudioView model={model()} pane />)
+    expect(screen.queryByLabelText(/studio enabled/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Attributes' })).toBeInTheDocument()
+    expect(screen.getAllByText('button[data-testid="submit"]').length).toBeGreaterThan(0)
   })
 
   it('shows computed styles and listeners under Inspect', async () => {
