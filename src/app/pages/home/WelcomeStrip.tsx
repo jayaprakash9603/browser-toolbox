@@ -3,7 +3,6 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { categoryRegistry, toolRegistry } from '@/core/registry'
 import { getGreetingKey, HOME_TAGLINES, TAGLINE_INTERVAL_MS, type GreetingKey } from '@/app/pages/home/homeConfig'
 import { SlideUp } from '@/shared/components/motion'
 import { cn } from '@/shared/utils/cn'
@@ -53,7 +52,7 @@ function useRotatingIndex(count: number, paused: boolean): [number, (index: numb
   return [index, setIndex]
 }
 
-export function WelcomeStrip({ favoriteCount, delay = 0 }: { favoriteCount: number; delay?: number }) {
+export function WelcomeStrip({ delay = 0 }: { delay?: number }) {
   const { t, i18n } = useTranslation()
   const reduce = useReducedMotion()
   const now = useMinuteClock()
@@ -78,20 +77,6 @@ export function WelcomeStrip({ favoriteCount, delay = 0 }: { favoriteCount: numb
     const full = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'full', timeStyle: 'short' }).format(now)
     return { time, period, date, full }
   }, [now, i18n.language])
-
-  const stats = useMemo(() => {
-    const toolCount = toolRegistry.getAll().length
-    const categoryCount = categoryRegistry
-      .getEnabled()
-      .filter((category) => toolRegistry.getByCategory(category.id).length > 0).length
-    return { toolCount, categoryCount }
-  }, [])
-
-  const items = [
-    { label: t('home.stat.tools'), value: stats.toolCount },
-    { label: t('home.stat.categories'), value: stats.categoryCount },
-    { label: t('home.stat.favorites'), value: favoriteCount },
-  ]
 
   const enter = reduce ? { opacity: 0 } : { opacity: 0, y: 8, filter: 'blur(4px)' }
   const exit = reduce ? { opacity: 0 } : { opacity: 0, y: -8, filter: 'blur(4px)' }
@@ -212,17 +197,6 @@ export function WelcomeStrip({ favoriteCount, delay = 0 }: { favoriteCount: numb
             )
           })}
         </div>
-
-        <dl className="relative mt-2 grid grid-cols-3 divide-x rounded-xl border bg-background/60 backdrop-blur-sm">
-          {items.map((item) => (
-            <div key={item.label} className="flex min-w-0 flex-col-reverse items-center px-1 py-1.5">
-              <dt className="max-w-full truncate text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-                {item.label}
-              </dt>
-              <dd className="text-base leading-tight font-bold tabular-nums">{item.value}</dd>
-            </div>
-          ))}
-        </dl>
       </section>
     </SlideUp>
   )
