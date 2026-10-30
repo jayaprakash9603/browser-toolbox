@@ -33,17 +33,23 @@ export async function pingContentScript(tabId: number): Promise<boolean> {
   }
 }
 
-export async function ensureContentScriptInTab(tabId: number): Promise<void> {
-  if (await pingContentScript(tabId)) return
+export async function ensureContentScriptInTab(
+  tabId: number,
+  options?: { allFrames?: boolean },
+): Promise<void> {
+  if (!options?.allFrames && (await pingContentScript(tabId))) return
 
   const file = contentScriptBundlePath()
   if (!file) throw new TabMessagingError('CONTENT_SCRIPT_UNAVAILABLE')
 
   try {
-    await chrome.scripting.executeScript({ target: { tabId }, files: [file] })
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: options?.allFrames ?? false },
+      files: [file],
+    })
   } catch (error: unknown) {
     const detail = error instanceof Error ? error.message : String(error)
-    throw new TabMessagingError('INJECT_FAILED', detail)
+    if (!options?.allFrames) throw new TabMessagingError('INJECT_FAILED', detail)
   }
 
   for (let attempt = 0; attempt < 12; attempt++) {

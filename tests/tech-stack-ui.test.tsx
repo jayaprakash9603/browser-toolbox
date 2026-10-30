@@ -1,25 +1,52 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { TECH_CATEGORIES } from '@/core/engines/techStack/categories'
+import type { TechHit } from '@/core/engines/techStack/types'
 import { categoryColor, scanAccent } from '@/features/tech-stack/categoryStyle'
+import { ScanFooter } from '@/features/tech-stack/components/ScanFooter'
 import { TechStackView } from '@/features/tech-stack/components/TechStackView'
 import { TechnologiesTab } from '@/features/tech-stack/components/TechnologiesTab'
 import '@/features/tech-stack/i18n'
+
+function hit(partial: Partial<TechHit> & Pick<TechHit, 'name' | 'category' | 'evidence'>): TechHit {
+  return {
+    evidenceItems: [{ type: 'js', detail: partial.evidence }],
+    confidence: 0.95,
+    confidenceLevel: 'high',
+    ...partial,
+  }
+}
 
 const { scan } = vi.hoisted(() => ({
   scan: {
     url: 'https://example.com/app',
     scannedAt: '2026-10-29T10:00:00.000Z',
+    durationMs: 88,
+    headersAvailable: true,
+    engineVersion: 2,
     hits: [
       {
         name: 'React',
-        category: 'js-framework',
+        category: 'js-framework' as const,
         version: '18.2.0',
-        evidence: 'React.version',
+        evidence: 'js: React.version',
+        evidenceItems: [{ type: 'js' as const, detail: 'js: React.version' }],
+        confidence: 0.95,
+        confidenceLevel: 'high' as const,
         website: 'https://react.dev',
+        description: 'A library for building user interfaces from components.',
       },
-      { name: 'Google Analytics', category: 'analytics', evidence: 'gtag', website: 'https://analytics.google.com' },
+      {
+        name: 'Google Analytics',
+        category: 'analytics' as const,
+        evidence: 'gtag',
+        evidenceItems: [{ type: 'url' as const, detail: 'url: gtag' }],
+        confidence: 0.85,
+        confidenceLevel: 'high' as const,
+        website: 'https://analytics.google.com',
+      },
     ],
     facts: {
       title: 'Example',
@@ -61,7 +88,7 @@ describe('tech stack category colors', () => {
 })
 
 describe('TechStackView', () => {
-  it('renders grouped technologies with versions and category counts', () => {
+  it('renders grouped technologies with versions and tabs', () => {
     render(<TechStackView />)
 
     expect(screen.getByText('example.com')).toBeInTheDocument()
@@ -70,23 +97,47 @@ describe('TechStackView', () => {
     expect(screen.getByText('18.2.0')).toBeInTheDocument()
     expect(screen.getByText('Google Analytics')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Open React website' })).toHaveAttribute('href', 'https://react.dev')
-    expect(screen.queryByRole('tab')).not.toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Technologies/ })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'More info' })).toBeInTheDocument()
+  })
+
+  it('shows scan details on the More info tab', () => {
+    render(<TechStackView />)
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'More info' }))
+    expect(screen.getByText('Example')).toBeInTheDocument()
+    expect(screen.getByText('Strict-Transport-Security')).toBeInTheDocument()
+    expect(screen.getByText('88 ms')).toBeInTheDocument()
+  })
+
+  it('expands a technology row to show evidence', () => {
+    render(<TechStackView />)
+    fireEvent.click(screen.getByRole('button', { name: 'Show details for React' }))
+    expect(screen.getByText('A library for building user interfaces from components.')).toBeInTheDocument()
+    expect(screen.getByText('js: React.version')).toBeInTheDocument()
+  })
+
+  it('lists CSV and JSON export actions', async () => {
+    const user = userEvent.setup()
+    render(<ScanFooter canExport showOpen={false} onExportCsv={() => {}} onExportJson={() => {}} />)
+    await user.click(screen.getByRole('button', { name: 'Export technologies' }))
+    expect(await screen.findByRole('menuitem', { name: 'Export as CSV' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Export as JSON' })).toBeInTheDocument()
   })
 })
 
 describe('TechnologiesTab', () => {
-  it('filters the list from the search field', () => {
+  it('renders technologies grouped by category', () => {
     render(
       <TechnologiesTab
         hits={[
-          { name: 'React', category: 'js-framework', evidence: 'React.version' },
-          { name: 'Vue', category: 'js-framework', evidence: 'Vue.version' },
+          hit({ name: 'React', category: 'js-framework', evidence: 'React.version' }),
+          hit({ name: 'Vue', category: 'js-framework', evidence: 'Vue.version' }),
         ]}
       />,
     )
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Filter technologies…' }), { target: { value: 'vue' } })
-    expect(screen.queryByText('React')).not.toBeInTheDocument()
+    expect(screen.getByText('React')).toBeInTheDocument()
     expect(screen.getByText('Vue')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'JavaScript frameworks' })).toBeInTheDocument()
   })
 })

@@ -3,6 +3,7 @@ import type { PageFacts, PageSignals } from '@/core/engines/techStack/types'
 export interface DomScan {
   signals: Omit<PageSignals, 'url' | 'jsValues'>
   facts: PageFacts
+  headersAvailable: boolean
 }
 
 /**
@@ -33,7 +34,7 @@ export async function collectDomSignals(selectors: string[]): Promise<DomScan> {
   const attr = (selector: string, name: string): string =>
     document.querySelector(selector)?.getAttribute(name)?.trim() ?? ''
 
-  const readHeaders = async (): Promise<Record<string, string>> => {
+  const readHeaders = async (): Promise<{ headers: Record<string, string>; available: boolean }> => {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), HEADER_TIMEOUT_MS)
     const headers: Record<string, string> = {}
@@ -47,11 +48,12 @@ export async function collectDomSignals(selectors: string[]): Promise<DomScan> {
         headers[key.toLowerCase()] = value
       })
       controller.abort()
+      clearTimeout(timer)
+      return { headers, available: true }
     } catch {
-      /* some pages cannot be refetched; the other signals still work */
+      clearTimeout(timer)
+      return { headers: {}, available: false }
     }
-    clearTimeout(timer)
-    return headers
   }
 
   const urls = (selector: string, property: 'href' | 'src'): string[] =>
@@ -126,14 +128,16 @@ export async function collectDomSignals(selectors: string[]): Promise<DomScan> {
     .join('\n')
     .slice(0, 40_000)
   const htmlBlob = styleText ? `${styleText}\n${document.documentElement.outerHTML}` : document.documentElement.outerHTML
+  const headerScan = await readHeaders()
 
   return {
+    headersAvailable: headerScan.available,
     signals: {
       scripts,
       resources,
       inlineScripts,
       meta,
-      headers: await readHeaders(),
+      headers: headerScan.headers,
       cookies: document.cookie.split(';').map((cookie) => cookie.split('=')[0].trim()).filter(Boolean),
       domMatches,
       html: htmlBlob.slice(0, MAX_HTML_CHARS),

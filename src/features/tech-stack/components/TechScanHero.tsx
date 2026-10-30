@@ -3,6 +3,8 @@ import { motion, useReducedMotion } from 'motion/react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { cn } from '@/shared/utils/cn'
+
 import { mixTint } from '../categoryStyle'
 import { ScanSection } from './ScanSection'
 
@@ -12,9 +14,21 @@ interface TechScanHeroProps {
   loading: boolean
   accent: string
   actions?: ReactNode
+  /** Sticks under the tool page header while the list scrolls. */
+  pinned?: boolean
+  /** Popover shell uses popover surface tokens. */
+  inPopover?: boolean
 }
 
-export function TechScanHero({ host, count, loading, accent, actions }: TechScanHeroProps) {
+export function TechScanHero({
+  host,
+  count,
+  loading,
+  accent,
+  actions,
+  pinned = false,
+  inPopover = false,
+}: TechScanHeroProps) {
   const { t } = useTranslation()
   const reduce = useReducedMotion()
   const title = host || (loading ? t('techStack.scanning') : t('techStack.hero.unknownHost'))
@@ -28,8 +42,15 @@ export function TechScanHero({ host, count, loading, accent, actions }: TechScan
 
   return (
     <ScanSection
-      className="relative overflow-hidden px-3.5 pt-3.5 pb-3"
-      style={{ background: `linear-gradient(135deg, ${mixTint(accent, 12)}, transparent 72%)` }}
+      instant
+      className={cn(
+        'relative shrink-0 overflow-hidden border-b border-border/80 px-3.5 pt-3.5 pb-3',
+        inPopover ? 'z-10 bg-popover' : 'bg-background/95 backdrop-blur-md',
+        pinned && 'sticky top-0 z-[2]',
+      )}
+      style={{
+        background: `linear-gradient(135deg, ${mixTint(accent, 18)}, ${inPopover ? 'var(--popover)' : 'var(--background)'} 68%)`,
+      }}
     >
       <div className="flex items-start gap-3">
         <span
@@ -49,7 +70,7 @@ export function TechScanHero({ host, count, loading, accent, actions }: TechScan
           <LayersIcon className="size-6" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+          <p className="text-[11px] font-semibold tracking-wide text-foreground/75 uppercase">
             {t('techStack.hero.scanning')}
           </p>
           <p className="truncate text-[15px] leading-tight font-semibold text-foreground" aria-live="polite">

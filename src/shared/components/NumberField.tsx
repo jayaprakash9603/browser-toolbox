@@ -2,8 +2,10 @@ import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/utils/cn'
 
 interface NumberFieldProps {
+  id?: string
   value: string
   onChange: (value: string) => void
+  onBlur?: () => void
   ariaLabel: string
   min?: number
   max?: number
@@ -45,8 +47,10 @@ export function parseNumberInRange(
 }
 
 export function NumberField({
+  id,
   value,
   onChange,
+  onBlur,
   ariaLabel,
   min,
   max,
@@ -59,12 +63,14 @@ export function NumberField({
   const invalid = value.length > 0 && parseNumberInRange(value, min, max) === null
   return (
     <Input
+      id={id}
       inputMode={allowDecimal ? 'decimal' : 'numeric'}
       value={value}
       disabled={disabled}
       placeholder={placeholder}
       aria-label={ariaLabel}
       aria-invalid={invalid}
+      onBlur={onBlur}
       onChange={(event) =>
         onChange(sanitizeNumberText(event.target.value, { allowDecimal, allowNegative }))
       }

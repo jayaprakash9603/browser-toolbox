@@ -130,6 +130,16 @@ First public release.
 - **browser-toolbox:** Refine tool button styles (da7a6cc)
 - **browser-toolbox:** Localize UI and highlight search matches (a366364)
 
+## 1.0.6 (2026-10-29)
+
+### Fixes
+
+- **capture:** Keep zoom inside the editor canvas area instead of expanding the whole panel
+- **capture:** Export PDFs with JPEG compression and capped resolution for much smaller files
+- **capture:** PDF export keeps ~150 DPI width on long captures (fixes blurry full-page PDFs from over-shrinking)
+- **ui:** Redesign capture editor toolbar and export sidebar for clearer layout in the side panel
+- **ui:** Hide number-input spinners app-wide; screenshot numeric fields allow clear-and-type entry
+
 ## 1.0.5 (2026-10-29)
 
 ### Fixes

@@ -601,6 +601,17 @@ export const TOOL_SEARCH_ENTRIES: Record<string, ToolSearchEntry[]> = {
     },
     { id: 'csv', labelKey: 'qa.formatCsv', fallbackLabel: 'CSV format', params: { format: 'csv' } },
   ],
+  'qa.selector-studio': [
+    tab('recommended', 'studio.tab.recommended', 'Recommended', 'recommended'),
+    tab('xpath', 'studio.tab.xpath', 'XPath', 'xpath'),
+    tab('css', 'studio.tab.css', 'CSS', 'css'),
+    tab('inspect', 'studio.tab.inspect', 'Inspect', 'inspect'),
+    tab('styles', 'studio.tab.styles', 'Styles', 'inspect', { inspect: 'styles' }),
+    tab('computed', 'studio.tab.computed', 'Computed', 'inspect', { inspect: 'computed' }),
+    tab('listeners', 'studio.tab.listeners', 'Event listeners', 'inspect', { inspect: 'listeners' }),
+    tab('frameworks', 'studio.tab.frameworks', 'Frameworks', 'frameworks'),
+    tab('history', 'studio.tab.history', 'History', 'history'),
+  ],
   'qa.element-inspector': [
     tab('overview', 'inspectorEl.tab.overview', 'Overview', 'overview'),
     tab('box', 'inspectorEl.tab.box', 'Box model', 'box'),

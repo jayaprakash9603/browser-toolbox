@@ -135,6 +135,8 @@ const chromeMock = {
     contains: vi.fn(async () => false),
     request: vi.fn(async () => false),
     remove: vi.fn(async () => true),
+    onAdded: makeEvent(),
+    onRemoved: makeEvent(),
   },
   tabs: {
     query: vi.fn(async () => [{ id: 1, url: 'https://example.com', active: true }]),
@@ -142,6 +144,10 @@ const chromeMock = {
     reload: vi.fn(async () => undefined),
     get: vi.fn(async (id: number) => ({ id, url: 'https://example.com' })),
     create: vi.fn(async () => undefined),
+    onActivated: makeEvent(),
+    onCreated: makeEvent(),
+    onRemoved: makeEvent(),
+    onUpdated: makeEvent(),
   },
   notifications: {
     create: vi.fn(async () => undefined),
@@ -171,6 +177,7 @@ const chromeMock = {
   windows: {
     getLastFocused: vi.fn(async () => ({ tabs: [] })),
     getAll: vi.fn(async () => []),
+    onFocusChanged: makeEvent(),
   },
   i18n: {
     getMessage: (name: string) =>

@@ -41,13 +41,38 @@ export type TechCategoryId =
   | 'performance'
   | 'misc'
 
+export type EvidenceType =
+  | 'js'
+  | 'header'
+  | 'meta'
+  | 'url'
+  | 'inline'
+  | 'html'
+  | 'cookie'
+  | 'dom'
+  | 'protocol'
+  | 'page-url'
+  | 'implied'
+
+export type ConfidenceLevel = 'high' | 'medium' | 'low'
+
+export interface EvidenceItem {
+  type: EvidenceType
+  detail: string
+}
+
 export interface TechRule {
   name: string
   category: TechCategoryId
   website?: string
+  description?: string
   implies?: string[]
+  /** Drop this hit when one of these technologies also matched. */
+  excludes?: string[]
   /** Regex sources tested against script, stylesheet, iframe and image URLs. */
   src?: string[]
+  /** Regex sources tested against the page URL. */
+  url?: string[]
   /** Regex sources tested against inline script text. */
   inline?: string[]
   /** Regex sources tested against the page HTML. */
@@ -87,7 +112,11 @@ export interface TechHit {
   category: TechCategoryId
   version?: string
   evidence: string
+  evidenceItems: EvidenceItem[]
+  confidence: number
+  confidenceLevel: ConfidenceLevel
   website?: string
+  description?: string
   implied?: boolean
 }
 
@@ -112,4 +141,7 @@ export interface TechScan {
   facts: PageFacts
   headers: Record<string, string>
   protocol?: string
+  durationMs?: number
+  headersAvailable?: boolean
+  engineVersion?: number
 }

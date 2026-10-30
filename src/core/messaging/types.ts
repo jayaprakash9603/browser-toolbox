@@ -13,6 +13,13 @@ export type ExtensionMessage =
   | { type: 'CONTEXT_MENU_ACTION'; actionId: string; selectionText?: string }
   | { type: 'PICK_ELEMENT_START' }
   | { type: 'PICK_ELEMENT_CANCEL' }
+  | {
+      type: 'SELECTOR_STUDIO_HIGHLIGHT'
+      kind: 'css' | 'xpath'
+      expression: string
+      identityPath?: string
+    }
+  | { type: 'SELECTOR_STUDIO_CLEAR' }
   | { type: 'GET_PAGE_INFO' }
   | { type: 'GET_SEO_DATA' }
   | { type: 'SEO_HIGHLIGHT'; kind: import('@/core/engines/seo/types').SeoHighlightKind }
@@ -297,6 +304,8 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'CONTEXT_MENU_ACTION',
   'PICK_ELEMENT_START',
   'PICK_ELEMENT_CANCEL',
+  'SELECTOR_STUDIO_HIGHLIGHT',
+  'SELECTOR_STUDIO_CLEAR',
   'GET_PAGE_INFO',
   'GET_SEO_DATA',
   'SEO_HIGHLIGHT',

@@ -5,6 +5,7 @@ import { BUILDER_RULES, CMS_RULES, ECOMMERCE_RULES, PAYMENT_RULES } from './cont
 import { BUILD_RULES, FRAMEWORK_RULES, LIBRARY_RULES, UI_RULES } from './frontend'
 import { CDN_RULES, EMBED_RULES, HOSTING_RULES, LANGUAGE_RULES, MISC_RULES, PLATFORM_RULES, SERVER_RULES } from './infrastructure'
 import { EXTENDED_RULES } from './extended'
+import { COVERAGE_RULES } from './coverage'
 
 export const TECH_RULES: TechRule[] = [
   ...FRAMEWORK_RULES,
@@ -29,4 +30,5 @@ export const TECH_RULES: TechRule[] = [
   ...EMBED_RULES,
   ...MISC_RULES,
   ...EXTENDED_RULES,
+  ...COVERAGE_RULES,
 ]

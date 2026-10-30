@@ -35,6 +35,7 @@ const CategoryPage = lazy(() => import('@/app/pages/CategoryPage'))
 const AllToolsPage = lazy(() => import('@/app/pages/AllToolsPage'))
 const DevToolsPage = lazy(() => import('@/app/pages/DevToolsPage'))
 const DevToolsInterceptorPage = lazy(() => import('@/app/pages/DevToolsInterceptorPage'))
+const DevToolsSelectorStudioSidebarPage = lazy(() => import('@/app/pages/DevToolsSelectorStudioSidebarPage'))
 const CommandPalette = lazy(() =>
   import('@/features/command-palette/CommandPalette').then((m) => ({ default: m.CommandPalette })),
 )
@@ -127,10 +128,13 @@ export function AppShell({ children }: { children?: ReactNode }) {
   }, [path])
 
   const content = renderRoute(path)
-  // The DevTools Interceptor panel is a standalone network tool: no toolbox navigation chrome.
+  // Dedicated DevTools panels (Interceptor) and Elements sidebar panes are chromeless.
   const captureFullPage =
     path === '/tools/screenshots/capture' && isCaptureViewerSearch(search)
-  const chromeless = path === '/devtools/interceptor' || captureFullPage
+  const chromeless =
+    path === '/devtools/interceptor' ||
+    path === '/devtools/selector-studio-sidebar' ||
+    captureFullPage
 
   return (
     // `relative` + `overflow-clip`: absolutely positioned descendants (e.g. `sr-only` status text) would otherwise
@@ -225,6 +229,7 @@ function renderRoute(path: string) {
   if (path === '/tools') return <AllToolsPage />
   if (path === '/devtools') return <DevToolsPage />
   if (path === '/devtools/interceptor') return <DevToolsInterceptorPage />
+  if (path === '/devtools/selector-studio-sidebar') return <DevToolsSelectorStudioSidebarPage />
   const legacyToolId = LEGACY_TOOL_ROUTES[path]
   if (legacyToolId) return <ToolHost toolId={legacyToolId} />
   const categoryMatch = path.match(/^\/categories\/([\w-]+)$/)
@@ -237,7 +242,12 @@ function renderRoute(path: string) {
 function getLoadingVariant(path: string): AppLoadingSkeletonVariant {
   if (path === '/settings' || path === '/settings/keyboard-shortcuts') return 'settings'
   if (path === '/favorites' || path === '/recent' || path === '/tools') return 'collection'
-  if (path === '/devtools' || path === '/devtools/interceptor') return 'category'
+  if (
+    path === '/devtools' ||
+    path === '/devtools/interceptor' ||
+    path === '/devtools/selector-studio-sidebar'
+  )
+    return 'category'
   if (path in LEGACY_TOOL_ROUTES) return 'tool'
   if (/^\/categories\/[\w-]+$/.test(path)) return 'category'
   if (toolRegistry.getAll().some((tool) => tool.route === path)) return 'tool'

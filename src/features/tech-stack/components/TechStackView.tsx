@@ -2,13 +2,13 @@ import { RefreshCwIcon } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { useTranslation } from 'react-i18next'
 
-import { techScanFilename, techScanToCsv } from '@/core/engines/techStack/export'
+import { techScanFilename, techScanToCsv, techScanToJson } from '@/core/engines/techStack/export'
 import { SiteAccessBar } from '@/features/site-access/SiteAccessBar'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/utils/cn'
 
 import { scanAccent } from '../categoryStyle'
-import { downloadCsv } from '../download'
+import { downloadCsv, downloadJson } from '../download'
 import '../i18n'
 import { useTechScan } from '../useTechScan'
 import { ScanBody } from './ScanBody'
@@ -44,12 +44,19 @@ export function TechStackView({
   const accent = scanAccent(state.status === 'error' ? 'error' : isLoading ? 'loading' : 'ready', scan?.hits.length ?? 0)
 
   const exportCsv = () => {
-    if (scan) downloadCsv(techScanToCsv(scan), techScanFilename(scan))
+    if (scan) downloadCsv(techScanToCsv(scan), techScanFilename(scan, 'csv'))
+  }
+  const exportJson = () => {
+    if (scan) downloadJson(techScanToJson(scan), techScanFilename(scan, 'json'))
   }
 
   return (
     <div className={cn('@container flex min-h-0 flex-1 flex-col', !scrollable && 'p-3')}>
-      {showAccessPrompt && <SiteAccessBar />}
+      {showAccessPrompt && (
+        <div className="relative z-10 shrink-0">
+          <SiteAccessBar />
+        </div>
+      )}
       <motion.div
         className="flex min-h-0 flex-1 flex-col"
         initial={reduce ? false : 'hidden'}
@@ -61,6 +68,8 @@ export function TechStackView({
           count={scan?.hits.length ?? null}
           loading={isLoading}
           accent={accent}
+          inPopover={scrollable}
+          pinned={!scrollable}
           actions={
             <Button
               size="icon-sm"
@@ -74,13 +83,20 @@ export function TechStackView({
             </Button>
           }
         />
-        <div className={cn('px-3.5 pt-3 pb-1', scrollable && 'min-h-0 flex-1 overflow-y-auto overscroll-contain')}>
+        <div
+          className={cn(
+            'relative min-h-0 px-3.5 pt-3 pb-1',
+            scrollable && 'z-0 flex-1 overflow-y-auto overscroll-contain',
+          )}
+        >
           <ScanBody state={state} onRetry={rescan} />
         </div>
         <ScanFooter
           canExport={Boolean(scan && scan.hits.length > 0)}
           showOpen={Boolean(onNavigate)}
-          onExport={exportCsv}
+          inPopover={scrollable}
+          onExportCsv={exportCsv}
+          onExportJson={exportJson}
           onNavigate={onNavigate}
         />
       </motion.div>
