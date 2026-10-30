@@ -1,8 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowRightIcon, FileTextIcon, LanguagesIcon, LayoutTemplateIcon, LoaderCircleIcon, TriangleAlertIcon } from 'lucide-react'
+import {
+  ArrowRightIcon,
+  FileTextIcon,
+  LanguagesIcon,
+  LayoutTemplateIcon,
+  LoaderCircleIcon,
+  TriangleAlertIcon,
+} from 'lucide-react'
 
-import { createTranslator, detectLanguage, hasTranslator, translatorAvailability, type Availability } from '@/core/engines/ai/builtin'
+import {
+  createTranslator,
+  detectLanguage,
+  hasTranslator,
+  translatorAvailability,
+  type Availability,
+} from '@/core/engines/ai/builtin'
 import { docToDocx } from '@/core/engines/files/docx'
 import { DEFAULT_DOCUMENT_SETTINGS, type DocBlock } from '@/core/engines/files/document'
 import { editPdf, type EditItem } from '@/core/engines/pdf/edit'
@@ -41,7 +54,8 @@ export function TranslatePanel() {
     let cancelled = false
     void (async () => {
       const sample: string[] = []
-      for (let page = 1; page <= Math.min(3, doc.pages.length); page += 1) sample.push(await extractPageText(doc.handle, page))
+      for (let page = 1; page <= Math.min(3, doc.pages.length); page += 1)
+        sample.push(await extractPageText(doc.handle, page))
       const language = await detectLanguage(sample.join('\n'))
       if (cancelled) return
       setDetected(language)
@@ -56,7 +70,9 @@ export function TranslatePanel() {
   useEffect(() => {
     if (!from || from === target) return
     let cancelled = false
-    void translatorAvailability(from, target).then((value) => !cancelled && setChecked({ pair: `${from}>${target}`, value }))
+    void translatorAvailability(from, target).then(
+      (value) => !cancelled && setChecked({ pair: `${from}>${target}`, value }),
+    )
     return () => {
       cancelled = true
     }
@@ -64,7 +80,10 @@ export function TranslatePanel() {
   const availability: Availability | null = checked && checked.pair === pair ? checked.value : null
 
   const languageOptions = useMemo(
-    () => LANGUAGES.map((code) => ({ value: code as string, label: languageName(code, locale) })).sort((a, b) => a.label.localeCompare(b.label, locale)),
+    () =>
+      LANGUAGES.map((code) => ({ value: code as string, label: languageName(code, locale) })).sort(
+        (a, b) => a.label.localeCompare(b.label, locale),
+      ),
     [locale],
   )
 
@@ -73,7 +92,8 @@ export function TranslatePanel() {
       if (!from) throw new Error(t('pdf.translate.pickSource'))
       setStatus(t('pdf.translate.preparing'))
       const translator = await createTranslator(from, target, {
-        onDownload: (fraction) => setStatus(t('pdf.translate.downloading', { percent: Math.round(fraction * 100) })),
+        onDownload: (fraction) =>
+          setStatus(t('pdf.translate.downloading', { percent: Math.round(fraction * 100) })),
       })
       const stem = stemOf(doc)
       try {
@@ -85,7 +105,7 @@ export function TranslatePanel() {
         const step = () => {
           done += 1
           setProgress(done / count)
-          setStatus(t('pdf.translate.progress', { done, total: count }))
+          setStatus(t('pdf.translate.progress', { count, done, total: count }))
         }
 
         if (output === 'layout') {
@@ -95,27 +115,59 @@ export function TranslatePanel() {
             for (const block of blocks) {
               const text = await translator.translate(block.text)
               const pad = block.size * 0.15
-              const box = { x: block.x - pad, y: block.y - pad, w: block.w + pad * 2, h: block.h + pad * 2 }
-              const bytes = await paragraphImage(text, { width: box.w, height: box.h, fontSize: block.size, bold: block.lines[0]?.bold, rtl: isRtl(target) })
-              const frame = { page: index, u: box.x / width, v: box.y / height, w: box.w / width, h: box.h / height }
-              items.push({ kind: 'rect', ...frame, color: '#ffffff', opacity: 1 }, { kind: 'image', ...frame, bytes, format: 'png' })
+              const box = {
+                x: block.x - pad,
+                y: block.y - pad,
+                w: block.w + pad * 2,
+                h: block.h + pad * 2,
+              }
+              const bytes = await paragraphImage(text, {
+                width: box.w,
+                height: box.h,
+                fontSize: block.size,
+                bold: block.lines[0]?.bold,
+                rtl: isRtl(target),
+              })
+              const frame = {
+                page: index,
+                u: box.x / width,
+                v: box.y / height,
+                w: box.w / width,
+                h: box.h / height,
+              }
+              items.push(
+                { kind: 'rect', ...frame, color: '#ffffff', opacity: 1 },
+                { kind: 'image', ...frame, bytes, format: 'png' },
+              )
               step()
             }
           }
           const bytes = await editPdf(sourceOf(doc), { items })
           showResults({
-            artifacts: [pdfArtifact(`${stem}-${target}.pdf`, bytes, { note: t('pdf.translate.layoutNote', { from: languageName(from, locale), to: languageName(target, locale) }) })],
+            artifacts: [
+              pdfArtifact(`${stem}-${target}.pdf`, bytes, {
+                note: t('pdf.translate.layoutNote', {
+                  from: languageName(from, locale),
+                  to: languageName(target, locale),
+                }),
+              }),
+            ],
           })
         } else {
           const blocks: DocBlock[] = []
           const runs = pages.flatMap((page) => page.runs)
           const chars = runs.reduce((sum, run) => sum + run.str.length, 0)
-          const body = runs.reduce((sum, run) => sum + run.size * run.str.length, 0) / Math.max(1, chars)
+          const body =
+            runs.reduce((sum, run) => sum + run.size * run.str.length, 0) / Math.max(1, chars)
           for (const pageBlocks of blocksPerPage) {
             for (const block of pageBlocks) {
               const text = await translator.translate(block.text)
               const heading = block.size > body * 1.25 && text.length < 160
-              blocks.push(heading ? { type: 'heading', level: block.size > body * 1.6 ? 1 : 2, runs: [{ text }] } : { type: 'paragraph', runs: [{ text, bold: block.lines[0]?.bold }] })
+              blocks.push(
+                heading
+                  ? { type: 'heading', level: block.size > body * 1.6 ? 1 : 2, runs: [{ text }] }
+                  : { type: 'paragraph', runs: [{ text, bold: block.lines[0]?.bold }] },
+              )
               step()
             }
           }
@@ -124,10 +176,16 @@ export function TranslatePanel() {
             artifacts: [
               createArtifact({
                 name: `${stem}-${target}.docx`,
-                blob: bytesBlob(docToDocx(blocks, settings), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
+                blob: bytesBlob(
+                  docToDocx(blocks, settings),
+                  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                ),
                 format: 'DOCX',
                 preview: { kind: 'document', blocks, settings },
-                note: t('pdf.translate.documentNote', { from: languageName(from, locale), to: languageName(target, locale) }),
+                note: t('pdf.translate.documentNote', {
+                  from: languageName(from, locale),
+                  to: languageName(target, locale),
+                }),
               }),
             ],
           })
@@ -143,11 +201,16 @@ export function TranslatePanel() {
   if (!supported) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed px-4 py-10 text-center">
-        <span className="flex size-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground" aria-hidden>
+        <span
+          className="flex size-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground"
+          aria-hidden
+        >
           <LanguagesIcon className="size-6" />
         </span>
         <p className="text-sm font-semibold">{t('pdf.translate.unsupportedTitle')}</p>
-        <p className="max-w-md text-xs text-muted-foreground">{t('pdf.translate.unsupportedText')}</p>
+        <p className="max-w-md text-xs text-muted-foreground">
+          {t('pdf.translate.unsupportedText')}
+        </p>
       </div>
     )
   }
@@ -161,12 +224,30 @@ export function TranslatePanel() {
             label={t('pdf.translate.from')}
             value={source}
             onChange={setSource}
-            options={[{ value: 'auto', label: detected ? t('pdf.translate.detected', { language: languageName(detected, locale) }) : t('pdf.translate.detect') }, ...languageOptions]}
+            options={[
+              {
+                value: 'auto',
+                label: detected
+                  ? t('pdf.translate.detected', { language: languageName(detected, locale) })
+                  : t('pdf.translate.detect'),
+              },
+              ...languageOptions,
+            ]}
           />
-          <ArrowRightIcon className="mx-auto mb-2 hidden size-4 text-muted-foreground @[520px]:block" aria-hidden />
-          <OptionSelect label={t('pdf.translate.to')} value={target} onChange={setTarget} options={languageOptions} />
+          <ArrowRightIcon
+            className="mx-auto mb-2 hidden size-4 text-muted-foreground @[520px]:block"
+            aria-hidden
+          />
+          <OptionSelect
+            label={t('pdf.translate.to')}
+            value={target}
+            onChange={setTarget}
+            options={languageOptions}
+          />
         </div>
-        {source === 'auto' && !detected && <p className="text-[11px] text-muted-foreground">{t('pdf.translate.detectHint')}</p>}
+        {source === 'auto' && !detected && (
+          <p className="text-[11px] text-muted-foreground">{t('pdf.translate.detectHint')}</p>
+        )}
         {from === target && <PanelError message={t('pdf.translate.same')} />}
         {pairBlocked && (
           <p className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-800 dark:text-amber-200">
@@ -174,7 +255,9 @@ export function TranslatePanel() {
             {t('pdf.translate.pairUnavailable')}
           </p>
         )}
-        {availability === 'downloadable' && <p className="text-[11px] text-muted-foreground">{t('pdf.translate.willDownload')}</p>}
+        {availability === 'downloadable' && (
+          <p className="text-[11px] text-muted-foreground">{t('pdf.translate.willDownload')}</p>
+        )}
       </PanelSection>
       <PanelSection title={t('pdf.translate.output')} icon={<LayoutTemplateIcon />}>
         <ChoiceCards
@@ -183,19 +266,41 @@ export function TranslatePanel() {
           onChange={setOutput}
           className="@[560px]:grid-cols-2"
           choices={[
-            { value: 'layout', icon: LayoutTemplateIcon, label: t('pdf.translate.layout'), hint: t('pdf.translate.layoutHint') },
-            { value: 'document', icon: FileTextIcon, label: t('pdf.translate.document'), hint: t('pdf.translate.documentHint') },
+            {
+              value: 'layout',
+              icon: LayoutTemplateIcon,
+              label: t('pdf.translate.layout'),
+              hint: t('pdf.translate.layoutHint'),
+            },
+            {
+              value: 'document',
+              icon: FileTextIcon,
+              label: t('pdf.translate.document'),
+              hint: t('pdf.translate.documentHint'),
+            },
           ]}
         />
       </PanelSection>
       {error && <PanelError message={error} />}
       <ActionBar progress={progress}>
-        <Button onClick={() => void translate()} disabled={busy || !from || from === target || pairBlocked} className="min-w-40 flex-1 @[480px]:flex-none">
-          {busy ? <LoaderCircleIcon className="animate-spin" aria-hidden /> : <LanguagesIcon aria-hidden />}
+        <Button
+          onClick={() => void translate()}
+          disabled={busy || !from || from === target || pairBlocked}
+          className="min-w-40 flex-1 @[480px]:flex-none"
+        >
+          {busy ? (
+            <LoaderCircleIcon className="animate-spin" aria-hidden />
+          ) : (
+            <LanguagesIcon aria-hidden />
+          )}
           {t('pdf.translate.run', { language: languageName(target, locale) })}
         </Button>
         {status && (
-          <span className="ml-auto text-[11px] text-muted-foreground" role="status" aria-live="polite">
+          <span
+            className="ml-auto text-[11px] text-muted-foreground"
+            role="status"
+            aria-live="polite"
+          >
             {status}
           </span>
         )}

@@ -20,6 +20,7 @@ import { sitesInstagramStrings } from './sitesInstagramEn'
 import { sitesYoutubeStrings } from './sitesYoutubeEn'
 import { scriptStudioStrings } from './scriptStudioEn'
 import { reactDevtoolsStrings } from './reactDevtoolsEn'
+import { toolRegistryStrings } from './toolRegistryEn'
 import { testDataStrings } from './testDataEn'
 import { paletteGeneratorStrings } from './paletteGeneratorEn'
 import { pageInspectorStrings } from './pageInspectorEn'
@@ -28,6 +29,20 @@ import { saveImageAsStrings } from './saveImageAsEn'
 import { calculatorStrings } from './calculatorEn'
 import { htmlBundleStrings } from './htmlBundleEn'
 import { a11yStrings } from './a11yEn'
+import { allToolsViewerStrings } from './allToolsViewerEn'
+import { bookmarksStrings } from './bookmarksEn'
+import { captureStrings } from './captureEn'
+import { colorPickerStrings } from './colorPickerEn'
+import { demoStrings } from './demoEn'
+import { diffStrings } from './diffEn'
+import { htmlBundleCrawlStrings } from './htmlBundleCrawlEn'
+import { notesStrings } from './notesEn'
+import { readingListStrings } from './readingListEn'
+import { selectorStudioStrings } from './selectorStudioEn'
+import { snippetsStrings } from './snippetsEn'
+import { storageInspectorStrings } from './storageInspectorEn'
+import { techStackStrings } from './techStackEn'
+import { workspacesStrings } from './workspacesEn'
 import { hashToolkitStrings } from './hashToolkitEn'
 import { linkCheckerStrings } from './linkCheckerEn'
 import { bugReporterStrings } from './bugReporterEn'
@@ -1515,6 +1530,21 @@ const en = {
   ...bugReporterStrings,
   ...elementInspectorStrings,
   ...a11yStrings,
+  ...allToolsViewerStrings,
+  ...bookmarksStrings,
+  ...captureStrings,
+  ...colorPickerStrings,
+  ...demoStrings,
+  ...diffStrings,
+  ...htmlBundleCrawlStrings,
+  ...notesStrings,
+  ...readingListStrings,
+  ...selectorStudioStrings,
+  ...snippetsStrings,
+  ...storageInspectorStrings,
+  ...techStackStrings,
+  ...workspacesStrings,
+  ...toolRegistryStrings,
 } as const
 
 export default en
