@@ -1,10 +1,10 @@
 export const tasksStrings = {
   'tasks.inbox': 'Inbox',
   'tasks.done': 'Done',
-  'tasks.options': 'Tasks options',
+  'tasks.options': 'To Do options',
   'tasks.loadMore': 'Show more',
   'tasks.completedToggle': 'Completed · {{count}}',
-  'tasks.tip': 'Tip: right-click any page or link and choose “Add to Tasks”, or press Alt+Shift+Q.',
+  'tasks.tip': 'Tip: right-click any page or link and choose “Add to To Do”, or press Alt+Shift+Q.',
   'tasks.progress': '{{done}} of {{total}} done',
 
   'tasks.views.label': 'Task views',

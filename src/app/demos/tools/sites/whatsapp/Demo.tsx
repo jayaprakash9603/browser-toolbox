@@ -196,7 +196,7 @@ function Drawer() {
     >
       <div className="flex items-center justify-between border-b border-white/10 px-2 py-1.5">
         <span className="text-[11px] font-bold">
-          ChatBoost <sup className="text-[7px] font-normal text-white/50">for WhatsApp</sup>
+          WhatsApp <sup className="text-[7px] font-normal text-white/50">One Panel</sup>
         </span>
         <span
           data-d="drawer-close"
@@ -355,7 +355,7 @@ function Drawer() {
 export default function Demo() {
   return (
     <DemoStage
-      label="ChatBoost opening its drawer in WhatsApp Web, blurring private content with Private Mode and exporting the open chat as JSON"
+      label="WhatsApp tools opening its drawer in WhatsApp Web, blurring private content with Private Mode and exporting the open chat as JSON"
       steps={CAPTIONS}
       build={build}
     >

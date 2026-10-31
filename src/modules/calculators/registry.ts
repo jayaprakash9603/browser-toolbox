@@ -1,23 +1,8 @@
-import { BinaryIcon, CalculatorIcon, ArrowLeftRightIcon } from 'lucide-react'
+import { BinaryIcon, ArrowLeftRightIcon } from 'lucide-react'
 
 import { defineTool } from '@/core/registry'
 
 export const calculatorsTools = [
-  defineTool({
-    id: 'calculators.calculator',
-    name: 'Calculator',
-    description:
-      'Glass-style keypad with live preview, memory, history, degrees-based trig, and scientific functions — parsed safely without eval.',
-    category: 'calculators',
-    icon: CalculatorIcon,
-    keywords: ['calculator', 'math', 'arithmetic', 'scientific', 'percent', 'sqrt'],
-    aliases: ['calculator', 'calc', 'math', 'scientific calculator', 'percentage'],
-    route: '/tools/calculators/calculator',
-    capabilities: ['SIDE_PANEL', 'COMMAND'],
-    dependencies: ['calc'],
-    status: 'active',
-    loader: () => import('@/tools/calculators/calculator/Tool'),
-  }),
   defineTool({
     id: 'calculators.unit-converter',
     name: 'Unit Converter',

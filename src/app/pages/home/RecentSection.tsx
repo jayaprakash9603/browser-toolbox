@@ -6,6 +6,7 @@ import { Link } from '@/app/router'
 import { toolRegistry, type ToolDefinition } from '@/core/registry'
 import { formatRelativeTime } from '@/app/pages/home/formatRelativeTime'
 import { SectionHeader } from '@/app/pages/home/SectionHeader'
+import { getToolLocationLabel } from '@/features/search/toolLocation'
 import { SlideUp } from '@/shared/components/motion'
 import { useRecentTools } from '@/shared/hooks/useRecentTools'
 import { useToolLabels } from '@/shared/hooks/useToolLabels'
@@ -62,7 +63,7 @@ function RecentRow({ tool, openedAt }: { tool: ToolDefinition; openedAt: number 
   const { t } = useTranslation()
   const Icon = tool.icon
   const { name } = useToolLabels(tool)
-  const category = t(`categories.${tool.category}.name`, { defaultValue: tool.category })
+  const category = getToolLocationLabel(tool, t)
   const preload = () => {
     void tool.loader()
   }

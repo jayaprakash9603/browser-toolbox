@@ -1,6 +1,24 @@
 import { describe, expect, it } from 'vitest'
 
-import { selectionSlicesCoverRegion } from '@/chrome/background/screenshot/capture'
+import { findUncoveredScrollTarget, selectionSlicesCoverRegion } from '@/chrome/background/screenshot/capture'
+
+describe('findUncoveredScrollTarget', () => {
+  const region = { x: 0, y: 1000, width: 400, height: 1800 }
+
+  it('accepts slices captured at arbitrary scroll positions when they overlap', () => {
+    const slices = [{ scrollY: 950 }, { scrollY: 1700 }, { scrollY: 2250 }]
+    expect(findUncoveredScrollTarget(slices, region, 900)).toBeNull()
+  })
+
+  it('reports the first gap so only that part is captured again', () => {
+    const slices = [{ scrollY: 1000 }, { scrollY: 2400 }]
+    expect(findUncoveredScrollTarget(slices, region, 900)).toBe(1900)
+  })
+
+  it('asks for the region start when nothing was captured', () => {
+    expect(findUncoveredScrollTarget([], region, 900)).toBe(1000)
+  })
+})
 
 describe('selectionSlicesCoverRegion', () => {
   const region = { x: 0, y: 1000, width: 400, height: 1800 }

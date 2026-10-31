@@ -738,9 +738,6 @@ export const TOOL_SEARCH_ENTRIES: Record<string, ToolSearchEntry[]> = {
   'design.layout-wireframe': [
     { id: 'wireframe', labelKey: 'design.wireframe.title', fallbackLabel: 'Wireframe', params: {} },
   ],
-  'security.totp': [
-    { id: 'codes', labelKey: 'security.totp.add', fallbackLabel: 'TOTP codes', params: {} },
-  ],
   'text.read-aloud': [
     { id: 'speak', labelKey: 'text.readAloud.play', fallbackLabel: 'Read aloud', params: {} },
   ],

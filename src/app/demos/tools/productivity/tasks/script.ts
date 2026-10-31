@@ -546,7 +546,7 @@ export const CAPTIONS = STEPS.map((step) => step.title)
 
 export const DETAILS = [
   '“tomorrow 5pm”, “next fri”, “in 2 weeks” and “every monday” all become real due dates.',
-  'Right-click any page or link and choose Add to Tasks, or press Alt+Shift+Q.',
+  'Right-click any page or link and choose Add to To Do, or press Alt+Shift+Q.',
   'Type #Project and @label inside the task. New ones are created as you go.',
   `${REPEAT_LABELS.length} repeat rules and ${REMINDER_OFFSETS.length} reminder times, from the moment it is due to a day before.`,
   'Four priority levels colour the checkbox. Break a task into subtasks and track how many are done.',

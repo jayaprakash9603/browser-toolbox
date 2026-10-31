@@ -1,8 +1,23 @@
-import { BinaryIcon, HashIcon, KeyRoundIcon, DicesIcon, ShieldIcon, TicketIcon } from 'lucide-react'
+import { BinaryIcon, HashIcon, KeyRoundIcon, DicesIcon, ShieldCheckIcon, TicketIcon } from 'lucide-react'
 
 import { defineTool } from '@/core/registry'
 
 export const securityTools = [
+  defineTool({
+    id: 'security.toolkit',
+    name: 'Security Toolkit',
+    description:
+      'Encode and decode, hash, inspect JWTs, and generate passwords and random values, all locally.',
+    category: 'security',
+    icon: ShieldCheckIcon,
+    keywords: ['security', 'encode', 'decode', 'hash', 'jwt', 'password', 'random'],
+    aliases: ['security tools', 'crypto tools'],
+    route: '/tools/security/toolkit',
+    capabilities: ['SIDE_PANEL'],
+    toolkitGroup: 'security',
+    status: 'active',
+    loader: () => import('@/tools/security/security-toolkit/Tool'),
+  }),
   defineTool({
     id: 'security.encoder-decoder',
     name: 'Encoder / Decoder',
@@ -63,20 +78,6 @@ export const securityTools = [
     dependencies: ['password'],
     status: 'active',
     loader: () => import('@/tools/security/password-generator/Tool'),
-  }),
-  defineTool({
-    id: 'security.totp',
-    name: '2FA Authenticator',
-    description:
-      'Generate time-based one-time passwords (TOTP) from stored secrets — computed locally.',
-    category: 'security',
-    icon: ShieldIcon,
-    keywords: ['totp', '2fa', 'authenticator', 'otp', 'mfa'],
-    aliases: ['google authenticator', 'totp generator'],
-    route: '/tools/security/totp',
-    capabilities: ['SIDE_PANEL', 'STORAGE'],
-    status: 'active',
-    loader: () => import('@/tools/security/totp/Tool'),
   }),
   defineTool({
     id: 'security.random-generator',

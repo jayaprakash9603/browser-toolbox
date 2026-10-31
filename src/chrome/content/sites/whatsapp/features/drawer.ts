@@ -75,7 +75,7 @@ const ICONS = {
 } as const
 
 const VIEW_TITLES: Record<View, string> = {
-  home: 'ChatBoost',
+  home: 'WhatsApp',
   enhancements: 'Enhancements',
   business: 'Business Tools',
   templates: 'Message Templates',
@@ -831,8 +831,8 @@ function viewMore(): HTMLElement {
         void patchState({ values: { showSideLauncher: false } })
         closeDrawer()
       }),
-      navRow('power', 'Turn off ChatBoost', 'Disable every ChatBoost feature on this site.', () => {
-        void confirmDialog('Turn off ChatBoost?', 'You can turn it on again from One Panel.', 'Turn off').then((yes) => {
+      navRow('power', 'Turn off WhatsApp tools', 'Disable every WhatsApp feature on this site.', () => {
+        void confirmDialog('Turn off WhatsApp tools?', 'You can turn it on again from One Panel.', 'Turn off').then((yes) => {
           if (yes) void patchState({ enabled: false })
         })
       }),
@@ -890,7 +890,7 @@ function build(): HTMLElement {
   root.setAttribute('role', 'dialog')
   root.tabIndex = -1
 
-  const title = el('div', 'tbx-d-header__title', el('span', '', 'ChatBoost'), el('sup', 'tbx-d-header__ver', 'for WhatsApp'))
+  const title = el('div', 'tbx-d-header__title', el('span', '', 'WhatsApp'), el('sup', 'tbx-d-header__ver', 'One Panel'))
   title.addEventListener('click', () => {
     if (stack.length > 1) {
       stack = ['home']

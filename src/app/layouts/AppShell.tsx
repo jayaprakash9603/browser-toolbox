@@ -8,6 +8,8 @@ import { Link, useRouter } from '@/app/router'
 import { isCaptureViewerSearch } from '@/core/screenshot/viewerUrl'
 import { getToolComponent } from '@/app/toolComponents'
 import { toolRegistry } from '@/core/registry'
+import { getWorkspaceForTool } from '@/core/registry/workspaces'
+import { WorkspaceHost } from '@/features/workspace/WorkspaceHost'
 import { trackRecentTool } from '@/features/recent-tools/recentToolsService'
 import { NetStatusIndicator } from '@/features/netmon/components/NetStatusIndicator'
 import { SiteAccessBar } from '@/features/site-access/SiteAccessBar'
@@ -29,6 +31,9 @@ import { useShortcutDisplay } from '@/features/shortcuts/useShortcutDisplay'
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
 
 const HomePage = lazy(() => import('@/app/pages/HomePage'))
+const HeaderProtectionToggles = lazy(() =>
+  import('@/features/header/HeaderToggles').then((m) => ({ default: m.HeaderProtectionToggles })),
+)
 const SettingsPage = lazy(() => import('@/app/pages/SettingsPage'))
 const KeyboardShortcutsPage = lazy(() => import('@/app/pages/settings/KeyboardShortcutsPage'))
 const CategoryPage = lazy(() => import('@/app/pages/CategoryPage'))
@@ -123,6 +128,8 @@ export function AppShell({ children }: { children?: ReactNode }) {
     if (tool) void trackRecentTool(tool.id)
   }, [tool])
 
+  const motionKey = getWorkspaceForTool(tool?.id ?? LEGACY_TOOL_ROUTES[path] ?? '')?.id ?? path
+
   useEffect(() => {
     mainRef.current?.focus({ preventScroll: true })
   }, [path])
@@ -161,7 +168,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
                 onClick={openPalette}
               >
                 <SearchIcon className="size-4" />
-                <kbd className="rounded border bg-muted px-1.5 font-sans text-[10px] leading-5 font-medium">
+                <kbd className="hidden rounded border bg-muted px-1.5 font-sans text-[10px] leading-5 font-medium @[360px]:inline">
                   {searchShortcutLabel}
                 </kbd>
               </Button>
@@ -169,6 +176,9 @@ export function AppShell({ children }: { children?: ReactNode }) {
             <TooltipContent>{t('nav.commandPalette')}</TooltipContent>
           </Tooltip>
           {isHomePath(path) && <NetStatusIndicator />}
+          <Suspense fallback={<span aria-hidden className="w-16 shrink-0" />}>
+            <HeaderProtectionToggles />
+          </Suspense>
           <TechStackButton />
           <ThemeToggle />
           <Tooltip>
@@ -196,7 +206,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
             }
           >
             <motion.div
-              key={path}
+              key={motionKey}
               className="h-full"
               initial={reduceMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -229,12 +239,23 @@ function renderRoute(path: string) {
   if (path === '/devtools/interceptor') return <DevToolsInterceptorPage />
   if (path === '/devtools/selector-studio-sidebar') return <DevToolsSelectorStudioSidebarPage />
   const legacyToolId = LEGACY_TOOL_ROUTES[path]
-  if (legacyToolId) return <ToolHost toolId={legacyToolId} />
+  if (legacyToolId) return renderTool(legacyToolId)
   const categoryMatch = path.match(/^\/categories\/([\w-]+)$/)
   if (categoryMatch) return <CategoryPage categoryId={categoryMatch[1]} />
   const tool = toolRegistry.getAll().find((entry) => entry.route === path)
-  if (tool) return <ToolHost toolId={tool.id} />
+  if (tool) return renderTool(tool.id)
   return <HomePage />
+}
+
+function renderTool(toolId: string) {
+  const workspace = getWorkspaceForTool(toolId)
+  const body = <ToolHost toolId={toolId} />
+  if (!workspace) return body
+  return (
+    <WorkspaceHost workspace={workspace} activeToolId={toolId}>
+      {body}
+    </WorkspaceHost>
+  )
 }
 
 function getLoadingVariant(path: string): AppLoadingSkeletonVariant {

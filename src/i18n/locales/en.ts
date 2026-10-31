@@ -21,6 +21,7 @@ import { sitesYoutubeStrings } from './sitesYoutubeEn'
 import { scriptStudioStrings } from './scriptStudioEn'
 import { reactDevtoolsStrings } from './reactDevtoolsEn'
 import { toolRegistryStrings } from './toolRegistryEn'
+import { workspaceStrings } from './workspaceEn'
 import { testDataStrings } from './testDataEn'
 import { paletteGeneratorStrings } from './paletteGeneratorEn'
 import { pageInspectorStrings } from './pageInspectorEn'
@@ -832,8 +833,6 @@ const en = {
   'tools.qa.test-data-generator.name': 'Test Data Generator',
   'tools.qa.test-data-generator.description':
     'Generate names, emails, addresses and more as JSON or CSV.',
-  'tools.qa.http-status.name': 'HTTP Status Codes',
-  'tools.qa.http-status.description': 'Look up HTTP status codes with meaning and debugging hints.',
   'tools.api.request-builder.name': 'API Request Builder',
   'tools.api.request-builder.description':
     'Full API client with collections, environments, scripts, and request history.',
@@ -1108,16 +1107,13 @@ const en = {
   'recorder.viewer.delete': 'Delete',
   'recorder.viewer.deleteTitle': 'Delete recording?',
   'recorder.viewer.deleteBody': 'This removes the video from this device. It cannot be undone.',
-  'tools.screenshots.capture.name': 'Capture Toolkit',
+  'tools.screenshots.capture.name': 'Page Capture',
   'tools.screenshots.capture.description':
     'FireShot-style capture: full page, selection, element, all tabs, and a full-screen editor with export.',
   'capture.captureVisible': 'Visible screen',
   'capture.captureArea': 'Select area',
   'capture.captureFull': 'Full page',
   'capture.download': 'Download PNG',
-  'tools.calculators.calculator.name': 'Calculator',
-  'tools.calculators.calculator.description':
-    'Arithmetic and scientific calculator with history (no eval).',
   'tools.calculators.unit-converter.name': 'Unit Converter',
   'tools.calculators.unit-converter.description':
     'Convert length, weight, temperature, data, speed and more.',
@@ -1190,7 +1186,7 @@ const en = {
   'shortcuts.commands.captureMenu': 'Open capture menu',
   'shortcuts.commands.togglePip': 'Toggle Picture-in-Picture',
   'shortcuts.commands.toggleRecording': 'Start or stop screen recording',
-  'shortcuts.commands.addPageTask': 'Add current page to Tasks',
+  'shortcuts.commands.addPageTask': 'Add current page to To Do',
   'shortcuts.commands.pickColor': 'Pick a color from the page',
   'pip.toggleButton': 'Toggle Picture-in-Picture on this tab',
   'pip.gestureHint': 'Chrome blocked PiP from the panel. Press {{shortcut}} on the page instead.',
@@ -1310,7 +1306,7 @@ const en = {
   'tools.productivity.notes.name': 'Notes',
   'tools.productivity.notes.description':
     'Notes with quick capture, #tags, checklists, templates, archive and trash, plus formatting, find & replace and export.',
-  'tools.productivity.tasks.name': 'Tasks',
+  'tools.productivity.tasks.name': 'To Do',
   'tools.productivity.tasks.description':
     'To-do list with due dates and reminders. Save the current page as a task, type dates in plain words, sort into projects and labels.',
   'tools.productivity.timer.name': 'Timer',
@@ -1545,6 +1541,7 @@ const en = {
   ...techStackStrings,
   ...workspacesStrings,
   ...toolRegistryStrings,
+  ...workspaceStrings,
 } as const
 
 export default en

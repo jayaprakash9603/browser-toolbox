@@ -42,7 +42,7 @@
     "message": "Start or stop recording the current tab"
   },
   "commandAddPageTask": {
-    "message": "Add the current page to Tasks"
+    "message": "Add the current page to To Do"
   },
   "commandPickColor": {
     "message": "Pick a color from the current page"
@@ -93,13 +93,16 @@
     "message": "Nothing to clear"
   },
   "contextMenuTaskPage": {
-    "message": "Add page to Tasks"
+    "message": "Add page to To Do"
   },
   "contextMenuTaskLink": {
-    "message": "Add link to Tasks"
+    "message": "Add link to To Do"
   },
   "contextMenuTaskSelection": {
-    "message": "Add “%s” to Tasks"
+    "message": "Add “%s” to To Do"
+  },
+  "contextMenuReadingListSelection": {
+    "message": "Save to Reading List"
   },
   "taskReminderTitle": {
     "message": "Task reminder"

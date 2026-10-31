@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { useDeepLinkParam, useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
+import { usePayloadText } from '@/shared/hooks/usePayloadText'
 import { useTranslation } from 'react-i18next'
 import { RefreshCwIcon } from 'lucide-react'
 
@@ -29,6 +30,7 @@ export default function IdToolkitTool() {
   const count = parseNumberInRange(countText, 1, 500)
   const [output, setOutput] = useState<string[]>([])
   const [validateInput, setValidateInput] = useState('')
+  usePayloadText(tool.id, setValidateInput)
 
   const validation = validateInput.trim()
     ? { valid: isValidUuid(validateInput), version: uuidVersion(validateInput) }

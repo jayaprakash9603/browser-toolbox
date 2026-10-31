@@ -25,6 +25,7 @@ import { useNavigate } from '@/app/navigation'
 import { toolRegistry } from '@/core/registry'
 import { getToolDescription, getToolName } from '@/i18n/toolLabels'
 import { searchAll, toolsVisibleForQuery, type SearchItem } from '@/features/search/searchIndex'
+import { getToolLocationLabel } from '@/features/search/toolLocation'
 import { useFavorites } from '@/shared/hooks/useFavorites'
 import { useRecentTools } from '@/shared/hooks/useRecentTools'
 import { cn } from '@/shared/utils/cn'
@@ -324,7 +325,7 @@ const PaletteResults = memo(function PaletteResults({
 
   const renderTool = (tool: Tool, group: string) => {
     const name = getToolName(tool, t)
-    const category = t(`categories.${tool.category}.name`, { defaultValue: tool.category })
+    const category = getToolLocationLabel(tool, t)
     const value = `${group}:${tool.id} ${name} ${category}`
     return (
       <PaletteItem

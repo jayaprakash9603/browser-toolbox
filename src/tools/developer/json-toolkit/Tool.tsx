@@ -23,6 +23,7 @@ import { Segmented } from '@/shared/components/ui/segmented'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import type { EditorLanguage } from '@/shared/lib/code-editor/languages'
 import { useDeepLinkParam, useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
+import { usePayloadText } from '@/shared/hooks/usePayloadText'
 import { JsonErrorView, OutputPane, useDevTool } from '../_shared'
 import {
   JSON_CONVERT_TARGETS,
@@ -48,6 +49,7 @@ export default function JsonToolkitTool() {
   const tool = useDevTool('developer.json-toolkit')
   const [tab, setTab] = useDeepLinkTab('tab', JSON_TABS, 'format')
   const [input, setInput] = useState('')
+  usePayloadText(tool.id, setInput)
   const [indent, setIndent] = useState<Indent>('2')
   const [pathQuery, setPathQuery] = useState('$')
   const [convertTarget, setConvertTarget] = useDeepLinkParam('target', JSON_CONVERT_TARGETS, 'csv')

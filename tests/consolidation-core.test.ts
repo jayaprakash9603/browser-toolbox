@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 
 import { formatCaptionForInstagram } from '@/core/sites/instagram/captionFormat'
 import { detectTechnologies } from '@/core/engines/techStack/detect'
-import { generateTotp, normalizeBase32Secret } from '@/core/security/totp'
 import { htmlToMarkdown } from '@/core/text/htmlToMarkdown'
 import { isBrokenStatus } from '@/core/engines/linkChecker/check'
 
@@ -26,12 +25,6 @@ describe('consolidation core', () => {
       html: '',
     })
     expect(hits.some((h) => h.name === 'React')).toBe(true)
-  })
-
-  it('generates totp for known test vector secret', async () => {
-    const secret = normalizeBase32Secret('JBSWY3DPEHPK3PXP')
-    const code = await generateTotp(secret, Date.UTC(2009, 1, 13, 23, 31, 30))
-    expect(code).toMatch(/^\d{6}$/)
   })
 
   it('converts simple html to markdown', () => {

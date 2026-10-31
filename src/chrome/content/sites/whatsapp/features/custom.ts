@@ -54,8 +54,8 @@ function createItem(anchor: HTMLElement): HTMLElement {
   const btn = document.createElement('button')
   btn.type = 'button'
   btn.className = 'tbx-wa-launcher'
-  btn.title = 'ChatBoost'
-  btn.setAttribute('aria-label', 'ChatBoost')
+  btn.title = 'One Panel for WhatsApp'
+  btn.setAttribute('aria-label', 'One Panel for WhatsApp')
   btn.innerHTML = PLUS_SVG
   btn.addEventListener('click', (e) => {
     e.stopPropagation()

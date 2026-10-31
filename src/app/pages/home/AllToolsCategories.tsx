@@ -6,7 +6,7 @@ import { useRememberedState } from '@/app/navigationMemory'
 import { CatalogFilterChips } from '@/app/pages/all-tools/CatalogFilterChips'
 import { CategoryViewerHost } from '@/app/pages/all-tools/CategoryViewerHost'
 import { ALL_CATALOG, useToolCatalog } from '@/app/pages/all-tools/useToolCatalog'
-import { categoryRegistry, toolRegistry } from '@/core/registry'
+import { getPrimaryToolsForUserCategory, getUserCategories } from '@/core/registry/userCategories'
 import { Link } from '@/app/router'
 import { CategoryCard } from '@/app/pages/home/CategoryCard'
 import { SectionHeader } from '@/app/pages/home/SectionHeader'
@@ -22,9 +22,8 @@ export function AllToolsCategories({ delay = 0.3 }: { delay?: number }) {
 
   const categories = useMemo(
     () =>
-      [...categoryRegistry.getAll()]
-        .sort((a, b) => a.order - b.order)
-        .map((category) => ({ category, tools: toolRegistry.getByCategory(category.id) }))
+      getUserCategories()
+        .map((category) => ({ category, tools: getPrimaryToolsForUserCategory(category.id) }))
         .filter(({ tools }) => tools.length > 0),
     [],
   )

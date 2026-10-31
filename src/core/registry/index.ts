@@ -1,6 +1,8 @@
 export { toolRegistry } from './toolRegistry'
 export { categoryRegistry } from './categoryRegistry'
 export { defineTool } from './defineTool'
+export { SECTIONS, getSection, getSectionForTool, isPrimaryTool } from './sections'
+export { WORKSPACES, getWorkspace, getWorkspaceForTool, isWorkspaceChild } from './workspaces'
 export { groupToolsByToolkit } from './groupTools'
 export { TOOLKIT_GROUP_IDS, TOOLKIT_GROUP_LABEL_KEYS } from './toolkitGroups'
 export type { ToolkitGroupId } from './toolkitGroups'

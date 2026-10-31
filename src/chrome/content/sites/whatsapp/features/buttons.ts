@@ -108,7 +108,7 @@ function quickReplyList(): HTMLElement {
   if (!templates.length) {
     const empty = document.createElement('p')
     empty.className = 'tbx-wa-popover__empty'
-    empty.textContent = 'No templates yet. Add them in ChatBoost → Business Tools → Message Templates.'
+    empty.textContent = 'No templates yet. Add them in One Panel → WhatsApp → Business Tools → Message Templates.'
     list.appendChild(empty)
     return list
   }

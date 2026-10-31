@@ -5,12 +5,12 @@ import { defineTool } from '@/core/registry'
 export const screenshotsTools = [
   defineTool({
     id: 'screenshots.capture',
-    name: 'Capture Toolkit',
-    description: 'Capture the visible tab and annotate with shapes, text, highlight and blur.',
+    name: 'Page Capture',
+    description: 'Capture the visible area, a selection, an element or a full scrolling page, then annotate with shapes, text, highlight and blur.',
     category: 'screenshots',
     icon: CameraIcon,
-    keywords: ['screenshot', 'capture', 'screen', 'annotate', 'arrow', 'blur'],
-    aliases: ['take screenshot', 'screenshot', 'capture screen', 'annotate screenshot'],
+    keywords: ['screenshot', 'capture', 'screen', 'annotate', 'arrow', 'blur', 'scrolling', 'full page'],
+    aliases: ['capture toolkit', 'take screenshot', 'screenshot', 'capture screen', 'annotate screenshot', 'page capture'],
     route: '/tools/screenshots/capture',
     capabilities: ['SIDE_PANEL', 'COMMAND', 'SCREEN_CAPTURE'],
     dependencies: ['capture'],

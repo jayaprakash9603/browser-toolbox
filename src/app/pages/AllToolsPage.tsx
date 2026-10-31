@@ -1,13 +1,13 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MotionConfig, motion } from 'motion/react'
-import { GalleryHorizontalEndIcon, LayoutGridIcon, SearchXIcon } from 'lucide-react'
+import { GalleryHorizontalEndIcon, SearchXIcon } from 'lucide-react'
 
 import { useRememberedState, useScrollMemory } from '@/app/navigationMemory'
-import { CategoryViewer, type ViewerSection } from '@/app/pages/all-tools/CategoryViewer'
+import { CategoryViewer } from '@/app/pages/all-tools/CategoryViewer'
 import { ToolRow, type Row } from '@/app/pages/all-tools/ToolRow'
-import { categoryRegistry, toolRegistry } from '@/core/registry'
-import { getToolDescription, getToolName, getToolSearchLabels } from '@/i18n/toolLabels'
+import { ALL_CATALOG as ALL, useToolCatalog } from '@/app/pages/all-tools/useToolCatalog'
+import { getUserCategoryIdForTool } from '@/core/registry/userCategories'
 import { BackButton } from '@/shared/components/BackButton'
 import { ChipRail } from '@/shared/components/ChipRail'
 import { EmptyState } from '@/shared/components/EmptyState'
@@ -15,7 +15,6 @@ import { SearchInput } from '@/shared/components/SearchInput'
 import { cn } from '@/shared/utils/cn'
 
 const EASE = [0.22, 1, 0.36, 1] as const
-const ALL = 'all'
 
 export default function AllToolsPage() {
   const { t, i18n } = useTranslation()
@@ -23,64 +22,13 @@ export default function AllToolsPage() {
   const [filter, setFilter] = useRememberedState<string>('allTools.filter', ALL)
   const [viewerOpen, setViewerOpen] = useState(false)
   const scrollRef = useScrollMemory<HTMLDivElement>()
-
-  const categories = useMemo(
-    () =>
-      [...categoryRegistry.getAll()]
-        .sort((a, b) => a.order - b.order)
-        .map((category) => ({
-          category,
-          name: t(`categories.${category.id}.name`, { defaultValue: category.name }),
-          count: toolRegistry.getByCategory(category.id).length,
-        }))
-        .filter((entry) => entry.count > 0),
-    [t],
-  )
-
-  const rows = useMemo<Row[]>(() => {
-    const categoryNames = new Map(categories.map((entry) => [entry.category.id, entry.name]))
-    return toolRegistry
-      .getAll()
-      .map((tool) => {
-        const name = getToolName(tool, t)
-        const description = getToolDescription(tool, t)
-        const categoryName = categoryNames.get(tool.category) ?? tool.category
-        return {
-          tool,
-          name,
-          description,
-          categoryName,
-          haystack: [name, description, categoryName, ...getToolSearchLabels(tool), ...tool.keywords]
-            .join(' ')
-            .toLowerCase(),
-        }
-      })
-      .sort((a, b) => a.name.localeCompare(b.name, i18n.language))
-  }, [categories, t, i18n.language])
-
-  const sections = useMemo<ViewerSection[]>(
-    () => [
-      {
-        id: ALL,
-        name: t('allTools.all'),
-        description: t('allTools.viewer.allDescription'),
-        icon: LayoutGridIcon,
-        rows,
-      },
-      ...categories.map(({ category, name }) => ({
-        id: category.id,
-        name,
-        description: t(`categories.${category.id}.description`, { defaultValue: category.description }),
-        icon: category.icon,
-        rows: rows.filter((row) => row.tool.category === category.id),
-      })),
-    ],
-    [categories, rows, t],
-  )
+  const { categories, rows, sections } = useToolCatalog()
 
   const search = query.trim().toLowerCase()
   const visible = rows.filter(
-    (row) => (filter === ALL || row.tool.category === filter) && (!search || row.haystack.includes(search)),
+    (row) =>
+      (filter === ALL || getUserCategoryIdForTool(row.tool) === filter) &&
+      (!search || row.haystack.includes(search)),
   )
   const groups = groupByLetter(visible, i18n.language)
 

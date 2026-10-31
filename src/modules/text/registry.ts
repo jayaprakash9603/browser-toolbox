@@ -4,6 +4,7 @@ import {
   CaseSensitiveIcon,
   DiffIcon,
   HashIcon,
+  LayersIcon,
   ReplaceIcon,
   TypeIcon,
   Volume2Icon,
@@ -13,6 +14,21 @@ import {
 import { defineTool } from '@/core/registry'
 
 export const textTools = [
+  defineTool({
+    id: 'text.studio',
+    name: 'Text Studio',
+    description:
+      'One workspace for formatting code, cleaning and analyzing text, converting case, find and replace, and dummy data.',
+    category: 'text',
+    icon: LayersIcon,
+    keywords: ['text', 'studio', 'format', 'clean', 'analyze', 'case', 'replace', 'lines', 'dummy'],
+    aliases: ['text tools', 'text workspace', 'text utilities'],
+    route: '/tools/text/studio',
+    capabilities: ['SIDE_PANEL'],
+    toolkitGroup: 'clipboard-text',
+    status: 'active',
+    loader: () => import('@/tools/text/text-studio/Tool'),
+  }),
   defineTool({
     id: 'text.formatter',
     name: 'Code Formatter',

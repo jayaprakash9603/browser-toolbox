@@ -3,7 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { useRememberedState, useScrollMemory } from '@/app/navigationMemory'
 import { DemoPanel, DemoToggle } from '@/app/pages/category/DemoDisclosure'
 import { useDemoOpen } from '@/app/pages/category/useDemoOpen'
-import { categoryRegistry, groupToolsByToolkit, toolRegistry } from '@/core/registry'
+import {
+  getPrimaryToolsForUserCategory,
+  getUserCategory,
+  resolveUserCategoryId,
+} from '@/core/registry/userCategories'
+import { getWorkspace } from '@/core/registry/workspaces'
 import { getToolSearchLabels } from '@/i18n/toolLabels'
 import { BackButton } from '@/shared/components/BackButton'
 import { ToolCardGrid } from '@/shared/components/ToolCardGrid'
@@ -11,24 +16,26 @@ import { EmptyState } from '@/shared/components/EmptyState'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { InboxIcon } from 'lucide-react'
 
-export default function CategoryPage({ categoryId }: { categoryId: string }) {
+export default function CategoryPage({ categoryId: requestedId }: { categoryId: string }) {
   const { t } = useTranslation()
+  const categoryId = resolveUserCategoryId(requestedId) ?? requestedId
   const [query, setQuery] = useRememberedState(`category.${categoryId}.query`, '')
   const scrollRef = useScrollMemory<HTMLDivElement>()
   const [demoOpen, toggleDemo] = useDemoOpen(categoryId)
   const demoId = useId()
-  const category = categoryRegistry.get(categoryId)
-  const tools = toolRegistry.getByCategory(categoryId)
+  const category = getUserCategory(categoryId)
+  const tools = useMemo(() => getPrimaryToolsForUserCategory(categoryId), [categoryId])
   const filteredTools = useMemo(() => {
     const search = query.trim().toLowerCase()
     if (!search) return tools
-    return tools.filter((tool) =>
-      [...getToolSearchLabels(tool), ...tool.keywords].join(' ').toLowerCase().includes(search),
-    )
+    return tools.filter((tool) => {
+      const viewLabels = getWorkspace(tool.id)?.views.map((view) => view.label) ?? []
+      return [...getToolSearchLabels(tool), ...tool.keywords, ...viewLabels]
+        .join(' ')
+        .toLowerCase()
+        .includes(search)
+    })
   }, [query, tools])
-
-  const grouped = useMemo(() => groupToolsByToolkit(filteredTools), [filteredTools])
-  const showGrouped = grouped.length > 1
 
   if (!category) {
     return <EmptyState icon={InboxIcon} title={t('category.unknown')} />
@@ -82,17 +89,6 @@ export default function CategoryPage({ categoryId }: { categoryId: string }) {
         ) : (
           <EmptyState icon={InboxIcon} title={t('category.noTools')} />
         )
-      ) : showGrouped ? (
-        <div className="flex flex-col gap-4">
-          {grouped.map((section) => (
-            <section key={section.id}>
-              <h2 className="mb-2 text-xs font-semibold text-muted-foreground">
-                {t(section.labelKey, { defaultValue: section.id })}
-              </h2>
-              <ToolCardGrid tools={section.tools} />
-            </section>
-          ))}
-        </div>
       ) : (
         <ToolCardGrid tools={filteredTools} />
       )}

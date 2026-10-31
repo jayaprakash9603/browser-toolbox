@@ -20,16 +20,13 @@ export const toolRegistryStrings = {
   'tools.design.svg-grabber.name': 'SVG Grabber',
   'tools.design.svg-grabber.description':
     'Extract inline SVGs from the page and copy as SVG or JSX.',
-  'tools.security.totp.name': '2FA Authenticator',
-  'tools.security.totp.description':
-    'Generate time-based one-time passwords (TOTP) from stored secrets — computed locally.',
   'tools.sites.linkedin.name': 'LinkedIn Creator Tools',
   'tools.sites.linkedin.description':
     'Post preview cutoffs, Unicode styling, and quick profile CSV export',
   'tools.sites.twitter.name': 'X / Twitter Power Tools',
   'tools.sites.twitter.description':
     'Advanced search operators and thread length counter for x.com',
-  'tools.sites.whatsapp.name': 'ChatBoost',
+  'tools.sites.whatsapp.name': 'WhatsApp',
   'tools.sites.whatsapp.description':
     'Privacy, business tools, exports, and broadcasting for web.whatsapp.com',
   'tools.web.copy-markdown.name': 'Copy as Markdown',

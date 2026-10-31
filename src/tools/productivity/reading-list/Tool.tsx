@@ -15,6 +15,7 @@ import {
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 
 import { downloadBlob } from '@/features/netmon/download'
+import { subscribePayload, type ToolPayload } from '@/core/payloads'
 import { ChipRail } from '@/shared/components/ChipRail'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { StaggerChildren, StaggerItem } from '@/shared/components/motion'
@@ -56,6 +57,7 @@ import {
 } from './model'
 import { ReadingEditDialog } from './ReadingEditDialog'
 import { ReadingItemCard } from './ReadingItemCard'
+import { PendingExcerpt } from './PendingExcerpt'
 
 async function readActiveTab(): Promise<{ url: string; title: string } | null> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
@@ -80,7 +82,16 @@ export default function ReadingListTool() {
   const [customUrl, setCustomUrl] = useState('')
   const [customTitle, setCustomTitle] = useState('')
   const [editing, setEditing] = useState<ReadingItem | null>(null)
+  const [pendingExcerpt, setPendingExcerpt] = useState<ToolPayload | null>(null)
   const importRef = useRef<HTMLInputElement>(null)
+
+  useEffect(
+    () =>
+      subscribePayload(tool.id, (payload) => {
+        if (payload.text?.trim()) setPendingExcerpt(payload)
+      }),
+    [tool.id],
+  )
 
   useEffect(() => {
     void loadReadingList().then((list) => {
@@ -126,6 +137,21 @@ export default function ReadingListTool() {
     setTagsText('')
     setCustomUrl('')
     setCustomTitle('')
+    showToast(t('readingList.saved'))
+  }
+
+  const saveExcerpt = async (excerpt: string) => {
+    const pageUrl = pendingExcerpt?.pageUrl
+    const source =
+      pageUrl && /^https?:\/\//i.test(pageUrl)
+        ? { url: pageUrl, title: pendingExcerpt?.pageTitle || pageUrl }
+        : await readActiveTab()
+    if (!source) {
+      showToast(t('readingList.noTab'), { variant: 'error' })
+      return
+    }
+    await persist([newReadingItem({ ...source, excerpt }), ...items])
+    setPendingExcerpt(null)
     showToast(t('readingList.saved'))
   }
 
@@ -199,6 +225,16 @@ export default function ReadingListTool() {
       <ToolSearchLayout
         header={
           <>
+            {pendingExcerpt?.text && (
+              <PendingExcerpt
+                key={pendingExcerpt.createdAt}
+                excerpt={pendingExcerpt.text}
+                sourceUrl={pendingExcerpt.pageUrl}
+                sourceTitle={pendingExcerpt.pageTitle}
+                onSave={(excerpt) => void saveExcerpt(excerpt)}
+                onDismiss={() => setPendingExcerpt(null)}
+              />
+            )}
             <div className="flex items-center gap-1.5">
               <SearchInput
                 value={query}

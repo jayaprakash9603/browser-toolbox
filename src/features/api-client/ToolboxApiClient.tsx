@@ -49,6 +49,7 @@ export function ToolboxApiClient() {
   return (
     <ApiClient
       embedded
+      appearanceControlledByHost
       adapters={adapters}
       uiKit={shadcnKit}
       theme={theme}

@@ -12,6 +12,7 @@ import { PopularTools } from '@/app/pages/home/PopularTools'
 import { QuickActions } from '@/app/pages/home/QuickActions'
 import { RecentSection } from '@/app/pages/home/RecentSection'
 import { WelcomeStrip } from '@/app/pages/home/WelcomeStrip'
+import { SupportCard } from '@/features/support/SupportCard'
 import { BackButton } from '@/shared/components/BackButton'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { ToolCardGrid } from '@/shared/components/ToolCardGrid'
@@ -84,6 +85,7 @@ export default function HomePage({ section }: HomePageProps) {
           <PopularTools />
           <AllToolsCategories />
           <BottomTip />
+          <SupportCard />
         </div>
       </div>
     </div>

@@ -22,13 +22,15 @@ const assets = join(dist, 'assets')
 /** ~1.186 MB after Element Inspector strings joined the boot i18n catalog. */
 /** ~1.188 MB after Technologies header control joined the App shell boot graph. */
 /** ~1.191 MB after Selector Studio joined the QA registry and boot catalog. */
-const MAX_HOME_BOOT_JS = 1_192_000
+/** ~1.288 MB after the five-section home, workspace routing and support strings joined the boot graph. */
+const MAX_HOME_BOOT_JS = 1_300_000
 /** After SW leak fix, measured ~423 KB static closure. */
 /** ~481 KB measured after interceptor optional-permission wiring in the SW graph. */
 /** ~496 KB after form autofill review and global values; service workers cannot lazy-load them. */
 /** ~503 KB once the injected form script learned label heuristics, files and date pickers. */
 /** ~512 KB with div-built dropdowns, ARIA widgets and contenteditable fields in that script. */
-const MAX_SERVICE_WORKER_JS = 516 * 1024
+/** ~538 KB after the Reading List menu, request cancel/FormData transport and selection-capture gap fill joined the SW graph. */
+const MAX_SERVICE_WORKER_JS = 526 * 1024
 
 /** `_gsap` is the cache property GSAP stamps on every target: the tool demos must stay lazy. */
 const BANNED_IN_HOME = [/postman-lite/i, /\bcmdk\b/, /\b_gsap\b/]

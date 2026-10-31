@@ -2,6 +2,7 @@ import { fullPageOffsets, type AreaSelection } from '@/core/engines/capture/page
 import {
   collectPageMeta,
   disableSmoothScroll,
+  enableSmoothScroll,
   hideFixedStickyAfterFirst,
   hideToolboxUi,
   restoreToolboxUi,
@@ -10,6 +11,7 @@ import {
   restoreCapturePageState,
   scrollCaptureTo,
   selectPageAreaWithScroll,
+  showFixedSticky,
   type SelectionCaptureResult,
 } from '@/core/engines/capture/pageCaptureScript'
 import { CAPTURE_THROTTLE_MS, sleep } from '@/core/screenshot/slicePlan'
@@ -23,6 +25,7 @@ import type {
 import { loadScreenshotSettings } from '@/core/screenshot/settings'
 
 let lastCaptureAt = 0
+const selectionSliceCounts = new Map<number, number>()
 
 /** captureVisibleTab is rate-limited (MAX_CAPTURE_VISIBLE_TAB_CALLS_PER_SECOND = 2). */
 async function captureVisiblePng(windowId: number): Promise<string> {
@@ -287,6 +290,11 @@ export async function captureSelectionVisibleSlice(tab: chrome.tabs.Tab): Promis
   if (tab.id == null || tab.windowId == null) return null
   const tabId = tab.id
   const windowId = tab.windowId
+  const taken = selectionSliceCounts.get(tabId) ?? 0
+  selectionSliceCounts.set(tabId, taken + 1)
+  if (taken >= 1 && (await loadScreenshotSettings()).hideStickyHeaders) {
+    await runInTab(tabId, hideFixedStickyAfterFirst).catch(() => undefined)
+  }
   const viewport = await runInTab(tabId, readViewport)
   const scroll = await runInTab(tabId, readWindowScroll)
   const dataUrl = await withToolboxUiHidden(tabId, () => captureVisiblePng(windowId))
@@ -298,32 +306,84 @@ export async function captureSelectionVisibleSlice(tab: chrome.tabs.Tab): Promis
   }
 }
 
-export function selectionSlicesCoverRegion(
-  slices: CaptureSlice[],
+/** The first page-space y in the region that no slice shows, or null when the slices cover it all. */
+export function findUncoveredScrollTarget<T extends { scrollY: number }>(
+  slices: readonly T[],
+  region: CaptureRect,
+  viewportHeight: number,
+): number | null {
+  const end = region.y + region.height
+  let cursor = region.y
+  while (cursor < end - 0.5) {
+    const covering = slices.filter(
+      (slice) => slice.scrollY <= cursor + 1 && slice.scrollY + viewportHeight > cursor + 1,
+    )
+    if (covering.length === 0) return cursor
+    cursor = Math.max(...covering.map((slice) => slice.scrollY)) + viewportHeight
+  }
+  return null
+}
+
+export function selectionSlicesCoverRegion<T extends { scrollY: number }>(
+  slices: readonly T[],
   region: CaptureRect,
   viewportHeight: number,
 ): boolean {
   if (slices.length === 0 || viewportHeight <= 0) return false
-  const needed = fullPageOffsets(region.height, viewportHeight).map((localY) => region.y + localY)
-  return needed.every((targetY) => slices.some((s) => Math.abs(s.scrollY - targetY) < 8))
+  return findUncoveredScrollTarget(slices, region, viewportHeight) === null
 }
 
-async function frameFromLiveSelection(
+async function captureMissingSelectionSlices(
+  tab: chrome.tabs.Tab,
+  result: SelectionCaptureResult,
+  viewport: { width: number; height: number },
+): Promise<CaptureSlice[]> {
+  const tabId = tab.id!
+  const windowId = tab.windowId!
+  const settings = await loadScreenshotSettings()
+  const slices: CaptureSlice[] = [...result.slices]
+  const maxCaptures = Math.ceil(result.height / viewport.height) + 1
+  let captured = 0
+  let target = findUncoveredScrollTarget(slices, result, viewport.height)
+  if (target === null) return slices
+
+  await runInTab(tabId, disableSmoothScroll)
+  if (settings.hideStickyHeaders && slices.length > 0) await runInTab(tabId, hideFixedStickyAfterFirst)
+  while (target !== null && captured < maxCaptures) {
+    const reached = await runInTab(tabId, scrollWindowTo, [result.savedScrollX, target])
+    await sleep(settings.scrollStepDelayMs)
+    const dataUrl = await captureVisiblePng(windowId)
+    slices.push({ dataUrl, scrollX: reached.x, scrollY: reached.y, view: { x: 0, y: 0, width: viewport.width, height: viewport.height } })
+    captured += 1
+    const next = findUncoveredScrollTarget(slices, result, viewport.height)
+    if (next !== null && next <= target) break
+    target = next
+  }
+  return slices
+}
+
+async function frameFromSelection(
   tab: chrome.tabs.Tab,
   result: SelectionCaptureResult,
   notice?: string,
 ): Promise<ScreenshotFrame> {
   const tabId = tab.id!
-  await runInTab(tabId, scrollWindowTo, [result.savedScrollX, result.savedScrollY]).catch(() => undefined)
-  const slices = [...result.slices].sort((a, b) => a.scrollY - b.scrollY)
-  const area = result
-  return {
-    slices,
-    region: { x: area.x, y: area.y, width: area.width, height: area.height },
-    stitchHeight: area.height,
-    devicePixelRatio: area.devicePixelRatio,
-    pageInfo: pageInfoFromTab(tab),
-    notice,
+  const viewport = await runInTab(tabId, readViewport)
+  try {
+    const slices = await captureMissingSelectionSlices(tab, result, viewport)
+    slices.sort((a, b) => a.scrollY - b.scrollY)
+    return {
+      slices,
+      region: { x: result.x, y: result.y, width: result.width, height: result.height },
+      stitchHeight: result.height,
+      devicePixelRatio: result.devicePixelRatio,
+      pageInfo: pageInfoFromTab(tab),
+      notice,
+    }
+  } finally {
+    await runInTab(tabId, showFixedSticky).catch(() => undefined)
+    await runInTab(tabId, enableSmoothScroll).catch(() => undefined)
+    await runInTab(tabId, scrollWindowTo, [result.savedScrollX, result.savedScrollY]).catch(() => undefined)
   }
 }
 
@@ -332,14 +392,19 @@ export async function captureSelectionFrame(tab: chrome.tabs.Tab): Promise<Scree
   if (!(await canScriptTab(tab.id, tab.url))) {
     return captureVisibleFrame(tab, 'Selection requires a normal web page; captured visible area.')
   }
-  const result = await runInTab(tab.id, selectPageAreaWithScroll)
-  if (!result) return null
-  const viewport = await runInTab(tab.id, readViewport)
-  const useLiveSlices = selectionSlicesCoverRegion(result.slices, result, viewport.height)
-  if (useLiveSlices) {
-    return withToolboxUiHidden(tab.id, () => frameFromLiveSelection(tab, result))
+  const tabId = tab.id
+  selectionSliceCounts.set(tabId, 0)
+  let result: SelectionCaptureResult | null
+  try {
+    result = await runInTab(tabId, selectPageAreaWithScroll)
+  } finally {
+    selectionSliceCounts.delete(tabId)
   }
-  return withToolboxUiHidden(tab.id, () => captureWindowRegion(tab, result))
+  if (!result) {
+    await runInTab(tabId, showFixedSticky).catch(() => undefined)
+    return null
+  }
+  return withToolboxUiHidden(tabId, () => frameFromSelection(tab, result))
 }
 
 export async function captureElementFrame(tab: chrome.tabs.Tab): Promise<ScreenshotFrame | null> {

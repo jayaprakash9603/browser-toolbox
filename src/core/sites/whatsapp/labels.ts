@@ -8,7 +8,7 @@ export const WHATSAPP_FEATURE_LABELS: Record<string, { label: string; descriptio
   blurComposer: { label: 'Blur message composer input', description: 'Hide what you type until the box is focused.' },
   restoreDeletedMessages: { label: 'Restore deleted messages', description: 'Show a copy of messages deleted for everyone.' },
   customChatBackground: { label: 'Set custom chat background image', description: 'Use your own wallpaper behind conversations.' },
-  showSideLauncher: { label: 'Show ChatBoost button in sidebar', description: 'Green plus button in the left navigation rail.' },
+  showSideLauncher: { label: 'Show WhatsApp tools button in sidebar', description: 'Green plus button in the left navigation rail.' },
   chatPulse: {
     label: 'ChatPulse Analytics',
     description: 'Full messaging dashboard overlay with charts and insights (right-click or drawer).',

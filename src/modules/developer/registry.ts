@@ -6,11 +6,27 @@ import {
   HashIcon,
   RegexIcon,
   DatabaseIcon,
+  ScanSearchIcon,
 } from 'lucide-react'
 
 import { defineTool } from '@/core/registry'
 
 export const developerTools = [
+  defineTool({
+    id: 'developer.formatter-studio',
+    name: 'Developer Formatter Studio',
+    description:
+      'Paste JSON, XML, YAML, SQL, a regex or an ID and open the matching formatter, validator or generator.',
+    category: 'developer',
+    icon: ScanSearchIcon,
+    keywords: ['formatter', 'json', 'xml', 'yaml', 'sql', 'regex', 'uuid', 'detect', 'format', 'validate'],
+    aliases: ['format detector', 'data formatter', 'developer formatter', 'formatter studio'],
+    route: '/tools/developer/formatter-studio',
+    capabilities: ['SIDE_PANEL'],
+    toolkitGroup: 'developer',
+    status: 'active',
+    loader: () => import('@/tools/developer/formatter-studio/Tool'),
+  }),
   defineTool({
     id: 'developer.react-devtools',
     name: 'React DevTools',

@@ -53,6 +53,7 @@ import { safeRegister, safeStartup } from './safeInit'
 import { initClipboardCapture, registerClipboardCapture } from './clipboardCapture'
 import { registerTimer } from './timer'
 import { handleTaskMenuClick, isTaskMenuItem, registerTasks } from './tasks'
+import { handleReadingListMenuClick, isReadingListMenuItem } from './readingList'
 import { registerColorPicker } from './colorPicker'
 import { registerFormMemory } from './formMemory'
 import { registerReactDevtools, syncReactDevtoolsState } from './reactDevtools'
@@ -139,6 +140,10 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   }
   if (isTaskMenuItem(menuItemId)) {
     void handleTaskMenuClick(info, tab)
+    return
+  }
+  if (isReadingListMenuItem(menuItemId)) {
+    void handleReadingListMenuClick(info, tab)
     return
   }
   if (isChatPulseMenuItem(menuItemId) && tab?.id != null) {

@@ -7,6 +7,7 @@ export interface ReadingItem {
   url: string
   title: string
   note: string
+  excerpt?: string
   tags: string[]
   savedAt: number
   read: boolean
@@ -36,13 +37,16 @@ export function parseReadingTags(input: string): string[] {
 }
 
 export function newReadingItem(
-  partial: Pick<ReadingItem, 'url' | 'title'> & Partial<Pick<ReadingItem, 'note' | 'tags'>>,
+  partial: Pick<ReadingItem, 'url' | 'title'> &
+    Partial<Pick<ReadingItem, 'note' | 'tags' | 'excerpt'>>,
 ): ReadingItem {
+  const excerpt = partial.excerpt?.trim()
   return {
     id: crypto.randomUUID(),
     url: partial.url,
     title: partial.title.trim() || partial.url,
     note: partial.note?.trim() ?? '',
+    ...(excerpt ? { excerpt } : {}),
     tags: partial.tags ?? [],
     savedAt: Date.now(),
     read: false,
@@ -126,7 +130,8 @@ export function exportReadingMarkdown(items: ReadingItem[]): string {
   return items
     .map((item) => {
       const tags = item.tags.length ? ` ${item.tags.map((tag) => `#${tag}`).join(' ')}` : ''
-      return `- [${item.title}](${item.url})${item.note ? ` — ${item.note}` : ''}${tags}`
+      const excerpt = item.excerpt ? `\n  > ${item.excerpt.replace(/\s*\n\s*/g, ' ')}` : ''
+      return `- [${item.title}](${item.url})${item.note ? ` — ${item.note}` : ''}${tags}${excerpt}`
     })
     .join('\n')
 }

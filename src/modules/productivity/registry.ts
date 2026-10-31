@@ -5,7 +5,7 @@ import { defineTool } from '@/core/registry'
 export const productivityTools = [
   defineTool({
     id: 'productivity.tasks',
-    name: 'Tasks',
+    name: 'To Do',
     description:
       'To-do list with due dates and reminders. Save the current page as a task, type dates in plain words, sort into projects and labels.',
     category: 'productivity',
@@ -23,7 +23,7 @@ export const productivityTools = [
       'labels',
       'upcoming',
     ],
-    aliases: ['tasks', 'todo list', 'to do list', 'todoist', 'reminders', 'save page as task', 'read later'],
+    aliases: ['tasks', 'task list', 'to do', 'todo list', 'to do list', 'todoist', 'reminders', 'save page as task', 'read later'],
     route: '/tools/productivity/tasks',
     capabilities: ['SIDE_PANEL', 'STORAGE', 'CONTEXT_MENU', 'COMMAND'],
     status: 'active',

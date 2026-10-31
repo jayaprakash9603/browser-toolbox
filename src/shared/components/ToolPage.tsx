@@ -11,8 +11,10 @@ import {
 import { useTranslation } from 'react-i18next'
 
 import type { ToolDefinition } from '@/core/registry'
-import { Link } from '@/app/router'
+import { getUserCategoryIdForTool } from '@/core/registry/userCategories'
+import { Link, useRouter } from '@/app/router'
 import { removeRecentTool } from '@/features/recent-tools/recentToolsService'
+import { useWorkspaceId } from '@/features/workspace/WorkspaceContext'
 import { BackButton } from '@/shared/components/BackButton'
 import { FavoriteButton } from '@/shared/components/FavoriteButton'
 import {
@@ -41,40 +43,53 @@ export function ToolPage({
   tool,
   children,
   actions,
-  backTo = `/categories/${tool.category}`,
+  backTo = `/categories/${getUserCategoryIdForTool(tool)}`,
   contentClassName,
 }: ToolPageProps) {
   const Icon = tool.icon
   const { t } = useTranslation()
   const { name, description } = useToolLabels(tool)
+  const workspaceId = useWorkspaceId()
+  const inWorkspace = workspaceId !== null
+  const isWorkspaceHostView = workspaceId === tool.id
+  const { path, search } = useRouter()
+  const deepLink = path === tool.route ? `${tool.route}${search}` : tool.route
 
   const copyLink = async () => {
-    const url = `${window.location.origin}${window.location.pathname}#${tool.route}`
+    const url = `${window.location.origin}${window.location.pathname}#${deepLink}`
     await navigator.clipboard.writeText(url)
   }
 
   const openNewTab = () => {
-    const url = `${window.location.origin}${window.location.pathname}#${tool.route}`
+    const url = `${window.location.origin}${window.location.pathname}#${deepLink}`
     window.open(url, '_blank', 'noopener,noreferrer')
   }
 
   return (
     <div className="flex h-full flex-col">
       <header className="sticky top-0 z-10 flex shrink-0 items-center gap-2.5 bg-background/85 px-3 py-2 backdrop-blur-md @[360px]:px-4">
-        <BackButton to={backTo} className="shrink-0" />
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 shadow-sm">
-          <Icon className="size-4 text-primary" aria-hidden />
-        </div>
+        {!inWorkspace && <BackButton to={backTo} className="shrink-0" />}
+        {!inWorkspace && (
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 shadow-sm">
+            <Icon className="size-4 text-primary" aria-hidden />
+          </div>
+        )}
         <div className="flex min-w-0 flex-1 items-center gap-0.5">
-          <h1 className="truncate text-[15px] font-semibold tracking-tight">{name}</h1>
-          <ToolInfo
-            name={name}
-            description={description}
-            category={t(`categories.${tool.category}.name`, { defaultValue: tool.category })}
-            icon={<Icon className="size-4 text-primary" aria-hidden />}
-            onCopyLink={copyLink}
-            onOpenNewTab={openNewTab}
-          />
+          {isWorkspaceHostView ? null : inWorkspace ? (
+            <h2 className="truncate text-sm font-semibold tracking-tight">{name}</h2>
+          ) : (
+            <h1 className="truncate text-[15px] font-semibold tracking-tight">{name}</h1>
+          )}
+          {!isWorkspaceHostView && (
+            <ToolInfo
+              name={name}
+              description={description}
+              category={t(`categories.${tool.category}.name`, { defaultValue: tool.category })}
+              icon={<Icon className="size-4 text-primary" aria-hidden />}
+              onCopyLink={copyLink}
+              onOpenNewTab={openNewTab}
+            />
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-1">
           {actions}

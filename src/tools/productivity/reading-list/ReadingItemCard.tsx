@@ -112,6 +112,11 @@ export function ReadingItemCard({
             })}
           </span>
         </p>
+        {item.excerpt && (
+          <blockquote className="mt-1.5 line-clamp-4 rounded-md border-l-2 border-muted-foreground/40 bg-muted/30 py-1 pr-2 pl-2 text-xs leading-relaxed text-foreground/80 italic">
+            {item.excerpt}
+          </blockquote>
+        )}
         {item.note && (
           <p className="mt-1.5 rounded-md border-l-2 border-primary/40 bg-muted/40 py-1 pr-2 pl-2 text-xs leading-relaxed text-foreground/80">
             {item.note}

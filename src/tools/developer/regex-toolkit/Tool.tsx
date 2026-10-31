@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 
 import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
+import { usePayloadText } from '@/shared/hooks/usePayloadText'
 import { useTranslation } from 'react-i18next'
 import { AlertTriangleIcon } from 'lucide-react'
 
@@ -32,6 +33,7 @@ export default function RegexToolkitTool() {
   const tool = useDevTool('developer.regex-toolkit')
   const [tab, setTab] = useDeepLinkTab('tab', ['test', 'replace', 'library'] as const, 'test')
   const [pattern, setPattern] = useState('')
+  usePayloadText(tool.id, (text) => setPattern(text.replace(/^\/(.+)\/[a-z]*$/s, '$1')))
   const [flags, setFlags] = useState<RegexFlags>(DEFAULT_REGEX_FLAGS)
   const [input, setInput] = useState('')
   const [replacement, setReplacement] = useState('')

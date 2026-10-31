@@ -70,8 +70,8 @@ export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
   {
     id: 'whatsappPanel',
     labelKey: 'sites.whatsapp.settings.title',
-    fallbackLabel: 'ChatBoost for WhatsApp',
-    keywords: ['whatsapp', 'wa', 'sites'],
+    fallbackLabel: 'WhatsApp',
+    keywords: ['whatsapp', 'wa', 'chatboost', 'sites'],
   },
   {
     id: 'saveImageAsPanel',

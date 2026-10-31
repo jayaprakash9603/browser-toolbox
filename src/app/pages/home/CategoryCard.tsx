@@ -70,6 +70,7 @@ export function CategoryCard({ category, tools, position = 0, playing = true }: 
           <span className="text-[11px] leading-4 text-muted-foreground tabular-nums">
             {t('home.toolCount', { count: tools.length })}
           </span>
+          <ToolIconRow tools={tools} />
         </span>
         <ArrowUpRightIcon
           aria-hidden
@@ -77,6 +78,26 @@ export function CategoryCard({ category, tools, position = 0, playing = true }: 
         />
       </div>
     </Link>
+  )
+}
+
+const DEMO_PREVIEW_LIMIT = 6
+const ICON_PREVIEW_LIMIT = 6
+
+function ToolGlyph({ tool }: { tool: ToolDefinition }) {
+  const Icon = tool.icon
+  return <Icon className="size-3" aria-hidden />
+}
+
+function ToolIconRow({ tools }: { tools: readonly ToolDefinition[] }) {
+  const extra = tools.length - ICON_PREVIEW_LIMIT
+  return (
+    <span aria-hidden className="mt-1 flex items-center gap-1.5 text-muted-foreground/80">
+      {tools.slice(0, ICON_PREVIEW_LIMIT).map((tool) => (
+        <ToolGlyph key={tool.id} tool={tool} />
+      ))}
+      {extra > 0 && <span className="text-[10px] tabular-nums">+{extra}</span>}
+    </span>
   )
 }
 
@@ -91,7 +112,8 @@ function CategoryDemo({
   const pageVisible = usePageVisible()
   const reduceMotion = useReducedMotion()
   const active = playing && inView && pageVisible && !reduceMotion
-  const { index, running, advance } = useDemoCycle(tools.length, active, (position % 4) * 350)
+  const previewTools = tools.slice(0, DEMO_PREVIEW_LIMIT)
+  const { index, running, advance } = useDemoCycle(previewTools.length, active, (position % 4) * 350)
 
   return (
     <div
@@ -99,8 +121,8 @@ function CategoryDemo({
       aria-hidden
       className={`${FRAME} bg-surface ring-1 ring-black/5 transition-shadow duration-200 ring-inset group-hover:shadow-[0_10px_30px_-14px_rgb(0_0_0/0.55)] dark:ring-white/5`}
     >
-      <Suspense fallback={<Poster tool={tools[index]} />}>
-        <DemoReel category={category} tools={tools} index={index} running={running} advance={advance} />
+      <Suspense fallback={<Poster tool={previewTools[index]} />}>
+        <DemoReel category={category} tools={previewTools} index={index} running={running} advance={advance} />
       </Suspense>
     </div>
   )

@@ -1,6 +1,6 @@
 # Tools catalog & capability matrix
 
-One Panel ships **55 registry tools** (including one disabled legacy entry) as **consolidated toolkits**, not hundreds of separate icons. Search, favorites, the command palette (`Ctrl/Cmd+Shift+Space`), context menus, and clipboard insights surface the same capabilities.
+One Panel ships **92 registry tools** (including one disabled legacy entry), shown to users as **49 primary tools in five sections**. Related tools are grouped into workspaces; every tool keeps its id, route and search entry. Search, favorites, the command palette (`Ctrl/Cmd+Shift+Space`), context menus, and clipboard insights surface the same capabilities.
 
 See [ROADMAP.md](./ROADMAP.md) for what is planned next.
 
@@ -17,10 +17,10 @@ See [ROADMAP.md](./ROADMAP.md) for what is planned next.
 | **3. URL & web utilities** | **Partial** | `web.url-toolkit`, links, images, page info. No DNS/WHOIS/SSL/redirect SaaS lookups (out of scope). |
 | **4. Color & design** | **Shipped** | Color convert/pick/palette, contrast, CSS generators; eyedropper + context menu pick. |
 | **5. Screenshots** | **Partial** | Visible tab capture + annotations. No full-page, element-only, or OCR yet (Phase 2). |
-| **6. QA / testing** | **Shipped** / **Partial** | Element inspector, selectors, XPath, test data, HTTP status reference, bug reporter. `api.request-builder` under **API** category (history + response diff). |
+| **6. QA / testing** | **Shipped** / **Partial** | Element inspector, selectors, XPath, test data, bug reporter. `api.request-builder` under **API** category (history + response diff). |
 | **7. Security utilities** | **Shipped** | Encoder, hash/HMAC, JWT decode, password/random generators — local Web Crypto where applicable. |
 | **8. Time tools** | **Shipped** | `datetime.toolkit` (diff, zones, cron) + `productivity.timer`. |
-| **9. Calculators** | **Partial** | Basic/scientific calc, unit converter, base converter — not full fraction/ratio/percentage suite. |
+| **9. Calculators** | **Partial** | Unit converter and base converter (inside the Universal Data Converter workspace). The standalone Calculator was removed. |
 | **10. File tools** | **Partial** | CSV/JSON/text viewers, image→PDF locally. |
 | **11. Image tools** | **Partial** | Resize, crop, convert, info, Base64 in `image.image-toolkit`. |
 | **12. QR** | **Shipped** | Generate + decode in `generators.qr-toolkit`. |
@@ -29,7 +29,7 @@ See [ROADMAP.md](./ROADMAP.md) for what is planned next.
 | **15. Element inspector / selectors** | **Shipped** | QA toolkits + shared picker/selector engine. |
 | **16–18. Responsive, rulers, measurement** | **Deferred** | Phase 5. |
 | **19. Productivity (tabs, bookmarks)** | **Partial** | Tasks, notes, timer, tab search/duplicates/URLs. No bookmark manager or tab groups yet. |
-| **19a. Tasks** | **Shipped** | `productivity.tasks` — Todoist-style quick add ("tomorrow 5pm p1 #Work @reading", "every monday"), one-tap "save this page" with due date, Today/Upcoming/Inbox/projects/labels/Completed views, subtasks, repeats, reminders (notifications with Complete/Snooze), undo, search, Markdown copy and JSON backup. Right-click "Add to Tasks" for page/link/selection and the `Alt+Shift+Q` command. |
+| **19a. To Do** | **Shipped** | `productivity.tasks` (formerly Tasks) — Todoist-style quick add ("tomorrow 5pm p1 #Work @reading", "every monday"), one-tap "save this page" with due date, Today/Upcoming/Inbox/projects/labels/Completed views, subtasks, repeats, reminders (notifications with Complete/Snooze), undo, search, Markdown copy and JSON backup. Right-click "Add to To Do" for page/link/selection and the `Alt+Shift+Q` command. |
 | **20. Notes** | **Shipped** | Notepad/Sticky Notes-style editor: formatting toolbar + shortcuts, checklists, colors, find/replace, go to line, zoom, word wrap, preview, status bar; export TXT/MD/HTML/Word/PDF/ZIP/JSON, import, print. |
 | **21. AI utilities** | **Out of scope** | Optional future module; off by default. |
 | **22. Generators** | **Partial** | Test data, passwords, UUIDs, QR, lorem — not full fake-identity suite. |
@@ -39,6 +39,28 @@ See [ROADMAP.md](./ROADMAP.md) for what is planned next.
 | **26. Browser quick actions** | **Shipped** | Context menus + commands; see [PERMISSIONS.md](./PERMISSIONS.md). |
 | **Ad blocking (MV3)** | **Shipped** | `privacy.ad-blocker` — DNR filter lists, cosmetic hiding, YouTube scripts; off by default. |
 | **Storage (local/session)** | **Partial** | `storage.inspector` — **localStorage + sessionStorage only** (cookies planned Phase 2). |
+
+---
+
+## Workspaces
+
+A workspace is one primary tool that hosts several existing tools as tabs. The registered tool ids and routes of the hosted tools do not change, so deep links, favorites, recents and search still work; opening one shows its workspace with that tab selected. Definitions live in [`workspaces.ts`](src/core/registry/workspaces.ts); sections in [`sections.ts`](src/core/registry/sections.ts).
+
+| Workspace (id) | Hosted tools |
+| -------------- | ------------ |
+| Text Studio (`text.studio`) | Code Formatter, Case Converter, Text Cleaner, Text Analyzer, Line Tools, Find & Replace, Dummy Data |
+| Developer Formatter Studio (`developer.formatter-studio`) | JSON, XML, YAML, SQL, Regex, UUID toolkits |
+| Selector Studio (`qa.selector-studio`) | Element Inspector, Selector Generator, XPath Tester |
+| Web Toolkit (`web.toolkit`) | URL, Link, Broken Link Checker, Redirect Tracer, UTM Builder |
+| Universal Data Converter (`data.universal-converter`) | Unit Converter, Number Base Converter |
+| CSS & Color Studio (`design.css-color-studio`) | CSS Generator, Contrast Checker, Color Converter |
+| Security Toolkit (`security.toolkit`) | Encoder/Decoder, Hash, JWT, Password, Random |
+| Date & Time Toolkit (`datetime.toolkit`) | Timer |
+| Browser Toolkit (`browser.toolkit`) | Tab Manager, Tab Sessions, Bookmark Search, Storage Inspector, Accessibility Quick Check, Page Information |
+| Image Toolkit (`image.image-toolkit`) | Image Links, SVG Grabber, Image Downloader |
+| Internet Monitor (`browser.internet-monitor`) | Speed Test |
+
+Removed: Calculator, HTTP Status Codes, 2FA Authenticator. Renamed (ids unchanged): ChatBoost → WhatsApp, Tasks → To Do, Capture Toolkit → Page Capture.
 
 ---
 

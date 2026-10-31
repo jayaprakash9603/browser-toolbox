@@ -7,13 +7,13 @@ for (const [id, v] of Object.entries(WHATSAPP_FEATURE_LABELS)) {
 }
 
 export const sitesWhatsappStrings: Record<string, string> = {
-  'sites.whatsapp.header.title': 'ChatBoost',
+  'sites.whatsapp.header.title': 'WhatsApp',
   'sites.whatsapp.header.subtitle': 'Privacy, productivity, and business tools for web.whatsapp.com',
   'sites.whatsapp.header.active': '{{count}} features active',
   'sites.whatsapp.search': 'Search options…',
   'sites.whatsapp.bestEffort': 'best effort',
   'sites.whatsapp.resetSection': 'Reset section',
-  'sites.whatsapp.settings.title': 'ChatBoost for WhatsApp',
+  'sites.whatsapp.settings.title': 'WhatsApp',
   'sites.whatsapp.settings.link': 'Open WhatsApp panel',
   'sites.whatsapp.status.no_tab': 'Open web.whatsapp.com',
   'sites.whatsapp.status.loading': 'Connecting…',

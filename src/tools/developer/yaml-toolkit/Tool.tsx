@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 
 import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
+import { usePayloadText } from '@/shared/hooks/usePayloadText'
 import { SparklesIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -23,6 +24,7 @@ export default function YamlToolkitTool() {
   const tool = useDevTool('developer.yaml-toolkit')
   const [tab, setTab] = useDeepLinkTab('tab', ['validate', 'convert', 'fromJson'] as const, 'validate')
   const [input, setInput] = useState('')
+  usePayloadText(tool.id, setInput)
   const [jsonInput, setJsonInput] = useState('')
   const [indent, setIndent] = useState<'2' | '4'>('2')
 

@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from 'react'
 import * as TabsPrimitive from '@radix-ui/react-tabs'
 import { MotionConfig, motion, useReducedMotion } from 'motion/react'
 import { CodeXmlIcon, ContrastIcon, LayersIcon, LayoutTemplateIcon, LibraryBigIcon, SlidersHorizontalIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { useRouter } from '@/app/router'
 import { ModeTiles } from '@/shared/components/toolkit'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TabsContent } from '@/shared/components/ui/tabs'
@@ -103,6 +104,15 @@ export default function PaletteGeneratorTool() {
   }
 
   const changeBase = (hex: string) => set(applyHarmony(swatches, hex, harmony), hex)
+
+  const { search } = useRouter()
+  const seedColor = new URLSearchParams(search).get('color')
+  const applySeedColor = useEffectEvent((hex: string) => changeBase(hex))
+  useEffect(() => {
+    if (seedColor && /^#?[0-9a-f]{6}$/i.test(seedColor)) {
+      applySeedColor(seedColor.startsWith('#') ? seedColor : `#${seedColor}`)
+    }
+  }, [seedColor])
 
   const toggleLock = (id: string) => set(swatches.map((s) => (s.id === id ? { ...s, locked: !s.locked } : s)))
 

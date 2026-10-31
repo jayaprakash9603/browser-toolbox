@@ -6,6 +6,7 @@ import {
   PaletteIcon,
   PipetteIcon,
   ScanIcon,
+  SwatchBookIcon,
   TypeIcon,
   WandIcon,
 } from 'lucide-react'
@@ -13,6 +14,20 @@ import {
 import { defineTool } from '@/core/registry'
 
 export const designTools = [
+  defineTool({
+    id: 'design.css-color-studio',
+    name: 'CSS & Color Studio',
+    description: 'Generate CSS, check contrast and convert colors in one workspace.',
+    category: 'design',
+    icon: SwatchBookIcon,
+    keywords: ['css', 'color', 'contrast', 'convert', 'studio', 'gradient', 'shadow'],
+    aliases: ['css studio', 'color studio', 'css and color'],
+    route: '/tools/design/css-color-studio',
+    capabilities: ['SIDE_PANEL'],
+    toolkitGroup: 'design',
+    status: 'active',
+    loader: () => import('@/tools/design/css-color-studio/Tool'),
+  }),
   defineTool({
     id: 'design.color-converter',
     name: 'Color Converter',

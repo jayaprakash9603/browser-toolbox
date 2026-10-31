@@ -38,7 +38,7 @@ describe('tool page back navigation', () => {
       </TooltipProvider>,
     )
 
-    expect(screen.getByRole('link', { name: 'Back' })).toHaveAttribute('href', '#/categories/text')
+    expect(screen.getByRole('link', { name: 'Back' })).toHaveAttribute('href', '#/categories/develop-qa')
   })
 })
 

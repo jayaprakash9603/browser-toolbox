@@ -122,6 +122,10 @@ export function disableSmoothScroll(): void {
   document.documentElement.append(el)
 }
 
+export function enableSmoothScroll(): void {
+  document.getElementById('tbx-capture-smooth-off')?.remove()
+}
+
 export function hideFixedStickyAfterFirst(): void {
   const style = document.getElementById('tbx-capture-hide-sticky')
   if (style) return
@@ -132,10 +136,18 @@ export function hideFixedStickyAfterFirst(): void {
   `
   document.documentElement.append(el)
   document.querySelectorAll<HTMLElement>('*').forEach((node) => {
+    if (node.closest('[data-toolbox-capture]')) return
     const pos = getComputedStyle(node).position
     if (pos === 'fixed' || pos === 'sticky') {
       node.setAttribute('data-tbx-capture-sticky-hidden', '1')
     }
+  })
+}
+
+export function showFixedSticky(): void {
+  document.getElementById('tbx-capture-hide-sticky')?.remove()
+  document.querySelectorAll('[data-tbx-capture-sticky-hidden]').forEach((node) => {
+    node.removeAttribute('data-tbx-capture-sticky-hidden')
   })
 }
 
@@ -205,7 +217,7 @@ export function collectPageMeta(): {
   return { links, textRuns }
 }
 
-/** Background router returns `{ ok, data: { slice } }`; must stay self-contained for executeScript. */
+/** Same unwrapping selectPageAreaWithScroll does inline; executeScript cannot reach this export. */
 export function unwrapSelectionSliceResponse(raw: unknown): SelectionLiveSlice | null {
   if (!raw || typeof raw !== 'object') return null
   const envelope = raw as { ok?: boolean; data?: { slice?: SelectionLiveSlice | null }; slice?: SelectionLiveSlice }
@@ -220,9 +232,11 @@ export function selectPageAreaWithScroll(): Promise<SelectionCaptureResult | nul
     overlay.style.cssText =
       'position:fixed;inset:0;z-index:2147483646;cursor:crosshair;background:rgba(15,23,42,.28)'
     const box = document.createElement('div')
+    box.setAttribute('data-toolbox-capture', 'box')
     box.style.cssText =
       'position:fixed;z-index:2147483647;border:2px solid #f97316;background:rgba(249,115,22,.18);display:none;pointer-events:none'
     const hint = document.createElement('div')
+    hint.setAttribute('data-toolbox-capture', 'hint')
     hint.textContent = 'Drag to capture · scroll or hold at the edge to extend · Esc to cancel'
     hint.style.cssText =
       'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:2147483647;background:#111827;color:#fff;font:500 13px/1.2 system-ui,sans-serif;padding:8px 12px;border-radius:999px'
@@ -314,8 +328,11 @@ export function selectPageAreaWithScroll(): Promise<SelectionCaptureResult | nul
       hideChrome()
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
       try {
-        const raw = await runtime.sendMessage({ type: 'SCREENSHOT_SELECTION_SLICE' })
-        const slice = unwrapSelectionSliceResponse(raw)
+        const raw = (await runtime.sendMessage({ type: 'SCREENSHOT_SELECTION_SLICE' })) as
+          | { ok?: boolean; data?: { slice?: SelectionLiveSlice | null }; slice?: SelectionLiveSlice }
+          | null
+          | undefined
+        const slice = raw?.ok && raw.data ? (raw.data.slice ?? null) : (raw?.slice ?? null)
         if (slice?.dataUrl) {
           const key = sliceKey(slice.scrollX, slice.scrollY)
           if (!seenKeys.has(key)) {
@@ -324,8 +341,8 @@ export function selectPageAreaWithScroll(): Promise<SelectionCaptureResult | nul
             lastCaptureAt = now
           }
         }
-      } catch {
-        /* ignore */
+      } catch (error) {
+        console.warn('[toolbox] live capture slice failed', error)
       } finally {
         showChrome()
         captureBusy = false
@@ -366,6 +383,7 @@ export function selectPageAreaWithScroll(): Promise<SelectionCaptureResult | nul
       selecting = true
       box.style.display = 'block'
       drawBox()
+      void captureLiveSlice(true)
     })
     overlay.addEventListener('pointermove', (event) => {
       if (!start) return

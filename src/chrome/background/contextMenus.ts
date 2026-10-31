@@ -8,6 +8,7 @@ import { buildPipMenus } from './pip'
 import { buildChatPulseMenus } from './sites/whatsappAnalytics'
 import { buildScreenshotMenus } from './screenshot/contextMenus'
 import { buildTaskMenus } from './tasks'
+import { buildReadingListMenus } from './readingList'
 
 const logger = createLogger('context-menus')
 
@@ -59,6 +60,11 @@ async function rebuildContextMenusOnce(): Promise<void> {
     buildTaskMenus(createContextMenu)
   } catch (error) {
     logger.warn('tasks menu build failed', error)
+  }
+  try {
+    buildReadingListMenus(createContextMenu)
+  } catch (error) {
+    logger.warn('reading list menu build failed', error)
   }
   for (const { name, run } of builders) {
     try {

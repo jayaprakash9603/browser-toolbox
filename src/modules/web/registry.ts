@@ -1,8 +1,23 @@
-import { ArchiveIcon, InfoIcon, ImageIcon, LayersIcon, Link2Icon, LinkIcon } from 'lucide-react'
+import { ArchiveIcon, GlobeIcon, InfoIcon, ImageIcon, LayersIcon, Link2Icon, LinkIcon } from 'lucide-react'
 
 import { defineTool } from '@/core/registry'
 
 export const webTools = [
+  defineTool({
+    id: 'web.toolkit',
+    name: 'Web Toolkit',
+    description:
+      'URLs, links, broken-link checks, redirect tracing and UTM campaign links in one workspace.',
+    category: 'web',
+    icon: GlobeIcon,
+    keywords: ['web', 'url', 'link', 'redirect', 'utm', 'broken links', 'campaign'],
+    aliases: ['web tools', 'link tools', 'url tools'],
+    route: '/tools/web/toolkit',
+    capabilities: ['SIDE_PANEL'],
+    toolkitGroup: 'web',
+    status: 'active',
+    loader: () => import('@/tools/web/web-toolkit/Tool'),
+  }),
   defineTool({
     id: 'web.url-toolkit',
     name: 'URL Toolkit',

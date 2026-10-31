@@ -42,10 +42,6 @@ export const DEMOS: Record<string, DemoEntry> = {
     demo: () => import('./tools/calculators/base-converter/Demo'),
     steps: () => import('./tools/calculators/base-converter/script').then((module) => module.STEPS),
   },
-  'calculators.calculator': {
-    demo: () => import('./tools/calculators/calculator/Demo'),
-    steps: () => import('./tools/calculators/calculator/script').then((module) => module.STEPS),
-  },
   'calculators.unit-converter': {
     demo: () => import('./tools/calculators/unit-converter/Demo'),
     steps: () => import('./tools/calculators/unit-converter/script').then((module) => module.STEPS),
@@ -206,10 +202,6 @@ export const DEMOS: Record<string, DemoEntry> = {
     demo: () => import('./tools/qa/element-inspector/Demo'),
     steps: () => import('./tools/qa/element-inspector/script').then((module) => module.STEPS),
   },
-  'qa.http-status': {
-    demo: () => import('./tools/qa/http-status/Demo'),
-    steps: () => import('./tools/qa/http-status/script').then((module) => module.STEPS),
-  },
   'qa.selector-generator': {
     demo: () => import('./tools/qa/selector-generator/Demo'),
     steps: () => import('./tools/qa/selector-generator/script').then((module) => module.STEPS),
@@ -249,10 +241,6 @@ export const DEMOS: Record<string, DemoEntry> = {
   'security.random-generator': {
     demo: () => import('./tools/security/random-generator/Demo'),
     steps: () => import('./tools/security/random-generator/script').then((module) => module.STEPS),
-  },
-  'security.totp': {
-    demo: () => import('./tools/security/totp/Demo'),
-    steps: () => import('./tools/security/totp/script').then((module) => module.STEPS),
   },
   'seo.toolkit': {
     demo: () => import('./tools/seo/toolkit/Demo'),

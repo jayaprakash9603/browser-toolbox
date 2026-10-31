@@ -70,7 +70,7 @@ if (!guarded.__toolboxWaEnhancer) {
           if (!state.enabled || !isFeatureOn(state.values, 'chatPulse')) {
             const t = document.createElement('div')
             t.className = 'tbx-wa-toast'
-            t.textContent = 'Enable ChatPulse in ChatBoost'
+            t.textContent = 'Enable ChatPulse in WhatsApp tools'
             document.body.appendChild(t)
             setTimeout(() => t.remove(), 2600)
             return

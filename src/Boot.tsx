@@ -16,6 +16,7 @@ export function Boot() {
       registerModules()
       preloadRouteFromHash()
       setReady(true)
+      void import('@/features/migration/pruneRemovedTools').then((m) => m.pruneRemovedTools())
     })()
   }, [])
 

@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from '@/app/router'
 import {
   AlertTriangleIcon,
   CircleCheckIcon,
   DownloadIcon,
+  FileSearchIcon,
   ListChecksIcon,
   NetworkIcon,
   SaveIcon,
@@ -540,7 +542,20 @@ export default function HtmlBundleTool() {
     : t('htmlBundle.ui.summary', { count: zipPageCount })
 
   return (
-    <ToolPage tool={tool}>
+    <ToolPage
+      tool={tool}
+      actions={
+        <Button asChild variant="ghost" size="icon-sm">
+          <Link
+            to="/tools/web/link-checker"
+            aria-label={t('htmlBundle.checkLinks', { defaultValue: 'Check broken links' })}
+            title={t('htmlBundle.checkLinks', { defaultValue: 'Check broken links' })}
+          >
+            <FileSearchIcon className="size-4" aria-hidden />
+          </Link>
+        </Button>
+      }
+    >
       <div className="flex min-h-0 flex-1 flex-col gap-2.5">
         <PageCard
           pageTitle={pageTitle}

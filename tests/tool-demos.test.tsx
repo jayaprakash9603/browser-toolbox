@@ -6,14 +6,23 @@ import { ToolDemo } from '@/app/demos/ToolDemo'
 import CategoryDemoPlayer from '@/app/pages/category/CategoryDemoPlayer'
 import CategoryPage from '@/app/pages/CategoryPage'
 import { CategoryCard } from '@/app/pages/home/CategoryCard'
-import { categoryRegistry, toolRegistry } from '@/core/registry'
+import { toolRegistry } from '@/core/registry'
+import { getPrimaryToolsForUserCategory, getUserCategory } from '@/core/registry/userCategories'
 import { registerModules } from '@/modules'
 import { TooltipProvider } from '@/shared/components/ui/tooltip'
 
 registerModules()
 
 /** Tools whose website page has no walkthrough yet; they show a still poster. */
-const WITHOUT_DEMO = ['developer.timestamp-toolkit', 'qa.selector-studio']
+const WITHOUT_DEMO = [
+  'developer.timestamp-toolkit',
+  'qa.selector-studio',
+  'text.studio',
+  'developer.formatter-studio',
+  'web.toolkit',
+  'design.css-color-studio',
+  'security.toolkit',
+]
 
 const originalMatchMedia = window.matchMedia
 
@@ -168,10 +177,10 @@ describe('CategoryPage demo toggle', () => {
 
 describe('CategoryCard reel', () => {
   it('loads the reel with the first tool and its position', async () => {
-    const category = categoryRegistry.get('text')
-    if (!category) throw new Error('missing text category')
-    const tools = toolRegistry.getByCategory('text')
+    const category = getUserCategory('develop-qa')
+    if (!category) throw new Error('missing section')
+    const tools = getPrimaryToolsForUserCategory('develop-qa')
     render(<CategoryCard category={category} tools={tools} />)
-    expect(await screen.findByText(`1/${tools.length}`, {}, { timeout: 20_000 })).toBeInTheDocument()
+    expect(await screen.findByText(`1/${Math.min(tools.length, 6)}`, {}, { timeout: 20_000 })).toBeInTheDocument()
   }, 30_000)
 })

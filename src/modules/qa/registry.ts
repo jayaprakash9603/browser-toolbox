@@ -4,7 +4,6 @@ import {
   ListChecksIcon,
   MousePointerClickIcon,
   ScanSearchIcon,
-  ServerIcon,
   TestTube2Icon,
 } from 'lucide-react'
 
@@ -121,20 +120,6 @@ export const qaTools = [
     dependencies: ['testdata'],
     status: 'active',
     loader: () => import('@/tools/qa/test-data-generator/Tool'),
-  }),
-  defineTool({
-    id: 'qa.http-status',
-    name: 'HTTP Status Codes',
-    description: 'Look up HTTP status codes with meaning and debugging hints.',
-    category: 'qa',
-    icon: ServerIcon,
-    keywords: ['http', 'status', 'code', '404', '500', 'error', 'response'],
-    aliases: ['http status', 'status code', '404', 'http codes', 'http error'],
-    route: '/tools/qa/http-status',
-    capabilities: ['SIDE_PANEL'],
-    toolkitGroup: 'qa',
-    status: 'active',
-    loader: () => import('@/tools/qa/http-status/Tool'),
   }),
   defineTool({
     id: 'qa.bug-reporter',
