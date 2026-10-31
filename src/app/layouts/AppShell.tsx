@@ -145,11 +145,9 @@ export function AppShell({ children }: { children?: ReactNode }) {
           <Link
             to="/"
             className="flex min-w-0 items-center gap-2 rounded-md pr-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label={t('home.title')}
           >
             <BrandLogo size={26} />
-            <span className="truncate text-[13px] font-semibold tracking-tight">
-              {t('home.title')}
-            </span>
           </Link>
           <div className="flex-1" />
           <Tooltip>
