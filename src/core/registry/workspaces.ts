@@ -23,6 +23,7 @@ import {
   ScanSearchIcon,
   ShapesIcon,
   SquareCodeIcon,
+  SwatchBookIcon,
   TagsIcon,
   TimerIcon,
   type LucideIcon,
@@ -91,10 +92,10 @@ export const WORKSPACES: WorkspaceDefinition[] = [
   {
     id: 'design.css-color-studio',
     views: [
-      { key: 'overview', toolId: 'design.css-color-studio', label: 'Overview', icon: LayoutGridIcon },
       { key: 'css', toolId: 'design.css-generator', label: 'CSS Generation', icon: ShapesIcon },
       { key: 'contrast', toolId: 'design.contrast-checker', label: 'Contrast', icon: ScanSearchIcon },
       { key: 'color', toolId: 'design.color-converter', label: 'Color Conversion', icon: PaletteIcon },
+      { key: 'palette', toolId: 'design.palette-generator', label: 'Palette Generator', icon: SwatchBookIcon },
     ],
   },
   {

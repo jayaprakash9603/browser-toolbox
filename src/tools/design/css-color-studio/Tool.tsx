@@ -1,5 +1,13 @@
-import { WorkspaceLanding } from '@/features/workspace/WorkspaceLanding'
+import { useEffect } from 'react'
+
+import { useNavigate } from '@/app/navigation'
 
 export default function CssColorStudioTool() {
-  return <WorkspaceLanding workspaceId="design.css-color-studio" />
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    navigate('/tools/design/css-generator')
+  }, [navigate])
+
+  return null
 }
