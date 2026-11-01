@@ -12,6 +12,7 @@ import { toolRegistry } from '@/core/registry'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
 import { Button } from '@/shared/components/ui/button'
+import type { EditorLanguage } from '@/shared/lib/code-editor/languages'
 import { cn } from '@/shared/utils/cn'
 import { useDevTool } from '../_shared'
 
@@ -25,6 +26,15 @@ const FORMAT_TOOL: Record<DetectedFormat, { toolId: string; label: string; query
 }
 
 const FORMATS = Object.keys(FORMAT_TOOL) as DetectedFormat[]
+
+const EDITOR_LANGUAGE: Record<DetectedFormat, EditorLanguage> = {
+  json: 'json',
+  xml: 'xml',
+  yaml: 'yaml',
+  sql: 'sql',
+  regex: 'text',
+  uuid: 'text',
+}
 
 const FORMAT_SAMPLES: Record<DetectedFormat, string> = {
   json: '{\n  "name": "One Panel",\n  "tags": ["tools", "dev"],\n  "active": true\n}',
@@ -131,7 +141,7 @@ export default function FormatterStudioTool() {
           onChange={applyText}
           fill
           mono
-          language={resolved ?? undefined}
+          language={resolved ? EDITOR_LANGUAGE[resolved] : undefined}
           ariaLabel={t('formatterStudio.input', { defaultValue: 'Paste or type content' })}
           label={t('formatterStudio.input', { defaultValue: 'Paste or type content' })}
           placeholder={t('formatterStudio.placeholder', {
