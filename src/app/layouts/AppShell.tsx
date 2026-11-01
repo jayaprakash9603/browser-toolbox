@@ -20,7 +20,6 @@ import {
 } from '@/shared/components/AppLoadingSkeleton'
 import { BrandLogo } from '@/shared/components/BrandLogo'
 import { Button } from '@/shared/components/ui/button'
-import { ThemeToggle } from '@/shared/components/ThemeToggle'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip'
 import {
   consumeOpenCommandPalette,
@@ -180,7 +179,6 @@ export function AppShell({ children }: { children?: ReactNode }) {
             <HeaderProtectionToggles />
           </Suspense>
           <TechStackButton />
-          <ThemeToggle />
           <Tooltip>
             <TooltipTrigger asChild>
               <Button asChild variant="ghost" size="icon" aria-label={t('nav.settings')}>
