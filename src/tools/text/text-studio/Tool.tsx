@@ -17,13 +17,13 @@ import { TextEditor } from '@/shared/components/TextEditor'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Tabs, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
-import { useDevTool } from '../_shared'
+import { useTransformTool } from '../_shared'
 
 type Mode = 'format' | 'case' | 'clean' | 'analyze' | 'lines' | 'find'
 
 export default function TextStudioTool() {
   const { t } = useTranslation()
-  const tool = useDevTool('text.studio')
+  const tool = useTransformTool('text.studio')
   const [mode, setMode] = useState<Mode>('find')
   const [input, setInput] = useState('')
   const [find, setFind] = useState('')
