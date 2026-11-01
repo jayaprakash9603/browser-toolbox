@@ -10,6 +10,7 @@ import {
   FileSearchIcon,
   FingerprintIcon,
   GlobeIcon,
+  HashIcon,
   ImageDownIcon,
   ImageIcon,
   LayoutGridIcon,
@@ -24,7 +25,6 @@ import {
   SquareCodeIcon,
   TagsIcon,
   TimerIcon,
-  WrapTextIcon,
   type LucideIcon,
 } from 'lucide-react'
 
