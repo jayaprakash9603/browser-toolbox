@@ -26,12 +26,20 @@ export const workspaceStrings: Record<string, string> = {
   'formatterStudio.formats': 'Format',
   'formatterStudio.openIn': 'Open in {{format}}',
   'formatterStudio.pick': 'Choose a format',
-  'formatterStudio.note': 'Nothing is changed until you open a tool. Your text is passed over as it is.',
-  'formatterStudio.chosen': 'Using {{format}} (chosen by you).',
-  'formatterStudio.none': 'No format detected. Pick one below.',
-  'formatterStudio.jsonInvalid':
-    'Detected: JSON (it does not parse yet; the JSON tool will show the error).',
-  'formatterStudio.detected': 'Detected: {{format}} ({{confidence}} confidence).',
+  'formatterStudio.note':
+    'Nothing is changed until you open a tool. Your text is passed over as it is.',
+  'formatterStudio.detectedShort': '{{format}} detected',
+  'formatterStudio.paste': 'Paste',
+  'formatterStudio.sample': 'Sample',
+  'formatterStudio.clear': 'Clear',
+  'formatterStudio.stats': '{{lines}} lines · {{chars}} characters',
+  'formatterStudio.detectedBadge': 'Detected',
+  'formatterStudio.desc.json': 'Pretty-print, validate and minify',
+  'formatterStudio.desc.xml': 'Format, validate and inspect documents',
+  'formatterStudio.desc.yaml': 'Edit and validate configuration',
+  'formatterStudio.desc.sql': 'Format and tidy queries',
+  'formatterStudio.desc.regex': 'Test patterns and inspect matches',
+  'formatterStudio.desc.uuid': 'Validate and generate identifiers',
 
   'headerToggle.on': 'on',
   'headerToggle.off': 'off',
@@ -65,6 +73,7 @@ export const workspaceStrings: Record<string, string> = {
   'readingList.excerpt.save': 'Save to Reading List',
 
   'colorPicker.generatePalette': 'Generate palette',
-  'web.copyMarkdown.emptySelection': 'Nothing is selected on the page. Select some text and try again.',
+  'web.copyMarkdown.emptySelection':
+    'Nothing is selected on the page. Select some text and try again.',
   'htmlBundle.checkLinks': 'Check broken links',
 }

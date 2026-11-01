@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import {
   CheckIcon,
   ExternalLinkIcon,
@@ -14,7 +15,7 @@ import type { ToolDefinition } from '@/core/registry'
 import { getUserCategoryIdForTool } from '@/core/registry/userCategories'
 import { Link, useRouter } from '@/app/router'
 import { removeRecentTool } from '@/features/recent-tools/recentToolsService'
-import { useWorkspaceId } from '@/features/workspace/WorkspaceContext'
+import { useWorkspaceHeaderSlot, useWorkspaceId } from '@/features/workspace/WorkspaceContext'
 import { BackButton } from '@/shared/components/BackButton'
 import { FavoriteButton } from '@/shared/components/FavoriteButton'
 import {
@@ -50,8 +51,13 @@ export function ToolPage({
   const { t } = useTranslation()
   const { name, description } = useToolLabels(tool)
   const workspaceId = useWorkspaceId()
+  const headerSlot = useWorkspaceHeaderSlot()
   const inWorkspace = workspaceId !== null
+  // The workspace host view (e.g. Formatter Studio's Detect page) already shows its
+  // title and tabs in the workspace header, so it gets no tool header of its own.
   const isWorkspaceHostView = workspaceId === tool.id
+  // Child tools in a workspace move their actions into the workspace header slot.
+  const embedInWorkspaceHeader = inWorkspace && !isWorkspaceHostView && headerSlot !== null
   const { path, search } = useRouter()
   const deepLink = path === tool.route ? `${tool.route}${search}` : tool.route
 
@@ -65,6 +71,82 @@ export function ToolPage({
     window.open(url, '_blank', 'noopener,noreferrer')
   }
 
+  const info = (
+    <ToolInfo
+      name={name}
+      description={description}
+      category={t(`categories.${tool.category}.name`, { defaultValue: tool.category })}
+      icon={<Icon className="size-4 text-primary" aria-hidden />}
+      onCopyLink={copyLink}
+      onOpenNewTab={openNewTab}
+    />
+  )
+
+  const toolbar = (
+    <>
+      {actions}
+      <FavoriteButton toolId={tool.id} />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon-sm" aria-label={t('nav.moreOptions')}>
+            <MoreHorizontalIcon className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={() => void copyLink()}>
+            <Link2Icon className="size-4" />
+            {t('tool.copyLink')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={openNewTab}>
+            <Link2Icon className="size-4" />
+            {t('tool.openNewTab')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => void removeRecentTool(tool.id)}>
+            <Trash2Icon className="size-4" />
+            {t('tool.removeFromRecent')}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link to="/settings" className="flex items-center gap-2">
+              <SettingsIcon className="size-4" />
+              {t('nav.settings')}
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
+  )
+
+  const body = (
+    <div
+      className={cn(
+        'relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain p-[var(--density-page-pad)]',
+        contentClassName,
+      )}
+    >
+      {children}
+    </div>
+  )
+
+  if (isWorkspaceHostView) {
+    return <div className="flex h-full flex-col">{body}</div>
+  }
+
+  if (embedInWorkspaceHeader) {
+    return (
+      <div className="flex h-full flex-col">
+        {createPortal(
+          <div className="flex shrink-0 items-center gap-1">
+            {info}
+            {toolbar}
+          </div>,
+          headerSlot,
+        )}
+        {body}
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-full flex-col">
       <header className="sticky top-0 z-10 flex shrink-0 items-center gap-2.5 bg-background/85 px-3 py-2 backdrop-blur-md @[360px]:px-4">
@@ -75,64 +157,17 @@ export function ToolPage({
           </div>
         )}
         <div className="flex min-w-0 flex-1 items-center gap-0.5">
-          {isWorkspaceHostView ? null : inWorkspace ? (
+          {inWorkspace ? (
             <h2 className="truncate text-sm font-semibold tracking-tight">{name}</h2>
           ) : (
             <h1 className="truncate text-[15px] font-semibold tracking-tight">{name}</h1>
           )}
-          {!isWorkspaceHostView && (
-            <ToolInfo
-              name={name}
-              description={description}
-              category={t(`categories.${tool.category}.name`, { defaultValue: tool.category })}
-              icon={<Icon className="size-4 text-primary" aria-hidden />}
-              onCopyLink={copyLink}
-              onOpenNewTab={openNewTab}
-            />
-          )}
+          {info}
         </div>
-        <div className="flex shrink-0 items-center gap-1">
-          {actions}
-          <FavoriteButton toolId={tool.id} />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" aria-label={t('nav.moreOptions')}>
-                <MoreHorizontalIcon className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => void copyLink()}>
-                <Link2Icon className="size-4" />
-                {t('tool.copyLink')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={openNewTab}>
-                <Link2Icon className="size-4" />
-                {t('tool.openNewTab')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => void removeRecentTool(tool.id)}>
-                <Trash2Icon className="size-4" />
-                {t('tool.removeFromRecent')}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/settings" className="flex items-center gap-2">
-                  <SettingsIcon className="size-4" />
-                  {t('nav.settings')}
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <div className="flex shrink-0 items-center gap-1">{toolbar}</div>
       </header>
       <Separator />
-      <div
-        className={cn(
-          'relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain p-[var(--density-page-pad)]',
-          contentClassName,
-        )}
-      >
-        {children}
-      </div>
+      {body}
     </div>
   )
 }

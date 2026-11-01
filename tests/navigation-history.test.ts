@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import { getReturnRoute, recordNavigation } from '@/app/navigationHistory'
+import { registerModules } from '@/modules'
+import { toolRegistry } from '@/core/registry'
+
+registerModules()
 
 describe('navigation history', () => {
   it('returns to the page a tool was opened from', () => {
@@ -22,6 +26,17 @@ describe('navigation history', () => {
 
     expect(getReturnRoute('/categories/design', '/')).toBe('/')
     expect(getReturnRoute('/tools/design/color-picker', '/categories/design')).toBe('/categories/design')
+  })
+
+  it('ignores tab switches inside the same workspace', () => {
+    const json = toolRegistry.get('developer.json-toolkit')!
+    const xml = toolRegistry.get('developer.xml-toolkit')!
+    const category = '/categories/develop-qa'
+
+    recordNavigation(category, json.route)
+    recordNavigation(json.route, xml.route)
+
+    expect(getReturnRoute(xml.route, category)).toBe(category)
   })
 
   it('keeps the query of the origin and ignores query-only changes', () => {
