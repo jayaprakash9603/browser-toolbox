@@ -28,7 +28,7 @@ export function CatalogFilterChips({
 
   return (
     <div className={cn('flex items-stretch gap-1.5', className)}>
-      <ChipRail role="group" label={t('allTools.filter')} rows={2} className="min-w-0 flex-1">
+      <ChipRail role="group" label={t('allTools.filter')} rows={1} className="min-w-0 flex-1">
         <CatalogChip active={filter === 'all'} count={allCount} onClick={() => onFilter('all')}>
           {t('allTools.all')}
         </CatalogChip>

@@ -5,7 +5,6 @@ import { useScrollMemory } from '@/app/navigationMemory'
 import { filterTools } from '@/features/search/filterTools'
 import { toolRegistry } from '@/core/registry'
 import { AllToolsCategories } from '@/app/pages/home/AllToolsCategories'
-import { BottomTip } from '@/app/pages/home/BottomTip'
 import { BundleJobBanner } from '@/app/pages/home/BundleJobBanner'
 import { FavoritesSection } from '@/app/pages/home/FavoritesSection'
 import { PopularTools } from '@/app/pages/home/PopularTools'
@@ -84,7 +83,6 @@ export default function HomePage({ section }: HomePageProps) {
           <FavoritesSection />
           <PopularTools />
           <AllToolsCategories />
-          <BottomTip />
           <SupportCard />
         </div>
       </div>

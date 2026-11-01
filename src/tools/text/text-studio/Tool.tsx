@@ -6,28 +6,23 @@ import {
   CASE_STYLES,
   cleanWhitespace,
   convertCase,
-  countMatches,
   DEFAULT_WHITESPACE_OPTIONS,
   removeDuplicateLines,
-  replaceText,
   sortLines,
 } from '@/core/engines/text'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { TextEditor } from '@/shared/components/TextEditor'
 import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
 import { Tabs, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { useTransformTool } from '../_shared'
 
-type Mode = 'format' | 'case' | 'clean' | 'analyze' | 'lines' | 'find'
+type Mode = 'format' | 'case' | 'clean' | 'analyze' | 'lines'
 
 export default function TextStudioTool() {
   const { t } = useTranslation()
   const tool = useTransformTool('text.studio')
-  const [mode, setMode] = useState<Mode>('find')
+  const [mode, setMode] = useState<Mode>('format')
   const [input, setInput] = useState('')
-  const [find, setFind] = useState('')
-  const [replace, setReplace] = useState('')
   const [result, setResult] = useState('')
 
   const stats = useMemo(() => analyzeText(input), [input])
@@ -42,13 +37,6 @@ export default function TextStudioTool() {
       apply(removeDuplicateLines(input, { caseSensitive: false, trimFirst: true }).output)
     } else if (action === 'format') {
       apply(input.replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n'))
-    } else if (action === 'find') {
-      const output = replaceText(input, find, replace, {
-        caseSensitive: false,
-        wholeWord: false,
-        regex: false,
-      })
-      apply(output.output)
     } else if (action.startsWith('case:')) {
       apply(convertCase(input, action.slice(5) as Parameters<typeof convertCase>[1]))
     } else if (action.startsWith('sort:')) {
@@ -62,7 +50,6 @@ export default function TextStudioTool() {
         <div className="flex shrink-0 items-center gap-2 overflow-x-auto pb-0.5">
           <Tabs value={mode} onValueChange={(value) => setMode(value as Mode)}>
             <TabsList variant="chips">
-              <TabsTrigger value="find">Find & Replace</TabsTrigger>
               <TabsTrigger value="format">Format</TabsTrigger>
               <TabsTrigger value="case">Case</TabsTrigger>
               <TabsTrigger value="clean">Clean</TabsTrigger>
@@ -76,14 +63,6 @@ export default function TextStudioTool() {
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-          {mode === 'find' && (
-            <>
-              <Input value={find} onChange={(event) => setFind(event.target.value)} placeholder="Find" aria-label="Find" className="h-8 w-32" />
-              <Input value={replace} onChange={(event) => setReplace(event.target.value)} placeholder="Replace with" aria-label="Replace with" className="h-8 w-32" />
-              <Button size="sm" onClick={() => run('find')} disabled={!find || !input}>Replace all</Button>
-              <span className="text-xs text-muted-foreground">{find ? `${countMatches(input, find, { caseSensitive: false, wholeWord: false, regex: false })} matches` : 'Find text in the editor'}</span>
-            </>
-          )}
           {mode === 'format' && <Button size="sm" onClick={() => run('format')} disabled={!input}>Beautify</Button>}
           {mode === 'case' && CASE_STYLES.slice(0, 6).map((style) => <Button key={style.id} size="sm" variant="outline" onClick={() => run(`case:${style.id}`)} disabled={!input}>{style.label}</Button>)}
           {mode === 'clean' && <Button size="sm" onClick={() => run('clean')} disabled={!input}>Clean whitespace</Button>}
@@ -95,6 +74,7 @@ export default function TextStudioTool() {
           value={input}
           onChange={setInput}
           fill
+          enableSearch={false}
           label={t('common.input')}
           ariaLabel={t('text.input')}
           placeholder="Paste or type text…"

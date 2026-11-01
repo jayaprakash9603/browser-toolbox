@@ -21,6 +21,7 @@ interface TextEditorProps {
   actions?: ReactNode
   status?: EditorStatus | null
   wrap?: boolean
+  enableSearch?: boolean
 }
 
 export function TextEditor({
@@ -39,6 +40,7 @@ export function TextEditor({
   actions,
   status,
   wrap,
+  enableSearch = true,
 }: TextEditorProps) {
   if (!mono) {
     return (
@@ -74,6 +76,7 @@ export function TextEditor({
       actions={actions}
       status={status}
       wrap={wrap ?? language === undefined}
+      enableSearch={enableSearch}
       onSubmit={onKeyCommand ? () => onKeyCommand('submit') : undefined}
       className={className}
     />

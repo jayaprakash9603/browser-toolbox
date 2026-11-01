@@ -3,6 +3,7 @@ import { useApiClientStoreApi } from 'postman-lite'
 
 import { TOOLBOX_THEME_ID } from '@/features/api-client/build-api-client-theme'
 import { dispatchToolboxRestoreTheme } from '@/features/api-client/themeEvents'
+import { useApiClientDialogPortalTheme } from '@/features/api-client/useApiClientDialogPortalTheme'
 
 function cleanupHostDocument() {
   const root = document.documentElement
@@ -13,6 +14,7 @@ function cleanupHostDocument() {
 
 export function ApiClientHostLifecycle() {
   const storeApi = useApiClientStoreApi()
+  useApiClientDialogPortalTheme()
 
   useEffect(() => {
     document.documentElement.dataset.browserToolboxApiClient = 'open'

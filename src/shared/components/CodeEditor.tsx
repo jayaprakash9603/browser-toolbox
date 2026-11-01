@@ -37,6 +37,7 @@ export interface CodeEditorProps {
   ariaLabel?: string
   onSubmit?: () => void
   onCursorChange?: (position: CursorPosition) => void
+  enableSearch?: boolean
   className?: string
   style?: CSSProperties
 }
@@ -57,6 +58,7 @@ export function CodeEditor({
   ariaLabel,
   onSubmit,
   onCursorChange,
+  enableSearch = true,
   className,
   style,
 }: CodeEditorProps) {
@@ -93,7 +95,7 @@ export function CodeEditor({
       indentOnInput(),
       bracketMatching(),
       highlightSelectionMatches(),
-      search({ top: true }),
+      enableSearch ? search({ top: true }) : [],
       editorTheme,
       editorDarkTheme,
       c.syntax.of(editorSyntaxForTheme()),
@@ -107,7 +109,7 @@ export function CodeEditor({
             return true
           },
         },
-        ...searchKeymap,
+        ...(enableSearch ? searchKeymap : []),
         ...foldKeymap,
         ...historyKeymap,
         ...defaultKeymap,

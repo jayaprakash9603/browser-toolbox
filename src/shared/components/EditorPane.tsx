@@ -41,6 +41,7 @@ export interface EditorPaneProps {
   fill?: boolean
   minRows?: number
   wrap?: boolean
+  enableSearch?: boolean
   onSubmit?: () => void
   className?: string
 }
@@ -100,6 +101,7 @@ export function EditorPane({
   fill = false,
   minRows = 6,
   wrap: initialWrap = false,
+  enableSearch = true,
   onSubmit,
   className,
 }: EditorPaneProps) {
@@ -177,6 +179,7 @@ export function EditorPane({
         ariaLabel={ariaLabel ?? (typeof label === 'string' ? label : undefined)}
         onSubmit={onSubmit}
         onCursorChange={setCursor}
+        enableSearch={enableSearch}
         className={fill ? 'flex-1' : undefined}
         style={fill ? undefined : { height: `${minRows * 1.3 + 1}rem` }}
       />
