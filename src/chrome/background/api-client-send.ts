@@ -1,5 +1,5 @@
 import type { ApiClientResponse, ApiClientSendPayload } from 'postman-lite'
-import { deserializeBodyFromTransport, executeHttpRequest } from 'postman-lite/core'
+import { executeHttpRequest } from 'postman-lite/core'
 
 import { createLogger } from '@/core/logging'
 
@@ -19,8 +19,7 @@ async function runRequest(
   const controller = new AbortController()
   if (requestId) inFlight.set(requestId, controller)
   try {
-    const body = deserializeBodyFromTransport(payload.body)
-    return await executeHttpRequest(fetch, { ...payload, body }, { signal: controller.signal })
+    return await executeHttpRequest(fetch, payload, { signal: controller.signal })
   } catch (error) {
     logger.warn('API_CLIENT_SEND failed', error)
     return { ok: false, error: error instanceof Error ? error.message : String(error) }
