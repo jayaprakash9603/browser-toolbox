@@ -117,8 +117,14 @@ export const autofillStrings = {
   'formMemory.global.title': 'Global values',
   'formMemory.global.hint': 'Filled into matching fields on any site',
 
+  'formMemory.settings.enabled': 'Enable form autofill',
+  'formMemory.settings.enabledHint':
+    'Turn off to stop scanning, remembering and filling forms. Existing saved entries are kept.',
   'formMemory.settings.learn': 'Remember form entries',
   'formMemory.settings.learnHint':
     'Keeps what you type, tick and pick in forms for review before anything is saved. Passwords and card numbers are never kept. Filling is manual only: {{fill}} fills and {{clear}} clears.',
+  'formMemory.settings.review': 'Review before filling',
+  'formMemory.settings.reviewHint':
+    'When enabled, saved values are shown for confirmation before they are applied. Turn it off to allow trusted matches to fill directly.',
   'formMemory.settings.manage': 'Review saved form entries',
 } as const

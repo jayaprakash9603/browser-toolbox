@@ -8,7 +8,11 @@ type AutofillHost = ReturnType<typeof createExtensionAutofillHost>
  * Connects only when `enabled` is true (user chose to scan the page). Review mode is enforced so
  * trusted-site matches never fill the page on scan or connect.
  */
-export function useReviewAutofillController(host: AutofillHost, enabled: boolean) {
+export function useReviewAutofillController(
+  host: AutofillHost,
+  enabled: boolean,
+  review: boolean,
+) {
   const [controller, setController] = useState<AutofillController | null>(null)
 
   useEffect(() => {
@@ -20,8 +24,9 @@ export function useReviewAutofillController(host: AutofillHost, enabled: boolean
     void (async () => {
       const store = host.getStore()
       await store.ready()
-      if (store.getSnapshot().settings.mode !== 'review') {
-        await store.settings.update({ mode: 'review' })
+      const mode = review ? 'review' : 'trusted'
+      if (store.getSnapshot().settings.mode !== mode) {
+        await store.settings.update({ mode })
       }
       if (cancelled) return
       await instance.connect()
@@ -35,7 +40,7 @@ export function useReviewAutofillController(host: AutofillHost, enabled: boolean
       setController(null)
       instance.destroy()
     }
-  }, [host, enabled])
+  }, [host, enabled, review])
 
   return enabled ? controller : null
 }

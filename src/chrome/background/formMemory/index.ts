@@ -72,6 +72,7 @@ export async function fillFormInTab(
     return { ok: false, reason: 'restricted', ...EMPTY, url: target.url }
   }
   const state = await loadFormMemory()
+  if (!state.settings.enabled) return { ok: false, reason: 'blocked', ...EMPTY, url: target.url }
   const ref = pageRefFor(target.url)
   const blocked = ref ? isHostBlocked(state.settings, ref.host) : false
   const plan = planFill(state, target.url, source !== 'auto')
@@ -141,6 +142,7 @@ export async function clearFormInTab(
     return { ok: false, reason: 'restricted', ...EMPTY, url: target.url }
   }
   const state = await loadFormMemory()
+  if (!state.settings.enabled) return { ok: false, reason: 'blocked', ...EMPTY, url: target.url }
   const plan = planFill(state, target.url, true)
   const page = await runInTab(target.id, {
     action: 'clear',
@@ -169,6 +171,7 @@ async function inspectTab(tabId?: number): Promise<FormActionResult> {
   if (target?.id == null) return { ok: false, reason: 'no-tab', ...EMPTY }
   if (!scriptable(target.url)) return { ok: false, reason: 'restricted', ...EMPTY, url: target.url }
   const state = await loadFormMemory()
+  if (!state.settings.enabled) return { ok: false, reason: 'blocked', ...EMPTY, url: target.url }
   const ref = pageRefFor(target.url)
   const plan = planFill(state, target.url, true)
   const base = {
@@ -216,6 +219,8 @@ async function saveTab(tabId?: number): Promise<FormActionResult> {
   const target = await resolveTab(undefined, tabId)
   if (target?.id == null) return { ok: false, reason: 'no-tab', ...EMPTY }
   if (!scriptable(target.url)) return { ok: false, reason: 'restricted', ...EMPTY, url: target.url }
+  const state = await loadFormMemory()
+  if (!state.settings.enabled) return { ok: false, reason: 'blocked', ...EMPTY, url: target.url }
   const page = await runInTab(target.id, { action: 'snapshot', watch: true })
   if (!page) return { ok: false, reason: 'no-access', ...EMPTY, url: target.url }
   const url = target.url
@@ -240,7 +245,7 @@ async function onPageReady(tabId: number): Promise<void> {
   const tab = await chrome.tabs.get(tabId).catch(() => undefined)
   if (!tab?.url || !scriptable(tab.url) || tab.discarded) return
   const state = await loadFormMemory()
-  if (!state.settings.learn) return
+  if (!state.settings.enabled || !state.settings.learn) return
   const ref = pageRefFor(tab.url)
   if (!ref || isHostBlocked(state.settings, ref.host)) return
   if (!/^file:/i.test(tab.url)) {
@@ -281,10 +286,11 @@ export function registerFormMemory(): void {
     const url = sender.tab?.url ?? message.url
     if (!scriptable(url) || !Array.isArray(message.fields)) return
     const captured = capturedFields(message.fields)
-    if (captured.length === 0 || !(await loadFormMemory()).settings.learn) return
+    const current = await loadFormMemory()
+    if (captured.length === 0 || !current.settings.enabled || !current.settings.learn) return
     const fields = await storeCapturedFiles(captured)
     await updateFormMemory((current) =>
-      current.settings.learn
+      current.settings.enabled && current.settings.learn
         ? applyReviewCapture(current, { url, title: sender.tab?.title ?? message.title, fields }, Date.now())
         : current,
     )

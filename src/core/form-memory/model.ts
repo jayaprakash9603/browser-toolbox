@@ -37,8 +37,12 @@ export interface MemoryPage {
 }
 
 export interface FormMemorySettings {
+  /** Master switch for form memory and autofill features. */
+  enabled: boolean
   /** Remember what is typed, ticked and picked in forms. */
   learn: boolean
+  /** Ask for confirmation before the autofill SDK applies saved values. */
+  review: boolean
   /** Fill remembered pages as soon as they open. */
   autoFill: boolean
   /** Hosts that are never remembered or filled. */
@@ -132,7 +136,9 @@ export interface FormActionResult {
 }
 
 export const DEFAULT_FORM_MEMORY_SETTINGS: FormMemorySettings = {
+  enabled: true,
   learn: true,
+  review: true,
   autoFill: false,
   blockedHosts: [],
 }
@@ -352,7 +358,9 @@ export function normalizeFormMemoryState(raw: unknown): FormMemoryState {
     global: normalizeGlobal(item.global),
     review: normalizeReview(item.review),
     settings: {
+      enabled: settings.enabled !== false,
       learn: settings.learn !== false,
+      review: settings.review !== false,
       autoFill: settings.autoFill === true,
       blockedHosts: Array.isArray(settings.blockedHosts)
         ? settings.blockedHosts.filter((host): host is string => typeof host === 'string')

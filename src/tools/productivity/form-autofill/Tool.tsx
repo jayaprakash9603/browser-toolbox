@@ -90,9 +90,15 @@ export default function FormAutofillTool() {
   const { show } = useToast()
   const tool = useProductivityTool('productivity.form-autofill')
   const [pageScanEnabled, setPageScanEnabled] = useState(false)
-  const controller = useReviewAutofillController(host, pageScanEnabled)
-  const sdk = useAutofillState(controller)
   const memory = useFormMemory()
+  const autofillEnabled = memory.state?.settings.enabled ?? true
+  const reviewEnabled = memory.state?.settings.review ?? true
+  const controller = useReviewAutofillController(
+    host,
+    pageScanEnabled && autofillEnabled,
+    reviewEnabled,
+  )
+  const sdk = useAutofillState(controller)
   const [detailsOpen, setDetailsOpen] = useState(() => readPreference(DETAILS_KEY) === '1')
   const [view, setView] = useState<View>(readView)
   const [busy, setBusy] = useState<FillBarAction | 'access' | 'save' | null>(null)
@@ -126,11 +132,13 @@ export default function FormAutofillTool() {
   }, [])
 
   const requestPageScan = useCallback(() => {
+    if (!autofillEnabled) return
     setPageScanEnabled(true)
-  }, [])
+  }, [autofillEnabled])
 
   const act = useCallback(
     async (action: FillBarAction) => {
+      if (!autofillEnabled) return
       setPageScanEnabled(true)
       setBusy(action)
       try {
@@ -157,11 +165,11 @@ export default function FormAutofillTool() {
         setBusy(null)
       }
     },
-    [controller, profileIds, runPage, show, t],
+    [autofillEnabled, controller, profileIds, runPage, show, t],
   )
 
   const allowAccess = useCallback(async (origins: string[]) => {
-    if (origins.length === 0) return
+    if (!autofillEnabled || origins.length === 0) return
     setBusy('access')
     try {
       const granted = await chrome.permissions
@@ -175,7 +183,7 @@ export default function FormAutofillTool() {
     } finally {
       setBusy(null)
     }
-  }, [controller, refreshPage])
+  }, [autofillEnabled, controller, refreshPage])
 
   const saveCurrent = useCallback(async () => {
     setBusy('save')
@@ -194,6 +202,11 @@ export default function FormAutofillTool() {
 
   return (
     <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col overflow-hidden p-0">
+      {!autofillEnabled && (
+        <div className="mx-3 mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
+          {t('formMemory.settings.enabledHint')}
+        </div>
+      )}
       <ConnectionBar
         controller={controller}
         theme={theme}

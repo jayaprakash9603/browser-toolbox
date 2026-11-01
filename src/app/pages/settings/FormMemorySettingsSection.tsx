@@ -15,6 +15,17 @@ export function FormMemorySettingsSection() {
   return (
     <>
       <SettingsRow
+        searchId="formMemoryEnabled"
+        label={t('formMemory.settings.enabled')}
+        description={t('formMemory.settings.enabledHint')}
+      >
+        <Switch
+          checked={state.settings.enabled}
+          onCheckedChange={(on) => void patchSettings({ enabled: on })}
+          aria-label={t('formMemory.settings.enabled')}
+        />
+      </SettingsRow>
+      <SettingsRow
         searchId="formMemoryLearn"
         label={t('formMemory.settings.learn')}
         description={t('formMemory.settings.learnHint', { fill: fillKey, clear: clearKey })}
@@ -23,6 +34,17 @@ export function FormMemorySettingsSection() {
           checked={state.settings.learn}
           onCheckedChange={(on) => void patchSettings({ learn: on })}
           aria-label={t('formMemory.settings.learn')}
+        />
+      </SettingsRow>
+      <SettingsRow
+        searchId="formMemoryReview"
+        label={t('formMemory.settings.review')}
+        description={t('formMemory.settings.reviewHint')}
+      >
+        <Switch
+          checked={state.settings.review}
+          onCheckedChange={(on) => void patchSettings({ review: on })}
+          aria-label={t('formMemory.settings.review')}
         />
       </SettingsRow>
       <SettingsLinkRow to={FORM_AUTOFILL_ROUTE}>{t('formMemory.settings.manage')}</SettingsLinkRow>
