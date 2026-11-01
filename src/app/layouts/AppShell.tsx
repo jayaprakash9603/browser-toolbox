@@ -168,7 +168,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
                 onClick={openPalette}
               >
                 <SearchIcon className="size-4" />
-                <kbd className="hidden rounded border bg-muted px-1.5 font-sans text-[10px] leading-5 font-medium @[360px]:inline">
+                <kbd className="rounded border bg-muted px-1.5 font-sans text-[10px] leading-5 font-medium">
                   {searchShortcutLabel}
                 </kbd>
               </Button>
