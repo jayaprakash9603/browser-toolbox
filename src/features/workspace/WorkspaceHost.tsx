@@ -94,7 +94,7 @@ export function WorkspaceHost({ workspace, activeToolId, children }: WorkspaceHo
   return (
     <WorkspaceContext.Provider value={workspace.id}>
       <div className="flex h-full flex-col" data-workspace={workspace.id}>
-        <header className="flex shrink-0 items-center gap-2.5 px-3 pt-2 pb-1 @[360px]:px-4">
+        <header className="flex shrink-0 items-center gap-2.5 px-3 py-1.5 @[360px]:px-4">
           <BackButton to={section ? `/categories/${section.id}` : '/'} />
           <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 shadow-sm">
             <HostIcon className="size-4 text-primary" aria-hidden />
@@ -110,7 +110,7 @@ export function WorkspaceHost({ workspace, activeToolId, children }: WorkspaceHo
             defaultValue: '{{name}} sections',
             name: hostName,
           })}
-          className="shrink-0 border-b px-3 pb-2 @[360px]:px-4"
+          className="shrink-0 border-b px-3 pb-1.5 @[360px]:px-4"
         >
           <Tabs value={activeView?.key ?? ''} onValueChange={openView} className="gap-0">
             <TabsList variant="chips">

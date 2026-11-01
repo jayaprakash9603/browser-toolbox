@@ -129,7 +129,19 @@ export function ToolPage({
   )
 
   if (isWorkspaceHostView) {
-    return <div className="flex h-full flex-col">{body}</div>
+    return (
+      <div className="flex h-full flex-col">
+        {headerSlot &&
+          createPortal(
+            <div className="flex shrink-0 items-center gap-1">
+              {info}
+              {toolbar}
+            </div>,
+            headerSlot,
+          )}
+        {body}
+      </div>
+    )
   }
 
   if (embedInWorkspaceHeader) {

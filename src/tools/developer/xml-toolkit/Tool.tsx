@@ -47,27 +47,27 @@ export default function XmlToolkitTool() {
   return (
     <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col overflow-hidden">
       <Tabs value={tab} onValueChange={(v) => setTab(v as XmlTab)} className="min-h-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           <TabsList className="max-w-full justify-start">
             <TabsTrigger value="format">{t('dev.tabFormat')}</TabsTrigger>
             <TabsTrigger value="validate">{t('dev.tabValidate')}</TabsTrigger>
             <TabsTrigger value="convert">{t('dev.tabConvertJson')}</TabsTrigger>
           </TabsList>
+          {tab === 'format' && (
+            <div className="flex items-center gap-1.5">
+              <Button size="sm" disabled={!valid} onClick={() => apply(formatXml)}>
+                {t('text.beautify')}
+              </Button>
+              <Button size="sm" variant="outline" disabled={!valid} onClick={() => apply(minifyXml)}>
+                {t('text.minify')}
+              </Button>
+            </div>
+          )}
           <Button size="sm" variant="ghost" className="ml-auto" onClick={() => setInput(EXAMPLE)}>
             <SparklesIcon /> {t('dev.tryExample')}
           </Button>
         </div>
 
-        <TabsContent value="format" className="mt-0 flex-none">
-          <div className="flex flex-wrap items-center gap-2">
-            <Button size="sm" disabled={!valid} onClick={() => apply(formatXml)}>
-              {t('text.beautify')}
-            </Button>
-            <Button size="sm" variant="outline" disabled={!valid} onClick={() => apply(minifyXml)}>
-              {t('text.minify')}
-            </Button>
-          </div>
-        </TabsContent>
         <TabsContent value="validate" className="mt-0 flex-none">
           {valid && (
             <p className="rounded-lg border border-emerald-500/40 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-400">
