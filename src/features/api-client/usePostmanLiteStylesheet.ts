@@ -13,7 +13,21 @@ export function usePostmanLiteStylesheet() {
     if (!styleElement) {
       styleElement = document.createElement('style')
       styleElement.dataset.browserToolbox = 'postman-lite'
-      styleElement.textContent = postmanLiteCss
+      styleElement.textContent = `${postmanLiteCss}
+
+/* Keep embedded API client dialogs above the host panel and its overlay. */
+html[data-browser-toolbox-api-client="open"] [data-radix-dialog-overlay][data-state="open"] {
+  z-index: 9998 !important;
+}
+
+html[data-browser-toolbox-api-client="open"] [data-radix-dialog-content][data-state="open"] {
+  z-index: 9999 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  background-color: hsl(var(--background)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+`
       document.head.append(styleElement)
     }
     return () => {
