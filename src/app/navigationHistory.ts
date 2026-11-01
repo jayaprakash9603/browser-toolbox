@@ -21,7 +21,11 @@ export function recordNavigation(from: string, to: string): void {
   if (fromPath === toPath) return
   const fromWorkspace = workspaceIdForRoute(from)
   const toWorkspace = workspaceIdForRoute(to)
-  if (fromWorkspace !== undefined && fromWorkspace === toWorkspace) return
+  if (fromWorkspace !== undefined && fromWorkspace === toWorkspace) {
+    const origin = origins.get(fromPath)
+    if (origin !== undefined && !origins.has(toPath)) origins.set(toPath, origin)
+    return
+  }
   // Heading back to the page that opened `from` must keep that page's own origin, or Back would bounce.
   const fromOrigin = origins.get(fromPath)
   if (fromOrigin !== undefined && pathOf(fromOrigin) === toPath) return

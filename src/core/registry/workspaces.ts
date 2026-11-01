@@ -150,7 +150,10 @@ const WORKSPACE_BY_ID = new Map(WORKSPACES.map((workspace) => [workspace.id, wor
 
 const WORKSPACE_BY_MEMBER = new Map(
   WORKSPACES.flatMap((workspace) =>
-    workspace.views.map((view) => [view.toolId, workspace] as const),
+    [
+      [workspace.id, workspace] as const,
+      ...workspace.views.map((view) => [view.toolId, workspace] as const),
+    ],
   ),
 )
 

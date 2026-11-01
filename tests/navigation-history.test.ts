@@ -39,6 +39,27 @@ describe('navigation history', () => {
     expect(getReturnRoute(xml.route, category)).toBe(category)
   })
 
+  it('does not loop when a workspace entry redirects to its first tab', () => {
+    const studio = toolRegistry.get('design.css-color-studio')!
+    const css = toolRegistry.get('design.css-generator')!
+    const category = '/categories/design'
+
+    recordNavigation(category, studio.route)
+    recordNavigation(studio.route, css.route)
+
+    expect(getReturnRoute(css.route, category)).toBe(category)
+  })
+
+  it('carries the original entry point across workspace tabs', () => {
+    const css = toolRegistry.get('design.css-generator')!
+    const palette = toolRegistry.get('design.palette-generator')!
+
+    recordNavigation('/', css.route)
+    recordNavigation(css.route, palette.route)
+
+    expect(getReturnRoute(palette.route, '/categories/design')).toBe('/')
+  })
+
   it('keeps the query of the origin and ignores query-only changes', () => {
     recordNavigation('/tools?q=json', '/tools/developer/json-toolkit')
     recordNavigation('/tools/developer/json-toolkit', '/tools/developer/json-toolkit?tab=tree')
