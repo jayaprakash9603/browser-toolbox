@@ -7,6 +7,7 @@ import ApiClient, {
 
 import {
   ApiClientHostLifecycle,
+  useToolboxApiClientAppearanceSync,
 } from '@/features/api-client/ApiClientHostLifecycle'
 import { buildApiClientTheme } from '@/features/api-client/build-api-client-theme'
 import { usePostmanLiteStylesheet } from '@/features/api-client/usePostmanLiteStylesheet'
@@ -35,6 +36,7 @@ export function ToolboxApiClient() {
   )
 
   const theme = useMemo(() => buildApiClientTheme(themeMode, palette), [themeMode, palette])
+  const appearanceSync = useToolboxApiClientAppearanceSync(themeMode)
 
   const settingsExtras = useMemo(
     () => (
@@ -53,6 +55,7 @@ export function ToolboxApiClient() {
       adapters={adapters}
       uiKit={shadcnKit}
       theme={theme}
+      appearanceSync={appearanceSync}
       locale="en"
       storageNamespace="browser_toolbox_apiclient"
       persistSidebarState={false}
