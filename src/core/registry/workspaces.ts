@@ -11,7 +11,6 @@ import {
   FingerprintIcon,
   GlobeIcon,
   HashIcon,
-  ImageDownIcon,
   ImageIcon,
   LayoutGridIcon,
   Link2Icon,
@@ -132,9 +131,7 @@ export const WORKSPACES: WorkspaceDefinition[] = [
     id: 'image.image-toolkit',
     views: [
       { key: 'discovery', toolId: 'web.image-links', label: 'Discovery', icon: ImageIcon },
-      { key: 'svg', toolId: 'design.svg-grabber', label: 'SVG', icon: ShapesIcon },
       { key: 'editing', toolId: 'image.image-toolkit', label: 'Editing', icon: ImageIcon },
-      { key: 'downloading', toolId: 'image.image-downloader', label: 'Downloading', icon: ImageDownIcon },
     ],
   },
   {
