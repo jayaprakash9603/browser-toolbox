@@ -1,16 +1,13 @@
-import { useTranslation } from 'react-i18next'
+import { useEffect } from 'react'
 
-import { WorkspaceLanding } from '@/features/workspace/WorkspaceLanding'
+import { useNavigate } from '@/app/navigation'
 
 export default function WebToolkitTool() {
-  const { t } = useTranslation()
-  return (
-    <WorkspaceLanding
-      workspaceId="web.toolkit"
-      note={t('workspace.web.note', {
-        defaultValue:
-          'Link checks run only when you start them and are limited in number. Pages that block cross-origin requests are reported as unverified, not as working.',
-      })}
-    />
-  )
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    navigate('/tools/web/url-toolkit')
+  }, [navigate])
+
+  return null
 }

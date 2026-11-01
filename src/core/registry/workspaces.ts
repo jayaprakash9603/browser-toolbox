@@ -72,7 +72,6 @@ export const WORKSPACES: WorkspaceDefinition[] = [
   {
     id: 'web.toolkit',
     views: [
-      { key: 'overview', toolId: 'web.toolkit', label: 'Overview', icon: LayoutGridIcon },
       { key: 'url', toolId: 'web.url-toolkit', label: 'URL Builder', icon: GlobeIcon },
       { key: 'links', toolId: 'web.link-toolkit', label: 'Link Analysis', icon: Link2Icon },
       { key: 'broken', toolId: 'web.link-checker', label: 'Broken Links', icon: FileSearchIcon },
