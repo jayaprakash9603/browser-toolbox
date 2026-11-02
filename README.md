@@ -36,7 +36,9 @@ Quick Actions adapt from a four-action dock to two columns in narrow panels; Fav
 
 Browser Workspace and Productivity play short decorative tab-loading and planner sequences while visible; these are illustrations, not live status. Design & Accessibility has a keyboard-accessible Stack/Spread control for its tool-card deck. Motion honors reduced-motion preferences and stops when the page is hidden.
 
-Tool navigation uses an outlined sliding selection rail with overflow controls and keyboard navigation; PDF Toolkit keeps its existing category chips. Each tool's three-dot menu starts with **Watch demo**, also available from its info panel. Walkthroughs load on demand and use sample data; workspace overview tools offer demos for their child tools. **Report an issue** separates description from review, keeps optional steps and diagnostics collapsible, and lets users inspect the report before opening GitHub/email or copying it. Nothing is sent automatically.
+Tool navigation uses an outlined sliding selection rail with overflow controls and keyboard navigation; PDF Toolkit keeps its existing category chips. Each tool's three-dot menu starts with **Watch demo**, also available from its info panel. Walkthroughs load on demand and use sample data; workspace overview tools offer demos for their child tools. **Report an issue** opens a dedicated full-page experience with a guided form, privacy details, a review step, and GitHub/email/copy actions. Nothing is sent automatically.
+
+Help and feedback uses illustrated issue, email, and rating cards with hover and keyboard-focus effects. Cards stack in narrow panels and form three columns when space permits. Illustrations are decorative, respect reduced motion, and do not send reports, emails, or ratings; the existing report page, email draft, and store links remain the actions.
 
 ## Documentation
 

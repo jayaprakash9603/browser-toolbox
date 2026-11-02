@@ -19,8 +19,13 @@ export function preloadRouteFromHash(): void {
     void import('@/app/pages/SettingsPage')
     return
   }
+  if (path === '/report-issue') {
+    void import('@/app/pages/ReportIssuePage')
+    return
+  }
   if (path === '/favorites' || path === '/recent') {
     void import('@/app/pages/HomePage')
+    void import('@/app/pages/ReportIssuePage')
     return
   }
   if (path === '/devtools') {

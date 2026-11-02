@@ -30,6 +30,7 @@ import { useShortcutDisplay } from '@/features/shortcuts/useShortcutDisplay'
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
 
 const HomePage = lazy(() => import('@/app/pages/HomePage'))
+const ReportIssuePage = lazy(() => import('@/app/pages/ReportIssuePage'))
 const HeaderProtectionToggles = lazy(() =>
   import('@/features/header/HeaderToggles').then((m) => ({ default: m.HeaderProtectionToggles })),
 )
@@ -230,6 +231,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
 
 function renderRoute(path: string) {
   if (path === '/' || path === '') return <HomePage />
+  if (path === '/report-issue') return <ReportIssuePage />
   if (path === '/settings') return <SettingsPage />
   if (path === '/settings/keyboard-shortcuts') return <KeyboardShortcutsPage />
   if (path === '/favorites') return <HomePage section="favorites" />
@@ -259,6 +261,7 @@ function renderTool(toolId: string) {
 }
 
 function getLoadingVariant(path: string): AppLoadingSkeletonVariant {
+  if (path === '/report-issue') return 'settings'
   if (path === '/settings' || path === '/settings/keyboard-shortcuts') return 'settings'
   if (path === '/favorites' || path === '/recent' || path === '/tools') return 'collection'
   if (
