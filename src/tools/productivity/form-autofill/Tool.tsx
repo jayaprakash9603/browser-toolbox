@@ -214,6 +214,7 @@ export default function FormAutofillTool() {
         onOpenChange={changeDetails}
         scanEnabled={pageScanEnabled}
         onRequestScan={requestPageScan}
+        onRefreshPage={refreshPage}
       />
       <div className="shrink-0 px-3 pb-2">
         <Segmented

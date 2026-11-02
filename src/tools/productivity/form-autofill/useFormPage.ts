@@ -45,15 +45,11 @@ export function useFormPage(active: boolean, poll: boolean, pageKey: string | un
       inFlight.current = false
     }
   }, [])
+  const hasDetectedFields = info?.ok === true && info.total > 0
 
   useEffect(() => {
     if (!active) return
     const kick = window.setTimeout(() => void refresh(), 0)
-    const timer = poll
-      ? window.setInterval(() => {
-          if (document.visibilityState === 'visible') void refresh()
-        }, POLL_MS)
-      : undefined
     const onTab = () => void refresh()
     const onUpdated = (_tabId: number, change: { status?: string }, tab: chrome.tabs.Tab) => {
       if (change.status === 'complete' && tab.active) void refresh()
@@ -62,11 +58,18 @@ export function useFormPage(active: boolean, poll: boolean, pageKey: string | un
     chrome.tabs?.onUpdated?.addListener(onUpdated)
     return () => {
       window.clearTimeout(kick)
-      window.clearInterval(timer)
       chrome.tabs?.onActivated?.removeListener(onTab)
       chrome.tabs?.onUpdated?.removeListener(onUpdated)
     }
   }, [active, poll, pageKey, refresh])
+
+  useEffect(() => {
+    if (!active || !poll || !hasDetectedFields) return
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void refresh()
+    }, POLL_MS)
+    return () => window.clearInterval(timer)
+  }, [active, poll, hasDetectedFields, refresh])
 
   const run = useCallback(
     async (action: 'fill' | 'clear' | 'save') => {

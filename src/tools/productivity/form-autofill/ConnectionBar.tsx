@@ -38,6 +38,7 @@ interface ConnectionBarProps {
   onOpenChange: (open: boolean) => void
   scanEnabled: boolean
   onRequestScan: () => void
+  onRefreshPage: () => void
 }
 
 /**
@@ -51,6 +52,7 @@ export function ConnectionBar({
   onOpenChange,
   scanEnabled,
   onRequestScan,
+  onRefreshPage,
 }: ConnectionBarProps) {
   const { t } = useTranslation()
   const reduceMotion = useReducedMotion()
@@ -123,7 +125,10 @@ export function ConnectionBar({
             type="button"
             onClick={() => {
               if (!scanEnabled) onRequestScan()
-              else void controller?.connect()
+              else {
+                void controller?.connect()
+                onRefreshPage()
+              }
             }}
             disabled={busy}
             aria-label={scanEnabled ? t('autofill.bar.refresh') : t('formMemory.bar.scanToStart')}
