@@ -17,14 +17,13 @@ export function useProtection() {
   }, [])
 
   useEffect(() => {
-    void Promise.all([getProtectionState(), getProtectionStats()]).then(([nextState, nextStats]) => {
-      setState(nextState)
-      setStats(nextStats)
-    })
-    const onChange = (
-      changes: Record<string, chrome.storage.StorageChange>,
-      area: string,
-    ) => {
+    void Promise.all([getProtectionState(), getProtectionStats()]).then(
+      ([nextState, nextStats]) => {
+        setState(nextState)
+        setStats(nextStats)
+      },
+    )
+    const onChange = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
       if (area !== 'local') return
       if (changes.protection) setState(changes.protection.newValue as ProtectionState)
       if (changes.protectionStats) setStats(changes.protectionStats.newValue as ProtectionStats)
@@ -34,7 +33,9 @@ export function useProtection() {
   }, [refreshStats])
 
   const patch = useCallback(async (next: Partial<ProtectionState>) => {
-    setState(await updateProtectionState(next))
+    const updated = await updateProtectionState(next)
+    setState(updated)
+    return updated
   }, [])
 
   return { state, stats, patch, refreshStats }

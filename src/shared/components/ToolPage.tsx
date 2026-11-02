@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import {
   CheckIcon,
@@ -6,6 +6,7 @@ import {
   InfoIcon,
   Link2Icon,
   MoreHorizontalIcon,
+  PlayIcon,
   SettingsIcon,
   Trash2Icon,
 } from 'lucide-react'
@@ -32,6 +33,8 @@ import { Separator } from '@/shared/components/ui/separator'
 import { useToolLabels } from '@/shared/hooks/useToolLabels'
 import { cn } from '@/shared/utils/cn'
 
+const ToolDemoDialog = lazy(() => import('./ToolDemoDialog'))
+
 interface ToolPageProps {
   tool: ToolDefinition
   children: ReactNode
@@ -49,6 +52,7 @@ export function ToolPage({
 }: ToolPageProps) {
   const Icon = tool.icon
   const { t } = useTranslation()
+  const [demoOpen, setDemoOpen] = useState(false)
   const { name, description } = useToolLabels(tool)
   const workspaceId = useWorkspaceId()
   const headerSlot = useWorkspaceHeaderSlot()
@@ -79,6 +83,7 @@ export function ToolPage({
       icon={<Icon className="size-4 text-primary" aria-hidden />}
       onCopyLink={copyLink}
       onOpenNewTab={openNewTab}
+      onWatchDemo={() => setDemoOpen(true)}
     />
   )
 
@@ -88,11 +93,29 @@ export function ToolPage({
       <FavoriteButton toolId={tool.id} />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon-sm" aria-label={t('nav.moreOptions')}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t('nav.moreOptions')}
+            title={t('tool.actionsHint')}
+          >
             <MoreHorizontalIcon className="size-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            onSelect={() => setDemoOpen(true)}
+            className="min-h-12 gap-3 text-primary"
+          >
+            <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
+              <PlayIcon className="size-4" aria-hidden />
+            </span>
+            <span className="flex flex-col gap-0.5">
+              <span className="font-semibold">{t('tool.watchDemo')}</span>
+              <span className="text-[11px] text-muted-foreground">{t('tool.demoMenuHint')}</span>
+            </span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => void copyLink()}>
             <Link2Icon className="size-4" />
             {t('tool.copyLink')}
@@ -118,14 +141,27 @@ export function ToolPage({
   )
 
   const body = (
-    <div
-      className={cn(
-        'relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain p-[var(--density-page-pad)]',
-        contentClassName,
+    <>
+      <div
+        className={cn(
+          'relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain p-[var(--density-page-pad)]',
+          contentClassName,
+        )}
+      >
+        {children}
+      </div>
+      {demoOpen && (
+        <Suspense
+          fallback={
+            <p role="status" className="p-3 text-xs text-muted-foreground">
+              {t('nav.loading')}
+            </p>
+          }
+        >
+          <ToolDemoDialog key={tool.id} tool={tool} onOpenChange={setDemoOpen} />
+        </Suspense>
       )}
-    >
-      {children}
-    </div>
+    </>
   )
 
   if (isWorkspaceHostView) {
@@ -191,6 +227,7 @@ function ToolInfo({
   icon,
   onCopyLink,
   onOpenNewTab,
+  onWatchDemo,
 }: {
   name: string
   description: string
@@ -198,6 +235,7 @@ function ToolInfo({
   icon: ReactNode
   onCopyLink: () => Promise<void>
   onOpenNewTab: () => void
+  onWatchDemo: () => void
 }) {
   const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
@@ -236,6 +274,15 @@ function ToolInfo({
         <p className="px-3 pb-3 text-xs leading-relaxed text-muted-foreground">{description}</p>
         <Separator />
         <div className="flex flex-col p-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="min-h-11 justify-start text-primary"
+            onClick={onWatchDemo}
+          >
+            <PlayIcon aria-hidden />
+            {t('tool.watchDemo')}
+          </Button>
           <Button
             variant="ghost"
             size="sm"

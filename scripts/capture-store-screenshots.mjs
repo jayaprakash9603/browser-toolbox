@@ -20,7 +20,7 @@ const storeH = 800
 const chromeMock = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'store-screenshot-chrome-mock.js'), 'utf8')
 
 const shots = [
-  { file: '01-home.png', hash: '#/', wait: 'Browse by category', extra: null },
+  { file: '01-home.png', hash: '#/', wait: 'Develop & QA', extra: null },
   {
     file: '02-json-toolkit.png',
     hash: '#/tools/developer/json-toolkit',
@@ -30,7 +30,7 @@ const shots = [
   {
     file: '03-command-palette.png',
     hash: '#/',
-    wait: 'Browse by category',
+    wait: 'Develop & QA',
     extra: async (page) => {
       await page.getByRole('button', { name: /open command palette/i }).click()
       await page.waitForTimeout(600)

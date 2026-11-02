@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { ThemeApplicator } from '@/app/providers/ThemeApplicator'
@@ -82,13 +82,15 @@ describe('HomePage landing', () => {
     await waitFor(() => expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument())
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
     expect(screen.getByText('Quick actions')).toBeInTheDocument()
-    expect(screen.getByText('Browse by category')).toBeInTheDocument()
+    expect(screen.queryByText('Browse by category')).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Develop & QA' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Files, Media & Utilities' })).toBeInTheDocument()
     expect(document.getElementById('all-tools')).not.toBeNull()
 
-    const tip = screen.getByRole('button', { name: 'Next tip' })
-    const before = tip.parentElement?.textContent
-    fireEvent.click(tip)
-    expect(tip.parentElement?.textContent).not.toBe(before)
+    const popular = screen.getByText('Popular tools')
+    const suites = document.getElementById('all-tools')
+    expect(suites).not.toBeNull()
+    expect(popular.compareDocumentPosition(suites!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
   }, 20_000)
 })
 

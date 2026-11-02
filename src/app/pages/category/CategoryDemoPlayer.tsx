@@ -17,7 +17,13 @@ import { useToolLabels } from '@/shared/hooks/useToolLabels'
 import { cn } from '@/shared/utils/cn'
 
 /** Website-style walkthrough player for a category: one demo at a time, a tool switcher and the steps. */
-export default function CategoryDemoPlayer({ tools }: { tools: readonly ToolDefinition[] }) {
+export default function CategoryDemoPlayer({
+  tools,
+  onOpenTool,
+}: {
+  tools: readonly ToolDefinition[]
+  onOpenTool?: () => void
+}) {
   const { t } = useTranslation()
   const ids = useId()
   const panelId = `${ids}-panel`
@@ -74,7 +80,13 @@ export default function CategoryDemoPlayer({ tools }: { tools: readonly ToolDefi
     <div className="rounded-2xl border bg-card p-2.5 @[720px]:p-3">
       {count > 1 ? (
         <div className="mb-2.5 flex flex-col gap-2">
-          <ToolTabs tools={tools} selected={selected} idPrefix={ids} panelId={panelId} onSelect={choose} />
+          <ToolTabs
+            tools={tools}
+            selected={selected}
+            idPrefix={ids}
+            panelId={panelId}
+            onSelect={choose}
+          />
           <div className="flex items-center gap-2 px-0.5">
             <span className="flex items-center text-[11px] text-muted-foreground tabular-nums">
               <Button
@@ -124,6 +136,7 @@ export default function CategoryDemoPlayer({ tools }: { tools: readonly ToolDefi
           steps={steps}
           activeStep={activeStep}
           onJump={(index) => controlsRef.current?.jump(index)}
+          onOpen={onOpenTool}
         />
       </div>
     </div>
@@ -135,11 +148,13 @@ function ToolDetails({
   steps,
   activeStep,
   onJump,
+  onOpen,
 }: {
   tool: ToolDefinition
   steps: readonly WalkStep[]
   activeStep: number
   onJump: (index: number) => void
+  onOpen?: () => void
 }) {
   const { t } = useTranslation()
   const { name, description } = useToolLabels(tool)
@@ -152,7 +167,9 @@ function ToolDetails({
         </span>
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-sm font-semibold">{name}</h3>
-          <p className="line-clamp-3 text-xs leading-relaxed text-muted-foreground">{description}</p>
+          <p className="line-clamp-3 text-xs leading-relaxed text-muted-foreground">
+            {description}
+          </p>
         </div>
       </div>
 
@@ -173,13 +190,17 @@ function ToolDetails({
                     aria-label={t('demo.stepLabel', { index: index + 1, title: item.title })}
                     className={cn(
                       'flex w-full items-start gap-2.5 rounded-lg border px-2.5 py-2 text-left outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none',
-                      active ? 'border-primary/35 bg-primary/[0.06]' : 'border-transparent hover:bg-muted/60',
+                      active
+                        ? 'border-primary/35 bg-primary/[0.06]'
+                        : 'border-transparent hover:bg-muted/60',
                     )}
                   >
                     <span
                       className={cn(
                         'mt-px flex size-5 shrink-0 items-center justify-center rounded-full font-mono text-[10px] tabular-nums transition-colors duration-200',
-                        active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+                        active
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground',
                       )}
                     >
                       {index + 1}
@@ -204,7 +225,7 @@ function ToolDetails({
       ) : null}
 
       <Button asChild size="sm" className="self-start">
-        <Link to={tool.route}>
+        <Link to={tool.route} onClick={onOpen}>
           {t('demo.player.open', { name })}
           <ArrowRightIcon aria-hidden />
         </Link>

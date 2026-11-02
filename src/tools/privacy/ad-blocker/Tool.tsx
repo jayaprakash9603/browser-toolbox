@@ -42,7 +42,7 @@ export default function AdBlockerTool() {
           <ProtectionHeader
             enabled={state.enabled}
             totals={live.totals}
-            onToggle={(enabled) => onPatch({ enabled })}
+            onToggle={async (enabled) => (await patch({ enabled })).enabled}
           />
         </StaggerItem>
         <PermissionNotice active={state.enabled} message={t('siteAccess.adblockNeeded')} />
@@ -70,9 +70,9 @@ export default function AdBlockerTool() {
           <div data-search-id="allowlist">
             <h3 className="mb-2 text-xs font-semibold">{t('adblock.allowlistTitle')}</h3>
             <AllowlistEditor
-            allowlist={state.allowlist}
-            onChange={(allowlist) => onPatch({ allowlist })}
-          />
+              allowlist={state.allowlist}
+              onChange={(allowlist) => onPatch({ allowlist })}
+            />
           </div>
         </StaggerItem>
         <StaggerItem>

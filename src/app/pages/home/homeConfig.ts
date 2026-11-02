@@ -3,6 +3,8 @@ import {
   CodeXmlIcon,
   GlobeIcon,
   ImageIcon,
+  AppWindowIcon,
+  MessagesSquareIcon,
   ShieldCheckIcon,
   TypeIcon,
   type LucideIcon,
@@ -10,6 +12,49 @@ import {
 
 import type { ToolDefinition } from '@/core/registry'
 import { toolRegistry } from '@/core/registry'
+import { SECTIONS } from '@/core/registry/sections'
+import { getPrimaryToolsForUserCategory } from '@/core/registry/userCategories'
+
+export function getHomeWorkbenchGroups() {
+  return SECTIONS.flatMap((section) => {
+    const tools = getPrimaryToolsForUserCategory(section.id)
+    const shortcuts = (section.shortcuts ?? []).flatMap(({ toolId }) => {
+      const tool = toolRegistry.get(toolId)
+      return tool && tool.status !== 'disabled' ? [tool] : []
+    })
+    if (section.id !== 'productivity-browser') return [{ ...section, tools, shortcuts }]
+
+    return [
+      {
+        ...section,
+        id: 'productivity',
+        name: 'Productivity',
+        description: 'Capture ideas, organize tasks and keep your day flowing.',
+        icon: ClipboardListIcon,
+        tools: tools.filter((tool) => tool.category !== 'browser' && tool.category !== 'sites'),
+        shortcuts: [],
+      },
+      {
+        ...section,
+        id: 'browser',
+        name: 'Browser Workspace',
+        description: 'Your tabs, connection and floating video in one place.',
+        icon: AppWindowIcon,
+        tools: tools.filter((tool) => tool.category === 'browser'),
+        shortcuts: [],
+      },
+      {
+        ...section,
+        id: 'social',
+        name: 'Social & Platforms',
+        description: 'Focused controls for your everyday platforms.',
+        icon: MessagesSquareIcon,
+        tools: tools.filter((tool) => tool.category === 'sites'),
+        shortcuts: [],
+      },
+    ]
+  })
+}
 
 export type HomeTagline = {
   id: 'text' | 'developer' | 'web' | 'media' | 'security' | 'productivity'
@@ -67,13 +112,19 @@ export function getHomePopularTools() {
   return getPopularTools().filter((tool) => !hidden.has(tool.id))
 }
 
-export const TILE_VARS = ['var(--tile-1)', 'var(--tile-2)', 'var(--tile-3)', 'var(--tile-4)'] as const
+export const TILE_VARS = [
+  'var(--tile-1)',
+  'var(--tile-2)',
+  'var(--tile-3)',
+  'var(--tile-4)',
+] as const
 
 export function tileColor(index: number) {
   return TILE_VARS[index % TILE_VARS.length]
 }
 
-export type GreetingKey = 'home.greeting.morning' | 'home.greeting.afternoon' | 'home.greeting.evening'
+export type GreetingKey =
+  'home.greeting.morning' | 'home.greeting.afternoon' | 'home.greeting.evening'
 
 export function getGreetingKey(hour = new Date().getHours()): GreetingKey {
   if (hour >= 5 && hour < 12) return 'home.greeting.morning'

@@ -1,0 +1,83 @@
+.protection-power-card {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  background: var(--muted);
+  transition:
+    background-color 240ms,
+    border-color 240ms;
+}
+.protection-power-card[data-enabled='true'] {
+  background: linear-gradient(120deg, color-mix(in srgb, #10b981 13%, var(--card)), var(--card));
+  border-color: color-mix(in srgb, #10b981 35%, var(--border));
+}
+.protection-power-orbit {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  color: var(--muted-foreground);
+}
+.protection-power-ring {
+  position: absolute;
+  inset: 0;
+  border: 1px dashed currentColor;
+  border-radius: 50%;
+  opacity: 0.4;
+}
+[data-enabled='true'] .protection-power-orbit {
+  color: light-dark(#047857, #34d399);
+}
+.protection-power-button {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--background);
+  color: var(--muted-foreground);
+  outline: none;
+  transition:
+    background-color 160ms,
+    color 160ms,
+    box-shadow 160ms;
+}
+[data-enabled='true'] .protection-power-button {
+  background: light-dark(#047857, #065f46);
+  color: white;
+  box-shadow: 0 0 0 4px color-mix(in srgb, #10b981 12%, transparent);
+}
+.protection-power-button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+.protection-power-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-enabled='true'] .protection-power-ring {
+    animation: protection-orbit 1400ms ease-out;
+  }
+  @keyframes protection-orbit {
+    from {
+      transform: rotate(-90deg) scale(0.8);
+      opacity: 0;
+    }
+    to {
+      transform: rotate(0) scale(1);
+      opacity: 0.4;
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .protection-power-card,
+  .protection-power-button {
+    transition: none;
+  }
+}

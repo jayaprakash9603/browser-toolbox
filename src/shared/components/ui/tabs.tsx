@@ -9,7 +9,7 @@ import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/utils/cn'
 
 /**
- * chips: rounded chips with a sliding filled pill (default, same as the PDF toolkit categories).
+ * chips: a compact navigation rail with a sliding outlined tile (default).
  * pill: segmented control with a sliding raised thumb. underline: classic sliding underline.
  */
 type TabsVariant = 'chips' | 'pill' | 'underline'
@@ -19,7 +19,7 @@ const TabsVariantContext = React.createContext<TabsVariant>('chips')
 const tabsListVariants = cva('inline-flex w-fit items-center text-muted-foreground', {
   variants: {
     variant: {
-      chips: 'h-auto gap-1.5 rounded-none bg-transparent px-px py-0.5',
+      chips: 'h-auto gap-1 rounded-xl border bg-muted/40 p-1',
       pill: 'h-9 justify-center rounded-lg bg-muted p-1',
       underline: 'h-9 gap-0 rounded-none border-0 bg-transparent p-0',
     },
@@ -33,9 +33,8 @@ const tabsTriggerVariants = cva(
     variants: {
       variant: {
         chips:
-          'relative z-10 h-8 rounded-full border bg-card px-3 text-xs hover:border-foreground/20 hover:text-foreground data-[state=active]:border-transparent data-[state=active]:bg-transparent data-[state=active]:text-primary-foreground',
-        pill:
-          'relative z-10 h-7 flex-1 rounded-md px-3 hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground',
+          'relative z-10 min-h-11 rounded-lg border border-transparent bg-transparent px-3 text-xs hover:bg-background/60 hover:text-foreground data-[state=active]:text-primary motion-reduce:transition-none',
+        pill: 'relative z-10 h-7 flex-1 rounded-md px-3 hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground',
         underline:
           'relative z-10 h-9 rounded-none border-0 bg-transparent px-3 shadow-none hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none',
       },
@@ -119,7 +118,12 @@ function TabsList({
   const { t } = useTranslation()
   const resolved = variant ?? 'chips'
   const listRef = React.useRef<HTMLDivElement>(null)
-  const [underline, setUnderline] = React.useState<IndicatorBox>({ left: 0, top: 0, width: 0, height: 0 })
+  const [underline, setUnderline] = React.useState<IndicatorBox>({
+    left: 0,
+    top: 0,
+    width: 0,
+    height: 0,
+  })
   const [edges, setEdges] = React.useState<Edges>({ start: false, end: false })
   const [overflowing, setOverflowing] = React.useState(false)
   const reduceMotion = useReducedMotion()
@@ -145,7 +149,12 @@ function TabsList({
       scrollActiveIntoView(node, !reduceMotion)
       sync()
     })
-    observer.observe(node, { attributes: true, subtree: true, attributeFilter: ['data-state'], childList: true })
+    observer.observe(node, {
+      attributes: true,
+      subtree: true,
+      attributeFilter: ['data-state'],
+      childList: true,
+    })
 
     const resizeObserver = new ResizeObserver(sync)
     resizeObserver.observe(node)
@@ -186,7 +195,7 @@ function TabsList({
           <Button
             type="button"
             variant="ghost"
-            size="icon-xs"
+            size="icon"
             className="my-auto shrink-0 rounded-md text-muted-foreground transition-opacity duration-200 disabled:opacity-0"
             disabled={!edges.start}
             aria-label={t('common.scrollTabsLeft')}
@@ -200,6 +209,7 @@ function TabsList({
           className={cn(
             tabsListVariants({ variant: resolved }),
             'relative',
+            fullWidth && 'w-full flex-1 [&_[role=tab]]:flex-1',
             showScrollButtons
               ? 'min-w-0 flex-1 overflow-x-auto overscroll-x-contain scrollbar-none'
               : 'max-w-full',
@@ -215,12 +225,20 @@ function TabsList({
               className={cn(
                 'pointer-events-none absolute top-0 left-0',
                 resolved === 'underline' && 'z-20 rounded-full bg-primary',
-                resolved === 'chips' && 'z-0 rounded-full bg-primary shadow-sm',
+                resolved === 'chips' &&
+                  'z-0 rounded-lg border border-primary/25 bg-background shadow-sm',
                 resolved === 'pill' && 'z-0 rounded-md bg-background shadow-sm',
               )}
               initial={false}
-              animate={{ left: underline.left, top: underline.top, width: underline.width, height: underline.height }}
-              transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 400, damping: 40 }}
+              animate={{
+                left: underline.left,
+                top: underline.top,
+                width: underline.width,
+                height: underline.height,
+              }}
+              transition={
+                reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 400, damping: 40 }
+              }
             />
           )}
         </TabsPrimitive.List>
@@ -228,7 +246,7 @@ function TabsList({
           <Button
             type="button"
             variant="ghost"
-            size="icon-xs"
+            size="icon"
             className="my-auto shrink-0 rounded-md text-muted-foreground transition-opacity duration-200 disabled:opacity-0"
             disabled={!edges.end}
             aria-label={t('common.scrollTabsRight')}
@@ -257,7 +275,7 @@ function TabsTrigger({
           className={cn(
             'rounded-full bg-muted-foreground/15 px-1.5 text-[11px] leading-4 tabular-nums',
             variant === 'chips'
-              ? 'group-data-[state=active]/tab:bg-primary-foreground/20 group-data-[state=active]/tab:text-primary-foreground'
+              ? 'group-data-[state=active]/tab:bg-primary/15 group-data-[state=active]/tab:text-primary'
               : 'group-data-[state=active]/tab:bg-primary/15 group-data-[state=active]/tab:text-primary',
           )}
         >

@@ -11,6 +11,8 @@ import { SlideUp } from '@/shared/components/motion'
 import { useRecentTools } from '@/shared/hooks/useRecentTools'
 import { useToolLabels } from '@/shared/hooks/useToolLabels'
 
+import './home-shortcuts.css'
+
 interface RecentSectionProps {
   delay?: number
   limit?: number
@@ -35,7 +37,9 @@ export function RecentSection({ delay = 0.12, limit = 4, showViewAll = true }: R
       <SectionHeader
         title={t('home.recentlyUsed')}
         icon={ClockIcon}
-        action={showViewAll && recent.length > 0 ? { to: '/recent', label: t('home.viewAll') } : undefined}
+        action={
+          showViewAll && recent.length > 0 ? { to: '/recent', label: t('home.viewAll') } : undefined
+        }
         count={recent.length}
       />
       {entries.length === 0 ? (
@@ -47,7 +51,7 @@ export function RecentSection({ delay = 0.12, limit = 4, showViewAll = true }: R
           </div>
         </div>
       ) : (
-        <ul className="divide-y overflow-hidden rounded-2xl border bg-card shadow-[var(--shadow-card)]">
+        <ul className="home-recent-grid">
           {entries.map(({ tool, openedAt }) => (
             <li key={tool.id}>
               <RecentRow tool={tool} openedAt={openedAt} />
@@ -72,19 +76,16 @@ function RecentRow({ tool, openedAt }: { tool: ToolDefinition; openedAt: number 
       to={tool.route}
       onPointerEnter={preload}
       onFocus={preload}
-      className="group flex min-h-11 items-center gap-2.5 px-2.5 py-2 outline-none transition-colors duration-150 hover:bg-accent/50 focus-visible:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+      className="home-recent-link group"
     >
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+      <span className="home-recent-icon">
         <Icon className="size-4" aria-hidden />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px] leading-tight font-medium">{name}</span>
+        <span className="home-shortcut-name">{name}</span>
         <span className="block truncate text-[11px] text-muted-foreground">{category}</span>
       </span>
-      <time
-        dateTime={new Date(openedAt).toISOString()}
-        className="shrink-0 text-[11px] text-muted-foreground tabular-nums"
-      >
+      <time dateTime={new Date(openedAt).toISOString()} className="home-recent-time">
         {formatRelativeTime(openedAt)}
       </time>
       <ChevronRightIcon

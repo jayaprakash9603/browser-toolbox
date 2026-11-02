@@ -49,7 +49,7 @@ export default function WebProtectionTool() {
           <ProtectionToolHeader
             enabled={state.enabled}
             stats={stats}
-            onToggle={(enabled) => onPatch({ enabled })}
+            onToggle={async (enabled) => (await patch({ enabled })).enabled}
           />
         </StaggerItem>
         <PermissionNotice active={state.enabled} message={t('siteAccess.protectionNeeded')} />
@@ -82,7 +82,10 @@ export default function WebProtectionTool() {
         </StaggerItem>
         <StaggerItem>
           <h3 className="mb-2 text-xs font-semibold">{t('protection.trusted.title')}</h3>
-          <TrustedSitesEditor trusted={state.trusted} onChange={(trusted) => onPatch({ trusted })} />
+          <TrustedSitesEditor
+            trusted={state.trusted}
+            onChange={(trusted) => onPatch({ trusted })}
+          />
         </StaggerItem>
         {threats && (
           <StaggerItem>

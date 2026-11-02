@@ -11,10 +11,7 @@ export function useAdblock() {
 
   useEffect(() => {
     void getAdblockState().then(setState)
-    const onChange = (
-      changes: Record<string, chrome.storage.StorageChange>,
-      area: string,
-    ) => {
+    const onChange = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
       if (area === 'local' && changes.adblock) {
         setState(changes.adblock.newValue as AdblockState)
       }
@@ -24,7 +21,9 @@ export function useAdblock() {
   }, [])
 
   const patch = useCallback(async (next: Partial<AdblockState>) => {
-    setState(await updateAdblockState(next))
+    const updated = await updateAdblockState(next)
+    setState(updated)
+    return updated
   }, [])
 
   return { state, patch, refresh }

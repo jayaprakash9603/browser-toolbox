@@ -4,7 +4,7 @@ import { InboxIcon } from 'lucide-react'
 import { useScrollMemory } from '@/app/navigationMemory'
 import { filterTools } from '@/features/search/filterTools'
 import { toolRegistry } from '@/core/registry'
-import { AllToolsCategories } from '@/app/pages/home/AllToolsCategories'
+import { HomeToolSections } from '@/app/pages/home/HomeToolSections'
 import { BundleJobBanner } from '@/app/pages/home/BundleJobBanner'
 import { FavoritesSection } from '@/app/pages/home/FavoritesSection'
 import { PopularTools } from '@/app/pages/home/PopularTools'
@@ -74,7 +74,10 @@ export default function HomePage({ section }: HomePageProps) {
 
   return (
     <div className="@container flex h-full min-w-0 flex-col overflow-x-clip">
-      <div ref={scrollRef} className="scrollbar-styled min-h-0 flex-1 overflow-y-auto overflow-x-clip px-3 pb-6 @[360px]:px-4">
+      <div
+        ref={scrollRef}
+        className="scrollbar-styled min-h-0 flex-1 overflow-y-auto overflow-x-clip px-3 pb-6 @[360px]:px-4"
+      >
         <div className="mx-auto max-w-3xl pt-3">
           <BundleJobBanner />
           <WelcomeStrip />
@@ -82,7 +85,7 @@ export default function HomePage({ section }: HomePageProps) {
           <RecentSection />
           <FavoritesSection />
           <PopularTools />
-          <AllToolsCategories />
+          <HomeToolSections />
           <SupportCard />
         </div>
       </div>

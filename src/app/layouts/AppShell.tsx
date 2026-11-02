@@ -134,7 +134,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
 
   useEffect(() => {
     mainRef.current?.focus({ preventScroll: true })
-  }, [path])
+  }, [motionKey])
 
   const content = renderRoute(path)
   // Dedicated DevTools panels (Interceptor) and Elements sidebar panes are chromeless.
