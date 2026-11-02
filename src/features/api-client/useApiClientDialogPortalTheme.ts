@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 
 const PORTAL_DATASET_KEY = 'browserToolboxApiClientPortal'
 const PORTAL_SELECTOR = '[data-browser-toolbox-api-client-portal="themed"]'
+const DIALOG_CONTENT_SELECTOR = '[data-postman-lite-dialog-content][data-state="open"]'
 
 function copyThemeHostStyles(from: HTMLElement, to: HTMLElement): void {
   to.classList.toggle('dark', from.classList.contains('dark'))
@@ -14,9 +15,7 @@ function copyThemeHostStyles(from: HTMLElement, to: HTMLElement): void {
 }
 
 function isPostmanLiteDialogContent(node: Element): boolean {
-  if (!node.matches('[data-radix-dialog-content]')) return false
-  if (node.closest('.api-client-theme-host')) return false
-  return getComputedStyle(node).zIndex === '9999'
+  return node.matches(DIALOG_CONTENT_SELECTOR) && !node.closest('.api-client-theme-host')
 }
 
 /** Radix dialogs portal to <body>, outside `.api-client-theme-host`, so postman-lite tokens and utilities never apply. */
@@ -26,7 +25,7 @@ function syncPostmanLiteDialogPortals(): void {
   const host = document.querySelector<HTMLElement>('.api-client-theme-host')
   if (!host) return
 
-  for (const content of document.querySelectorAll<HTMLElement>('[data-radix-dialog-content]')) {
+  for (const content of document.querySelectorAll<HTMLElement>(DIALOG_CONTENT_SELECTOR)) {
     if (!isPostmanLiteDialogContent(content)) continue
     const portal = content.parentElement
     if (!portal) continue

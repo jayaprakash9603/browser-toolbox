@@ -16,11 +16,11 @@ export function usePostmanLiteStylesheet() {
       styleElement.textContent = `${postmanLiteCss}
 
 /* Keep embedded API client dialogs above the host panel and its overlay. */
-html[data-browser-toolbox-api-client="open"] [data-radix-dialog-overlay][data-state="open"] {
+html[data-browser-toolbox-api-client="open"] [data-postman-lite-dialog-overlay][data-state="open"] {
   z-index: 9998 !important;
 }
 
-html[data-browser-toolbox-api-client="open"] [data-radix-dialog-content][data-state="open"] {
+html[data-browser-toolbox-api-client="open"] [data-postman-lite-dialog-content][data-state="open"] {
   z-index: 9999 !important;
 }
 `
