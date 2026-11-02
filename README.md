@@ -38,7 +38,7 @@ Browser Workspace and Productivity play short decorative tab-loading and planner
 
 Tool navigation uses an outlined sliding selection rail with overflow controls and keyboard navigation; PDF Toolkit keeps its existing category chips. Each tool's three-dot menu starts with **Watch demo**, also available from its info panel. Walkthroughs load on demand and use sample data; workspace overview tools offer demos for their child tools. **Report an issue** opens a dedicated full-page experience with a guided form, privacy details, a review step, and GitHub/email/copy actions. Nothing is sent automatically.
 
-Help and feedback uses illustrated issue, email, and rating cards with hover and keyboard-focus effects. Cards stack in narrow panels and form three columns when space permits. Illustrations are decorative, respect reduced motion, and do not send reports, emails, or ratings; the existing report page, email draft, and store links remain the actions.
+Help and feedback stays in one compact three-card row at every panel width. Small decorative issue, email, and rating demos play in sequence inside the cards, pause offscreen or when the page is hidden, and respect reduced motion. Descriptions remain available to screen readers without adding visual height. The existing report page, email draft, and store links remain the actions; animations never send anything.
 
 ## Documentation
 

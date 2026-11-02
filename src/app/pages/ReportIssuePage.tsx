@@ -22,17 +22,11 @@ import {
 } from '@/core/support/config'
 import { getToolName } from '@/i18n/toolLabels'
 import { BackButton } from '@/shared/components/BackButton'
+import { Autocomplete } from '@/shared/components/Autocomplete'
 import { Button } from '@/shared/components/ui/button'
 import { Checkbox } from '@/shared/components/ui/checkbox'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/shared/components/ui/select'
 import { Textarea } from '@/shared/components/ui/textarea'
 import { useSettings } from '@/shared/hooks/useSettings'
 
@@ -176,23 +170,26 @@ export default function ReportIssuePage() {
                       <Label htmlFor="report-tool">
                         {t('support.report.tool', { defaultValue: 'Tool' })}
                       </Label>
-                      <Select value={toolId} onValueChange={setToolId}>
-                        <SelectTrigger id="report-tool" className="min-h-11 w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={GENERAL_TOOL}>
-                            {t('support.report.general', {
+                      <Autocomplete
+                        id="report-tool"
+                        value={toolId}
+                        onValueChange={setToolId}
+                        placeholder={t('support.report.toolPlaceholder', {
+                          defaultValue: 'Search tools…',
+                        })}
+                        noResultsLabel={t('support.report.noToolMatches', {
+                          defaultValue: 'No matching tools',
+                        })}
+                        options={[
+                          {
+                            value: GENERAL_TOOL,
+                            label: t('support.report.general', {
                               defaultValue: 'General / not tool-specific',
-                            })}
-                          </SelectItem>
-                          {tools.map((tool) => (
-                            <SelectItem key={tool.id} value={tool.id}>
-                              {tool.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                            }),
+                          },
+                          ...tools.map((tool) => ({ value: tool.id, label: tool.name })),
+                        ]}
+                      />
                     </div>
 
                     <div className="report-field report-field-wide">

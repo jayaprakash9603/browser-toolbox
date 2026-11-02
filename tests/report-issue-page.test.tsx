@@ -89,6 +89,21 @@ describe('full-page issue reporting', () => {
     expect(screen.getByLabelText('Title', { exact: false })).toHaveValue('Cannot convert data')
   })
 
+  it('filters and selects a tool in the reusable autocomplete', () => {
+    renderReport()
+    const toolPicker = screen.getByRole('combobox', { name: 'Tool' })
+    fireEvent.focus(toolPicker)
+    fireEvent.change(toolPicker, { target: { value: 'diff' } })
+    fireEvent.click(screen.getByRole('option', { name: 'Diff' }))
+
+    describeIssue()
+    fireEvent.click(screen.getByRole('button', { name: 'Review report' }))
+    const github = screen.getByRole('link', { name: 'Open GitHub issue' })
+    expect(new URL(github.getAttribute('href')!).searchParams.get('body')).toContain(
+      '**Tool:** Diff',
+    )
+  })
+
   it('excludes diagnostics when unchecked and copies exactly the reviewed report', async () => {
     const write = vi.fn().mockResolvedValue(undefined)
     mockClipboard(write)
