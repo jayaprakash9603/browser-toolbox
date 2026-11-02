@@ -2,11 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import {
-  serviceWorkerClosure,
-  sidePanelHomeBootClosure,
-  totalBytes,
-} from './build-chunk-graph.mjs'
+import { serviceWorkerClosure, sidePanelHomeBootClosure, totalBytes } from './build-chunk-graph.mjs'
 
 const dist = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist')
 const assets = join(dist, 'assets')
@@ -88,7 +84,8 @@ for (const file of swClosure.keys()) {
   }
   const text = readFileSync(join(assets, file), 'utf8')
   for (const pattern of BANNED_SW_CONTENT) {
-    if (pattern.test(text)) fail(`service worker chunk ${file} matches banned UI library ${pattern}`)
+    if (pattern.test(text))
+      fail(`service worker chunk ${file} matches banned UI library ${pattern}`)
   }
 }
 

@@ -39,7 +39,9 @@ const CategoryPage = lazy(() => import('@/app/pages/CategoryPage'))
 const AllToolsPage = lazy(() => import('@/app/pages/AllToolsPage'))
 const DevToolsPage = lazy(() => import('@/app/pages/DevToolsPage'))
 const DevToolsInterceptorPage = lazy(() => import('@/app/pages/DevToolsInterceptorPage'))
-const DevToolsSelectorStudioSidebarPage = lazy(() => import('@/app/pages/DevToolsSelectorStudioSidebarPage'))
+const DevToolsSelectorStudioSidebarPage = lazy(
+  () => import('@/app/pages/DevToolsSelectorStudioSidebarPage'),
+)
 const CommandPalette = lazy(() =>
   import('@/features/command-palette/CommandPalette').then((m) => ({ default: m.CommandPalette })),
 )
@@ -91,7 +93,8 @@ export function AppShell({ children }: { children?: ReactNode }) {
       changes: { [key: string]: chrome.storage.StorageChange },
       area: string,
     ) => {
-      if (area === 'session' && changes[PANEL_OPEN_COMMAND_PALETTE_KEY]?.newValue) openPaletteFromIntent()
+      if (area === 'session' && changes[PANEL_OPEN_COMMAND_PALETTE_KEY]?.newValue)
+        openPaletteFromIntent()
     }
     chrome.storage?.onChanged.addListener(onSessionPalette)
 
@@ -135,8 +138,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
 
   const content = renderRoute(path)
   // Dedicated DevTools panels (Interceptor) and Elements sidebar panes are chromeless.
-  const captureFullPage =
-    path === '/tools/screenshots/capture' && isCaptureViewerSearch(search)
+  const captureFullPage = path === '/tools/screenshots/capture' && isCaptureViewerSearch(search)
   const chromeless =
     path === '/devtools/interceptor' ||
     path === '/devtools/selector-studio-sidebar' ||

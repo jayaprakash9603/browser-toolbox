@@ -29,7 +29,9 @@ function HeaderToggle({ toolId, enabled, setEnabled }: HeaderToggleProps) {
   const busy = pending || enabled === null
   const Icon: ComponentType<{ className?: string }> = busy ? LoaderCircleIcon : tool.icon
   const describe = (on: boolean) =>
-    on ? t('headerToggle.on', { defaultValue: 'on' }) : t('headerToggle.off', { defaultValue: 'off' })
+    on
+      ? t('headerToggle.on', { defaultValue: 'on' })
+      : t('headerToggle.off', { defaultValue: 'off' })
   const label =
     enabled === null
       ? `${name}: ${t('headerToggle.loading', { defaultValue: 'loading' })}`
@@ -104,13 +106,24 @@ export function HeaderProtectionToggles() {
 export function AdblockHeaderToggle() {
   const { state } = useAdblock()
   const setEnabled = async (next: boolean) => (await updateAdblockState({ enabled: next })).enabled
-  return <HeaderToggle toolId="privacy.ad-blocker" enabled={state ? state.enabled : null} setEnabled={setEnabled} />
+  return (
+    <HeaderToggle
+      toolId="privacy.ad-blocker"
+      enabled={state ? state.enabled : null}
+      setEnabled={setEnabled}
+    />
+  )
 }
 
 export function ProtectionHeaderToggle() {
   const { state } = useProtection()
-  const setEnabled = async (next: boolean) => (await updateProtectionState({ enabled: next })).enabled
+  const setEnabled = async (next: boolean) =>
+    (await updateProtectionState({ enabled: next })).enabled
   return (
-    <HeaderToggle toolId="privacy.web-protection" enabled={state ? state.enabled : null} setEnabled={setEnabled} />
+    <HeaderToggle
+      toolId="privacy.web-protection"
+      enabled={state ? state.enabled : null}
+      setEnabled={setEnabled}
+    />
   )
 }
