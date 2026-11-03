@@ -2,7 +2,7 @@
 /**
  * Builds a Chrome Web Store release: picks the next version from the commits since the last
  * `vX.Y.Z` tag, writes it to package.json, runs the production build, verifies dist/, zips it
- * and records the release in CHANGELOG.md with a commit and tag.
+ * and records the release in CHANGELOG.md with a commit and tag, then pushes both to origin by default.
  *
  *   node scripts/release/release.mjs [auto|major|minor|patch|X.Y.Z] [options]
  */
@@ -67,25 +67,28 @@ ${bold('Options')}
   --dry-run      plan only: no files, build, commit or tag
   --yes, -y      don't ask for confirmation
   --test         run lint and the test suite before building
-  --push         push the release commit and tag to origin
+  --push         push the release commit and tag to origin (default)
+  --no-push      keep the release commit and tag local
   --no-commit    build and zip, but leave versioning changes uncommitted and untagged
   --allow-dirty  release even with uncommitted changes to tracked files
   --help         show this help
 `
 
 function parseArgs(argv) {
-  const options = { request: 'auto', dryRun: false, yes: false, test: false, push: false, commit: true, allowDirty: false, help: false }
+  const options = { request: 'auto', dryRun: false, yes: false, test: false, push: null, commit: true, allowDirty: false, help: false }
   for (const arg of argv) {
     if (arg === '--dry-run') options.dryRun = true
     else if (arg === '--yes' || arg === '-y') options.yes = true
     else if (arg === '--test') options.test = true
     else if (arg === '--push') options.push = true
+    else if (arg === '--no-push') options.push = false
     else if (arg === '--no-commit') options.commit = false
     else if (arg === '--allow-dirty') options.allowDirty = true
     else if (arg === '--help' || arg === '-h' || arg === '/?') options.help = true
     else if (arg === 'auto' || BUMPS.includes(arg) || isChromeVersion(arg.replace(/^v/, ''))) options.request = arg.replace(/^v/, '')
     else throw new ReleaseError(`Unknown argument "${arg}". Run release.bat --help for usage.`)
   }
+  if (options.push === null) options.push = options.commit
   if (options.push && !options.commit) throw new ReleaseError('--push needs the release commit; drop --no-commit.')
   return options
 }

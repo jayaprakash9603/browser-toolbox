@@ -1,8 +1,9 @@
 @echo off
-rem Builds a versioned Chrome Web Store zip into releases\.
+rem Builds a versioned Chrome Web Store zip into releases\ and pushes its commit/tag to origin.
 rem   release.bat              version from commits (feat = minor, fix = patch, breaking = major)
 rem   release.bat minor        force major / minor / patch, or pass an exact version like 1.2.0
 rem   release.bat --dry-run    preview only;  release.bat --help for all options
+rem   release.bat --no-push    keep the release commit and tag local
 setlocal
 cd /d "%~dp0"
 
