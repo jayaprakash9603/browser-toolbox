@@ -79,7 +79,11 @@ describe('usePostmanLiteStylesheet', () => {
     })
 
     expect(dialog.isConnected).toBe(true)
-    expect(sheets()[0]?.textContent).toContain('[data-postman-lite-dialog-content][data-state="open"]')
-    expect(sheets()[0]?.textContent).toContain('[data-postman-lite-dialog-overlay][data-state="open"]')
+    expect(sheets()[0]?.textContent).toContain(
+      '[data-postman-lite-dialog-content][data-state="open"]',
+    )
+    expect(sheets()[0]?.textContent).toContain(
+      '[data-postman-lite-dialog-overlay][data-state="open"]',
+    )
   })
 })
