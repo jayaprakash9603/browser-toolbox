@@ -4,7 +4,9 @@ import { fileURLToPath } from 'node:url'
 
 import { serviceWorkerClosure, sidePanelHomeBootClosure, totalBytes } from './build-chunk-graph.mjs'
 
-const dist = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist')
+const dist = process.env.BUILD_OUTPUT_DIR
+  ? process.env.BUILD_OUTPUT_DIR
+  : join(dirname(fileURLToPath(import.meta.url)), '..', 'dist', 'chromium')
 const assets = join(dist, 'assets')
 
 /** Measured home boot ~986 KB; allow headroom for i18n/catalog growth. */

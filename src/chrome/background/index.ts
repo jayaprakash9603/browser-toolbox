@@ -61,6 +61,7 @@ import { registerScriptStudio } from './script-studio'
 import { registerSidePanelNavigation } from './panelNavigation'
 import { registerResponsiveViewerFraming } from './responsiveViewerFraming'
 import { setPanelRouteIntent } from '@/core/panel/navigationSession'
+import { configurePanelAction, openExtensionPanel } from '@/platform/panel'
 
 const logger = createLogger('background')
 
@@ -80,7 +81,7 @@ async function openPanelWithTool(
   if (tool?.route) await setPanelRouteIntent(tool.route)
   if (tab?.windowId != null) {
     try {
-      await chrome.sidePanel.open({ windowId: tab.windowId })
+      await openExtensionPanel({ windowId: tab.windowId, tabId: tab.id })
     } catch (error) {
       logger.warn('side panel open failed', error)
     }
@@ -90,9 +91,6 @@ async function openPanelWithTool(
 chrome.runtime.onInstalled.addListener(() => {
   logger.info('installed')
   safeStartup('initStorage', () => initStorage().then(() => enqueueContextMenuRebuild()))
-  safeStartup('sidePanel', () =>
-    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }),
-  )
   safeStartup('protection', () => syncProtectionState())
   safeStartup('youtube', () => syncYoutubeEnhancerState())
   safeStartup('instagram', () => syncInstagramEnhancerState())
@@ -166,7 +164,9 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     return
   }
   if (menuItemId === 'toolbox.open' || menuItemId.startsWith('toolbox.open.')) {
-    if (tab?.windowId != null) void chrome.sidePanel.open({ windowId: tab.windowId })
+    if (tab?.windowId != null) {
+      void openExtensionPanel({ windowId: tab.windowId, tabId: tab.id })
+    }
     return
   }
   const match = findToolForMenuItem(menuItemId)
@@ -185,6 +185,7 @@ chrome.commands.onCommand.addListener((command, tab) => {
 
 const rebuildMenus = () => enqueueContextMenuRebuild()
 
+safeRegister('panelAction', () => configurePanelAction().then(() => undefined))
 safeRegister('apiClientSend', registerApiClientSendHandler)
 safeRegister('capture', registerCaptureHandler)
 safeRegister('screenshot', registerScreenshotHandlers)

@@ -1,0 +1,24 @@
+{
+  "categories": {
+    "firefox": [
+      "other"
+    ]
+  },
+  "summary": {
+    "en-US": "Everyday developer, text and web tools in one searchable browser sidebar."
+  },
+  "version": {
+    "license": "MIT"
+  },
+  "homepage": {
+    "en-US": "https://onepanel.quickcalci.com"
+  },
+  "support_email": {
+    "en-US": "jjayaprakash2002@gmail.com"
+  },
+  "support_website": {
+    "en-US": "https://onepanel.quickcalci.com"
+  },
+  "requires_payment": false
+}
+

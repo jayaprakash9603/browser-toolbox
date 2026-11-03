@@ -1,13 +1,15 @@
+import { extensionApi } from '@/platform/browser'
+
 export const ALL_SITES_ORIGINS = ['<all_urls>']
 
 function hasPermissionsApi(): boolean {
-  return typeof chrome !== 'undefined' && Boolean(chrome.permissions?.contains)
+  return Boolean(extensionApi()?.permissions?.contains)
 }
 
 export async function hasAllSitesAccess(): Promise<boolean> {
   if (!hasPermissionsApi()) return false
   try {
-    return await chrome.permissions.contains({ origins: ALL_SITES_ORIGINS })
+    return await extensionApi()!.permissions.contains({ origins: ALL_SITES_ORIGINS })
   } catch {
     return false
   }
@@ -20,8 +22,9 @@ export async function hasAllSitesAccess(): Promise<boolean> {
 export async function requestPermissions(request: chrome.permissions.Permissions): Promise<boolean> {
   if (!hasPermissionsApi()) return false
   try {
-    if (await chrome.permissions.contains(request)) return true
-    return await chrome.permissions.request(request)
+    const api = extensionApi()!
+    if (await api.permissions.contains(request)) return true
+    return await api.permissions.request(request)
   } catch {
     return false
   }
@@ -34,7 +37,7 @@ export function requestAllSitesAccess(): Promise<boolean> {
 export async function revokeAllSitesAccess(): Promise<boolean> {
   if (!hasPermissionsApi()) return false
   try {
-    return await chrome.permissions.remove({ origins: ALL_SITES_ORIGINS })
+    return await extensionApi()!.permissions.remove({ origins: ALL_SITES_ORIGINS })
   } catch {
     return false
   }
@@ -59,12 +62,13 @@ export function requestSiteAccess(url: string | undefined): Promise<boolean> {
 }
 
 export function onSiteAccessChanged(listener: () => void): () => void {
-  if (!hasPermissionsApi() || !chrome.permissions.onAdded) return () => undefined
+  const api = extensionApi()
+  if (!api?.permissions?.onAdded) return () => undefined
   const handler = () => listener()
-  chrome.permissions.onAdded.addListener(handler)
-  chrome.permissions.onRemoved.addListener(handler)
+  api.permissions.onAdded.addListener(handler)
+  api.permissions.onRemoved.addListener(handler)
   return () => {
-    chrome.permissions.onAdded.removeListener(handler)
-    chrome.permissions.onRemoved.removeListener(handler)
+    api.permissions.onAdded.removeListener(handler)
+    api.permissions.onRemoved.removeListener(handler)
   }
 }

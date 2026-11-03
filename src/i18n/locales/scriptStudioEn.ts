@@ -141,7 +141,7 @@ export const scriptStudioStrings = {
   'scriptStudio.setup.step1.body': 'Chrome asks once so Script Studio can run scripts on the sites you choose.',
   'scriptStudio.setup.step2.title': 'Turn on “Allow user scripts”',
   'scriptStudio.setup.step2.body':
-    'Open One Panel’s details in chrome://extensions and switch on “Allow user scripts” (Developer mode on older Chrome). Come back here and this card disappears.',
+    'Open One Panel’s details in your browser’s extension settings and switch on “Allow user scripts” if your browser provides that option. Come back here and this card disappears.',
   'scriptStudio.setup.openSettings': 'Open extension settings',
   'scriptStudio.setup.unsupported': 'This browser does not support the user scripts API. Update Chrome to version 120 or newer.',
   'scriptStudio.setup.enable': 'Allow permission',

@@ -1,4 +1,5 @@
 import { registerMessageHandler } from '@/core/messaging'
+import { openExtensionPanel } from '@/platform/panel'
 import {
   COUNTDOWN_ALARM,
   POMODORO_ALARM,
@@ -136,7 +137,7 @@ async function openTimerPanel(): Promise<void> {
   try {
     await chrome.storage.session.set({ [PENDING_ROUTE_KEY]: TIMER_ROUTE })
     const win = await chrome.windows.getLastFocused({ windowTypes: ['normal'] })
-    if (win.id != null) await chrome.sidePanel.open({ windowId: win.id })
+    if (win.id != null) await openExtensionPanel({ windowId: win.id })
   } catch {
     /* panel may already be open */
   }
@@ -150,6 +151,8 @@ function isRestricted(url?: string): boolean {
     lower.startsWith('chrome:') ||
     lower.startsWith('chrome-extension:') ||
     lower.startsWith('edge:') ||
+    lower.startsWith('moz-extension:') ||
+    lower.startsWith('resource:') ||
     lower.startsWith('about:') ||
     lower.startsWith('devtools:')
   )

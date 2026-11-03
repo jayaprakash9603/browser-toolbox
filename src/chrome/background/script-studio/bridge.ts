@@ -1,4 +1,5 @@
 import { createLogger } from '@/core/logging'
+import { extensionApi } from '@/platform/browser'
 import { isConnectAllowed } from '@/core/script-studio/connect'
 import {
   getScriptCode,
@@ -204,7 +205,7 @@ export function registerGmBridgeListener(): void {
   })
 
   // Messages from the USER_SCRIPT world (including the page-world relay) only arrive on this event, never onMessage.
-  chrome.runtime.onUserScriptMessage?.addListener((message, sender, sendResponse) => {
+  extensionApi()?.runtime.onUserScriptMessage?.addListener((message, sender, sendResponse) => {
     if (!isBridgeMessage(message)) return false
     void handleGmBridge(message, sender).then((res) => sendResponse(res))
     return true

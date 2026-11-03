@@ -87,6 +87,8 @@ export function classifyTabUrl(url?: string): TabMessagingError['code'] | null {
     lower.startsWith('chrome-untrusted://') ||
     lower.startsWith('edge://') ||
     lower.startsWith('devtools://') ||
+    lower.startsWith('moz-extension://') ||
+    lower.startsWith('resource://') ||
     lower.startsWith('about:') ||
     lower.includes('chrome.google.com/webstore')
   ) {

@@ -8,6 +8,7 @@ import { parseChromeShortcut } from '@/core/commands/accelerator'
 import { registerMessageHandler } from '@/core/messaging'
 import { createLogger } from '@/core/logging'
 import { requestOpenCommandPalette } from '@/core/panel/navigationSession'
+import { openExtensionPanel } from '@/platform/panel'
 
 import { getActiveWebTab } from '@/chrome/contentScriptClient'
 
@@ -34,7 +35,9 @@ function primePanelOpen(commandId: string, sender: chrome.runtime.MessageSender)
   if (!def?.opensPanel) return
   const windowId = sender.tab?.windowId
   if (windowId == null) return
-  void chrome.sidePanel.open({ windowId }).catch((error) => logger.warn('side panel open failed', error))
+  void openExtensionPanel({ windowId }).then((opened) => {
+    if (!opened) logger.warn('side panel open failed')
+  })
 }
 
 export function registerShortcuts(): void {

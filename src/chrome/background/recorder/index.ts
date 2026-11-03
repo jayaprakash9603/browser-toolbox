@@ -13,6 +13,7 @@ import {
 import { loadRecorderSettings } from '@/core/recorder/settings'
 import type { RecorderSession, RecorderSettings, RecordingSource } from '@/core/recorder/types'
 import { isRestrictedCaptureUrl } from '@/core/screenshot/restricted'
+import { hasCapability } from '@/platform/capabilities'
 
 import { acquireOffscreen, releaseOffscreen } from '../offscreen'
 import {
@@ -140,7 +141,7 @@ export async function startRecorder(
   const id = crypto.randomUUID()
   const target = tab?.id != null ? tab : await activeTab()
 
-  if (source === 'tab' && target?.id != null) {
+  if (source === 'tab' && target?.id != null && hasCapability('tabCapture')) {
     if (isRestrictedCaptureUrl(target.url)) {
       throw new Error('Chrome does not allow recording this page. Switch to a normal website tab.')
     }

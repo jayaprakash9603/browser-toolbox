@@ -16,11 +16,18 @@
     "build:world-map": "node scripts/build-world-map.mjs",
     "sync:demos": "node scripts/sync-website-demos.mjs",
     "build": "node scripts/build.mjs",
+    "build:chromium": "node scripts/build-target.mjs chromium",
+    "build:firefox": "node scripts/build-target.mjs firefox",
+    "build:all": "node scripts/build-target.mjs all",
+    "validate:targets": "node scripts/validate-targets.mjs",
+    "package:all": "node scripts/package-release.mjs",
+    "lint:firefox": "web-ext lint --source-dir dist/firefox",
     "measure-build": "node scripts/measure-build.mjs",
-    "lint": "eslint .",
+    "lint": "eslint manifest.config.ts vite.config.ts scripts src tests",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:browser": "node scripts/browser/smoke.mjs",
     "typecheck": "tsgo -b",
     "release": "node scripts/release/release.mjs",
     "capture-store-screenshots": "node scripts/capture-store-screenshots.mjs",
@@ -128,6 +135,7 @@
     "typescript-eslint": "^8.69.0",
     "vite": "^8.3.0",
     "vitest": "^5.0.3",
+    "web-ext": "^8.10.0",
     "world-atlas": "^2.0.2"
   }
 }

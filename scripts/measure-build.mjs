@@ -13,7 +13,8 @@ import {
 } from './build-chunk-graph.mjs'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const dist = join(root, 'dist')
+const target = process.env.BUILD_TARGET === 'firefox' ? 'firefox' : 'chromium'
+const dist = process.env.BUILD_OUTPUT_DIR ?? join(root, 'dist', target)
 const assets = join(dist, 'assets')
 
 function walkFiles(dir, pred) {

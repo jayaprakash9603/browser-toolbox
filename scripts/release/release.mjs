@@ -1,19 +1,17 @@
 #!/usr/bin/env node
 /**
- * Builds a Chrome Web Store release: picks the next version from the commits since the last
- * `vX.Y.Z` tag, writes it to package.json, runs the production build, verifies dist/, zips it
- * and records the release in CHANGELOG.md with a commit and tag, then pushes both to origin by default.
+ * Builds a cross-browser release: picks the next version from the commits since the last
+ * `vX.Y.Z` tag, writes it to package.json, builds Chromium and Firefox targets, packages the
+ * browser artifacts and records the release in CHANGELOG.md with a commit and tag, then pushes
+ * both to origin by default.
  *
  *   node scripts/release/release.mjs [auto|major|minor|patch|X.Y.Z] [options]
  */
 import { execFileSync, spawnSync } from 'node:child_process'
-import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { createInterface } from 'node:readline/promises'
 import { fileURLToPath } from 'node:url'
-
-import { zipSync } from 'fflate'
 
 import {
   BUMPS,
@@ -26,14 +24,13 @@ import {
   slug,
   summarize,
 } from './versioning.mjs'
+import { packageTarget, writeChecksums } from './package.mjs'
+import { RELEASE_TARGETS } from './targets.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
-const DIST = join(ROOT, 'dist')
 const OUT = join(ROOT, 'releases')
 const VERSION_FILES = ['package.json', 'package-lock.json']
 const CHANGELOG = 'CHANGELOG.md'
-const STORE_LIMIT_BYTES = 2 * 1024 ** 3
-const STORED_EXTENSIONS = /\.(png|jpe?g|gif|webp|avif|ico|woff2?|wasm|zip|gz|br|mp3|mp4|webm)$/i
 
 const color = (code) => (text) => (process.stdout.isTTY ? `\x1b[${code}m${text}\x1b[0m` : text)
 const bold = color('1')
@@ -103,13 +100,14 @@ function git(args, { allowFail = false, raw = false } = {}) {
   }
 }
 
-function run(command, args) {
+function run(command, args, extraEnv = {}) {
   console.log(dim(`  $ ${[command, ...args].join(' ')}`))
+  const env = { ...process.env, ...extraEnv }
   // npm is a .cmd shim on Windows, so it needs a shell; args here are fixed script names.
   const result =
     process.platform === 'win32'
-      ? spawnSync([command, ...args].join(' '), { cwd: ROOT, stdio: 'inherit', shell: true })
-      : spawnSync(command, args, { cwd: ROOT, stdio: 'inherit' })
+      ? spawnSync([command, ...args].join(' '), { cwd: ROOT, stdio: 'inherit', shell: true, env })
+      : spawnSync(command, args, { cwd: ROOT, stdio: 'inherit', env })
   if (result.status !== 0) throw new ReleaseError(`${command} ${args.join(' ')} failed (exit code ${result.status ?? result.signal}).`)
 }
 
@@ -186,60 +184,6 @@ function restoreFiles(snapshot) {
   for (const [path, content] of snapshot) writeFileSync(join(ROOT, path), content)
 }
 
-function listFiles(dir) {
-  const out = []
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, entry.name)
-    if (entry.isDirectory()) out.push(...listFiles(full))
-    else out.push(full)
-  }
-  return out
-}
-
-function verifyDist(version) {
-  const manifestPath = join(DIST, 'manifest.json')
-  if (!existsSync(manifestPath)) throw new ReleaseError('dist/manifest.json is missing; the build did not produce an extension.')
-  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
-  const problems = []
-  if (manifest.version !== version) problems.push(`manifest version is ${manifest.version}, expected ${version}`)
-  if (manifest.manifest_version !== 3) problems.push('manifest_version is not 3')
-
-  const worker = manifest.background?.service_worker
-  const devMarkers = /localhost:\d+|@vite\/client|CRXJS DEV MODE/
-  for (const file of [worker, manifest.side_panel?.default_path, manifest.devtools_page].filter(Boolean)) {
-    const full = join(DIST, file)
-    if (!existsSync(full)) problems.push(`${file} is listed in the manifest but missing from dist`)
-    else if (devMarkers.test(readFileSync(full, 'utf8'))) problems.push(`${file} points at the Vite dev server; stop "npm run dev" and rebuild`)
-  }
-  for (const icon of Object.values(manifest.icons ?? {})) {
-    if (!existsSync(join(DIST, icon))) problems.push(`icon ${icon} is missing`)
-  }
-  for (const name of readdirSync(DIST)) {
-    if (name.startsWith('_') && name !== '_locales') problems.push(`"${name}" starts with "_", which Chrome reserves`)
-  }
-  if (problems.length) throw new ReleaseError(`The build is not ready to upload:\n${problems.map((p) => `  - ${p}`).join('\n')}`)
-  return manifest
-}
-
-function buildZip(zipPath) {
-  const files = {}
-  let count = 0
-  let raw = 0
-  for (const full of listFiles(DIST)) {
-    const path = relative(DIST, full).split('\\').join('/')
-    if (path.split('/').some((part) => part.startsWith('.')) || /\.map$/.test(path) || /(^|\/)Thumbs\.db$/i.test(path)) continue
-    if (path === '_metadata' || path.startsWith('_metadata/')) continue
-    const data = readFileSync(full)
-    files[path] = [new Uint8Array(data), { level: STORED_EXTENSIONS.test(path) ? 0 : 9 }]
-    count += 1
-    raw += data.length
-  }
-  const zipped = zipSync(files)
-  if (zipped.length > STORE_LIMIT_BYTES) throw new ReleaseError('The zip is larger than the 2 GB Chrome Web Store limit.')
-  writeFileSync(zipPath, zipped)
-  return { count, raw, size: zipped.length, sha256: createHash('sha256').update(zipped).digest('hex') }
-}
-
 const mb = (bytes) => `${(bytes / 1024 / 1024).toFixed(1)} MB`
 
 async function confirm(question) {
@@ -294,7 +238,8 @@ async function main() {
   if (options.dryRun) {
     step('Dry run: changelog preview')
     console.log(dim(renderChangelog(plan.version, today, commits, { initial: !tag }).replace(/^/gm, '  ')))
-    info(`Would write releases/${slug(name)}-v${plan.version}.zip`)
+    info(`Would build ${RELEASE_TARGETS.map((target) => target.id).join(' and ')}`)
+    info(`Would write releases/v${plan.version}/${slug(name)}-v${plan.version}-<browser>.zip`)
     return
   }
 
@@ -322,21 +267,38 @@ async function main() {
       run('npm', ['test'])
     }
 
-    step('Building')
-    run('npm', ['run', 'build'])
-
-    step('Verifying dist/')
-    const manifest = verifyDist(version)
-    info(`manifest.json v${manifest.version}, ${(manifest.permissions ?? []).length} permissions, MV${manifest.manifest_version}`)
-
-    step('Packaging')
-    mkdirSync(OUT, { recursive: true })
+    step('Building browser targets')
+    const releaseDir = join(OUT, `v${version}`)
+    mkdirSync(releaseDir, { recursive: true })
+    const artifacts = []
+    for (const target of RELEASE_TARGETS) {
+      const outputDir = join(ROOT, target.outputDir)
+      run('npm', ['run', 'build'], {
+        BUILD_TARGET: target.id,
+        BUILD_OUTPUT_DIR: outputDir,
+      })
+      step(`Verifying and packaging ${target.id}`)
+      const packaged = packageTarget({
+        sourceDir: outputDir,
+        releaseDir,
+        target: target.id,
+        browsers: target.browsers,
+        slug: slug(name),
+        version,
+      })
+      artifacts.push(...packaged.artifacts)
+      info(
+        `${target.id}: ${packaged.zip.count} files, ${mb(packaged.zip.raw)} → ` +
+          `${bold(mb(packaged.zip.size))} (${target.browsers.join(', ')})`,
+      )
+      info(dim(`sha256 ${packaged.zip.sha256}`))
+    }
     const base = `${slug(name)}-v${version}`
-    const zipPath = join(OUT, `${base}.zip`)
-    const zip = buildZip(zipPath)
-    info(`${zip.count} files, ${mb(zip.raw)} → ${bold(mb(zip.size))}`)
-    info(dim(`sha256 ${zip.sha256}`))
-    writeFileSync(join(OUT, `${base}-notes.txt`), renderStoreNotes(version, commits))
+    const notesPath = join(releaseDir, `${base}-notes.txt`)
+    const checksumsPath = join(releaseDir, 'SHA256SUMS.txt')
+    writeFileSync(notesPath, renderStoreNotes(version, commits))
+    writeChecksums(artifacts, checksumsPath)
+    info(`Checksums: ${relative(ROOT, checksumsPath)}`)
 
     step('Changelog')
     const changelogPath = join(ROOT, CHANGELOG)
@@ -363,9 +325,9 @@ async function main() {
     }
 
     console.log(`\n${green('✔')} ${bold(`${name} v${version} is ready to upload`)}`)
-    info(`Zip:   ${relative(ROOT, zipPath)}`)
-    info(`Notes: ${relative(ROOT, join(OUT, `${base}-notes.txt`))}`)
-    info(dim('Upload it at https://chrome.google.com/webstore/devconsole → your item → Package → Upload new package.'))
+    info(`Artifacts: ${relative(ROOT, releaseDir)}`)
+    info(`Notes:     ${relative(ROOT, notesPath)}`)
+    info(dim('Upload the Chromium ZIP to Chrome, Edge, Opera, and Brave; upload the Firefox ZIP to AMO.'))
     if (options.commit && !options.push) info(dim(`Push when ready: git push origin HEAD v${version}`))
   } catch (error) {
     if (!committed) {

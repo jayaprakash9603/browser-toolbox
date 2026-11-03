@@ -3,7 +3,14 @@ import { delimiter, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const env = { ...process.env, PATH: `${resolve(root, 'node_modules/.bin')}${delimiter}${process.env.PATH}` }
+const buildTarget = process.env.BUILD_TARGET === 'firefox' ? 'firefox' : 'chromium'
+const outputDir = process.env.BUILD_OUTPUT_DIR ?? resolve(root, 'dist', buildTarget)
+const env = {
+  ...process.env,
+  BUILD_TARGET: buildTarget,
+  BUILD_OUTPUT_DIR: outputDir,
+  PATH: `${resolve(root, 'node_modules/.bin')}${delimiter}${process.env.PATH}`,
+}
 const children = new Set()
 
 function run(label, command) {

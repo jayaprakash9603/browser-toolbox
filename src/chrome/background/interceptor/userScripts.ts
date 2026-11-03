@@ -1,6 +1,7 @@
 import { getInterceptorState, isRuleActive, needsUserScripts } from '@/core/interceptor'
 import type { InsertScriptRule, LibraryItem } from '@/core/interceptor'
 import { createLogger } from '@/core/logging'
+import { extensionApi } from '@/platform/browser'
 
 const logger = createLogger('interceptor-userscripts')
 
@@ -13,20 +14,21 @@ function resolveScriptContent(rule: InsertScriptRule, library: LibraryItem[]): s
 }
 
 export async function syncInterceptorUserScripts(): Promise<void> {
+  const userScripts = extensionApi()?.userScripts
   const state = await getInterceptorState()
   const has = needsUserScripts(state.rules, state.settings.paused, state.groups)
   if (!has) {
     try {
-      const registered = await chrome.userScripts?.getScripts() ?? []
+      const registered = (await userScripts?.getScripts()) ?? []
       const ids = registered.map((s) => s.id).filter((id) => id.startsWith('interceptor-'))
-      if (ids.length) await chrome.userScripts?.unregister({ ids })
+      if (ids.length) await userScripts?.unregister({ ids })
     } catch {
       /* userScripts unavailable */
     }
     return
   }
 
-  if (!chrome.userScripts) {
+  if (!userScripts) {
     logger.warn('userScripts API unavailable')
     return
   }
@@ -49,10 +51,10 @@ export async function syncInterceptorUserScripts(): Promise<void> {
   }
 
   try {
-    const existing = await chrome.userScripts.getScripts()
+    const existing = await userScripts.getScripts()
     const removeIds = existing.map((s) => s.id).filter((id) => id.startsWith('interceptor-'))
-    if (removeIds.length) await chrome.userScripts.unregister({ ids: removeIds })
-    if (scripts.length) await chrome.userScripts.register(scripts)
+    if (removeIds.length) await userScripts.unregister({ ids: removeIds })
+    if (scripts.length) await userScripts.register(scripts)
   } catch (error) {
     logger.warn('userScripts register failed', error)
   }

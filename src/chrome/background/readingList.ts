@@ -1,6 +1,7 @@
 import { getChromeMessage } from '@/core/i18n/chromeMessages'
 import { setPanelRouteIntent } from '@/core/panel/navigationSession'
 import { stashPayload } from '@/core/payloads'
+import { openExtensionPanel } from '@/platform/panel'
 
 export const READING_LIST_TOOL_ID = 'productivity.reading-list'
 export const READING_LIST_ROUTE = '/tools/productivity/reading-list'
@@ -40,7 +41,7 @@ export function handleReadingListMenuClick(
   ])
   const opened =
     tab?.windowId != null
-      ? chrome.sidePanel.open({ windowId: tab.windowId }).catch(() => undefined)
+      ? openExtensionPanel({ windowId: tab.windowId, tabId: tab.id })
       : undefined
   return Promise.all([ready, opened]).then(() => undefined)
 }

@@ -1,5 +1,6 @@
 import { getInterceptorState, matchRules, type InterceptorRule } from '@/core/interceptor'
 import { createLogger } from '@/core/logging'
+import { hasCapability } from '@/platform/capabilities'
 
 import { incrementTabRuleCount } from './badge'
 
@@ -26,6 +27,9 @@ export async function attachDeepIntercept(tabId: number): Promise<string | null>
   const state = await getInterceptorState()
   if (!state.settings.deepIntercept) {
     return 'Enable "Deep intercept" in the HTTP Interceptor Settings tab first'
+  }
+  if (!hasCapability('debugger')) {
+    return 'Deep intercept is not available in this browser.'
   }
   if (attachedTabs.has(tabId)) return null
   try {

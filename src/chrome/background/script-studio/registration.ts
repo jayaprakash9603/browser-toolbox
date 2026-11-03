@@ -1,5 +1,6 @@
 import { STORAGE_KEYS } from '@/core/constants'
 import { createLogger } from '@/core/logging'
+import { extensionApi } from '@/platform/browser'
 import {
   getScriptCode,
   getScriptExternals,
@@ -102,7 +103,8 @@ async function collectBundles(): Promise<BuiltScriptBundle[]> {
 }
 
 export async function syncScriptStudioUserScripts(): Promise<void> {
-  if (!chrome.userScripts) return
+  const userScripts = extensionApi()?.userScripts
+  if (!userScripts) return
   const bundles = await collectBundles()
   const desired = bundles.map((b) => ({
     id: b.userScriptId,
@@ -117,12 +119,12 @@ export async function syncScriptStudioUserScripts(): Promise<void> {
   }))
 
   try {
-    const existing = await chrome.userScripts.getScripts()
+    const existing = await userScripts.getScripts()
     const owned = existing.filter((s) => s.id.startsWith(OWNED_PREFIX))
     const desiredIds = new Set(desired.map((d) => d.id))
 
     const toRemove = owned.filter((s) => !desiredIds.has(s.id)).map((s) => s.id)
-    if (toRemove.length) await chrome.userScripts.unregister({ ids: toRemove })
+    if (toRemove.length) await userScripts.unregister({ ids: toRemove })
 
     const fpById = new Map(bundles.map((b) => [b.userScriptId, userScriptFingerprint(b)]))
     for (const script of desired) {
@@ -154,8 +156,8 @@ export async function syncScriptStudioUserScripts(): Promise<void> {
         : null
 
       if (prevFp !== nextFp) {
-        if (prev) await chrome.userScripts.unregister({ ids: [script.id] })
-        await chrome.userScripts.register([script])
+        if (prev) await userScripts.unregister({ ids: [script.id] })
+        await userScripts.register([script])
       }
     }
   } catch (error) {
@@ -172,7 +174,8 @@ export function scheduleScriptStudioSync(): void {
 }
 
 export async function executeScriptOnTab(tabId: number, scriptId: string): Promise<void> {
-  if (!chrome.userScripts?.execute) {
+  const userScripts = extensionApi()?.userScripts
+  if (!userScripts?.execute) {
     logger.warn('userScripts.execute unavailable; run from menu needs Chrome 135+ and the userScripts permission')
     return
   }
@@ -188,7 +191,7 @@ export async function executeScriptOnTab(tabId: number, scriptId: string): Promi
   const handlerVersion = chrome.runtime.getManifest().version
   const bundle = buildBundle(record, code, values, externals, runtimeJs, settings, handlerVersion)
   if (!bundle?.code) return
-  await chrome.userScripts.execute({
+  await userScripts.execute({
     target: { tabId },
     js: [{ code: bundle.code }],
     world: bundle.world,
@@ -212,7 +215,8 @@ export function watchScriptStudioStorage(): void {
 
 export async function initScriptStudioRegistration(): Promise<void> {
   try {
-    if (chrome.userScripts) await chrome.userScripts.configureWorld({ messaging: true })
+    const userScripts = extensionApi()?.userScripts
+    if (userScripts?.configureWorld) await userScripts.configureWorld({ messaging: true })
   } catch {
     /* permission not granted yet */
   }

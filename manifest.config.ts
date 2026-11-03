@@ -3,11 +3,66 @@ import { readFileSync } from 'node:fs'
 import { defineManifest } from '@crxjs/vite-plugin'
 
 import { buildManifestCommands } from './src/core/commands/manifest.ts'
+import {
+  DEFAULT_FIREFOX_EXTENSION_ID,
+  isFirefoxTarget,
+  resolveBuildTarget,
+} from './src/platform/targets.ts'
 
 /** package.json is the single source of the version; release.bat bumps it. */
 const { version } = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
 ) as { version: string }
+
+const buildTarget = resolveBuildTarget(process.env.BUILD_TARGET)
+const isFirefox = isFirefoxTarget(buildTarget)
+const firefoxExtensionId =
+  process.env.FIREFOX_EXTENSION_ID?.trim() || DEFAULT_FIREFOX_EXTENSION_ID
+
+const chromiumPermissions = [
+  'sidePanel',
+  'storage',
+  'clipboardWrite',
+  'contextMenus',
+  'activeTab',
+  'scripting',
+  'tabs',
+  'downloads',
+  'offscreen',
+  'tabCapture',
+  'desktopCapture',
+  'declarativeNetRequest',
+  'declarativeNetRequestFeedback',
+  'alarms',
+  'notifications',
+  'webNavigation',
+  'favicon',
+]
+
+const firefoxPermissions = [
+  'storage',
+  'clipboardWrite',
+  'contextMenus',
+  'activeTab',
+  'scripting',
+  'tabs',
+  'downloads',
+  'declarativeNetRequest',
+  'alarms',
+  'notifications',
+  'webNavigation',
+]
+
+const optionalPermissions = [
+  'clipboardRead',
+  'webRequest',
+  'userScripts',
+  'debugger',
+  'cookies',
+  'bookmarks',
+]
+
+const firefoxOptionalPermissions = ['clipboardRead', 'webRequest', 'debugger', 'cookies', 'bookmarks']
 
 export default defineManifest({
   manifest_version: 3,
@@ -23,12 +78,11 @@ export default defineManifest({
   action: {
     default_title: '__MSG_actionTitle__',
   },
-  side_panel: {
-    default_path: 'index.html',
-  },
+  ...(isFirefox ? {} : { side_panel: { default_path: 'index.html' } }),
   background: {
-    service_worker: 'src/chrome/background/index.ts',
-    type: 'module',
+    ...(isFirefox
+      ? { scripts: ['src/chrome/background/index.ts'], persistent: false }
+      : { service_worker: 'src/chrome/background/index.ts', type: 'module' }),
   },
   devtools_page: 'devtools.html',
   content_scripts: [
@@ -38,34 +92,26 @@ export default defineManifest({
       run_at: 'document_idle',
     },
   ],
-  permissions: [
-    'sidePanel',
-    'storage',
-    'clipboardWrite',
-    'contextMenus',
-    'activeTab',
-    'scripting',
-    'tabs',
-    'downloads',
-    'offscreen',
-    'tabCapture',
-    'desktopCapture',
-    'declarativeNetRequest',
-    'declarativeNetRequestFeedback',
-    'alarms',
-    'notifications',
-    'webNavigation',
-    'favicon',
-  ],
-  optional_permissions: [
-    'clipboardRead',
-    'webRequest',
-    'userScripts',
-    'debugger',
-    'cookies',
-    'bookmarks',
-  ],
+  permissions: isFirefox ? firefoxPermissions : chromiumPermissions,
+  optional_permissions: isFirefox ? firefoxOptionalPermissions : optionalPermissions,
   optional_host_permissions: ['<all_urls>'],
+  ...(isFirefox
+    ? {
+        sidebar_action: {
+          default_panel: 'index.html',
+          default_title: '__MSG_actionTitle__',
+        },
+        browser_specific_settings: {
+          gecko: {
+            id: firefoxExtensionId,
+            strict_min_version: '113.0',
+            data_collection_permissions: {
+              required: ['none'],
+            },
+          },
+        },
+      }
+    : {}),
   declarative_net_request: {
     rule_resources: [
       { id: 'ruleset-ads', enabled: false, path: 'adblock/rulesets/ads.json' },

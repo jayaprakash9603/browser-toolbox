@@ -10,6 +10,7 @@ export default defineConfig([
   globalIgnores([
     'dist',
     'coverage',
+    '.reference-repos',
     'universal-form-autofill',
     'website',
     // Copied from the website by scripts/sync-website-demos.mjs and linted there.

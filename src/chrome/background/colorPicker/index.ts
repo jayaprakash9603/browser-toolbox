@@ -6,6 +6,7 @@ import { createLogger } from '@/core/logging'
 import { registerMessageHandler } from '@/core/messaging'
 import { setPanelRouteIntent } from '@/core/panel/navigationSession'
 import { isRestrictedCaptureUrl } from '@/core/screenshot/restricted'
+import { openExtensionPanel } from '@/platform/panel'
 
 import { runColorPicker, type ColorPickerPageOptions } from './page'
 
@@ -28,7 +29,7 @@ function pageText(): ColorPickerPageOptions['text'] {
 /** Pages Chrome will not let us capture or script open the panel tool instead. */
 async function openPanelFallback(windowId: number | undefined): Promise<void> {
   const intent = setPanelRouteIntent(COLOR_PICKER_ROUTE)
-  if (windowId != null) await chrome.sidePanel.open({ windowId }).catch(() => undefined)
+  if (windowId != null) await openExtensionPanel({ windowId })
   await intent
 }
 

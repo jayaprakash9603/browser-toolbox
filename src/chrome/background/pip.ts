@@ -33,6 +33,8 @@ function isRestrictedUrl(url?: string): boolean {
       parsed.protocol === 'chrome:' ||
       parsed.protocol === 'chrome-extension:' ||
       parsed.protocol === 'edge:' ||
+      parsed.protocol === 'moz-extension:' ||
+      parsed.protocol === 'resource:' ||
       parsed.protocol === 'about:'
     )
   } catch {

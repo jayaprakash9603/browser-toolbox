@@ -8,9 +8,14 @@ import tailwindcss from '@tailwindcss/vite'
 import { searchForWorkspaceRoot, type Plugin } from 'vite'
 import { configDefaults, defineConfig as defineVitestConfig } from 'vitest/config'
 import manifest from './manifest.config.ts'
+import { resolveBuildTarget } from './src/platform/targets.ts'
 
 const rootDir = fileURLToPath(new URL('.', import.meta.url))
 const postmanLiteDist = fileURLToPath(new URL('./node_modules/postman-lite/dist', import.meta.url))
+const buildTarget = resolveBuildTarget(process.env.BUILD_TARGET)
+const outputDir =
+  process.env.BUILD_OUTPUT_DIR ??
+  fileURLToPath(new URL(buildTarget === 'firefox' ? './dist/firefox' : './dist/chromium', import.meta.url))
 
 const protectionThreatsGenerated = (
   JSON.parse(readFileSync(join(rootDir, 'public/protection/threats.json'), 'utf8')) as { generated: string }
@@ -41,7 +46,12 @@ function exposeContentScriptChunks(): Plugin {
 }
 
 export default defineVitestConfig({
-  plugins: [react(), tailwindcss(), crx({ manifest }), exposeContentScriptChunks()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    crx({ manifest, browser: buildTarget === 'firefox' ? 'firefox' : 'chrome' }),
+    exposeContentScriptChunks(),
+  ],
   define: {
     __PROTECTION_THREATS_GENERATED__: JSON.stringify(protectionThreatsGenerated),
   },
@@ -58,11 +68,13 @@ export default defineVitestConfig({
     ],
   },
   build: {
+    outDir: outputDir,
     modulePreload: false,
     // Gzipping ~800 chunks only to print their sizes adds seconds; check-startup-budget guards size instead.
     reportCompressedSize: false,
     rollupOptions: {
       input: {
+        index: 'index.html',
         offscreen: 'offscreen.html',
         blocked: 'blocked.html',
         recorder: 'recorder.html',
@@ -93,6 +105,7 @@ export default defineVitestConfig({
     setupFiles: ['./tests/setup.ts'],
     exclude: [
       ...configDefaults.exclude,
+      '.reference-repos/**',
       'universal-form-autofill/**',
       'website/**',
       'scripts/react-devtools/**',

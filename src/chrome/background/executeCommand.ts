@@ -9,6 +9,7 @@ import { pickColorOnPage } from './colorPicker'
 import { runFormCommand } from './formMemory'
 import { openScreenshotCaptureMenu } from './screenshot/menu'
 import { modeFromCommand, startScreenshot } from './screenshot/start'
+import { openExtensionPanel } from '@/platform/panel'
 
 const logger = createLogger('commands')
 
@@ -25,9 +26,7 @@ async function injectContentScript(tabId: number): Promise<boolean> {
 
 function startSidePanelOpen(windowId: number | undefined): Promise<void> | undefined {
   if (windowId == null) return undefined
-  return chrome.sidePanel.open({ windowId }).catch((error) => {
-    logger.warn('side panel open failed', error)
-  })
+  return openExtensionPanel({ windowId }).then(() => undefined)
 }
 
 export async function executeToolboxCommand(command: string, tab?: chrome.tabs.Tab): Promise<void> {

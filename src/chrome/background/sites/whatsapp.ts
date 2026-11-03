@@ -10,6 +10,7 @@ import {
 } from '@/core/sites/whatsapp'
 import { STORAGE_KEYS } from '@/core/constants'
 import { registerMessageHandler } from '@/core/messaging'
+import { openExtensionPanel } from '@/platform/panel'
 
 import { injectWhatsappIntoOpenTabs, syncWhatsappContentScripts } from './whatsappContentScripts'
 import { syncWaScheduleAlarm, WA_SCHEDULE_ALARM } from './whatsappScheduleAlarm'
@@ -40,8 +41,7 @@ export function registerSitesWhatsapp(): void {
   registerMessageHandler('WA_OPEN_PANEL', async (_message, sender) => {
     const tabId = sender.tab?.id
     if (tabId == null) return { opened: false }
-    await chrome.sidePanel.open({ tabId })
-    return { opened: true }
+    return { opened: await openExtensionPanel({ tabId, windowId: sender.tab?.windowId }) }
   })
 
   registerMessageHandler('WA_GET_STATUS', async () => {

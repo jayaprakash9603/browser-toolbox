@@ -20,7 +20,7 @@ function friendlyTabError(error: unknown): string {
       case 'RESTRICTED_PAGE':
         return 'Open a normal website tab, click it once, then run Auto-detect again. (Extension and browser system pages cannot be scraped.)'
       case 'FILE_URL_ACCESS':
-        return 'Enable “Allow access to file URLs” for this extension in chrome://extensions, then reload the file page.'
+        return 'Enable “Allow access to file URLs” for this extension in your browser’s extension settings, then reload the file page.'
       case 'INJECT_FAILED':
         return `Could not attach to this page: ${error.message}`
       case 'CONTENT_SCRIPT_UNAVAILABLE':

@@ -41,7 +41,7 @@ export function closureFromEntries(entryFiles, assetsDir, opts = {}) {
 
 /** @param {string} html */
 export function entryScriptFromHtml(html) {
-  const m = html.match(/assets\/(index\.html-[^"]+\.js)/)
+  const m = html.match(/assets\/([^"']+\.js)/)
   return m?.[1] ?? null
 }
 

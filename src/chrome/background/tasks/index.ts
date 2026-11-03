@@ -1,6 +1,7 @@
 import { getChromeMessage } from '@/core/i18n/chromeMessages'
 import { setPanelRouteIntent } from '@/core/panel/navigationSession'
 import { stashPayload, type ToolPayload } from '@/core/payloads'
+import { openExtensionPanel } from '@/platform/panel'
 import {
   TASK_REMINDER_ALARM,
   TASK_REMINDERS_KEY,
@@ -139,7 +140,7 @@ async function openTaskFromNotification(taskId: string): Promise<void> {
   try {
     const win = await chrome.windows.getLastFocused({ windowTypes: ['normal'] })
     const intent = setPanelRouteIntent(`${TASKS_ROUTE}?task=${encodeURIComponent(taskId)}`)
-    if (win.id != null) await chrome.sidePanel.open({ windowId: win.id }).catch(() => undefined)
+    if (win.id != null) await openExtensionPanel({ windowId: win.id })
     await intent
     if (task?.link) await chrome.tabs.create({ url: task.link.url, ...(win.id != null ? { windowId: win.id } : {}) })
   } catch {
@@ -157,7 +158,7 @@ function openTasksWith(source: TaskSource, windowId: number | undefined): Promis
     stashPayload({ toolId: TASKS_TOOL_ID, ...source }),
     setPanelRouteIntent(TASKS_ROUTE),
   ])
-  const opened = windowId != null ? chrome.sidePanel.open({ windowId }).catch(() => undefined) : undefined
+  const opened = windowId != null ? openExtensionPanel({ windowId }) : undefined
   return Promise.all([ready, opened]).then(() => undefined)
 }
 

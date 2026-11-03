@@ -12,6 +12,7 @@ import {
 import { STORAGE_KEYS } from '@/core/constants'
 import { createLogger } from '@/core/logging'
 import { set } from '@/core/storage'
+import { extensionApi } from '@/platform/browser'
 
 const logger = createLogger('adblock-stats')
 
@@ -187,7 +188,7 @@ async function isBlockingMatch(rulesetId: string, ruleId: number): Promise<boole
 
 /** Live per-request counting; Chrome only exposes this event to unpacked extensions. */
 export function startNetworkCounter(): boolean {
-  const event = chrome.declarativeNetRequest.onRuleMatchedDebug
+  const event = extensionApi()?.declarativeNetRequest?.onRuleMatchedDebug
   if (!event) return false
   event.addListener((info) => {
     const tabId = info.request.tabId

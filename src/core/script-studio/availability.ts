@@ -1,4 +1,5 @@
 import { ALL_SITES_ORIGINS, requestPermissions } from '@/core/permissions/siteAccess'
+import { extensionApi, extensionManagementUrl, isFirefoxRuntime } from '@/platform/browser'
 
 export type UserScriptsStep = 'unsupported' | 'permission' | 'toggle' | 'ready'
 
@@ -11,8 +12,10 @@ export type UserScriptsProbe = {
 }
 
 async function hasUserScriptsPermission(): Promise<boolean> {
+  const api = extensionApi()
+  if (!api?.permissions?.contains) return false
   try {
-    return await chrome.permissions.contains({ permissions: ['userScripts'] })
+    return await api.permissions.contains({ permissions: ['userScripts'] })
   } catch {
     return false
   }
@@ -23,8 +26,11 @@ async function hasUserScriptsPermission(): Promise<boolean> {
  * API itself: while it is off, `chrome.userScripts` is undefined or its calls throw.
  */
 export async function probeUserScripts(): Promise<UserScriptsProbe> {
+  const api = extensionApi()?.userScripts
+  if (isFirefoxRuntime() && !api) {
+    return { step: 'unsupported', apiPresent: false, permissionGranted: false, operational: false }
+  }
   const permissionGranted = await hasUserScriptsPermission()
-  const api = typeof chrome !== 'undefined' ? chrome.userScripts : undefined
 
   if (api) {
     try {
@@ -45,6 +51,9 @@ export async function probeUserScripts(): Promise<UserScriptsProbe> {
   }
 
   if (!permissionGranted) return { step: 'permission', apiPresent: false, permissionGranted, operational: false }
+  if (isFirefoxRuntime()) {
+    return { step: 'unsupported', apiPresent: false, permissionGranted, operational: false }
+  }
   const major = Number(/Chrome\/(\d+)/.exec(navigator.userAgent)?.[1] ?? 0)
   if (major > 0 && major < 120) {
     return { step: 'unsupported', apiPresent: false, permissionGranted, operational: false }
@@ -61,5 +70,5 @@ export async function requestUserScriptsPermission(): Promise<boolean> {
 }
 
 export function extensionSettingsUrl(): string {
-  return `chrome://extensions/?id=${chrome.runtime.id}`
+  return extensionManagementUrl() ?? 'about:addons'
 }

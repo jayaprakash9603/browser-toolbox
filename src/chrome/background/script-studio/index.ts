@@ -15,6 +15,7 @@ import {
 import { registerUpdateAlarms } from './updates'
 import { clearTabBadge, updateBadgeForTab } from './badge'
 import { registerScriptRunTracking } from './runs'
+import { extensionApi } from '@/platform/browser'
 
 const logger = createLogger('script-studio')
 
@@ -45,7 +46,7 @@ export function registerScriptStudio(): void {
     return probeApi()
   })
 
-  chrome.permissions.onAdded.addListener((permissions) => {
+  extensionApi()?.permissions?.onAdded?.addListener((permissions) => {
     if (permissions.permissions?.includes('userScripts')) {
       void initScriptStudioRegistration().catch((e) => logger.warn('init after grant failed', e))
     }

@@ -1,4 +1,5 @@
 import type { RecordingSource } from '@/core/recorder/types'
+import { extensionApi } from '@/platform/browser'
 
 export interface DesktopPick {
   streamId: string
@@ -18,7 +19,12 @@ const SOURCES: Record<RecordingSource, `${chrome.desktopCapture.DesktopCaptureSo
  */
 export function chooseDesktopSource(source: RecordingSource): Promise<DesktopPick | null> {
   return new Promise((resolve) => {
-    chrome.desktopCapture.chooseDesktopMedia(SOURCES[source], (streamId, options) => {
+    const api = extensionApi()
+    if (!api?.desktopCapture?.chooseDesktopMedia) {
+      resolve(null)
+      return
+    }
+    api.desktopCapture.chooseDesktopMedia(SOURCES[source], (streamId, options) => {
       resolve(streamId ? { streamId, audio: Boolean(options?.canRequestAudioTrack) } : null)
     })
   })
