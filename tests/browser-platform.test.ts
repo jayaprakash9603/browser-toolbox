@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { hasCapability } from '@/platform/capabilities'
-import { openExtensionPanel } from '@/platform/panel'
+import { configurePanelAction, openExtensionPanel } from '@/platform/panel'
 import { isFirefoxTarget, resolveBuildTarget } from '@/platform/targets'
 import { classifyTabUrl } from '@/chrome/contentScriptClient'
 import { isRestrictedCaptureUrl } from '@/core/screenshot/restricted'
@@ -25,6 +25,22 @@ describe('browser capability layer', () => {
     const opened = await openExtensionPanel({ windowId: 7 })
     expect(opened).toBe(true)
     expect(chrome.sidePanel.open).toHaveBeenCalledWith({ windowId: 7 })
+  })
+
+  it('keeps the toolbar action usable when panel behavior setup is rejected', async () => {
+    const addListener = vi.spyOn(chrome.action.onClicked, 'addListener')
+    vi.mocked(chrome.sidePanel.setPanelBehavior).mockRejectedValueOnce(new Error('unsupported'))
+
+    try {
+      await expect(configurePanelAction()).resolves.toBe(true)
+      expect(addListener).toHaveBeenCalledOnce()
+
+      const listener = addListener.mock.calls[0][0] as (tab: chrome.tabs.Tab) => void
+      listener({ id: 7, windowId: 42 } as chrome.tabs.Tab)
+      expect(chrome.sidePanel.open).toHaveBeenCalledWith({ tabId: 7 })
+    } finally {
+      addListener.mockRestore()
+    }
   })
 })
 

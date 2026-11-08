@@ -67,11 +67,16 @@ export async function configurePanelAction(): Promise<boolean> {
   if (!api) return false
 
   if (api.sidePanel?.setPanelBehavior) {
-    await api.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
-    return true
+    try {
+      await api.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+      return true
+    } catch {
+      // Some Chromium derivatives expose the API but reject the behavior setting.
+      // Keep the toolbar action usable through the fallback listener below.
+    }
   }
 
-  if (api.action?.onClicked) {
+  if (api.action?.onClicked?.addListener) {
     api.action.onClicked.addListener((tab) => {
       void openExtensionPanel({ windowId: tab.windowId, tabId: tab.id })
     })
