@@ -28,6 +28,20 @@ export function isFirefoxRuntime(): boolean {
   return typeof navigator !== 'undefined' && /\bFirefox\//.test(navigator.userAgent)
 }
 
+/** Edge's user-agent token is `Edg`, including Edge, Edge Android, and Edge iOS. */
+export function isEdgeUserAgent(userAgent: string): boolean {
+  return /Edg(?:e|A|iOS)?\//.test(userAgent)
+}
+
+export function isEdgeRuntime(): boolean {
+  if (typeof navigator === 'undefined') return false
+  if (isEdgeUserAgent(navigator.userAgent)) return true
+  const brands = (
+    navigator as Navigator & { userAgentData?: { brands?: { brand: string }[] } }
+  ).userAgentData?.brands
+  return Boolean(brands?.some((item) => /microsoft edge/i.test(item.brand)))
+}
+
 export function extensionManagementUrl(): string | null {
   const api = extensionApi()
   if (!api?.runtime?.id) return null

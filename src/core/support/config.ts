@@ -1,7 +1,20 @@
+import { isEdgeRuntime } from '@/platform/browser'
+
 export const SUPPORT_EMAIL = 'contact@quickcalci.com'
 
-export const STORE_LISTING_URL =
+export const CHROME_STORE_LISTING_URL =
   'https://chromewebstore.google.com/detail/one-panel/ppanklldbegjgaalfliiicologfoggfo'
+
+/** Microsoft Edge Add-ons listing. The Chromium zip is shared, so Edge chooses this at runtime. */
+export const EDGE_STORE_LISTING_URL =
+  'https://microsoftedge.microsoft.com/addons/detail/one-panel/plochclbdimjmjmfpaeofdinikpjpefp'
+
+/** Chrome Web Store listing, kept for callers that want the Chromium default. */
+export const STORE_LISTING_URL = CHROME_STORE_LISTING_URL
+
+export function storeListingUrl(): string {
+  return isEdgeRuntime() ? EDGE_STORE_LISTING_URL : CHROME_STORE_LISTING_URL
+}
 
 export const ISSUE_TRACKER_URL = 'https://github.com/jayaprakash9603/browser-toolbox/issues/new'
 
