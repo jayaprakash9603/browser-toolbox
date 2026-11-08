@@ -179,6 +179,12 @@ describe('tasks view logic', () => {
     expect(sortTasks([timed, allDay], 'priority').map((t) => t.title)).toEqual(['All day', 'Timed'])
   })
 
+  it('sorts tasks by their saved manual order', () => {
+    const first = make('First', { sortOrder: 1 })
+    const second = make('Second', { sortOrder: 0 })
+    expect(sortTasks([first, second], 'manual').map((t) => t.title)).toEqual(['Second', 'First'])
+  })
+
   it('searches across titles, links, labels and projects', () => {
     const tasks = [
       make('Read docs', { link: { url: 'https://react.dev/learn', title: 'Learn React' }, labels: ['reading'] }),

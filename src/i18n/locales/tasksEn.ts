@@ -67,6 +67,7 @@ export const tasksStrings = {
 
   'tasks.sort.label': 'Sort by',
   'tasks.sort.smart': 'Smart',
+  'tasks.sort.manual': 'My order',
   'tasks.sort.due': 'Due date',
   'tasks.sort.priority': 'Priority',
   'tasks.sort.title': 'Name',
@@ -117,6 +118,7 @@ export const tasksStrings = {
   'tasks.row.schedule': 'Schedule',
   'tasks.row.openLink': 'Open link',
   'tasks.row.more': 'More actions',
+  'tasks.row.reorder': 'Reorder “{{title}}” · position {{position}} of {{total}}. Use Up or Down to move.',
   'tasks.row.duplicate': 'Duplicate',
   'tasks.row.delete': 'Delete',
   'tasks.row.hasNotes': 'Has a description',

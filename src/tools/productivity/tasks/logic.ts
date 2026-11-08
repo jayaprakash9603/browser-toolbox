@@ -72,6 +72,8 @@ function smartCompare(a: Task, b: Task): number {
 export function sortTasks(tasks: Task[], sort: TaskSort): Task[] {
   const list = [...tasks]
   switch (sort) {
+    case 'manual':
+      return list.sort((a, b) => a.sortOrder - b.sortOrder || a.createdAt - b.createdAt)
     case 'priority':
       return list.sort((a, b) => a.priority - b.priority || smartCompare(a, b))
     case 'title':

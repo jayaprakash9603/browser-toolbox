@@ -6,7 +6,7 @@ import { I18nextProvider } from 'react-i18next'
 import i18n from '@/i18n'
 import { registerModules } from '@/modules'
 import { stashPayload } from '@/core/payloads'
-import { TASKS_STORAGE_KEY, addDays, createTask, startOfDay, type TasksData } from '@/core/tasks/model'
+import { TASKS_STORAGE_KEY, TASK_PREFS_KEY, addDays, createTask, startOfDay, type TasksData } from '@/core/tasks/model'
 import { ToastProvider } from '@/shared/components/toast/ToastProvider'
 import { TooltipProvider } from '@/shared/components/ui/tooltip'
 import TasksTool from '@/tools/productivity/tasks/Tool'
@@ -136,6 +136,26 @@ describe('Tasks tool', { timeout: 20_000 }, () => {
 
     await user.click(screen.getByRole('button', { name: /Upcoming/ }))
     expect(await screen.findByText('Book flights')).toBeInTheDocument()
+  })
+
+  it('moves a task up with the reorder handle and persists manual order', async () => {
+    const first = createTask({ title: 'First task', due: startOfDay(Date.now()), allDay: true }, Date.now() - 2_000)
+    const second = createTask({ title: 'Second task', due: startOfDay(Date.now()), allDay: true }, Date.now() - 1_000)
+    await chrome.storage.local.set({ [TASKS_STORAGE_KEY]: { tasks: [first, second], projects: [] } })
+    renderTool()
+
+    const handle = await screen.findByRole('button', { name: /Reorder “Second task”/ })
+    fireEvent.keyDown(handle, { key: 'ArrowUp' })
+
+    await waitFor(async () => {
+      const data = await stored()
+      expect([...data.tasks].sort((a, b) => a.sortOrder - b.sortOrder).map((task) => task.title)).toEqual([
+        'Second task',
+        'First task',
+      ])
+    })
+    const prefs = await chrome.storage.local.get(TASK_PREFS_KEY)
+    expect(prefs[TASK_PREFS_KEY]).toMatchObject({ sort: 'manual' })
   })
 })
 

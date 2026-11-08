@@ -295,6 +295,18 @@ export default function TasksTool() {
     )
   }
 
+  const reorderTasks = (ordered: Task[]) => {
+    const positions = new Map(ordered.map((task, index) => [task.id, index]))
+    updatePrefs({ sort: 'manual' })
+    void mutate((current) => ({
+      ...current,
+      tasks: current.tasks.map((task) => {
+        const sortOrder = positions.get(task.id)
+        return sortOrder == null ? task : { ...task, sortOrder }
+      }),
+    }))
+  }
+
   const rowActions: TaskRowActions = {
     toggle: toggleTask,
     open: (task) => setSelectedId(task.id),
@@ -834,6 +846,8 @@ export default function TasksTool() {
                         highlightId={highlightId}
                         actions={rowActions}
                         onRescheduleOverdue={rescheduleOverdue}
+                        onReorder={reorderTasks}
+                        reorderable={!activeQuery && view.kind !== 'completed'}
                       />
                     ) : (
                       <TasksEmpty kind={emptyKind} query={activeQuery} />

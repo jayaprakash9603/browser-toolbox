@@ -37,7 +37,7 @@ export const PROJECT_COLORS = [
 ] as const
 export type ProjectColor = (typeof PROJECT_COLORS)[number]
 
-export const TASK_SORTS = ['smart', 'due', 'priority', 'title', 'created'] as const
+export const TASK_SORTS = ['smart', 'manual', 'due', 'priority', 'title', 'created'] as const
 export type TaskSort = (typeof TASK_SORTS)[number]
 
 export interface TaskLink {
@@ -68,6 +68,8 @@ export interface Task {
   subtasks: Subtask[]
   completed: boolean
   completedAt: number | null
+  /** Stable user-controlled position used by the manual task order. */
+  sortOrder: number
   createdAt: number
   updatedAt: number
 }
@@ -225,6 +227,7 @@ export function normalizeTask(raw: Partial<Task>): Task {
     subtasks: normalizeSubtasks(raw.subtasks),
     completed,
     completedAt: completed ? (finiteOrNull(raw.completedAt) ?? updatedAt) : null,
+    sortOrder: finiteOrNull(raw.sortOrder) ?? finiteOrNull(raw.createdAt) ?? updatedAt,
     createdAt: finiteOrNull(raw.createdAt) ?? updatedAt,
     updatedAt,
   }
@@ -250,7 +253,10 @@ export function normalizeTasksData(raw: unknown): TasksData {
   const tasks = Array.isArray(value.tasks)
     ? value.tasks
         .filter((t) => t && typeof t === 'object')
-        .map(normalizeTask)
+        .map((t, index) => {
+          const task = t as Partial<Task>
+          return normalizeTask({ ...task, sortOrder: finiteOrNull(task.sortOrder) ?? index })
+        })
         .map((t) => (t.projectId === INBOX_ID || projectIds.has(t.projectId) ? t : { ...t, projectId: INBOX_ID }))
     : []
   return { tasks, projects }
