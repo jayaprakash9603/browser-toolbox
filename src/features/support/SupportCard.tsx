@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Link, useRouter } from '@/app/router'
 import { useInViewport, usePageVisible } from '@/app/pages/home/useDemoCycle'
-import { FEEDBACK_SUBJECT, STORE_LISTING_URL, buildMailtoUrl } from '@/core/support/config'
+import { FEEDBACK_SUBJECT, buildMailtoUrl, storeListingUrl } from '@/core/support/config'
 import { FadeIn } from '@/shared/components/motion'
 import './support-card.css'
 
@@ -123,7 +123,7 @@ export function SupportCard({ delay = 0.4 }: { delay?: number }) {
           </a>
           <a
             className="support-action support-action-rate"
-            href={STORE_LISTING_URL}
+            href={storeListingUrl()}
             target="_blank"
             rel="noopener noreferrer"
             aria-labelledby={`${id}-rate-title`}

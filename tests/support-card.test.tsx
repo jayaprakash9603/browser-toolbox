@@ -4,7 +4,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import * as demoVisibility from '@/app/pages/home/useDemoCycle'
 import { RouterProvider } from '@/app/router'
-import { buildMailtoUrl, FEEDBACK_SUBJECT, STORE_LISTING_URL } from '@/core/support/config'
+import {
+  CHROME_STORE_LISTING_URL,
+  EDGE_STORE_LISTING_URL,
+  FEEDBACK_SUBJECT,
+  buildMailtoUrl,
+} from '@/core/support/config'
 import { SupportCard } from '@/features/support/SupportCard'
 
 afterEach(() => {
@@ -39,10 +44,28 @@ describe('feedback action cards', () => {
     expect(email).toHaveAccessibleDescription('Ideas or questions? Open an email draft.')
 
     const rate = within(region).getByRole('link', { name: 'Rate One Panel' })
-    expect(rate).toHaveAttribute('href', STORE_LISTING_URL)
+    expect(rate).toHaveAttribute('href', CHROME_STORE_LISTING_URL)
     expect(rate).toHaveAttribute('target', '_blank')
     expect(rate).toHaveAttribute('rel', 'noopener noreferrer')
     expect(rate).toHaveAccessibleDescription('Enjoying One Panel? Review it in the store.')
+  })
+
+  it('opens the Edge add-ons listing when the panel is running in Microsoft Edge', () => {
+    const userAgent = navigator.userAgent
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value:
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0',
+    })
+    try {
+      renderSupport()
+      expect(screen.getByRole('link', { name: 'Rate One Panel' })).toHaveAttribute(
+        'href',
+        EDGE_STORE_LISTING_URL,
+      )
+    } finally {
+      Object.defineProperty(navigator, 'userAgent', { configurable: true, value: userAgent })
+    }
   })
 
   it('keeps illustrations decorative and keyboard focus on the three actions only', async () => {

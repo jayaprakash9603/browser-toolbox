@@ -29,7 +29,7 @@ export function isFirefoxRuntime(): boolean {
 }
 
 /** Edge's user-agent token is `Edg`, including Edge, Edge Android, and Edge iOS. */
-export function isEdgeUserAgent(userAgent: string): boolean {
+function isEdgeUserAgent(userAgent: string): boolean {
   return /Edg(?:e|A|iOS)?\//.test(userAgent)
 }
 

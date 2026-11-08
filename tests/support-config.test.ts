@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  CHROME_STORE_LISTING_URL,
+  EDGE_STORE_LISTING_URL,
   FEEDBACK_SUBJECT,
   SUPPORT_EMAIL,
   buildIssueUrl,
   buildMailtoUrl,
   buildReportBody,
   formatDiagnostics,
+  storeListingUrl,
 } from '@/core/support/config'
 
 const report = {
@@ -29,6 +32,22 @@ describe('support config', () => {
     expect(body).toContain('**Tool:** Text Studio')
     expect(body).not.toContain('Steps to reproduce')
     expect(body).toContain('Extension version: 1.2.0')
+  })
+
+  it('uses the Edge add-ons listing in Microsoft Edge and the Chrome listing otherwise', () => {
+    const userAgent = navigator.userAgent
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value:
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+    })
+    expect(storeListingUrl()).toBe(CHROME_STORE_LISTING_URL)
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: `${navigator.userAgent} Edg/130.0.0.0`,
+    })
+    expect(storeListingUrl()).toBe(EDGE_STORE_LISTING_URL)
+    Object.defineProperty(navigator, 'userAgent', { configurable: true, value: userAgent })
   })
 
   it('keeps the issue link bounded', () => {
