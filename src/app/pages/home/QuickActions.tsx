@@ -16,9 +16,13 @@ export function QuickActions({ delay = 0.06 }: { delay?: number }) {
   const tools = getQuickActionTools()
 
   return (
-    <SlideUp delay={delay} className="mb-[var(--density-section-gap)]">
+    <SlideUp onceKey="home.quick-actions" delay={delay} className="mb-[var(--density-section-gap)]">
       <SectionHeader title={t('home.quickActions')} icon={ZapIcon} />
-      <StaggerChildren className="home-quick-grid" stagger={0.045}>
+      <StaggerChildren
+        onceKey="home.quick-actions.grid"
+        className="home-quick-grid"
+        stagger={0.045}
+      >
         {tools.map((tool, index) => (
           <StaggerItem key={tool.id} className="min-w-0">
             <QuickActionTile tool={tool} color={tileColor(index)} />

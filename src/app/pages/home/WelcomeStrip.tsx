@@ -3,7 +3,12 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { getGreetingKey, HOME_TAGLINES, TAGLINE_INTERVAL_MS, type GreetingKey } from '@/app/pages/home/homeConfig'
+import {
+  getGreetingKey,
+  HOME_TAGLINES,
+  TAGLINE_INTERVAL_MS,
+  type GreetingKey,
+} from '@/app/pages/home/homeConfig'
 import { SlideUp } from '@/shared/components/motion'
 import { cn } from '@/shared/utils/cn'
 
@@ -23,7 +28,10 @@ function useMinuteClock(): Date {
     const schedule = () => {
       const current = new Date()
       setNow(current)
-      timer = setTimeout(schedule, 60_000 - (current.getSeconds() * 1000 + current.getMilliseconds()) + 50)
+      timer = setTimeout(
+        schedule,
+        60_000 - (current.getSeconds() * 1000 + current.getMilliseconds()) + 50,
+      )
     }
     const onVisible = () => {
       if (document.visibilityState !== 'visible') return
@@ -59,22 +67,35 @@ export function WelcomeStrip({ delay = 0 }: { delay?: number }) {
   const [hovered, setHovered] = useState(false)
   const [focused, setFocused] = useState(false)
   // Reduced motion stops auto-advance entirely; the dots still let people browse the messages.
-  const [taglineIndex, setTaglineIndex] = useRotatingIndex(HOME_TAGLINES.length, Boolean(reduce) || hovered || focused)
+  const [taglineIndex, setTaglineIndex] = useRotatingIndex(
+    HOME_TAGLINES.length,
+    Boolean(reduce) || hovered || focused,
+  )
   const tagline = HOME_TAGLINES[taglineIndex]
   const TaglineIcon = tagline.icon
 
   const greetingKey = getGreetingKey(now.getHours())
   const DaypartIcon = DAYPART_ICON[greetingKey]
   const clock = useMemo(() => {
-    const parts = new Intl.DateTimeFormat(i18n.language, { hour: 'numeric', minute: '2-digit' }).formatToParts(now)
+    const parts = new Intl.DateTimeFormat(i18n.language, {
+      hour: 'numeric',
+      minute: '2-digit',
+    }).formatToParts(now)
     const time = parts
       .filter((p) => p.type !== 'dayPeriod')
       .map((p) => p.value)
       .join('')
       .trim()
     const period = parts.find((p) => p.type === 'dayPeriod')?.value ?? ''
-    const date = new Intl.DateTimeFormat(i18n.language, { weekday: 'short', month: 'short', day: 'numeric' }).format(now)
-    const full = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'full', timeStyle: 'short' }).format(now)
+    const date = new Intl.DateTimeFormat(i18n.language, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    }).format(now)
+    const full = new Intl.DateTimeFormat(i18n.language, {
+      dateStyle: 'full',
+      timeStyle: 'short',
+    }).format(now)
     return { time, period, date, full }
   }, [now, i18n.language])
 
@@ -82,7 +103,11 @@ export function WelcomeStrip({ delay = 0 }: { delay?: number }) {
   const exit = reduce ? { opacity: 0 } : { opacity: 0, y: -8, filter: 'blur(4px)' }
 
   return (
-    <SlideUp delay={delay} className="@container mb-[var(--density-section-gap)]">
+    <SlideUp
+      onceKey="home.welcome"
+      delay={delay}
+      className="@container mb-[var(--density-section-gap)]"
+    >
       <section
         aria-labelledby="home-welcome-title"
         className="relative overflow-hidden rounded-2xl border px-3 pt-2.5 pb-2 shadow-[var(--shadow-card)]"
@@ -114,8 +139,14 @@ export function WelcomeStrip({ delay = 0 }: { delay?: number }) {
                 key={tagline.id}
                 initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.4, rotate: -30 }}
                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.4, rotate: 30, transition: { duration: 0.15 } }}
-                transition={reduce ? { duration: 0.2 } : { type: 'spring', stiffness: 420, damping: 22 }}
+                exit={
+                  reduce
+                    ? { opacity: 0 }
+                    : { opacity: 0, scale: 0.4, rotate: 30, transition: { duration: 0.15 } }
+                }
+                transition={
+                  reduce ? { duration: 0.2 } : { type: 'spring', stiffness: 420, damping: 22 }
+                }
                 className="flex"
               >
                 <TaglineIcon className="size-4" />
@@ -160,7 +191,9 @@ export function WelcomeStrip({ delay = 0 }: { delay?: number }) {
               <span className="flex items-baseline gap-0.5 text-[15px] leading-none font-semibold tracking-tight tabular-nums">
                 <RollingTime time={clock.time} />
                 {clock.period ? (
-                  <span className="text-[10px] font-medium text-muted-foreground uppercase">{clock.period}</span>
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase">
+                    {clock.period}
+                  </span>
                 ) : null}
               </span>
               <span className="flex items-center gap-1 text-[10px] leading-none text-muted-foreground">
@@ -189,10 +222,14 @@ export function WelcomeStrip({ delay = 0 }: { delay?: number }) {
                   <motion.span
                     aria-hidden
                     animate={{ width: active ? 14 : 5 }}
-                    transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 500, damping: 34 }}
+                    transition={
+                      reduce ? { duration: 0 } : { type: 'spring', stiffness: 500, damping: 34 }
+                    }
                     className={cn(
                       'block h-[5px] rounded-full transition-colors',
-                      active ? 'bg-[var(--hero-from)]' : 'bg-muted-foreground/30 group-hover/dot:bg-muted-foreground/60',
+                      active
+                        ? 'bg-[var(--hero-from)]'
+                        : 'bg-muted-foreground/30 group-hover/dot:bg-muted-foreground/60',
                     )}
                   />
                 </button>

@@ -80,7 +80,7 @@ export function SupportCard({ delay = 0.4 }: { delay?: number }) {
   const reportRoute = `/report-issue?from=${encodeURIComponent(`${path}${search}`)}`
 
   return (
-    <FadeIn delay={delay} className="mb-2">
+    <FadeIn onceKey="home.support" delay={delay} className="mb-2">
       <section
         ref={ref}
         className="support-section"

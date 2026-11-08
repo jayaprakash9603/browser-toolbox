@@ -35,7 +35,7 @@ export function FavoritesSection({
   )
 
   return (
-    <SlideUp delay={delay} className="mb-[var(--density-section-gap)]">
+    <SlideUp onceKey="home.favorites" delay={delay} className="mb-[var(--density-section-gap)]">
       <SectionHeader
         title={t('nav.favorites')}
         icon={StarIcon}
@@ -52,7 +52,11 @@ export function FavoritesSection({
           <p className="text-tool-desc">{t('home.favoriteHint')}</p>
         </div>
       ) : (
-        <StaggerChildren className="home-favorite-grid" stagger={0.025}>
+        <StaggerChildren
+          onceKey="home.favorites.grid"
+          className="home-favorite-grid"
+          stagger={0.025}
+        >
           {tools.map((tool) => (
             <StaggerItem key={tool.id} className="min-w-0">
               <FavoriteChip tool={tool} />

@@ -10,7 +10,8 @@ import { useRef, useState, type CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { getHomeWorkbenchGroups } from '@/app/pages/home/homeConfig'
-import { useInViewport, usePageVisible } from '@/app/pages/home/useDemoCycle'
+import { useHomeWorkbenchMotion } from '@/app/pages/home/useHomeMotion'
+import { useInViewport } from '@/app/pages/home/useDemoCycle'
 import { Link } from '@/app/router'
 import type { ToolDefinition } from '@/core/registry'
 import { useToolLabels } from '@/shared/hooks/useToolLabels'
@@ -42,7 +43,7 @@ function HomeWorkbench({ group }: { group: WorkbenchGroup }) {
   const ref = useRef<HTMLElement>(null)
   const inViewport = useInViewport(ref)
   const reduce = useReducedMotion()
-  const pageVisible = usePageVisible()
+  const motionPhase = useHomeWorkbenchMotion(group.id, inViewport, Boolean(reduce))
   const [deckOpen, setDeckOpen] = useState(true)
   const isDesign = group.id === 'design-accessibility'
   const Icon = group.icon
@@ -61,7 +62,7 @@ function HomeWorkbench({ group }: { group: WorkbenchGroup }) {
       aria-labelledby={headingId}
       className="home-tool-suite"
       data-suite={group.id}
-      data-motion={inViewport && pageVisible && !reduce ? 'active' : 'off'}
+      data-motion={reduce ? 'off' : motionPhase}
       data-deck={deckOpen ? 'open' : 'closed'}
     >
       <header className="home-suite-heading">
@@ -108,12 +109,7 @@ function HomeWorkbench({ group }: { group: WorkbenchGroup }) {
           style={isDesign ? { overflow: 'clip' } : undefined}
         >
           {tools.map((tool, index) => (
-            <li
-              key={tool.id}
-              className="home-suite-item"
-              data-tool={tool.id}
-              style={{ '--tool-order': index } as CSSProperties}
-            >
+            <li key={tool.id} className="home-suite-item" data-tool={tool.id}>
               <WorkbenchTool tool={tool} index={index} />
             </li>
           ))}

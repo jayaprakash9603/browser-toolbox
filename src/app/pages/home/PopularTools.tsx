@@ -32,7 +32,7 @@ export function PopularTools({ delay = 0.24 }: { delay?: number }) {
   const activeId = featuredId ?? topPickId
 
   return (
-    <SlideUp delay={delay} className="mb-[var(--density-section-gap)]">
+    <SlideUp onceKey="home.popular-tools" delay={delay} className="mb-[var(--density-section-gap)]">
       <SectionHeader title={t('home.popularTools')} icon={FlameIcon} />
       <PopularToolsGrid
         tools={tools}
@@ -132,9 +132,7 @@ function PopularToolTile({
       transition={{ layout: layoutTransition }}
       className={cn(
         'relative min-h-0 min-w-0 max-w-full',
-        expanded
-          ? 'col-span-2 row-span-1 @[560px]:row-span-2'
-          : 'col-span-1 row-span-1',
+        expanded ? 'col-span-2 row-span-1 @[560px]:row-span-2' : 'col-span-1 row-span-1',
       )}
     >
       <Link
@@ -167,7 +165,9 @@ function PopularToolTile({
             />
             <span
               className="col-start-1 row-start-1 flex size-10 shrink-0 items-center justify-center rounded-xl text-white shadow-sm @[560px]:size-9"
-              style={{ background: `linear-gradient(145deg, ${color}, color-mix(in srgb, ${color} 55%, black))` }}
+              style={{
+                background: `linear-gradient(145deg, ${color}, color-mix(in srgb, ${color} 55%, black))`,
+              }}
             >
               <Icon className="size-4" aria-hidden />
             </span>
@@ -184,7 +184,11 @@ function PopularToolTile({
                   {t('home.topPick')}
                 </motion.span>
               ) : (
-                <span key="spacer" className="col-start-2 row-start-1 hidden min-h-0 @[560px]:block" aria-hidden />
+                <span
+                  key="spacer"
+                  className="col-start-2 row-start-1 hidden min-h-0 @[560px]:block"
+                  aria-hidden
+                />
               )}
             </AnimatePresence>
             <ArrowRightIcon

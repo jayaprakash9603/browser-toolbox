@@ -25,7 +25,6 @@
   transition:
     background-color 160ms,
     border-color 160ms,
-    transform 160ms,
     box-shadow 160ms;
 }
 .home-shortcut-name {
@@ -53,7 +52,6 @@
   height: 30px;
   flex-shrink: 0;
   border-radius: 10px;
-  transition: transform 180ms ease;
 }
 .home-quick-icon {
   color: white;
@@ -139,12 +137,7 @@
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .home-quick-link:hover,
   .home-favorite-link:hover {
-    transform: translateY(-2px);
     box-shadow: 0 4px 12px #0000000a;
-  }
-  .home-quick-link:hover .home-quick-icon,
-  .home-favorite-link:hover .home-favorite-icon {
-    transform: rotate(-6deg);
   }
 }
 @media (prefers-reduced-motion: reduce) {

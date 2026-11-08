@@ -1,15 +1,24 @@
 import { motion, useReducedMotion } from 'motion/react'
 import type { ReactNode } from 'react'
 
+import { useMotionOnce } from '@/shared/components/motion/useMotionOnce'
+
 interface StaggerChildrenProps {
   children: ReactNode
   className?: string
   stagger?: number
+  onceKey?: string
 }
 
-export function StaggerChildren({ children, className, stagger = 0.04 }: StaggerChildrenProps) {
+export function StaggerChildren({
+  children,
+  className,
+  stagger = 0.04,
+  onceKey,
+}: StaggerChildrenProps) {
   const reduce = useReducedMotion()
-  if (reduce) {
+  const shouldAnimate = useMotionOnce(onceKey)
+  if (reduce || !shouldAnimate) {
     return <div className={className}>{children}</div>
   }
   return (

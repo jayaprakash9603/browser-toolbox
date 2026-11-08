@@ -33,7 +33,7 @@ export function RecentSection({ delay = 0.12, limit = 4, showViewAll = true }: R
   )
 
   return (
-    <SlideUp delay={delay} className="mb-[var(--density-section-gap)]">
+    <SlideUp onceKey="home.recent" delay={delay} className="mb-[var(--density-section-gap)]">
       <SectionHeader
         title={t('home.recentlyUsed')}
         icon={ClockIcon}

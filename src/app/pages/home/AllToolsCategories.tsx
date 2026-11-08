@@ -29,7 +29,9 @@ export function AllToolsCategories({ delay = 0.3 }: { delay?: number }) {
   )
 
   const visible =
-    filter === ALL_CATALOG ? categories : categories.filter(({ category }) => category.id === filter)
+    filter === ALL_CATALOG
+      ? categories
+      : categories.filter(({ category }) => category.id === filter)
 
   const chipCategories = useMemo(
     () =>
@@ -45,7 +47,11 @@ export function AllToolsCategories({ delay = 0.3 }: { delay?: number }) {
   const PlaybackIcon = paused ? PlayIcon : PauseIcon
 
   return (
-    <SlideUp delay={delay} className="mb-[var(--density-section-gap)]">
+    <SlideUp
+      onceKey="home.all-tools-categories"
+      delay={delay}
+      className="mb-[var(--density-section-gap)]"
+    >
       <div id="all-tools" className="scroll-mt-4">
         <SectionHeader
           title={t('home.allTools')}
@@ -77,7 +83,12 @@ export function AllToolsCategories({ delay = 0.3 }: { delay?: number }) {
         <ul className="grid grid-cols-2 gap-2 @[360px]:gap-2.5 @[960px]:grid-cols-3">
           {visible.map(({ category, tools }, position) => (
             <li key={category.id} className="min-w-0">
-              <CategoryCard category={category} tools={tools} position={position} playing={!paused} />
+              <CategoryCard
+                category={category}
+                tools={tools}
+                position={position}
+                playing={!paused}
+              />
             </li>
           ))}
         </ul>
