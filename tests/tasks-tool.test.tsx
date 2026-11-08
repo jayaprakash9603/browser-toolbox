@@ -54,6 +54,19 @@ describe('Tasks tool', { timeout: 20_000 }, () => {
     expect(within(card).getByRole('button', { name: 'Tomorrow' })).toBeInTheDocument()
   })
 
+  it('uses the overview card and primary view tabs for navigation', async () => {
+    const user = userEvent.setup()
+    renderTool()
+
+    expect(await screen.findByRole('button', { name: 'Show task overview' })).toBeInTheDocument()
+    expect(screen.getAllByRole('tab')).toHaveLength(4)
+
+    await user.click(screen.getByRole('button', { name: 'Show task overview' }))
+    expect(await screen.findByRole('list', { name: 'Task summary' })).toBeInTheDocument()
+    await user.click(screen.getByRole('tab', { name: /Upcoming/ }))
+    expect(await screen.findByRole('heading', { name: 'Upcoming' })).toBeInTheDocument()
+  })
+
   it('adds a task from natural language and creates the named project', async () => {
     const user = userEvent.setup()
     renderTool()
@@ -134,7 +147,7 @@ describe('Tasks tool', { timeout: 20_000 }, () => {
     expect(screen.getByRole('button', { name: 'Reschedule' })).toBeInTheDocument()
     expect(screen.queryByText('Book flights')).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: /Upcoming/ }))
+    await user.click(screen.getByRole('tab', { name: /Upcoming/ }))
     expect(await screen.findByText('Book flights')).toBeInTheDocument()
   })
 })

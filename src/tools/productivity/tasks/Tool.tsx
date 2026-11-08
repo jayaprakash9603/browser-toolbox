@@ -1,15 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import * as TabsPrimitive from '@radix-ui/react-tabs'
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'motion/react'
 import {
   ArrowDownUpIcon,
+  CalendarRangeIcon,
+  CircleCheckBigIcon,
   ChevronRightIcon,
   ClipboardCopyIcon,
   DownloadIcon,
   EllipsisVerticalIcon,
+  FolderOpenIcon,
+  InboxIcon,
   ListTodoIcon,
   PencilIcon,
+  PlusIcon,
   SearchIcon,
+  SunIcon,
   Trash2Icon,
   UploadIcon,
   XIcon,
@@ -40,6 +47,7 @@ import {
   type TasksData,
 } from '@/core/tasks/model'
 import { ToolPage } from '@/shared/components/ToolPage'
+import { ModeTiles, PanelSection } from '@/shared/components/toolkit'
 import { Button } from '@/shared/components/ui/button'
 import {
   DropdownMenu,
@@ -58,7 +66,7 @@ import { cn } from '@/shared/utils/cn'
 import { useProductivityTool } from '../_shared'
 import type { DueValue } from './DuePicker'
 import { makeConfetti, playCompleteChime, type ConfettiBurst } from './effects'
-import { useActivePage, useElementWidth, useNow, useTasksStore } from './hooks'
+import { useActivePage, useNow, useTasksStore } from './hooks'
 import { useDayWords } from './labels'
 import {
   COMPLETED_PAGE,
@@ -89,13 +97,15 @@ import { ProjectDot } from './TaskMeta'
 import type { TaskRowActions } from './TaskRow'
 import { TaskList, TaskSections } from './TaskSections'
 import { TasksEmpty, type EmptyKind } from './TasksEmpty'
+import { TaskOverviewBar } from './TaskOverviewBar'
 import { useToast } from '@/shared/components/toast/useToast'
 import { ViewHeader } from './ViewHeader'
 import { ViewNav } from './ViewNav'
 
-const WIDE_LAYOUT = 640
 const HIGHLIGHT_MS = 2400
 const TODAY_VIEW: ParsedView = { kind: 'today' }
+const PRIMARY_VIEWS = ['today', 'upcoming', 'inbox', 'completed'] as const
+type PrimaryView = (typeof PRIMARY_VIEWS)[number]
 
 function replaceTasks(data: TasksData, snapshots: Task[], removeIds: string[] = []): TasksData {
   const ids = new Set([...snapshots.map((task) => task.id), ...removeIds])
@@ -143,10 +153,7 @@ export default function TasksTool() {
   const composerRef = useRef<TaskComposerHandle>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
-  const rootRef = useRef<HTMLDivElement>(null)
   const highlightTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const width = useElementWidth(rootRef)
-  const wide = width >= WIDE_LAYOUT
 
   const loaded = data != null
   const tasks = useMemo(() => data?.tasks ?? [], [data])
@@ -165,6 +172,8 @@ export default function TasksTool() {
   const doneInView = useMemo(() => completedInView(view, tasks, now), [view, tasks, now])
   const progress = useMemo(() => viewProgress(view, tasks, now), [view, tasks, now])
   const openCount = sections.reduce((sum, section) => sum + section.tasks.length, 0)
+  const openTaskCount = tasks.filter((task) => !task.completed).length
+  const completedTaskCount = tasks.length - openTaskCount
 
   const deepLinkId = new URLSearchParams(search).get('task')
   const detailTask = tasks.find((task) => task.id === (selectedId ?? deepLinkId)) ?? null
@@ -681,80 +690,122 @@ export default function TasksTool() {
       </DropdownMenu>
     ) : null
 
-  const nav = (
-    <ViewNav
-      current={currentViewId}
-      counts={counts}
-      projects={projects}
-      labels={labels}
-      layout={wide ? 'sidebar' : 'rail'}
-      todayDate={now}
-      onSelect={selectView}
-      onAddProject={() => setProjectDialog({ open: true, project: null })}
-    />
-  )
+  const primaryViewValue = PRIMARY_VIEWS.includes(currentViewId as PrimaryView)
+    ? (currentViewId as PrimaryView)
+    : ''
+  const viewTiles = [
+    {
+      value: 'today' as const,
+      label: t('tasks.views.today'),
+      hint: t('tasks.tiles.todayHint'),
+      icon: SunIcon,
+      tone: 'bg-amber-500/12 text-amber-600 dark:text-amber-300',
+    },
+    {
+      value: 'upcoming' as const,
+      label: t('tasks.views.upcoming'),
+      hint: t('tasks.tiles.upcomingHint'),
+      icon: CalendarRangeIcon,
+      tone: 'bg-violet-500/12 text-violet-600 dark:text-violet-300',
+    },
+    {
+      value: 'inbox' as const,
+      label: t('tasks.views.inbox'),
+      hint: t('tasks.tiles.inboxHint'),
+      icon: InboxIcon,
+      tone: 'bg-sky-500/12 text-sky-600 dark:text-sky-300',
+    },
+    {
+      value: 'completed' as const,
+      label: t('tasks.views.completed'),
+      hint: t('tasks.tiles.completedHint'),
+      icon: CircleCheckBigIcon,
+      tone: 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-300',
+    },
+  ]
+  const collections =
+    projects.length > 0 || labels.length > 0 ? (
+      <PanelSection title={t('tasks.organize.title')} icon={<FolderOpenIcon />} className="gap-2">
+        <ViewNav
+          current={currentViewId}
+          counts={counts}
+          projects={projects}
+          labels={labels}
+          layout="rail"
+          includePrimary={false}
+          todayDate={now}
+          onSelect={selectView}
+          onAddProject={() => setProjectDialog({ open: true, project: null })}
+        />
+      </PanelSection>
+    ) : null
+  const newProjectAction =
+    projects.length === 0 && labels.length === 0 ? (
+      <Button
+        size="xs"
+        variant="ghost"
+        className="h-7 shrink-0 gap-1 px-1.5 text-muted-foreground"
+        onClick={() => setProjectDialog({ open: true, project: null })}
+      >
+        <PlusIcon className="size-3.5" aria-hidden />
+        <span className="hidden @[400px]:inline">{t('tasks.project.new')}</span>
+      </Button>
+    ) : null
 
   return (
     <ToolPage tool={tool} actions={headerActions} contentClassName="overflow-hidden p-0">
       <MotionConfig reducedMotion="user">
-        <div ref={rootRef} className="flex min-h-0 flex-1">
-          {wide && (
-            <aside className="flex min-h-0 shrink-0 border-r py-[var(--density-page-pad)] pl-[var(--density-page-pad)]">
-              {nav}
-            </aside>
-          )}
-          <div className="@container flex min-h-0 min-w-0 flex-1 flex-col">
-            <div className="flex shrink-0 flex-col gap-2 px-[var(--density-page-pad)] pt-[var(--density-page-pad)]">
-              {!wide && nav}
-              <AnimatePresence initial={false}>
-                {searchOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6, transition: { duration: 0.12 } }}
-                    className="relative"
-                  >
-                    <SearchIcon
-                      className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-                      aria-hidden
-                    />
-                    <input
-                      ref={searchRef}
-                      type="search"
-                      value={query}
-                      onChange={(event) => setQuery(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Escape') {
-                          event.preventDefault()
-                          event.stopPropagation()
-                          if (query) setQuery('')
-                          else setSearchOpen(false)
-                        }
+        <div className="@container flex min-h-0 min-w-0 flex-1 flex-col">
+          <div className="flex shrink-0 flex-col gap-2 px-[var(--density-page-pad)] pt-[var(--density-page-pad)]">
+            <AnimatePresence initial={false}>
+              {searchOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6, transition: { duration: 0.12 } }}
+                  className="relative"
+                >
+                  <SearchIcon
+                    className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                    aria-hidden
+                  />
+                  <input
+                    ref={searchRef}
+                    type="search"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        if (query) setQuery('')
+                        else setSearchOpen(false)
+                      }
+                    }}
+                    placeholder={t('tasks.search.placeholder')}
+                    aria-label={t('tasks.search.placeholder')}
+                    className="h-9 w-full rounded-lg border border-input bg-background pr-9 pl-9 text-[13px] shadow-xs outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:ring-4 focus-visible:ring-primary/15 [&::-webkit-search-cancel-button]:hidden"
+                  />
+                  {query && (
+                    <Button
+                      size="icon-xs"
+                      variant="ghost"
+                      className="absolute top-1/2 right-1.5 size-6 -translate-y-1/2 text-muted-foreground"
+                      onClick={() => {
+                        setQuery('')
+                        searchRef.current?.focus()
                       }}
-                      placeholder={t('tasks.search.placeholder')}
-                      aria-label={t('tasks.search.placeholder')}
-                      className="h-9 w-full rounded-lg border border-input bg-background pr-9 pl-9 text-[13px] shadow-xs outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:ring-4 focus-visible:ring-primary/15 [&::-webkit-search-cancel-button]:hidden"
-                    />
-                    {query && (
-                      <Button
-                        size="icon-xs"
-                        variant="ghost"
-                        className="absolute top-1/2 right-1.5 size-6 -translate-y-1/2 text-muted-foreground"
-                        onClick={() => {
-                          setQuery('')
-                          searchRef.current?.focus()
-                        }}
-                        aria-label={t('common.clear')}
-                      >
-                        <XIcon />
-                      </Button>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                      aria-label={t('common.clear')}
+                    >
+                      <XIcon />
+                    </Button>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
-            <div className="scrollbar-styled flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-[var(--density-page-pad)] pt-3 pb-20 *:shrink-0">
+          <div className="scrollbar-styled flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-[var(--density-page-pad)] pt-3 pb-20 *:shrink-0">
               {!loaded ? (
                 <div className="flex flex-col gap-3" aria-busy="true" aria-label={t('nav.loading')}>
                   <div className="h-7 w-32 animate-pulse rounded-md bg-muted" />
@@ -767,6 +818,26 @@ export default function TasksTool() {
                 </div>
               ) : (
                 <>
+                  <TaskOverviewBar
+                    openCount={openTaskCount}
+                    todayCount={counts.today}
+                    overdueCount={counts.overdue}
+                    completedCount={completedTaskCount}
+                  />
+                  <TabsPrimitive.Root
+                    value={primaryViewValue}
+                    onValueChange={selectView}
+                    className="flex flex-col gap-3"
+                  >
+                    <ModeTiles
+                      label={t('tasks.tiles.label')}
+                      layoutId="tasks-primary-view"
+                      value={primaryViewValue}
+                      className="grid grid-cols-2 gap-1.5 @[560px]:grid-cols-4"
+                      hintClassName="hidden @[400px]:block"
+                      tiles={viewTiles}
+                    />
+                    {collections}
                   {!activeQuery && (
                     <ViewHeader
                       title={viewTitle}
@@ -778,7 +849,17 @@ export default function TasksTool() {
                     />
                   )}
 
-                  <AnimatePresence initial={false}>
+                  <PanelSection
+                    title={t('tasks.board.title')}
+                    icon={<ListTodoIcon />}
+                    actions={
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        {newProjectAction}
+                        <span className="max-w-[48%] truncate text-[11px] text-muted-foreground">{subtitle}</span>
+                      </div>
+                    }
+                  >
+                    <AnimatePresence initial={false}>
                     {showPageCard && activePage && (
                       <PageCapture
                         key="page"
@@ -894,11 +975,12 @@ export default function TasksTool() {
                       {t('tasks.tip')}
                     </p>
                   )}
+                  </PanelSection>
+                </TabsPrimitive.Root>
                 </>
               )}
             </div>
           </div>
-        </div>
 
         <TaskDetail
           task={detailTask}
