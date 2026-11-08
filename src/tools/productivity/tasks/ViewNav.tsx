@@ -15,7 +15,6 @@ interface ViewNavProps {
   projects: TaskProject[]
   labels: string[]
   layout: 'rail' | 'sidebar'
-  includePrimary?: boolean
   todayDate: number
   onSelect: (id: string) => void
   onAddProject: () => void
@@ -41,17 +40,7 @@ function TodayGlyph({ date }: { date: number }) {
   )
 }
 
-export function ViewNav({
-  current,
-  counts,
-  projects,
-  labels,
-  layout,
-  includePrimary = true,
-  todayDate,
-  onSelect,
-  onAddProject,
-}: ViewNavProps) {
+export function ViewNav({ current, counts, projects, labels, layout, todayDate, onSelect, onAddProject }: ViewNavProps) {
   const { t } = useTranslation()
   const listRef = useRef<HTMLDivElement>(null)
 
@@ -166,14 +155,14 @@ export function ViewNav({
           ref={listRef}
           className="scrollbar-none flex items-center gap-1 overflow-x-auto px-1 py-0.5 [mask-image:linear-gradient(to_right,transparent,black_0.5rem,black_calc(100%-1.5rem),transparent)]"
         >
-          {includePrimary && main.map(renderItem)}
-          {includePrimary && <span className="mx-0.5 h-4 w-px shrink-0 bg-border" aria-hidden />}
+          {main.map(renderItem)}
+          <span className="mx-0.5 h-4 w-px shrink-0 bg-border" aria-hidden />
           {projectItems.map(renderItem)}
           {addProject}
           {labelItems.length > 0 && <span className="mx-0.5 h-4 w-px shrink-0 bg-border" aria-hidden />}
           {labelItems.map(renderItem)}
-          {includePrimary && <span className="mx-0.5 h-4 w-px shrink-0 bg-border" aria-hidden />}
-          {includePrimary && renderItem(completed)}
+          <span className="mx-0.5 h-4 w-px shrink-0 bg-border" aria-hidden />
+          {renderItem(completed)}
           <span className="w-4 shrink-0" aria-hidden />
         </div>
       </nav>
@@ -182,12 +171,10 @@ export function ViewNav({
 
   return (
     <nav aria-label={t('tasks.views.label')} className="scrollbar-styled flex w-48 shrink-0 flex-col gap-4 overflow-y-auto pr-1">
-      {includePrimary && (
-        <div className="flex flex-col gap-0.5">
-          {main.map(renderItem)}
-          {renderItem(completed)}
-        </div>
-      )}
+      <div className="flex flex-col gap-0.5">
+        {main.map(renderItem)}
+        {renderItem(completed)}
+      </div>
       <div className="flex flex-col gap-0.5">
         <div className="flex items-center justify-between px-2.5 pb-1">
           <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
