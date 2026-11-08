@@ -5,14 +5,16 @@ import { isAdblockAllowlistRuleId } from '@/chrome/background/adblock/allowlist'
 import { DEFAULT_PROTECTION_STATE, isProtectionManagedRuleId } from '@/core/protection'
 import { resetChromeMockStorage } from './setup'
 
+const ENABLED_PROTECTION_STATE = { ...DEFAULT_PROTECTION_STATE, enabled: true }
+
 describe('protection background sync', () => {
   beforeEach(() => {
     resetChromeMockStorage()
     vi.clearAllMocks()
   })
 
-  it('registers the isolated script and every page guard by default', () => {
-    const scripts = buildProtectionContentScripts(DEFAULT_PROTECTION_STATE)
+  it('registers the isolated script and every page guard when enabled', () => {
+    const scripts = buildProtectionContentScripts(ENABLED_PROTECTION_STATE)
     expect(scripts.map((s) => s.id)).toEqual([
       'protection-heuristics',
       'protection-guard-scam',
@@ -26,7 +28,7 @@ describe('protection background sync', () => {
 
   it('keeps the isolated script when look-alike detection is off and drops disabled guards', () => {
     const scripts = buildProtectionContentScripts({
-      ...DEFAULT_PROTECTION_STATE,
+      ...ENABLED_PROTECTION_STATE,
       lookalike: false,
       scamGuard: false,
       notificationGuard: false,
@@ -39,7 +41,7 @@ describe('protection background sync', () => {
   })
 
   it('excludes trusted sites from every script', () => {
-    const scripts = buildProtectionContentScripts({ ...DEFAULT_PROTECTION_STATE, trusted: ['bank.test'] })
+    const scripts = buildProtectionContentScripts({ ...ENABLED_PROTECTION_STATE, trusted: ['bank.test'] })
     for (const script of scripts) {
       expect(script.excludeMatches).toEqual(['*://bank.test/*', '*://*.bank.test/*'])
     }

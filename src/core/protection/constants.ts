@@ -57,6 +57,7 @@ export const MAX_RECENT_ENTRIES = 20
 export const PROTECTION_RULES_VERSION_KEY = 'protectionRulesVersion'
 
 export const DEFAULT_PROTECTION_STATE: ProtectionState = {
+  // Web protection is opt-in; its individual safeguards are ready when the user enables it.
   enabled: false,
   phishing: true,
   malware: true,

@@ -12,9 +12,10 @@ import { resetChromeMockStorage } from './setup'
 describe('protection service', () => {
   beforeEach(() => resetChromeMockStorage())
 
-  it('defaults to enabled with all layers on', async () => {
+  it('defaults to off with all layers ready to enable', async () => {
     const state = await getProtectionState()
     expect(state).toEqual(DEFAULT_PROTECTION_STATE)
+    expect(state.enabled).toBe(false)
     expect(state.miners && state.scamGuard && state.clipboardGuard).toBe(true)
     expect(state.downloadGuard && state.notificationGuard).toBe(true)
   })

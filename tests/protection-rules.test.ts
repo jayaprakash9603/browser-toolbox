@@ -19,9 +19,11 @@ const sampleThreats: ThreatsFile = {
   miner: ['coinhive.test'],
 }
 
+const ENABLED_PROTECTION_STATE = { ...DEFAULT_PROTECTION_STATE, enabled: true }
+
 describe('protection DNR rules', () => {
   it('builds redirect and block pairs per category', () => {
-    const rules = buildThreatRules(sampleThreats, DEFAULT_PROTECTION_STATE, 'chrome-extension://abc')
+    const rules = buildThreatRules(sampleThreats, ENABLED_PROTECTION_STATE, 'chrome-extension://abc')
     const redirects = rules.filter((r) => r.action.type === 'redirect')
     const blocks = rules.filter((r) => r.action.type === 'block')
     expect(redirects.length).toBe(4)
@@ -31,7 +33,7 @@ describe('protection DNR rules', () => {
   })
 
   it('every redirect rule pairs regexSubstitution with regexFilter', () => {
-    const rules = buildThreatRules(sampleThreats, DEFAULT_PROTECTION_STATE, 'chrome-extension://abc')
+    const rules = buildThreatRules(sampleThreats, ENABLED_PROTECTION_STATE, 'chrome-extension://abc')
     for (const rule of rules.filter((r) => r.action.type === 'redirect')) {
       expect(rule.condition.regexFilter).toBeTruthy()
       expect(rule.condition.urlFilter).toBeUndefined()
@@ -39,18 +41,18 @@ describe('protection DNR rules', () => {
   })
 
   it('puts IP hosts into requestDomains chunks instead of per-IP rules', () => {
-    const rules = buildThreatRules(sampleThreats, DEFAULT_PROTECTION_STATE, 'chrome-extension://abc')
+    const rules = buildThreatRules(sampleThreats, ENABLED_PROTECTION_STATE, 'chrome-extension://abc')
     const malware = rules.filter((r) => JSON.stringify(r).includes('malware.test'))
     expect(malware).toHaveLength(2)
     expect(malware[0].condition.requestDomains).toContain('203.0.113.7')
   })
 
   it('includes cryptominer hosts and honours the miners toggle', () => {
-    const on = buildThreatRules(sampleThreats, DEFAULT_PROTECTION_STATE, 'chrome-extension://abc')
+    const on = buildThreatRules(sampleThreats, ENABLED_PROTECTION_STATE, 'chrome-extension://abc')
     expect(on.some((r) => r.condition.requestDomains?.includes('coinhive.test'))).toBe(true)
     const off = buildThreatRules(
       sampleThreats,
-      { ...DEFAULT_PROTECTION_STATE, miners: false },
+      { ...ENABLED_PROTECTION_STATE, miners: false },
       'chrome-extension://abc',
     )
     expect(off.some((r) => r.condition.requestDomains?.includes('coinhive.test'))).toBe(false)
@@ -61,7 +63,7 @@ describe('protection DNR rules', () => {
       ...sampleThreats,
       scam: ['com', 'co.uk', 'www.google.com', 'mail.google.co.in', 'youtube.com', 'vlc.de', 'scam.test'],
     }
-    const rules = buildThreatRules(poisoned, DEFAULT_PROTECTION_STATE, 'chrome-extension://abc')
+    const rules = buildThreatRules(poisoned, ENABLED_PROTECTION_STATE, 'chrome-extension://abc')
     const domains = rules.flatMap((r) => r.condition.requestDomains ?? [])
     for (const host of ['com', 'co.uk', 'www.google.com', 'mail.google.co.in', 'youtube.com']) {
       expect(domains).not.toContain(host)
@@ -72,10 +74,10 @@ describe('protection DNR rules', () => {
   })
 
   it('omits rules when protection is disabled or category is off', () => {
-    expect(buildThreatRules(sampleThreats, { ...DEFAULT_PROTECTION_STATE, enabled: false }, 'x').length).toBe(0)
+    expect(buildThreatRules(sampleThreats, { ...ENABLED_PROTECTION_STATE, enabled: false }, 'x').length).toBe(0)
     const noPhish = buildThreatRules(
       sampleThreats,
-      { ...DEFAULT_PROTECTION_STATE, phishing: false },
+      { ...ENABLED_PROTECTION_STATE, phishing: false },
       'chrome-extension://abc',
     )
     expect(noPhish.every((r) => !JSON.stringify(r).includes('phish-a'))).toBe(true)

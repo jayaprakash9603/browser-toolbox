@@ -84,6 +84,20 @@ describe('header protection panels', () => {
     expect((await getAdblockState()).enabled).toBe(false)
   })
 
+  it('keeps Web Protection off until the user enables it', async () => {
+    renderHeader('protection')
+    const trigger = await screen.findByRole('button', { name: 'Web Protection: off' })
+
+    expect((await getProtectionState()).enabled).toBe(false)
+    fireEvent.click(trigger)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Web Protection' })
+    expect(within(dialog).getByRole('switch', { name: 'Web Protection' })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    )
+  })
+
   it('keeps protection off and explains when site access is declined', async () => {
     vi.spyOn(chrome.permissions, 'contains').mockImplementation(async () => false)
     vi.spyOn(chrome.permissions, 'request').mockImplementation(async () => false)
