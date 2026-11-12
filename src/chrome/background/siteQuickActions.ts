@@ -11,11 +11,7 @@ import { getChromeMessage } from '@/core/i18n/chromeMessages'
 import { STORAGE_KEYS } from '@/core/constants'
 import { createLogger } from '@/core/logging'
 
-import {
-  pushElementInspectorToTab,
-  resolveElementInspectorForTab,
-  toggleElementInspectorForTab,
-} from './elementInspector'
+import { resolveElementInspectorForTab, toggleElementInspectorForTab } from './elementInspector'
 import { pushFontInspectorToTab, resolveFontInspectorForTab, toggleFontInspectorForTab } from './fontInspector'
 import { readElementInspectorTab } from '@/core/design/elementInspectorState'
 
