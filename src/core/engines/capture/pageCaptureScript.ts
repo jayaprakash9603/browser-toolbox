@@ -227,6 +227,11 @@ export function unwrapSelectionSliceResponse(raw: unknown): SelectionLiveSlice |
 
 export function selectPageAreaWithScroll(): Promise<SelectionCaptureResult | null> {
   return new Promise((resolve) => {
+    const frameBlock = document.createElement('style')
+    frameBlock.id = 'tbx-capture-frame-block'
+    frameBlock.textContent = 'iframe,frame,object,embed { pointer-events: none !important; }'
+    document.documentElement.append(frameBlock)
+
     const overlay = document.createElement('div')
     overlay.setAttribute('data-toolbox-capture', 'overlay')
     overlay.style.cssText =
@@ -246,6 +251,8 @@ export function selectPageAreaWithScroll(): Promise<SelectionCaptureResult | nul
     // page scrolls underneath (edge auto-scroll or the mouse wheel).
     let start: { x: number; y: number } | null = null
     let selecting = false
+    let pointerActive = false
+    let activePointerId: number | null = null
     let pointer = { x: 0, y: 0 }
     let scrollTimer: number | null = null
     let scrollSpeed = 0
@@ -296,7 +303,6 @@ export function selectPageAreaWithScroll(): Promise<SelectionCaptureResult | nul
         scrollTimer = window.setInterval(() => {
           window.scrollBy(0, scrollSpeed)
           drawBox()
-          void captureLiveSlice(false)
         }, 16)
       }
     }
@@ -308,18 +314,19 @@ export function selectPageAreaWithScroll(): Promise<SelectionCaptureResult | nul
     const seenKeys = new Set<string>()
 
     const hideChrome = () => {
-      overlay.style.visibility = 'hidden'
+      overlay.style.background = 'transparent'
       box.style.visibility = 'hidden'
       hint.style.visibility = 'hidden'
     }
     const showChrome = () => {
-      overlay.style.visibility = ''
-      box.style.visibility = ''
+      overlay.style.background = 'rgba(15,23,42,.28)'
+      if (box.style.display !== 'none') box.style.visibility = ''
       hint.style.visibility = ''
     }
 
     const captureLiveSlice = async (force = false) => {
       if (!selecting || captureBusy) return
+      if (pointerActive && !force) return
       const now = Date.now()
       if (!force && now - lastCaptureAt < 550) return
       const runtime = typeof chrome !== 'undefined' ? chrome.runtime : undefined
@@ -354,10 +361,61 @@ export function selectPageAreaWithScroll(): Promise<SelectionCaptureResult | nul
       void captureLiveSlice(false)
     }
 
+    const onWindowPointerMove = (event: PointerEvent) => {
+      if (!selecting || !start || !pointerActive) return
+      if (activePointerId != null && event.pointerId !== activePointerId) return
+      pointer = { x: event.clientX, y: event.clientY }
+      updateAutoScroll()
+      drawBox()
+    }
+
+    const finishPointerSelection = (event: PointerEvent) => {
+      if (!start) return
+      pointer = { x: event.clientX, y: event.clientY }
+      stopScroll()
+      pointerActive = false
+      activePointerId = null
+      window.removeEventListener('pointermove', onWindowPointerMove, true)
+      window.removeEventListener('pointerup', onWindowPointerUp, true)
+      try {
+        overlay.releasePointerCapture(event.pointerId)
+      } catch {
+        /* already released */
+      }
+      const rect = currentRect()
+      void (async () => {
+        await captureLiveSlice(true)
+        selecting = false
+        start = null
+        if (!rect || rect.width < 8 || rect.height < 8) {
+          cleanup(null)
+          return
+        }
+        cleanup({
+          ...rect,
+          devicePixelRatio: window.devicePixelRatio || 1,
+          slices: liveSlices,
+          savedScrollX: window.scrollX,
+          savedScrollY: window.scrollY,
+        })
+      })()
+    }
+
+    const onWindowPointerUp = (event: PointerEvent) => {
+      if (!selecting || !start) return
+      if (activePointerId != null && event.pointerId !== activePointerId) return
+      finishPointerSelection(event)
+    }
+
     const cleanup = (value: SelectionCaptureResult | null) => {
       selecting = false
+      pointerActive = false
+      activePointerId = null
       start = null
       stopScroll()
+      window.removeEventListener('pointermove', onWindowPointerMove, true)
+      window.removeEventListener('pointerup', onWindowPointerUp, true)
+      document.getElementById('tbx-capture-frame-block')?.remove()
       overlay.remove()
       box.remove()
       hint.remove()
@@ -383,35 +441,22 @@ export function selectPageAreaWithScroll(): Promise<SelectionCaptureResult | nul
       selecting = true
       box.style.display = 'block'
       drawBox()
-      void captureLiveSlice(true)
+      pointerActive = true
+      activePointerId = event.pointerId
+      window.addEventListener('pointermove', onWindowPointerMove, true)
+      window.addEventListener('pointerup', onWindowPointerUp, true)
     })
-    overlay.addEventListener('pointermove', (event) => {
-      if (!start) return
-      pointer = { x: event.clientX, y: event.clientY }
-      updateAutoScroll()
-      drawBox()
-    })
-    overlay.addEventListener('pointerup', (event) => {
-      if (!start) return
-      pointer = { x: event.clientX, y: event.clientY }
-      stopScroll()
-      const rect = currentRect()
-      void (async () => {
-        await captureLiveSlice(true)
-        selecting = false
-        start = null
-        if (!rect || rect.width < 8 || rect.height < 8) {
-          cleanup(null)
-          return
+    overlay.addEventListener('lostpointercapture', (event) => {
+      if (selecting && pointerActive && activePointerId === event.pointerId) {
+        try {
+          overlay.setPointerCapture(event.pointerId)
+        } catch {
+          /* ignore */
         }
-        cleanup({
-          ...rect,
-          devicePixelRatio: window.devicePixelRatio || 1,
-          slices: liveSlices,
-          savedScrollX: window.scrollX,
-          savedScrollY: window.scrollY,
-        })
-      })()
+      }
+    })
+    overlay.addEventListener('pointercancel', (event) => {
+      if (selecting && start) finishPointerSelection(event)
     })
     window.addEventListener('keydown', onKey, true)
     window.addEventListener('scroll', onScroll, true)
