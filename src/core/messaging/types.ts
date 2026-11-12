@@ -192,6 +192,16 @@ export type ExtensionMessage =
   | { type: 'FONT_INSPECTOR_PANEL_GET' }
   | { type: 'FONT_INSPECTOR_PANEL_SET'; enabled: boolean }
   | { type: 'FONT_INSPECTOR_TAB_STATE'; enabled: boolean }
+  | {
+      type: 'FONT_INSPECTOR_SHOW'
+      clientX: number
+      clientY: number
+      fontFamily: string
+      fontSize: string
+      fontWeight: string
+      lineHeight: string
+    }
+  | { type: 'FONT_INSPECTOR_HIDE' }
   | { type: 'INSPECTOR_POINTER_ACTIVE' }
   | { type: 'INSPECTOR_FRAME_FOCUS'; frameId: number }
   | {
@@ -397,6 +407,8 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'FONT_INSPECTOR_PANEL_GET',
   'FONT_INSPECTOR_PANEL_SET',
   'FONT_INSPECTOR_TAB_STATE',
+  'FONT_INSPECTOR_SHOW',
+  'FONT_INSPECTOR_HIDE',
   'INSPECTOR_POINTER_ACTIVE',
   'INSPECTOR_FRAME_FOCUS',
   'PAGE_INSPECTOR_SET',

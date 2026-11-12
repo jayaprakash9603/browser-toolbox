@@ -13,7 +13,7 @@ import { applySeoHighlight, clearSeoHighlight } from './seoHighlight'
 import { collectPageSvgs, svgToJsx } from './collectors/svgs'
 import { collectPageLinks, locatePageLink } from './collectors/links'
 import { clearPageLinkMarks, markPageLinks } from './collectors/linkMarks'
-import { isFontInspectorActive, setFontInspector, setWireframe } from './designModes'
+import { applyFontTipShow, hideFontTip, isFontInspectorActive, setFontInspector, setWireframe } from './designModes'
 import { handleInspectorFrameFocus } from './inspectorFrameFocus'
 import { getInspectorState, runInspectorAction, setInspector } from './pageInspector/inspector'
 import type { InspectorAction, InspectorLabels, PageInspectorOptions } from './pageInspector/model'
@@ -245,6 +245,23 @@ if (!contentAlreadyInstalled) chrome.runtime.onMessage.addListener((raw, sender,
     case 'FONT_INSPECTOR_TOGGLE':
       setFontInspector((raw as { enabled: boolean }).enabled)
       sendResponse({ ok: true, data: { enabled: (raw as { enabled: boolean }).enabled } })
+      return false
+    case 'FONT_INSPECTOR_SHOW': {
+      const payload = raw as {
+        clientX: number
+        clientY: number
+        fontFamily: string
+        fontSize: string
+        fontWeight: string
+        lineHeight: string
+      }
+      applyFontTipShow(payload)
+      sendResponse({ ok: true, data: { shown: true } })
+      return false
+    }
+    case 'FONT_INSPECTOR_HIDE':
+      hideFontTip()
+      sendResponse({ ok: true, data: { hidden: true } })
       return false
     case 'INSPECTOR_FRAME_FOCUS':
       handleInspectorFrameFocus((raw as { frameId: number }).frameId, sender.frameId ?? 0)

@@ -58,6 +58,22 @@ export function registerFontInspector(): void {
     return { enabled: message.enabled, tabId: tab.id }
   })
 
+  registerMessageHandler('FONT_INSPECTOR_SHOW', async (message, sender) => {
+    if (message.type !== 'FONT_INSPECTOR_SHOW' || sender.tab?.id == null) return
+    try {
+      await chrome.tabs.sendMessage(sender.tab.id, message, { frameId: 0 })
+    } catch {
+      await broadcastToTabFrames(sender.tab.id, message)
+    }
+    return { relayed: true }
+  })
+
+  registerMessageHandler('FONT_INSPECTOR_HIDE', async (_message, sender) => {
+    if (sender.tab?.id == null) return
+    await chrome.tabs.sendMessage(sender.tab.id, { type: 'FONT_INSPECTOR_HIDE' }, { frameId: 0 }).catch(() => undefined)
+    return { relayed: true }
+  })
+
   chrome.tabs.onRemoved.addListener((tabId) => {
     void clearFontInspectorTab(tabId)
   })
