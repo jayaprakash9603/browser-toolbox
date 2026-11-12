@@ -116,6 +116,15 @@
   "colorGeneratePalette": {
     "message": "Generate palette in sidebar"
   },
+  "colorCopyAgain": {
+    "message": "Copy again"
+  },
+  "colorPickPageAgain": {
+    "message": "Pick from page again"
+  },
+  "colorPickScreenAgain": {
+    "message": "Pick from screen again"
+  },
   "commandFormFill": {
     "message": "Fill the form on the current page with saved values"
   },

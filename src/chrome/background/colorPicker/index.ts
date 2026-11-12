@@ -39,6 +39,9 @@ function pageText(): ColorPickerPageText {
     close: getChromeMessage('colorResultClose'),
     shadesLabel: getChromeMessage('colorShadesLabel'),
     generatePalette: getChromeMessage('colorGeneratePalette'),
+    copyAgain: getChromeMessage('colorCopyAgain'),
+    pickPageAgain: getChromeMessage('colorPickPageAgain'),
+    pickScreenAgain: getChromeMessage('colorPickScreenAgain'),
   }
 }
 
@@ -47,7 +50,9 @@ function openPaletteGeneratorFromUserGesture(hex: string, tab?: chrome.tabs.Tab)
   const normalized = normalizeHex(hex)
   if (!normalized) return
   const route = `${PALETTE_GENERATOR_ROUTE}?color=${encodeURIComponent(normalized)}`
-  void setPanelRouteIntent(route)
+  void setPanelRouteIntent(route).then(() => {
+    void chrome.runtime.sendMessage({ type: 'PANEL_ROUTE_APPLY', route }).catch(() => undefined)
+  })
   void openExtensionPanel({ windowId: tab?.windowId, tabId: tab?.id })
 }
 
@@ -90,16 +95,8 @@ export async function pickColorOnPage(tab?: chrome.tabs.Tab): Promise<void> {
     }
     const state = await loadColorPickerState()
     try {
-      await new Promise<void>((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-      })
-      const image = await chrome.tabs.captureVisibleTab(target.windowId, {
-        format: 'jpeg',
-        quality: 90,
-      })
       await injectColorPicker(target.id, {
         mode: 'page',
-        image,
         format: pageFormatFor(state.format),
         text: pageText(),
       })
@@ -147,10 +144,38 @@ export function registerColorPicker(): void {
     await recordPickedColor(message.hex, isColorFormat(message.format) ? message.format : undefined, url)
   })
 
-  registerMessageHandler('COLOR_PICK_START', async () => {
-    const [active] = await chrome.tabs.query({ active: true, lastFocusedWindow: true })
-    await pickColorOnPage(active)
+  registerMessageHandler('COLOR_PICK_START', async (_message, sender) => {
+    const tab = sender.tab ?? (await chrome.tabs.query({ active: true, lastFocusedWindow: true }))[0]
+    await pickColorOnPage(tab)
     return { started: true }
+  })
+
+  registerMessageHandler('COLOR_PICK_SCREEN', async (_message, sender) => {
+    const tab = sender.tab ?? (await chrome.tabs.query({ active: true, lastFocusedWindow: true }))[0]
+    await pickColorFromScreen(tab)
+    return { started: true }
+  })
+
+  registerMessageHandler('COLOR_PICK_LOUPE', async (_message, sender) => {
+    const tab = sender.tab
+    if (tab?.id == null || tab.windowId == null) return { ok: false as const }
+    if (isRestrictedCaptureUrl(tab.url)) return { ok: false as const }
+    const state = await loadColorPickerState()
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+    })
+    const image = await chrome.tabs.captureVisibleTab(tab.windowId, {
+      format: 'jpeg',
+      quality: 90,
+    })
+    await injectColorPicker(tab.id, {
+      mode: 'page',
+      forceLoupe: true,
+      image,
+      format: pageFormatFor(state.format),
+      text: pageText(),
+    })
+    return { ok: true as const }
   })
 
   // Async message router breaks the user gesture before `sidePanel.open()`; handle in sync turn.

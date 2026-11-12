@@ -20,6 +20,9 @@ export interface ColorPickerPageText {
   close: string
   shadesLabel: string
   generatePalette: string
+  copyAgain: string
+  pickPageAgain: string
+  pickScreenAgain: string
 }
 
 export interface ColorPickerPageOptions {

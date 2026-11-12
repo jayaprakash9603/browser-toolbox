@@ -111,6 +111,23 @@ export function RouterProvider({ children }: { children: ReactNode }) {
       })
     }
 
+    const onPanelRouteApply = (
+      message: unknown,
+      _sender: chrome.runtime.MessageSender,
+      _sendResponse: (response?: unknown) => void,
+    ) => {
+      if (typeof message !== 'object' || message === null) return false
+      if ((message as { type?: string }).type !== 'PANEL_ROUTE_APPLY') return false
+      const route = (message as { route?: unknown }).route
+      if (typeof route !== 'string' || !route.startsWith('/')) return false
+      void isSidePanelDocument().then((inPanel) => {
+        if (!inPanel) return
+        window.location.hash = route
+        void consumePanelRouteIntent()
+      })
+      return false
+    }
+
     if (chrome.storage?.session) {
       void chrome.storage.session.get(PENDING_ROUTE_KEY).then((stored) => {
         applyPendingRoute(stored[PENDING_ROUTE_KEY])
@@ -118,10 +135,12 @@ export function RouterProvider({ children }: { children: ReactNode }) {
       chrome.storage.onChanged.addListener(onPendingRoute)
       chrome.storage.onChanged.addListener(onSessionNav)
     }
+    chrome.runtime.onMessage.addListener(onPanelRouteApply)
     return () => {
       window.removeEventListener('hashchange', onHashChange)
       chrome.storage?.onChanged.removeListener(onPendingRoute)
       chrome.storage?.onChanged?.removeListener(onSessionNav)
+      chrome.runtime.onMessage.removeListener(onPanelRouteApply)
       off()
     }
   }, [])

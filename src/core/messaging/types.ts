@@ -145,8 +145,11 @@ export type ExtensionMessage =
   | { type: 'OFFSCREEN_IMAGE_RELEASE'; url: string }
   | { type: 'PIP_TOGGLE'; tabId?: number }
   | { type: 'COLOR_PICK_START' }
+  | { type: 'COLOR_PICK_SCREEN' }
+  | { type: 'COLOR_PICK_LOUPE' }
   | { type: 'COLOR_PICKED'; hex: string; format?: string; url?: string }
   | { type: 'COLOR_OPEN_PALETTE'; hex: string }
+  | { type: 'PANEL_ROUTE_APPLY'; route: string }
   | { type: 'FORM_MEMORY_CAPTURE'; url: string; title?: string; fields: unknown[] }
   | { type: 'FORM_MEMORY_RUN'; action: 'fill' | 'clear' | 'inspect' | 'save'; tabId?: number }
   | {
@@ -392,8 +395,11 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'OFFSCREEN_IMAGE_RELEASE',
   'PIP_TOGGLE',
   'COLOR_PICK_START',
+  'COLOR_PICK_SCREEN',
+  'COLOR_PICK_LOUPE',
   'COLOR_PICKED',
   'COLOR_OPEN_PALETTE',
+  'PANEL_ROUTE_APPLY',
   'FORM_MEMORY_CAPTURE',
   'FORM_MEMORY_RUN',
   'NETMON_SAMPLE',

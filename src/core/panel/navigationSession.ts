@@ -21,6 +21,8 @@ export function isSidePanelDocument(): Promise<boolean> {
 
 export async function setPanelRouteIntent(route: string): Promise<void> {
   if (!chrome.storage?.session) return
+  // Clear first so `onChanged` fires even when reopening the same route (e.g. palette + new color).
+  await chrome.storage.session.remove(PANEL_ROUTE_INTENT_KEY)
   await chrome.storage.session.set({ [PANEL_ROUTE_INTENT_KEY]: route })
 }
 

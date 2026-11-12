@@ -1,6 +1,6 @@
 export const colorPickerStrings = {
   'colorPicker.pickPage': 'Pick from page',
-  'colorPicker.pickPageHint': 'Freeze the tab and zoom in with a loupe. Works with this panel closed too.',
+  'colorPicker.pickPageHint': 'Browser eyedropper on this tab—the same flow as screen pick. Magnifier fallback on browsers without it.',
   'colorPicker.pickScreen': 'Pick from screen',
   'colorPicker.pickScreenHint': 'Pick any pixel on your display, including other windows.',
   'colorPicker.chooseCustom': 'Choose a color',

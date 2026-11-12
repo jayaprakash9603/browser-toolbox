@@ -9,6 +9,14 @@
 
   var HOST_ID = 'tbx-color-picker-host'
   var RESULT_ID = 'tbx-color-result-host'
+  var pickAgain = {
+    page: function () {
+      chrome.runtime.sendMessage({ type: 'COLOR_PICK_START' }).catch(function () {})
+    },
+    screen: function () {
+      chrome.runtime.sendMessage({ type: 'COLOR_PICK_SCREEN' }).catch(function () {})
+    },
+  }
   var FORMATS = ['hex', 'rgb', 'hsl', 'hsv']
   var ZOOMS = [5, 7, 9, 11, 15, 21]
   var LOUPE = 132
@@ -103,21 +111,48 @@
     return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 }
   }
 
+  function copyTextSync(text) {
+    try {
+      var area = document.createElement('textarea')
+      area.value = text
+      area.setAttribute('readonly', '')
+      area.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;'
+      document.documentElement.appendChild(area)
+      area.focus()
+      area.select()
+      area.setSelectionRange(0, text.length)
+      var ok = document.execCommand('copy')
+      area.remove()
+      return ok
+    } catch (e) {
+      return false
+    }
+  }
+
   function copyText(text) {
-    return navigator.clipboard.writeText(text).then(function () { return true }).catch(function () {
-      try {
-        var area = document.createElement('textarea')
-        area.value = text
-        area.style.cssText = 'position:fixed;opacity:0;pointer-events:none;'
-        document.documentElement.append(area)
-        area.select()
-        var ok = document.execCommand('copy')
-        area.remove()
-        return ok
-      } catch (e) {
-        return false
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).then(function () { return true }).catch(function () {
+        return copyTextSync(text)
+      })
+    }
+    return Promise.resolve(copyTextSync(text))
+  }
+
+  function copyFromUserGesture(text, onResult) {
+    var done = function (ok) {
+      if (onResult) onResult(ok)
+    }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { done(true) }).catch(function () {
+          done(copyTextSync(text))
+        })
+        return
       }
-    })
+    } catch (e) {
+      /* fall through */
+    }
+    done(copyTextSync(text))
   }
 
   function mountResultPanel(text, r, g, b, pickedFormat, copied) {
@@ -139,14 +174,24 @@
       'box-shadow:0 16px 48px rgba(0,0,0,.45)}' +
       '.head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;cursor:grab;touch-action:none;user-select:none}' +
       '.head:active{cursor:grabbing}' +
-      '.title{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;opacity:.8}' +
+      '.title{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;opacity:.8;flex:1;min-width:0}' +
+      '.head-actions{display:flex;align-items:center;gap:2px;flex:none}' +
+      '.icon-btn{border:0;background:transparent;color:inherit;cursor:pointer;opacity:.72;padding:6px;border-radius:8px;display:grid;place-items:center}' +
+      '.icon-btn:hover{opacity:1;background:rgba(255,255,255,.1)}' +
+      '.icon-btn svg{width:16px;height:16px;display:block}' +
       '.close{border:0;background:transparent;color:inherit;font-size:20px;line-height:1;cursor:pointer;opacity:.7;padding:2px 8px;border-radius:6px}' +
       '.close:hover{opacity:1;background:rgba(255,255,255,.08)}' +
       '.main{display:flex;align-items:center;gap:10px;margin-bottom:8px}' +
       '.sw{width:48px;height:48px;border-radius:10px;flex:none;background:var(--c);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}' +
+      '.value-col{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}' +
+      '.val-row{display:flex;align-items:flex-start;gap:6px}' +
+      '.val-row .val{flex:1;min-width:0}' +
+      '.copy-inline{margin-top:0;flex:none;flex-shrink:0}' +
+      '.icon-btn.copied{opacity:1;color:#86efac;background:rgba(134,239,172,.15)}' +
       '.val{font:600 14px/1.25 ui-monospace,monospace;word-break:break-all}' +
-      '.status{margin-top:4px;font-size:11px;font-weight:600;color:#86efac}' +
+      '.status{min-height:14px;font-size:11px;font-weight:600;color:#86efac}' +
       '.status.fail{color:#fca5a5}' +
+      '.status.idle{font-size:10px;font-weight:500;color:rgba(255,255,255,.45)}' +
       '.shades-label{margin:8px 0 6px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.7}' +
       '.shades{display:flex;gap:5px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}' +
       '.shade{width:34px;height:34px;flex:none;border-radius:8px;cursor:pointer;border:1px solid rgba(255,255,255,.22);padding:0}' +
@@ -161,8 +206,19 @@
       '.shade{border-color:rgba(0,0,0,.12)}.shade[data-active="true"]{outline-color:#111}}' +
       '</style>' +
       '<div class="card" role="dialog">' +
-      '<div class="head"><span class="title"></span><button type="button" class="close" data-action="close" aria-label="Close">×</button></div>' +
-      '<div class="main"><span class="sw"></span><div><div class="val"></div><div class="status"></div></div></div>' +
+      '<div class="head"><span class="title"></span><div class="head-actions">' +
+      '<button type="button" class="icon-btn" data-action="copy-again" aria-label=""><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+      '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>' +
+      '<button type="button" class="icon-btn" data-action="pick-page" aria-label=""><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+      '<path d="m2 22 1-1h3l9-9"/><path d="M15 6l3.29-3.29a1 1 0 0 1 1.41 0l2.59 2.59a1 1 0 0 1 0 1.41L19 9"/><path d="m11.5 10.5 7.3 7.3"/></svg></button>' +
+      '<button type="button" class="icon-btn" data-action="pick-screen" aria-label=""><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+      '<path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="M13 13l6 6"/></svg></button>' +
+      '<button type="button" class="close" data-action="close" aria-label="Close">×</button></div></div>' +
+      '<div class="main"><span class="sw"></span><div class="value-col">' +
+      '<div class="val-row"><div class="val"></div>' +
+      '<button type="button" class="icon-btn copy-inline" data-action="copy-again-inline" aria-label=""><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+      '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>' +
+      '<div class="status"></div></div></div>' +
       '<div class="shades-label"></div><div class="shades"></div>' +
       '<div class="actions">' +
       '<button type="button" class="btn" data-format="hex"></button>' +
@@ -179,6 +235,12 @@
     sh.querySelector('.title').textContent = text.resultTitle
     sh.querySelector('.shades-label').textContent = text.shadesLabel
     sh.querySelector('.palette-label').textContent = text.generatePalette
+    sh.querySelector('[data-action="copy-again"]').setAttribute('aria-label', text.copyAgain || 'Copy again')
+    sh.querySelector('[data-action="pick-page"]').setAttribute('aria-label', text.pickPageAgain || 'Pick from page again')
+    sh.querySelector('[data-action="pick-screen"]').setAttribute('aria-label', text.pickScreenAgain || 'Pick from screen again')
+    sh.querySelector('[data-action="copy-again-inline"]').setAttribute('aria-label', text.copyAgain || 'Copy again')
+    var pickScreenBtn = sh.querySelector('[data-action="pick-screen"]')
+    if (!window.EyeDropper) pickScreenBtn.style.display = 'none'
     var valEl = sh.querySelector('.val')
     var statusEl = sh.querySelector('.status')
     var swEl = sh.querySelector('.sw')
@@ -191,10 +253,52 @@
       valEl.textContent = formatValue(activeFormat, activeR, activeG, activeB)
     }
 
-    function setStatus(ok) {
+    var copyHeaderBtn = sh.querySelector('[data-action="copy-again"]')
+    var copyInlineBtn = sh.querySelector('[data-action="copy-again-inline"]')
+
+    function setStatus(ok, fromClick) {
+      statusEl.classList.remove('idle', 'fail')
+      if (fromClick === false && ok === null) {
+        statusEl.textContent = text.copyAgain || 'Copy'
+        statusEl.classList.add('idle')
+        return
+      }
       statusEl.textContent = ok ? text.copied : text.copyFailed
       statusEl.classList.toggle('fail', !ok)
+      var glow = Boolean(ok)
+      copyHeaderBtn.classList.toggle('copied', glow)
+      copyInlineBtn.classList.toggle('copied', glow)
+      if (glow) {
+        window.setTimeout(function () {
+          copyHeaderBtn.classList.remove('copied')
+          copyInlineBtn.classList.remove('copied')
+        }, 1400)
+      }
     }
+
+    function runCopyAgain(e) {
+      if (e) {
+        e.preventDefault()
+        e.stopPropagation()
+      }
+      var value = formatValue(activeFormat, activeR, activeG, activeB)
+      copyFromUserGesture(value, function (ok) {
+        setStatus(ok, true)
+      })
+    }
+
+    copyHeaderBtn.addEventListener('click', runCopyAgain)
+    copyInlineBtn.addEventListener('click', runCopyAgain)
+    sh.querySelector('[data-action="pick-page"]').addEventListener('click', function (e) {
+      e.stopPropagation()
+      dismiss()
+      pickAgain.page()
+    })
+    sh.querySelector('[data-action="pick-screen"]').addEventListener('click', function (e) {
+      e.stopPropagation()
+      dismiss()
+      pickAgain.screen()
+    })
 
     var labels = { hex: text.copyHex, rgb: text.copyRgb, hsl: text.copyHsl, hsv: text.copyHsv }
     var fmtBtns = sh.querySelectorAll('.btn[data-format]')
@@ -207,7 +311,9 @@
           activeFormat = fmt
           for (var j = 0; j < fmtBtns.length; j++) fmtBtns[j].dataset.active = fmtBtns[j] === btn ? 'true' : 'false'
           refresh()
-          copyText(formatValue(activeFormat, activeR, activeG, activeB)).then(setStatus)
+          copyFromUserGesture(formatValue(activeFormat, activeR, activeG, activeB), function (ok) {
+            setStatus(ok, true)
+          })
         })
       })(fmtBtns[fi])
     }
@@ -231,7 +337,9 @@
             activeR = p.r; activeG = p.g; activeB = p.b
             renderShades()
             refresh()
-            copyText(formatValue(activeFormat, activeR, activeG, activeB)).then(setStatus)
+            copyFromUserGesture(formatValue(activeFormat, activeR, activeG, activeB), function (ok) {
+              setStatus(ok, true)
+            })
           })
           shadesEl.appendChild(sw)
         })(shades[si])
@@ -239,7 +347,7 @@
     }
     renderShades()
     refresh()
-    setStatus(copied)
+    setStatus(copied === undefined ? null : copied, false)
 
     sh.querySelector('[data-action="palette"]').addEventListener('click', function () {
       chrome.runtime
@@ -260,7 +368,7 @@
     var head = sh.querySelector('.head')
     var drag = false, offX = 0, offY = 0
     head.addEventListener('pointerdown', function (e) {
-      if (e.target.closest('[data-action="close"]')) return
+      if (e.target.closest('[data-action="close"], .icon-btn')) return
       drag = true
       head.setPointerCapture(e.pointerId)
       var rect = host.getBoundingClientRect()
@@ -284,10 +392,7 @@
 
   function finishPick(r, g, b, format) {
     var hex = toHex(r, g, b)
-    var value = formatValue(format, r, g, b)
-    copyText(value).then(function (ok) {
-      mountResultPanel(opts.text, r, g, b, format, ok)
-    })
+    mountResultPanel(opts.text, r, g, b, format, undefined)
     chrome.runtime.sendMessage({ type: 'COLOR_PICKED', hex: hex, format: format, url: location.href }).catch(function () {})
   }
 
@@ -498,6 +603,21 @@
     img.src = opts.image
   }
 
+  function beginPagePick() {
+    if (!opts.forceLoupe && window.EyeDropper) {
+      startScreen()
+      return
+    }
+    if (opts.image) {
+      startPage()
+      return
+    }
+    chrome.runtime.sendMessage({ type: 'COLOR_PICK_LOUPE' }).catch(function () {})
+  }
+
+  pickAgain.page = beginPagePick
+  pickAgain.screen = startScreen
+
   if (opts.mode === 'screen') startScreen()
-  else if (opts.image) startPage()
+  else if (opts.mode === 'page') beginPagePick()
 })()
