@@ -6,6 +6,17 @@ import { tabHasPlayableVideo } from './pip'
 
 const logger = createLogger('context-menu-shown')
 
+/** Chrome 121+; not yet in @types/chrome. */
+type ContextMenuOnShownInfo = {
+  contextTypes?: chrome.contextMenus.ContextType[]
+}
+
+type ContextMenusWithOnShown = typeof chrome.contextMenus & {
+  onShown?: {
+    addListener: (fn: (info: ContextMenuOnShownInfo, tab?: chrome.tabs.Tab) => void) => void
+  }
+}
+
 function isHttpTab(tab?: chrome.tabs.Tab): boolean {
   const url = tab?.url
   if (!url) return false
@@ -17,7 +28,7 @@ function isHttpTab(tab?: chrome.tabs.Tab): boolean {
   }
 }
 
-async function refreshPipMenuVisibility(info: chrome.contextMenus.OnShownInfo, tab?: chrome.tabs.Tab): Promise<void> {
+async function refreshPipMenuVisibility(info: ContextMenuOnShownInfo, tab?: chrome.tabs.Tab): Promise<void> {
   if (!chrome.contextMenus.update) return
   const onVideo = info.contextTypes?.includes('video') ?? false
   if (onVideo) {
@@ -38,9 +49,7 @@ async function refreshPipMenuVisibility(info: chrome.contextMenus.OnShownInfo, t
 }
 
 export function registerContextMenuOnShown(): void {
-  const api = chrome.contextMenus as typeof chrome.contextMenus & {
-    onShown?: { addListener: (fn: (info: chrome.contextMenus.OnShownInfo, tab?: chrome.tabs.Tab) => void) => void }
-  }
+  const api = chrome.contextMenus as ContextMenusWithOnShown
   if (!api.onShown) return
 
   api.onShown.addListener((info, tab) => {
