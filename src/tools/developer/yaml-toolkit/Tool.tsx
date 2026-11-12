@@ -69,8 +69,8 @@ export default function YamlToolkitTool() {
   return (
     <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col overflow-hidden">
       <Tabs value={tab} onValueChange={(v) => setTab(v as YamlTab)} className="min-h-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <TabsList className="max-w-full justify-start">
+        <div className="flex min-w-0 items-center gap-2">
+          <TabsList fullWidth className="min-w-0 flex-1 justify-start">
             <TabsTrigger value="validate">{t('dev.tabValidate')}</TabsTrigger>
             <TabsTrigger value="convert">YAML → JSON</TabsTrigger>
             <TabsTrigger value="fromJson">JSON → YAML</TabsTrigger>
@@ -78,7 +78,7 @@ export default function YamlToolkitTool() {
           <Button
             size="sm"
             variant="ghost"
-            className="ml-auto"
+            className="ml-auto shrink-0"
             onClick={() => (fromJsonMode ? setJsonInput(JSON_EXAMPLE) : setInput(EXAMPLE))}
           >
             <SparklesIcon /> {t('dev.tryExample')}

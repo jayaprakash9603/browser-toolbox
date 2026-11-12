@@ -145,15 +145,15 @@ export default function JsonToolkitTool() {
   return (
     <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col overflow-hidden">
       <Tabs value={tab} onValueChange={(v) => setTab(v as JsonTab)} className="min-h-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <TabsList className="max-w-full justify-start">
+        <div className="flex min-w-0 items-center gap-2">
+          <TabsList fullWidth className="min-w-0 flex-1 justify-start">
             <TabsTrigger value="format">{t('dev.tabFormat')}</TabsTrigger>
             <TabsTrigger value="validate">{t('dev.tabValidate')}</TabsTrigger>
             <TabsTrigger value="tree">{t('dev.tabTree')}</TabsTrigger>
             <TabsTrigger value="path">{t('dev.tabPath')}</TabsTrigger>
             <TabsTrigger value="convert">{t('dev.tabConvert')}</TabsTrigger>
           </TabsList>
-          <Button size="sm" variant="ghost" className="ml-auto" onClick={() => setInput(EXAMPLE)}>
+          <Button size="sm" variant="ghost" className="ml-auto shrink-0" onClick={() => setInput(EXAMPLE)}>
             <SparklesIcon /> {t('dev.tryExample')}
           </Button>
         </div>

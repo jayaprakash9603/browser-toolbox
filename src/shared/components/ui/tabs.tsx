@@ -9,7 +9,7 @@ import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/utils/cn'
 
 /**
- * attached: shadcn-style pill rail; active tab expands to show a label (icon-only when idle).
+ * attached: pill rail with icon + label always visible; overflow scrolls with chevrons.
  * chips: compact navigation with a sliding outlined tile.
  * pill: segmented control with a sliding raised thumb. underline: classic sliding underline.
  */
@@ -18,8 +18,8 @@ type TabsVariant = 'attached' | 'chips' | 'pill' | 'underline'
 const TabsVariantContext = React.createContext<TabsVariant>('attached')
 
 /**
- * expand — icon when idle, label on active (scroll rail like PDF toolkit categories).
- * equal — equal columns, labels always visible (grid layouts).
+ * labeled — content-sized tabs that scroll when they overflow.
+ * equal — share leftover width evenly, never shrink below the label.
  */
 type TabDistribution = 'expand' | 'equal'
 const TabsDistributionContext = React.createContext<TabDistribution>('expand')
@@ -46,7 +46,7 @@ const tabsTriggerVariants = cva(
     variants: {
       variant: {
         attached:
-          'relative z-10 min-h-9 min-w-0 rounded-full border border-transparent bg-transparent px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-[color] duration-200 ease-out hover:text-primary/80 data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none motion-reduce:transition-none [&_svg]:transition-colors [&_svg]:duration-200 data-[state=active]:[&_svg]:text-primary',
+          'relative z-10 h-9 min-h-9 shrink-0 rounded-full border border-transparent bg-transparent px-2.5 py-1.5 text-sm font-medium leading-none text-muted-foreground transition-[color] duration-200 ease-out hover:text-primary/80 data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none motion-reduce:transition-none [&_svg]:transition-colors [&_svg]:duration-200 data-[state=active]:[&_svg]:text-primary',
         chips:
           'relative z-10 min-h-11 rounded-lg border border-transparent bg-transparent px-3 text-xs hover:bg-background/60 hover:text-foreground data-[state=active]:text-primary motion-reduce:transition-none',
         pill: 'relative z-10 h-7 flex-1 rounded-md px-3 hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground',
@@ -158,14 +158,14 @@ function TabsList({
     scrollButtons?: boolean | 'auto'
     /** Stretch the tab rail to the container width (tabs scroll inside when needed). */
     fullWidth?: boolean
-    /** expand: icon rail + label on active. equal: fixed columns (also used for CSS grid lists). */
+    /** labeled: natural width + scroll. equal: grow evenly without truncating labels. */
     distribution?: TabDistribution
   }) {
   const { t } = useTranslation()
   const resolved = variant ?? 'attached'
   const distribution: TabDistribution =
     distributionProp ??
-    (resolved === 'attached' && /grid/i.test(className ?? '') ? 'equal' : 'expand')
+    (resolved === 'attached' && (fullWidth || /grid/i.test(className ?? '')) ? 'equal' : 'expand')
   const listRef = React.useRef<HTMLDivElement>(null)
   const [underline, setUnderline] = React.useState<IndicatorBox>({
     left: 0,
@@ -176,7 +176,6 @@ function TabsList({
   const [edges, setEdges] = React.useState<Edges>({ start: false, end: false })
   const [overflowing, setOverflowing] = React.useState(false)
   const reduceMotion = useReducedMotion()
-  const equalTabs = distribution === 'equal'
   const wantsScrollChrome = scrollButtons !== false
   const showScrollButtons = scrollButtons === true || (scrollButtons === 'auto' && overflowing)
 
@@ -189,7 +188,7 @@ function TabsList({
     })
     const nextUnderline = measureActiveTab(node, resolved === 'underline')
     setUnderline((prev) => (indicatorClose(prev, nextUnderline) ? prev : nextUnderline))
-  }, [resolved, equalTabs])
+  }, [resolved])
 
   React.useLayoutEffect(() => {
     const node = listRef.current
@@ -236,9 +235,7 @@ function TabsList({
       else sync()
     })
     resizeObserver.observe(node)
-    if (resolved !== 'attached') {
-      for (const tab of node.querySelectorAll('[role="tab"]')) resizeObserver.observe(tab)
-    }
+    for (const tab of node.querySelectorAll('[role="tab"]')) resizeObserver.observe(tab)
 
     node.addEventListener('scroll', scheduleSync, { passive: true })
     node.addEventListener('wheel', onWheel, { passive: false })
@@ -279,13 +276,13 @@ function TabsList({
             tabsListVariants({ variant: resolved }),
             'relative w-full min-w-0 scroll-px-2',
             resolved === 'attached' &&
-              'overflow-x-auto overscroll-x-contain scrollbar-none',
+              'overflow-x-auto overscroll-x-contain scrollbar-none justify-start',
             resolved === 'attached' &&
               distribution === 'expand' &&
-              'justify-start [&_[role=tab]]:shrink-0 [&_[role=tab]]:min-w-9 [&_[role=tab][data-state=inactive]]:max-w-[2.75rem] [&_[role=tab][data-state=active]]:max-w-[min(100%,12rem)]',
+              '[&_[role=tab]]:shrink-0 [&_[role=tab]]:min-w-max',
             resolved === 'attached' &&
               distribution === 'equal' &&
-              '[&_[role=tab]]:min-w-0 [&_[role=tab]]:flex-1 [&_[role=tab]]:max-w-none [&_[role=tab]]:shrink',
+              '[&_[role=tab]]:min-w-max [&_[role=tab]]:flex-1 [&_[role=tab]]:shrink-0',
             fullWidth &&
               resolved !== 'attached' &&
               '[&_[role=tab]]:min-w-0 [&_[role=tab]]:flex-1',
@@ -383,27 +380,17 @@ function TabsTrigger({
     <TabsPrimitive.Trigger
       className={cn(
         tabsTriggerVariants({ variant }),
-        variant === 'attached' && 'overflow-hidden',
         variant === 'attached' && distribution === 'equal' && 'flex-1',
         className,
       )}
+      title={typeof labels === 'string' ? labels : undefined}
       {...props}
     >
       {variant === 'attached' ? (
         <>
           {icon}
           <span
-            className={cn(
-              'inline-block min-w-0 overflow-hidden font-medium motion-reduce:transition-none',
-              distribution === 'equal'
-                ? 'max-w-full truncate whitespace-nowrap text-xs leading-tight opacity-100'
-                : cn(
-                    'text-sm transition-[max-width,opacity,margin] duration-300 ease-out',
-                    icon
-                      ? 'max-w-0 opacity-0 ml-0 truncate whitespace-nowrap group-data-[state=active]/tab:max-w-[min(16rem,42vw)] group-data-[state=active]/tab:opacity-100 group-data-[state=active]/tab:ml-1.5 sm:group-data-[state=active]/tab:max-w-[min(20rem,50%)]'
-                      : 'max-w-full truncate whitespace-nowrap opacity-100',
-                  ),
-            )}
+            className="inline-block whitespace-nowrap text-sm font-medium leading-none"
             data-slot="tabs-trigger-label"
           >
             {labels}

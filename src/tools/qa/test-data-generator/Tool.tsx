@@ -23,7 +23,7 @@ export default function TestDataGeneratorTool() {
         onValueChange={(value) => setTab(value as (typeof TABS)[number])}
         className="min-h-0 flex-1"
       >
-        <TabsList variant="attached" scrollButtons={false} fullWidth>
+        <TabsList variant="attached" fullWidth scrollButtons="auto">
           <TabsTrigger value="dataset">
             <DatabaseIcon /> {t('testData.tabs.dataset')}
           </TabsTrigger>

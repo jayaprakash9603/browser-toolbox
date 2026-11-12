@@ -47,8 +47,8 @@ export default function XmlToolkitTool() {
   return (
     <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col overflow-hidden">
       <Tabs value={tab} onValueChange={(v) => setTab(v as XmlTab)} className="min-h-0 flex-1">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <TabsList className="max-w-full justify-start">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <TabsList fullWidth className="min-w-0 flex-1 justify-start">
             <TabsTrigger value="format">{t('dev.tabFormat')}</TabsTrigger>
             <TabsTrigger value="validate">{t('dev.tabValidate')}</TabsTrigger>
             <TabsTrigger value="convert">{t('dev.tabConvertJson')}</TabsTrigger>

@@ -49,7 +49,7 @@ export function Segmented<T extends string>({
       aria-label={ariaLabel}
       className={cn(
         'inline-flex max-w-full items-center gap-0.5 rounded-md border border-input bg-background p-0.5 shadow-xs',
-        fullWidth && 'flex w-full',
+        fullWidth && 'flex w-full min-w-0 overflow-x-auto overscroll-x-contain scrollbar-none',
         className,
       )}
     >
@@ -81,7 +81,8 @@ export function Segmented<T extends string>({
             }}
             className={cn(
               'inline-flex cursor-pointer items-center justify-center gap-1 rounded-[5px] font-medium text-muted-foreground outline-none transition-[color,background-color,transform,filter] duration-150 hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:size-3.5 [&_svg]:shrink-0',
-              fullWidth ? 'min-w-0 flex-1 truncate whitespace-nowrap px-1.5' : 'whitespace-nowrap',
+              'whitespace-nowrap',
+              fullWidth && 'min-w-max flex-1 shrink-0 px-2',
               size === 'sm' ? cn('min-h-7 py-1 text-xs', !fullWidth && 'h-6 px-2') : cn('min-h-8', !fullWidth && 'h-7 px-2.5 text-[13px]'),
               selected && 'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary',
             )}
