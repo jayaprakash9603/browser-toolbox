@@ -6,9 +6,9 @@ import { tabHasPlayableVideo } from './pip'
 
 const logger = createLogger('context-menu-shown')
 
-/** Chrome 121+; not yet in @types/chrome. */
+/** Chrome 121+; not yet in @types/chrome (includes context types like `video`). */
 type ContextMenuOnShownInfo = {
-  contextTypes?: chrome.contextMenus.ContextType[]
+  contextTypes?: string[]
 }
 
 type ContextMenusWithOnShown = typeof chrome.contextMenus & {
