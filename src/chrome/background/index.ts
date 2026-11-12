@@ -57,6 +57,7 @@ import { initClipboardCapture, registerClipboardCapture } from './clipboardCaptu
 import { registerTimer } from './timer'
 import { handleTaskMenuClick, isTaskMenuItem, registerTasks } from './tasks'
 import { handleReadingListMenuClick, isReadingListMenuItem } from './readingList'
+import { registerElementInspector } from './elementInspector'
 import { registerFontInspector } from './fontInspector'
 import { registerColorPicker } from './colorPicker'
 import { screenshotModeFromMenuAction } from './screenshot/contextMenus'
@@ -184,6 +185,7 @@ safeRegister('scraper', registerScraperJobHandlers)
 safeRegister('clipboardCapture', registerClipboardCapture)
 safeRegister('timer', registerTimer)
 safeRegister('tasks', registerTasks)
+safeRegister('elementInspector', registerElementInspector)
 safeRegister('fontInspector', registerFontInspector)
 safeRegister('colorPicker', registerColorPicker)
 safeRegister('formMemory', registerFormMemory)

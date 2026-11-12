@@ -32,6 +32,11 @@ vi.mock('@/chrome/background/fontInspector', () => ({
   toggleFontInspectorForTab: vi.fn(async () => true),
 }))
 
+vi.mock('@/chrome/background/elementInspector', () => ({
+  resolveElementInspectorForTab: vi.fn(async () => false),
+  toggleElementInspectorForTab: vi.fn(async () => true),
+}))
+
 describe('site quick actions', () => {
   beforeEach(() => {
     resetChromeMockStorage()

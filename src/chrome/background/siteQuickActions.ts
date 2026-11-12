@@ -11,12 +11,19 @@ import { getChromeMessage } from '@/core/i18n/chromeMessages'
 import { STORAGE_KEYS } from '@/core/constants'
 import { createLogger } from '@/core/logging'
 
+import {
+  pushElementInspectorToTab,
+  resolveElementInspectorForTab,
+  toggleElementInspectorForTab,
+} from './elementInspector'
 import { pushFontInspectorToTab, resolveFontInspectorForTab, toggleFontInspectorForTab } from './fontInspector'
+import { readElementInspectorTab } from '@/core/design/elementInspectorState'
 
 const logger = createLogger('site-quick-actions')
 
 export const ADBLOCK_SITE_MENU_ID = 'toolbox.adblock.site'
 export const FONT_INSPECTOR_MENU_ID = 'toolbox.font-inspector.toggle'
+export const ELEMENT_INSPECTOR_MENU_ID = 'toolbox.element-inspector.toggle'
 
 function isHttpUrl(url?: string): boolean {
   if (!url) return false
@@ -41,12 +48,18 @@ export function buildSiteQuickActionMenus(
     title: getChromeMessage('contextMenuEnableFontInspector'),
     contexts: ['page', 'frame'],
   })
+  create({
+    id: ELEMENT_INSPECTOR_MENU_ID,
+    title: getChromeMessage('contextMenuEnableElementInspector'),
+    contexts: ['page', 'frame'],
+  })
 }
 
 export function applySiteQuickActionMenuLabels(
   tab: chrome.tabs.Tab | undefined,
   adblock: { enabled: boolean; blocking: boolean },
   fontInspectorOn: boolean,
+  elementInspectorOn: boolean,
 ): void {
   if (!chrome.contextMenus.update) return
   const show = isHttpUrl(tab?.url)
@@ -62,6 +75,12 @@ export function applySiteQuickActionMenuLabels(
       ? getChromeMessage('contextMenuDisableFontInspector')
       : getChromeMessage('contextMenuEnableFontInspector'),
   })
+  void chrome.contextMenus.update(ELEMENT_INSPECTOR_MENU_ID, {
+    visible: show,
+    title: elementInspectorOn
+      ? getChromeMessage('contextMenuDisableElementInspector')
+      : getChromeMessage('contextMenuEnableElementInspector'),
+  })
 }
 
 export async function refreshSiteQuickActionMenus(tab?: chrome.tabs.Tab): Promise<void> {
@@ -69,17 +88,26 @@ export async function refreshSiteQuickActionMenus(tab?: chrome.tabs.Tab): Promis
   const state = await getAdblockState()
   const blocking = show && state.enabled && isBlockingActiveForUrl(state, tab?.url)
   let fontInspectorOn = false
+  let elementInspectorOn = false
   if (tab?.id != null && show) {
     fontInspectorOn = await readFontInspectorTab(tab.id)
+    elementInspectorOn = await readElementInspectorTab(tab.id)
     void resolveFontInspectorForTab(tab.id)
       .then((enabled) => {
         if (enabled !== fontInspectorOn) {
-          applySiteQuickActionMenuLabels(tab, { enabled: state.enabled, blocking }, enabled)
+          applySiteQuickActionMenuLabels(tab, { enabled: state.enabled, blocking }, enabled, elementInspectorOn)
+        }
+      })
+      .catch(() => undefined)
+    void resolveElementInspectorForTab(tab.id)
+      .then((enabled) => {
+        if (enabled !== elementInspectorOn) {
+          applySiteQuickActionMenuLabels(tab, { enabled: state.enabled, blocking }, fontInspectorOn, enabled)
         }
       })
       .catch(() => undefined)
   }
-  applySiteQuickActionMenuLabels(tab, { enabled: state.enabled, blocking }, fontInspectorOn)
+  applySiteQuickActionMenuLabels(tab, { enabled: state.enabled, blocking }, fontInspectorOn, elementInspectorOn)
 }
 
 export async function refreshSiteQuickActionMenusForActiveTab(): Promise<void> {
@@ -116,9 +144,28 @@ export async function handleSiteQuickActionClick(
           blocking: isBlockingActiveForUrl(state, tab.url),
         },
         enabled,
+        await readElementInspectorTab(tab.id),
       )
     } catch (error) {
       logger.warn('font inspector toggle failed', error)
+    }
+    return true
+  }
+  if (menuItemId === ELEMENT_INSPECTOR_MENU_ID && tab?.id != null) {
+    try {
+      const enabled = await toggleElementInspectorForTab(tab.id)
+      const state = await getAdblockState()
+      applySiteQuickActionMenuLabels(
+        tab,
+        {
+          enabled: state.enabled,
+          blocking: isBlockingActiveForUrl(state, tab.url),
+        },
+        await readFontInspectorTab(tab.id),
+        enabled,
+      )
+    } catch (error) {
+      logger.warn('element inspector toggle failed', error)
     }
     return true
   }
@@ -126,7 +173,11 @@ export async function handleSiteQuickActionClick(
 }
 
 export function isSiteQuickActionMenuItem(menuItemId: string): boolean {
-  return menuItemId === ADBLOCK_SITE_MENU_ID || menuItemId === FONT_INSPECTOR_MENU_ID
+  return (
+    menuItemId === ADBLOCK_SITE_MENU_ID ||
+    menuItemId === FONT_INSPECTOR_MENU_ID ||
+    menuItemId === ELEMENT_INSPECTOR_MENU_ID
+  )
 }
 
 let rebuildMenus: (() => Promise<void>) | null = null

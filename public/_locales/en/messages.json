@@ -131,6 +131,12 @@
   "contextMenuDisableFontInspector": {
     "message": "Disable font inspector"
   },
+  "contextMenuEnableElementInspector": {
+    "message": "Enable element inspector"
+  },
+  "contextMenuDisableElementInspector": {
+    "message": "Disable element inspector"
+  },
   "contextMenuSaveImageAs": {
     "message": "Save image as"
   },

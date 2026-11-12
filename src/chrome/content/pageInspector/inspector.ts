@@ -1032,6 +1032,9 @@ export function setInspector(next: Partial<PageInspectorOptions>, nextLabels?: P
     renderPanel()
     schedule()
   }
+  void chrome.runtime
+    .sendMessage({ type: 'PAGE_INSPECTOR_TAB_STATE', enabled: options.enabled })
+    .catch(() => {})
   notify()
   return getInspectorState()
 }

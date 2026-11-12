@@ -8,6 +8,8 @@ const CHROME_UI_FALLBACKS: Record<string, string> = {
   contextMenuResumeAdblock: 'Enable ad blocking on this site',
   contextMenuEnableFontInspector: 'Enable font inspector',
   contextMenuDisableFontInspector: 'Disable font inspector',
+  contextMenuEnableElementInspector: 'Enable element inspector',
+  contextMenuDisableElementInspector: 'Disable element inspector',
   contextMenuSaveImageAs: 'Save image as',
   contextMenuPip: 'Picture-in-Picture',
   commandTogglePip: 'Toggle Picture-in-Picture for the current tab',

@@ -200,6 +200,9 @@ export type ExtensionMessage =
   | { type: 'PAGE_INSPECTOR_GET' }
   | { type: 'PAGE_INSPECTOR_ACTION'; action: 'undo' | 'reset' | 'deselect' | 'export' }
   | { type: 'PAGE_INSPECTOR_STATE'; state: import('@/chrome/content/pageInspector/model').PageInspectorState }
+  | { type: 'PAGE_INSPECTOR_TAB_STATE'; enabled: boolean }
+  | { type: 'PAGE_INSPECTOR_PANEL_GET' }
+  | { type: 'PAGE_INSPECTOR_PANEL_SET'; enabled: boolean; labels?: Record<string, string> }
   | { type: 'GET_READABLE_TEXT'; scope?: 'page' | 'selection' }
   | { type: 'GET_MARKDOWN_FROM_PAGE'; mode: 'selection' | 'article' }
   | {
@@ -396,6 +399,9 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'PAGE_INSPECTOR_GET',
   'PAGE_INSPECTOR_ACTION',
   'PAGE_INSPECTOR_STATE',
+  'PAGE_INSPECTOR_TAB_STATE',
+  'PAGE_INSPECTOR_PANEL_GET',
+  'PAGE_INSPECTOR_PANEL_SET',
   'GET_READABLE_TEXT',
   'GET_MARKDOWN_FROM_PAGE',
   'CHECK_HTTP_URLS',

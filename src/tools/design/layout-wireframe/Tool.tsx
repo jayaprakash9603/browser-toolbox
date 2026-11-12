@@ -31,6 +31,7 @@ import {
 import { addClipboardEntry } from '@/core/clipboard'
 import { STORAGE_KEYS } from '@/core/constants'
 import { isExtensionMessage } from '@/core/messaging/types'
+import { sendMessage } from '@/core/messaging/messageService'
 import { get, set } from '@/core/storage'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
@@ -164,7 +165,12 @@ export default function LayoutWireframeTool() {
 
   const setEnabled = async (enabled: boolean) => {
     setOptions((current) => ({ ...current, enabled }))
-    adopt(await sendToActiveTab<PageInspectorState>({ type: 'PAGE_INSPECTOR_SET', options: { ...options, enabled }, labels: pageLabels() }))
+    await sendMessage({
+      type: 'PAGE_INSPECTOR_PANEL_SET',
+      enabled,
+      labels: pageLabels(),
+    })
+    await sync()
   }
 
   const update = (patch: Partial<Prefs>) => {
