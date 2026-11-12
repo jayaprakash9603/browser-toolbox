@@ -31,6 +31,12 @@ import {
   unmountRecorderCountdown,
   unmountRecorderPill,
 } from './controls'
+import {
+  clearRecorderPillForSession,
+  syncRecorderPill,
+  syncRoamingPill,
+  usesRoamingPill,
+} from './pillSync'
 
 const logger = createLogger('recorder')
 const OFFSCREEN_OWNER = 'recorder'
@@ -39,13 +45,11 @@ const BADGE_TICK_MS = 1000
 const DEFAULT_ACTION_TITLE = 'Open One Panel'
 
 let current: RecorderSession | null = null
-let loaded = false
 let badgeTicker: ReturnType<typeof setInterval> | undefined
 
 async function getSession(): Promise<RecorderSession | null> {
   const stored = await chrome.storage.session.get(RECORDER_SESSION_KEY)
   current = (stored[RECORDER_SESSION_KEY] as RecorderSession | undefined) ?? null
-  loaded = true
   return current
 }
 
@@ -109,15 +113,16 @@ function clearInPageRecorderUi(session: RecorderSession): void {
       .executeScript({ target: { tabId }, func: unmountRecorderCountdown })
       .catch(() => undefined)
   }
+  void clearRecorderPillForSession(session)
 }
 
 async function setSession(next: RecorderSession | null): Promise<void> {
   const prev = current
   current = next
-  loaded = true
   if (next) await chrome.storage.session.set({ [RECORDER_SESSION_KEY]: next })
   else await chrome.storage.session.remove(RECORDER_SESSION_KEY)
   if (!next && prev) clearInPageRecorderUi(prev)
+  else if (next) void syncRecorderPill(next)
   await updateBadge(next)
   syncBadgeTicker(next)
   syncRecorderContextMenu(next)
@@ -185,9 +190,12 @@ async function startPageCapture(id: string, source: RecordingSource, tab?: chrom
       (returnTabId != null ? `&returnTab=${returnTabId}` : ''),
   )
   const page = await chrome.tabs.create({ url, pinned: true, active: true, windowId: tab?.windowId })
-  await setSession(
-    createSession(id, source, 'page', Date.now(), { pageTabId: page.id, returnTabId, windowId: page.windowId }),
-  )
+  const session = createSession(id, source, 'page', Date.now(), {
+    pageTabId: page.id,
+    returnTabId,
+    windowId: page.windowId,
+  })
+  await setSession(session)
 }
 
 export async function startRecorder(
@@ -415,10 +423,26 @@ export function registerRecorder(): void {
     })
   })
 
+  chrome.tabs.onActivated.addListener(({ tabId }) => {
+    void getSession().then((session) => {
+      if (session && usesRoamingPill(session)) void syncRoamingPill(session, tabId)
+    })
+  })
+
+  chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (!tab.active || changeInfo.status !== 'complete') return
+    void getSession().then((session) => {
+      if (session && usesRoamingPill(session)) void syncRoamingPill(session, tabId)
+    })
+  })
+
   void getSession().then(async (session) => {
     syncRecorderContextMenu(session)
     syncBadgeTicker(session)
-    if (session) await updateBadge(session)
+    if (session) {
+      await updateBadge(session)
+      await syncRecorderPill(session)
+    }
   })
 
   void getSession().then((session) => {

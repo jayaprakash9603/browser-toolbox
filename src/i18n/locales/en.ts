@@ -1226,7 +1226,7 @@ const en = {
   'recorder.page.picking': 'Choose what to share in Chrome’s dialog.',
   'recorder.page.keepOpen': 'Recording. Keep this pinned tab open until you stop.',
   'recorder.page.backgroundHint':
-    'Recording runs in the background. Watch the extension icon for the timer, or right-click → Stop recording.',
+    'Recording runs in the background. Use the control on the right edge of whatever page you are on, watch the extension icon, or right-click → Stop recording.',
   'recorder.window.micTitle': 'Microphone access',
   'recorder.window.micHint': 'Allow the microphone once so recordings can include your voice.',
   'recorder.window.micAllow': 'Allow microphone',
