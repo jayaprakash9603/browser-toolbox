@@ -122,6 +122,15 @@
   "contextMenuPauseAdblock": {
     "message": "Pause ad blocking on this site"
   },
+  "contextMenuResumeAdblock": {
+    "message": "Enable ad blocking on this site"
+  },
+  "contextMenuEnableFontInspector": {
+    "message": "Enable font inspector"
+  },
+  "contextMenuDisableFontInspector": {
+    "message": "Disable font inspector"
+  },
   "contextMenuSaveImageAs": {
     "message": "Save image as"
   },

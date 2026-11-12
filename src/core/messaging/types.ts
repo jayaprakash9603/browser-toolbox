@@ -187,6 +187,7 @@ export type ExtensionMessage =
   | { type: 'GET_PAGE_SVGS' }
   | { type: 'SVG_TO_JSX'; markup: string }
   | { type: 'WIREFRAME_TOGGLE'; enabled: boolean }
+  | { type: 'FONT_INSPECTOR_GET' }
   | { type: 'FONT_INSPECTOR_TOGGLE'; enabled: boolean }
   | {
       type: 'PAGE_INSPECTOR_SET'
@@ -383,6 +384,7 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'GET_PAGE_SVGS',
   'SVG_TO_JSX',
   'WIREFRAME_TOGGLE',
+  'FONT_INSPECTOR_GET',
   'FONT_INSPECTOR_TOGGLE',
   'PAGE_INSPECTOR_SET',
   'PAGE_INSPECTOR_GET',

@@ -1,18 +1,25 @@
 import { getChromeMessage } from '@/core/i18n/chromeMessages'
 import { createLogger } from '@/core/logging'
-import { toolRegistry } from '@/core/registry'
 
-import { buildMenuItems } from '../context-menu/menuTree'
+import { registerContextMenuOnShown } from './contextMenuShown'
 import { buildImageConvertMenus } from './imageConvert'
 import { buildPipMenus } from './pip'
 import { buildChatPulseMenus } from './sites/whatsappAnalytics'
 import { buildScreenshotMenus } from './screenshot/contextMenus'
+import { buildSiteQuickActionMenus } from './siteQuickActions'
 import { buildTaskMenus } from './tasks'
 import { buildReadingListMenus } from './readingList'
 
 const logger = createLogger('context-menus')
 
 let rebuildQueue: Promise<void> = Promise.resolve()
+let onShownRegistered = false
+
+function ensureContextMenuOnShown(): void {
+  if (onShownRegistered) return
+  onShownRegistered = true
+  registerContextMenuOnShown()
+}
 
 function createContextMenu(properties: chrome.contextMenus.CreateProperties): void {
   chrome.contextMenus.create(properties, () => {
@@ -30,22 +37,7 @@ async function rebuildContextMenusOnce(): Promise<void> {
     title: getChromeMessage('contextMenuOpen'),
     contexts: ['all'],
   })
-  createContextMenu({
-    id: 'toolbox.adblock.pause-site',
-    title: getChromeMessage('contextMenuPauseAdblock'),
-    contexts: ['page', 'frame'],
-  })
-  for (const item of buildMenuItems(toolRegistry.getAll())) {
-    createContextMenu({
-      id: item.id,
-      title: item.title,
-      contexts: item.contexts as [
-        chrome.contextMenus.ContextType,
-        ...chrome.contextMenus.ContextType[],
-      ],
-      ...(item.parentId ? { parentId: item.parentId } : {}),
-    })
-  }
+  buildSiteQuickActionMenus(createContextMenu)
   const builders = [
     { name: 'imageConvert', run: buildImageConvertMenus },
     { name: 'pip', run: buildPipMenus },
@@ -77,6 +69,7 @@ async function rebuildContextMenusOnce(): Promise<void> {
 
 /** Serializes overlapping rebuild requests (storage listeners, install, startup). */
 export function enqueueContextMenuRebuild(): Promise<void> {
+  ensureContextMenuOnShown()
   rebuildQueue = rebuildQueue
     .then(() => rebuildContextMenusOnce())
     .catch((error) => logger.warn('context menu rebuild failed', error))

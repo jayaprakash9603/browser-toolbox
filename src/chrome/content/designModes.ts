@@ -20,6 +20,10 @@ export function setWireframe(enabled: boolean): void {
   document.head.appendChild(style)
 }
 
+export function isFontInspectorActive(): boolean {
+  return fontInspectorActive
+}
+
 export function setFontInspector(enabled: boolean): void {
   if (enabled === fontInspectorActive) return
   fontInspectorActive = enabled

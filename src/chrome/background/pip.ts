@@ -42,6 +42,36 @@ function isRestrictedUrl(url?: string): boolean {
   }
 }
 
+async function collectVideoCandidates(tabId: number): Promise<VideoCandidate[]> {
+  const measureResults = await chrome.scripting.executeScript({
+    target: { tabId, allFrames: true },
+    world: 'MAIN',
+    func: pipMeasureInFrame,
+  })
+  const candidates: VideoCandidate[] = []
+  for (const injection of measureResults ?? []) {
+    const result = injection.result
+    if (result && typeof result === 'object' && result.kind === 'candidate') {
+      candidates.push({
+        frameId: injection.frameId,
+        area: result.area,
+        playing: result.playing,
+        readyState: result.readyState,
+      })
+    }
+  }
+  return candidates
+}
+
+export async function tabHasPlayableVideo(tabId: number): Promise<boolean> {
+  try {
+    const candidates = await collectVideoCandidates(tabId)
+    return pickBestVideoCandidate(candidates) != null
+  } catch {
+    return false
+  }
+}
+
 function notify(title: string, message: string): void {
   void chrome.notifications.create(`pip-${Date.now()}`, {
     type: 'basic',
@@ -68,25 +98,7 @@ export async function togglePipInTab(tab?: chrome.tabs.Tab): Promise<PipToggleRe
       return { action: 'exited' }
     }
 
-    const measureResults = await chrome.scripting.executeScript({
-      target: { tabId, allFrames: true },
-      world: 'MAIN',
-      func: pipMeasureInFrame,
-    })
-
-    const candidates: VideoCandidate[] = []
-    for (const injection of measureResults ?? []) {
-      const result = injection.result
-      if (result && typeof result === 'object' && result.kind === 'candidate') {
-        candidates.push({
-          frameId: injection.frameId,
-          area: result.area,
-          playing: result.playing,
-          readyState: result.readyState,
-        })
-      }
-    }
-
+    const candidates = await collectVideoCandidates(tabId)
     const best = pickBestVideoCandidate(candidates)
     if (!best) {
       notify('No video found', 'Play a video on this page, then try again.')
@@ -146,10 +158,14 @@ export async function togglePipInTab(tab?: chrome.tabs.Tab): Promise<PipToggleRe
 export async function buildPipMenus(): Promise<void> {
   const state = await getPipState()
   if (!state.enabled || !state.showContextMenu) return
+  const onShown = Boolean(
+    (chrome.contextMenus as typeof chrome.contextMenus & { onShown?: unknown }).onShown,
+  )
   chrome.contextMenus.create({
     id: PIP_MENU_ID,
     title: getChromeMessage('contextMenuPip') || 'Picture-in-Picture',
-    contexts: ['video', 'page'],
+    contexts: onShown ? (['page', 'video'] as const) : (['video'] as const),
+    visible: onShown ? true : undefined,
   })
 }
 

@@ -1,12 +1,15 @@
-import { addAllowlistHost, hostnameFromUrl } from '@/core/adblock'
 import { createLogger } from '@/core/logging'
 import { startMessageRouter } from '@/core/messaging'
-import { stashPayload } from '@/core/payloads'
-import { toolRegistry } from '@/core/registry'
 import { initStorage } from '@/core/storage'
 
 import { registerAdblock, syncAdblockState } from './adblock'
 import { enqueueContextMenuRebuild } from './contextMenus'
+import {
+  bindSiteQuickActionMenuRebuild,
+  handleSiteQuickActionClick,
+  isSiteQuickActionMenuItem,
+  registerSiteQuickActionMenuSync,
+} from './siteQuickActions'
 import { registerProtection, syncProtectionState } from './protection'
 import {
   registerSitesInstagram,
@@ -60,33 +63,9 @@ import { registerReactDevtools, syncReactDevtoolsState } from './reactDevtools'
 import { registerScriptStudio } from './script-studio'
 import { registerSidePanelNavigation } from './panelNavigation'
 import { registerResponsiveViewerFraming } from './responsiveViewerFraming'
-import { setPanelRouteIntent } from '@/core/panel/navigationSession'
 import { configurePanelAction, openExtensionPanel } from '@/platform/panel'
 
 const logger = createLogger('background')
-
-function findToolForMenuItem(menuItemId: string) {
-  const match = /^toolbox\.tool\.([\w.-]+)\.(selection|link|image|page)$/.exec(menuItemId)
-  if (!match) return null
-  return { tool: toolRegistry.get(match[1]), surface: match[2] }
-}
-
-async function openPanelWithTool(
-  tab: chrome.tabs.Tab | undefined,
-  toolId: string,
-  payload: { text?: string; linkUrl?: string; imageUrl?: string; pageUrl?: string },
-) {
-  await stashPayload({ toolId, ...payload })
-  const tool = toolRegistry.get(toolId)
-  if (tool?.route) await setPanelRouteIntent(tool.route)
-  if (tab?.windowId != null) {
-    try {
-      await openExtensionPanel({ windowId: tab.windowId, tabId: tab.id })
-    } catch (error) {
-      logger.warn('side panel open failed', error)
-    }
-  }
-}
 
 chrome.runtime.onInstalled.addListener(() => {
   logger.info('installed')
@@ -148,9 +127,8 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     void sendOpenAnalyticsToTab(tab.id)
     return
   }
-  if (menuItemId === 'toolbox.adblock.pause-site' && tab?.url) {
-    const host = hostnameFromUrl(tab.url)
-    if (host) void addAllowlistHost(host)
+  if (isSiteQuickActionMenuItem(menuItemId)) {
+    void handleSiteQuickActionClick(menuItemId, tab)
     return
   }
   if (menuItemId.startsWith('toolbox.screenshot.')) {
@@ -169,14 +147,6 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     }
     return
   }
-  const match = findToolForMenuItem(menuItemId)
-  if (!match?.tool) return
-  void openPanelWithTool(tab, match.tool.id, {
-    text: info.selectionText,
-    linkUrl: info.linkUrl,
-    imageUrl: info.srcUrl,
-    pageUrl: info.pageUrl,
-  })
 })
 
 chrome.commands.onCommand.addListener((command, tab) => {
@@ -200,6 +170,8 @@ safeRegister('sitesInstagram', registerSitesInstagram)
 bindImageConvertMenuRebuild(rebuildMenus)
 bindPipMenuRebuild(rebuildMenus)
 bindChatPulseMenuRebuild(rebuildMenus)
+bindSiteQuickActionMenuRebuild(rebuildMenus)
+safeRegister('siteQuickActions', registerSiteQuickActionMenuSync)
 safeRegister('chatPulseMenuSync', registerChatPulseMenuSync)
 safeRegister('imageConvert', registerImageConvert)
 safeRegister('pip', registerPip)

@@ -13,7 +13,7 @@ import { applySeoHighlight, clearSeoHighlight } from './seoHighlight'
 import { collectPageSvgs, svgToJsx } from './collectors/svgs'
 import { collectPageLinks, locatePageLink } from './collectors/links'
 import { clearPageLinkMarks, markPageLinks } from './collectors/linkMarks'
-import { setFontInspector, setWireframe } from './designModes'
+import { isFontInspectorActive, setFontInspector, setWireframe } from './designModes'
 import { getInspectorState, runInspectorAction, setInspector } from './pageInspector/inspector'
 import type { InspectorAction, InspectorLabels, PageInspectorOptions } from './pageInspector/model'
 import { articleHtmlToMarkdown, selectionHtmlToMarkdown } from '@/core/text/htmlToMarkdown'
@@ -237,6 +237,9 @@ if (!contentAlreadyInstalled) chrome.runtime.onMessage.addListener((raw, _sender
     case 'WIREFRAME_TOGGLE':
       setWireframe((raw as { enabled: boolean }).enabled)
       sendResponse({ ok: true, data: { enabled: (raw as { enabled: boolean }).enabled } })
+      return false
+    case 'FONT_INSPECTOR_GET':
+      sendResponse({ ok: true, data: { enabled: isFontInspectorActive() } })
       return false
     case 'FONT_INSPECTOR_TOGGLE':
       setFontInspector((raw as { enabled: boolean }).enabled)
