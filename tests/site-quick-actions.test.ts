@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ADBLOCK_SITE_MENU_ID, handleSiteQuickActionClick } from '@/chrome/background/siteQuickActions'
-import { toggleAllowlistHost } from '@/core/adblock'
+import { addAllowlistHost } from '@/core/adblock'
 import { resetChromeMockStorage } from './setup'
 
 vi.mock('@/core/adblock', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/core/adblock')>()
   return {
     ...actual,
-    toggleAllowlistHost: vi.fn(async () => ({
+    addAllowlistHost: vi.fn(async () => ({
       enabled: true,
       allowlist: ['example.com'],
       lists: actual.DEFAULT_ADBLOCK_STATE.lists,
@@ -16,7 +16,13 @@ vi.mock('@/core/adblock', async (importOriginal) => {
       cookieBanners: true,
       distractions: true,
     })),
-    getAdblockState: vi.fn(async () => actual.DEFAULT_ADBLOCK_STATE),
+    removeAllowlistHost: vi.fn(async () => actual.DEFAULT_ADBLOCK_STATE),
+    updateAdblockState: vi.fn(async (patch) => ({
+      ...actual.DEFAULT_ADBLOCK_STATE,
+      ...patch,
+    })),
+    getAdblockState: vi.fn(async () => ({ ...actual.DEFAULT_ADBLOCK_STATE, enabled: true })),
+    isBlockingActiveForUrl: vi.fn(() => true),
   }
 })
 
@@ -39,6 +45,6 @@ describe('site quick actions', () => {
       url: 'https://example.com/path',
     } as chrome.tabs.Tab)
     expect(handled).toBe(true)
-    expect(toggleAllowlistHost).toHaveBeenCalledWith('example.com')
+    expect(addAllowlistHost).toHaveBeenCalledWith('example.com')
   })
 })

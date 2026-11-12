@@ -1,8 +1,10 @@
 import {
+  addAllowlistHost,
   getAdblockState,
   hostnameFromUrl,
   isBlockingActiveForUrl,
-  toggleAllowlistHost,
+  removeAllowlistHost,
+  updateAdblockState,
 } from '@/core/adblock'
 import { readFontInspectorTab } from '@/core/design/fontInspectorState'
 import { getChromeMessage } from '@/core/i18n/chromeMessages'
@@ -49,7 +51,7 @@ export function applySiteQuickActionMenuLabels(
   if (!chrome.contextMenus.update) return
   const show = isHttpUrl(tab?.url)
   void chrome.contextMenus.update(ADBLOCK_SITE_MENU_ID, {
-    visible: show && adblock.enabled,
+    visible: show,
     title: adblock.blocking
       ? getChromeMessage('contextMenuPauseAdblock')
       : getChromeMessage('contextMenuResumeAdblock'),
@@ -92,7 +94,14 @@ export async function handleSiteQuickActionClick(
   if (menuItemId === ADBLOCK_SITE_MENU_ID && tab?.url) {
     const host = hostnameFromUrl(tab.url)
     if (!host) return true
-    await toggleAllowlistHost(host)
+    const state = await getAdblockState()
+    const blocking = state.enabled && isBlockingActiveForUrl(state, tab.url)
+    if (blocking) {
+      await addAllowlistHost(host)
+    } else {
+      if (!state.enabled) await updateAdblockState({ enabled: true })
+      await removeAllowlistHost(host)
+    }
     await refreshSiteQuickActionMenus(tab)
     return true
   }
