@@ -106,13 +106,13 @@ export default function PaletteGeneratorTool() {
   const changeBase = (hex: string) => set(applyHarmony(swatches, hex, harmony), hex)
 
   const { search } = useRouter()
-  const seedColor = new URLSearchParams(search).get('color')
   const applySeedColor = useEffectEvent((hex: string) => changeBase(hex))
   useEffect(() => {
+    const seedColor = new URLSearchParams(search).get('color')
     if (seedColor && /^#?[0-9a-f]{6}$/i.test(seedColor)) {
       applySeedColor(seedColor.startsWith('#') ? seedColor : `#${seedColor}`)
     }
-  }, [seedColor])
+  }, [search])
 
   const toggleLock = (id: string) => set(swatches.map((s) => (s.id === id ? { ...s, locked: !s.locked } : s)))
 

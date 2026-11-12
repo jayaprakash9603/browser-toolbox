@@ -49,7 +49,7 @@ function pageText(): ColorPickerPageText {
 function openPaletteGeneratorFromUserGesture(hex: string, tab?: chrome.tabs.Tab): void {
   const normalized = normalizeHex(hex)
   if (!normalized) return
-  const route = `${PALETTE_GENERATOR_ROUTE}?color=${encodeURIComponent(normalized)}`
+  const route = `${PALETTE_GENERATOR_ROUTE}?color=${encodeURIComponent(normalized)}&_g=${Date.now()}`
   void setPanelRouteIntent(route).then(() => {
     void chrome.runtime.sendMessage({ type: 'PANEL_ROUTE_APPLY', route }).catch(() => undefined)
   })

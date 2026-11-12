@@ -48,11 +48,24 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   const [navKey, setNavKey] = useState(0)
 
   useEffect(() => {
+    const applyPanelRoute = (route: string) => {
+      const target = route.startsWith('/') ? route : `/${route}`
+      const currentHash = window.location.hash.replace(/^#/, '')
+      if (currentHash === target) {
+        window.location.hash = '/'
+        queueMicrotask(() => {
+          window.location.hash = target
+        })
+        return
+      }
+      window.location.hash = target
+    }
+
     void (async () => {
       if (!(await isSidePanelDocument())) return
       const intent = await consumePanelRouteIntent()
       if (intent) {
-        window.location.hash = intent
+        applyPanelRoute(intent)
         return
       }
       const openHome = await consumeOpenHomeOnPanel()
@@ -82,7 +95,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
     })
     const applyPendingRoute = (route: unknown) => {
       if (typeof route !== 'string' || !route.startsWith('/tools/')) return
-      window.location.hash = route
+      applyPanelRoute(route)
       void Promise.resolve(chrome.storage.session.remove(PENDING_ROUTE_KEY)).catch(() => undefined)
     }
     const onPendingRoute = (changes: { [key: string]: chrome.storage.StorageChange }, area: string) => {
@@ -105,7 +118,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
         }
         if (intent) {
           void consumePanelRouteIntent().then((route) => {
-            if (route) window.location.hash = route
+            if (route) applyPanelRoute(route)
           })
         }
       })
@@ -122,7 +135,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
       if (typeof route !== 'string' || !route.startsWith('/')) return false
       void isSidePanelDocument().then((inPanel) => {
         if (!inPanel) return
-        window.location.hash = route
+        applyPanelRoute(route)
         void consumePanelRouteIntent()
       })
       return false
