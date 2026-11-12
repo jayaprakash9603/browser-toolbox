@@ -36,7 +36,7 @@ const tabsTriggerVariants = cva(
     variants: {
       variant: {
         attached:
-          'relative z-10 min-h-9 flex-1 rounded-full border border-transparent bg-transparent px-3 py-1.5 text-sm font-medium text-muted-foreground transition-[color,padding] duration-300 ease-out hover:text-primary/80 data-[state=active]:bg-transparent data-[state=active]:px-4 data-[state=active]:text-primary data-[state=active]:shadow-none motion-reduce:transition-none [&_svg]:transition-colors [&_svg]:duration-300 data-[state=active]:[&_svg]:text-primary',
+          'relative z-10 min-h-9 min-w-0 flex-1 rounded-full border border-transparent bg-transparent px-3 py-1.5 text-sm font-medium text-muted-foreground transition-[color] duration-300 ease-out hover:text-primary/80 data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none motion-reduce:transition-none [&_svg]:transition-colors [&_svg]:duration-300 data-[state=active]:[&_svg]:text-primary',
         chips:
           'relative z-10 min-h-11 rounded-lg border border-transparent bg-transparent px-3 text-xs hover:bg-background/60 hover:text-foreground data-[state=active]:text-primary motion-reduce:transition-none',
         pill: 'relative z-10 h-7 flex-1 rounded-md px-3 hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground',
@@ -54,6 +54,15 @@ const FADE_PX = 24
 
 type IndicatorBox = { left: number; top: number; width: number; height: number }
 type Edges = { start: boolean; end: boolean }
+
+function indicatorClose(a: IndicatorBox, b: IndicatorBox, epsilon = 0.75): boolean {
+  return (
+    Math.abs(a.left - b.left) < epsilon &&
+    Math.abs(a.top - b.top) < epsilon &&
+    Math.abs(a.width - b.width) < epsilon &&
+    Math.abs(a.height - b.height) < epsilon
+  )
+}
 
 function activeTab(list: HTMLElement): HTMLElement | null {
   return list.querySelector<HTMLElement>('[role="tab"][data-state="active"]')
@@ -152,19 +161,34 @@ function TabsList({
       const next = measureEdges(node)
       return next.start === prev.start && next.end === prev.end ? prev : next
     })
-    setUnderline(measureActiveTab(node, resolved === 'underline'))
+    const nextUnderline = measureActiveTab(node, resolved === 'underline')
+    setUnderline((prev) => (indicatorClose(prev, nextUnderline) ? prev : nextUnderline))
   }, [resolved])
 
   React.useLayoutEffect(() => {
     const node = listRef.current
     if (!node) return
+    let syncRaf = 0
+    const flushSync = () => {
+      syncRaf = 0
+      sync()
+    }
+    const scheduleSync = () => {
+      if (syncRaf) return
+      syncRaf = requestAnimationFrame(flushSync)
+    }
+
+    const onActiveChange = () => {
+      if (resolved !== 'attached' && listOverflows(node)) {
+        scrollActiveIntoView(node, !reduceMotion)
+      }
+      sync()
+    }
+
     scrollActiveIntoView(node, false)
     sync()
 
-    const observer = new MutationObserver(() => {
-      scrollActiveIntoView(node, !reduceMotion)
-      sync()
-    })
+    const observer = new MutationObserver(onActiveChange)
     observer.observe(node, {
       attributes: true,
       subtree: true,
@@ -172,19 +196,25 @@ function TabsList({
       childList: true,
     })
 
-    const resizeObserver = new ResizeObserver(sync)
+    const resizeObserver = new ResizeObserver(() => {
+      if (resolved === 'attached') scheduleSync()
+      else sync()
+    })
     resizeObserver.observe(node)
-    for (const tab of node.querySelectorAll('[role="tab"]')) resizeObserver.observe(tab)
+    if (resolved !== 'attached') {
+      for (const tab of node.querySelectorAll('[role="tab"]')) resizeObserver.observe(tab)
+    }
 
-    node.addEventListener('scroll', sync, { passive: true })
-    window.addEventListener('resize', sync)
+    node.addEventListener('scroll', scheduleSync, { passive: true })
+    window.addEventListener('resize', scheduleSync)
     return () => {
+      if (syncRaf) cancelAnimationFrame(syncRaf)
       observer.disconnect()
       resizeObserver.disconnect()
-      node.removeEventListener('scroll', sync)
-      window.removeEventListener('resize', sync)
+      node.removeEventListener('scroll', scheduleSync)
+      window.removeEventListener('resize', scheduleSync)
     }
-  }, [sync, reduceMotion])
+  }, [sync, reduceMotion, resolved])
 
   const scroll = (direction: -1 | 1) => {
     const node = listRef.current
@@ -225,7 +255,8 @@ function TabsList({
           className={cn(
             tabsListVariants({ variant: resolved }),
             'relative',
-            (fullWidth || resolved === 'attached') && 'w-full flex-1 [&_[role=tab]]:flex-1',
+            (fullWidth || resolved === 'attached') &&
+              'w-full flex-1 [&_[role=tab]]:min-w-0 [&_[role=tab]]:flex-1',
             showScrollButtons
               ? 'min-w-0 flex-1 overflow-x-auto overscroll-x-contain scrollbar-none'
               : 'max-w-full',
@@ -258,7 +289,12 @@ function TabsList({
                 reduceMotion
                   ? { duration: 0 }
                   : resolved === 'attached'
-                    ? { type: 'spring', stiffness: 520, damping: 38, mass: 0.75 }
+                    ? {
+                        left: { type: 'spring', stiffness: 420, damping: 42, mass: 0.85 },
+                        top: { duration: 0.2, ease: [0.22, 1, 0.36, 1] },
+                        width: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
+                        height: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
+                      }
                     : { type: 'spring', stiffness: 400, damping: 40 }
               }
             />
