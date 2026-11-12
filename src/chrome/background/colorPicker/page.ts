@@ -16,7 +16,10 @@ export interface ColorPickerPageText {
   copyHex: string
   copyRgb: string
   copyHsl: string
+  copyHsv: string
   close: string
+  shadesLabel: string
+  generatePalette: string
 }
 
 export interface ColorPickerPageOptions {
@@ -34,7 +37,7 @@ export interface ColorPickerPageResult {
 export function runColorPicker(options: ColorPickerPageOptions): Promise<ColorPickerPageResult> {
   const HOST_ID = 'tbx-color-picker-host'
   const RESULT_ID = 'tbx-color-result-host'
-  const FORMATS = ['hex', 'rgb', 'hsl'] as const
+  const FORMATS = ['hex', 'rgb', 'hsl', 'hsv'] as const
   const ZOOMS = [5, 7, 9, 11, 15, 21]
   const LOUPE = 132
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -88,10 +91,86 @@ export function runColorPicker(options: ColorPickerPageOptions): Promise<ColorPi
     return `hsl(${Math.round(h)}, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%)`
   }
 
+  function toHsv(r: number, g: number, b: number): string {
+    const rn = r / 255
+    const gn = g / 255
+    const bn = b / 255
+    const max = Math.max(rn, gn, bn)
+    const min = Math.min(rn, gn, bn)
+    const d = max - min
+    let h = 0
+    const s = max === 0 ? 0 : d / max
+    if (d !== 0) {
+      if (max === rn) h = (gn - bn) / d + (gn < bn ? 6 : 0)
+      else if (max === gn) h = (bn - rn) / d + 2
+      else h = (rn - gn) / d + 4
+      h *= 60
+    }
+    return `hsv(${Math.round(h)}, ${Math.round(s * 100)}%, ${Math.round(max * 100)}%)`
+  }
+
   function formatValue(format: (typeof FORMATS)[number], r: number, g: number, b: number): string {
     if (format === 'rgb') return `rgb(${r}, ${g}, ${b})`
     if (format === 'hsl') return toHsl(r, g, b)
+    if (format === 'hsv') return toHsv(r, g, b)
     return toHex(r, g, b)
+  }
+
+  const SHADE_L = [20, 30, 40, 50, 60, 70, 80, 90, 96]
+
+  function rgbToHslParts(r: number, g: number, b: number): { h: number; s: number; l: number } {
+    const rn = r / 255
+    const gn = g / 255
+    const bn = b / 255
+    const max = Math.max(rn, gn, bn)
+    const min = Math.min(rn, gn, bn)
+    const l = (max + min) / 2
+    const d = max - min
+    let h = 0
+    let s = 0
+    if (d !== 0) {
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+      if (max === rn) h = (gn - bn) / d + (gn < bn ? 6 : 0)
+      else if (max === gn) h = (bn - rn) / d + 2
+      else h = (rn - gn) / d + 4
+      h *= 60
+    }
+    return { h, s: s * 100, l: l * 100 }
+  }
+
+  function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: number } {
+    const sn = s / 100
+    const ln = l / 100
+    const c = (1 - Math.abs(2 * ln - 1)) * sn
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
+    const m = ln - c / 2
+    let rp = 0
+    let gp = 0
+    let bp = 0
+    if (h < 60) [rp, gp, bp] = [c, x, 0]
+    else if (h < 120) [rp, gp, bp] = [x, c, 0]
+    else if (h < 180) [rp, gp, bp] = [0, c, x]
+    else if (h < 240) [rp, gp, bp] = [0, x, c]
+    else if (h < 300) [rp, gp, bp] = [x, 0, c]
+    else [rp, gp, bp] = [c, 0, x]
+    return {
+      r: Math.round((rp + m) * 255),
+      g: Math.round((gp + m) * 255),
+      b: Math.round((bp + m) * 255),
+    }
+  }
+
+  function computeShades(r: number, g: number, b: number): string[] {
+    const { h, s } = rgbToHslParts(r, g, b)
+    const seen = new Set<string>()
+    return SHADE_L.map((light) => {
+      const { r: sr, g: sg, b: sb } = hslToRgb(h, s, light)
+      return toHex(sr, sg, sb)
+    }).filter((shade) => {
+      if (seen.has(shade)) return false
+      seen.add(shade)
+      return true
+    })
   }
 
   function start(source: HTMLImageElement): void {
@@ -285,6 +364,13 @@ export function runColorPicker(options: ColorPickerPageOptions): Promise<ColorPi
             border-radius:999px; padding:6px 10px; font-size:11px; font-weight:600; cursor:pointer; }
           .btn:hover { background:rgba(255,255,255,.12); }
           .btn[data-active="true"] { border-color:rgba(255,255,255,.28); background:rgba(255,255,255,.16); }
+          .btn.palette { display:inline-flex; align-items:center; gap:6px; margin-top:8px; width:100%; justify-content:center;
+            background:linear-gradient(135deg,rgba(99,102,241,.22),rgba(168,85,247,.18)); border-color:rgba(129,140,248,.35); }
+          .btn.palette svg { width:15px; height:15px; flex:none; opacity:.95; }
+          .shades-label { margin:10px 0 6px; font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; opacity:.65; }
+          .shades { display:flex; gap:4px; overflow-x:auto; padding-bottom:2px; scrollbar-width:thin; }
+          .shade { width:30px; height:30px; flex:none; border-radius:8px; cursor:pointer; border:1px solid rgba(255,255,255,.2); }
+          .shade[data-active="true"] { outline:2px solid #fff; outline-offset:2px; }
           @media (prefers-color-scheme: light) {
             .card { color:#18181b; background:rgba(255,255,255,.95); border-color:rgba(0,0,0,.08);
               box-shadow:0 14px 40px rgba(0,0,0,.14), 0 2px 8px rgba(0,0,0,.06); }
@@ -292,6 +378,8 @@ export function runColorPicker(options: ColorPickerPageOptions): Promise<ColorPi
             .btn:hover { background:rgba(0,0,0,.07); }
             .status { color:#15803d; }
             .status.fail { color:#b91c1c; }
+            .shade { border-color:rgba(0,0,0,.12); }
+            .shade[data-active="true"] { outline-color:#18181b; }
           }
         </style>
         <div class="card" role="dialog" aria-labelledby="tbx-color-result-title">
@@ -306,42 +394,106 @@ export function runColorPicker(options: ColorPickerPageOptions): Promise<ColorPi
               <div class="status"></div>
             </div>
           </div>
+          <div class="shades-label"></div>
+          <div class="shades"></div>
           <div class="actions">
             <button type="button" class="btn" data-format="hex"></button>
             <button type="button" class="btn" data-format="rgb"></button>
             <button type="button" class="btn" data-format="hsl"></button>
+            <button type="button" class="btn" data-format="hsv"></button>
           </div>
+          <button type="button" class="btn palette" data-action="palette">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/>
+              <circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/>
+              <path d="M12 22a10 10 0 0 0 10-10c0-4-3-6-6-8-1.5 3-4.5 5-7 5.5"/>
+            </svg>
+            <span class="palette-label"></span>
+          </button>
         </div>`
 
       const card = sh.querySelector('.card') as HTMLElement
       const statusEl = sh.querySelector('.status') as HTMLElement
       const valEl = sh.querySelector('.val') as HTMLElement
       ;(sh.querySelector('.title') as HTMLElement).textContent = options.text.resultTitle
+      ;(sh.querySelector('.shades-label') as HTMLElement).textContent = options.text.shadesLabel
+      ;(sh.querySelector('.palette-label') as HTMLElement).textContent = options.text.generatePalette
       card.style.setProperty('--c', hex)
+
+      let activeR = r
+      let activeG = g
+      let activeB = b
+      let activeFormat = pickedFormat
 
       const formatButtons = Array.from(sh.querySelectorAll<HTMLButtonElement>('.btn[data-format]'))
       const labels: Record<string, string> = {
         hex: options.text.copyHex,
         rgb: options.text.copyRgb,
         hsl: options.text.copyHsl,
+        hsv: options.text.copyHsv,
       }
+
+      const refreshValueDisplay = () => {
+        const value = formatValue(activeFormat as (typeof FORMATS)[number], activeR, activeG, activeB)
+        valEl.textContent = value
+        card.style.setProperty('--c', toHex(activeR, activeG, activeB))
+        ;(sh.querySelector('.sw') as HTMLElement).style.background = toHex(activeR, activeG, activeB)
+      }
+
+      const setCopiedStatus = (ok: boolean) => {
+        statusEl.textContent = ok ? options.text.copied : options.text.copyFailed
+        statusEl.classList.toggle('fail', !ok)
+      }
+
       for (const button of formatButtons) {
         const fmt = button.dataset.format ?? 'hex'
         button.textContent = labels[fmt] ?? fmt.toUpperCase()
         button.dataset.active = fmt === pickedFormat ? 'true' : 'false'
         button.addEventListener('click', () => {
-          const value = formatValue(fmt as (typeof FORMATS)[number], r, g, b)
-          valEl.textContent = value
+          activeFormat = fmt
           for (const peer of formatButtons) peer.dataset.active = peer === button ? 'true' : 'false'
-          void copyText(value).then((ok) => {
-            statusEl.textContent = ok ? options.text.copied : options.text.copyFailed
-            statusEl.classList.toggle('fail', !ok)
-          })
+          const value = formatValue(fmt as (typeof FORMATS)[number], activeR, activeG, activeB)
+          valEl.textContent = value
+          void copyText(value).then(setCopiedStatus)
         })
       }
 
-      const activeValue = formatValue(pickedFormat as (typeof FORMATS)[number], r, g, b)
-      valEl.textContent = activeValue
+      const shadesEl = sh.querySelector('.shades') as HTMLElement
+      const renderShades = () => {
+        shadesEl.replaceChildren()
+        const shades = computeShades(activeR, activeG, activeB)
+        const activeHex = toHex(activeR, activeG, activeB)
+        for (const shade of shades) {
+          const sw = document.createElement('button')
+          sw.type = 'button'
+          sw.className = 'shade'
+          sw.dataset.active = shade === activeHex ? 'true' : 'false'
+          sw.style.background = shade
+          sw.title = shade
+          sw.addEventListener('click', () => {
+            const parsed = /^#?([0-9a-f]{6})$/i.exec(shade)
+            if (!parsed) return
+            const n = parseInt(parsed[1], 16)
+            activeR = (n >> 16) & 255
+            activeG = (n >> 8) & 255
+            activeB = n & 255
+            renderShades()
+            refreshValueDisplay()
+            void copyText(formatValue(activeFormat as (typeof FORMATS)[number], activeR, activeG, activeB)).then(
+              setCopiedStatus,
+            )
+          })
+          shadesEl.append(sw)
+        }
+      }
+      renderShades()
+
+      sh.querySelector('[data-action="palette"]')?.addEventListener('click', () => {
+        const hexValue = toHex(activeR, activeG, activeB)
+        chrome.runtime.sendMessage({ type: 'COLOR_OPEN_PALETTE', hex: hexValue }).catch(() => undefined)
+      })
+
+      refreshValueDisplay()
       statusEl.textContent = copied ? options.text.copied : options.text.copyFailed
       statusEl.classList.toggle('fail', !copied)
 
@@ -515,7 +667,8 @@ export function runColorPicker(options: ColorPickerPageOptions): Promise<ColorPi
   }
 }
 
-type ScreenPickOptions = { format: 'hex' | 'rgb' | 'hsl'; text: ColorPickerPageText }
+type ScreenPickFormat = 'hex' | 'rgb' | 'hsl' | 'hsv'
+type ScreenPickOptions = { format: ScreenPickFormat; text: ColorPickerPageText }
 
 /** Native EyeDropper + the same copy-again result card as the page loupe picker. */
 export function runScreenColorPick(options: ScreenPickOptions): Promise<ColorPickerPageResult> {
@@ -558,10 +711,86 @@ export function runScreenColorPick(options: ScreenPickOptions): Promise<ColorPic
     return `hsl(${Math.round(h)}, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%)`
   }
 
-  function formatValue(format: ScreenPickOptions['format'], r: number, g: number, b: number): string {
+  function toHsv(r: number, g: number, b: number): string {
+    const rn = r / 255
+    const gn = g / 255
+    const bn = b / 255
+    const max = Math.max(rn, gn, bn)
+    const min = Math.min(rn, gn, bn)
+    const d = max - min
+    let h = 0
+    const s = max === 0 ? 0 : d / max
+    if (d !== 0) {
+      if (max === rn) h = (gn - bn) / d + (gn < bn ? 6 : 0)
+      else if (max === gn) h = (bn - rn) / d + 2
+      else h = (rn - gn) / d + 4
+      h *= 60
+    }
+    return `hsv(${Math.round(h)}, ${Math.round(s * 100)}%, ${Math.round(max * 100)}%)`
+  }
+
+  function formatValue(format: ScreenPickFormat, r: number, g: number, b: number): string {
     if (format === 'rgb') return `rgb(${r}, ${g}, ${b})`
     if (format === 'hsl') return toHsl(r, g, b)
+    if (format === 'hsv') return toHsv(r, g, b)
     return toHex(r, g, b)
+  }
+
+  const SHADE_L = [20, 30, 40, 50, 60, 70, 80, 90, 96]
+
+  function rgbToHslParts(r: number, g: number, b: number): { h: number; s: number; l: number } {
+    const rn = r / 255
+    const gn = g / 255
+    const bn = b / 255
+    const max = Math.max(rn, gn, bn)
+    const min = Math.min(rn, gn, bn)
+    const l = (max + min) / 2
+    const d = max - min
+    let h = 0
+    let s = 0
+    if (d !== 0) {
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+      if (max === rn) h = (gn - bn) / d + (gn < bn ? 6 : 0)
+      else if (max === gn) h = (bn - rn) / d + 2
+      else h = (rn - gn) / d + 4
+      h *= 60
+    }
+    return { h, s: s * 100, l: l * 100 }
+  }
+
+  function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: number } {
+    const sn = s / 100
+    const ln = l / 100
+    const c = (1 - Math.abs(2 * ln - 1)) * sn
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
+    const m = ln - c / 2
+    let rp = 0
+    let gp = 0
+    let bp = 0
+    if (h < 60) [rp, gp, bp] = [c, x, 0]
+    else if (h < 120) [rp, gp, bp] = [x, c, 0]
+    else if (h < 180) [rp, gp, bp] = [0, c, x]
+    else if (h < 240) [rp, gp, bp] = [0, x, c]
+    else if (h < 300) [rp, gp, bp] = [x, 0, c]
+    else [rp, gp, bp] = [c, 0, x]
+    return {
+      r: Math.round((rp + m) * 255),
+      g: Math.round((gp + m) * 255),
+      b: Math.round((bp + m) * 255),
+    }
+  }
+
+  function computeShades(r: number, g: number, b: number): string[] {
+    const { h, s } = rgbToHslParts(r, g, b)
+    const seen = new Set<string>()
+    return SHADE_L.map((light) => {
+      const { r: sr, g: sg, b: sb } = hslToRgb(h, s, light)
+      return toHex(sr, sg, sb)
+    }).filter((shade) => {
+      if (seen.has(shade)) return false
+      seen.add(shade)
+      return true
+    })
   }
 
   async function copyText(text: string): Promise<boolean> {
@@ -611,25 +840,60 @@ export function runScreenColorPick(options: ScreenPickOptions): Promise<ColorPic
         .btn { border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.08); color:inherit;
           border-radius:999px; padding:6px 10px; font-size:11px; font-weight:600; cursor:pointer; }
         .btn[data-active="true"] { background:rgba(255,255,255,.18); }
+        .btn.palette { display:inline-flex; align-items:center; gap:6px; margin-top:8px; width:100%; justify-content:center;
+          background:linear-gradient(135deg,rgba(99,102,241,.22),rgba(168,85,247,.18)); border-color:rgba(129,140,248,.35); }
+        .btn.palette svg { width:15px; height:15px; flex:none; }
+        .shades-label { margin:10px 0 6px; font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; opacity:.65; }
+        .shades { display:flex; gap:4px; overflow-x:auto; padding-bottom:2px; }
+        .shade { width:30px; height:30px; flex:none; border-radius:8px; cursor:pointer; border:1px solid rgba(255,255,255,.2); }
+        .shade[data-active="true"] { outline:2px solid #fff; outline-offset:2px; }
       </style>
       <div class="card" role="dialog">
         <div class="head"><span class="title"></span><button type="button" class="close">×</button></div>
         <div class="main"><span class="sw"></span><div><div class="val"></div><div class="status"></div></div></div>
+        <div class="shades-label"></div>
+        <div class="shades"></div>
         <div class="actions">
           <button type="button" class="btn" data-format="hex"></button>
           <button type="button" class="btn" data-format="rgb"></button>
           <button type="button" class="btn" data-format="hsl"></button>
+          <button type="button" class="btn" data-format="hsv"></button>
         </div>
+        <button type="button" class="btn palette" data-action="palette">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/>
+            <circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/>
+            <path d="M12 22a10 10 0 0 0 10-10c0-4-3-6-6-8-1.5 3-4.5 5-7 5.5"/>
+          </svg>
+          <span class="palette-label"></span>
+        </button>
       </div>`
     const card = sh.querySelector('.card') as HTMLElement
     card.style.setProperty('--c', hex)
     ;(sh.querySelector('.title') as HTMLElement).textContent = options.text.resultTitle
+    ;(sh.querySelector('.shades-label') as HTMLElement).textContent = options.text.shadesLabel
+    ;(sh.querySelector('.palette-label') as HTMLElement).textContent = options.text.generatePalette
     const valEl = sh.querySelector('.val') as HTMLElement
     const statusEl = sh.querySelector('.status') as HTMLElement
+    let activeR = r
+    let activeG = g
+    let activeB = b
+    let activeFormat = pickedFormat as ScreenPickFormat
     const labels: Record<string, string> = {
       hex: options.text.copyHex,
       rgb: options.text.copyRgb,
       hsl: options.text.copyHsl,
+      hsv: options.text.copyHsv,
+    }
+    const setCopiedStatus = (ok: boolean) => {
+      statusEl.textContent = ok ? options.text.copied : options.text.copyFailed
+      statusEl.classList.toggle('fail', !ok)
+    }
+    const refreshValueDisplay = () => {
+      valEl.textContent = formatValue(activeFormat, activeR, activeG, activeB)
+      const h = toHex(activeR, activeG, activeB)
+      card.style.setProperty('--c', h)
+      ;(sh.querySelector('.sw') as HTMLElement).style.background = h
     }
     const buttons = Array.from(sh.querySelectorAll<HTMLButtonElement>('.btn[data-format]'))
     for (const button of buttons) {
@@ -637,17 +901,45 @@ export function runScreenColorPick(options: ScreenPickOptions): Promise<ColorPic
       button.textContent = labels[fmt] ?? fmt
       button.dataset.active = fmt === pickedFormat ? 'true' : 'false'
       button.addEventListener('click', () => {
-        const value = formatValue(fmt as ScreenPickOptions['format'], r, g, b)
-        valEl.textContent = value
+        activeFormat = fmt as ScreenPickFormat
         for (const peer of buttons) peer.dataset.active = peer === button ? 'true' : 'false'
-        void copyText(value).then((ok) => {
-          statusEl.textContent = ok ? options.text.copied : options.text.copyFailed
-          statusEl.classList.toggle('fail', !ok)
-        })
+        const value = formatValue(activeFormat, activeR, activeG, activeB)
+        valEl.textContent = value
+        void copyText(value).then(setCopiedStatus)
       })
     }
-    const value = formatValue(pickedFormat as ScreenPickOptions['format'], r, g, b)
-    valEl.textContent = value
+    const shadesEl = sh.querySelector('.shades') as HTMLElement
+    const renderShades = () => {
+      shadesEl.replaceChildren()
+      const shades = computeShades(activeR, activeG, activeB)
+      const activeHex = toHex(activeR, activeG, activeB)
+      for (const shade of shades) {
+        const sw = document.createElement('button')
+        sw.type = 'button'
+        sw.className = 'shade'
+        sw.dataset.active = shade === activeHex ? 'true' : 'false'
+        sw.style.background = shade
+        sw.title = shade
+        sw.addEventListener('click', () => {
+          const parsed = parseHex(shade)
+          if (!parsed) return
+          activeR = parsed.r
+          activeG = parsed.g
+          activeB = parsed.b
+          renderShades()
+          refreshValueDisplay()
+          void copyText(formatValue(activeFormat, activeR, activeG, activeB)).then(setCopiedStatus)
+        })
+        shadesEl.append(sw)
+      }
+    }
+    renderShades()
+    sh.querySelector('[data-action="palette"]')?.addEventListener('click', () => {
+      chrome.runtime
+        .sendMessage({ type: 'COLOR_OPEN_PALETTE', hex: toHex(activeR, activeG, activeB) })
+        .catch(() => undefined)
+    })
+    refreshValueDisplay()
     statusEl.textContent = copied ? options.text.copied : options.text.copyFailed
     statusEl.classList.toggle('fail', !copied)
     const dismiss = () => {

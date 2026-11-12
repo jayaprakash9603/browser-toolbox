@@ -12,6 +12,7 @@ import {
 export const COLOR_PICKER_KEY = 'colorPicker'
 export const COLOR_PICKER_TOOL_ID = 'design.color-picker'
 export const COLOR_PICKER_ROUTE = '/tools/design/color-picker'
+export const PALETTE_GENERATOR_ROUTE = '/tools/design/palette-generator'
 export const COLOR_PICKER_HISTORY_LIMIT = 36
 
 export const COLOR_FORMATS = ['hex', 'rgb', 'hsl', 'hsv', 'hwb', 'cmyk', 'oklch'] as const

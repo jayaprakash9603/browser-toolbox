@@ -1,4 +1,10 @@
-import { COLOR_PICKER_ROUTE, normalizeHex, pageFormatFor, isColorFormat } from '@/core/color-picker/model'
+import {
+  COLOR_PICKER_ROUTE,
+  PALETTE_GENERATOR_ROUTE,
+  normalizeHex,
+  pageFormatFor,
+  isColorFormat,
+} from '@/core/color-picker/model'
 import { loadColorPickerState, recordPickedColor } from '@/core/color-picker/storage'
 import { getActiveWebTab } from '@/chrome/contentScriptClient'
 import { getChromeMessage } from '@/core/i18n/chromeMessages'
@@ -31,8 +37,20 @@ function pageText(): ColorPickerPageText {
     copyHex: getChromeMessage('colorCopyHex'),
     copyRgb: getChromeMessage('colorCopyRgb'),
     copyHsl: getChromeMessage('colorCopyHsl'),
+    copyHsv: getChromeMessage('colorCopyHsv'),
     close: getChromeMessage('colorResultClose'),
+    shadesLabel: getChromeMessage('colorShadesLabel'),
+    generatePalette: getChromeMessage('colorGeneratePalette'),
   }
+}
+
+export async function openPaletteGenerator(hex: string, windowId: number | undefined): Promise<void> {
+  const normalized = normalizeHex(hex)
+  if (!normalized) return
+  const route = `${PALETTE_GENERATOR_ROUTE}?color=${encodeURIComponent(normalized)}`
+  const intent = setPanelRouteIntent(route)
+  if (windowId != null) await openExtensionPanel({ windowId })
+  await intent
 }
 
 /** Pages Chrome will not let us capture or script open the panel tool instead. */
@@ -113,5 +131,11 @@ export function registerColorPicker(): void {
     const [active] = await chrome.tabs.query({ active: true, lastFocusedWindow: true })
     await pickColorOnPage(active)
     return { started: true }
+  })
+
+  registerMessageHandler('COLOR_OPEN_PALETTE', async (message, sender) => {
+    if (message.type !== 'COLOR_OPEN_PALETTE') return
+    await openPaletteGenerator(message.hex, sender.tab?.windowId)
+    return { ok: true }
   })
 }

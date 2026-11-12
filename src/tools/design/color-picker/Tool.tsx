@@ -1,7 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { CheckIcon, CopyIcon, MousePointerClickIcon, PaletteIcon, PipetteIcon, StarIcon, Trash2Icon, XIcon } from 'lucide-react'
+import {
+  ArrowUpRightIcon,
+  CheckIcon,
+  CopyIcon,
+  MousePointerClickIcon,
+  PaletteIcon,
+  PipetteIcon,
+  StarIcon,
+  Trash2Icon,
+  XIcon,
+} from 'lucide-react'
 
 import {
   COLOR_FORMATS,
@@ -297,10 +307,17 @@ export default function ColorPickerTool() {
 
               <Link
                 to={`/tools/design/palette-generator?color=${encodeURIComponent(hex)}`}
-                className="flex h-9 items-center justify-center gap-1.5 rounded-lg border bg-background text-[13px] font-medium transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
+                className="flex h-9 items-center justify-center gap-2 rounded-lg border bg-background text-[13px] font-medium transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
               >
-                <PaletteIcon className="size-4" aria-hidden />
+                <span className="relative grid size-7 place-items-center rounded-md bg-violet-500/15 text-violet-600 dark:text-violet-300">
+                  <PaletteIcon className="size-4" aria-hidden />
+                  <span
+                    className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-violet-500 ring-2 ring-background"
+                    aria-hidden
+                  />
+                </span>
                 {t('colorPicker.generatePalette', { defaultValue: 'Generate palette' })}
+                <ArrowUpRightIcon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
               </Link>
             </motion.div>
           ) : (

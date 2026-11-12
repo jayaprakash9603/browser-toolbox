@@ -72,7 +72,7 @@ export const workspaceStrings: Record<string, string> = {
   'readingList.excerpt.label': 'Selected text',
   'readingList.excerpt.save': 'Save to Reading List',
 
-  'colorPicker.generatePalette': 'Generate palette',
+  'colorPicker.generatePalette': 'Generate palette in sidebar',
   'web.copyMarkdown.emptySelection':
     'Nothing is selected on the page. Select some text and try again.',
   'htmlBundle.checkLinks': 'Check broken links',

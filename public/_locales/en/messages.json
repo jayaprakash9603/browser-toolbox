@@ -98,11 +98,23 @@
   "colorResultClose": {
     "message": "Close"
   },
+  "contextMenuColorPicker": {
+    "message": "Color picker"
+  },
   "contextMenuPickColorPage": {
-    "message": "Pick color from page"
+    "message": "Pick from page"
   },
   "contextMenuPickColorScreen": {
-    "message": "Pick color from screen"
+    "message": "Pick from screen"
+  },
+  "colorCopyHsv": {
+    "message": "Copy HSV"
+  },
+  "colorShadesLabel": {
+    "message": "Shades"
+  },
+  "colorGeneratePalette": {
+    "message": "Generate palette in sidebar"
   },
   "commandFormFill": {
     "message": "Fill the form on the current page with saved values"
