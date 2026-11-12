@@ -20,7 +20,7 @@ const TabsVariantContext = React.createContext<TabsVariant>('attached')
 const tabsListVariants = cva('inline-flex w-fit items-center text-muted-foreground', {
   variants: {
     variant: {
-      attached: 'h-auto w-full gap-1 rounded-full bg-muted p-1',
+      attached: 'h-auto w-full gap-0.5 rounded-full border border-border/40 bg-muted/90 p-1 shadow-inner',
       chips: 'h-auto gap-1 rounded-xl border bg-muted/40 p-1',
       pill: 'h-9 justify-center rounded-lg bg-muted p-1',
       underline: 'h-9 gap-0 rounded-none border-0 bg-transparent p-0',
@@ -35,7 +35,7 @@ const tabsTriggerVariants = cva(
     variants: {
       variant: {
         attached:
-          'relative z-10 min-h-9 flex-1 rounded-full border border-transparent bg-transparent px-3 py-1.5 text-sm text-muted-foreground transition-all duration-300 ease-out hover:text-foreground data-[state=active]:bg-background data-[state=active]:px-4 data-[state=active]:text-foreground data-[state=active]:shadow-xs motion-reduce:transition-none',
+          'relative z-10 min-h-9 flex-1 rounded-full border border-transparent bg-transparent px-3 py-1.5 text-sm font-medium text-muted-foreground transition-[color,padding] duration-300 ease-out hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:px-4 data-[state=active]:text-foreground data-[state=active]:shadow-none motion-reduce:transition-none',
         chips:
           'relative z-10 min-h-11 rounded-lg border border-transparent bg-transparent px-3 text-xs hover:bg-background/60 hover:text-foreground data-[state=active]:text-primary motion-reduce:transition-none',
         pill: 'relative z-10 h-7 flex-1 rounded-md px-3 hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground',
@@ -117,7 +117,7 @@ function Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive
 
 function TabsList({
   className,
-  variant = 'chips',
+  variant,
   scrollButtons = 'auto',
   fullWidth = false,
   children,
@@ -234,12 +234,14 @@ function TabsList({
           {...props}
         >
           {children}
-          {underline.width > 0 && resolved !== 'attached' && (
+          {underline.width > 0 && (
             <motion.span
               aria-hidden
               className={cn(
                 'pointer-events-none absolute top-0 left-0',
                 resolved === 'underline' && 'z-20 rounded-full bg-primary',
+                resolved === 'attached' &&
+                  'z-0 rounded-full border border-border/50 bg-background shadow-xs dark:border-border/60 dark:bg-card',
                 resolved === 'chips' &&
                   'z-0 rounded-lg border border-primary/25 bg-background shadow-sm',
                 resolved === 'pill' && 'z-0 rounded-md bg-background shadow-sm',
@@ -252,7 +254,11 @@ function TabsList({
                 height: underline.height,
               }}
               transition={
-                reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 400, damping: 40 }
+                reduceMotion
+                  ? { duration: 0 }
+                  : resolved === 'attached'
+                    ? { type: 'spring', stiffness: 520, damping: 38, mass: 0.75 }
+                    : { type: 'spring', stiffness: 400, damping: 40 }
               }
             />
           )}
