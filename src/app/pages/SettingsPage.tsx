@@ -7,6 +7,7 @@ import {
   VideoIcon,
   GlobeLockIcon,
   KeyboardIcon,
+  MousePointerClickIcon,
   ShieldCheckIcon,
   ShieldIcon,
   Trash2Icon,
@@ -48,6 +49,7 @@ import { KeyboardShortcutsSettingsCard } from '@/app/pages/settings/KeyboardShor
 import { NetMonitorSettingsSection } from '@/app/pages/settings/NetMonitorSettingsSection'
 import { PipSettingsSection } from '@/app/pages/settings/PipSettingsSection'
 import { ReactDevtoolsSettingsSection } from '@/app/pages/settings/ReactDevtoolsSettingsSection'
+import { ContextMenuSettingsSection } from '@/app/pages/settings/ContextMenuSettingsSection'
 import { SaveImageAsSettingsSection } from '@/app/pages/settings/SaveImageAsSettingsSection'
 import { SiteAccessSettingsSection } from '@/app/pages/settings/SiteAccessSettingsSection'
 import { SitesSettingsSection } from '@/app/pages/settings/SitesSettingsSection'
@@ -80,6 +82,7 @@ export default function SettingsPage() {
     { id: 'siteAccess', icon: GlobeLockIcon, label: t('settings.siteAccess') },
     { id: 'sites', icon: GlobeIcon, label: t('settings.groupSites') },
     { id: 'features', icon: KeyboardIcon, label: t('settings.groupFeatures') },
+    { id: 'contextMenu', icon: MousePointerClickIcon, label: t('settings.contextMenu.title') },
     { id: 'clipboard', icon: ClipboardIcon, label: t('settings.clipboard') },
     { id: 'data', icon: Trash2Icon, label: t('settings.data') },
   ]
@@ -232,6 +235,15 @@ export default function SettingsPage() {
           <PipSettingsSection />
           <ReactDevtoolsSettingsSection />
           <NetMonitorSettingsSection />
+        </SettingsGroup>
+
+        <SettingsGroup
+          id="contextMenu"
+          icon={MousePointerClickIcon}
+          title={t('settings.contextMenu.title')}
+          description={t('settings.contextMenu.description')}
+        >
+          <ContextMenuSettingsSection />
         </SettingsGroup>
 
         <SettingsGroup id="clipboard" icon={ClipboardIcon} title={t('settings.clipboard')}>

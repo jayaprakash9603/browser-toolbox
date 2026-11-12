@@ -183,10 +183,61 @@
     "message": "Clipboard"
   },
   "clipboardPanelSearch": {
-    "message": "Search clipboard"
+    "message": "Search clipboard…"
   },
   "clipboardPanelEmpty": {
     "message": "Nothing copied yet. Copy text on any page to see it here."
+  },
+  "clipboardPanelNoMatches": {
+    "message": "Nothing in this view yet"
+  },
+  "clipboardPanelFilterAll": {
+    "message": "All"
+  },
+  "clipboardPanelFilterLinks": {
+    "message": "Links"
+  },
+  "clipboardPanelFilterCode": {
+    "message": "Code"
+  },
+  "clipboardPanelFilterText": {
+    "message": "Text"
+  },
+  "clipboardPanelFilterLabel": {
+    "message": "Filter clipboard items"
+  },
+  "clipboardPanelToday": {
+    "message": "Today"
+  },
+  "clipboardPanelYesterday": {
+    "message": "Yesterday"
+  },
+  "clipboardPanelEarlier": {
+    "message": "Earlier"
+  },
+  "clipboardPanelCharacter": {
+    "message": "character"
+  },
+  "clipboardPanelCharacters": {
+    "message": "characters"
+  },
+  "clipboardPanelWords": {
+    "message": "words"
+  },
+  "clipboardPanelJustNow": {
+    "message": "just now"
+  },
+  "clipboardPanelMinAgo": {
+    "message": "min. ago"
+  },
+  "clipboardPanelHrAgo": {
+    "message": "hr. ago"
+  },
+  "clipboardPanelHrsAgo": {
+    "message": "hrs. ago"
+  },
+  "clipboardPanelDaysAgo": {
+    "message": "days ago"
   },
   "clipboardPanelCopy": {
     "message": "Copy"
@@ -202,6 +253,9 @@
   },
   "clipboardPinnedLabel": {
     "message": "Pinned"
+  },
+  "clipboardPanelRecent": {
+    "message": "Recent"
   },
   "contextMenuPauseAdblock": {
     "message": "Pause ad blocking on this site"

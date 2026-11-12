@@ -4,6 +4,7 @@ import { initStorage } from '@/core/storage'
 
 import { registerAdblock, syncAdblockState } from './adblock'
 import { enqueueContextMenuRebuild } from './contextMenus'
+import { registerContextMenuSettingsSync } from './contextMenuSettings'
 import {
   bindSiteQuickActionMenuRebuild,
   handleSiteQuickActionClick,
@@ -175,6 +176,8 @@ chrome.commands.onCommand.addListener((command, tab) => {
 })
 
 const rebuildMenus = () => enqueueContextMenuRebuild()
+
+safeRegister('contextMenuSettings', registerContextMenuSettingsSync)
 
 safeRegister('panelAction', () => configurePanelAction().then(() => undefined))
 safeRegister('apiClientSend', registerApiClientSendHandler)

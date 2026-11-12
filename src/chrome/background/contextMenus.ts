@@ -1,5 +1,7 @@
 import { getChromeMessage } from '@/core/i18n/chromeMessages'
 import { createLogger } from '@/core/logging'
+import { resolveContextMenuVisibility } from '@/core/settings/contextMenuVisibility'
+import { getSettings } from '@/features/settings/settingsService'
 
 import { registerContextMenuOnShown } from './contextMenuShown'
 import { buildImageConvertMenus } from './imageConvert'
@@ -34,41 +36,57 @@ function createContextMenu(properties: chrome.contextMenus.CreateProperties): vo
 }
 
 async function rebuildContextMenusOnce(): Promise<void> {
+  const settings = await getSettings()
+  const menu = resolveContextMenuVisibility(settings)
+
   await chrome.contextMenus.removeAll()
-  createContextMenu({
-    id: 'toolbox.open',
-    title: getChromeMessage('contextMenuOpen'),
-    contexts: ['all'],
-  })
-  buildSiteQuickActionMenus(createContextMenu)
-  buildColorPickerMenus(createContextMenu)
-  buildClipboardPanelMenus(createContextMenu)
-  const builders = [
-    { name: 'imageConvert', run: buildImageConvertMenus },
-    { name: 'pip', run: buildPipMenus },
-    { name: 'chatPulse', run: buildChatPulseMenus },
+  if (menu.openPanel) {
+    createContextMenu({
+      id: 'toolbox.open',
+      title: getChromeMessage('contextMenuOpen'),
+      contexts: ['all'],
+    })
+  }
+  if (menu.siteQuickActions) buildSiteQuickActionMenus(createContextMenu)
+  if (menu.colorPicker) buildColorPickerMenus(createContextMenu)
+  if (menu.clipboardHistory && settings.clipboardHistoryEnabled) {
+    buildClipboardPanelMenus(createContextMenu)
+  }
+  const builders: { name: string; run: () => void | Promise<void>; enabled: boolean }[] = [
+    { name: 'imageConvert', run: buildImageConvertMenus, enabled: menu.saveImageAs },
+    { name: 'pip', run: buildPipMenus, enabled: menu.pictureInPicture },
+    { name: 'chatPulse', run: buildChatPulseMenus, enabled: menu.chatPulse },
   ]
-  try {
-    buildScreenshotMenus(createContextMenu)
-  } catch (error) {
-    logger.warn('screenshot menu build failed', error)
+  if (menu.screenshot) {
+    try {
+      buildScreenshotMenus(createContextMenu)
+    } catch (error) {
+      logger.warn('screenshot menu build failed', error)
+    }
   }
-  try {
-    buildRecorderMenus(createContextMenu)
-  } catch (error) {
-    logger.warn('recorder menu build failed', error)
+  if (menu.screenRecorder) {
+    try {
+      buildRecorderMenus(createContextMenu)
+    } catch (error) {
+      logger.warn('recorder menu build failed', error)
+    }
   }
-  try {
-    buildTaskMenus(createContextMenu)
-  } catch (error) {
-    logger.warn('tasks menu build failed', error)
+  if (menu.tasks) {
+    try {
+      buildTaskMenus(createContextMenu)
+    } catch (error) {
+      logger.warn('tasks menu build failed', error)
+    }
   }
-  try {
-    buildReadingListMenus(createContextMenu)
-  } catch (error) {
-    logger.warn('reading list menu build failed', error)
+  if (menu.readingList) {
+    try {
+      buildReadingListMenus(createContextMenu)
+    } catch (error) {
+      logger.warn('reading list menu build failed', error)
+    }
   }
-  for (const { name, run } of builders) {
+  for (const { name, run, enabled } of builders) {
+    if (!enabled) continue
     try {
       await run()
     } catch (error) {

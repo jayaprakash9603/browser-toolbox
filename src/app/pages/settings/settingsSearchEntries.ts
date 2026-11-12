@@ -25,6 +25,36 @@ export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
     keywords: ['shortcut', 'hotkey', 'keyboard', 'alt+p', 'ctrl+k'],
   },
   {
+    id: 'contextMenuClipboardHistory',
+    labelKey: 'settings.contextMenu.clipboardHistory',
+    fallbackLabel: 'Clipboard in right-click menu',
+    keywords: ['context menu', 'right click', 'clipboard', 'overlay'],
+  },
+  {
+    id: 'contextMenuColorPicker',
+    labelKey: 'settings.contextMenu.colorPicker',
+    fallbackLabel: 'Color picker in right-click menu',
+    keywords: ['context menu', 'right click', 'color', 'eyedropper'],
+  },
+  {
+    id: 'contextMenuOpenPanel',
+    labelKey: 'settings.contextMenu.openPanel',
+    fallbackLabel: 'Open panel in right-click menu',
+    keywords: ['context menu', 'right click', 'open panel'],
+  },
+  {
+    id: 'contextMenuScreenshot',
+    labelKey: 'settings.contextMenu.screenshot',
+    fallbackLabel: 'Capture in right-click menu',
+    keywords: ['context menu', 'right click', 'screenshot', 'capture'],
+  },
+  {
+    id: 'contextMenuScreenRecorder',
+    labelKey: 'settings.contextMenu.screenRecorder',
+    fallbackLabel: 'Record screen in right-click menu',
+    keywords: ['context menu', 'right click', 'record'],
+  },
+  {
     id: 'theme',
     labelKey: 'settings.theme',
     fallbackLabel: 'Theme',

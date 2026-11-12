@@ -1,5 +1,10 @@
 import { STORAGE_KEYS } from '@/core/constants'
 import { requestAllSitesAccess } from '@/core/permissions/siteAccess'
+import {
+  DEFAULT_CONTEXT_MENU_VISIBILITY,
+  resolveContextMenuVisibility,
+  type ContextMenuVisibility,
+} from '@/core/settings/contextMenuVisibility'
 import { get, set } from '@/core/storage'
 import { DEFAULT_PALETTE, isPaletteId, type PaletteId } from '@/shared/lib/theme/palettes'
 
@@ -15,6 +20,7 @@ export interface Settings {
   clipboardCaptureFromPages: boolean
   clipboardHistoryLimit: number
   clipboardRetentionDays: number
+  contextMenu: ContextMenuVisibility
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -25,6 +31,7 @@ export const DEFAULT_SETTINGS: Settings = {
   clipboardCaptureFromPages: true,
   clipboardHistoryLimit: 100,
   clipboardRetentionDays: 0,
+  contextMenu: DEFAULT_CONTEXT_MENU_VISIBILITY,
 }
 
 export function isPageClipboardCaptureOn(settings: Partial<Settings> | undefined): boolean {
@@ -43,6 +50,7 @@ export async function getSettings(): Promise<Settings> {
   ) {
     merged.clipboardCaptureFromPages = true
   }
+  merged.contextMenu = resolveContextMenuVisibility(merged)
   return merged
 }
 
@@ -50,7 +58,13 @@ export const SETTINGS_LOCAL_UPDATE_EVENT = 'browser-toolbox:settings-local'
 
 export async function updateSettings(patch: Partial<Settings>): Promise<Settings> {
   const current = await getSettings()
-  const next = { ...current, ...patch }
+  const next: Settings = {
+    ...current,
+    ...patch,
+    contextMenu: patch.contextMenu
+      ? { ...current.contextMenu, ...patch.contextMenu }
+      : current.contextMenu,
+  }
   const captureTurningOn = isPageClipboardCaptureOn(next) && !isPageClipboardCaptureOn(current)
   if (captureTurningOn && !(await requestAllSitesAccess())) return current
   await set(STORAGE_KEYS.settings, next)
