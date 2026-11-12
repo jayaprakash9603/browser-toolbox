@@ -43,7 +43,7 @@ import { initShortcutsOnStartup, registerShortcuts, resolveChromeCommand } from 
 import { registerApiClientSendHandler } from './api-client-send'
 import { registerCaptureHandler } from './capture'
 import { registerScreenshotHandlers } from './screenshot'
-import { registerRecorder } from './recorder'
+import { handleRecorderMenuClick, isRecorderMenuAction, registerRecorder } from './recorder'
 import { registerHtmlBundleJobHandlers } from './htmlBundleJob'
 import { registerImageDownloadJobHandlers } from './imageDownloadJob'
 import { registerNetMonitor } from './netmon'
@@ -140,6 +140,10 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (menuItemId.startsWith('toolbox.screenshot.')) {
     const mode = screenshotModeFromMenuAction(menuItemId)
     if (mode) void startScreenshot(mode as ScreenshotMode, tab)
+    return
+  }
+  if (isRecorderMenuAction(menuItemId)) {
+    void handleRecorderMenuClick(menuItemId, tab)
     return
   }
   if (menuItemId === 'toolbox.open' || menuItemId.startsWith('toolbox.open.')) {

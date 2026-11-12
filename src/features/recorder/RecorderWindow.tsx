@@ -1,17 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CircleStopIcon, MicIcon, MonitorIcon, PauseIcon, PlayIcon } from 'lucide-react'
+import { MicIcon } from 'lucide-react'
 
 import { showRecorderCountdown } from '@/chrome/background/recorder/controls'
 import { isExtensionMessage } from '@/core/messaging/types'
-import { formatDuration } from '@/core/recorder/format'
 import { loadRecorderSettings, videoConstraints } from '@/core/recorder/settings'
 import type { RecorderQuality, RecordingSource } from '@/core/recorder/types'
 import { Button } from '@/shared/components/ui/button'
 
 import { chooseDesktopSource } from './desktopPicker'
 import { startRecording, type ActiveRecording } from './engine'
-import { useRecorderSession } from './useRecorder'
 
 function reportMic(granted: boolean): void {
   void chrome.runtime.sendMessage({ type: 'RECORDER_MIC_RESULT', granted }).catch(() => undefined)
@@ -83,7 +81,6 @@ async function captureDesktop(streamId: string, withAudio: boolean, quality: Rec
 /** Pinned recorder tab: opens Chrome's share picker on load and owns the recording. */
 function PageRecorder({ id, source, returnTabId }: { id: string; source: RecordingSource; returnTabId?: number }) {
   const { t } = useTranslation()
-  const { session, elapsed } = useRecorderSession()
   const [stage, setStage] = useState<Stage>('picking')
   const [error, setError] = useState('')
   const recordingRef = useRef<ActiveRecording | null>(null)
@@ -171,33 +168,19 @@ function PageRecorder({ id, source, returnTabId }: { id: string; source: Recordi
     void run()
   }, [id, source, returnTabId, finish])
 
-  const paused = session?.phase === 'paused'
-
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">
-      <MonitorIcon className="size-10 text-primary" />
-      {stage === 'picking' && <p className="text-sm text-muted-foreground">{t('recorder.page.picking')}</p>}
-      {stage === 'recording' && (
-        <>
-          <p className="flex items-center gap-2 text-2xl font-semibold tabular-nums">
-            <span className={`size-3 rounded-full ${paused ? 'bg-amber-500' : 'animate-pulse bg-red-500'}`} />
-            {formatDuration(elapsed)}
-          </p>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => send({ type: paused ? 'RECORDER_RESUME' : 'RECORDER_PAUSE' })}>
-              {paused ? <PlayIcon className="size-4" /> : <PauseIcon className="size-4" />}
-              {t(paused ? 'recorder.resume' : 'recorder.pause')}
-            </Button>
-            <Button variant="destructive" onClick={() => send({ type: 'RECORDER_STOP' })}>
-              <CircleStopIcon className="size-4" />
-              {t('recorder.stop')}
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">{t('recorder.page.keepOpen')}</p>
-        </>
+    <div className="min-h-screen bg-[#0a0a0a] text-[#555]">
+      <p className="sr-only">
+        {stage === 'picking' && t('recorder.page.picking')}
+        {stage === 'recording' && t('recorder.page.backgroundHint')}
+        {stage === 'saving' && t('recorder.saving')}
+        {stage === 'error' && error}
+      </p>
+      {stage === 'error' && (
+        <p className="px-4 py-3 text-center text-xs text-red-400" role="alert">
+          {error}
+        </p>
       )}
-      {stage === 'saving' && <p className="text-sm text-muted-foreground">{t('recorder.saving')}</p>}
-      {stage === 'error' && <p className="text-sm text-destructive">{error}</p>}
     </div>
   )
 }

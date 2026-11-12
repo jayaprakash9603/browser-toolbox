@@ -4,6 +4,18 @@ import type { RecorderSession } from '@/core/recorder/types'
  * Runs in the recorded tab (isolated world). Builds a small draggable control pill in a
  * shadow root and listens for RECORDER_STATE broadcasts to keep the timer in sync.
  */
+export function unmountRecorderPill(): void {
+  type PillWindow = Window & { __tbxRecorderPill?: (s: RecorderSession | null) => void }
+  const w = window as PillWindow
+  w.__tbxRecorderPill?.(null)
+}
+
+const SOURCE_LABEL: Record<RecorderSession['source'], string> = {
+  tab: 'Tab',
+  window: 'Window',
+  screen: 'Screen',
+}
+
 export function mountRecorderPill(initial: RecorderSession): void {
   const HOST_ID = 'toolbox-recorder-pill'
   type PillWindow = Window & { __tbxRecorderPill?: (s: RecorderSession | null) => void }
@@ -15,31 +27,42 @@ export function mountRecorderPill(initial: RecorderSession): void {
 
   const host = document.createElement('div')
   host.id = HOST_ID
-  host.style.cssText = 'all:initial;position:fixed;left:16px;bottom:16px;z-index:2147483647;'
+  host.style.cssText =
+    'all:initial;position:fixed;right:12px;top:50%;transform:translateY(-50%);z-index:2147483647;'
   const root = host.attachShadow({ mode: 'closed' })
   const style = document.createElement('style')
   style.textContent = `
-    .pill{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;
-      background:rgba(17,17,17,.88);color:#fff;font:600 12px/1 system-ui,sans-serif;
-      box-shadow:0 4px 16px rgba(0,0,0,.35);cursor:grab;user-select:none}
-    .dot{width:10px;height:10px;border-radius:50%;background:#ef4444}
-    .paused .dot{background:#f59e0b}
-    .time{min-width:40px;font-variant-numeric:tabular-nums}
-    button{all:unset;cursor:pointer;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.14)}
-    button:hover{background:rgba(255,255,255,.26)}
-    button.stop{background:#ef4444}
+    .pill{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 7px;border-radius:12px;
+      background:rgba(17,17,17,.92);color:#fff;font:600 11px/1.2 system-ui,sans-serif;
+      box-shadow:0 4px 20px rgba(0,0,0,.4);cursor:grab;user-select:none;border:1px solid rgba(255,255,255,.08);
+      min-width:52px}
+  .dot{width:10px;height:10px;border-radius:50%;background:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.35)}
+  .paused .dot{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.35)}
+  .label{font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;opacity:.75}
+  .time{font-size:12px;min-width:44px;text-align:center;font-variant-numeric:tabular-nums}
+  .row{display:flex;flex-direction:column;gap:4px;width:100%}
+  button{all:unset;cursor:pointer;padding:5px 0;border-radius:8px;background:rgba(255,255,255,.12);
+    text-align:center;font-size:10px;font-weight:600}
+  button:hover{background:rgba(255,255,255,.22)}
+  button.stop{background:#ef4444}
+  button.stop:hover{background:#dc2626}
   `
   const pill = document.createElement('div')
   pill.className = 'pill'
   const dot = document.createElement('span')
   dot.className = 'dot'
+  const label = document.createElement('span')
+  label.className = 'label'
   const time = document.createElement('span')
   time.className = 'time'
+  const row = document.createElement('div')
+  row.className = 'row'
   const pauseBtn = document.createElement('button')
   const stopBtn = document.createElement('button')
   stopBtn.className = 'stop'
   stopBtn.textContent = 'Stop'
-  pill.append(dot, time, pauseBtn, stopBtn)
+  row.append(pauseBtn, stopBtn)
+  pill.append(dot, label, time, row)
   root.append(style, pill)
   document.documentElement.appendChild(host)
 
@@ -57,11 +80,11 @@ export function mountRecorderPill(initial: RecorderSession): void {
     if (!session) return
     const stopping = session.phase === 'stopping'
     pill.classList.toggle('paused', session.phase === 'paused' || stopping)
+    label.textContent = SOURCE_LABEL[session.source]
     time.textContent =
-      session.phase === 'pending' ? 'Starting' : stopping ? 'Saving' : fmt(elapsed(session))
+      session.phase === 'pending' ? '…' : stopping ? 'Save' : fmt(elapsed(session))
     pauseBtn.textContent = session.phase === 'paused' ? 'Resume' : 'Pause'
-    pauseBtn.style.display = session.phase === 'pending' || stopping ? 'none' : ''
-    stopBtn.style.display = stopping ? 'none' : ''
+    row.style.display = session.phase === 'pending' || stopping ? 'none' : ''
   }
   const timer = window.setInterval(render, 500)
   render()
@@ -91,9 +114,10 @@ export function mountRecorderPill(initial: RecorderSession): void {
   })
   pill.addEventListener('pointermove', (e) => {
     if (!drag) return
+    host.style.right = 'auto'
+    host.style.transform = 'none'
     host.style.left = `${Math.max(0, e.clientX - drag.dx)}px`
     host.style.top = `${Math.max(0, e.clientY - drag.dy)}px`
-    host.style.bottom = 'auto'
   })
   pill.addEventListener('pointerup', () => (drag = null))
 

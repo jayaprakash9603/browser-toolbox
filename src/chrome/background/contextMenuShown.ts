@@ -1,6 +1,7 @@
 import { PIP_MENU_ID } from '@/core/pip'
 import { createLogger } from '@/core/logging'
 
+import { refreshRecorderMenuVisibility } from './recorder/contextMenus'
 import { refreshSiteQuickActionMenus } from './siteQuickActions'
 import { tabHasPlayableVideo } from './pip'
 
@@ -55,5 +56,6 @@ export function registerContextMenuOnShown(): void {
   api.onShown.addListener((info, tab) => {
     void refreshSiteQuickActionMenus(tab)
     void refreshPipMenuVisibility(info, tab)
+    void refreshRecorderMenuVisibility()
   })
 }

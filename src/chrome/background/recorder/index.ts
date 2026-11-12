@@ -17,11 +17,24 @@ import { hasCapability } from '@/platform/capabilities'
 
 import { acquireOffscreen, releaseOffscreen } from '../offscreen'
 import {
+  isRecorderMenuAction,
+  recorderSourceFromMenuAction,
+  RECORDER_STOP_MENU_ID,
+  syncRecorderContextMenu,
+} from './contextMenus'
+import {
   mountMicPermissionFrame,
   mountRecorderPill,
   removeMicPermissionFrame,
   showRecorderCountdown,
 } from './controls'
+import {
+  clearRoamingPill,
+  roamingPillHostTabId,
+  syncRoamingPill,
+  syncRoamingPillToFocused,
+  usesRoamingPill,
+} from './pillSync'
 
 const logger = createLogger('recorder')
 const OFFSCREEN_OWNER = 'recorder'
@@ -58,17 +71,31 @@ async function updateBadge(session: RecorderSession | null): Promise<void> {
   }
 }
 
+function recorderControlTabIds(session: RecorderSession | null, prev?: RecorderSession | null): number[] {
+  const ids = new Set<number>()
+  if (prev?.tabId != null) ids.add(prev.tabId)
+  if (prev?.returnTabId != null) ids.add(prev.returnTabId)
+  if (session?.tabId != null) ids.add(session.tabId)
+  if (session?.returnTabId != null) ids.add(session.returnTabId)
+  const roam = roamingPillHostTabId()
+  if (roam != null) ids.add(roam)
+  return [...ids]
+}
+
 async function setSession(next: RecorderSession | null): Promise<void> {
-  const prevTab = current?.tabId
+  const prev = current
   current = next
   loaded = true
   if (next) await chrome.storage.session.set({ [RECORDER_SESSION_KEY]: next })
   else await chrome.storage.session.remove(RECORDER_SESSION_KEY)
   await updateBadge(next)
-  const tabId = next?.tabId ?? prevTab
-  if (tabId != null) {
-    void chrome.tabs.sendMessage(tabId, { type: 'RECORDER_STATE', session: next }).catch(() => undefined)
+  const payload = { type: 'RECORDER_STATE' as const, session: next }
+  for (const tabId of recorderControlTabIds(next, prev)) {
+    void chrome.tabs.sendMessage(tabId, payload).catch(() => undefined)
   }
+  if (!next) void clearRoamingPill()
+  else if (usesRoamingPill(next)) void syncRoamingPillToFocused(next)
+  syncRecorderContextMenu(next)
 }
 
 function broadcastControl(id: string, action: 'pause' | 'resume' | 'stop'): void {
@@ -130,6 +157,8 @@ async function startPageCapture(id: string, source: RecordingSource, tab?: chrom
   await setSession(
     createSession(id, source, 'page', Date.now(), { pageTabId: page.id, returnTabId, windowId: page.windowId }),
   )
+  if (current && returnTabId != null) await syncRoamingPill(current, returnTabId)
+  else if (current) await syncRoamingPillToFocused(current)
 }
 
 export async function startRecorder(
@@ -209,6 +238,28 @@ async function requestMicrophone(): Promise<{ granted: boolean; fallback?: boole
     .catch(() => undefined)
   return { granted }
 }
+
+export async function handleRecorderMenuClick(menuItemId: string, tab?: chrome.tabs.Tab): Promise<void> {
+  if (menuItemId === RECORDER_STOP_MENU_ID) {
+    await stopRecorder()
+    return
+  }
+  const source = recorderSourceFromMenuAction(menuItemId)
+  if (!source) return
+  try {
+    await startRecorder(source, await loadRecorderSettings(), tab)
+  } catch (error) {
+    logger.warn('context menu start failed', error)
+    void chrome.notifications.create({
+      type: 'basic',
+      iconUrl: chrome.runtime.getURL('public/icons/icon128.png'),
+      title: 'Screen recorder',
+      message: error instanceof Error ? error.message : String(error),
+    })
+  }
+}
+
+export { isRecorderMenuAction }
 
 export async function toggleRecorderFromCommand(tab?: chrome.tabs.Tab): Promise<void> {
   if (await getSession()) {
@@ -302,5 +353,23 @@ export function registerRecorder(): void {
       // The recorder tab owns the MediaRecorder; closing it ends the session.
       else if (session.host === 'page' && session.pageTabId === tabId) void setSession(null)
     })
+  })
+
+  chrome.tabs.onActivated.addListener(({ tabId }) => {
+    void getSession().then((session) => {
+      if (session && usesRoamingPill(session)) void syncRoamingPill(session, tabId)
+    })
+  })
+
+  chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (!tab.active || changeInfo.status !== 'complete') return
+    void getSession().then((session) => {
+      if (session && usesRoamingPill(session)) void syncRoamingPill(session, tabId)
+    })
+  })
+
+  void getSession().then(async (session) => {
+    syncRecorderContextMenu(session)
+    if (session && usesRoamingPill(session)) await syncRoamingPillToFocused(session)
   })
 }

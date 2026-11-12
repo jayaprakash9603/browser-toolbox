@@ -35,6 +35,21 @@
   "contextMenuScreenshot": {
     "message": "Capture"
   },
+  "contextMenuRecord": {
+    "message": "Record screen"
+  },
+  "contextMenuRecordTab": {
+    "message": "This tab"
+  },
+  "contextMenuRecordWindow": {
+    "message": "This window"
+  },
+  "contextMenuRecordScreen": {
+    "message": "Entire screen"
+  },
+  "contextMenuRecordStop": {
+    "message": "Stop recording"
+  },
   "commandTogglePip": {
     "message": "Toggle Picture-in-Picture for the current tab"
   },

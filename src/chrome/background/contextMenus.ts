@@ -5,6 +5,7 @@ import { registerContextMenuOnShown } from './contextMenuShown'
 import { buildImageConvertMenus } from './imageConvert'
 import { buildPipMenus } from './pip'
 import { buildChatPulseMenus } from './sites/whatsappAnalytics'
+import { buildRecorderMenus } from './recorder/contextMenus'
 import { buildScreenshotMenus } from './screenshot/contextMenus'
 import { buildSiteQuickActionMenus } from './siteQuickActions'
 import { buildTaskMenus } from './tasks'
@@ -47,6 +48,11 @@ async function rebuildContextMenusOnce(): Promise<void> {
     buildScreenshotMenus(createContextMenu)
   } catch (error) {
     logger.warn('screenshot menu build failed', error)
+  }
+  try {
+    buildRecorderMenus(createContextMenu)
+  } catch (error) {
+    logger.warn('recorder menu build failed', error)
   }
   try {
     buildTaskMenus(createContextMenu)
