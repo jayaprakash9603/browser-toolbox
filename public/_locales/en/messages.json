@@ -176,6 +176,33 @@
   "contextMenuOpen": {
     "message": "Open One Panel"
   },
+  "contextMenuClipboardPanel": {
+    "message": "Clipboard history"
+  },
+  "clipboardPanelTitle": {
+    "message": "Clipboard"
+  },
+  "clipboardPanelSearch": {
+    "message": "Search clipboard"
+  },
+  "clipboardPanelEmpty": {
+    "message": "Nothing copied yet. Copy text on any page to see it here."
+  },
+  "clipboardPanelCopy": {
+    "message": "Copy"
+  },
+  "clipboardPanelDelete": {
+    "message": "Delete"
+  },
+  "clipboardPanelPin": {
+    "message": "Pin"
+  },
+  "clipboardPanelUnpin": {
+    "message": "Unpin"
+  },
+  "clipboardPinnedLabel": {
+    "message": "Pinned"
+  },
   "contextMenuPauseAdblock": {
     "message": "Pause ad blocking on this site"
   },

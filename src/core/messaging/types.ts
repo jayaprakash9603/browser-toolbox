@@ -10,6 +10,7 @@ export type ExtensionMessage =
   | { type: 'CLIPBOARD_CAPTURE_REQUEST' }
   | { type: 'CLIPBOARD_WATCH'; active: boolean }
   | { type: 'CLIPBOARD_CAPTURED'; text: string }
+  | { type: 'CLIPBOARD_PANEL_MUTATE'; op: 'delete' | 'pin'; id: string; pinned?: boolean }
   | { type: 'CONTEXT_MENU_ACTION'; actionId: string; selectionText?: string }
   | { type: 'PICK_ELEMENT_START' }
   | { type: 'PICK_ELEMENT_CANCEL' }
@@ -329,6 +330,7 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'CLIPBOARD_CAPTURE_REQUEST',
   'CLIPBOARD_WATCH',
   'CLIPBOARD_CAPTURED',
+  'CLIPBOARD_PANEL_MUTATE',
   'CONTEXT_MENU_ACTION',
   'PICK_ELEMENT_START',
   'PICK_ELEMENT_CANCEL',

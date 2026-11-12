@@ -61,6 +61,8 @@ import { registerElementInspector } from './elementInspector'
 import { registerFontInspector } from './fontInspector'
 import { registerInspectorFrameFocus } from './inspectorFrameFocus'
 import { pickColorFromScreen, pickColorOnPage, registerColorPicker } from './colorPicker'
+import { openClipboardPanelOnTab, registerClipboardPanel } from './clipboardPanel'
+import { isClipboardPanelMenuItem } from './clipboardPanel/menus'
 import {
   COLOR_PICK_PAGE_MENU_ID,
   COLOR_PICK_SCREEN_MENU_ID,
@@ -147,6 +149,10 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     else if (menuItemId === COLOR_PICK_PAGE_MENU_ID) void pickColorOnPage(tab)
     return
   }
+  if (isClipboardPanelMenuItem(menuItemId)) {
+    void openClipboardPanelOnTab(tab)
+    return
+  }
   if (menuItemId.startsWith('toolbox.screenshot.')) {
     const mode = screenshotModeFromMenuAction(menuItemId)
     if (mode) void startScreenshot(mode as ScreenshotMode, tab)
@@ -204,6 +210,7 @@ safeRegister('elementInspector', registerElementInspector)
 safeRegister('fontInspector', registerFontInspector)
 safeRegister('inspectorFrameFocus', registerInspectorFrameFocus)
 safeRegister('colorPicker', registerColorPicker)
+safeRegister('clipboardPanel', registerClipboardPanel)
 safeRegister('formMemory', registerFormMemory)
 safeRegister('reactDevtools', registerReactDevtools)
 safeRegister('scriptStudio', registerScriptStudio)

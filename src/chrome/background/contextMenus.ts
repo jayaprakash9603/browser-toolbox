@@ -7,6 +7,7 @@ import { buildPipMenus } from './pip'
 import { buildChatPulseMenus } from './sites/whatsappAnalytics'
 import { buildRecorderMenus } from './recorder/contextMenus'
 import { buildScreenshotMenus } from './screenshot/contextMenus'
+import { buildClipboardPanelMenus } from './clipboardPanel/menus'
 import { buildColorPickerMenus } from './colorPicker/menus'
 import { buildSiteQuickActionMenus } from './siteQuickActions'
 import { buildTaskMenus } from './tasks'
@@ -41,6 +42,7 @@ async function rebuildContextMenusOnce(): Promise<void> {
   })
   buildSiteQuickActionMenus(createContextMenu)
   buildColorPickerMenus(createContextMenu)
+  buildClipboardPanelMenus(createContextMenu)
   const builders = [
     { name: 'imageConvert', run: buildImageConvertMenus },
     { name: 'pip', run: buildPipMenus },
