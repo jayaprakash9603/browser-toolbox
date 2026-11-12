@@ -14,6 +14,7 @@ import { collectPageSvgs, svgToJsx } from './collectors/svgs'
 import { collectPageLinks, locatePageLink } from './collectors/links'
 import { clearPageLinkMarks, markPageLinks } from './collectors/linkMarks'
 import { isFontInspectorActive, setFontInspector, setWireframe } from './designModes'
+import { handleInspectorFrameFocus } from './inspectorFrameFocus'
 import { getInspectorState, runInspectorAction, setInspector } from './pageInspector/inspector'
 import type { InspectorAction, InspectorLabels, PageInspectorOptions } from './pageInspector/model'
 import { articleHtmlToMarkdown, selectionHtmlToMarkdown } from '@/core/text/htmlToMarkdown'
@@ -160,7 +161,7 @@ const contentScope = window as unknown as { __toolboxContentScript?: boolean }
 const contentAlreadyInstalled = Boolean(contentScope.__toolboxContentScript)
 contentScope.__toolboxContentScript = true
 
-if (!contentAlreadyInstalled) chrome.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
+if (!contentAlreadyInstalled) chrome.runtime.onMessage.addListener((raw, sender, sendResponse) => {
   if (!isExtensionMessage(raw)) return false
   switch (raw.type) {
     case 'CONTENT_SCRIPT_PING':
@@ -244,6 +245,10 @@ if (!contentAlreadyInstalled) chrome.runtime.onMessage.addListener((raw, _sender
     case 'FONT_INSPECTOR_TOGGLE':
       setFontInspector((raw as { enabled: boolean }).enabled)
       sendResponse({ ok: true, data: { enabled: (raw as { enabled: boolean }).enabled } })
+      return false
+    case 'INSPECTOR_FRAME_FOCUS':
+      handleInspectorFrameFocus((raw as { frameId: number }).frameId, sender.frameId ?? 0)
+      sendResponse({ ok: true, data: { focused: (raw as { frameId: number }).frameId } })
       return false
     case 'PAGE_INSPECTOR_SET': {
       const { options, labels } = raw as { options: Partial<PageInspectorOptions>; labels?: Partial<InspectorLabels> }

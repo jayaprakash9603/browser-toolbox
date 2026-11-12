@@ -59,6 +59,7 @@ import { handleTaskMenuClick, isTaskMenuItem, registerTasks } from './tasks'
 import { handleReadingListMenuClick, isReadingListMenuItem } from './readingList'
 import { registerElementInspector } from './elementInspector'
 import { registerFontInspector } from './fontInspector'
+import { registerInspectorFrameFocus } from './inspectorFrameFocus'
 import { registerColorPicker } from './colorPicker'
 import { screenshotModeFromMenuAction } from './screenshot/contextMenus'
 import { startScreenshot } from './screenshot/start'
@@ -187,6 +188,7 @@ safeRegister('timer', registerTimer)
 safeRegister('tasks', registerTasks)
 safeRegister('elementInspector', registerElementInspector)
 safeRegister('fontInspector', registerFontInspector)
+safeRegister('inspectorFrameFocus', registerInspectorFrameFocus)
 safeRegister('colorPicker', registerColorPicker)
 safeRegister('formMemory', registerFormMemory)
 safeRegister('reactDevtools', registerReactDevtools)

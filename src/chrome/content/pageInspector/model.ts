@@ -41,7 +41,7 @@ export interface PageInspectorState {
 
 export const DEFAULT_INSPECTOR_OPTIONS: PageInspectorOptions = {
   enabled: false,
-  outlines: true,
+  outlines: false,
   outlineMode: 'single',
   hoverInfo: true,
   boxModel: true,

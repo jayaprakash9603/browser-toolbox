@@ -2,7 +2,7 @@ import {
   DEFAULT_INSPECTOR_LABELS,
   DEFAULT_INSPECTOR_OPTIONS,
 } from '@/chrome/content/pageInspector/model'
-import { ensureContentScriptInTab, getActiveWebTab } from '@/chrome/contentScriptClient'
+import { broadcastToTabFrames, ensureContentScriptInTab, getActiveWebTab } from '@/chrome/contentScriptClient'
 import {
   clearElementInspectorTab,
   readElementInspectorTab,
@@ -25,9 +25,11 @@ async function ensureInspectorScripts(tabId: number): Promise<void> {
 async function broadcastInspector(tabId: number, enabled: boolean, labels?: Record<string, string>): Promise<void> {
   await ensureInspectorScripts(tabId)
   try {
-    await chrome.tabs.sendMessage(tabId, {
+    await broadcastToTabFrames(tabId, {
       type: 'PAGE_INSPECTOR_SET',
-      options: enabled ? { ...DEFAULT_INSPECTOR_OPTIONS, enabled: true } : { enabled: false },
+      options: enabled
+        ? { ...DEFAULT_INSPECTOR_OPTIONS, enabled: true, outlines: false }
+        : { enabled: false, outlines: false },
       labels: { ...DEFAULT_INSPECTOR_LABELS, ...labels },
     })
   } catch (error) {

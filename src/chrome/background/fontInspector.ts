@@ -1,4 +1,4 @@
-import { ensureContentScriptInTab, getActiveWebTab } from '@/chrome/contentScriptClient'
+import { broadcastToTabFrames, ensureContentScriptInTab, getActiveWebTab } from '@/chrome/contentScriptClient'
 import { clearFontInspectorTab, readFontInspectorTab, writeFontInspectorTab } from '@/core/design/fontInspectorState'
 import { registerMessageHandler } from '@/core/messaging'
 import { createLogger } from '@/core/logging'
@@ -18,7 +18,7 @@ export async function pushFontInspectorToTab(tabId: number, enabled: boolean): P
   await writeFontInspectorTab(tabId, enabled)
   try {
     await ensureFontScripts(tabId)
-    await chrome.tabs.sendMessage(tabId, { type: 'FONT_INSPECTOR_TOGGLE', enabled })
+    await broadcastToTabFrames(tabId, { type: 'FONT_INSPECTOR_TOGGLE', enabled })
   } catch (error) {
     logger.warn('font inspector apply failed', error)
     throw error

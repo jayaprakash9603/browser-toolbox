@@ -124,3 +124,17 @@ export async function getActiveWebTab(): Promise<chrome.tabs.Tab | undefined> {
 export function isFileUrlTab(url?: string): boolean {
   return Boolean(url?.toLowerCase().startsWith('file:'))
 }
+
+/** Delivers a message to every injected content-script frame (main + iframes). */
+export async function broadcastToTabFrames(tabId: number, message: unknown): Promise<void> {
+  const frames = await chrome.webNavigation.getAllFrames({ tabId }).catch(() => null)
+  if (!frames?.length) {
+    await chrome.tabs.sendMessage(tabId, message).catch(() => undefined)
+    return
+  }
+  await Promise.all(
+    frames.map((frame) =>
+      chrome.tabs.sendMessage(tabId, message, { frameId: frame.frameId }).catch(() => undefined),
+    ),
+  )
+}

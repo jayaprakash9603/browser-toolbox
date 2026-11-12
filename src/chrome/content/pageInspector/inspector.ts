@@ -23,10 +23,12 @@ import {
   type PageInspectorOptions,
   type PageInspectorState,
 } from './model'
+import { pulseInspectorFrameFocus, registerInspectorFrameBlur } from '../inspectorFrameFocus'
 import { OVERLAY_CSS, icon, type IconName } from './ui'
 
 const HOST_ID = 'tbx-page-inspector'
 const OUTLINE_ID = 'tbx-page-inspector-outlines'
+const SKIP_TARGET_TAGS = new Set(['IFRAME', 'FRAME', 'OBJECT', 'EMBED'])
 
 type Styled = HTMLElement | SVGElement
 type Dir = 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw'
@@ -87,6 +89,7 @@ let notifyTimer: ReturnType<typeof setTimeout> | undefined
 let toastTimer: ReturnType<typeof setTimeout> | undefined
 const originals = new Map<Element, Original>()
 const history: (() => void)[] = []
+let frameBlurUnregister: (() => void) | null = null
 
 const isStyled = (node: unknown): node is Styled => node instanceof HTMLElement || node instanceof SVGElement
 const px = (value: string) => Number.parseFloat(value) || 0
@@ -447,7 +450,18 @@ function ownEvent(event: Event): boolean {
 function pageTarget(event: Event): Styled | null {
   const target = event.composedPath()[0]
   if (!isStyled(target) || target === document.documentElement) return null
+  if (SKIP_TARGET_TAGS.has(target.tagName)) return null
   return target
+}
+
+function clearTransientOverlays(): void {
+  hovered = null
+  tipFor = null
+  if (!ui) return
+  for (const node of [ui.hover, ui.margin, ui.padding, ui.content]) node.style.display = 'none'
+  ui.tip.style.display = 'none'
+  ui.guides.replaceChildren()
+  schedule()
 }
 
 function onPointerMove(event: PointerEvent) {
@@ -455,6 +469,7 @@ function onPointerMove(event: PointerEvent) {
     drag.move(event)
     return
   }
+  pulseInspectorFrameFocus()
   if (ownEvent(event)) return
   const target = pageTarget(event)
   if (target !== hovered) {
@@ -550,7 +565,16 @@ function onKeyDown(event: KeyboardEvent) {
 }
 
 function onMouseOut(event: MouseEvent) {
-  if (!event.relatedTarget && hovered) {
+  const related = event.relatedTarget
+  if (related instanceof Node && document.contains(related)) return
+  if (hovered) {
+    hovered = null
+    schedule()
+  }
+}
+
+function onPointerLeaveDocument(): void {
+  if (hovered) {
     hovered = null
     schedule()
   }
@@ -565,6 +589,7 @@ function listen(on: boolean) {
   window[method]('scroll', schedule, true)
   window[method]('resize', schedule)
   document[method]('mouseout', onMouseOut as EventListener)
+  document.documentElement[method]('pointerleave', onPointerLeaveDocument)
   for (const type of BLOCKED) window[method](type, onBlocked, true)
 }
 
@@ -992,6 +1017,8 @@ function applyOutlines() {
 function teardown() {
   if (editing) finishEditing()
   drag = null
+  frameBlurUnregister?.()
+  frameBlurUnregister = null
   if (ui) {
     listen(false)
     ui.host.remove()
@@ -1033,6 +1060,10 @@ export function setInspector(next: Partial<PageInspectorOptions>, nextLabels?: P
     if (!ui) {
       ui = buildUi()
       listen(true)
+    }
+    if (!frameBlurUnregister) {
+      frameBlurUnregister = registerInspectorFrameBlur(clearTransientOverlays)
+      pulseInspectorFrameFocus()
     }
     if (!options.select) selected = null
     tipFor = null

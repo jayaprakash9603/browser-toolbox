@@ -192,6 +192,8 @@ export type ExtensionMessage =
   | { type: 'FONT_INSPECTOR_PANEL_GET' }
   | { type: 'FONT_INSPECTOR_PANEL_SET'; enabled: boolean }
   | { type: 'FONT_INSPECTOR_TAB_STATE'; enabled: boolean }
+  | { type: 'INSPECTOR_POINTER_ACTIVE' }
+  | { type: 'INSPECTOR_FRAME_FOCUS'; frameId: number }
   | {
       type: 'PAGE_INSPECTOR_SET'
       options: Partial<import('@/chrome/content/pageInspector/model').PageInspectorOptions>
@@ -395,6 +397,8 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'FONT_INSPECTOR_PANEL_GET',
   'FONT_INSPECTOR_PANEL_SET',
   'FONT_INSPECTOR_TAB_STATE',
+  'INSPECTOR_POINTER_ACTIVE',
+  'INSPECTOR_FRAME_FOCUS',
   'PAGE_INSPECTOR_SET',
   'PAGE_INSPECTOR_GET',
   'PAGE_INSPECTOR_ACTION',
