@@ -764,6 +764,10 @@ function refreshDims(rect: DOMRect) {
 function renderPanel() {
   if (!ui) return
   const panel = ui.panel
+  if (!options.showPanel) {
+    panel.style.display = 'none'
+    return
+  }
   const el = selected
   if (!el || !options.select) {
     panel.style.display = 'none'
@@ -1020,6 +1024,9 @@ function notify() {
 export function setInspector(next: Partial<PageInspectorOptions>, nextLabels?: Partial<InspectorLabels>): PageInspectorState {
   if (nextLabels) labels = { ...DEFAULT_INSPECTOR_LABELS, ...nextLabels }
   options = { ...options, ...next }
+  if (options.enabled && options.showPanel === undefined) {
+    options.showPanel = window.top === window.self
+  }
   applyOutlines()
   if (!options.enabled) teardown()
   else {

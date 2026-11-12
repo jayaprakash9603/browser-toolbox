@@ -28,6 +28,8 @@ export interface PageInspectorOptions {
   move: boolean
   resize: boolean
   textEdit: boolean
+  /** Style panel is shown only in the top frame; other frames still get hover/select overlays. */
+  showPanel?: boolean
 }
 
 export interface PageInspectorState {
