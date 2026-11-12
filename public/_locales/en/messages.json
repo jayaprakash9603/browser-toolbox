@@ -239,6 +239,12 @@
   "clipboardPanelDaysAgo": {
     "message": "days ago"
   },
+  "clipboardPanelShowAll": {
+    "message": "Show all"
+  },
+  "clipboardPanelShowLess": {
+    "message": "Show less"
+  },
   "clipboardPanelCopy": {
     "message": "Copy"
   },

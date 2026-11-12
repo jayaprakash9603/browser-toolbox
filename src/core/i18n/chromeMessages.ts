@@ -57,6 +57,8 @@ const CHROME_UI_FALLBACKS: Record<string, string> = {
   clipboardPanelHrAgo: 'hr. ago',
   clipboardPanelHrsAgo: 'hrs. ago',
   clipboardPanelDaysAgo: 'days ago',
+  clipboardPanelShowAll: 'Show all',
+  clipboardPanelShowLess: 'Show less',
   clipboardPanelCopy: 'Copy',
   clipboardPanelDelete: 'Delete',
   clipboardPanelPin: 'Pin',

@@ -322,6 +322,22 @@
       }).catch(function () {})
     }))
     foot.appendChild(meta)
+    var long = chars > 180 || String(entry.text || '').split(/\r?\n/).length > 3
+    if (long) {
+      var more = document.createElement('button')
+      more.type = 'button'
+      more.className = 'more'
+      more.textContent = text.showAll
+      more.setAttribute('aria-expanded', 'false')
+      more.addEventListener('click', function (event) {
+        event.stopPropagation()
+        var open = preview.classList.toggle('open')
+        more.textContent = open ? text.showLess : text.showAll
+        more.setAttribute('aria-expanded', open ? 'true' : 'false')
+        wrap.scrollIntoView({ block: 'nearest' })
+      })
+      foot.appendChild(more)
+    }
     foot.appendChild(actions)
     wrap.appendChild(body)
     wrap.appendChild(foot)
@@ -403,7 +419,10 @@
         searchEl.focus()
         return
       }
-      cards[Math.min(cards.length - 1, next)].focus()
+      var card = cards[Math.min(cards.length - 1, next)]
+      card.focus()
+      var item = card.closest('.item')
+      if (item && item.scrollIntoView) item.scrollIntoView({ block: 'nearest' })
     }
   }
 
@@ -433,10 +452,11 @@
     ':host{all:initial}' +
     '*{box-sizing:border-box}' +
     '.catcher{pointer-events:auto;position:absolute;inset:0;background:rgba(15,23,42,.16)}' +
-    '.shell{pointer-events:auto;position:relative;width:min(360px,calc(100vw - 24px))}' +
-    '.card{display:flex;flex-direction:column;max-height:min(520px,calc(100vh - 24px));border-radius:12px;' +
+    '.shell{pointer-events:auto;position:relative;width:min(360px,calc(100vw - 24px));height:min(max-content,calc(100vh - 24px));max-height:calc(100vh - 24px);display:flex;min-height:0}' +
+    '.card{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;max-height:calc(100vh - 24px);border-radius:12px;' +
     'border:1px solid rgba(24,24,27,.1);background:#fff;color:#18181b;' +
     'box-shadow:0 10px 32px rgba(15,23,42,.18);font:500 12px/1.4 system-ui,-apple-system,Segoe UI,sans-serif;overflow:hidden}' +
+    '.head,.toolbar{flex:none}' +
     '.head{display:flex;align-items:center;gap:8px;padding:8px 6px 0 12px}' +
     '.title-wrap{flex:1;min-width:0;display:flex;align-items:baseline;gap:6px}' +
     '.title{font-size:11px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:#3f3f46}' +
@@ -462,7 +482,10 @@
     '.chip-count{min-width:14px;padding:0 4px;border-radius:999px;font-size:10px;line-height:16px;text-align:center;' +
     'background:rgba(24,24,27,.06);font-variant-numeric:tabular-nums}' +
     '.chip[aria-pressed="true"] .chip-count{background:rgba(99,102,241,.12);color:#4f46e5}' +
-    '.list{flex:1;min-height:0;overflow:auto;padding:8px;scrollbar-width:thin;overscroll-behavior:contain;display:flex;flex-direction:column;gap:6px}' +
+    '.list{flex:1 1 auto;min-height:0;max-height:calc(100vh - 148px);overflow-x:hidden;overflow-y:auto;padding:8px 6px 8px 8px;scrollbar-width:thin;scrollbar-color:rgba(24,24,27,.28) transparent;overscroll-behavior:contain;display:flex;flex-direction:column;gap:6px;-webkit-overflow-scrolling:touch}' +
+    '.list::-webkit-scrollbar{width:8px}' +
+    '.list::-webkit-scrollbar-thumb{background:rgba(24,24,27,.22);border-radius:8px}' +
+    '.list::-webkit-scrollbar-track{background:transparent}' +
     '.section{display:flex;align-items:center;gap:6px;padding:2px 2px 0;font-size:10px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:#71717a}' +
     '.section-count{font-variant-numeric:tabular-nums;opacity:.75}' +
     '.section-line{height:1px;flex:1;background:rgba(24,24,27,.1)}' +
@@ -476,6 +499,9 @@
     '.kind.swatch{border:1px solid rgba(24,24,27,.12)}' +
     '.preview{min-width:0;flex:1;font-size:12px;line-height:1.4;word-break:break-word;white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}' +
     '.preview.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px}' +
+    '.preview.open{display:block;-webkit-line-clamp:unset;max-height:12em;overflow-y:auto;overscroll-behavior:contain;padding-right:4px}' +
+    '.more{border:0;background:transparent;color:#4f46e5;cursor:pointer;font:600 10px/1.2 system-ui,sans-serif;padding:0 4px;flex:none;white-space:nowrap}' +
+    '.more:hover{text-decoration:underline}' +
     '.foot{display:flex;align-items:center;gap:2px;min-width:0;padding:0 6px 5px 38px}' +
     '.meta{flex:1;min-width:0;margin:0;font-size:10px;line-height:1.3;color:#71717a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}' +
     '.actions{display:flex;gap:1px;flex-shrink:0}' +
@@ -500,6 +526,8 @@
     '.chip[aria-pressed="true"]{background:#3f3f46;color:#fafafa;box-shadow:none}' +
     '.chip-count{background:rgba(255,255,255,.08)}' +
     '.chip[aria-pressed="true"] .chip-count{background:rgba(165,180,252,.18);color:#c7d2fe}' +
+    '.list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.22)}' +
+    '.more{color:#c7d2fe}' +
     '.section-line{background:rgba(255,255,255,.1)}' +
     '.item{background:#27272a;border-color:rgba(255,255,255,.1)}' +
     '.item.pinned{background:#292524;border-color:rgba(251,191,36,.35)}' +
@@ -520,7 +548,7 @@
     '<input class="search" type="search" autocomplete="off" spellcheck="false" />' +
     '<kbd class="kbd" aria-hidden="true">/</kbd></div>' +
     '<div class="filters" role="group"></div></div>' +
-    '<div class="list"></div>' +
+    '<div class="list" tabindex="0"></div>' +
     '<div class="toast" role="status" aria-live="polite"></div>' +
     '</div></div>'
 
@@ -541,14 +569,28 @@
   listEl.addEventListener(
     'wheel',
     function (event) {
+      event.stopPropagation()
+      var inner = event.target && event.target.closest && event.target.closest('.preview.open')
+      if (inner && inner.scrollHeight > inner.clientHeight + 1) {
+        var innerTop = inner.scrollTop <= 0
+        var innerBottom = inner.scrollTop + inner.clientHeight >= inner.scrollHeight - 1
+        if (!((event.deltaY < 0 && innerTop) || (event.deltaY > 0 && innerBottom))) return
+      }
+      var canScroll = listEl.scrollHeight > listEl.clientHeight + 1
       var atTop = listEl.scrollTop <= 0
       var atBottom = listEl.scrollTop + listEl.clientHeight >= listEl.scrollHeight - 1
-      if ((event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom) || listEl.scrollHeight <= listEl.clientHeight) {
+      if (!canScroll || (event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom)) {
         event.preventDefault()
       }
-      event.stopPropagation()
     },
     { passive: false },
+  )
+  listEl.addEventListener(
+    'touchmove',
+    function (event) {
+      event.stopPropagation()
+    },
+    { passive: true },
   )
 
   searchEl.addEventListener('input', function () {

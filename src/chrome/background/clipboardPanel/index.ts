@@ -40,6 +40,8 @@ function panelText() {
     hrAgo: getChromeMessage('clipboardPanelHrAgo'),
     hrsAgo: getChromeMessage('clipboardPanelHrsAgo'),
     daysAgo: getChromeMessage('clipboardPanelDaysAgo'),
+    showAll: getChromeMessage('clipboardPanelShowAll'),
+    showLess: getChromeMessage('clipboardPanelShowLess'),
   }
 }
 
