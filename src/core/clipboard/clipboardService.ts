@@ -106,8 +106,36 @@ export async function readClipboardText(): Promise<string> {
   return navigator.clipboard.readText()
 }
 
+function writeClipboardTextSync(text: string): boolean {
+  try {
+    const area = document.createElement('textarea')
+    area.value = text
+    area.setAttribute('readonly', '')
+    area.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;'
+    document.documentElement.appendChild(area)
+    area.focus()
+    area.select()
+    area.setSelectionRange(0, text.length)
+    const ok = document.execCommand('copy')
+    area.remove()
+    return ok
+  } catch {
+    return false
+  }
+}
+
 export async function writeClipboardText(text: string): Promise<void> {
-  await navigator.clipboard.writeText(text)
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text)
+      return
+    } catch {
+      /* fall back below */
+    }
+  }
+  if (!writeClipboardTextSync(text)) {
+    throw new Error('clipboard write failed')
+  }
 }
 
 function insertTextIntoPage(value: string): boolean {

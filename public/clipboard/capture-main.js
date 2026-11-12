@@ -30,6 +30,7 @@
     if (clip && typeof clip.writeText === 'function') {
       var writeText = clip.writeText.bind(clip)
       clip.writeText = function (text) {
+        emit(String(text))
         var result = writeText(text)
         Promise.resolve(result).then(function () { emit(String(text)) }, function () {})
         return result

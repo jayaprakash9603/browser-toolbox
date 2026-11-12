@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import {
   AtSignIcon,
   CheckIcon,
+  CopyIcon,
   ClipboardPasteIcon,
   CodeXmlIcon,
   HashIcon,
@@ -135,9 +136,14 @@ export const HistoryItem = memo(function HistoryItem({
   }
 
   const copy = async () => {
-    await writeClipboardText(entry.text)
-    await addClipboardEntry(entry.text)
-    flash('copied')
+    try {
+      await writeClipboardText(entry.text)
+      await addClipboardEntry(entry.text)
+      onChanged()
+      flash('copied')
+    } catch {
+      flash('ready')
+    }
   }
 
   const paste = async () => {
@@ -219,6 +225,9 @@ export const HistoryItem = memo(function HistoryItem({
           )}
         </div>
         <div className="flex shrink-0 items-center gap-0.5 opacity-75 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100">
+          <IconAction label={t('common.copy')} onClick={() => void copy()}>
+            <CopyIcon />
+          </IconAction>
           <IconAction label={t('clipboard.paste')} onClick={() => void paste()}>
             <ClipboardPasteIcon />
           </IconAction>

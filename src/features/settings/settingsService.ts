@@ -22,7 +22,7 @@ export const DEFAULT_SETTINGS: Settings = {
   palette: DEFAULT_PALETTE,
   density: 'comfortable',
   clipboardHistoryEnabled: true,
-  clipboardCaptureFromPages: false,
+  clipboardCaptureFromPages: true,
   clipboardHistoryLimit: 100,
   clipboardRetentionDays: 0,
 }
@@ -36,6 +36,13 @@ export async function getSettings(): Promise<Settings> {
   const stored = await get<Partial<Settings>>(STORAGE_KEYS.settings)
   const merged = { ...DEFAULT_SETTINGS, ...stored }
   if (!isPaletteId(merged.palette)) merged.palette = DEFAULT_PALETTE
+  if (
+    merged.clipboardHistoryEnabled &&
+    stored &&
+    !('clipboardCaptureFromPages' in stored)
+  ) {
+    merged.clipboardCaptureFromPages = true
+  }
   return merged
 }
 
