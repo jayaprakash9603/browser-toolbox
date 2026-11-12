@@ -42,7 +42,7 @@ import { getActiveTabId, sendToActiveTab } from '@/tools/web/tabMessaging'
 import { useDesignTool } from '../_shared'
 
 type Prefs = Omit<PageInspectorOptions, 'enabled'>
-type Flag = Exclude<keyof Prefs, 'outlineMode'>
+type Flag = Exclude<keyof Prefs, 'outlineMode' | 'showPanel'>
 type Icon = ComponentType<SVGProps<SVGSVGElement>>
 
 const FLAGS: Flag[] = ['outlines', 'hoverInfo', 'boxModel', 'guides', 'select', 'move', 'resize', 'textEdit']

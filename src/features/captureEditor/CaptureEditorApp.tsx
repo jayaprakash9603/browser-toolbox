@@ -58,6 +58,8 @@ import { Separator } from '@/shared/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip'
 import { cn } from '@/shared/utils/cn'
 
+import { BackButton } from '@/shared/components/BackButton'
+
 import { CaptureHistory } from './CaptureHistory'
 import { CaptureEditorToolbar } from './CaptureEditorToolbar'
 import { IMAGE_FORMATS, ScreenshotOptions } from './ScreenshotOptions'
@@ -564,9 +566,26 @@ function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: Ca
     <div
       ref={editorRef}
       data-capture-editor
-      className="flex h-full min-h-0 flex-col overflow-hidden bg-gradient-to-br from-muted/35 via-background to-muted/20 lg:flex-row"
+      className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/15 md:flex-row"
     >
       <div className="@container flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="flex shrink-0 items-center gap-2 border-b border-border/60 bg-background/95 px-2 py-1.5 backdrop-blur-sm sm:px-3">
+          <BackButton to="/tools/screenshots/capture" className="size-8 rounded-lg" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold leading-tight text-foreground">
+              {frame.pageInfo?.title ?? 'Screenshot'}
+            </p>
+            {frame.pageInfo?.domain && (
+              <p className="truncate text-[11px] text-muted-foreground">{frame.pageInfo.domain}</p>
+            )}
+          </div>
+          <Badge variant="outline" className="hidden shrink-0 tabular-nums sm:inline-flex">
+            {baseSize.width}×{baseSize.height}
+          </Badge>
+          <Badge variant="secondary" className="shrink-0 tabular-nums">
+            {zoomPercent}%
+          </Badge>
+        </div>
         <CaptureEditorToolbar
           activeTool={activeTool}
           onToolChange={setActiveTool}
@@ -594,13 +613,14 @@ function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: Ca
         )}
         <div
           ref={scrollRef}
-          className="scrollbar-styled min-h-0 flex-1 overflow-auto overscroll-contain p-4 sm:p-6 [background-image:radial-gradient(color-mix(in_srgb,var(--foreground)_7%,transparent)_1px,transparent_1px)] [background-size:16px_16px] bg-muted/20"
+          className="scrollbar-styled min-h-0 flex-1 overflow-auto overscroll-contain bg-[length:20px_20px] bg-muted/25 [background-image:radial-gradient(color-mix(in_srgb,var(--foreground)_6%,transparent)_1px,transparent_1px)]"
           style={{ touchAction: 'pan-x pan-y' }}
         >
-          <div className="mx-auto w-fit rounded-xl p-1 ring-1 ring-border/70 bg-background/40 shadow-[0_8px_32px_color-mix(in_srgb,var(--foreground)_12%,transparent)] backdrop-blur-[2px]">
+          <div className="flex min-h-full min-w-full items-start justify-center p-4 sm:p-6">
+            <div className="w-fit rounded-xl bg-background/60 p-1.5 shadow-lg ring-1 ring-border/60 backdrop-blur-[2px]">
             <canvas
               ref={canvasRef}
-              className="mx-auto block max-w-none cursor-crosshair rounded-lg border border-border/50 bg-background shadow-inner"
+              className="block max-w-none cursor-crosshair rounded-md border border-border/40 bg-background"
               style={canvasStyle}
               onMouseDown={(event) => {
               const point = imagePoint(event)
@@ -633,10 +653,11 @@ function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: Ca
               pushAnnotation({ tool: activeTool, color, x1: start.x, y1: start.y, x2: end.x, y2: end.y })
             }}
           />
+            </div>
           </div>
         </div>
         {session.frames.length > 1 && (
-          <div className="flex gap-2 overflow-x-auto border-t border-border/60 bg-background/90 p-2.5 backdrop-blur-sm">
+          <div className="flex shrink-0 gap-2 overflow-x-auto border-t border-border/60 bg-background/95 p-2 backdrop-blur-sm">
             {session.frames.map((item, index) => (
               <Button
                 key={index}
@@ -665,58 +686,40 @@ function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: Ca
         )}
       </div>
 
-      <aside className="relative w-full shrink-0 overflow-y-auto border-l border-border/60 bg-gradient-to-b from-background via-background to-muted/25 lg:w-[19rem]">
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-[radial-gradient(120%_100%_at_50%_0%,color-mix(in_srgb,var(--primary)_14%,transparent),transparent)]"
-          aria-hidden
-        />
-        <div className="relative flex flex-col gap-4 p-4">
-          <header className="flex items-start justify-between gap-2">
-            <div className="min-w-0 space-y-1">
-              <div className="flex items-center gap-1.5 text-primary">
-                <ImageIcon className="size-3.5 shrink-0" aria-hidden />
-                <span className="text-[10px] font-semibold uppercase tracking-widest">Export studio</span>
-              </div>
-              <h2 className="truncate text-sm font-semibold leading-snug text-foreground">
-                {frame.pageInfo?.title ?? 'Screenshot'}
-              </h2>
-              {frame.pageInfo?.domain && (
-                <Badge
-                  variant="outline"
-                  className="max-w-full truncate border-primary/25 bg-primary/5 font-normal text-[10px] text-muted-foreground"
-                >
-                  {frame.pageInfo.domain}
-                </Badge>
-              )}
-            </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon-sm"
-                  variant="outline"
-                  className="shrink-0 rounded-lg border-border/70 bg-background/80 shadow-sm"
-                  aria-label="Screenshot options"
-                  onClick={() => navigate('/tools/screenshots/capture?options=1')}
-                >
-                  <SettingsIcon />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Options</TooltipContent>
-            </Tooltip>
-          </header>
-
-          <Card className="gap-0 overflow-hidden border-border/70 bg-card/95 py-0 shadow-md backdrop-blur-sm">
-            <CardHeader className="border-b border-border/50 bg-muted/20 px-4 py-3">
+      <aside className="relative flex w-full shrink-0 flex-col border-t border-border/60 bg-background md:max-h-full md:w-[17.5rem] md:border-l md:border-t-0 lg:w-[19rem]">
+        <div className="flex items-center justify-between gap-2 border-b border-border/50 px-3 py-2.5">
+          <div className="flex min-w-0 items-center gap-2 text-primary">
+            <ImageIcon className="size-4 shrink-0" aria-hidden />
+            <span className="text-xs font-semibold uppercase tracking-wide">Export</span>
+          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon-sm"
+                variant="outline"
+                className="shrink-0 rounded-lg"
+                aria-label="Screenshot options"
+                onClick={() => navigate('/tools/screenshots/capture?options=1')}
+              >
+                <SettingsIcon />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Options</TooltipContent>
+          </Tooltip>
+        </div>
+        <div className="scrollbar-styled min-h-0 flex-1 overflow-y-auto p-3 md:max-h-none">
+          <Card className="gap-0 overflow-hidden border-border/60 py-0 shadow-sm">
+            <CardHeader className="border-b border-border/50 bg-muted/15 px-3 py-2.5">
               <CardTitle className="text-sm font-semibold">Save & share</CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col gap-4 px-4 py-4">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="capture-image-format" className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <CardContent className="flex flex-col gap-3 px-3 py-3">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="capture-image-format" className="text-[11px] font-medium text-muted-foreground">
                   Image file
                 </Label>
-                <div className="flex gap-2">
+                <div className="flex items-stretch gap-2">
                   <Select value={format} onValueChange={(value) => setFormat(value as ImageFormat)}>
-                    <SelectTrigger id="capture-image-format" className="w-24 border-border/70 bg-background shadow-sm">
+                    <SelectTrigger id="capture-image-format" className="h-9 w-[5.5rem] shrink-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -728,25 +731,26 @@ function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: Ca
                     </SelectContent>
                   </Select>
                   <Button
-                    className="flex-1 shadow-md shadow-primary/15"
+                    className="h-9 min-w-0 flex-1"
                     disabled={busy}
                     onClick={() => void runExport('Saved', 'image', () => save(format, 'image'))}
                   >
-                    <DownloadIcon /> Save image
+                    <DownloadIcon className="shrink-0" />
+                    <span className="truncate">Save image</span>
                   </Button>
                 </div>
                 {exportJob?.anchor === 'image' && (
                   <CaptureExportProgress exportJob={exportJob} t={t} />
                 )}
               </div>
-              <Separator className="bg-border/60" />
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="capture-pdf-split" className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <Separator />
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="capture-pdf-split" className="text-[11px] font-medium text-muted-foreground">
                   PDF document
                 </Label>
-                <div className="flex gap-2">
+                <div className="flex items-stretch gap-2">
                   <Select value={pdfSplit} onValueChange={(value) => setPdfSplit(value as PdfSplit)}>
-                    <SelectTrigger id="capture-pdf-split" className="w-32 border-border/70 bg-background shadow-sm">
+                    <SelectTrigger id="capture-pdf-split" className="h-9 w-[7.25rem] shrink-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -757,23 +761,24 @@ function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: Ca
                   </Select>
                   <Button
                     variant="outline"
-                    className="flex-1 border-primary/25 bg-primary/5 hover:bg-primary/10"
+                    className="h-9 min-w-0 flex-1"
                     disabled={busy}
                     onClick={() => void runExport('PDF saved', 'pdf', () => save('pdf', 'pdf'))}
                   >
-                    <FileTextIcon /> Save PDF
+                    <FileTextIcon className="shrink-0" />
+                    <span className="truncate">Save PDF</span>
                   </Button>
                 </div>
                 {exportJob?.anchor === 'pdf' && (
                   <CaptureExportProgress exportJob={exportJob} t={t} />
                 )}
               </div>
-              <Separator className="bg-border/60" />
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Quick actions</p>
+              <Separator />
+              <p className="text-[11px] font-medium text-muted-foreground">Quick actions</p>
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
-                  className="h-auto flex-col gap-1.5 rounded-xl border-border/70 py-3 text-xs shadow-sm"
+                  className="h-auto flex-col gap-1 rounded-lg py-2.5 text-xs"
                   disabled={busy}
                   onClick={() =>
                     void runQuickAction('Copied to clipboard', async () => {
@@ -786,7 +791,7 @@ function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: Ca
                 </Button>
                 <Button
                   variant="outline"
-                  className="h-auto flex-col gap-1.5 rounded-xl border-border/70 py-3 text-xs shadow-sm"
+                  className="h-auto flex-col gap-1 rounded-lg py-2.5 text-xs"
                   disabled={busy}
                   onClick={() => void runQuickAction('Print dialog opened', print)}
                 >
@@ -795,7 +800,7 @@ function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: Ca
                 </Button>
                 <Button
                   variant="outline"
-                  className="col-span-2 h-auto flex-row gap-2 rounded-xl border-border/70 py-2.5 text-xs shadow-sm"
+                  className="col-span-2 h-9 gap-2 text-xs"
                   disabled={busy}
                   onClick={() =>
                     void runExport('Saved — attach it in the Gmail draft', 'image', async () => {
@@ -811,11 +816,12 @@ function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: Ca
               {session.frames.length > 1 && (
                 <Button
                   variant="secondary"
-                  className="rounded-xl shadow-sm"
+                  className="h-9 w-full"
                   disabled={busy}
                   onClick={() => void runExport('ZIP saved', 'zip', saveAllAsZip)}
                 >
-                  <FolderArchiveIcon /> Save all as ZIP
+                  <FolderArchiveIcon className="shrink-0" />
+                  Save all as ZIP
                 </Button>
               )}
               {exportJob?.anchor === 'zip' && (
