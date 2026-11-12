@@ -12,6 +12,7 @@ import { createLogger } from '@/core/logging'
 
 import { syncProtectionContentScripts } from './contentScripts'
 import { decideDownload, recordGesture, registerDownloadGuard } from './downloads'
+import { getRedirectLog, reportRedirectFalsePositive, setMetaRefreshSignal } from './redirectStore'
 import { allowOpenedTabSite, recordTabGesture, registerOpenedTabGuard } from './openedTabs'
 import { syncProtectionRules } from './rules'
 import { allowProceedOnce } from './trusted'
@@ -78,6 +79,21 @@ export function registerProtection(): void {
     if (!sender.url?.startsWith(chrome.runtime.getURL(''))) return null
     await allowOpenedTabSite(sender.tab?.id, message.url)
     return { ok: true }
+  })
+
+  registerMessageHandler('PROTECTION_REDIRECT_META', async (message, sender) => {
+    if (message.type !== 'PROTECTION_REDIRECT_META') return null
+    if (sender.tab?.id == null) return null
+    await setMetaRefreshSignal(sender.tab.id, true)
+    return { ok: true }
+  })
+
+  registerMessageHandler('PROTECTION_REDIRECT_GET_LOG', async () => getRedirectLog())
+
+  registerMessageHandler('PROTECTION_REDIRECT_REPORT_FP', async (message) => {
+    if (message.type !== 'PROTECTION_REDIRECT_REPORT_FP' || !message.logId) return null
+    const entries = await reportRedirectFalsePositive(message.logId)
+    return { entries }
   })
 
   registerMessageHandler('PROTECTION_DOWNLOAD_DECISION', async (message, sender) => {

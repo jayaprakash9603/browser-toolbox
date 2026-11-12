@@ -1,3 +1,4 @@
+import { DEFAULT_REDIRECT_PROTECTION } from './redirect/constants'
 import { THREAT_CATEGORIES } from './types'
 import type { ProtectionBlockedCounts, ProtectionState, ProtectionStats } from './types'
 
@@ -70,6 +71,28 @@ export const DEFAULT_PROTECTION_STATE: ProtectionState = {
   downloadGuard: true,
   openedTabGuard: true,
   trusted: [],
+  redirectProtection: { ...DEFAULT_REDIRECT_PROTECTION, riskWeights: { ...DEFAULT_REDIRECT_PROTECTION.riskWeights } },
+  workflowHosts: [],
+}
+
+export function mergeProtectionState(stored: Partial<ProtectionState> | undefined): ProtectionState {
+  const base = DEFAULT_PROTECTION_STATE
+  const redirectStored = stored?.redirectProtection
+  const riskStored = redirectStored?.riskWeights
+  return {
+    ...base,
+    ...stored,
+    trusted: stored?.trusted ?? base.trusted,
+    workflowHosts: stored?.workflowHosts ?? base.workflowHosts,
+    redirectProtection: {
+      ...base.redirectProtection,
+      ...redirectStored,
+      riskWeights: {
+        ...base.redirectProtection.riskWeights,
+        ...riskStored,
+      },
+    },
+  }
 }
 
 export function emptyProtectionStats(): ProtectionStats {

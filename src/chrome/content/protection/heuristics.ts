@@ -264,9 +264,23 @@ function onPageSignal(event: MessageEvent): void {
   }
 }
 
+function gesturesNeeded(): boolean {
+  if (state.downloadGuard !== false) return true
+  if (state.openedTabGuard !== false) return true
+  return state.redirectProtection?.enabled !== false
+}
+
+function reportMetaRefresh(): void {
+  if (state.enabled === false || state.redirectProtection?.enabled === false) return
+  if (state.redirectProtection?.detectMetaRefresh === false) return
+  const meta = document.querySelector('meta[http-equiv="refresh" i]')
+  if (!meta) return
+  send({ type: 'PROTECTION_REDIRECT_META' })
+}
+
 function onGesture(event: Event): void {
   if (!event.isTrusted || state.enabled === false) return
-  if (state.downloadGuard === false && state.openedTabGuard === false) return
+  if (!gesturesNeeded()) return
   const now = Date.now()
   if (now - lastGestureSent < GESTURE_THROTTLE_MS) return
   lastGestureSent = now
@@ -281,10 +295,14 @@ function apply(next: Partial<ProtectionState> | undefined): void {
     removeOverlay()
     return
   }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startTopFrameChecks, { once: true })
-  } else {
+  const onReady = () => {
     startTopFrameChecks()
+    if (IS_TOP) reportMetaRefresh()
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', onReady, { once: true })
+  } else {
+    onReady()
   }
 }
 

@@ -110,6 +110,9 @@ export type ExtensionMessage =
   | { type: 'PROTECTION_GESTURE'; host?: string }
   | { type: 'PROTECTION_DOWNLOAD_DECISION'; id: number; keep: boolean }
   | { type: 'PROTECTION_ALLOW_OPENED_TAB'; url: string }
+  | { type: 'PROTECTION_REDIRECT_META' }
+  | { type: 'PROTECTION_REDIRECT_GET_LOG' }
+  | { type: 'PROTECTION_REDIRECT_REPORT_FP'; logId: string }
   | { type: 'YT_SPONSOR_SEGMENTS'; videoId: string; categories: string[] }
   | { type: 'YT_DISLIKES'; videoId: string }
   | { type: 'YT_DOWNLOAD_TRANSCRIPT'; videoId: string }
@@ -362,6 +365,9 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'PROTECTION_GESTURE',
   'PROTECTION_DOWNLOAD_DECISION',
   'PROTECTION_ALLOW_OPENED_TAB',
+  'PROTECTION_REDIRECT_META',
+  'PROTECTION_REDIRECT_GET_LOG',
+  'PROTECTION_REDIRECT_REPORT_FP',
   'YT_SPONSOR_SEGMENTS',
   'YT_DISLIKES',
   'YT_DOWNLOAD_TRANSCRIPT',

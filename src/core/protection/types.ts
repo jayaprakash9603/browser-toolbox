@@ -14,6 +14,18 @@ export const THREAT_CATEGORIES = [
 
 export type ThreatCategory = (typeof THREAT_CATEGORIES)[number]
 
+export type {
+  RedirectAction,
+  RedirectClassification,
+  RedirectLogEntry,
+  RedirectProtectionSettings,
+  RedirectRiskLevel,
+  RedirectSession,
+  UnknownRedirectBehavior,
+  WorkflowHostPolicy,
+  WorkflowKind,
+} from './redirect/types'
+
 export interface ProtectionState {
   enabled: boolean
   phishing: boolean
@@ -33,7 +45,21 @@ export interface ProtectionState {
   /** Stop a tab a site opened from later switching to a different site on its own. */
   openedTabGuard: boolean
   trusted: string[]
+  redirectProtection: import('./redirect/types').RedirectProtectionSettings
+  workflowHosts: import('./redirect/types').WorkflowHostPolicy[]
 }
+
+export type ProtectionBooleanToggleKey =
+  | 'phishing'
+  | 'malware'
+  | 'scams'
+  | 'miners'
+  | 'lookalike'
+  | 'scamGuard'
+  | 'clipboardGuard'
+  | 'notificationGuard'
+  | 'downloadGuard'
+  | 'openedTabGuard'
 
 export interface ThreatsFile {
   generated: string

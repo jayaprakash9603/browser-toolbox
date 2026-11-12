@@ -14,6 +14,7 @@ export const STORAGE_KEYS = {
   protection: 'protection',
   protectionStats: 'protectionStats',
   protectionRulesVersion: 'protectionRulesVersion',
+  protectionRedirectLog: 'protectionRedirectLog',
   youtubeEnhancer: 'youtubeEnhancer',
   whatsappPlus: 'whatsappPlus',
   instagramEnhancer: 'instagramEnhancer',

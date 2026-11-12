@@ -3,7 +3,7 @@ import { get, set } from '@/core/storage'
 import { normalizeHostname } from '@/core/adblock/hostname'
 import { requestAllSitesAccess } from '@/core/permissions/siteAccess'
 
-import { DEFAULT_PROTECTION_STATE, emptyProtectionStats, MAX_RECENT_ENTRIES } from './constants'
+import { emptyProtectionStats, MAX_RECENT_ENTRIES, mergeProtectionState } from './constants'
 import { THREAT_CATEGORIES } from './types'
 import type { ProtectionState, ProtectionStats, ThreatCategory } from './types'
 
@@ -13,21 +13,27 @@ export function isThreatCategory(value: unknown): value is ThreatCategory {
 
 export async function getProtectionState(): Promise<ProtectionState> {
   const stored = await get<Partial<ProtectionState>>(STORAGE_KEYS.protection)
-  return {
-    ...DEFAULT_PROTECTION_STATE,
-    ...stored,
-    trusted: stored?.trusted ?? [],
-  }
+  return mergeProtectionState(stored)
 }
 
 export async function updateProtectionState(patch: Partial<ProtectionState>): Promise<ProtectionState> {
   const current = await getProtectionState()
   if (patch.enabled && !current.enabled && !(await requestAllSitesAccess())) return current
-  const next: ProtectionState = {
+  const rp = patch.redirectProtection
+  const merged: Partial<ProtectionState> = {
     ...current,
     ...patch,
     trusted: patch.trusted ?? current.trusted,
+    workflowHosts: patch.workflowHosts ?? current.workflowHosts,
+    redirectProtection: rp
+      ? {
+          ...current.redirectProtection,
+          ...rp,
+          riskWeights: { ...current.redirectProtection.riskWeights, ...rp.riskWeights },
+        }
+      : current.redirectProtection,
   }
+  const next = mergeProtectionState(merged)
   await set(STORAGE_KEYS.protection, next)
   return next
 }

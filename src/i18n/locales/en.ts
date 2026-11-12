@@ -438,6 +438,58 @@ const en = {
   'protection.redirect.openerLabel': 'Opened by',
   'protection.redirect.close': 'Close this tab',
   'protection.redirect.proceed': 'Continue to this site',
+  'protection.redirect.reasonSmart':
+    'A tab opened from {{opener}} was held before loading {{classification}} (risk: {{risk}}).',
+  'protection.redirect.reasonLabel': 'Reason',
+  'protection.redirect.classificationLabel': 'Classification',
+  'protection.redirect.riskLabel': 'Risk level',
+  'protection.redirect.timeLabel': 'Time',
+  'protection.redirect.reportFalsePositive': 'Report false positive',
+  'protection.redirect.reported': 'Thanks — noted locally',
+  'protection.smartRedirect.title': 'Smart Redirect Protection',
+  'protection.smartRedirect.enabled': 'Smart Redirect Protection',
+  'protection.smartRedirect.enabledDescription':
+    'Classifies redirects with context instead of blocking every automatic hop.',
+  'protection.smartRedirect.blockMalicious': 'Block known malicious redirects',
+  'protection.smartRedirect.blockMaliciousDescription':
+    'Always stop redirects to hosts on the threat blocklists.',
+  'protection.smartRedirect.detectAutomatic': 'Detect suspicious automatic redirects',
+  'protection.smartRedirect.detectAutomaticDescription':
+    'Watch cross-site navigation in tabs pages open without treating every hop as malicious.',
+  'protection.smartRedirect.detectJavascript': 'Detect suspicious JavaScript redirects',
+  'protection.smartRedirect.detectJavascriptDescription':
+    'Score client-side redirects using navigation context, not the redirect alone.',
+  'protection.smartRedirect.detectMetaRefresh': 'Detect suspicious meta refresh redirects',
+  'protection.smartRedirect.detectMetaRefreshDescription':
+    'Factor meta refresh navigations into redirect risk scoring.',
+  'protection.smartRedirect.detectChains': 'Detect suspicious redirect chains',
+  'protection.smartRedirect.detectChainsDescription':
+    'Raise risk when many hops occur in a short window.',
+  'protection.smartRedirect.allowPayment': 'Allow verified payment workflows',
+  'protection.smartRedirect.allowPaymentDescription':
+    'Short-lived sessions for known payment gateways after a user click.',
+  'protection.smartRedirect.allowAuth': 'Allow verified authentication workflows',
+  'protection.smartRedirect.allowAuthDescription':
+    'Short-lived sessions for OAuth and sign-in providers after a user click.',
+  'protection.smartRedirect.allowBanking': 'Allow verified banking workflows',
+  'protection.smartRedirect.allowBankingDescription':
+    'Short-lived sessions for known banking hosts after a user click.',
+  'protection.smartRedirect.workflowsTitle': 'Legitimate workflow controls',
+  'protection.smartRedirect.unknownTitle': 'Unknown redirect behaviour',
+  'protection.smartRedirect.unknownBlock': 'Block',
+  'protection.smartRedirect.unknownWarn': 'Warn',
+  'protection.smartRedirect.unknownAllow': 'Allow with logging',
+  'protection.workflow.title': 'Workflow policy hosts',
+  'protection.workflow.placeholder': 'Exact hostname (e.g. auth.mycompany.com)',
+  'protection.workflow.add': 'Add',
+  'protection.workflow.remove': 'Remove',
+  'protection.workflow.empty': 'No custom workflow hosts. Bundled payment and auth providers still apply.',
+  'protection.workflow.kind.payment': 'Payment',
+  'protection.workflow.kind.auth': 'Authentication',
+  'protection.workflow.kind.banking': 'Banking',
+  'protection.redirectLog.title': 'Redirect event log',
+  'protection.redirectLog.empty': 'No redirect decisions logged yet.',
+  'protection.redirectLog.falsePositive': 'false positive',
   'protection.download.badgeBlocked': 'Blocked',
   'protection.download.badgeHeld': 'On hold',
   'protection.download.blockedTitle': 'Dangerous download stopped',

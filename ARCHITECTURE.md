@@ -67,6 +67,7 @@ On by default (`privacy.web-protection` tool + Settings). State lives in `core/p
    - `guard-clipboard.js` (main world, all frames): blocks hidden shell commands copied to the clipboard (ClickFix / fake CAPTCHA).
    - `guard-notify.js` (main world, top frame): denies notification/push requests made without a user gesture.
 4. Hooks `chrome.downloads.onDeterminingFilename`, which holds every download before anything is written or the Save As dialog opens: downloads from threat hosts are cancelled; executables that start without a recent user gesture on the source site stay held until the user answers `blocked.html?mode=download` (closing it deletes the download).
+5. **Smart Redirect Protection** (`core/protection/redirect/`): classifies top-frame navigations with bundled workflow policies, tab-scoped temporary sessions (`chrome.storage.session`), and user settings. Opened-tab and same-tab cross-site hops are scored on `webNavigation.onCommitted`; known threat hosts always block. Legitimate payment/OAuth hops after a user gesture (including gestures on the opener tab) can proceed without permanently widening `allowedSites`.
 
 List entries that would block a whole TLD, a public suffix or a site in `SAFE_DOMAINS` (Google, YouTube, Bing, Microsoft, ...) are dropped both when lists are built and when rules are installed (`isSafeToBlock`), because `requestDomains` also matches every subdomain.
 

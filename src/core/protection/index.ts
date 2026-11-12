@@ -1,6 +1,17 @@
+export { classifyRedirect } from './redirect/classify'
+export { appendRedirectLog, buildLogEntry, markLogFalsePositive } from './redirect/log'
+export { mergeWorkflowPolicies, matchWorkflowPolicy } from './redirect/providers'
+export {
+  containsOpenRedirectTarget,
+  hostOfHttpUrl,
+  isExtensionOrAboutUrl,
+  stripUrlForLog,
+} from './redirect/privacy'
+export { applyVerdictToSession, createRedirectSession, isSessionExpired } from './redirect/sessionLogic'
 export {
   CONTENT_SCRIPT_IDS,
   DEFAULT_PROTECTION_STATE,
+  mergeProtectionState,
   DOWNLOAD_GESTURE_WINDOW_MS,
   emptyProtectionStats,
   MAX_RECENT_ENTRIES,
@@ -51,10 +62,17 @@ export type { OpenedTabRecord } from './openedTabs'
 export { THREAT_CATEGORIES, THREAT_LIST_CATEGORIES } from './types'
 export type {
   ProtectionBlockedCounts,
+  ProtectionBooleanToggleKey,
   ProtectionRecentEntry,
   ProtectionState,
   ProtectionStats,
+  RedirectLogEntry,
+  RedirectProtectionSettings,
   ThreatCategory,
   ThreatListCategory,
   ThreatsFile,
+  UnknownRedirectBehavior,
+  WorkflowHostPolicy,
+  WorkflowKind,
 } from './types'
+export type { RedirectContext, RedirectSession } from './redirect/types'

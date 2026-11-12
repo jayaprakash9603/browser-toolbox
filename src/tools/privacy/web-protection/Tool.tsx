@@ -8,7 +8,10 @@ import { CategoryToggles, GuardToggles } from '@/features/protection/components/
 import { ProtectionSuite } from '@/features/protection/components/ProtectionSuite'
 import { ProtectionToolHeader } from '@/features/protection/components/ProtectionToolHeader'
 import { RecentBlocked } from '@/features/protection/components/RecentBlocked'
+import { RedirectEventLog } from '@/features/protection/components/RedirectEventLog'
+import { RedirectProtectionSettings } from '@/features/protection/components/RedirectProtectionSettings'
 import { TrustedSitesEditor } from '@/features/protection/components/TrustedSitesEditor'
+import { WorkflowPoliciesEditor } from '@/features/protection/components/WorkflowPoliciesEditor'
 import { useProtection } from '@/features/protection/useProtection'
 import { PermissionNotice } from '@/features/site-access/PermissionNotice'
 import { StaggerChildren, StaggerItem } from '@/shared/components/motion/StaggerChildren'
@@ -71,6 +74,12 @@ export default function WebProtectionTool() {
           </div>
         </StaggerItem>
         <StaggerItem>
+          <div data-search-id="smart-redirect">
+            <h3 className="mb-2 text-xs font-semibold">{t('protection.smartRedirect.title')}</h3>
+            <RedirectProtectionSettings state={state} disabled={!state.enabled} onPatch={onPatch} />
+          </div>
+        </StaggerItem>
+        <StaggerItem>
           <div data-search-id="suite">
             <h3 className="mb-2 text-xs font-semibold">{t('protection.suiteTitle')}</h3>
             <ProtectionSuite />
@@ -86,6 +95,18 @@ export default function WebProtectionTool() {
             trusted={state.trusted}
             onChange={(trusted) => onPatch({ trusted })}
           />
+        </StaggerItem>
+        <StaggerItem>
+          <h3 className="mb-2 text-xs font-semibold">{t('protection.workflow.title')}</h3>
+          <WorkflowPoliciesEditor
+            policies={state.workflowHosts}
+            disabled={!state.enabled}
+            onChange={(workflowHosts) => onPatch({ workflowHosts })}
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <h3 className="mb-2 text-xs font-semibold">{t('protection.redirectLog.title')}</h3>
+          <RedirectEventLog />
         </StaggerItem>
         {threats && (
           <StaggerItem>

@@ -13,13 +13,11 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import type { ProtectionState, ThreatsFile } from '@/core/protection'
+import type { ProtectionBooleanToggleKey, ProtectionState, ThreatsFile } from '@/core/protection'
 import { Switch } from '@/shared/components/ui/switch'
 
-type ToggleKey = keyof Omit<ProtectionState, 'enabled' | 'trusted'>
-
 interface Row {
-  key: ToggleKey
+  key: ProtectionBooleanToggleKey
   icon: LucideIcon
   count?: number
 }

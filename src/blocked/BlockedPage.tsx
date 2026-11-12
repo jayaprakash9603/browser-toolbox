@@ -36,25 +36,48 @@ export function BlockedPage() {
 function RedirectBlockedPage() {
   const { t } = useTranslation()
   const ctx = useMemo(() => parseBlockedContext(), [])
-  const opener = new URLSearchParams(window.location.search).get('opener') ?? ''
+  const search = useMemo(() => new URLSearchParams(window.location.search), [])
+  const opener = search.get('opener') ?? ''
+  const risk = search.get('risk') ?? ''
+  const classification = search.get('classification') ?? ''
+  const reason = search.get('reason') ?? ''
+  const logId = search.get('logId') ?? ''
+  const at = useMemo(() => Date.now(), [])
   const [busy, setBusy] = useState(false)
+  const [reported, setReported] = useState(false)
 
   useEffect(() => {
     document.title = t('protection.redirect.title')
   }, [t])
 
+  const smartDetails = classification || risk || reason
+
   return (
     <ProtectionInterstitial
       icon={ShieldAlertIcon}
-      tone="danger"
+      tone={risk === 'low' ? 'warning' : 'danger'}
       badge={t('protection.category.redirect')}
       title={t('protection.redirect.title')}
-      description={t('protection.redirect.reason', { opener })}
+      description={
+        smartDetails
+          ? t('protection.redirect.reasonSmart', {
+              opener,
+              classification,
+              risk,
+            })
+          : t('protection.redirect.reason', { opener })
+      }
       tips={[t('protection.redirect.tipSafe'), t('protection.redirect.tipProceed')]}
       details={
         <>
           <DetailRow label={t('protection.redirect.openerLabel')} value={opener} />
           <DetailRow label={t('protection.blocked.addressLabel')} value={ctx.host} />
+          {reason && <DetailRow label={t('protection.redirect.reasonLabel')} value={reason} />}
+          {classification && (
+            <DetailRow label={t('protection.redirect.classificationLabel')} value={classification} />
+          )}
+          {risk && <DetailRow label={t('protection.redirect.riskLabel')} value={risk} />}
+          <DetailRow label={t('protection.redirect.timeLabel')} value={new Date(at).toLocaleString()} />
         </>
       }
       actions={
@@ -86,6 +109,20 @@ function RedirectBlockedPage() {
           >
             {t('protection.redirect.proceed')}
           </Button>
+          {logId && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full text-muted-foreground"
+              disabled={reported}
+              onClick={() => {
+                setReported(true)
+                void sendMessage({ type: 'PROTECTION_REDIRECT_REPORT_FP', logId })
+              }}
+            >
+              {reported ? t('protection.redirect.reported') : t('protection.redirect.reportFalsePositive')}
+            </Button>
+          )}
         </>
       }
     />
