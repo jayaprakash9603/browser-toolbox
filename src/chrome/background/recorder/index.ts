@@ -24,10 +24,10 @@ import {
   RECORDER_STOP_MENU_ID,
   syncRecorderContextMenu,
 } from './contextMenus'
+import { COUNTDOWN_SEC_KEY, RECORDER_COUNTDOWN_JS } from './countdownInject'
 import {
   mountMicPermissionFrame,
   removeMicPermissionFrame,
-  showRecorderCountdown,
   unmountRecorderCountdown,
   unmountRecorderPill,
 } from './controls'
@@ -147,10 +147,16 @@ async function beginCountdown(session: RecorderSession, tabId?: number): Promise
   const until = Date.now() + COUNTDOWN_SECONDS * 1000
   await setSession(markCountdown(session, until))
   const targetTabId = tabId ?? session.tabId ?? session.returnTabId
-  if (targetTabId != null) {
-    await chrome.scripting
-      .executeScript({ target: { tabId: targetTabId }, func: showRecorderCountdown, args: [COUNTDOWN_SECONDS] })
-      .catch(() => undefined)
+  if (targetTabId == null) return
+  try {
+    await chrome.tabs.update(targetTabId, { active: true }).catch(() => undefined)
+    await chrome.storage.session.set({ [COUNTDOWN_SEC_KEY]: COUNTDOWN_SECONDS })
+    await chrome.scripting.executeScript({
+      target: { tabId: targetTabId },
+      files: [RECORDER_COUNTDOWN_JS],
+    })
+  } catch (error) {
+    logger.debug('countdown overlay inject failed', error)
   }
 }
 

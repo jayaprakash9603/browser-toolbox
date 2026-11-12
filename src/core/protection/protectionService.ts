@@ -92,8 +92,31 @@ export function isTrustedHost(trusted: string[], pageUrl?: string): boolean {
   if (!pageUrl) return false
   try {
     const host = new URL(pageUrl).hostname.replace(/^www\./, '').toLowerCase()
-    return trusted.some((t) => host === t || host.endsWith(`.${t}`))
+    return hostMatchesTrustedList(host, trusted)
   } catch {
     return false
   }
+}
+
+/** Match a bare hostname or registrable site label against the trusted list (includes subdomains). */
+export function isTrustedSiteHost(trusted: string[], hostOrSite: string | null | undefined): boolean {
+  if (!hostOrSite) return false
+  const host = hostOrSite.replace(/^www\./, '').toLowerCase()
+  return hostMatchesTrustedList(host, trusted)
+}
+
+function hostMatchesTrustedList(host: string, trusted: string[]): boolean {
+  return trusted.some((t) => {
+    const entry = t.replace(/^www\./, '').toLowerCase()
+    return host === entry || host.endsWith(`.${entry}`)
+  })
+}
+
+export function isProtectionActiveForUrl(
+  state: Pick<import('./types').ProtectionState, 'enabled' | 'trusted'>,
+  pageUrl?: string,
+): boolean {
+  if (!state.enabled) return false
+  if (isTrustedHost(state.trusted, pageUrl)) return false
+  return true
 }

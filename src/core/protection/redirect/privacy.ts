@@ -1,3 +1,5 @@
+import { registrableDomain } from '../domain'
+
 const SENSITIVE_PARAMS = new Set([
   'token',
   'access_token',
@@ -46,7 +48,22 @@ export function pathOfHttpUrl(url: string | undefined): string {
   }
 }
 
-export function containsOpenRedirectTarget(url: string, destSite: string | null): boolean {
+function embeddedHostRelatesToDest(embeddedHost: string, destSite: string | null, anchorSite: string | null): boolean {
+  const host = embeddedHost.replace(/^www\./, '').toLowerCase()
+  const embeddedSite = registrableDomain(host)
+  if (destSite && (embeddedSite === destSite || host === destSite || host.endsWith(`.${destSite}`))) {
+    return true
+  }
+  if (anchorSite && (embeddedSite === anchorSite || host.endsWith(`.${anchorSite}`))) return true
+  return false
+}
+
+/** Flags URLs that carry an unrelated third-party destination (common open-redirect abuse). */
+export function containsOpenRedirectTarget(
+  url: string,
+  destSite: string | null,
+  anchorSite: string | null = null,
+): boolean {
   if (!destSite) return false
   try {
     const parsed = new URL(url)
@@ -56,9 +73,7 @@ export function containsOpenRedirectTarget(url: string, destSite: string | null)
       if (!/^https?:\/\//i.test(decoded)) continue
       try {
         const embedded = new URL(decoded)
-        const site = embedded.hostname.replace(/^www\./, '').toLowerCase()
-        const registrable = site.split('.').slice(-2).join('.')
-        if (registrable !== destSite && site !== destSite) return true
+        if (!embeddedHostRelatesToDest(embedded.hostname, destSite, anchorSite)) return true
       } catch {
         continue
       }
@@ -69,8 +84,7 @@ export function containsOpenRedirectTarget(url: string, destSite: string | null)
       try {
         const raw = decodeURIComponent(httpMatch[0].replace(/%2F/gi, '/'))
         const embedded = new URL(raw)
-        const site = embedded.hostname.replace(/^www\./, '').toLowerCase()
-        if (site !== destSite) return true
+        if (!embeddedHostRelatesToDest(embedded.hostname, destSite, anchorSite)) return true
       } catch {
         return true
       }

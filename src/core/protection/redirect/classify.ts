@@ -1,4 +1,4 @@
-import { siteOfUrl } from '../domain'
+import { sameRegistrableSite, siteOfUrl } from '../domain'
 import { OPENED_TAB_GESTURE_MS } from '../openedTabs'
 import { containsOpenRedirectTarget, hostOfHttpUrl } from './privacy'
 import { isUrlShortenerHost, matchWorkflowPolicy, workflowKindAllowed } from './providers'
@@ -24,6 +24,18 @@ const BROWSER_TRANSITIONS = new Set([
 function hasRecentGesture(ctx: RedirectContext): boolean {
   const window = OPENED_TAB_GESTURE_MS
   return ctx.now - ctx.lastGestureTabAt <= window || ctx.now - ctx.lastGestureOpenerAt <= window
+}
+
+/** Click or submit on this tab, or a recent click on the opener (for pop-up tabs). */
+function isUserInitiatedNavigation(ctx: RedirectContext): boolean {
+  if (hasRecentGesture(ctx)) return true
+  if (
+    (ctx.transitionType === 'link' || ctx.transitionType === 'form_submit') &&
+    !ctx.transitionQualifiers?.includes('client_redirect')
+  ) {
+    return true
+  }
+  return false
 }
 
 function actionFromUnknown(behavior: UnknownRedirectBehavior, score: number): RedirectAction {
@@ -94,6 +106,18 @@ export function classifyRedirect(ctx: RedirectContext): RedirectVerdict {
     }
   }
 
+  if (ctx.isTrustedSource) {
+    return {
+      classification: 'TRUSTED_REDIRECT',
+      risk: 'low',
+      score: settings.riskWeights.sameOrigin,
+      reasons: ['user_trusted_source'],
+      action: 'allow',
+    }
+  }
+
+  const anchorSite = ctx.sourceSite ?? ctx.initiatingSite
+
   if (sessionAllowsDest(ctx)) {
     const complete = destSite === ctx.session?.initiatingSite
     reasons.push(complete ? 'workflow_callback' : 'active_workflow_session')
@@ -107,12 +131,12 @@ export function classifyRedirect(ctx: RedirectContext): RedirectVerdict {
     }
   }
 
-  if (destSite && sourceSite && destSite === sourceSite) {
+  if (destSite && anchorSite && destSite === anchorSite) {
     return {
       classification: 'NORMAL_REDIRECT',
       risk: 'low',
       score: settings.riskWeights.sameOrigin,
-      reasons: ['same_site'],
+      reasons: sourceSite ? ['same_site'] : ['same_site_as_opener'],
       action: 'allow',
     }
   }
@@ -150,12 +174,22 @@ export function classifyRedirect(ctx: RedirectContext): RedirectVerdict {
     }
   }
 
+  if (isUserInitiatedNavigation(ctx)) {
+    return {
+      classification: 'NORMAL_REDIRECT',
+      risk: 'low',
+      score: settings.riskWeights.sameOrigin,
+      reasons: ['user_initiated'],
+      action: 'allow',
+    }
+  }
+
   const signals: Partial<Record<keyof typeof settings.riskWeights, boolean>> = {}
-  if (destSite && sourceSite && destSite !== sourceSite) {
+  if (destSite && anchorSite && !sameRegistrableSite(destSite, anchorSite)) {
     signals.crossDomainUnrelated = true
     reasons.push('cross_domain')
   }
-  if (settings.detectJavascript && isClientRedirect(ctx)) {
+  if (settings.detectJavascript && isClientRedirect(ctx) && !isUserInitiatedNavigation(ctx)) {
     signals.unknownJavascript = true
     reasons.push('client_redirect')
   }
@@ -171,7 +205,7 @@ export function classifyRedirect(ctx: RedirectContext): RedirectVerdict {
     signals.multipleUnexpected = true
     reasons.push('url_shortener')
   }
-  if (containsOpenRedirectTarget(ctx.destUrl, destSite)) {
+  if (containsOpenRedirectTarget(ctx.destUrl, destSite, anchorSite)) {
     signals.crossDomainUnrelated = true
     reasons.push('open_redirect_pattern')
   }
@@ -187,11 +221,20 @@ export function classifyRedirect(ctx: RedirectContext): RedirectVerdict {
   if (classification === 'SUSPICIOUS_REDIRECT' && settings.unknownBehavior === 'block' && score >= 45) {
     action = 'block'
   }
-  if (ctx.isOpenedTab && !gesture && !policy && settings.detectAutomatic && action === 'allow') {
+  const userInitiated = isUserInitiatedNavigation(ctx)
+  if (ctx.isOpenedTab && !userInitiated && !policy && settings.detectAutomatic && action === 'allow') {
     action = settings.unknownBehavior === 'allow' ? 'allow' : settings.unknownBehavior
   }
 
-  if (ctx.isOpenedTab && !gesture && !policy && !ctx.session && settings.detectAutomatic) {
+  const sameOrgAsOpener = destSite && anchorSite && sameRegistrableSite(destSite, anchorSite)
+  if (
+    ctx.isOpenedTab &&
+    !userInitiated &&
+    !policy &&
+    !ctx.session &&
+    settings.detectAutomatic &&
+    !sameOrgAsOpener
+  ) {
     if (settings.unknownBehavior === 'block') {
       action = 'block'
       classification = 'SUSPICIOUS_REDIRECT'

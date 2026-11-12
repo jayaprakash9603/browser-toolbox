@@ -29,6 +29,7 @@ function ctx(partial: Partial<RedirectContext>): RedirectContext {
     recentHopCount: 0,
     destThreatCategory: null,
     isTrustedDest: false,
+    isTrustedSource: false,
     isOpenedTab: true,
     workflowHosts: policies,
     settings: { ...DEFAULT_REDIRECT_PROTECTION },
@@ -37,6 +38,27 @@ function ctx(partial: Partial<RedirectContext>): RedirectContext {
 }
 
 describe('classifyRedirect', () => {
+  it('allows opened-tab subdomain when the source URL is not available yet', () => {
+    const verdict = classifyRedirect(
+      ctx({
+        sourceUrl: undefined,
+        sourceSite: null,
+        sourceHost: null,
+        destUrl: 'https://app.example.com/checkout',
+        destHost: 'app.example.com',
+        destSite: 'example.com',
+        initiatingSite: 'example.com',
+        initiatingHost: 'www.example.com',
+        isOpenedTab: true,
+        lastGestureTabAt: 0,
+        lastGestureOpenerAt: 0,
+        settings: { ...DEFAULT_REDIRECT_PROTECTION, unknownBehavior: 'block', detectAutomatic: true },
+      }),
+    )
+    expect(verdict.action).toBe('allow')
+    expect(verdict.reasons).toContain('same_site_as_opener')
+  })
+
   it('allows same-site navigation', () => {
     const verdict = classifyRedirect(
       ctx({
@@ -113,12 +135,46 @@ describe('classifyRedirect', () => {
         destUrl: 'https://ads.other.net/landing',
         destHost: 'ads.other.net',
         destSite: 'other.net',
+        transitionType: 'auto_toplevel',
+        transitionQualifiers: [],
         lastGestureOpenerAt: 0,
         lastGestureTabAt: 0,
         settings: { ...DEFAULT_REDIRECT_PROTECTION, unknownBehavior: 'warn' },
       }),
     )
     expect(verdict.action).toBe('warn')
+  })
+
+  it('allows when the user clicked a normal link', () => {
+    const verdict = classifyRedirect(
+      ctx({
+        destUrl: 'https://docs.other.net/guide',
+        destHost: 'docs.other.net',
+        destSite: 'other.net',
+        transitionType: 'link',
+        transitionQualifiers: [],
+        lastGestureTabAt: 0,
+        lastGestureOpenerAt: 0,
+        isOpenedTab: false,
+      }),
+    )
+    expect(verdict.action).toBe('allow')
+    expect(verdict.reasons).toContain('user_initiated')
+  })
+
+  it('allows redirects from a trusted source site', () => {
+    const verdict = classifyRedirect(
+      ctx({
+        destUrl: 'https://other.net/landing',
+        destSite: 'other.net',
+        isTrustedSource: true,
+        transitionType: 'auto_toplevel',
+        lastGestureTabAt: 0,
+        lastGestureOpenerAt: 0,
+      }),
+    )
+    expect(verdict.action).toBe('allow')
+    expect(verdict.reasons).toContain('user_trusted_source')
   })
 
   it('allows trusted workflow session hop', () => {
@@ -170,7 +226,10 @@ describe('classifyRedirect', () => {
         destUrl: 'https://checkout.razorpay.com/v1/pay',
         destHost: 'checkout.razorpay.com',
         destSite: 'razorpay.com',
+        transitionType: 'auto_toplevel',
+        transitionQualifiers: ['client_redirect'],
         lastGestureOpenerAt: now - REDIRECT_GESTURE_MS - 1,
+        lastGestureTabAt: 0,
         settings: { ...DEFAULT_REDIRECT_PROTECTION, unknownBehavior: 'block' },
       }),
     )

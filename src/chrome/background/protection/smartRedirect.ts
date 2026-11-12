@@ -5,8 +5,10 @@ import {
   hostOfHttpUrl,
   isExtensionOrAboutUrl,
   isTrustedHost,
+  isTrustedSiteHost,
   mergeWorkflowPolicies,
   openedTabRecord,
+  primaryRedirectReasonLabel,
   recordProtectionBlock,
   shouldBlockOpenedTabNavigation,
   siteOfUrl,
@@ -47,6 +49,8 @@ async function saveOpenedRecords(): Promise<void> {
 
 function blockedUrl(params: {
   opener: string
+  fromHost: string
+  toHost: string
   target: string
   risk: string
   classification: string
@@ -56,6 +60,8 @@ function blockedUrl(params: {
   const query = new URLSearchParams({
     mode: 'redirect',
     opener: params.opener,
+    from: params.fromHost,
+    to: params.toHost,
     risk: params.risk,
     classification: params.classification,
     reason: params.reason,
@@ -115,6 +121,11 @@ async function buildContext(
     recentHopCount: hopCount,
     destThreatCategory: threat,
     isTrustedDest: isTrustedHost(state.trusted, destUrl),
+    isTrustedSource:
+      isTrustedHost(state.trusted, sourceUrl) ||
+      isTrustedSiteHost(state.trusted, record?.openerSite) ||
+      isTrustedSiteHost(state.trusted, openerHost) ||
+      isTrustedSiteHost(state.trusted, hostOfHttpUrl(sourceUrl)),
     isOpenedTab: record != null,
     workflowHosts: policies,
     settings: state.redirectProtection,
@@ -148,6 +159,8 @@ async function onCommitted(details: chrome.webNavigation.WebNavigationTransition
   if (!smart && !watchOpened) return
   if (!smart && !record) return
 
+  if (isTrustedHost(state.trusted, details.url)) return
+
   let sourceUrl: string | undefined
   try {
     const tab = await chrome.tabs.get(details.tabId)
@@ -155,6 +168,9 @@ async function onCommitted(details: chrome.webNavigation.WebNavigationTransition
   } catch {
     sourceUrl = undefined
   }
+
+  if (sourceUrl && isTrustedHost(state.trusted, sourceUrl)) return
+  if (record && isTrustedSiteHost(state.trusted, record.openerSite)) return
 
   if (smart) {
     const ctx = await buildContext(details, record, sourceUrl)
@@ -187,14 +203,18 @@ async function onCommitted(details: chrome.webNavigation.WebNavigationTransition
 
     if (verdict.action === 'warn' || verdict.action === 'block') {
       const opener = record?.openerSite ?? ctx.initiatingSite ?? 'unknown'
+      const fromHost = ctx.sourceHost ?? ctx.initiatingHost ?? opener
+      const toHost = ctx.destHost ?? hostOfHttpUrl(details.url) ?? 'unknown'
       logger.debug('smart redirect interrupt', { tabId: details.tabId, action: verdict.action })
       await chrome.tabs.update(details.tabId, {
         url: blockedUrl({
           opener,
+          fromHost,
+          toHost,
           target: details.url,
           risk: verdict.risk,
           classification: verdict.classification,
-          reason: verdict.reasons[0] ?? verdict.classification,
+          reason: primaryRedirectReasonLabel(verdict.reasons),
           logId: logEntry.id,
         }),
       })
@@ -219,7 +239,16 @@ async function onCommitted(details: chrome.webNavigation.WebNavigationTransition
     isTrusted: (url) => isTrustedHost(state.trusted, url),
   })
   if (block) {
-    const query = new URLSearchParams({ mode: 'redirect', opener: record.openerSite })
+    const destHost = hostOfHttpUrl(details.url) ?? 'unknown'
+    const query = new URLSearchParams({
+      mode: 'redirect',
+      opener: record.openerSite,
+      from: record.openerSite,
+      to: destHost,
+      reason: primaryRedirectReasonLabel(['cross_domain']),
+      classification: 'SUSPICIOUS_REDIRECT',
+      risk: 'medium',
+    })
     await chrome.tabs.update(details.tabId, {
       url: chrome.runtime.getURL(`blocked.html?${query}#${details.url}`),
     })

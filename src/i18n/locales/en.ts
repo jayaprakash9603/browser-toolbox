@@ -438,14 +438,22 @@ const en = {
   'protection.redirect.title': 'Redirect stopped',
   'protection.redirect.reason':
     'A tab opened by {{opener}} tried to switch to a different site on its own, without a click from you.',
+  'protection.redirect.reasonFromTo':
+    'This tab tried to open {{to}} on its own after starting from {{from}} (opened by {{opener}}).',
   'protection.redirect.tipSafe':
     'Genuine sites rarely send a tab they opened to another site minutes later.',
   'protection.redirect.tipProceed': 'Continue only if you expected to go to this site.',
+  'protection.redirect.fromLabel': 'From',
+  'protection.redirect.toLabel': 'To',
   'protection.redirect.openerLabel': 'Opened by',
   'protection.redirect.close': 'Close this tab',
   'protection.redirect.proceed': 'Continue to this site',
+  'protection.redirect.trustSite':
+    'Always allow this website (skip redirect checks)',
+  'protection.trusted.contextMenuHint':
+    'Right-click a page and choose Pause web protection on this site, same as ad blocking.',
   'protection.redirect.reasonSmart':
-    'A tab opened from {{opener}} was held before loading {{classification}} (risk: {{risk}}).',
+    'Redirect from {{from}} to {{to}} was held: {{classification}} (risk: {{risk}}).',
   'protection.redirect.reasonLabel': 'Reason',
   'protection.redirect.classificationLabel': 'Classification',
   'protection.redirect.riskLabel': 'Risk level',

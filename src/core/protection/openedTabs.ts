@@ -1,4 +1,4 @@
-import { siteOfUrl } from './domain'
+import { sameRegistrableSite, siteOfUrl } from './domain'
 
 /** A click or key press in the opened tab this recently makes its next navigation the user's own. */
 export const OPENED_TAB_GESTURE_MS = 5_000
@@ -44,7 +44,8 @@ export interface OpenedTabNavigation {
 
 export function shouldBlockOpenedTabNavigation(nav: OpenedTabNavigation): boolean {
   const site = siteOfUrl(nav.url)
-  if (!site || nav.record.allowedSites.includes(site)) return false
+  if (!site) return false
+  if (nav.record.allowedSites.some((allowed) => sameRegistrableSite(allowed, site))) return false
   if (nav.transitionType && BROWSER_TRANSITIONS.has(nav.transitionType)) return false
   if (nav.transitionQualifiers?.some((q) => q === 'forward_back' || q === 'from_address_bar')) return false
   if (nav.now - nav.lastGestureAt <= OPENED_TAB_GESTURE_MS) return false

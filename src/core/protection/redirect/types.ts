@@ -91,6 +91,8 @@ export interface RedirectContext {
   recentHopCount: number
   destThreatCategory: string | null
   isTrustedDest: boolean
+  /** Origin tab or opener is on the user's trusted / relaxed sites list. */
+  isTrustedSource: boolean
   isOpenedTab: boolean
   workflowHosts: WorkflowHostPolicy[]
   settings: RedirectProtectionSettings

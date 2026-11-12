@@ -60,7 +60,12 @@ import { handleReadingListMenuClick, isReadingListMenuItem } from './readingList
 import { registerElementInspector } from './elementInspector'
 import { registerFontInspector } from './fontInspector'
 import { registerInspectorFrameFocus } from './inspectorFrameFocus'
-import { registerColorPicker } from './colorPicker'
+import { pickColorFromScreen, pickColorOnPage, registerColorPicker } from './colorPicker'
+import {
+  COLOR_PICK_PAGE_MENU_ID,
+  COLOR_PICK_SCREEN_MENU_ID,
+  isColorPickerMenuItem,
+} from './colorPicker/menus'
 import { screenshotModeFromMenuAction } from './screenshot/contextMenus'
 import { startScreenshot } from './screenshot/start'
 import type { ScreenshotMode } from '@/core/screenshot/types'
@@ -135,6 +140,11 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   }
   if (isSiteQuickActionMenuItem(menuItemId)) {
     void handleSiteQuickActionClick(menuItemId, tab, info.frameId ?? 0)
+    return
+  }
+  if (isColorPickerMenuItem(menuItemId)) {
+    if (menuItemId === COLOR_PICK_SCREEN_MENU_ID) void pickColorFromScreen(tab)
+    else if (menuItemId === COLOR_PICK_PAGE_MENU_ID) void pickColorOnPage(tab)
     return
   }
   if (menuItemId.startsWith('toolbox.screenshot.')) {

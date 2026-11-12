@@ -32,6 +32,20 @@ export function registrableDomain(host: string): string {
   return parts.slice(-2).join('.')
 }
 
+/** True when both values are the same site (registrable domain or host). */
+export function sameRegistrableSite(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (!a || !b) return false
+  const left = a.includes('.') && !a.includes('/') ? registrableDomain(a) : a
+  const right = b.includes('.') && !b.includes('/') ? registrableDomain(b) : b
+  return left === right
+}
+
+/** Hostname of http(s) URL belongs to the same registrable site as `site` (e.g. site `example.com`). */
+export function hostOnSite(host: string | null | undefined, site: string | null | undefined): boolean {
+  if (!host || !site) return false
+  return registrableDomain(host.replace(/^www\./, '').toLowerCase()) === site
+}
+
 /** Registrable domain of an http(s) URL, so `app.example.com` and `example.com` are one site. */
 export function siteOfUrl(url: string | undefined): string | null {
   if (!url) return null

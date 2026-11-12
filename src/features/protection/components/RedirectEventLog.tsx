@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import type { RedirectLogEntry } from '@/core/protection'
+import { primaryRedirectReasonLabel, type RedirectLogEntry } from '@/core/protection'
 import { sendMessage } from '@/core/messaging'
 
 export function RedirectEventLog() {
@@ -27,10 +27,10 @@ export function RedirectEventLog() {
             <span className="truncate font-medium">
               {entry.sourceHost || '—'} → {entry.destHost || '—'}
             </span>
-            <span className="shrink-0 text-muted-foreground">{entry.action}</span>
+            <span className="shrink-0 text-muted-foreground">{entry.classification}</span>
           </div>
           <p className="text-muted-foreground">
-            {entry.classification} · {entry.risk} · {new Date(entry.at).toLocaleString()}
+            {primaryRedirectReasonLabel(entry.reasons)} · {entry.action} · {new Date(entry.at).toLocaleString()}
             {entry.falsePositive ? ` · ${t('protection.redirectLog.falsePositive')}` : ''}
           </p>
         </li>

@@ -8,13 +8,17 @@ import { setPanelRouteIntent } from '@/core/panel/navigationSession'
 import { isRestrictedCaptureUrl } from '@/core/screenshot/restricted'
 import { openExtensionPanel } from '@/platform/panel'
 
-import { runColorPicker, type ColorPickerPageOptions } from './page'
+import {
+  runColorPicker,
+  runScreenColorPick,
+  type ColorPickerPageText,
+} from './page'
 
 const logger = createLogger('color-picker')
 
 let running = false
 
-function pageText(): ColorPickerPageOptions['text'] {
+function pageText(): ColorPickerPageText {
   return {
     copied: getChromeMessage('colorCopied'),
     copyFailed: getChromeMessage('colorCopyFailed'),
@@ -23,6 +27,11 @@ function pageText(): ColorPickerPageOptions['text'] {
     hintFormat: getChromeMessage('colorHintFormat'),
     hintKeep: getChromeMessage('colorHintKeep'),
     hintExit: getChromeMessage('colorHintExit'),
+    resultTitle: getChromeMessage('colorResultTitle'),
+    copyHex: getChromeMessage('colorCopyHex'),
+    copyRgb: getChromeMessage('colorCopyRgb'),
+    copyHsl: getChromeMessage('colorCopyHsl'),
+    close: getChromeMessage('colorResultClose'),
   }
 }
 
@@ -58,6 +67,33 @@ export async function pickColorOnPage(tab?: chrome.tabs.Tab): Promise<void> {
       logger.warn('page picker unavailable', injection?.result?.error)
     } catch (error) {
       logger.warn('page picker failed', error)
+    }
+    await openPanelFallback(target.windowId)
+  } finally {
+    running = false
+  }
+}
+
+export async function pickColorFromScreen(tab?: chrome.tabs.Tab): Promise<void> {
+  if (running) return
+  running = true
+  try {
+    const target = tab?.id != null && tab.url ? tab : ((await getActiveWebTab()) ?? tab)
+    if (target?.id == null || isRestrictedCaptureUrl(target.url)) {
+      await openPanelFallback(target?.windowId)
+      return
+    }
+    const state = await loadColorPickerState()
+    try {
+      const [injection] = await chrome.scripting.executeScript({
+        target: { tabId: target.id },
+        func: runScreenColorPick,
+        args: [{ format: pageFormatFor(state.format), text: pageText() }],
+      })
+      if (injection?.result?.ok) return
+      logger.warn('screen picker unavailable', injection?.result?.error)
+    } catch (error) {
+      logger.warn('screen picker failed', error)
     }
     await openPanelFallback(target.windowId)
   } finally {

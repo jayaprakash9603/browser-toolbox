@@ -5,6 +5,13 @@ import type { WorkflowHostPolicy, WorkflowKind } from '@/core/protection'
 import { normalizeHostname } from '@/core/adblock/hostname'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/components/ui/select'
 
 const KINDS: WorkflowKind[] = ['payment', 'auth', 'banking']
 
@@ -31,18 +38,22 @@ export function WorkflowPoliciesEditor({
           placeholder={t('protection.workflow.placeholder')}
           className="h-8 min-w-[8rem] flex-1 text-xs"
         />
-        <select
-          className="h-8 rounded-md border bg-background px-2 text-xs"
+        <Select
           value={kind}
           disabled={disabled}
-          onChange={(e) => setKind(e.target.value as WorkflowKind)}
+          onValueChange={(value) => setKind(value as WorkflowKind)}
         >
-          {KINDS.map((k) => (
-            <option key={k} value={k}>
-              {t(`protection.workflow.kind.${k}`)}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger size="sm" className="h-8 w-[7.5rem]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {KINDS.map((k) => (
+              <SelectItem key={k} value={k}>
+                {t(`protection.workflow.kind.${k}`)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Button
           type="button"
           size="sm"

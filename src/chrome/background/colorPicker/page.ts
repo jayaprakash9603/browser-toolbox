@@ -12,6 +12,11 @@ export interface ColorPickerPageText {
   hintFormat: string
   hintKeep: string
   hintExit: string
+  resultTitle: string
+  copyHex: string
+  copyRgb: string
+  copyHsl: string
+  close: string
 }
 
 export interface ColorPickerPageOptions {
@@ -28,11 +33,10 @@ export interface ColorPickerPageResult {
 
 export function runColorPicker(options: ColorPickerPageOptions): Promise<ColorPickerPageResult> {
   const HOST_ID = 'tbx-color-picker-host'
-  const TOAST_ID = 'tbx-color-toast-host'
+  const RESULT_ID = 'tbx-color-result-host'
   const FORMATS = ['hex', 'rgb', 'hsl'] as const
   const ZOOMS = [5, 7, 9, 11, 15, 21]
   const LOUPE = 132
-  const TOAST_MS = 2600
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   type Host = HTMLElement & { __dispose?: () => void }
@@ -247,147 +251,121 @@ export function runColorPicker(options: ColorPickerPageOptions): Promise<ColorPi
       hintTimer = window.setTimeout(() => hint.classList.add('off'), 4200)
     }
 
-    // ── Toast ────────────────────────────────────────────────────────────────
-    let toastHost: Host | null = null
-    let toastTimer = 0
-    let toastRemaining = TOAST_MS
-    let toastStarted = 0
-    let toastBar: Animation | null = null
+    function showResultPanel(r: number, g: number, b: number, pickedFormat: string, copied: boolean): void {
+      const stale = document.getElementById(RESULT_ID) as Host | null
+      stale?.__dispose?.()
+      stale?.remove()
 
-    function dismissToast(): void {
-      window.clearTimeout(toastTimer)
-      const target = toastHost
-      if (!target) return
-      toastHost = null
-      const pill = target.shadowRoot?.querySelector('.toast') as HTMLElement | null
-      const done = () => target.remove()
-      if (!pill || reduced) {
-        pill?.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, fill: 'forwards' }).finished.then(done, done)
-        if (!pill) done()
-        return
-      }
-      pill
-        .animate(
-          [
-            { opacity: 1, transform: 'translateY(0) scale(1)' },
-            { opacity: 0, transform: 'translateY(-10px) scale(.96)' },
-          ],
-          { duration: 160, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' },
-        )
-        .finished.then(done, done)
-    }
-
-    function armToast(ms: number): void {
-      window.clearTimeout(toastTimer)
-      toastRemaining = ms
-      toastStarted = performance.now()
-      toastTimer = window.setTimeout(dismissToast, ms)
-    }
-
-    function showToast(copied: boolean, value: string, formatName: string): void {
-      const hex = toHex(current.r, current.g, current.b)
-      const light = (current.r * 299 + current.g * 587 + current.b * 114) / 1000 > 150
-      if (!toastHost) {
-        const stale = document.getElementById(TOAST_ID) as Host | null
-        stale?.__dispose?.()
-        stale?.remove()
-
-        const el = document.createElement('div') as Host
-        el.id = TOAST_ID
-        el.style.cssText =
-          'position:fixed;left:0;right:0;top:10px;z-index:2147483647;display:flex;justify-content:center;pointer-events:none;'
-        const sh = el.attachShadow({ mode: 'open' })
-        sh.innerHTML = `
-          <style>
-            :host { all: initial; }
-            * { box-sizing: border-box; }
-            .toast { position:relative; display:flex; align-items:center; gap:9px; height:38px;
-              padding:0 8px 0 7px; border-radius:999px; overflow:hidden; pointer-events:auto; cursor:default;
-              font:500 12px/1 system-ui,-apple-system,'Segoe UI',sans-serif;
-              color:#f4f4f5; background:rgba(26,26,30,.9); border:1px solid rgba(255,255,255,.12);
-              box-shadow:0 10px 30px rgba(0,0,0,.32), 0 2px 6px rgba(0,0,0,.2);
-              -webkit-backdrop-filter:blur(16px) saturate(170%); backdrop-filter:blur(16px) saturate(170%); }
-            .sw { width:22px; height:22px; border-radius:50%; flex:none; background:var(--c);
-              box-shadow:inset 0 0 0 1px rgba(255,255,255,.28), 0 0 0 2px rgba(255,255,255,.08); }
-            .val { font:600 13px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; letter-spacing:.01em; }
-            .tag { display:inline-flex; align-items:center; gap:4px; padding:4px 8px 4px 6px; border-radius:999px;
-              font-size:10.5px; font-weight:600; color:#86efac; background:rgba(34,197,94,.16); }
-            .tag.fail { color:#fca5a5; background:rgba(239,68,68,.16); }
-            .tag svg { width:12px; height:12px; }
-            .tag path { stroke-dasharray:20; stroke-dashoffset:0; }
-            .fmt { opacity:.55; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
-            .bar { position:absolute; left:0; right:0; bottom:0; height:2px; background:var(--c);
-              transform-origin:left center; opacity:.9; }
-            @media (prefers-color-scheme: light) {
-              .toast { color:#18181b; background:rgba(255,255,255,.92); border-color:rgba(0,0,0,.08);
-                box-shadow:0 10px 30px rgba(0,0,0,.16), 0 2px 6px rgba(0,0,0,.08); }
-              .sw { box-shadow:inset 0 0 0 1px rgba(0,0,0,.14), 0 0 0 2px rgba(0,0,0,.04); }
-              .tag { color:#15803d; background:rgba(34,197,94,.14); }
-              .tag.fail { color:#b91c1c; background:rgba(239,68,68,.12); }
-            }
-          </style>
-          <div class="toast" role="status" aria-live="polite">
+      const hex = toHex(r, g, b)
+      const el = document.createElement('div') as Host
+      el.id = RESULT_ID
+      el.style.cssText =
+        'position:fixed;left:0;right:0;top:12px;z-index:2147483647;display:flex;justify-content:center;pointer-events:none;'
+      const sh = el.attachShadow({ mode: 'open' })
+      sh.innerHTML = `
+        <style>
+          :host { all: initial; }
+          * { box-sizing: border-box; }
+          .card { pointer-events:auto; width:min(360px,calc(100vw - 24px)); padding:12px 12px 10px; border-radius:14px;
+            font:500 12px/1.35 system-ui,-apple-system,'Segoe UI',sans-serif;
+            color:#f4f4f5; background:rgba(22,22,26,.94); border:1px solid rgba(255,255,255,.12);
+            box-shadow:0 14px 40px rgba(0,0,0,.38), 0 2px 8px rgba(0,0,0,.2);
+            -webkit-backdrop-filter:blur(16px) saturate(170%); backdrop-filter:blur(16px) saturate(170%); }
+          .head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
+          .title { font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; opacity:.75; }
+          .close { border:0; background:transparent; color:inherit; opacity:.65; cursor:pointer; font-size:18px; line-height:1; padding:2px 6px; border-radius:6px; }
+          .close:hover { opacity:1; background:rgba(255,255,255,.08); }
+          .main { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+          .sw { width:42px; height:42px; border-radius:10px; flex:none; background:var(--c); box-shadow:inset 0 0 0 1px rgba(255,255,255,.25); }
+          .val { font:600 14px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; word-break:break-all; }
+          .status { margin-top:4px; font-size:10.5px; font-weight:600; color:#86efac; }
+          .status.fail { color:#fca5a5; }
+          .actions { display:flex; flex-wrap:wrap; gap:6px; }
+          .btn { border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:inherit;
+            border-radius:999px; padding:6px 10px; font-size:11px; font-weight:600; cursor:pointer; }
+          .btn:hover { background:rgba(255,255,255,.12); }
+          .btn[data-active="true"] { border-color:rgba(255,255,255,.28); background:rgba(255,255,255,.16); }
+          @media (prefers-color-scheme: light) {
+            .card { color:#18181b; background:rgba(255,255,255,.95); border-color:rgba(0,0,0,.08);
+              box-shadow:0 14px 40px rgba(0,0,0,.14), 0 2px 8px rgba(0,0,0,.06); }
+            .btn { border-color:rgba(0,0,0,.1); background:rgba(0,0,0,.04); }
+            .btn:hover { background:rgba(0,0,0,.07); }
+            .status { color:#15803d; }
+            .status.fail { color:#b91c1c; }
+          }
+        </style>
+        <div class="card" role="dialog" aria-labelledby="tbx-color-result-title">
+          <div class="head">
+            <span class="title" id="tbx-color-result-title"></span>
+            <button type="button" class="close" data-action="close" aria-label="Close">×</button>
+          </div>
+          <div class="main">
             <span class="sw"></span>
-            <span class="val"></span>
-            <span class="fmt"></span>
-            <span class="tag">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"/></svg>
-              <span class="msg"></span>
-            </span>
-            <span class="bar"></span>
-          </div>`
-        el.__dispose = () => window.clearTimeout(toastTimer)
-        const pill = sh.querySelector('.toast') as HTMLElement
-        pill.addEventListener('pointerenter', () => {
-          window.clearTimeout(toastTimer)
-          toastRemaining = Math.max(900, toastRemaining - (performance.now() - toastStarted))
-          toastBar?.pause()
+            <div>
+              <div class="val"></div>
+              <div class="status"></div>
+            </div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn" data-format="hex"></button>
+            <button type="button" class="btn" data-format="rgb"></button>
+            <button type="button" class="btn" data-format="hsl"></button>
+          </div>
+        </div>`
+
+      const card = sh.querySelector('.card') as HTMLElement
+      const statusEl = sh.querySelector('.status') as HTMLElement
+      const valEl = sh.querySelector('.val') as HTMLElement
+      ;(sh.querySelector('.title') as HTMLElement).textContent = options.text.resultTitle
+      card.style.setProperty('--c', hex)
+
+      const formatButtons = Array.from(sh.querySelectorAll<HTMLButtonElement>('.btn[data-format]'))
+      const labels: Record<string, string> = {
+        hex: options.text.copyHex,
+        rgb: options.text.copyRgb,
+        hsl: options.text.copyHsl,
+      }
+      for (const button of formatButtons) {
+        const fmt = button.dataset.format ?? 'hex'
+        button.textContent = labels[fmt] ?? fmt.toUpperCase()
+        button.dataset.active = fmt === pickedFormat ? 'true' : 'false'
+        button.addEventListener('click', () => {
+          const value = formatValue(fmt as (typeof FORMATS)[number], r, g, b)
+          valEl.textContent = value
+          for (const peer of formatButtons) peer.dataset.active = peer === button ? 'true' : 'false'
+          void copyText(value).then((ok) => {
+            statusEl.textContent = ok ? options.text.copied : options.text.copyFailed
+            statusEl.classList.toggle('fail', !ok)
+          })
         })
-        pill.addEventListener('pointerleave', () => {
-          armToast(toastRemaining)
-          toastBar?.play()
-        })
-        pill.addEventListener('click', dismissToast)
-        document.documentElement.append(el)
-        toastHost = el
-        if (!reduced) {
-          pill.animate(
-            [
-              { opacity: 0, transform: 'translateY(-16px) scale(.92)' },
-              { opacity: 1, transform: 'translateY(0) scale(1)' },
-            ],
-            { duration: 280, easing: 'cubic-bezier(.2,.9,.25,1.12)' },
-          )
-        } else {
-          pill.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 120 })
+      }
+
+      const activeValue = formatValue(pickedFormat as (typeof FORMATS)[number], r, g, b)
+      valEl.textContent = activeValue
+      statusEl.textContent = copied ? options.text.copied : options.text.copyFailed
+      statusEl.classList.toggle('fail', !copied)
+
+      const dismiss = () => {
+        window.removeEventListener('keydown', onResultKey, true)
+        el.remove()
+      }
+      el.__dispose = dismiss
+      const onResultKey = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          event.preventDefault()
+          event.stopImmediatePropagation()
+          dismiss()
         }
       }
-
-      const sh = (toastHost as Host).shadowRoot as ShadowRoot
-      const pill = sh.querySelector('.toast') as HTMLElement
-      const tag = sh.querySelector('.tag') as HTMLElement
-      pill.style.setProperty('--c', hex)
-      ;(sh.querySelector('.val') as HTMLElement).textContent = value
-      ;(sh.querySelector('.fmt') as HTMLElement).textContent = formatName
-      ;(sh.querySelector('.msg') as HTMLElement).textContent = copied ? options.text.copied : options.text.copyFailed
-      tag.classList.toggle('fail', !copied)
-      ;(sh.querySelector('.bar') as HTMLElement).style.opacity = light ? '0.55' : '0.9'
+      sh.querySelector('[data-action="close"]')?.addEventListener('click', dismiss)
+      window.addEventListener('keydown', onResultKey, true)
+      document.documentElement.append(el)
       if (!reduced) {
-        ;(sh.querySelector('.sw') as HTMLElement).animate(
-          [{ transform: 'scale(.6)' }, { transform: 'scale(1)' }],
-          { duration: 260, easing: 'cubic-bezier(.2,.9,.25,1.4)' },
-        )
-        ;(sh.querySelector('.tag path') as SVGPathElement | null)?.animate(
-          [{ strokeDashoffset: 20 }, { strokeDashoffset: 0 }],
-          { duration: 320, delay: 60, easing: 'ease-out', fill: 'backwards' },
+        card.animate(
+          [{ opacity: 0, transform: 'translateY(-12px)' }, { opacity: 1, transform: 'translateY(0)' }],
+          { duration: 220, easing: 'cubic-bezier(.2,.9,.25,1.1)' },
         )
       }
-      toastBar?.cancel()
-      toastBar = (sh.querySelector('.bar') as HTMLElement).animate(
-        [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }],
-        { duration: TOAST_MS, easing: 'linear', fill: 'forwards' },
-      )
-      armToast(TOAST_MS)
     }
 
     // ── Actions ──────────────────────────────────────────────────────────────
@@ -433,7 +411,9 @@ export function runColorPicker(options: ColorPickerPageOptions): Promise<ColorPi
           { duration: 220, easing: 'ease-out' },
         )
       }
-      void copying.then((ok) => showToast(ok, value, format))
+      void copying.then((ok) => {
+        showResultPanel(current.r, current.g, current.b, format, ok)
+      })
       chrome.runtime
         .sendMessage({ type: 'COLOR_PICKED', hex, format, url: location.href })
         .catch(() => undefined)
@@ -533,4 +513,179 @@ export function runColorPicker(options: ColorPickerPageOptions): Promise<ColorPi
     }
     showHint()
   }
+}
+
+type ScreenPickOptions = { format: 'hex' | 'rgb' | 'hsl'; text: ColorPickerPageText }
+
+/** Native EyeDropper + the same copy-again result card as the page loupe picker. */
+export function runScreenColorPick(options: ScreenPickOptions): Promise<ColorPickerPageResult> {
+  const RESULT_ID = 'tbx-color-result-host'
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  type Host = HTMLElement & { __dispose?: () => void }
+
+  const EyeDropperCtor = (window as unknown as { EyeDropper?: new () => { open(): Promise<{ sRGBHex: string }> } })
+    .EyeDropper
+  if (!EyeDropperCtor) return Promise.resolve({ ok: false, error: 'eyedropper' })
+
+  function toHex(r: number, g: number, b: number): string {
+    return '#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')
+  }
+
+  function parseHex(hex: string): { r: number; g: number; b: number } | null {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim())
+    if (!m) return null
+    const n = parseInt(m[1], 16)
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 }
+  }
+
+  function toHsl(r: number, g: number, b: number): string {
+    const rn = r / 255
+    const gn = g / 255
+    const bn = b / 255
+    const max = Math.max(rn, gn, bn)
+    const min = Math.min(rn, gn, bn)
+    const l = (max + min) / 2
+    const d = max - min
+    let h = 0
+    let s = 0
+    if (d !== 0) {
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+      if (max === rn) h = (gn - bn) / d + (gn < bn ? 6 : 0)
+      else if (max === gn) h = (bn - rn) / d + 2
+      else h = (rn - gn) / d + 4
+      h *= 60
+    }
+    return `hsl(${Math.round(h)}, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%)`
+  }
+
+  function formatValue(format: ScreenPickOptions['format'], r: number, g: number, b: number): string {
+    if (format === 'rgb') return `rgb(${r}, ${g}, ${b})`
+    if (format === 'hsl') return toHsl(r, g, b)
+    return toHex(r, g, b)
+  }
+
+  async function copyText(text: string): Promise<boolean> {
+    try {
+      await navigator.clipboard.writeText(text)
+      return true
+    } catch {
+      try {
+        const area = document.createElement('textarea')
+        area.value = text
+        area.style.cssText = 'position:fixed;opacity:0;pointer-events:none;'
+        document.documentElement.append(area)
+        area.select()
+        const ok = document.execCommand('copy')
+        area.remove()
+        return ok
+      } catch {
+        return false
+      }
+    }
+  }
+
+  function showResultPanel(r: number, g: number, b: number, pickedFormat: string, copied: boolean): void {
+    document.getElementById(RESULT_ID)?.remove()
+    const hex = toHex(r, g, b)
+    const el = document.createElement('div') as Host
+    el.id = RESULT_ID
+    el.style.cssText =
+      'position:fixed;left:0;right:0;top:12px;z-index:2147483647;display:flex;justify-content:center;pointer-events:none;'
+    const sh = el.attachShadow({ mode: 'open' })
+    sh.innerHTML = `
+      <style>
+        :host { all: initial; }
+        * { box-sizing: border-box; }
+        .card { pointer-events:auto; width:min(360px,calc(100vw - 24px)); padding:12px; border-radius:14px;
+          font:500 12px/1.35 system-ui,sans-serif; color:#f4f4f5; background:rgba(22,22,26,.94);
+          border:1px solid rgba(255,255,255,.12); box-shadow:0 14px 40px rgba(0,0,0,.35); }
+        .head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+        .title { font-size:11px; font-weight:600; text-transform:uppercase; opacity:.75; }
+        .close { border:0; background:transparent; color:inherit; font-size:18px; cursor:pointer; opacity:.7; }
+        .main { display:flex; gap:10px; align-items:center; margin-bottom:10px; }
+        .sw { width:42px; height:42px; border-radius:10px; background:var(--c); }
+        .val { font:600 14px/1.2 ui-monospace,monospace; }
+        .status { font-size:10.5px; color:#86efac; margin-top:4px; }
+        .status.fail { color:#fca5a5; }
+        .actions { display:flex; flex-wrap:wrap; gap:6px; }
+        .btn { border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.08); color:inherit;
+          border-radius:999px; padding:6px 10px; font-size:11px; font-weight:600; cursor:pointer; }
+        .btn[data-active="true"] { background:rgba(255,255,255,.18); }
+      </style>
+      <div class="card" role="dialog">
+        <div class="head"><span class="title"></span><button type="button" class="close">×</button></div>
+        <div class="main"><span class="sw"></span><div><div class="val"></div><div class="status"></div></div></div>
+        <div class="actions">
+          <button type="button" class="btn" data-format="hex"></button>
+          <button type="button" class="btn" data-format="rgb"></button>
+          <button type="button" class="btn" data-format="hsl"></button>
+        </div>
+      </div>`
+    const card = sh.querySelector('.card') as HTMLElement
+    card.style.setProperty('--c', hex)
+    ;(sh.querySelector('.title') as HTMLElement).textContent = options.text.resultTitle
+    const valEl = sh.querySelector('.val') as HTMLElement
+    const statusEl = sh.querySelector('.status') as HTMLElement
+    const labels: Record<string, string> = {
+      hex: options.text.copyHex,
+      rgb: options.text.copyRgb,
+      hsl: options.text.copyHsl,
+    }
+    const buttons = Array.from(sh.querySelectorAll<HTMLButtonElement>('.btn[data-format]'))
+    for (const button of buttons) {
+      const fmt = button.dataset.format ?? 'hex'
+      button.textContent = labels[fmt] ?? fmt
+      button.dataset.active = fmt === pickedFormat ? 'true' : 'false'
+      button.addEventListener('click', () => {
+        const value = formatValue(fmt as ScreenPickOptions['format'], r, g, b)
+        valEl.textContent = value
+        for (const peer of buttons) peer.dataset.active = peer === button ? 'true' : 'false'
+        void copyText(value).then((ok) => {
+          statusEl.textContent = ok ? options.text.copied : options.text.copyFailed
+          statusEl.classList.toggle('fail', !ok)
+        })
+      })
+    }
+    const value = formatValue(pickedFormat as ScreenPickOptions['format'], r, g, b)
+    valEl.textContent = value
+    statusEl.textContent = copied ? options.text.copied : options.text.copyFailed
+    statusEl.classList.toggle('fail', !copied)
+    const dismiss = () => {
+      window.removeEventListener('keydown', onKey, true)
+      el.remove()
+    }
+    el.__dispose = dismiss
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        dismiss()
+      }
+    }
+    sh.querySelector('.close')?.addEventListener('click', dismiss)
+    window.addEventListener('keydown', onKey, true)
+    document.documentElement.append(el)
+    if (!reduced) {
+      card.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 180 })
+    }
+  }
+
+  return new EyeDropperCtor()
+    .open()
+    .then(async (result) => {
+      const rgb = parseHex(result.sRGBHex)
+      if (!rgb) return { ok: false, error: 'hex' }
+      const hex = toHex(rgb.r, rgb.g, rgb.b)
+      const format = options.format
+      const value = formatValue(format, rgb.r, rgb.g, rgb.b)
+      const copied = await copyText(value)
+      showResultPanel(rgb.r, rgb.g, rgb.b, format, copied)
+      chrome.runtime
+        .sendMessage({ type: 'COLOR_PICKED', hex, format, url: location.href })
+        .catch(() => undefined)
+      return { ok: true }
+    })
+    .catch((error: unknown) => ({
+      ok: false,
+      error: error instanceof Error ? error.message : 'cancel',
+    }))
 }

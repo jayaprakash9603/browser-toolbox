@@ -83,6 +83,27 @@
   "colorHintExit": {
     "message": "exit"
   },
+  "colorResultTitle": {
+    "message": "Picked color"
+  },
+  "colorCopyHex": {
+    "message": "Copy HEX"
+  },
+  "colorCopyRgb": {
+    "message": "Copy RGB"
+  },
+  "colorCopyHsl": {
+    "message": "Copy HSL"
+  },
+  "colorResultClose": {
+    "message": "Close"
+  },
+  "contextMenuPickColorPage": {
+    "message": "Pick color from page"
+  },
+  "contextMenuPickColorScreen": {
+    "message": "Pick color from screen"
+  },
   "commandFormFill": {
     "message": "Fill the form on the current page with saved values"
   },
@@ -139,6 +160,12 @@
   },
   "contextMenuResumeAdblock": {
     "message": "Enable ad blocking on this site"
+  },
+  "contextMenuPauseProtection": {
+    "message": "Pause web protection on this site"
+  },
+  "contextMenuResumeProtection": {
+    "message": "Enable web protection on this site"
   },
   "contextMenuEnableFontInspector": {
     "message": "Enable font inspector"

@@ -38,6 +38,8 @@ function RedirectBlockedPage() {
   const ctx = useMemo(() => parseBlockedContext(), [])
   const search = useMemo(() => new URLSearchParams(window.location.search), [])
   const opener = search.get('opener') ?? ''
+  const fromHost = search.get('from') ?? opener
+  const toHost = search.get('to') ?? ctx.host
   const risk = search.get('risk') ?? ''
   const classification = search.get('classification') ?? ''
   const reason = search.get('reason') ?? ''
@@ -61,16 +63,21 @@ function RedirectBlockedPage() {
       description={
         smartDetails
           ? t('protection.redirect.reasonSmart', {
-              opener,
+              from: fromHost,
+              to: toHost,
               classification,
               risk,
             })
-          : t('protection.redirect.reason', { opener })
+          : t('protection.redirect.reasonFromTo', { from: fromHost, to: toHost, opener })
       }
       tips={[t('protection.redirect.tipSafe'), t('protection.redirect.tipProceed')]}
       details={
         <>
-          <DetailRow label={t('protection.redirect.openerLabel')} value={opener} />
+          <DetailRow label={t('protection.redirect.fromLabel')} value={fromHost} />
+          <DetailRow label={t('protection.redirect.toLabel')} value={toHost} />
+          {opener && opener !== fromHost && (
+            <DetailRow label={t('protection.redirect.openerLabel')} value={opener} />
+          )}
           <DetailRow label={t('protection.blocked.addressLabel')} value={ctx.host} />
           {reason && <DetailRow label={t('protection.redirect.reasonLabel')} value={reason} />}
           {classification && (
@@ -108,6 +115,26 @@ function RedirectBlockedPage() {
             }}
           >
             {t('protection.redirect.proceed')}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full text-muted-foreground"
+            disabled={busy}
+            onClick={() => {
+              setBusy(true)
+              void (async () => {
+                const hosts = [fromHost, toHost, opener].filter(Boolean)
+                for (const host of hosts) {
+                  await sendMessage({ type: 'PROTECTION_TRUST_SITE', host })
+                }
+                await sendMessage({ type: 'PROTECTION_ALLOW_OPENED_TAB', url: ctx.targetUrl })
+                window.location.replace(ctx.targetUrl)
+              })()
+            }}
+          >
+            <ShieldOffIcon aria-hidden />
+            {t('protection.redirect.trustSite')}
           </Button>
           {logId && (
             <Button

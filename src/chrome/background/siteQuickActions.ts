@@ -6,6 +6,14 @@ import {
   removeAllowlistHost,
   updateAdblockState,
 } from '@/core/adblock'
+import {
+  addTrustedHost,
+  getProtectionState,
+  isProtectionActiveForUrl,
+  isTrustedHost,
+  removeTrustedHost,
+  updateProtectionState,
+} from '@/core/protection'
 import { readFontInspectorTab } from '@/core/design/fontInspectorState'
 import { getChromeMessage } from '@/core/i18n/chromeMessages'
 import { STORAGE_KEYS } from '@/core/constants'
@@ -15,9 +23,12 @@ import { resolveElementInspectorForTab, toggleElementInspectorForTab } from './e
 import { pushFontInspectorToTab, resolveFontInspectorForTab, toggleFontInspectorForTab } from './fontInspector'
 import { readElementInspectorTab } from '@/core/design/elementInspectorState'
 
+import { syncProtectionState } from './protection'
+
 const logger = createLogger('site-quick-actions')
 
 export const ADBLOCK_SITE_MENU_ID = 'toolbox.adblock.site'
+export const PROTECTION_SITE_MENU_ID = 'toolbox.protection.site'
 export const FONT_INSPECTOR_MENU_ID = 'toolbox.font-inspector.toggle'
 export const ELEMENT_INSPECTOR_MENU_ID = 'toolbox.element-inspector.toggle'
 
@@ -40,6 +51,11 @@ export function buildSiteQuickActionMenus(
     contexts: ['page', 'frame'],
   })
   create({
+    id: PROTECTION_SITE_MENU_ID,
+    title: getChromeMessage('contextMenuPauseProtection'),
+    contexts: ['page', 'frame', 'link'],
+  })
+  create({
     id: FONT_INSPECTOR_MENU_ID,
     title: getChromeMessage('contextMenuEnableFontInspector'),
     contexts: ['page', 'frame'],
@@ -54,6 +70,7 @@ export function buildSiteQuickActionMenus(
 export function applySiteQuickActionMenuLabels(
   tab: chrome.tabs.Tab | undefined,
   adblock: { enabled: boolean; blocking: boolean },
+  protection: { enabled: boolean; active: boolean },
   fontInspectorOn: boolean,
   elementInspectorOn: boolean,
 ): void {
@@ -64,6 +81,12 @@ export function applySiteQuickActionMenuLabels(
     title: adblock.blocking
       ? getChromeMessage('contextMenuPauseAdblock')
       : getChromeMessage('contextMenuResumeAdblock'),
+  })
+  void chrome.contextMenus.update(PROTECTION_SITE_MENU_ID, {
+    visible: show && protection.enabled,
+    title: protection.active
+      ? getChromeMessage('contextMenuPauseProtection')
+      : getChromeMessage('contextMenuResumeProtection'),
   })
   void chrome.contextMenus.update(FONT_INSPECTOR_MENU_ID, {
     visible: show,
@@ -83,6 +106,8 @@ export async function refreshSiteQuickActionMenus(tab?: chrome.tabs.Tab): Promis
   const show = isHttpUrl(tab?.url)
   const state = await getAdblockState()
   const blocking = show && state.enabled && isBlockingActiveForUrl(state, tab?.url)
+  const protectionState = await getProtectionState()
+  const protectionActive = show && isProtectionActiveForUrl(protectionState, tab?.url)
   let fontInspectorOn = false
   let elementInspectorOn = false
   if (tab?.id != null && show) {
@@ -91,19 +116,37 @@ export async function refreshSiteQuickActionMenus(tab?: chrome.tabs.Tab): Promis
     void resolveFontInspectorForTab(tab.id)
       .then((enabled) => {
         if (enabled !== fontInspectorOn) {
-          applySiteQuickActionMenuLabels(tab, { enabled: state.enabled, blocking }, enabled, elementInspectorOn)
+          applySiteQuickActionMenuLabels(
+            tab,
+            { enabled: state.enabled, blocking },
+            { enabled: protectionState.enabled, active: protectionActive },
+            enabled,
+            elementInspectorOn,
+          )
         }
       })
       .catch(() => undefined)
     void resolveElementInspectorForTab(tab.id)
       .then((enabled) => {
         if (enabled !== elementInspectorOn) {
-          applySiteQuickActionMenuLabels(tab, { enabled: state.enabled, blocking }, fontInspectorOn, enabled)
+          applySiteQuickActionMenuLabels(
+            tab,
+            { enabled: state.enabled, blocking },
+            { enabled: protectionState.enabled, active: protectionActive },
+            fontInspectorOn,
+            enabled,
+          )
         }
       })
       .catch(() => undefined)
   }
-  applySiteQuickActionMenuLabels(tab, { enabled: state.enabled, blocking }, fontInspectorOn, elementInspectorOn)
+  applySiteQuickActionMenuLabels(
+    tab,
+    { enabled: state.enabled, blocking },
+    { enabled: protectionState.enabled, active: protectionActive },
+    fontInspectorOn,
+    elementInspectorOn,
+  )
 }
 
 export async function refreshSiteQuickActionMenusForActiveTab(): Promise<void> {
@@ -130,15 +173,35 @@ export async function handleSiteQuickActionClick(
     await refreshSiteQuickActionMenus(tab)
     return true
   }
+  if (menuItemId === PROTECTION_SITE_MENU_ID && tab?.url) {
+    const host = hostnameFromUrl(tab.url)
+    if (!host) return true
+    const state = await getProtectionState()
+    const relaxed = isTrustedHost(state.trusted, tab.url)
+    if (relaxed) {
+      await removeTrustedHost(host)
+    } else {
+      if (!state.enabled) await updateProtectionState({ enabled: true })
+      await addTrustedHost(host)
+    }
+    await syncProtectionState()
+    await refreshSiteQuickActionMenus(tab)
+    return true
+  }
   if (menuItemId === FONT_INSPECTOR_MENU_ID && tab?.id != null) {
     try {
       const enabled = await toggleFontInspectorForTab(tab.id)
       const state = await getAdblockState()
+      const protectionState = await getProtectionState()
       applySiteQuickActionMenuLabels(
         tab,
         {
           enabled: state.enabled,
           blocking: isBlockingActiveForUrl(state, tab.url),
+        },
+        {
+          enabled: protectionState.enabled,
+          active: isProtectionActiveForUrl(protectionState, tab.url),
         },
         enabled,
         await readElementInspectorTab(tab.id),
@@ -152,11 +215,16 @@ export async function handleSiteQuickActionClick(
     try {
       const enabled = await toggleElementInspectorForTab(tab.id)
       const state = await getAdblockState()
+      const protectionState = await getProtectionState()
       applySiteQuickActionMenuLabels(
         tab,
         {
           enabled: state.enabled,
           blocking: isBlockingActiveForUrl(state, tab.url),
+        },
+        {
+          enabled: protectionState.enabled,
+          active: isProtectionActiveForUrl(protectionState, tab.url),
         },
         await readFontInspectorTab(tab.id),
         enabled,
@@ -172,6 +240,7 @@ export async function handleSiteQuickActionClick(
 export function isSiteQuickActionMenuItem(menuItemId: string): boolean {
   return (
     menuItemId === ADBLOCK_SITE_MENU_ID ||
+    menuItemId === PROTECTION_SITE_MENU_ID ||
     menuItemId === FONT_INSPECTOR_MENU_ID ||
     menuItemId === ELEMENT_INSPECTOR_MENU_ID
   )
@@ -185,7 +254,7 @@ export function bindSiteQuickActionMenuRebuild(fn: () => Promise<void>): void {
 
 export function registerSiteQuickActionMenuSync(): void {
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && changes[STORAGE_KEYS.adblock]) {
+    if (area === 'local' && (changes[STORAGE_KEYS.adblock] || changes[STORAGE_KEYS.protection])) {
       void rebuildMenus?.()
       void refreshSiteQuickActionMenusForActiveTab()
     }

@@ -1,6 +1,7 @@
 export { classifyRedirect } from './redirect/classify'
 export { appendRedirectLog, buildLogEntry, markLogFalsePositive } from './redirect/log'
 export { mergeWorkflowPolicies, matchWorkflowPolicy } from './redirect/providers'
+export { primaryRedirectReasonLabel } from './redirect/reasons'
 export {
   containsOpenRedirectTarget,
   hostOfHttpUrl,
@@ -38,6 +39,8 @@ export {
   getProtectionStats,
   isThreatCategory,
   isTrustedHost,
+  isTrustedSiteHost,
+  isProtectionActiveForUrl,
   recordProtectionBlock,
   removeTrustedHost,
   resetProtectionStats,
