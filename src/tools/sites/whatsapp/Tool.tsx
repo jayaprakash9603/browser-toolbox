@@ -104,17 +104,13 @@ export default function ChatBoostTool() {
 
         <StaggerItem>
           <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-            <TabsList variant="attached" className="grid h-auto w-full grid-cols-4 gap-1">
+            <TabsList variant="attached" fullWidth scrollButtons="auto" className="h-auto gap-0.5 p-1">
               {WHATSAPP_TOOL_TABS.map((id) => {
                 const Icon = TAB_ICONS[id]
                 return (
-                  <TabsTrigger
-                    key={id}
-                    value={id}
-                    className="flex h-auto min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-[11px] font-medium leading-none text-muted-foreground transition-all data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm"
-                  >
-                    <Icon className="size-4 shrink-0" aria-hidden />
-                    <span className="max-w-full truncate">{t(`sites.whatsapp.tabs.${id}`)}</span>
+                  <TabsTrigger key={id} value={id} className="gap-1 px-2">
+                    <Icon aria-hidden />
+                    {t(`sites.whatsapp.tabs.${id}`)}
                   </TabsTrigger>
                 )
               })}

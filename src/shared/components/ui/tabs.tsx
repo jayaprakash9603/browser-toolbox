@@ -17,6 +17,16 @@ type TabsVariant = 'attached' | 'chips' | 'pill' | 'underline'
 
 const TabsVariantContext = React.createContext<TabsVariant>('attached')
 
+/**
+ * expand — icon when idle, label on active (scroll rail like PDF toolkit categories).
+ * equal — equal columns, labels always visible (grid layouts).
+ */
+type TabDistribution = 'expand' | 'equal'
+const TabsDistributionContext = React.createContext<TabDistribution>('expand')
+
+const SCROLL_BTN =
+  'absolute top-1/2 z-20 flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border/80 bg-card text-muted-foreground shadow-sm transition-[opacity,color,background-color] duration-200 hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-0'
+
 const tabsListVariants = cva('inline-flex w-fit items-center text-muted-foreground', {
   variants: {
     variant: {
@@ -36,7 +46,7 @@ const tabsTriggerVariants = cva(
     variants: {
       variant: {
         attached:
-          'relative z-10 min-h-9 min-w-0 flex-1 rounded-full border border-transparent bg-transparent px-3 py-1.5 text-sm font-medium text-muted-foreground transition-[color] duration-300 ease-out hover:text-primary/80 data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none motion-reduce:transition-none [&_svg]:transition-colors [&_svg]:duration-300 data-[state=active]:[&_svg]:text-primary',
+          'relative z-10 min-h-9 min-w-0 rounded-full border border-transparent bg-transparent px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-[color] duration-200 ease-out hover:text-primary/80 data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none motion-reduce:transition-none [&_svg]:transition-colors [&_svg]:duration-200 data-[state=active]:[&_svg]:text-primary',
         chips:
           'relative z-10 min-h-11 rounded-lg border border-transparent bg-transparent px-3 text-xs hover:bg-background/60 hover:text-foreground data-[state=active]:text-primary motion-reduce:transition-none',
         pill: 'relative z-10 h-7 flex-1 rounded-md px-3 hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground',
@@ -90,8 +100,16 @@ function measureEdges(list: HTMLElement | null): Edges {
   }
 }
 
-function listOverflows(list: HTMLElement | null): boolean {
-  return !!list && list.scrollWidth > list.clientWidth + 1
+const OVERFLOW_ON_EXTRA_PX = 4
+/** Wider deadband so chevron chrome does not toggle overflow every frame. */
+const OVERFLOW_OFF_EXTRA_PX = -40
+
+function nextOverflowing(list: HTMLElement | null, prev: boolean): boolean {
+  if (!list) return false
+  const slack = list.scrollWidth - list.clientWidth
+  if (slack > OVERFLOW_ON_EXTRA_PX) return true
+  if (slack < OVERFLOW_OFF_EXTRA_PX) return false
+  return prev
 }
 
 function scrollActiveIntoView(list: HTMLElement | null, smooth: boolean) {
@@ -130,6 +148,7 @@ function TabsList({
   variant,
   scrollButtons = 'auto',
   fullWidth = false,
+  distribution: distributionProp,
   children,
   style,
   ...props
@@ -137,11 +156,16 @@ function TabsList({
   VariantProps<typeof tabsListVariants> & {
     /** Chevron controls when tabs overflow; use false for wrapped tab rows. */
     scrollButtons?: boolean | 'auto'
-    /** Stretch the tab row to the container so each tab is the same width. */
+    /** Stretch the tab rail to the container width (tabs scroll inside when needed). */
     fullWidth?: boolean
+    /** expand: icon rail + label on active. equal: fixed columns (also used for CSS grid lists). */
+    distribution?: TabDistribution
   }) {
   const { t } = useTranslation()
   const resolved = variant ?? 'attached'
+  const distribution: TabDistribution =
+    distributionProp ??
+    (resolved === 'attached' && /grid/i.test(className ?? '') ? 'equal' : 'expand')
   const listRef = React.useRef<HTMLDivElement>(null)
   const [underline, setUnderline] = React.useState<IndicatorBox>({
     left: 0,
@@ -152,18 +176,20 @@ function TabsList({
   const [edges, setEdges] = React.useState<Edges>({ start: false, end: false })
   const [overflowing, setOverflowing] = React.useState(false)
   const reduceMotion = useReducedMotion()
+  const equalTabs = distribution === 'equal'
+  const wantsScrollChrome = scrollButtons !== false
   const showScrollButtons = scrollButtons === true || (scrollButtons === 'auto' && overflowing)
 
   const sync = React.useCallback(() => {
     const node = listRef.current
-    setOverflowing(listOverflows(node))
+    setOverflowing((prev) => nextOverflowing(node, prev))
     setEdges((prev) => {
       const next = measureEdges(node)
       return next.start === prev.start && next.end === prev.end ? prev : next
     })
     const nextUnderline = measureActiveTab(node, resolved === 'underline')
     setUnderline((prev) => (indicatorClose(prev, nextUnderline) ? prev : nextUnderline))
-  }, [resolved])
+  }, [resolved, equalTabs])
 
   React.useLayoutEffect(() => {
     const node = listRef.current
@@ -178,8 +204,17 @@ function TabsList({
       syncRaf = requestAnimationFrame(flushSync)
     }
 
+    const onWheel = (event: WheelEvent) => {
+      if (event.ctrlKey || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return
+      const max = node.scrollWidth - node.clientWidth
+      if (max <= 0) return
+      if ((event.deltaY < 0 && node.scrollLeft <= 0) || (event.deltaY > 0 && node.scrollLeft >= max - 1)) return
+      event.preventDefault()
+      node.scrollLeft += event.deltaY
+    }
+
     const onActiveChange = () => {
-      if (listOverflows(node)) {
+      if (node.scrollWidth > node.clientWidth + OVERFLOW_ON_EXTRA_PX) {
         scrollActiveIntoView(node, !reduceMotion)
       }
       sync()
@@ -206,12 +241,14 @@ function TabsList({
     }
 
     node.addEventListener('scroll', scheduleSync, { passive: true })
+    node.addEventListener('wheel', onWheel, { passive: false })
     window.addEventListener('resize', scheduleSync)
     return () => {
       if (syncRaf) cancelAnimationFrame(syncRaf)
       observer.disconnect()
       resizeObserver.disconnect()
       node.removeEventListener('scroll', scheduleSync)
+      node.removeEventListener('wheel', onWheel)
       window.removeEventListener('resize', scheduleSync)
     }
   }, [sync, reduceMotion, resolved])
@@ -222,51 +259,40 @@ function TabsList({
     scrollTabsBy(node, direction, !reduceMotion)
   }
 
-  // Fade only the edge that has hidden tabs behind it.
-  const fade = showScrollButtons
+  const overlayFade = wantsScrollChrome && showScrollButtons
     ? `linear-gradient(to right, ${edges.start ? 'transparent' : '#000'} 0, #000 ${edges.start ? FADE_PX : 0}px, #000 calc(100% - ${edges.end ? FADE_PX : 0}px), ${edges.end ? 'transparent' : '#000'} 100%)`
     : undefined
 
   return (
     <TabsVariantContext.Provider value={resolved}>
+      <TabsDistributionContext.Provider value={distribution}>
       <div
         className={cn(
-          'flex w-full max-w-full items-stretch',
+          'group/tabs-rail relative min-w-0',
+          fullWidth ? 'w-full max-w-full' : 'w-fit max-w-full',
           resolved === 'underline' && 'border-b border-border',
-          !showScrollButtons && !fullWidth && 'w-fit',
-          fullWidth && 'w-full',
         )}
       >
-        {showScrollButtons && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="my-auto shrink-0 rounded-md text-muted-foreground transition-opacity duration-200 disabled:opacity-0"
-            disabled={!edges.start}
-            aria-label={t('common.scrollTabsLeft')}
-            onClick={() => scroll(-1)}
-          >
-            <ChevronLeftIcon aria-hidden />
-          </Button>
-        )}
         <TabsPrimitive.List
           ref={listRef}
           className={cn(
             tabsListVariants({ variant: resolved }),
-            'relative',
-            (fullWidth || resolved === 'attached') && 'w-full min-w-0 flex-1',
+            'relative w-full min-w-0 scroll-px-2',
             resolved === 'attached' &&
-              'overflow-x-auto overscroll-x-contain scrollbar-none [&_[role=tab]]:min-w-9 [&_[role=tab]]:shrink-0 [&_[role=tab][data-state=inactive]]:max-w-[3.25rem] [&_[role=tab][data-state=active]]:max-w-none [&_[role=tab][data-state=active]]:min-w-[min(100%,9rem)] [&_[role=tab][data-state=active]]:flex-[2_1_auto]',
+              'overflow-x-auto overscroll-x-contain scrollbar-none',
+            resolved === 'attached' &&
+              distribution === 'expand' &&
+              'justify-start [&_[role=tab]]:shrink-0 [&_[role=tab]]:min-w-9 [&_[role=tab][data-state=inactive]]:max-w-[2.75rem] [&_[role=tab][data-state=active]]:max-w-[min(100%,12rem)]',
+            resolved === 'attached' &&
+              distribution === 'equal' &&
+              '[&_[role=tab]]:min-w-0 [&_[role=tab]]:flex-1 [&_[role=tab]]:max-w-none [&_[role=tab]]:shrink',
             fullWidth &&
               resolved !== 'attached' &&
               '[&_[role=tab]]:min-w-0 [&_[role=tab]]:flex-1',
-            showScrollButtons
-              ? 'min-w-0 flex-1 overflow-x-auto overscroll-x-contain scrollbar-none'
-              : resolved !== 'attached' && 'max-w-full',
+            !fullWidth && resolved !== 'attached' && 'max-w-full',
             className,
           )}
-          style={fade ? { ...style, maskImage: fade, WebkitMaskImage: fade } : style}
+          style={overlayFade ? { ...style, maskImage: overlayFade, WebkitMaskImage: overlayFade } : style}
           {...props}
         >
           {children}
@@ -293,31 +319,52 @@ function TabsList({
                 reduceMotion
                   ? { duration: 0 }
                   : resolved === 'attached'
-                    ? {
-                        left: { type: 'spring', stiffness: 420, damping: 42, mass: 0.85 },
-                        top: { duration: 0.2, ease: [0.22, 1, 0.36, 1] },
-                        width: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
-                        height: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
-                      }
+                    ? distribution === 'equal'
+                      ? {
+                          left: { type: 'spring', stiffness: 480, damping: 44, mass: 0.8 },
+                          top: { duration: 0 },
+                          width: { duration: 0 },
+                          height: { duration: 0 },
+                        }
+                      : {
+                          left: { type: 'spring', stiffness: 420, damping: 42, mass: 0.85 },
+                          top: { duration: 0.2, ease: [0.22, 1, 0.36, 1] },
+                          width: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
+                          height: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
+                        }
                     : { type: 'spring', stiffness: 400, damping: 40 }
               }
             />
           )}
         </TabsPrimitive.List>
-        {showScrollButtons && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="my-auto shrink-0 rounded-md text-muted-foreground transition-opacity duration-200 disabled:opacity-0"
-            disabled={!edges.end}
-            aria-label={t('common.scrollTabsRight')}
-            onClick={() => scroll(1)}
-          >
-            <ChevronRightIcon aria-hidden />
-          </Button>
+        {wantsScrollChrome && (
+          <>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={cn(SCROLL_BTN, 'left-0.5', showScrollButtons && edges.start ? 'opacity-100' : 'opacity-0')}
+              disabled={!edges.start}
+              aria-label={t('common.scrollTabsLeft')}
+              onClick={() => scroll(-1)}
+            >
+              <ChevronLeftIcon className="size-4" aria-hidden />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={cn(SCROLL_BTN, 'right-0.5', showScrollButtons && edges.end ? 'opacity-100' : 'opacity-0')}
+              disabled={!edges.end}
+              aria-label={t('common.scrollTabsRight')}
+              onClick={() => scroll(1)}
+            >
+              <ChevronRightIcon className="size-4" aria-hidden />
+            </Button>
+          </>
         )}
       </div>
+      </TabsDistributionContext.Provider>
     </TabsVariantContext.Provider>
   )
 }
@@ -329,11 +376,17 @@ function TabsTrigger({
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.Trigger> & { count?: number }) {
   const variant = React.useContext(TabsVariantContext)
+  const distribution = React.useContext(TabsDistributionContext)
   const { icon, labels } = partitionTriggerChildren(children)
 
   return (
     <TabsPrimitive.Trigger
-      className={cn(tabsTriggerVariants({ variant }), variant === 'attached' && 'overflow-hidden', className)}
+      className={cn(
+        tabsTriggerVariants({ variant }),
+        variant === 'attached' && 'overflow-hidden',
+        variant === 'attached' && distribution === 'equal' && 'flex-1',
+        className,
+      )}
       {...props}
     >
       {variant === 'attached' ? (
@@ -341,10 +394,15 @@ function TabsTrigger({
           {icon}
           <span
             className={cn(
-              'inline-block min-w-0 overflow-hidden text-sm font-medium transition-[max-width,opacity,margin] duration-300 ease-out motion-reduce:transition-none',
-              icon
-                ? 'max-w-0 opacity-0 ml-0 truncate whitespace-nowrap group-data-[state=active]/tab:max-w-[min(16rem,42vw)] group-data-[state=active]/tab:opacity-100 group-data-[state=active]/tab:ml-1.5 sm:group-data-[state=active]/tab:max-w-[min(20rem,50%)]'
-                : 'max-w-full truncate whitespace-nowrap opacity-100',
+              'inline-block min-w-0 overflow-hidden font-medium motion-reduce:transition-none',
+              distribution === 'equal'
+                ? 'max-w-full truncate whitespace-nowrap text-xs leading-tight opacity-100'
+                : cn(
+                    'text-sm transition-[max-width,opacity,margin] duration-300 ease-out',
+                    icon
+                      ? 'max-w-0 opacity-0 ml-0 truncate whitespace-nowrap group-data-[state=active]/tab:max-w-[min(16rem,42vw)] group-data-[state=active]/tab:opacity-100 group-data-[state=active]/tab:ml-1.5 sm:group-data-[state=active]/tab:max-w-[min(20rem,50%)]'
+                      : 'max-w-full truncate whitespace-nowrap opacity-100',
+                  ),
             )}
             data-slot="tabs-trigger-label"
           >
