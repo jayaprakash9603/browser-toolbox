@@ -10,6 +10,7 @@
   var filter = 'all'
   var entries = Array.isArray(opts.entries) ? opts.entries.slice() : []
   var host
+  var cardEl
   var listEl
   var toastEl
   var searchEl
@@ -213,6 +214,7 @@
       empty.className = 'empty'
       empty.textContent = query || filter !== 'all' ? text.noMatches : text.empty
       listEl.appendChild(empty)
+      syncOverflow()
       return
     }
 
@@ -232,6 +234,22 @@
       section.items.forEach(function (entry) {
         listEl.appendChild(row(entry))
       })
+    })
+    syncOverflow()
+  }
+
+  function syncOverflow() {
+    if (!listEl || !cardEl) return
+    var overflow = listEl.scrollHeight > listEl.clientHeight + 2
+    listEl.classList.toggle('can-scroll', overflow)
+    cardEl.classList.toggle('can-scroll', overflow)
+    var atEnd = !overflow || listEl.scrollTop + listEl.clientHeight >= listEl.scrollHeight - 2
+    cardEl.classList.toggle('at-end', atEnd)
+    window.requestAnimationFrame(function () {
+      if (!listEl || !cardEl) return
+      var overflow = listEl.scrollHeight > listEl.clientHeight + 2
+      listEl.classList.toggle('can-scroll', overflow)
+      cardEl.classList.toggle('can-scroll', overflow)
     })
   }
 
@@ -452,11 +470,10 @@
     ':host{all:initial}' +
     '*{box-sizing:border-box}' +
     '.catcher{pointer-events:auto;position:absolute;inset:0;background:rgba(15,23,42,.16)}' +
-    '.shell{pointer-events:auto;position:relative;width:min(360px,calc(100vw - 24px));height:min(max-content,calc(100vh - 24px));max-height:calc(100vh - 24px);display:flex;min-height:0}' +
-    '.card{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;max-height:calc(100vh - 24px);border-radius:12px;' +
+    '.shell{pointer-events:auto;position:relative;width:min(360px,calc(100vw - 24px));height:fit-content;max-height:calc(100vh - 24px);display:flex;flex-direction:column;min-height:0}' +
+    '.card{position:relative;display:grid;grid-template-rows:auto auto minmax(0,1fr);flex:1 1 auto;min-height:0;height:100%;max-height:inherit;border-radius:12px;' +
     'border:1px solid rgba(24,24,27,.1);background:#fff;color:#18181b;' +
     'box-shadow:0 10px 32px rgba(15,23,42,.18);font:500 12px/1.4 system-ui,-apple-system,Segoe UI,sans-serif;overflow:hidden}' +
-    '.head,.toolbar{flex:none}' +
     '.head{display:flex;align-items:center;gap:8px;padding:8px 6px 0 12px}' +
     '.title-wrap{flex:1;min-width:0;display:flex;align-items:baseline;gap:6px}' +
     '.title{font-size:11px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:#3f3f46}' +
@@ -482,10 +499,14 @@
     '.chip-count{min-width:14px;padding:0 4px;border-radius:999px;font-size:10px;line-height:16px;text-align:center;' +
     'background:rgba(24,24,27,.06);font-variant-numeric:tabular-nums}' +
     '.chip[aria-pressed="true"] .chip-count{background:rgba(99,102,241,.12);color:#4f46e5}' +
-    '.list{flex:1 1 auto;min-height:0;max-height:calc(100vh - 148px);overflow-x:hidden;overflow-y:auto;padding:8px 6px 8px 8px;scrollbar-width:thin;scrollbar-color:rgba(24,24,27,.28) transparent;overscroll-behavior:contain;display:flex;flex-direction:column;gap:6px;-webkit-overflow-scrolling:touch}' +
-    '.list::-webkit-scrollbar{width:8px}' +
-    '.list::-webkit-scrollbar-thumb{background:rgba(24,24,27,.22);border-radius:8px}' +
-    '.list::-webkit-scrollbar-track{background:transparent}' +
+    '.list{min-height:0;overflow-x:hidden;overflow-y:auto;padding:8px 2px 20px 8px;scrollbar-gutter:stable;scrollbar-width:auto;scrollbar-color:#71717a #ececee;overscroll-behavior:contain;display:flex;flex-direction:column;gap:6px;-webkit-overflow-scrolling:touch}' +
+    '.list.can-scroll{overflow-y:scroll}' +
+    '.list::-webkit-scrollbar{width:12px}' +
+    '.list::-webkit-scrollbar-track{background:#ececee;border-radius:0 10px 10px 0}' +
+    '.list::-webkit-scrollbar-thumb{background:#71717a;border-radius:8px;border:2px solid #ececee;min-height:40px}' +
+    '.list::-webkit-scrollbar-thumb:hover{background:#52525b}' +
+    '.fade{position:absolute;left:0;right:12px;bottom:0;height:40px;pointer-events:none;opacity:0;background:linear-gradient(transparent,#fff);transition:opacity .15s ease}' +
+    '.card.can-scroll:not(.at-end) .fade{opacity:1}' +
     '.section{display:flex;align-items:center;gap:6px;padding:2px 2px 0;font-size:10px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:#71717a}' +
     '.section-count{font-variant-numeric:tabular-nums;opacity:.75}' +
     '.section-line{height:1px;flex:1;background:rgba(24,24,27,.1)}' +
@@ -526,7 +547,11 @@
     '.chip[aria-pressed="true"]{background:#3f3f46;color:#fafafa;box-shadow:none}' +
     '.chip-count{background:rgba(255,255,255,.08)}' +
     '.chip[aria-pressed="true"] .chip-count{background:rgba(165,180,252,.18);color:#c7d2fe}' +
-    '.list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.22)}' +
+    '.list{scrollbar-color:#a1a1aa #27272a}' +
+    '.list::-webkit-scrollbar-track{background:#27272a}' +
+    '.list::-webkit-scrollbar-thumb{background:#a1a1aa;border-color:#27272a}' +
+    '.list::-webkit-scrollbar-thumb:hover{background:#d4d4d8}' +
+    '.fade{background:linear-gradient(transparent,#18181b)}' +
     '.more{color:#c7d2fe}' +
     '.section-line{background:rgba(255,255,255,.1)}' +
     '.item{background:#27272a;border-color:rgba(255,255,255,.1)}' +
@@ -549,6 +574,7 @@
     '<kbd class="kbd" aria-hidden="true">/</kbd></div>' +
     '<div class="filters" role="group"></div></div>' +
     '<div class="list" tabindex="0"></div>' +
+    '<div class="fade" aria-hidden="true"></div>' +
     '<div class="toast" role="status" aria-live="polite"></div>' +
     '</div></div>'
 
@@ -560,6 +586,7 @@
   kbdEl = sh.querySelector('.kbd')
   filtersEl = sh.querySelector('.filters')
   filtersEl.setAttribute('aria-label', text.filterLabel)
+  cardEl = sh.querySelector('.card')
   listEl = sh.querySelector('.list')
   toastEl = sh.querySelector('.toast')
   sh.querySelector('[data-action="close"]').setAttribute('aria-label', text.close)
@@ -585,6 +612,7 @@
     },
     { passive: false },
   )
+  listEl.addEventListener('scroll', syncOverflow, { passive: true })
   listEl.addEventListener(
     'touchmove',
     function (event) {
@@ -605,6 +633,7 @@
     chrome.storage.onChanged.addListener(onStorage)
   }
   render()
+  window.requestAnimationFrame(syncOverflow)
   if (!reduceMotion) {
     host.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 140, easing: 'ease-out' })
   }
