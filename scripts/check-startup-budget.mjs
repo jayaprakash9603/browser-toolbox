@@ -21,7 +21,8 @@ const assets = join(dist, 'assets')
 /** ~1.188 MB after Technologies header control joined the App shell boot graph. */
 /** ~1.191 MB after Selector Studio joined the QA registry and boot catalog. */
 /** ~1.288 MB after the five-section home, workspace routing and support strings joined the boot graph. */
-const MAX_HOME_BOOT_JS = 1_300_000
+/** ~1.303 MB after the clipboard overlay and right-click menu settings strings joined the boot catalog. */
+const MAX_HOME_BOOT_JS = 1_310_000
 /** After SW leak fix, measured ~423 KB static closure. */
 /** ~481 KB measured after interceptor optional-permission wiring in the SW graph. */
 /** ~496 KB after form autofill review and global values; service workers cannot lazy-load them. */
