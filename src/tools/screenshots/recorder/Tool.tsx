@@ -54,7 +54,7 @@ function ToggleRow({
 }) {
   return (
     <label htmlFor={id} className="flex items-center justify-between gap-3 text-sm">
-      <span>{label}</span>
+      <span className="min-w-0 flex-1 leading-snug">{label}</span>
       <Switch id={id} checked={checked} onCheckedChange={onChange} />
     </label>
   )
@@ -152,19 +152,23 @@ export default function ScreenRecorderTool() {
               disabled={!settings.enabled}
               className="flex flex-col gap-4 border-0 p-0 m-0 disabled:pointer-events-none disabled:opacity-50"
             >
-            <div className="grid grid-cols-3 gap-2">
-              {SOURCES.map(({ value, icon: Icon, labelKey }) => (
-                <Button
-                  key={value}
-                  variant={source === value ? 'default' : 'outline'}
-                  className="h-auto flex-col gap-1 py-3"
-                  aria-pressed={source === value}
-                  onClick={() => setSource(value)}
-                >
-                  <Icon className="size-5" />
-                  <span className="text-xs">{t(labelKey)}</span>
-                </Button>
-              ))}
+            <div className="grid grid-cols-[repeat(3,minmax(0,1fr))] gap-1.5 sm:gap-2">
+              {SOURCES.map(({ value, icon: Icon, labelKey }) => {
+                const title = t(labelKey)
+                return (
+                  <Button
+                    key={value}
+                    variant={source === value ? 'default' : 'outline'}
+                    className="h-auto min-h-[4.25rem] w-full flex-col gap-1.5 px-2 py-3"
+                    aria-pressed={source === value}
+                    title={title}
+                    onClick={() => setSource(value)}
+                  >
+                    <Icon className="size-5 shrink-0" />
+                    <span className="w-full text-center text-xs leading-snug text-balance">{title}</span>
+                  </Button>
+                )
+              })}
             </div>
             <div className="flex flex-col gap-3 rounded-lg border p-3">
               <ToggleRow
@@ -185,10 +189,12 @@ export default function ScreenRecorderTool() {
                 checked={settings.countdown}
                 onChange={(countdown) => patch({ countdown })}
               />
-              <div className="flex items-center justify-between gap-3 text-sm">
-                <span>{t('recorder.options.quality')}</span>
+              <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+                <span className="shrink-0">{t('recorder.options.quality')}</span>
                 <Segmented<RecorderQuality>
                   size="sm"
+                  fullWidth
+                  className="w-full min-w-[8rem] max-w-[11rem] sm:w-auto sm:flex-none"
                   ariaLabel={t('recorder.options.quality')}
                   value={settings.quality}
                   onValueChange={(quality) => patch({ quality })}

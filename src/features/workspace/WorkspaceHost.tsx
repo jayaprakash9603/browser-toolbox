@@ -113,7 +113,7 @@ export function WorkspaceHost({ workspace, activeToolId, children }: WorkspaceHo
           className="shrink-0 border-b border-primary/10 px-3 pb-2 pt-0.5 @[360px]:px-4"
         >
           <Tabs value={activeView?.key ?? ''} onValueChange={openView} className="gap-0">
-            <TabsList variant="attached" fullWidth>
+            <TabsList variant="attached" fullWidth scrollButtons="auto">
               {workspace.views.map((view) => {
                 const target = toolRegistry.get(view.toolId)
                 const ViewIcon = view.icon ?? target?.icon

@@ -15,6 +15,8 @@ interface SegmentedProps<T extends string> {
   options: readonly SegmentedOption<T>[]
   ariaLabel: string
   size?: 'sm' | 'default'
+  /** Evenly stretch segments; labels truncate on narrow panels. */
+  fullWidth?: boolean
   className?: string
 }
 
@@ -24,6 +26,7 @@ export function Segmented<T extends string>({
   options,
   ariaLabel,
   size = 'default',
+  fullWidth = false,
   className,
 }: SegmentedProps<T>) {
   const refs = React.useRef<(HTMLButtonElement | null)[]>([])
@@ -44,7 +47,11 @@ export function Segmented<T extends string>({
     <div
       role="radiogroup"
       aria-label={ariaLabel}
-      className={cn('inline-flex items-center gap-0.5 rounded-md border border-input bg-background p-0.5 shadow-xs', className)}
+      className={cn(
+        'inline-flex max-w-full items-center gap-0.5 rounded-md border border-input bg-background p-0.5 shadow-xs',
+        fullWidth && 'flex w-full',
+        className,
+      )}
     >
       {options.map((option, index) => {
         const selected = option.value === value
@@ -57,7 +64,9 @@ export function Segmented<T extends string>({
             type="button"
             role="radio"
             aria-checked={selected}
-            title={option.title}
+            title={
+              option.title ?? (typeof option.label === 'string' ? option.label : undefined)
+            }
             disabled={option.disabled}
             tabIndex={selected ? 0 : -1}
             onClick={() => onValueChange(option.value)}
@@ -71,8 +80,9 @@ export function Segmented<T extends string>({
               }
             }}
             className={cn(
-              'inline-flex cursor-pointer items-center justify-center gap-1 whitespace-nowrap rounded-[5px] font-medium text-muted-foreground outline-none transition-[color,background-color,transform,filter] duration-150 hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:size-3.5',
-              size === 'sm' ? 'h-6 px-2 text-xs' : 'h-7 px-2.5 text-[13px]',
+              'inline-flex cursor-pointer items-center justify-center gap-1 rounded-[5px] font-medium text-muted-foreground outline-none transition-[color,background-color,transform,filter] duration-150 hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:size-3.5 [&_svg]:shrink-0',
+              fullWidth ? 'min-w-0 flex-1 truncate whitespace-nowrap px-1.5' : 'whitespace-nowrap',
+              size === 'sm' ? cn('min-h-7 py-1 text-xs', !fullWidth && 'h-6 px-2') : cn('min-h-8', !fullWidth && 'h-7 px-2.5 text-[13px]'),
               selected && 'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary',
             )}
           >

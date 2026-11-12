@@ -179,7 +179,7 @@ function TabsList({
     }
 
     const onActiveChange = () => {
-      if (resolved !== 'attached' && listOverflows(node)) {
+      if (listOverflows(node)) {
         scrollActiveIntoView(node, !reduceMotion)
       }
       sync()
@@ -255,11 +255,15 @@ function TabsList({
           className={cn(
             tabsListVariants({ variant: resolved }),
             'relative',
-            (fullWidth || resolved === 'attached') &&
-              'w-full flex-1 [&_[role=tab]]:min-w-0 [&_[role=tab]]:flex-1',
+            (fullWidth || resolved === 'attached') && 'w-full min-w-0 flex-1',
+            resolved === 'attached' &&
+              'overflow-x-auto overscroll-x-contain scrollbar-none [&_[role=tab]]:min-w-9 [&_[role=tab]]:shrink-0 [&_[role=tab][data-state=inactive]]:max-w-[3.25rem] [&_[role=tab][data-state=active]]:max-w-none [&_[role=tab][data-state=active]]:min-w-[min(100%,9rem)] [&_[role=tab][data-state=active]]:flex-[2_1_auto]',
+            fullWidth &&
+              resolved !== 'attached' &&
+              '[&_[role=tab]]:min-w-0 [&_[role=tab]]:flex-1',
             showScrollButtons
               ? 'min-w-0 flex-1 overflow-x-auto overscroll-x-contain scrollbar-none'
-              : 'max-w-full',
+              : resolved !== 'attached' && 'max-w-full',
             className,
           )}
           style={fade ? { ...style, maskImage: fade, WebkitMaskImage: fade } : style}
@@ -328,16 +332,19 @@ function TabsTrigger({
   const { icon, labels } = partitionTriggerChildren(children)
 
   return (
-    <TabsPrimitive.Trigger className={cn(tabsTriggerVariants({ variant }), className)} {...props}>
+    <TabsPrimitive.Trigger
+      className={cn(tabsTriggerVariants({ variant }), variant === 'attached' && 'overflow-hidden', className)}
+      {...props}
+    >
       {variant === 'attached' ? (
         <>
           {icon}
           <span
             className={cn(
-              'inline-block overflow-hidden whitespace-nowrap text-sm font-medium transition-all duration-300 ease-out motion-reduce:transition-none',
+              'inline-block min-w-0 overflow-hidden text-sm font-medium transition-[max-width,opacity,margin] duration-300 ease-out motion-reduce:transition-none',
               icon
-                ? 'max-w-0 opacity-0 ml-0 group-data-[state=active]/tab:max-w-[12rem] group-data-[state=active]/tab:opacity-100 group-data-[state=active]/tab:ml-1.5'
-                : 'max-w-[12rem] opacity-100',
+                ? 'max-w-0 opacity-0 ml-0 truncate whitespace-nowrap group-data-[state=active]/tab:max-w-[min(16rem,42vw)] group-data-[state=active]/tab:opacity-100 group-data-[state=active]/tab:ml-1.5 sm:group-data-[state=active]/tab:max-w-[min(20rem,50%)]'
+                : 'max-w-full truncate whitespace-nowrap opacity-100',
             )}
             data-slot="tabs-trigger-label"
           >

@@ -235,10 +235,11 @@ export default function FormAutofillTool() {
           onValueChange={changeView}
           ariaLabel={t('formMemory.view.label')}
           size="sm"
-          className="flex w-full [&>button]:flex-1"
+          fullWidth
           options={[
             {
               value: 'page',
+              title: t('formMemory.view.page'),
               label: (
                 <>
                   <ScanTextIcon aria-hidden />
@@ -248,6 +249,7 @@ export default function FormAutofillTool() {
             },
             {
               value: 'review',
+              title: t('formMemory.view.review'),
               label: (
                 <>
                   <InboxIcon aria-hidden />
@@ -262,6 +264,7 @@ export default function FormAutofillTool() {
             },
             {
               value: 'saved',
+              title: t('formMemory.view.saved'),
               label: (
                 <>
                   <BookmarkIcon aria-hidden />
