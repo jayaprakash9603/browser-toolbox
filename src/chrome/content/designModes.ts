@@ -2,7 +2,27 @@ const WIREFRAME_STYLE_ID = 'toolbox-wireframe-style'
 const FONT_OVERLAY_ID = 'toolbox-font-overlay'
 
 let fontInspectorActive = false
-let fontMoveHandler: ((e: MouseEvent) => void) | null = null
+let fontMoveHandler: ((e: PointerEvent) => void) | null = null
+let fontLeaveHandler: ((e: MouseEvent) => void) | null = null
+
+function hoverTarget(event: PointerEvent): Element | null {
+  const fromPath = event.composedPath().find((node): node is Element => node instanceof Element)
+  if (fromPath) return fromPath
+  const target = event.target
+  return target instanceof Element ? target : null
+}
+
+function detachFontInspector(): void {
+  document.getElementById(FONT_OVERLAY_ID)?.remove()
+  if (fontMoveHandler) {
+    document.removeEventListener('pointermove', fontMoveHandler, true)
+    fontMoveHandler = null
+  }
+  if (fontLeaveHandler) {
+    document.removeEventListener('mouseout', fontLeaveHandler, true)
+    fontLeaveHandler = null
+  }
+}
 
 export function setWireframe(enabled: boolean): void {
   const existing = document.getElementById(WIREFRAME_STYLE_ID)
@@ -25,38 +45,48 @@ export function isFontInspectorActive(): boolean {
 }
 
 export function setFontInspector(enabled: boolean): void {
-  if (enabled === fontInspectorActive) return
-  fontInspectorActive = enabled
-  void chrome.runtime.sendMessage({ type: 'FONT_INSPECTOR_TAB_STATE', enabled }).catch(() => {})
-  const overlay = document.getElementById(FONT_OVERLAY_ID) as HTMLDivElement | null
   if (!enabled) {
-    overlay?.remove()
-    if (fontMoveHandler) {
-      document.removeEventListener('mousemove', fontMoveHandler, true)
-      fontMoveHandler = null
-    }
+    if (!fontInspectorActive) return
+    fontInspectorActive = false
+    void chrome.runtime.sendMessage({ type: 'FONT_INSPECTOR_TAB_STATE', enabled: false }).catch(() => {})
+    detachFontInspector()
     return
   }
-  const mount = document.body ?? document.documentElement
-  const tip =
-    document.getElementById(FONT_OVERLAY_ID) ??
-    (() => {
-      const el = document.createElement('div')
-      el.id = FONT_OVERLAY_ID
-      el.style.cssText =
-        'position:fixed;z-index:2147483646;pointer-events:none;padding:6px 8px;border-radius:6px;background:rgba(0,0,0,.82);color:#fff;font:12px/1.35 system-ui,sans-serif;max-width:320px;display:none;'
-      mount.appendChild(el)
-      return el
-    })()
+  if (fontInspectorActive) return
+  fontInspectorActive = true
+  void chrome.runtime.sendMessage({ type: 'FONT_INSPECTOR_TAB_STATE', enabled: true }).catch(() => {})
 
-  fontMoveHandler = (e: MouseEvent) => {
-    const target = e.target as Element | null
-    if (!target || target === tip) return
-    const cs = getComputedStyle(target)
-    tip.style.display = 'block'
-    tip.style.left = `${Math.min(e.clientX + 12, window.innerWidth - 280)}px`
-    tip.style.top = `${Math.min(e.clientY + 12, window.innerHeight - 80)}px`
-    tip.textContent = `${cs.fontFamily} · ${cs.fontSize} · ${cs.fontWeight} · ${cs.lineHeight}`
+  const mount = document.body ?? document.documentElement
+  if (!mount) return
+
+  const tip = document.createElement('div')
+  tip.id = FONT_OVERLAY_ID
+  tip.style.cssText =
+    'position:fixed;z-index:2147483646;pointer-events:none;padding:6px 8px;border-radius:6px;background:rgba(0,0,0,.82);color:#fff;font:12px/1.35 system-ui,sans-serif;max-width:320px;display:none;white-space:nowrap;'
+  mount.appendChild(tip)
+
+  const hideTip = () => {
+    tip.style.display = 'none'
   }
-  document.addEventListener('mousemove', fontMoveHandler, true)
+
+  fontMoveHandler = (event: PointerEvent) => {
+    const target = hoverTarget(event)
+    if (!target || target === tip || tip.contains(target)) {
+      hideTip()
+      return
+    }
+    const cs = getComputedStyle(target)
+    tip.textContent = `${cs.fontFamily} · ${cs.fontSize} · ${cs.fontWeight} · ${cs.lineHeight}`
+    tip.style.display = 'block'
+    tip.style.left = `${Math.min(Math.max(event.clientX + 12, 8), window.innerWidth - tip.offsetWidth - 8)}px`
+    tip.style.top = `${Math.min(Math.max(event.clientY + 12, 8), window.innerHeight - 40)}px`
+  }
+
+  fontLeaveHandler = (event: MouseEvent) => {
+    if (event.relatedTarget != null) return
+    hideTip()
+  }
+
+  document.addEventListener('pointermove', fontMoveHandler, true)
+  document.addEventListener('mouseout', fontLeaveHandler, true)
 }

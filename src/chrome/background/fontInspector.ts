@@ -14,11 +14,29 @@ async function ensureFontScripts(tabId: number): Promise<void> {
   }
 }
 
-export async function pushFontInspectorToTab(tabId: number, enabled: boolean): Promise<void> {
+async function broadcastFontInspector(tabId: number, enabled: boolean): Promise<void> {
+  await chrome.tabs.sendMessage(tabId, { type: 'FONT_INSPECTOR_TOGGLE', enabled })
+}
+
+export async function pushFontInspectorToTab(
+  tabId: number,
+  enabled: boolean,
+  options?: { frameId?: number; allFrames?: boolean },
+): Promise<void> {
   await writeFontInspectorTab(tabId, enabled)
   try {
     await ensureFontScripts(tabId)
-    await chrome.tabs.sendMessage(tabId, { type: 'FONT_INSPECTOR_TOGGLE', enabled })
+    if (!enabled) {
+      await broadcastFontInspector(tabId, false)
+      return
+    }
+    await broadcastFontInspector(tabId, false)
+    if (options?.allFrames) {
+      await chrome.tabs.sendMessage(tabId, { type: 'FONT_INSPECTOR_TOGGLE', enabled: true })
+    } else {
+      const frameId = options?.frameId ?? 0
+      await chrome.tabs.sendMessage(tabId, { type: 'FONT_INSPECTOR_TOGGLE', enabled: true }, { frameId })
+    }
   } catch (error) {
     logger.warn('font inspector apply failed', error)
     throw error
@@ -29,10 +47,10 @@ export async function resolveFontInspectorForTab(tabId: number): Promise<boolean
   return readFontInspectorTab(tabId)
 }
 
-export async function toggleFontInspectorForTab(tabId: number): Promise<boolean> {
+export async function toggleFontInspectorForTab(tabId: number, frameId = 0): Promise<boolean> {
   const current = await resolveFontInspectorForTab(tabId)
   const next = !current
-  await pushFontInspectorToTab(tabId, next)
+  await pushFontInspectorToTab(tabId, next, { frameId })
   return next
 }
 
@@ -54,7 +72,7 @@ export function registerFontInspector(): void {
     if (message.type !== 'FONT_INSPECTOR_PANEL_SET') return
     const tab = await getActiveWebTab()
     if (tab?.id == null) throw new Error('No page tab to inspect.')
-    await pushFontInspectorToTab(tab.id, message.enabled)
+    await pushFontInspectorToTab(tab.id, message.enabled, { allFrames: message.enabled })
     return { enabled: message.enabled, tabId: tab.id }
   })
 

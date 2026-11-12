@@ -132,7 +132,7 @@ export async function handleSiteQuickActionClick(
   }
   if (menuItemId === FONT_INSPECTOR_MENU_ID && tab?.id != null) {
     try {
-      const enabled = await toggleFontInspectorForTab(tab.id)
+      const enabled = await toggleFontInspectorForTab(tab.id, frameId)
       const state = await getAdblockState()
       applySiteQuickActionMenuLabels(
         tab,
