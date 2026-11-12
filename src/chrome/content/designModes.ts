@@ -37,6 +37,7 @@ export function setFontInspector(enabled: boolean): void {
     }
     return
   }
+  const mount = document.body ?? document.documentElement
   const tip =
     document.getElementById(FONT_OVERLAY_ID) ??
     (() => {
@@ -44,7 +45,7 @@ export function setFontInspector(enabled: boolean): void {
       el.id = FONT_OVERLAY_ID
       el.style.cssText =
         'position:fixed;z-index:2147483646;pointer-events:none;padding:6px 8px;border-radius:6px;background:rgba(0,0,0,.82);color:#fff;font:12px/1.35 system-ui,sans-serif;max-width:320px;display:none;'
-      document.body.appendChild(el)
+      mount.appendChild(el)
       return el
     })()
 

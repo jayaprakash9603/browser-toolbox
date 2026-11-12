@@ -5,25 +5,19 @@ import { createLogger } from '@/core/logging'
 
 const logger = createLogger('font-inspector')
 
-type TabMessageResponse = { ok?: boolean; data?: { enabled?: boolean } }
-
-async function queryContentFontState(tabId: number): Promise<boolean | null> {
+async function ensureFontScripts(tabId: number): Promise<void> {
   try {
-    await ensureContentScriptInTab(tabId)
-    const res = (await chrome.tabs.sendMessage(tabId, { type: 'FONT_INSPECTOR_GET' })) as
-      | TabMessageResponse
-      | undefined
-    if (res?.ok && typeof res.data?.enabled === 'boolean') return res.data.enabled
+    await ensureContentScriptInTab(tabId, { allFrames: true })
   } catch (error) {
-    logger.debug('font inspector query failed', error)
+    logger.debug('all-frame font inject partial', error)
+    await ensureContentScriptInTab(tabId).catch(() => undefined)
   }
-  return null
 }
 
 export async function pushFontInspectorToTab(tabId: number, enabled: boolean): Promise<void> {
   await writeFontInspectorTab(tabId, enabled)
   try {
-    await ensureContentScriptInTab(tabId)
+    await ensureFontScripts(tabId)
     await chrome.tabs.sendMessage(tabId, { type: 'FONT_INSPECTOR_TOGGLE', enabled })
   } catch (error) {
     logger.warn('font inspector apply failed', error)
@@ -32,11 +26,6 @@ export async function pushFontInspectorToTab(tabId: number, enabled: boolean): P
 }
 
 export async function resolveFontInspectorForTab(tabId: number): Promise<boolean> {
-  const fromPage = await queryContentFontState(tabId)
-  if (fromPage != null) {
-    await writeFontInspectorTab(tabId, fromPage)
-    return fromPage
-  }
   return readFontInspectorTab(tabId)
 }
 

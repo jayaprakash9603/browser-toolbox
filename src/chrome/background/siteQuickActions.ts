@@ -114,6 +114,7 @@ export async function refreshSiteQuickActionMenusForActiveTab(): Promise<void> {
 export async function handleSiteQuickActionClick(
   menuItemId: string,
   tab?: chrome.tabs.Tab,
+  frameId = 0,
 ): Promise<boolean> {
   if (menuItemId === ADBLOCK_SITE_MENU_ID && tab?.url) {
     const host = hostnameFromUrl(tab.url)
@@ -149,7 +150,7 @@ export async function handleSiteQuickActionClick(
   }
   if (menuItemId === ELEMENT_INSPECTOR_MENU_ID && tab?.id != null) {
     try {
-      const enabled = await toggleElementInspectorForTab(tab.id)
+      const enabled = await toggleElementInspectorForTab(tab.id, frameId)
       const state = await getAdblockState()
       applySiteQuickActionMenuLabels(
         tab,

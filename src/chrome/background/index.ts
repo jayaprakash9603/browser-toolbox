@@ -133,7 +133,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     return
   }
   if (isSiteQuickActionMenuItem(menuItemId)) {
-    void handleSiteQuickActionClick(menuItemId, tab)
+    void handleSiteQuickActionClick(menuItemId, tab, info.frameId ?? 0)
     return
   }
   if (menuItemId.startsWith('toolbox.screenshot.')) {

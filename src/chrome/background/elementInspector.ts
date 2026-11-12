@@ -1,7 +1,6 @@
 import {
   DEFAULT_INSPECTOR_LABELS,
   DEFAULT_INSPECTOR_OPTIONS,
-  type PageInspectorState,
 } from '@/chrome/content/pageInspector/model'
 import { ensureContentScriptInTab, getActiveWebTab } from '@/chrome/contentScriptClient'
 import {
@@ -14,8 +13,6 @@ import { createLogger } from '@/core/logging'
 
 const logger = createLogger('element-inspector')
 
-type TabMessageResponse = { ok?: boolean; data?: PageInspectorState }
-
 async function ensureInspectorScripts(tabId: number): Promise<void> {
   try {
     await ensureContentScriptInTab(tabId, { allFrames: true })
@@ -25,51 +22,54 @@ async function ensureInspectorScripts(tabId: number): Promise<void> {
   }
 }
 
-async function queryMainFrameInspector(tabId: number): Promise<boolean | null> {
+async function broadcastInspectorOff(tabId: number): Promise<void> {
+  await ensureInspectorScripts(tabId)
   try {
-    await ensureInspectorScripts(tabId)
-    const res = (await chrome.tabs.sendMessage(
-      tabId,
-      { type: 'PAGE_INSPECTOR_GET' },
-      { frameId: 0 },
-    )) as TabMessageResponse | undefined
-    if (res?.ok && res.data?.options) return res.data.options.enabled
+    await chrome.tabs.sendMessage(tabId, { type: 'PAGE_INSPECTOR_SET', options: { enabled: false } })
   } catch (error) {
-    logger.debug('element inspector query failed', error)
+    logger.debug('disable inspector in all frames failed', error)
   }
-  return null
 }
 
 export async function pushElementInspectorToTab(
   tabId: number,
   enabled: boolean,
-  labelOverrides?: Record<string, string>,
+  options?: { frameId?: number; labels?: Record<string, string> },
 ): Promise<void> {
   await writeElementInspectorTab(tabId, enabled)
+  if (!enabled) {
+    await broadcastInspectorOff(tabId)
+    return
+  }
+
+  const frameId = options?.frameId ?? 0
+  const labels = { ...DEFAULT_INSPECTOR_LABELS, ...options?.labels }
   await ensureInspectorScripts(tabId)
-  const labels = { ...DEFAULT_INSPECTOR_LABELS, ...labelOverrides }
-  await chrome.tabs.sendMessage(tabId, {
-    type: 'PAGE_INSPECTOR_SET',
-    options: enabled
-      ? { ...DEFAULT_INSPECTOR_OPTIONS, enabled: true }
-      : { enabled: false },
-    labels,
-  })
+  await broadcastInspectorOff(tabId)
+  try {
+    await chrome.tabs.sendMessage(
+      tabId,
+      {
+        type: 'PAGE_INSPECTOR_SET',
+        options: { ...DEFAULT_INSPECTOR_OPTIONS, enabled: true },
+        labels,
+      },
+      { frameId },
+    )
+  } catch (error) {
+    logger.warn('enable element inspector in frame failed', error)
+    throw error
+  }
 }
 
 export async function resolveElementInspectorForTab(tabId: number): Promise<boolean> {
-  const fromPage = await queryMainFrameInspector(tabId)
-  if (fromPage != null) {
-    await writeElementInspectorTab(tabId, fromPage)
-    return fromPage
-  }
   return readElementInspectorTab(tabId)
 }
 
-export async function toggleElementInspectorForTab(tabId: number): Promise<boolean> {
+export async function toggleElementInspectorForTab(tabId: number, frameId = 0): Promise<boolean> {
   const current = await resolveElementInspectorForTab(tabId)
   const next = !current
-  await pushElementInspectorToTab(tabId, next)
+  await pushElementInspectorToTab(tabId, next, { frameId })
   return next
 }
 
@@ -91,7 +91,7 @@ export function registerElementInspector(): void {
     if (message.type !== 'PAGE_INSPECTOR_PANEL_SET') return
     const tab = await getActiveWebTab()
     if (tab?.id == null) throw new Error('No page tab to inspect.')
-    await pushElementInspectorToTab(tab.id, message.enabled, message.labels)
+    await pushElementInspectorToTab(tab.id, message.enabled, { frameId: 0, labels: message.labels })
     return { enabled: message.enabled, tabId: tab.id }
   })
 
