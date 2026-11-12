@@ -39,14 +39,16 @@ export async function openExtensionPanel(target: PanelOpenTarget = {}): Promise<
     try {
       if (target.tabId != null) {
         await api.sidePanel.open({ tabId: target.tabId })
-      } else if (target.windowId != null) {
-        await api.sidePanel.open({ windowId: target.windowId })
-      } else {
-        return false
+        return true
       }
-      return true
+      if (target.windowId != null) {
+        await api.sidePanel.open({ windowId: target.windowId })
+        return true
+      }
+      return false
     } catch {
-      // Try the sidebar/tab fallback below.
+      // Chromium: avoid opening a full extension tab when the side panel API exists but this call failed.
+      return false
     }
   }
 
