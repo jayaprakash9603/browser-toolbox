@@ -2,7 +2,9 @@ import {
   BrushIcon,
   ClipboardIcon,
   CpuIcon,
+  FormInputIcon,
   GlobeIcon,
+  VideoIcon,
   GlobeLockIcon,
   KeyboardIcon,
   ShieldCheckIcon,
@@ -40,6 +42,7 @@ import {
 } from '@/shared/components/ui/select'
 import { AdblockSettingsSection } from '@/app/pages/settings/AdblockSettingsSection'
 import { FormMemorySettingsSection } from '@/app/pages/settings/FormMemorySettingsSection'
+import { RecorderSettingsSection } from '@/app/pages/settings/RecorderSettingsSection'
 import { ProtectionSettingsSection } from '@/app/pages/settings/ProtectionSettingsSection'
 import { KeyboardShortcutsSettingsCard } from '@/app/pages/settings/KeyboardShortcutsSettingsCard'
 import { NetMonitorSettingsSection } from '@/app/pages/settings/NetMonitorSettingsSection'
@@ -201,6 +204,24 @@ export default function SettingsPage() {
         </SettingsGroup>
 
         <SettingsGroup
+          id="formAutofill"
+          icon={FormInputIcon}
+          title={t('settings.formAutofillSection')}
+          description={t('settings.formAutofillSectionDescription')}
+        >
+          <FormMemorySettingsSection />
+        </SettingsGroup>
+
+        <SettingsGroup
+          id="screenRecorder"
+          icon={VideoIcon}
+          title={t('settings.screenRecorderSection')}
+          description={t('settings.screenRecorderSectionDescription')}
+        >
+          <RecorderSettingsSection />
+        </SettingsGroup>
+
+        <SettingsGroup
           id="features"
           icon={CpuIcon}
           title={t('settings.groupFeatures')}
@@ -209,7 +230,6 @@ export default function SettingsPage() {
           <KeyboardShortcutsSettingsCard />
           <SaveImageAsSettingsSection />
           <PipSettingsSection />
-          <FormMemorySettingsSection />
           <ReactDevtoolsSettingsSection />
           <NetMonitorSettingsSection />
         </SettingsGroup>

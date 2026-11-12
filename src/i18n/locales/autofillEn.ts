@@ -117,6 +117,8 @@ export const autofillStrings = {
   'formMemory.global.title': 'Global values',
   'formMemory.global.hint': 'Filled into matching fields on any site',
 
+  'formMemory.tool.statusOn': 'On — scan, fill and remember on allowed sites',
+  'formMemory.tool.statusOff': 'Off — saved values stay but nothing runs on pages',
   'formMemory.settings.enabled': 'Enable form autofill',
   'formMemory.settings.enabledHint':
     'Turn off to stop scanning, remembering and filling forms. Existing saved entries are kept.',

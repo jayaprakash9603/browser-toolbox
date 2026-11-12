@@ -15,6 +15,7 @@ import { useShortcutDisplay } from '@/features/shortcuts/useShortcutDisplay'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { useToast } from '@/shared/components/toast/useToast'
 import { Segmented } from '@/shared/components/ui/segmented'
+import { Switch } from '@/shared/components/ui/switch'
 import { cn } from '@/shared/utils/cn'
 import { useProductivityTool } from '../_shared'
 import { ConnectionBar } from './ConnectionBar'
@@ -202,11 +203,23 @@ export default function FormAutofillTool() {
 
   return (
     <ToolPage tool={tool} contentClassName="flex min-h-0 flex-col overflow-hidden p-0">
-      {!autofillEnabled && (
-        <div className="mx-3 mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
-          {t('formMemory.settings.enabledHint')}
+      <div className="flex items-center justify-between gap-3 border-b border-border/60 px-3 py-2.5">
+        <div className="min-w-0">
+          <p className="text-sm font-medium leading-tight">{t('formMemory.settings.enabled')}</p>
+          <p className="text-xs text-muted-foreground">
+            {autofillEnabled ? t('formMemory.tool.statusOn') : t('formMemory.tool.statusOff')}
+          </p>
         </div>
-      )}
+        <Switch
+          checked={autofillEnabled}
+          onCheckedChange={(on) => void memory.patchSettings({ enabled: on })}
+          aria-label={t('formMemory.settings.enabled')}
+        />
+      </div>
+      <fieldset
+        disabled={!autofillEnabled}
+        className="flex min-h-0 flex-1 flex-col border-0 p-0 m-0 disabled:opacity-55"
+      >
       <ConnectionBar
         controller={controller}
         theme={theme}
@@ -291,6 +304,7 @@ export default function FormAutofillTool() {
           onSave={() => void saveCurrent()}
         />
       )}
+      </fieldset>
     </ToolPage>
   )
 }

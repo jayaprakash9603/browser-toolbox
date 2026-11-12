@@ -156,6 +156,9 @@ export async function startRecorder(
   settings: RecorderSettings,
   tab?: chrome.tabs.Tab,
 ): Promise<RecorderSession> {
+  if (!settings.enabled) {
+    throw new Error('Screen recording is turned off. Turn it on in Settings or the Screen Recorder tool.')
+  }
   if (await getSession()) throw new Error('A recording is already running.')
   const id = crypto.randomUUID()
   const target = tab?.id != null ? tab : await activeTab()
@@ -236,8 +239,18 @@ export async function handleRecorderMenuClick(menuItemId: string, tab?: chrome.t
   }
   const source = recorderSourceFromMenuAction(menuItemId)
   if (!source) return
+  const settings = await loadRecorderSettings()
+  if (!settings.enabled) {
+    void chrome.notifications.create({
+      type: 'basic',
+      iconUrl: chrome.runtime.getURL('public/icons/icon128.png'),
+      title: 'Screen recorder',
+      message: 'Screen recording is turned off. Enable it in Settings or the Screen Recorder tool.',
+    })
+    return
+  }
   try {
-    await startRecorder(source, await loadRecorderSettings(), tab)
+    await startRecorder(source, settings, tab)
   } catch (error) {
     logger.warn('context menu start failed', error)
     void chrome.notifications.create({
@@ -256,8 +269,18 @@ export async function toggleRecorderFromCommand(tab?: chrome.tabs.Tab): Promise<
     await stopRecorder()
     return
   }
+  const settings = await loadRecorderSettings()
+  if (!settings.enabled) {
+    void chrome.notifications.create({
+      type: 'basic',
+      iconUrl: chrome.runtime.getURL('public/icons/icon128.png'),
+      title: 'Screen recorder',
+      message: 'Screen recording is turned off. Enable it in Settings or the Screen Recorder tool.',
+    })
+    return
+  }
   try {
-    await startRecorder('tab', await loadRecorderSettings(), tab)
+    await startRecorder('tab', settings, tab)
   } catch (error) {
     logger.warn('command start failed', error)
     void chrome.notifications.create({

@@ -86,6 +86,18 @@ export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
     keywords: ['pip', 'video', 'float', 'alt+p', 'picture in picture'],
   },
   {
+    id: 'formMemoryEnabled',
+    labelKey: 'formMemory.settings.enabled',
+    fallbackLabel: 'Form autofill',
+    keywords: ['form', 'autofill', 'fill', 'remember'],
+  },
+  {
+    id: 'recorderEnabled',
+    labelKey: 'recorder.settings.enabled',
+    fallbackLabel: 'Screen recording',
+    keywords: ['record', 'screen', 'video', 'capture'],
+  },
+  {
     id: 'clipboardHistory',
     labelKey: 'settings.clipboardHistory',
     fallbackLabel: 'Clipboard history',

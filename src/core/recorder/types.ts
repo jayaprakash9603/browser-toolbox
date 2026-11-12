@@ -3,6 +3,7 @@ export type RecordingSource = 'tab' | 'window' | 'screen'
 export type RecorderQuality = '720p' | '1080p'
 
 export interface RecorderSettings {
+  enabled: boolean
   mic: boolean
   tabAudio: boolean
   countdown: boolean

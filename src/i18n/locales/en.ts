@@ -263,6 +263,12 @@ const en = {
   'settings.groupPrivacy': 'Privacy & security',
   'settings.groupSites': 'Site enhancements',
   'settings.groupSitesDescription': 'Extras that run on sites you visit.',
+  'settings.formAutofillSection': 'Form autofill',
+  'settings.formAutofillSectionDescription':
+    'Fill and remember form fields on pages you allow. Turn off to pause all autofill.',
+  'settings.screenRecorderSection': 'Screen recorder',
+  'settings.screenRecorderSectionDescription':
+    'Tab, window and screen capture. Status shows on the extension icon while recording.',
   'settings.groupFeatures': 'Browser features',
   'settings.groupFeaturesDescription': 'Shortcuts, image saving and Picture-in-Picture.',
   'settings.groupData': 'Data & reset',
@@ -1193,6 +1199,14 @@ const en = {
   'recorder.options.systemAudio': 'System / tab audio (when Chrome offers it)',
   'recorder.options.countdown': '3-second countdown',
   'recorder.options.quality': 'Quality',
+  'recorder.settings.enabled': 'Screen recording',
+  'recorder.settings.enabledHint':
+    'When off, recording is blocked (toolbar badge, right-click menu, and shortcuts).',
+  'recorder.settings.micHint': 'Include microphone on new recordings (Chrome will ask permission).',
+  'recorder.settings.countdownHint': 'Wait three seconds before capture starts.',
+  'recorder.settings.openTool': 'Open Screen Recorder',
+  'recorder.tool.statusOn': 'On — right-click or use the tool to record',
+  'recorder.tool.statusOff': 'Off — turn on to record',
   'recorder.start': 'Start recording',
   'recorder.starting': 'Starting…',
   'recorder.pause': 'Pause',

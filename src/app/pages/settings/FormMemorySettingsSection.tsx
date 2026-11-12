@@ -12,6 +12,7 @@ export function FormMemorySettingsSection() {
   const fillKey = useShortcutDisplay('form-fill')
   const clearKey = useShortcutDisplay('form-clear')
   if (!state) return null
+  const active = state.settings.enabled
   return (
     <>
       <SettingsRow
@@ -20,7 +21,7 @@ export function FormMemorySettingsSection() {
         description={t('formMemory.settings.enabledHint')}
       >
         <Switch
-          checked={state.settings.enabled}
+          checked={active}
           onCheckedChange={(on) => void patchSettings({ enabled: on })}
           aria-label={t('formMemory.settings.enabled')}
         />
@@ -32,6 +33,7 @@ export function FormMemorySettingsSection() {
       >
         <Switch
           checked={state.settings.learn}
+          disabled={!active}
           onCheckedChange={(on) => void patchSettings({ learn: on })}
           aria-label={t('formMemory.settings.learn')}
         />
@@ -43,6 +45,7 @@ export function FormMemorySettingsSection() {
       >
         <Switch
           checked={state.settings.review}
+          disabled={!active}
           onCheckedChange={(on) => void patchSettings({ review: on })}
           aria-label={t('formMemory.settings.review')}
         />

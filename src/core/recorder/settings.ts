@@ -1,6 +1,7 @@
 import type { RecorderSettings } from './types'
 
 export const DEFAULT_RECORDER_SETTINGS: RecorderSettings = {
+  enabled: true,
   mic: false,
   tabAudio: true,
   countdown: true,
