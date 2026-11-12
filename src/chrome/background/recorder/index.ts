@@ -22,26 +22,17 @@ import {
   RECORDER_STOP_MENU_ID,
   syncRecorderContextMenu,
 } from './contextMenus'
-import {
-  mountMicPermissionFrame,
-  mountRecorderPill,
-  removeMicPermissionFrame,
-  showRecorderCountdown,
-} from './controls'
-import {
-  clearRoamingPill,
-  roamingPillHostTabId,
-  syncRoamingPill,
-  syncRoamingPillToFocused,
-  usesRoamingPill,
-} from './pillSync'
+import { mountMicPermissionFrame, removeMicPermissionFrame, unmountRecorderPill } from './controls'
 
 const logger = createLogger('recorder')
 const OFFSCREEN_OWNER = 'recorder'
 const COUNTDOWN_SECONDS = 3
+const BADGE_TICK_MS = 1000
+const DEFAULT_ACTION_TITLE = 'Open One Panel'
 
 let current: RecorderSession | null = null
 let loaded = false
+let badgeTicker: ReturnType<typeof setInterval> | undefined
 
 async function getSession(): Promise<RecorderSession | null> {
   if (!loaded) {
@@ -56,45 +47,54 @@ async function updateBadge(session: RecorderSession | null): Promise<void> {
   try {
     if (!session) {
       await chrome.action.setBadgeText({ text: '' })
+      await chrome.action.setTitle({ title: DEFAULT_ACTION_TITLE })
       return
     }
     const paused = session.phase === 'paused'
     await chrome.action.setBadgeBackgroundColor({ color: paused ? '#f59e0b' : '#dc2626' })
     if (session.phase === 'stopping') {
-      await chrome.action.setBadgeText({ text: '' })
+      await chrome.action.setBadgeText({ text: '…' })
+      await chrome.action.setTitle({ title: 'Saving recording…' })
       return
     }
-    const text = session.phase === 'pending' ? 'REC' : badgeTime(elapsedMs(session, Date.now()))
+    const text =
+      session.phase === 'pending' ? 'REC' : badgeTime(elapsedMs(session, Date.now()))
     await chrome.action.setBadgeText({ text })
+    const source =
+      session.source === 'tab' ? 'tab' : session.source === 'window' ? 'window' : 'screen'
+    const timerLabel = session.phase === 'pending' ? 'starting' : badgeTime(elapsedMs(session, Date.now()))
+    await chrome.action.setTitle({
+      title: `Recording ${source} (${timerLabel}). Right-click → Stop recording.`,
+    })
   } catch (error) {
     logger.debug('badge update failed', error)
   }
 }
 
-function recorderControlTabIds(session: RecorderSession | null, prev?: RecorderSession | null): number[] {
-  const ids = new Set<number>()
-  if (prev?.tabId != null) ids.add(prev.tabId)
-  if (prev?.returnTabId != null) ids.add(prev.returnTabId)
-  if (session?.tabId != null) ids.add(session.tabId)
-  if (session?.returnTabId != null) ids.add(session.returnTabId)
-  const roam = roamingPillHostTabId()
-  if (roam != null) ids.add(roam)
-  return [...ids]
+function syncBadgeTicker(session: RecorderSession | null): void {
+  if (session && session.phase !== 'stopping') {
+    if (badgeTicker != null) return
+    badgeTicker = setInterval(() => {
+      void getSession().then((active) => {
+        if (!active || active.phase === 'stopping') return
+        void updateBadge(active)
+      })
+    }, BADGE_TICK_MS)
+    return
+  }
+  if (badgeTicker != null) {
+    clearInterval(badgeTicker)
+    badgeTicker = undefined
+  }
 }
 
 async function setSession(next: RecorderSession | null): Promise<void> {
-  const prev = current
   current = next
   loaded = true
   if (next) await chrome.storage.session.set({ [RECORDER_SESSION_KEY]: next })
   else await chrome.storage.session.remove(RECORDER_SESSION_KEY)
   await updateBadge(next)
-  const payload = { type: 'RECORDER_STATE' as const, session: next }
-  for (const tabId of recorderControlTabIds(next, prev)) {
-    void chrome.tabs.sendMessage(tabId, payload).catch(() => undefined)
-  }
-  if (!next) void clearRoamingPill()
-  else if (usesRoamingPill(next)) void syncRoamingPillToFocused(next)
+  syncBadgeTicker(next)
   syncRecorderContextMenu(next)
 }
 
@@ -117,15 +117,7 @@ async function startTabCapture(id: string, settings: RecorderSettings, tab: chro
   const tabId = tab.id!
   await setSession(createSession(id, 'tab', 'offscreen', Date.now(), { tabId, windowId: tab.windowId }))
   try {
-    await chrome.scripting
-      .executeScript({ target: { tabId }, func: mountRecorderPill, args: [current!] })
-      .catch(() => undefined)
     const countdownMs = settings.countdown ? COUNTDOWN_SECONDS * 1000 : 0
-    if (countdownMs) {
-      await chrome.scripting
-        .executeScript({ target: { tabId }, func: showRecorderCountdown, args: [COUNTDOWN_SECONDS] })
-        .catch(() => undefined)
-    }
     await acquireOffscreen(OFFSCREEN_OWNER)
     const response = (await chrome.runtime.sendMessage({
       type: 'OFFSCREEN_RECORDER_START',
@@ -157,8 +149,6 @@ async function startPageCapture(id: string, source: RecordingSource, tab?: chrom
   await setSession(
     createSession(id, source, 'page', Date.now(), { pageTabId: page.id, returnTabId, windowId: page.windowId }),
   )
-  if (current && returnTabId != null) await syncRoamingPill(current, returnTabId)
-  else if (current) await syncRoamingPillToFocused(current)
 }
 
 export async function startRecorder(
@@ -355,21 +345,18 @@ export function registerRecorder(): void {
     })
   })
 
-  chrome.tabs.onActivated.addListener(({ tabId }) => {
-    void getSession().then((session) => {
-      if (session && usesRoamingPill(session)) void syncRoamingPill(session, tabId)
-    })
-  })
-
-  chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (!tab.active || changeInfo.status !== 'complete') return
-    void getSession().then((session) => {
-      if (session && usesRoamingPill(session)) void syncRoamingPill(session, tabId)
-    })
-  })
-
   void getSession().then(async (session) => {
     syncRecorderContextMenu(session)
-    if (session && usesRoamingPill(session)) await syncRoamingPillToFocused(session)
+    syncBadgeTicker(session)
+    if (session) await updateBadge(session)
+  })
+
+  void chrome.tabs.query({ url: ['http://*/*', 'https://*/*'] }).then((tabs) => {
+    for (const tab of tabs) {
+      if (tab.id == null) continue
+      void chrome.scripting
+        .executeScript({ target: { tabId: tab.id }, func: unmountRecorderPill })
+        .catch(() => undefined)
+    }
   })
 }

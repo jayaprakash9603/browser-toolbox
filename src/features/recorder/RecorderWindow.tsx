@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MicIcon } from 'lucide-react'
 
-import { showRecorderCountdown } from '@/chrome/background/recorder/controls'
 import { isExtensionMessage } from '@/core/messaging/types'
 import { loadRecorderSettings, videoConstraints } from '@/core/recorder/settings'
 import type { RecorderQuality, RecordingSource } from '@/core/recorder/types'
@@ -147,11 +146,6 @@ function PageRecorder({ id, source, returnTabId }: { id: string; source: Recordi
         : null
       if (returnTabId != null) {
         await chrome.tabs.update(returnTabId, { active: true }).catch(() => undefined)
-        if (settings.countdown) {
-          await chrome.scripting
-            .executeScript({ target: { tabId: returnTabId }, func: showRecorderCountdown, args: [COUNTDOWN_SECONDS] })
-            .catch(() => undefined)
-        }
       }
       if (settings.countdown) await new Promise((resolve) => setTimeout(resolve, COUNTDOWN_SECONDS * 1000 + 150))
       recordingRef.current = startRecording({
