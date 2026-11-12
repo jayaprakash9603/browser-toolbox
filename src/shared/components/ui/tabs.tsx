@@ -9,22 +9,24 @@ import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/utils/cn'
 
 /**
- * chips: a compact navigation rail with a sliding outlined tile (default).
+ * attached: shadcn-style pill rail; active tab expands to show a label (icon-only when idle).
+ * chips: compact navigation with a sliding outlined tile.
  * pill: segmented control with a sliding raised thumb. underline: classic sliding underline.
  */
-type TabsVariant = 'chips' | 'pill' | 'underline'
+type TabsVariant = 'attached' | 'chips' | 'pill' | 'underline'
 
-const TabsVariantContext = React.createContext<TabsVariant>('chips')
+const TabsVariantContext = React.createContext<TabsVariant>('attached')
 
 const tabsListVariants = cva('inline-flex w-fit items-center text-muted-foreground', {
   variants: {
     variant: {
+      attached: 'h-auto w-full gap-1 rounded-full bg-muted p-1',
       chips: 'h-auto gap-1 rounded-xl border bg-muted/40 p-1',
       pill: 'h-9 justify-center rounded-lg bg-muted p-1',
       underline: 'h-9 gap-0 rounded-none border-0 bg-transparent p-0',
     },
   },
-  defaultVariants: { variant: 'chips' },
+  defaultVariants: { variant: 'attached' },
 })
 
 const tabsTriggerVariants = cva(
@@ -32,6 +34,8 @@ const tabsTriggerVariants = cva(
   {
     variants: {
       variant: {
+        attached:
+          'relative z-10 min-h-9 flex-1 rounded-full border border-transparent bg-transparent px-3 py-1.5 text-sm text-muted-foreground transition-all duration-300 ease-out hover:text-foreground data-[state=active]:bg-background data-[state=active]:px-4 data-[state=active]:text-foreground data-[state=active]:shadow-xs motion-reduce:transition-none',
         chips:
           'relative z-10 min-h-11 rounded-lg border border-transparent bg-transparent px-3 text-xs hover:bg-background/60 hover:text-foreground data-[state=active]:text-primary motion-reduce:transition-none',
         pill: 'relative z-10 h-7 flex-1 rounded-md px-3 hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground',
@@ -39,7 +43,7 @@ const tabsTriggerVariants = cva(
           'relative z-10 h-9 rounded-none border-0 bg-transparent px-3 shadow-none hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none',
       },
     },
-    defaultVariants: { variant: 'chips' },
+    defaultVariants: { variant: 'attached' },
   },
 )
 
@@ -96,6 +100,17 @@ function scrollTabsBy(list: HTMLElement, direction: -1 | 1, smooth: boolean) {
   list.scrollBy({ left: direction * step, behavior: smooth ? 'smooth' : 'auto' })
 }
 
+function partitionTriggerChildren(children: React.ReactNode): {
+  icon: React.ReactNode | null
+  labels: React.ReactNode
+} {
+  const items = React.Children.toArray(children)
+  if (items.length >= 2 && React.isValidElement(items[0])) {
+    return { icon: items[0], labels: items.slice(1) }
+  }
+  return { icon: null, labels: children }
+}
+
 function Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Root>) {
   return <TabsPrimitive.Root className={cn('flex flex-col gap-3', className)} {...props} />
 }
@@ -116,7 +131,7 @@ function TabsList({
     fullWidth?: boolean
   }) {
   const { t } = useTranslation()
-  const resolved = variant ?? 'chips'
+  const resolved = variant ?? 'attached'
   const listRef = React.useRef<HTMLDivElement>(null)
   const [underline, setUnderline] = React.useState<IndicatorBox>({
     left: 0,
@@ -209,7 +224,7 @@ function TabsList({
           className={cn(
             tabsListVariants({ variant: resolved }),
             'relative',
-            fullWidth && 'w-full flex-1 [&_[role=tab]]:flex-1',
+            (fullWidth || resolved === 'attached') && 'w-full flex-1 [&_[role=tab]]:flex-1',
             showScrollButtons
               ? 'min-w-0 flex-1 overflow-x-auto overscroll-x-contain scrollbar-none'
               : 'max-w-full',
@@ -219,7 +234,7 @@ function TabsList({
           {...props}
         >
           {children}
-          {underline.width > 0 && (
+          {underline.width > 0 && resolved !== 'attached' && (
             <motion.span
               aria-hidden
               className={cn(
@@ -267,16 +282,33 @@ function TabsTrigger({
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.Trigger> & { count?: number }) {
   const variant = React.useContext(TabsVariantContext)
+  const { icon, labels } = partitionTriggerChildren(children)
+
   return (
     <TabsPrimitive.Trigger className={cn(tabsTriggerVariants({ variant }), className)} {...props}>
-      {children}
+      {variant === 'attached' ? (
+        <>
+          {icon}
+          <span
+            className={cn(
+              'inline-block overflow-hidden whitespace-nowrap text-sm font-medium transition-all duration-300 ease-out motion-reduce:transition-none',
+              icon
+                ? 'max-w-0 opacity-0 ml-0 group-data-[state=active]/tab:max-w-[12rem] group-data-[state=active]/tab:opacity-100 group-data-[state=active]/tab:ml-1.5'
+                : 'max-w-[12rem] opacity-100',
+            )}
+            data-slot="tabs-trigger-label"
+          >
+            {labels}
+          </span>
+        </>
+      ) : (
+        children
+      )}
       {count !== undefined && (
         <span
           className={cn(
             'rounded-full bg-muted-foreground/15 px-1.5 text-[11px] leading-4 tabular-nums',
-            variant === 'chips'
-              ? 'group-data-[state=active]/tab:bg-primary/15 group-data-[state=active]/tab:text-primary'
-              : 'group-data-[state=active]/tab:bg-primary/15 group-data-[state=active]/tab:text-primary',
+            'group-data-[state=active]/tab:bg-primary/15 group-data-[state=active]/tab:text-primary',
           )}
         >
           {count}
@@ -287,10 +319,13 @@ function TabsTrigger({
 }
 
 function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Content>) {
+  const variant = React.useContext(TabsVariantContext)
   return (
     <TabsPrimitive.Content
       className={cn(
-        'min-h-0 flex-1 outline-none rounded-md data-[state=active]:flex data-[state=active]:flex-col',
+        'min-h-0 flex-1 outline-none data-[state=active]:flex data-[state=active]:flex-col',
+        variant === 'attached' && 'mt-0 rounded-2xl border border-border bg-card shadow-xs',
+        variant !== 'attached' && 'rounded-md',
         className,
       )}
       {...props}

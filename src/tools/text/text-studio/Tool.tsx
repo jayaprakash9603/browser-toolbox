@@ -49,7 +49,7 @@ export default function TextStudioTool() {
       <div className="flex min-h-0 flex-1 flex-col gap-2.5">
         <div className="flex shrink-0 items-center gap-2 overflow-x-auto pb-0.5">
           <Tabs value={mode} onValueChange={(value) => setMode(value as Mode)}>
-            <TabsList variant="chips">
+            <TabsList variant="attached" fullWidth>
               <TabsTrigger value="format">Format</TabsTrigger>
               <TabsTrigger value="case">Case</TabsTrigger>
               <TabsTrigger value="clean">Clean</TabsTrigger>

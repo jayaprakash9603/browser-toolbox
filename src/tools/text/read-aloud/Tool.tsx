@@ -446,7 +446,7 @@ export default function ReadAloudTool() {
 
         <Tabs value={source} onValueChange={changeSource} className="min-h-0 flex-1 gap-0">
           <div className="flex shrink-0 flex-col gap-3 border-b px-[var(--density-page-pad)] pt-[var(--density-page-pad)] pb-3">
-            <TabsList variant="pill" fullWidth aria-label={t('text.readAloud.source')} className="w-full">
+            <TabsList variant="attached" fullWidth aria-label={t('text.readAloud.source')} className="w-full">
               <TabsTrigger value="page">
                 <GlobeIcon aria-hidden />
                 {t('text.readAloud.sourcePage')}

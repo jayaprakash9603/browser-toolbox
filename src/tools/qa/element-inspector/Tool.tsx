@@ -227,7 +227,7 @@ export default function ElementInspectorTool() {
             onValueChange={(value) => setTab(value as InspectorTab)}
             className="min-h-0"
           >
-            <TabsList variant="pill">
+            <TabsList variant="attached" fullWidth>
               <TabsTrigger value="overview">
                 <LayoutDashboardIcon /> {t('inspectorEl.tab.overview')}
               </TabsTrigger>

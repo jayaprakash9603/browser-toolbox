@@ -172,8 +172,9 @@ export function SelectorStudioHubShell({
 
             <Tabs value={tab} onValueChange={(value) => setTab(value as HubTab)} className="gap-1.5">
               <TabsList
-                variant="chips"
+                variant="attached"
                 scrollButtons="auto"
+                fullWidth
                 className={cn(
                   'h-auto w-full max-w-full justify-start',
                   panel ? 'gap-0.5' : 'gap-1',

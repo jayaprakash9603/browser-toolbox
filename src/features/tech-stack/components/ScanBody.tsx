@@ -41,7 +41,7 @@ export function ScanBody({ state, onRetry }: { state: TechScanState; onRetry: ()
     return (
       <ScanSection>
         <Tabs defaultValue="technologies">
-          <TabsList variant="chips">
+          <TabsList variant="attached" fullWidth>
             <TabsTrigger value="technologies" count={state.scan.hits.length}>
               {t('techStack.tab.technologies')}
             </TabsTrigger>
