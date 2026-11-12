@@ -137,8 +137,8 @@ export interface FormActionResult {
 
 export const DEFAULT_FORM_MEMORY_SETTINGS: FormMemorySettings = {
   enabled: true,
-  learn: true,
-  review: true,
+  learn: false,
+  review: false,
   autoFill: false,
   blockedHosts: [],
 }
@@ -359,8 +359,8 @@ export function normalizeFormMemoryState(raw: unknown): FormMemoryState {
     review: normalizeReview(item.review),
     settings: {
       enabled: settings.enabled !== false,
-      learn: settings.learn !== false,
-      review: settings.review !== false,
+      learn: settings.learn === true,
+      review: settings.review === true,
       autoFill: settings.autoFill === true,
       blockedHosts: Array.isArray(settings.blockedHosts)
         ? settings.blockedHosts.filter((host): host is string => typeof host === 'string')

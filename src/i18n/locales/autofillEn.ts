@@ -99,7 +99,7 @@ export const autofillStrings = {
   'formMemory.review.dismissedAll_other': 'Dismissed {{count}} entries',
   'formMemory.review.emptyTitle': 'Nothing to review',
   'formMemory.review.emptyHint':
-    'Values you type into forms show up here before they are saved, so you decide what gets filled next time.',
+    'When “Remember form entries” is on, new values land here before they are saved.',
   'formMemory.review.values_one': '1 value',
   'formMemory.review.values_other': '{{count}} values entered',
   'formMemory.review.times_one': 'Entered once',
@@ -119,14 +119,32 @@ export const autofillStrings = {
 
   'formMemory.tool.statusOn': 'On — scan, fill and remember on allowed sites',
   'formMemory.tool.statusOff': 'Off — saved values stay but nothing runs on pages',
+  'formMemory.tool.offTitle': 'Form autofill is off',
+  'formMemory.tool.offBody':
+    'Nothing is scanning or connecting to this page. Turn autofill on to see fields, fill, and optionally capture new entries.',
+  'formMemory.tool.turnOn': 'Turn on autofill',
   'formMemory.settings.enabled': 'Enable form autofill',
   'formMemory.settings.enabledHint':
     'Turn off to stop scanning, remembering and filling forms. Existing saved entries are kept.',
   'formMemory.settings.learn': 'Remember form entries',
   'formMemory.settings.learnHint':
-    'Keeps what you type, tick and pick in forms for review before anything is saved. Passwords and card numbers are never kept. Filling is manual only: {{fill}} fills and {{clear}} clears.',
+    'Off by default. When on, new values you enter wait in Review before they are saved. Passwords and card numbers are never kept. Fill and clear: {{fill}} / {{clear}}.',
   'formMemory.settings.review': 'Review before filling',
   'formMemory.settings.reviewHint':
-    'When enabled, saved values are shown for confirmation before they are applied. Turn it off to allow trusted matches to fill directly.',
+    'Off by default. When on, saved values are confirmed before they are applied to a form.',
+  'formMemory.review.offTitle': 'Review is paused',
+  'formMemory.review.offBody':
+    'Turn form autofill on to manage entries waiting for approval. Your existing queue is kept.',
+  'formMemory.review.captureOffTitle': 'Capture for review is off',
+  'formMemory.review.captureOffBody':
+    'New form entries are not collected for review. Turn on “Remember form entries” in Settings when you want the review queue.',
+  'formMemory.review.enableCapture': 'Enable remember entries',
+  'formMemory.review.emptySettings':
+    'Tip: enable Remember form entries in Settings to start collecting values here.',
+  'formMemory.saved.browseWhileOff':
+    'Autofill is off — you can browse saved values, but fill and scan stay disabled until you turn it on.',
+  'formMemory.saved.offTitle': 'Saved values only',
+  'formMemory.saved.offBody':
+    'Turn form autofill on to fill pages from this list. Your saved entries are not removed.',
   'formMemory.settings.manage': 'Review saved form entries',
 } as const

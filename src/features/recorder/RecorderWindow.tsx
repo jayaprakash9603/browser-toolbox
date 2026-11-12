@@ -7,6 +7,8 @@ import { loadRecorderSettings, videoConstraints } from '@/core/recorder/settings
 import type { RecorderQuality, RecordingSource } from '@/core/recorder/types'
 import { Button } from '@/shared/components/ui/button'
 
+import { showRecorderCountdown } from '@/chrome/background/recorder/controls'
+
 import { chooseDesktopSource } from './desktopPicker'
 import { startRecording, type ActiveRecording } from './engine'
 
@@ -147,7 +149,20 @@ function PageRecorder({ id, source, returnTabId }: { id: string; source: Recordi
       if (returnTabId != null) {
         await chrome.tabs.update(returnTabId, { active: true }).catch(() => undefined)
       }
-      if (settings.countdown) await new Promise((resolve) => setTimeout(resolve, COUNTDOWN_SECONDS * 1000 + 150))
+      if (settings.countdown) {
+        if (returnTabId != null) {
+          await chrome.scripting
+            .executeScript({
+              target: { tabId: returnTabId },
+              func: showRecorderCountdown,
+              args: [COUNTDOWN_SECONDS],
+            })
+            .catch(() => undefined)
+        } else {
+          showRecorderCountdown(COUNTDOWN_SECONDS)
+        }
+        await new Promise((resolve) => setTimeout(resolve, COUNTDOWN_SECONDS * 1000 + 150))
+      }
       recordingRef.current = startRecording({
         id,
         source,

@@ -18,6 +18,7 @@ import { Segmented } from '@/shared/components/ui/segmented'
 import { Switch } from '@/shared/components/ui/switch'
 import { cn } from '@/shared/utils/cn'
 import { useProductivityTool } from '../_shared'
+import { AutofillOffPanel, SavedBrowseHint } from './FormAutofillStatusPanel'
 import { ConnectionBar } from './ConnectionBar'
 import { FillBar, type FillBarAction } from './FillBar'
 import { ReviewView } from './ReviewView'
@@ -93,7 +94,10 @@ export default function FormAutofillTool() {
   const [pageScanEnabled, setPageScanEnabled] = useState(false)
   const memory = useFormMemory()
   const autofillEnabled = memory.state?.settings.enabled ?? true
-  const reviewEnabled = memory.state?.settings.review ?? true
+  const learnEnabled = memory.state?.settings.learn ?? false
+  const reviewEnabled = memory.state?.settings.review ?? false
+  const enableAutofill = useCallback(() => void memory.patchSettings({ enabled: true }), [memory])
+  const enableLearn = useCallback(() => void memory.patchSettings({ learn: true }), [memory])
   const controller = useReviewAutofillController(
     host,
     pageScanEnabled && autofillEnabled,
@@ -104,8 +108,8 @@ export default function FormAutofillTool() {
   const [view, setView] = useState<View>(readView)
   const [busy, setBusy] = useState<FillBarAction | 'access' | 'save' | null>(null)
   const { info: pageInfo, refresh: refreshPage, run: runPage } = useFormPage(
-    view === 'page',
-    pageScanEnabled,
+    view === 'page' && autofillEnabled,
+    pageScanEnabled && autofillEnabled,
     sdk.page?.url,
   )
   const fillKey = useShortcutDisplay('form-fill')
@@ -216,19 +220,6 @@ export default function FormAutofillTool() {
           aria-label={t('formMemory.settings.enabled')}
         />
       </div>
-      <fieldset
-        disabled={!autofillEnabled}
-        className="flex min-h-0 flex-1 flex-col border-0 p-0 m-0 disabled:opacity-55"
-      >
-      <ConnectionBar
-        controller={controller}
-        theme={theme}
-        open={detailsOpen}
-        onOpenChange={changeDetails}
-        scanEnabled={pageScanEnabled}
-        onRequestScan={requestPageScan}
-        onRefreshPage={refreshPage}
-      />
       <div className="shrink-0 px-3 pb-2">
         <Segmented
           value={view}
@@ -280,8 +271,46 @@ export default function FormAutofillTool() {
           ]}
         />
       </div>
-      {view === 'page' ? (
-        <>
+      {!autofillEnabled ? (
+        <div className="flex min-h-0 flex-1 flex-col">
+          {view === 'page' && (
+            <AutofillOffPanel onEnable={enableAutofill} className="mx-0 mb-3 flex-1 border-0" />
+          )}
+          {view === 'review' && (
+            <ReviewView
+              state={memory.state}
+              update={memory.update}
+              currentUrl={pageInfo?.url}
+              autofillEnabled={false}
+              learnEnabled={learnEnabled}
+              onEnableAutofill={enableAutofill}
+            />
+          )}
+          {view === 'saved' && (
+            <>
+              <SavedBrowseHint />
+              <SavedView
+                state={memory.state}
+                update={memory.update}
+                currentUrl={pageInfo?.url}
+                canSave={false}
+                saving={false}
+                onSave={() => undefined}
+              />
+            </>
+          )}
+        </div>
+      ) : view === 'page' ? (
+        <div className="flex min-h-0 flex-1 flex-col">
+          <ConnectionBar
+            controller={controller}
+            theme={theme}
+            open={detailsOpen}
+            onOpenChange={changeDetails}
+            scanEnabled={pageScanEnabled}
+            onRequestScan={requestPageScan}
+            onRefreshPage={refreshPage}
+          />
           {controller && (
             <AutofillPanel controller={controller} theme={theme} embedded className={cn(PANEL_LAYOUT)} />
           )}
@@ -294,9 +323,16 @@ export default function FormAutofillTool() {
             onAllowAccess={(origins) => void allowAccess(origins)}
             onOpenReview={() => changeView('review')}
           />
-        </>
+        </div>
       ) : view === 'review' ? (
-        <ReviewView state={memory.state} update={memory.update} currentUrl={pageInfo?.url} />
+        <ReviewView
+          state={memory.state}
+          update={memory.update}
+          currentUrl={pageInfo?.url}
+          autofillEnabled
+          learnEnabled={learnEnabled}
+          onEnableLearn={enableLearn}
+        />
       ) : (
         <SavedView
           state={memory.state}
@@ -307,7 +343,6 @@ export default function FormAutofillTool() {
           onSave={() => void saveCurrent()}
         />
       )}
-      </fieldset>
     </ToolPage>
   )
 }

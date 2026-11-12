@@ -31,7 +31,13 @@ function renderView(state: FormMemoryState) {
   })
   render(
     <ToastProvider>
-      <ReviewView state={state} update={update} currentUrl="https://a.test/form?x=1" />
+      <ReviewView
+        state={state}
+        update={update}
+        currentUrl="https://a.test/form?x=1"
+        autofillEnabled
+        learnEnabled
+      />
     </ToastProvider>,
   )
   return { update, result: () => current }

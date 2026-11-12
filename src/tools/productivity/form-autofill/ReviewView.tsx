@@ -17,6 +17,7 @@ import {
 import { useToast } from '@/shared/components/toast/useToast'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/utils/cn'
+import { ReviewAutofillOffPanel, ReviewCaptureOffBanner, ReviewCaptureOffPanel } from './FormAutofillStatusPanel'
 import { KIND_ICON, valueKey, valueText } from './fieldDisplay'
 
 type Update = (mutate: (current: FormMemoryState) => FormMemoryState) => Promise<FormMemoryState>
@@ -25,10 +26,22 @@ interface ReviewViewProps {
   state: FormMemoryState | null
   update: Update
   currentUrl: string | undefined
+  autofillEnabled: boolean
+  learnEnabled: boolean
+  onEnableAutofill?: () => void
+  onEnableLearn?: () => void
 }
 
 /** Values captured from forms wait here until the user keeps one for its page, makes it global or drops it. */
-export function ReviewView({ state, update, currentUrl }: ReviewViewProps) {
+export function ReviewView({
+  state,
+  update,
+  currentUrl,
+  autofillEnabled,
+  learnEnabled,
+  onEnableAutofill,
+  onEnableLearn,
+}: ReviewViewProps) {
   const { t } = useTranslation()
   const { show } = useToast()
   const currentId = pageRefFor(currentUrl)?.id
@@ -57,8 +70,19 @@ export function ReviewView({ state, update, currentUrl }: ReviewViewProps) {
 
   if (!state) return null
 
+  if (!autofillEnabled && onEnableAutofill) {
+    return <ReviewAutofillOffPanel onEnable={onEnableAutofill} className="min-h-[12rem]" />
+  }
+
+  if (!learnEnabled && onEnableLearn && total === 0) {
+    return <ReviewCaptureOffPanel onEnableLearn={onEnableLearn} className="min-h-[12rem]" />
+  }
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      {!learnEnabled && onEnableLearn && total > 0 && (
+        <ReviewCaptureOffBanner onEnableLearn={onEnableLearn} className="shrink-0" />
+      )}
       <div className="shrink-0 px-3 pb-2">
         <p className="text-xs leading-snug text-muted-foreground">{t('formMemory.review.hint')}</p>
         {total > 0 && (
@@ -93,7 +117,8 @@ function ReviewEmpty() {
         <InboxIcon className="size-5" />
       </span>
       <p className="text-sm font-semibold">{t('formMemory.review.emptyTitle')}</p>
-      <p className="max-w-64 text-xs leading-relaxed text-muted-foreground">{t('formMemory.review.emptyHint')}</p>
+      <p className="max-w-72 text-xs leading-relaxed text-muted-foreground">{t('formMemory.review.emptyHint')}</p>
+      <p className="max-w-72 text-[11px] leading-relaxed text-muted-foreground">{t('formMemory.review.emptySettings')}</p>
     </div>
   )
 }

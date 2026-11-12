@@ -22,7 +22,12 @@ import {
   RECORDER_STOP_MENU_ID,
   syncRecorderContextMenu,
 } from './contextMenus'
-import { mountMicPermissionFrame, removeMicPermissionFrame, unmountRecorderPill } from './controls'
+import {
+  mountMicPermissionFrame,
+  removeMicPermissionFrame,
+  showRecorderCountdown,
+  unmountRecorderPill,
+} from './controls'
 
 const logger = createLogger('recorder')
 const OFFSCREEN_OWNER = 'recorder'
@@ -118,6 +123,11 @@ async function startTabCapture(id: string, settings: RecorderSettings, tab: chro
   await setSession(createSession(id, 'tab', 'offscreen', Date.now(), { tabId, windowId: tab.windowId }))
   try {
     const countdownMs = settings.countdown ? COUNTDOWN_SECONDS * 1000 : 0
+    if (countdownMs) {
+      await chrome.scripting
+        .executeScript({ target: { tabId }, func: showRecorderCountdown, args: [COUNTDOWN_SECONDS] })
+        .catch(() => undefined)
+    }
     await acquireOffscreen(OFFSCREEN_OWNER)
     const response = (await chrome.runtime.sendMessage({
       type: 'OFFSCREEN_RECORDER_START',
