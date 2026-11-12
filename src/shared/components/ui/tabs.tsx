@@ -20,7 +20,8 @@ const TabsVariantContext = React.createContext<TabsVariant>('attached')
 const tabsListVariants = cva('inline-flex w-fit items-center text-muted-foreground', {
   variants: {
     variant: {
-      attached: 'h-auto w-full gap-0.5 rounded-full border border-border/40 bg-muted/90 p-1 shadow-inner',
+      attached:
+        'h-auto w-full gap-0.5 rounded-full border border-primary/15 bg-primary/[0.07] p-1 shadow-inner dark:border-primary/30 dark:bg-primary/10',
       chips: 'h-auto gap-1 rounded-xl border bg-muted/40 p-1',
       pill: 'h-9 justify-center rounded-lg bg-muted p-1',
       underline: 'h-9 gap-0 rounded-none border-0 bg-transparent p-0',
@@ -35,7 +36,7 @@ const tabsTriggerVariants = cva(
     variants: {
       variant: {
         attached:
-          'relative z-10 min-h-9 flex-1 rounded-full border border-transparent bg-transparent px-3 py-1.5 text-sm font-medium text-muted-foreground transition-[color,padding] duration-300 ease-out hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:px-4 data-[state=active]:text-foreground data-[state=active]:shadow-none motion-reduce:transition-none',
+          'relative z-10 min-h-9 flex-1 rounded-full border border-transparent bg-transparent px-3 py-1.5 text-sm font-medium text-muted-foreground transition-[color,padding] duration-300 ease-out hover:text-primary/80 data-[state=active]:bg-transparent data-[state=active]:px-4 data-[state=active]:text-primary data-[state=active]:shadow-none motion-reduce:transition-none [&_svg]:transition-colors [&_svg]:duration-300 data-[state=active]:[&_svg]:text-primary',
         chips:
           'relative z-10 min-h-11 rounded-lg border border-transparent bg-transparent px-3 text-xs hover:bg-background/60 hover:text-foreground data-[state=active]:text-primary motion-reduce:transition-none',
         pill: 'relative z-10 h-7 flex-1 rounded-md px-3 hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground',
@@ -241,7 +242,7 @@ function TabsList({
                 'pointer-events-none absolute top-0 left-0',
                 resolved === 'underline' && 'z-20 rounded-full bg-primary',
                 resolved === 'attached' &&
-                  'z-0 rounded-full border border-border/50 bg-background shadow-xs dark:border-border/60 dark:bg-card',
+                  'z-0 rounded-full border border-primary/25 bg-card shadow-sm ring-1 ring-primary/15 dark:border-primary/40 dark:bg-primary/15 dark:ring-primary/25',
                 resolved === 'chips' &&
                   'z-0 rounded-lg border border-primary/25 bg-background shadow-sm',
                 resolved === 'pill' && 'z-0 rounded-md bg-background shadow-sm',
@@ -330,7 +331,8 @@ function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPr
     <TabsPrimitive.Content
       className={cn(
         'min-h-0 flex-1 outline-none data-[state=active]:flex data-[state=active]:flex-col',
-        variant === 'attached' && 'mt-0 rounded-2xl border border-border bg-card shadow-xs',
+        variant === 'attached' &&
+          'mt-0 rounded-2xl border border-primary/15 bg-card shadow-xs dark:border-primary/25',
         variant !== 'attached' && 'rounded-md',
         className,
       )}

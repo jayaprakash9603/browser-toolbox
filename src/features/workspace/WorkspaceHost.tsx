@@ -110,7 +110,7 @@ export function WorkspaceHost({ workspace, activeToolId, children }: WorkspaceHo
             defaultValue: '{{name}} sections',
             name: hostName,
           })}
-          className="shrink-0 border-b px-3 pb-1.5 @[360px]:px-4"
+          className="shrink-0 border-b border-primary/10 px-3 pb-2 pt-0.5 @[360px]:px-4"
         >
           <Tabs value={activeView?.key ?? ''} onValueChange={openView} className="gap-0">
             <TabsList variant="attached" fullWidth>
