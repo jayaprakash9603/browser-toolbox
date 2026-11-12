@@ -10,6 +10,7 @@ import { getActiveWebTab } from '@/chrome/contentScriptClient'
 import { getChromeMessage } from '@/core/i18n/chromeMessages'
 import { createLogger } from '@/core/logging'
 import { registerMessageHandler } from '@/core/messaging'
+import { isExtensionMessage, type ExtensionResponse } from '@/core/messaging/types'
 import { setPanelRouteIntent } from '@/core/panel/navigationSession'
 import { isRestrictedCaptureUrl } from '@/core/screenshot/restricted'
 import { openExtensionPanel } from '@/platform/panel'
@@ -41,13 +42,13 @@ function pageText(): ColorPickerPageText {
   }
 }
 
-export async function openPaletteGenerator(hex: string, tab?: chrome.tabs.Tab): Promise<void> {
+/** Must run synchronously in the user-gesture turn (see `registerColorPicker` listener). */
+function openPaletteGeneratorFromUserGesture(hex: string, tab?: chrome.tabs.Tab): void {
   const normalized = normalizeHex(hex)
   if (!normalized) return
   const route = `${PALETTE_GENERATOR_ROUTE}?color=${encodeURIComponent(normalized)}`
-  const intent = setPanelRouteIntent(route)
-  const open = openExtensionPanel({ windowId: tab?.windowId, tabId: tab?.id })
-  await Promise.all([intent, open])
+  void setPanelRouteIntent(route)
+  void openExtensionPanel({ windowId: tab?.windowId, tabId: tab?.id })
 }
 
 /** Pages Chrome will not let us capture or script open the panel tool instead. */
@@ -89,6 +90,9 @@ export async function pickColorOnPage(tab?: chrome.tabs.Tab): Promise<void> {
     }
     const state = await loadColorPickerState()
     try {
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      })
       const image = await chrome.tabs.captureVisibleTab(target.windowId, {
         format: 'jpeg',
         quality: 90,
@@ -149,9 +153,11 @@ export function registerColorPicker(): void {
     return { started: true }
   })
 
-  registerMessageHandler('COLOR_OPEN_PALETTE', async (message, sender) => {
-    if (message.type !== 'COLOR_OPEN_PALETTE') return
-    await openPaletteGenerator(message.hex, sender.tab)
-    return { ok: true }
+  // Async message router breaks the user gesture before `sidePanel.open()`; handle in sync turn.
+  chrome.runtime.onMessage.addListener((raw, sender, sendResponse) => {
+    if (!isExtensionMessage(raw) || raw.type !== 'COLOR_OPEN_PALETTE') return false
+    openPaletteGeneratorFromUserGesture(raw.hex, sender.tab)
+    sendResponse({ ok: true, data: { ok: true } } satisfies ExtensionResponse)
+    return true
   })
 }

@@ -384,6 +384,15 @@ const en = {
   'adblock.liveShowAll': 'Show all {{count}} tabs',
   'adblock.resetTotals': 'Reset total counter',
   'adblock.listsUpdated': 'Lists generated {{date}}',
+  'adblock.listsRefresh': 'Refresh filter lists',
+  'adblock.listsRefreshing': 'Refreshing…',
+  'adblock.listsRefreshDone': 'Updated {{rules}} supplemental rules ({{domains}} domains).',
+  'adblock.listsRefreshFailed': 'Refresh failed: {{error}}',
+  'adblock.listsSupplementHint':
+    'Bundled lists block most ads. Refresh adds supplemental network rules within browser limits.',
+  'adblock.networkStatsPartial':
+    'Network block counts may be approximate on Firefox. Hidden ads and pop-ups are counted normally.',
+  'adblock.subscriptionUpdated': 'Source {{id}}: {{date}}',
   'adblock.plus.title': 'Premium features',
   'adblock.plus.badge': 'Free',
   'protection.header.title': 'Web protection',

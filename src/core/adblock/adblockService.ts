@@ -13,6 +13,8 @@ export async function getAdblockState(): Promise<AdblockState> {
     ...stored,
     lists: { ...DEFAULT_ADBLOCK_STATE.lists, ...stored?.lists },
     allowlist: stored?.allowlist ?? [],
+    subscriptions: stored?.subscriptions,
+    subscriptionSync: stored?.subscriptionSync,
   }
 }
 

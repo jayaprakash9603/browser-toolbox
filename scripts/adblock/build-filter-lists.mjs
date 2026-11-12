@@ -8,7 +8,7 @@ import { buildBloom } from './converter/bloom.mjs'
 import { createCosmeticCollector } from './converter/cosmetic.mjs'
 import { capRules, MAX_STATIC_RULES_PER_RULESET, RULESET_RULE_BUDGET } from './converter/limits.mjs'
 import { badfilterTarget, parseFilterLine } from './converter/parseFilter.mjs'
-import { preprocessList } from './converter/preprocess.mjs'
+import { preprocessList, SHIPPED_MV3_ENV } from './converter/preprocess.mjs'
 import { resolveRedirect } from './converter/redirects.mjs'
 import { createScriptletCollector, parseScriptletFilter, SCRIPTLET_RULESETS } from './converter/scriptlets.mjs'
 import { GENERIC_SHARD_COUNT, genericKeyShard, hostShard, SHARD_COUNT } from './converter/shard.mjs'
@@ -179,15 +179,19 @@ async function loadText(id, url) {
   }
 }
 
-/** A list with its `!#include`d sibling files inlined and `!#if` blocks resolved for Chromium MV3. */
+/** A list with its `!#include`d sibling files inlined and `!#if` blocks resolved for shipped MV3 (Chromium + Firefox). */
 async function loadList(list) {
   const text = await loadText(list.id, list.url)
   if (text == null) return null
   const includes = []
-  const lines = await preprocessList(text, (name) => {
-    includes.push(name)
-    return loadText(`${list.id}--${name.replace(/\.txt$/, '')}`, new URL(name, list.url).toString())
-  })
+  const lines = await preprocessList(
+    text,
+    (name) => {
+      includes.push(name)
+      return loadText(`${list.id}--${name.replace(/\.txt$/, '')}`, new URL(name, list.url).toString())
+    },
+    SHIPPED_MV3_ENV,
+  )
   return { lines, includes }
 }
 

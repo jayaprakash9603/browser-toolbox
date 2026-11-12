@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 // @ts-expect-error build-time converter modules are plain ESM
-import { evaluateCondition, preprocessList } from '../scripts/adblock/converter/preprocess.mjs'
+import { evaluateCondition, FIREFOX_MV3_ENV, preprocessList, SHIPPED_MV3_ENV } from '../scripts/adblock/converter/preprocess.mjs'
 
 describe('uBO list preprocessor', () => {
   it('evaluates conditions for Chromium MV3', () => {
@@ -35,5 +35,13 @@ describe('uBO list preprocessor', () => {
     })
     expect(lines).toEqual(['a', 'not-firefox', 'from-include', 'z'])
     expect(loaded).toEqual(['extra.txt'])
+  })
+
+  it('includes firefox sections in SHIPPED_MV3_ENV', () => {
+    expect(evaluateCondition('env_firefox', SHIPPED_MV3_ENV)).toBe(true)
+    expect(evaluateCondition('env_chromium', SHIPPED_MV3_ENV)).toBe(true)
+    expect(evaluateCondition('env_mobile', SHIPPED_MV3_ENV)).toBe(false)
+    expect(evaluateCondition('env_firefox', FIREFOX_MV3_ENV)).toBe(true)
+    expect(evaluateCondition('env_chromium', FIREFOX_MV3_ENV)).toBe(false)
   })
 })

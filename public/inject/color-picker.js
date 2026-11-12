@@ -242,7 +242,9 @@
     setStatus(copied)
 
     sh.querySelector('[data-action="palette"]').addEventListener('click', function () {
-      chrome.runtime.sendMessage({ type: 'COLOR_OPEN_PALETTE', hex: toHex(activeR, activeG, activeB) }).catch(function () {})
+      chrome.runtime
+        .sendMessage({ type: 'COLOR_OPEN_PALETTE', hex: toHex(activeR, activeG, activeB) })
+        .catch(function () {})
     })
 
     var dismiss = function () {
@@ -308,53 +310,89 @@
     if (prev && prev.__dispose) prev.__dispose()
     if (prev) prev.remove()
 
+    var text = opts.text
     var img = new Image()
     img.decoding = 'async'
     img.onerror = function () {}
     img.onload = function () {
-      var vw = window.innerWidth, vh = window.innerHeight
-      var scaleX = img.naturalWidth / vw, scaleY = img.naturalHeight / vh
-      var ratio = Math.min(window.devicePixelRatio || 1, 1.5)
+      var vw = window.innerWidth
+      var vh = window.innerHeight
+      var scaleX = img.naturalWidth / vw
+      var scaleY = img.naturalHeight / vh
+      var ratio = Math.min(window.devicePixelRatio || 1, 2)
       var formatIndex = Math.max(0, FORMATS.indexOf(opts.format))
-      var zoomIndex = 3, x = vw / 2, y = vh / 2
-      var current = { r: 0, g: 0, b: 0 }, frame = 0, wheelAcc = 0
+      var zoomIndex = 3
+      var x = vw / 2
+      var y = vh / 2
+      var current = { r: 0, g: 0, b: 0 }
+      var frame = 0
+      var wheelAcc = 0
+      var hintTimer = 0
 
       var host = document.createElement('div')
       host.id = HOST_ID
-      host.style.cssText = 'position:fixed;inset:0;z-index:2147483646;'
+      host.style.cssText =
+        'position:fixed;left:0;top:0;width:' + vw + 'px;height:' + vh + 'px;z-index:2147483646;pointer-events:none;'
       var shadow = host.attachShadow({ mode: 'open' })
       shadow.innerHTML =
         '<style>:host{all:initial}*{box-sizing:border-box}' +
-        '.root{position:absolute;inset:0;cursor:crosshair;touch-action:none;user-select:none;outline:none}' +
-        '.shot{position:absolute;inset:0;width:100%;height:100%;display:block}' +
-        '.loupe{position:absolute;width:' + LOUPE + 'px;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:8px}' +
+        '.root{position:absolute;inset:0;cursor:none;touch-action:none;user-select:none;outline:none;' +
+        'font:500 12px/1.2 system-ui,sans-serif;pointer-events:auto;background:transparent}' +
+        '.loupe{position:absolute;left:0;top:0;width:' + LOUPE + 'px;pointer-events:none;display:flex;flex-direction:column;' +
+        'align-items:center;gap:10px;will-change:transform}' +
         '.lens{width:' + LOUPE + 'px;height:' + LOUPE + 'px;border-radius:50%;overflow:hidden;background:#111;' +
-        'box-shadow:0 0 0 3px var(--c,#fff),0 0 0 5px #fff,0 10px 28px rgba(0,0,0,.4)}' +
+        'box-shadow:0 0 0 3px var(--c,#fff),0 0 0 5px rgba(255,255,255,.92),0 10px 28px rgba(0,0,0,.4)}' +
         '.lens canvas{width:100%;height:100%;display:block}' +
-        '.chip{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(20,20,24,.92);color:#fff;font:600 11px ui-monospace,monospace}' +
-        '.dot{width:14px;height:14px;border-radius:50%;background:var(--c)}' +
-        '</style><div class="root" tabindex="-1"><canvas class="shot"></canvas>' +
-        '<div class="loupe"><div class="lens"><canvas></canvas></div><div class="chip"><span class="dot"></span><span class="val"></span></div></div></div>'
+        '.chip{display:flex;align-items:center;gap:7px;padding:5px 10px 5px 6px;border-radius:999px;' +
+        'background:rgba(20,20,24,.9);color:#fafafa;border:1px solid rgba(255,255,255,.12);' +
+        'box-shadow:0 6px 18px rgba(0,0,0,.35);white-space:nowrap}' +
+        '.dot{width:16px;height:16px;border-radius:50%;background:var(--c,#fff);flex:none;' +
+        'box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}' +
+        '.val{font:600 12px/1 ui-monospace,monospace}' +
+        '.fmt{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.6}' +
+        '.hint{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;flex-wrap:wrap;' +
+        'justify-content:center;gap:10px 12px;padding:7px 14px;border-radius:999px;' +
+        'background:rgba(20,20,24,.88);color:#e4e4e7;border:1px solid rgba(255,255,255,.1);' +
+        'box-shadow:0 8px 24px rgba(0,0,0,.35);pointer-events:none;max-width:calc(100vw - 24px);' +
+        'transition:opacity .3s ease,transform .3s ease}' +
+        '.hint.off{opacity:0;transform:translateX(-50%) translateY(6px)}' +
+        '.hint b{color:#fff;font-weight:700;margin-right:4px}' +
+        '</style>' +
+        '<div class="root" tabindex="-1" role="application" aria-label="' + (text.hintPick || 'Pick') + '">' +
+        '<div class="loupe"><div class="lens"><canvas></canvas></div>' +
+        '<div class="chip"><span class="dot"></span><span class="val"></span><span class="fmt"></span></div></div>' +
+        '<div class="hint">' +
+        '<span><b>Click</b>' + (text.hintPick || '') + '</span>' +
+        '<span><b>Scroll</b>' + (text.hintZoom || '') + '</span>' +
+        '<span><b>Tab</b>' + (text.hintFormat || '') + '</span>' +
+        '<span><b>Shift</b>' + (text.hintKeep || '') + '</span>' +
+        '<span><b>Esc</b>' + (text.hintExit || '') + '</span>' +
+        '</div></div>'
 
       var root = shadow.querySelector('.root')
-      var shot = shadow.querySelector('.shot')
       var loupe = shadow.querySelector('.loupe')
       var lensCanvas = shadow.querySelector('.lens canvas')
       var valEl = shadow.querySelector('.val')
-      var dot = shadow.querySelector('.dot')
+      var fmtEl = shadow.querySelector('.fmt')
+      var chip = shadow.querySelector('.chip')
+      var hint = shadow.querySelector('.hint')
 
-      shot.width = img.naturalWidth
-      shot.height = img.naturalHeight
-      shot.getContext('2d').drawImage(img, 0, 0)
       lensCanvas.width = Math.round(LOUPE * ratio)
       lensCanvas.height = Math.round(LOUPE * ratio)
       var lensCtx = lensCanvas.getContext('2d')
       lensCtx.imageSmoothingEnabled = false
       var probe = document.createElement('canvas')
-      probe.width = 1; probe.height = 1
+      probe.width = 1
+      probe.height = 1
       var probeCtx = probe.getContext('2d', { willReadFrequently: true })
 
       function clamp(v, a, b) { return Math.min(b, Math.max(a, v)) }
+
+      function showHint() {
+        hint.classList.remove('off')
+        window.clearTimeout(hintTimer)
+        hintTimer = window.setTimeout(function () { hint.classList.add('off') }, 4200)
+      }
 
       function render() {
         frame = 0
@@ -364,24 +402,54 @@
         probeCtx.drawImage(img, px, py, 1, 1, 0, 0, 1, 1)
         var d = probeCtx.getImageData(0, 0, 1, 1).data
         current = { r: d[0], g: d[1], b: d[2] }
-        var cells = ZOOMS[zoomIndex], half = (cells - 1) / 2, size = lensCanvas.width
+        var cells = ZOOMS[zoomIndex]
+        var half = (cells - 1) / 2
+        var size = lensCanvas.width
         lensCtx.fillStyle = '#111'
         lensCtx.fillRect(0, 0, size, size)
         lensCtx.drawImage(img, px - half, py - half, cells, cells, 0, 0, size, size)
+        var cell = size / cells
+        if (cells <= 15) {
+          lensCtx.strokeStyle = 'rgba(0,0,0,.14)'
+          lensCtx.lineWidth = 1
+          lensCtx.beginPath()
+          for (var i = 1; i < cells; i++) {
+            var at = Math.round(i * cell) + 0.5
+            lensCtx.moveTo(at, 0)
+            lensCtx.lineTo(at, size)
+            lensCtx.moveTo(0, at)
+            lensCtx.lineTo(size, at)
+          }
+          lensCtx.stroke()
+        }
+        var mid = half * cell
+        lensCtx.lineWidth = Math.max(2, ratio * 1.5)
+        lensCtx.strokeStyle = '#fff'
+        lensCtx.strokeRect(mid, mid, cell, cell)
+        lensCtx.lineWidth = 1
+        lensCtx.strokeStyle = '#000'
+        lensCtx.strokeRect(mid + 1.5, mid + 1.5, cell - 3, cell - 3)
         var hex = toHex(current.r, current.g, current.b)
         loupe.style.setProperty('--c', hex)
-        dot.style.background = hex
+        chip.style.setProperty('--c', hex)
         valEl.textContent = formatValue(FORMATS[formatIndex], current.r, current.g, current.b)
+        fmtEl.textContent = FORMATS[formatIndex]
         var lx = clamp(x - LOUPE / 2, 8, vw - LOUPE - 8)
         var ly = clamp(y - LOUPE / 2, 8, vh - LOUPE - 52)
         loupe.style.transform = 'translate3d(' + lx + 'px,' + ly + 'px,0)'
       }
 
       function schedule() { if (!frame) frame = requestAnimationFrame(render) }
-      function setPoint(nx, ny) { x = clamp(nx, 0, vw - 1); y = clamp(ny, 0, vh - 1); schedule() }
+      function setPoint(nx, ny) {
+        x = clamp(nx, 0, vw - 1)
+        y = clamp(ny, 0, vh - 1)
+        showHint()
+        schedule()
+      }
 
       function close() {
         if (frame) cancelAnimationFrame(frame)
+        window.clearTimeout(hintTimer)
         window.removeEventListener('keydown', onKey, true)
         host.remove()
       }
@@ -399,10 +467,12 @@
         else if (e.key === 'Tab' || e.key === 'f' || e.key === 'F') {
           e.preventDefault()
           formatIndex = (formatIndex + (e.shiftKey ? -1 : 1) + FORMATS.length) % FORMATS.length
+          showHint()
           schedule()
         } else if (e.key === '+' || e.key === '=' || e.key === '-' || e.key === '_') {
           e.preventDefault()
           zoomIndex = clamp(zoomIndex + (e.key === '+' || e.key === '=' ? -1 : 1), 0, ZOOMS.length - 1)
+          showHint()
           schedule()
         }
       }
@@ -416,11 +486,13 @@
         if (Math.abs(wheelAcc) < 40) return
         zoomIndex = clamp(zoomIndex + (wheelAcc > 0 ? 1 : -1), 0, ZOOMS.length - 1)
         wheelAcc = 0
+        showHint()
         schedule()
       }, { passive: false })
       window.addEventListener('keydown', onKey, true)
       document.documentElement.appendChild(host)
       root.focus({ preventScroll: true })
+      showHint()
       render()
     }
     img.src = opts.image

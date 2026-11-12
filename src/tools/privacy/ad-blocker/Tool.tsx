@@ -13,6 +13,7 @@ import { StaggerChildren, StaggerItem } from '@/shared/components/motion/Stagger
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
 
+import { useExtensionLayout } from '@/platform/adblock/useExtensionLayout'
 import { useFocusTarget } from '@/shared/hooks/useFocusTarget'
 import { usePrivacyTool } from '../_shared'
 import { AllowlistEditor } from './AllowlistEditor'
@@ -21,8 +22,9 @@ import { FilterListToggles } from './FilterListToggles'
 export default function AdBlockerTool() {
   const { t } = useTranslation()
   const tool = usePrivacyTool('privacy.ad-blocker')
-  const { state, patch } = useAdblock()
+  const { state, patch, refresh } = useAdblock()
   const live = useAdblockLive()
+  const layout = useExtensionLayout()
   useFocusTarget()
 
   if (!state) {
@@ -44,6 +46,11 @@ export default function AdBlockerTool() {
             totals={live.totals}
             onToggle={async (enabled) => (await patch({ enabled })).enabled}
           />
+          {layout.networkStatsPartial && state.enabled && (
+            <p className="mt-1 px-0.5 text-[10px] leading-snug text-muted-foreground">
+              {t('adblock.networkStatsPartial')}
+            </p>
+          )}
         </StaggerItem>
         <PermissionNotice active={state.enabled} message={t('siteAccess.adblockNeeded')} />
         <StaggerItem>
@@ -54,16 +61,28 @@ export default function AdBlockerTool() {
             totals={live.totals}
           />
         </StaggerItem>
-        <StaggerItem>
-          <LiveSites tabs={live.liveTabs} activeTabId={live.activeTab?.id} />
-        </StaggerItem>
+        {!layout.isMobileFirefox && (
+          <StaggerItem>
+            <LiveSites tabs={live.liveTabs} activeTabId={live.activeTab?.id} />
+          </StaggerItem>
+        )}
+        {layout.isMobileFirefox && live.liveTabs.length > 0 && (
+          <StaggerItem>
+            <LiveSites tabs={live.liveTabs} activeTabId={live.activeTab?.id} limit={3} />
+          </StaggerItem>
+        )}
         <StaggerItem>
           <PlusFeatures state={state} onPatch={onPatch} />
         </StaggerItem>
         <StaggerItem>
           <div data-search-id="filterLists">
             <h3 className="mb-2 text-xs font-semibold">{t('adblock.filterLists')}</h3>
-            <FilterListToggles state={state} disabled={!state.enabled} onPatch={onPatch} />
+            <FilterListToggles
+              state={state}
+              disabled={!state.enabled}
+              onPatch={onPatch}
+              onRefreshed={() => void refresh()}
+            />
           </div>
         </StaggerItem>
         <StaggerItem>

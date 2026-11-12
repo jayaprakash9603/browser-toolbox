@@ -71,7 +71,7 @@ export function SiteCard({
   }
 
   return (
-    <div className="rounded-xl border bg-card p-3">
+    <div className="rounded-xl border bg-card p-3 touch-manipulation">
       <div className="mb-3 flex items-center gap-2">
         {activeTab?.favIconUrl ? (
           <img src={activeTab.favIconUrl} alt="" className="size-5 rounded-sm" />

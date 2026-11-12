@@ -1,0 +1,88 @@
+export interface FilterListSource {
+  id: string
+  url: string
+  license: string
+  ruleset: 'ads' | 'privacy' | 'annoyances'
+  defaultEnabled: boolean
+}
+
+/** Mirrors `scripts/adblock/sources.json` (runtime refresh targets). */
+export const FILTER_LIST_SOURCES: FilterListSource[] = [
+  {
+    id: 'easylist',
+    url: 'https://easylist.to/easylist/easylist.txt',
+    license: 'GPLv3',
+    ruleset: 'ads',
+    defaultEnabled: true,
+  },
+  {
+    id: 'easyprivacy',
+    url: 'https://easylist.to/easylist/easyprivacy.txt',
+    license: 'GPLv3',
+    ruleset: 'privacy',
+    defaultEnabled: true,
+  },
+  {
+    id: 'ublock-filters',
+    url: 'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/filters.txt',
+    license: 'GPLv3',
+    ruleset: 'ads',
+    defaultEnabled: true,
+  },
+  {
+    id: 'ublock-quick-fixes',
+    url: 'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/quick-fixes.txt',
+    license: 'GPLv3',
+    ruleset: 'ads',
+    defaultEnabled: true,
+  },
+  {
+    id: 'ublock-badware',
+    url: 'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/badware.txt',
+    license: 'GPLv3',
+    ruleset: 'ads',
+    defaultEnabled: true,
+  },
+  {
+    id: 'ublock-privacy',
+    url: 'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/privacy.txt',
+    license: 'GPLv3',
+    ruleset: 'privacy',
+    defaultEnabled: true,
+  },
+  {
+    id: 'ublock-unbreak',
+    url: 'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/unbreak.txt',
+    license: 'GPLv3',
+    ruleset: 'ads',
+    defaultEnabled: true,
+  },
+  {
+    id: 'peter-lowe',
+    url: 'https://pgl.yoyo.org/adservers/serverlist.php?hostformat=adblockplus&showintro=1&mimetype=plaintext',
+    license: 'McRae GPL',
+    ruleset: 'ads',
+    defaultEnabled: true,
+  },
+  {
+    id: 'fanboy-annoyance',
+    url: 'https://easylist.to/easylist/fanboy-annoyance.txt',
+    license: 'CC BY-SA 3.0',
+    ruleset: 'annoyances',
+    defaultEnabled: false,
+  },
+  {
+    id: 'ublock-annoyances-cookies',
+    url: 'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/annoyances-cookies.txt',
+    license: 'GPLv3',
+    ruleset: 'annoyances',
+    defaultEnabled: false,
+  },
+  {
+    id: 'ublock-annoyances-others',
+    url: 'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/annoyances-others.txt',
+    license: 'GPLv3',
+    ruleset: 'annoyances',
+    defaultEnabled: false,
+  },
+]

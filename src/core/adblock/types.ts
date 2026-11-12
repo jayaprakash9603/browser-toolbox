@@ -2,6 +2,20 @@ export const RULESET_IDS = ['ads', 'privacy', 'annoyances', 'youtube'] as const
 
 export type RulesetId = (typeof RULESET_IDS)[number]
 
+export interface FilterListSubscriptionMeta {
+  enabled: boolean
+  lastUpdated?: number
+  lastError?: string
+}
+
+export interface AdblockSubscriptionSyncMeta {
+  lastRefreshAt?: number
+  dynamicRulesApplied?: number
+  supplementalDomains?: number
+  unsupportedRules?: number
+  lastRefreshError?: string
+}
+
 export interface AdblockState {
   enabled: boolean
   youtubeEnabled: boolean
@@ -16,6 +30,9 @@ export interface AdblockState {
   blockPopups: boolean
   lists: Record<RulesetId, boolean>
   allowlist: string[]
+  /** Per-source list metadata (see `scripts/adblock/sources.json` ids). */
+  subscriptions?: Record<string, FilterListSubscriptionMeta>
+  subscriptionSync?: AdblockSubscriptionSyncMeta
 }
 
 export interface AdblockCounts {

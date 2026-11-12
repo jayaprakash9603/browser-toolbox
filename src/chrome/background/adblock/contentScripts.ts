@@ -8,6 +8,8 @@ import {
 } from '@/core/adblock'
 import { createLogger } from '@/core/logging'
 
+import { getAdblockRuntimeProfile } from '@/platform/adblock/runtime'
+
 import { reconcileContentScripts } from '../scriptRegistry'
 import { isRulesetOn } from './rulesets'
 
@@ -55,7 +57,9 @@ export function buildContentScripts(
 ): chrome.scripting.RegisteredContentScript[] {
   if (!state.enabled) return []
   const excludeMatches = allowlistExcludePatterns(state.allowlist)
+  const mainTopFrameOnly = getAdblockRuntimeProfile().prefersTopFrameMainScripts
   const base = { excludeMatches, runAt: 'document_start' as const, allFrames: true }
+  const mainBase = { ...base, allFrames: !mainTopFrameOnly }
   const scripts: chrome.scripting.RegisteredContentScript[] = []
 
   if (state.cosmeticEnabled) {
@@ -94,7 +98,7 @@ export function buildContentScripts(
   }
   if (state.blockNotifications) {
     scripts.push({
-      ...base,
+      ...mainBase,
       id: CONTENT_SCRIPT_IDS.notifications,
       js: [ADBLOCK_FILES.notificationsJs],
       matches: ALL_URLS,
@@ -103,7 +107,7 @@ export function buildContentScripts(
   }
   if (state.blockPopups) {
     scripts.push({
-      ...base,
+      ...mainBase,
       id: CONTENT_SCRIPT_IDS.popups,
       js: [ADBLOCK_FILES.popupsJs],
       matches: ALL_URLS,
@@ -125,7 +129,7 @@ export function buildContentScripts(
       matches: ALL_URLS,
     })
     scripts.push({
-      ...base,
+      ...mainBase,
       id: CONTENT_SCRIPT_IDS.scriptletsMain,
       js: [ADBLOCK_FILES.scriptletsMainJs],
       matches: ALL_URLS,
@@ -146,12 +150,34 @@ export function buildContentScripts(
   return scripts
 }
 
+async function injectMainWorldFallback(state: AdblockState): Promise<void> {
+  const files: string[] = []
+  if (state.blockPopups) files.push(ADBLOCK_FILES.popupsJs)
+  const scriptletLists = SCRIPTLET_RULESETS.filter((id) => isRulesetOn(state, id))
+  if (scriptletLists.length) files.push(ADBLOCK_FILES.scriptletsMainJs)
+  if (!files.length) return
+  const tabs = await chrome.tabs.query({ url: ['http://*/*', 'https://*/*'] })
+  for (const tab of tabs) {
+    if (tab.id == null || !tab.url || isAllowlisted(state.allowlist, tab.url)) continue
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id, allFrames: false },
+        files,
+        world: 'MAIN',
+      })
+    } catch {
+      /* tab may not allow injection */
+    }
+  }
+}
+
 export async function syncContentScripts(state: AdblockState): Promise<void> {
   const scripts = buildContentScripts(state, state.cosmeticEnabled ? await loadCosmeticControls() : NO_CONTROLS)
   try {
     await reconcileContentScripts(OWNED_SCRIPT_IDS, scripts)
   } catch (error) {
     logger.warn('registerContentScripts failed', error)
+    if (state.enabled) await injectMainWorldFallback(state)
   }
 }
 

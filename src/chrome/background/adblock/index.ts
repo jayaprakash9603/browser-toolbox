@@ -2,9 +2,11 @@ import { getAdblockState, isBlockingActiveForUrl } from '@/core/adblock'
 import { STORAGE_KEYS } from '@/core/constants'
 import { registerMessageHandler } from '@/core/messaging'
 import { createLogger } from '@/core/logging'
+import { getAdblockRuntimeProfile, shouldReconcileNetworkOnTabComplete } from '@/platform/adblock/runtime'
 
 import { syncAllowlistRules } from './allowlist'
 import { injectIntoOpenTabs, injectYoutubeOpenTabs, syncContentScripts } from './contentScripts'
+import { registerFilterListAlarms, refreshFilterLists } from './filterListSync'
 import { syncStaticRulesets } from './rulesets'
 import {
   configureBadge,
@@ -22,6 +24,7 @@ const logger = createLogger('adblock')
 
 let syncQueue: Promise<void> = Promise.resolve()
 let liveCounting = false
+let runtimeProfile = getAdblockRuntimeProfile()
 
 export function syncAdblockState(): Promise<void> {
   syncQueue = syncQueue
@@ -53,18 +56,32 @@ function registerTabTracking(): void {
       return
     }
     if (info.title || info.favIconUrl || info.url) void updateTabMeta(tabId, tab)
-    if (info.status === 'complete' && !liveCounting) void reconcileNetworkCount(tabId)
+    if (info.status === 'complete' && !liveCounting && shouldReconcileNetworkOnTabComplete(runtimeProfile)) {
+      void reconcileNetworkCount(tabId)
+    }
   })
   chrome.tabs.onRemoved?.addListener((tabId) => void removeTab(tabId))
 }
 
 export function registerAdblock(): void {
+  runtimeProfile = getAdblockRuntimeProfile()
+
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local' && changes[STORAGE_KEYS.adblock]) void syncAdblockState()
   })
 
+  chrome.runtime.onStartup?.addListener(() => {
+    runtimeProfile = getAdblockRuntimeProfile()
+    void syncAdblockState()
+  })
+  chrome.runtime.onInstalled?.addListener(() => {
+    runtimeProfile = getAdblockRuntimeProfile()
+    void syncAdblockState()
+  })
+
   liveCounting = startNetworkCounter()
   registerTabTracking()
+  registerFilterListAlarms()
 
   registerMessageHandler('ADBLOCK_COSMETIC_REPORT', async (message, sender) => {
     if (message.type !== 'ADBLOCK_COSMETIC_REPORT' || sender.tab?.id == null) return null
@@ -95,6 +112,14 @@ export function registerAdblock(): void {
   registerMessageHandler('ADBLOCK_RESET_TOTALS', async () => {
     await resetTotals()
     return { reset: true }
+  })
+
+  registerMessageHandler('ADBLOCK_REFRESH_LISTS', async () => {
+    const state = await refreshFilterLists(true)
+    return {
+      refreshed: true,
+      subscriptionSync: state.subscriptionSync,
+    }
   })
 
   void syncAdblockState()

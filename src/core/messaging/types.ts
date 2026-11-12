@@ -102,6 +102,7 @@ export type ExtensionMessage =
   | { type: 'ADBLOCK_RELOAD_TAB'; tabId?: number }
   | { type: 'ADBLOCK_COSMETIC_REPORT'; hidden?: number; youtube?: number }
   | { type: 'ADBLOCK_RESET_TOTALS' }
+  | { type: 'ADBLOCK_REFRESH_LISTS' }
   | { type: 'PROTECTION_REPORT'; category: string; host: string; source?: string }
   | { type: 'PROTECTION_GET_STATS' }
   | { type: 'PROTECTION_PROCEED_ONCE'; url: string }
@@ -359,6 +360,7 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'ADBLOCK_RELOAD_TAB',
   'ADBLOCK_COSMETIC_REPORT',
   'ADBLOCK_RESET_TOTALS',
+  'ADBLOCK_REFRESH_LISTS',
   'PROTECTION_REPORT',
   'PROTECTION_GET_STATS',
   'PROTECTION_PROCEED_ONCE',

@@ -4,7 +4,13 @@ import { syncAdblockState } from '@/chrome/background/adblock'
 import { buildContentScripts } from '@/chrome/background/adblock/contentScripts'
 import { enabledRulesetIds } from '@/chrome/background/adblock/rulesets'
 import { DEFAULT_ADBLOCK_STATE, updateAdblockState } from '@/core/adblock'
+import { STORAGE_KEYS } from '@/core/constants'
+import { set } from '@/core/storage'
 import { resetChromeMockStorage } from './setup'
+
+async function enableAdblockForTests(): Promise<void> {
+  await set(STORAGE_KEYS.adblock, { ...DEFAULT_ADBLOCK_STATE, enabled: true })
+}
 
 describe('adblock background sync', () => {
   beforeEach(() => {
@@ -13,6 +19,7 @@ describe('adblock background sync', () => {
   })
 
   it('enables rulesets by default', async () => {
+    await enableAdblockForTests()
     await syncAdblockState()
     const call = vi.mocked(chrome.declarativeNetRequest.updateEnabledRulesets).mock.calls.at(-1)
     expect(call?.[0]?.enableRulesetIds).toEqual(['ruleset-ads', 'ruleset-privacy', 'ruleset-youtube'])
@@ -26,13 +33,13 @@ describe('adblock background sync', () => {
   })
 
   it('maps cookie banners to the annoyances ruleset', () => {
-    expect(enabledRulesetIds({ ...DEFAULT_ADBLOCK_STATE, cookieBanners: true })).toContain(
+    expect(enabledRulesetIds({ ...DEFAULT_ADBLOCK_STATE, enabled: true, cookieBanners: true })).toContain(
       'ruleset-annoyances',
     )
   })
 
   it('registers cosmetic and YouTube scripts, excluding allowlisted hosts', () => {
-    const scripts = buildContentScripts({ ...DEFAULT_ADBLOCK_STATE, allowlist: ['example.com'] })
+    const scripts = buildContentScripts({ ...DEFAULT_ADBLOCK_STATE, enabled: true, allowlist: ['example.com'] })
     const ids = scripts.map((s) => s.id)
     expect(ids).toEqual([
       'adblock-cosmetic',
@@ -49,7 +56,7 @@ describe('adblock background sync', () => {
   })
 
   it('keeps the always-on generic CSS off $generichide and $elemhide sites', () => {
-    const scripts = buildContentScripts(DEFAULT_ADBLOCK_STATE, {
+    const scripts = buildContentScripts({ ...DEFAULT_ADBLOCK_STATE, enabled: true }, {
       generichide: ['news.example'],
       elemhide: ['shop.example'],
     })
@@ -64,18 +71,19 @@ describe('adblock background sync', () => {
   })
 
   it('runs the pop-up blocker in every frame of the page world, and can be turned off', () => {
-    const popups = buildContentScripts(DEFAULT_ADBLOCK_STATE).find((s) => s.id === 'adblock-popups')
+    const popups = buildContentScripts({ ...DEFAULT_ADBLOCK_STATE, enabled: true }).find((s) => s.id === 'adblock-popups')
     expect(popups?.world).toBe('MAIN')
     expect(popups?.allFrames).toBe(true)
     expect(popups?.runAt).toBe('document_start')
     expect(popups?.js).toEqual(['adblock/scripts/popups-main.js'])
-    const off = buildContentScripts({ ...DEFAULT_ADBLOCK_STATE, blockPopups: false })
+    const off = buildContentScripts({ ...DEFAULT_ADBLOCK_STATE, enabled: true, blockPopups: false })
     expect(off.some((s) => s.id === 'adblock-popups')).toBe(false)
   })
 
   it('registers premium feature scripts when enabled', () => {
     const ids = buildContentScripts({
       ...DEFAULT_ADBLOCK_STATE,
+      enabled: true,
       cookieBanners: true,
       distractions: true,
       blockNotifications: true,
@@ -86,6 +94,7 @@ describe('adblock background sync', () => {
   })
 
   it('injects into already-open tabs once per session', async () => {
+    await enableAdblockForTests()
     await syncAdblockState()
     expect(chrome.scripting.insertCSS).toHaveBeenCalledTimes(1)
     await syncAdblockState()
@@ -102,6 +111,7 @@ describe('adblock background sync', () => {
         { id: 2, url: 'https://discarded.test', discarded: true },
       ] as chrome.tabs.Tab[]
     })
+    await enableAdblockForTests()
     await syncAdblockState()
     expect(chrome.scripting.insertCSS).toHaveBeenCalledTimes(1)
   })

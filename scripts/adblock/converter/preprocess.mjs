@@ -4,6 +4,12 @@
  */
 export const CHROMIUM_MV3_ENV = new Set(['env_chromium', 'env_mv3', 'ext_ubol', 'ext_ublock', 'cap_user_stylesheet'])
 
+/** uBO list sections gated for Firefox MV3 (desktop + Fenix share one ruleset package). */
+export const FIREFOX_MV3_ENV = new Set(['env_firefox', 'env_gecko', 'env_mv3', 'ext_ubol', 'ext_ublock', 'cap_user_stylesheet'])
+
+/** Shipped extension: keep Chromium and Firefox-specific network/cosmetic lines; exclude mobile-only gates. */
+export const SHIPPED_MV3_ENV = new Set([...CHROMIUM_MV3_ENV, ...FIREFOX_MV3_ENV])
+
 /** Evaluates `env_a && !(env_b || cap_c)`; unknown tokens are false, malformed input is false. */
 export function evaluateCondition(expr, env = CHROMIUM_MV3_ENV) {
   const tokens = expr.match(/!|&&|\|\||\(|\)|[\w-]+/g) ?? []

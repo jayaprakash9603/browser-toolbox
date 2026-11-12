@@ -49,13 +49,37 @@ export function selectScriptlets(
   return calls
 }
 
-/** Synchronous on purpose: the scriptlets must be in place before the page's first script. */
+const shardCache = new Map<number, ScriptletShard>()
+const shardLoads = new Map<number, Promise<ScriptletShard>>()
+
+function loadShardAsync(index: number): Promise<ScriptletShard> {
+  const cached = shardCache.get(index)
+  if (cached) return Promise.resolve(cached)
+  const pending = shardLoads.get(index)
+  if (pending) return pending
+  const promise = fetch(chrome.runtime.getURL(`adblock/scriptlets/data/${index}.json`))
+    .then((res) => (res.ok ? (res.json() as Promise<ScriptletShard>) : ({} as ScriptletShard)))
+    .then((shard) => {
+      shardCache.set(index, shard)
+      shardLoads.delete(index)
+      return shard
+    })
+    .catch(() => ({}) as ScriptletShard)
+  shardLoads.set(index, promise)
+  return promise
+}
+
 function loadShardSync(index: number): ScriptletShard {
+  const cached = shardCache.get(index)
+  if (cached) return cached
   try {
     const xhr = new XMLHttpRequest()
     xhr.open('GET', chrome.runtime.getURL(`adblock/scriptlets/data/${index}.json`), false)
     xhr.send()
-    return xhr.status === 200 || xhr.status === 0 ? (JSON.parse(xhr.responseText) as ScriptletShard) : {}
+    const shard =
+      xhr.status === 200 || xhr.status === 0 ? (JSON.parse(xhr.responseText) as ScriptletShard) : {}
+    shardCache.set(index, shard)
+    return shard
   } catch {
     return {}
   }
@@ -67,12 +91,22 @@ function deliver(calls: ScriptletCall[]): void {
   document.dispatchEvent(new CustomEvent(SCRIPTLET_EVENT, { detail: payload }))
 }
 
+async function collectCalls(host: string, bloom: Base64Bloom, rulesets: number[]): Promise<ScriptletCall[]> {
+  const candidates = hostCandidates(host.replace(/\.$/, ''))
+  const hits = candidates.filter((candidate) => bloomHasBase64(bloom, candidate))
+  if (!hits.length) return []
+  const indexes = [...new Set(hits.map((candidate) => hostShard(candidate)))]
+  await Promise.all(indexes.map((index) => loadShardAsync(index)))
+  return selectScriptlets(host, bloom, rulesets, loadShardSync)
+}
+
 function run(): void {
   const bloom = globalThis.tbxScriptletBloom
   const rulesets = globalThis.tbxScriptletRulesets
   if (!bloom || !rulesets?.length || !location.hostname) return
-  const calls = selectScriptlets(location.hostname, bloom, rulesets, loadShardSync)
-  if (calls.length) deliver(calls)
+  void collectCalls(location.hostname, bloom, rulesets).then((calls) => {
+    if (calls.length) deliver(calls)
+  })
 }
 
 if (typeof chrome !== 'undefined' && chrome.runtime?.id) run()

@@ -12,6 +12,7 @@ import {
 import { STORAGE_KEYS } from '@/core/constants'
 import { createLogger } from '@/core/logging'
 import { set } from '@/core/storage'
+import { getAdblockRuntimeProfile } from '@/platform/adblock/runtime'
 import { extensionApi } from '@/platform/browser'
 
 const logger = createLogger('adblock-stats')
@@ -186,8 +187,9 @@ async function isBlockingMatch(rulesetId: string, ruleId: number): Promise<boole
   return !allow.get(rulesetId)?.has(ruleId)
 }
 
-/** Live per-request counting; Chrome only exposes this event to unpacked extensions. */
+/** Live per-request counting; Chromium builds with declarativeNetRequestFeedback. */
 export function startNetworkCounter(): boolean {
+  if (!getAdblockRuntimeProfile().supportsLiveNetworkStats) return false
   const event = extensionApi()?.declarativeNetRequest?.onRuleMatchedDebug
   if (!event) return false
   event.addListener((info) => {
@@ -223,6 +225,7 @@ export async function getTabEntry(tabId: number): Promise<AdblockTabEntry> {
 }
 
 export async function configureBadge(enabled: boolean): Promise<void> {
+  if (!getAdblockRuntimeProfile().supportsActionBadge) return
   try {
     await chrome.action.setBadgeBackgroundColor({ color: '#dc2626' })
     await chrome.declarativeNetRequest.setExtensionActionOptions({
