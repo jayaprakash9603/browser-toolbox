@@ -3,8 +3,10 @@ import { registerMessageHandler } from '@/core/messaging'
 import { badgeTime } from '@/core/recorder/format'
 import {
   RECORDER_SESSION_KEY,
+  countdownSecondsLeft,
   createSession,
   elapsedMs,
+  markCountdown,
   markPaused,
   markResumed,
   markStarted,
@@ -26,6 +28,7 @@ import {
   mountMicPermissionFrame,
   removeMicPermissionFrame,
   showRecorderCountdown,
+  unmountRecorderCountdown,
   unmountRecorderPill,
 } from './controls'
 
@@ -40,11 +43,9 @@ let loaded = false
 let badgeTicker: ReturnType<typeof setInterval> | undefined
 
 async function getSession(): Promise<RecorderSession | null> {
-  if (!loaded) {
-    loaded = true
-    const stored = await chrome.storage.session.get(RECORDER_SESSION_KEY)
-    current = (stored[RECORDER_SESSION_KEY] as RecorderSession | undefined) ?? null
-  }
+  const stored = await chrome.storage.session.get(RECORDER_SESSION_KEY)
+  current = (stored[RECORDER_SESSION_KEY] as RecorderSession | undefined) ?? null
+  loaded = true
   return current
 }
 
@@ -55,6 +56,8 @@ async function updateBadge(session: RecorderSession | null): Promise<void> {
       await chrome.action.setTitle({ title: DEFAULT_ACTION_TITLE })
       return
     }
+    const now = Date.now()
+    const countdown = countdownSecondsLeft(session, now)
     const paused = session.phase === 'paused'
     await chrome.action.setBadgeBackgroundColor({ color: paused ? '#f59e0b' : '#dc2626' })
     if (session.phase === 'stopping') {
@@ -63,13 +66,17 @@ async function updateBadge(session: RecorderSession | null): Promise<void> {
       return
     }
     const text =
-      session.phase === 'pending' ? 'REC' : badgeTime(elapsedMs(session, Date.now()))
+      countdown > 0 ? String(countdown) : session.phase === 'pending' ? 'REC' : badgeTime(elapsedMs(session, now))
     await chrome.action.setBadgeText({ text })
     const source =
       session.source === 'tab' ? 'tab' : session.source === 'window' ? 'window' : 'screen'
-    const timerLabel = session.phase === 'pending' ? 'starting' : badgeTime(elapsedMs(session, Date.now()))
+    const timerLabel =
+      countdown > 0 ? `${countdown}s` : session.phase === 'pending' ? 'starting' : badgeTime(elapsedMs(session, now))
     await chrome.action.setTitle({
-      title: `Recording ${source} (${timerLabel}). Right-click → Stop recording.`,
+      title:
+        countdown > 0
+          ? `Recording starts in ${countdown}s (${source}). Right-click → Stop recording.`
+          : `Recording ${source} (${timerLabel}). Right-click → Stop recording.`,
     })
   } catch (error) {
     logger.debug('badge update failed', error)
@@ -93,11 +100,24 @@ function syncBadgeTicker(session: RecorderSession | null): void {
   }
 }
 
+function clearInPageRecorderUi(session: RecorderSession): void {
+  const tabIds = new Set<number>()
+  if (session.tabId != null) tabIds.add(session.tabId)
+  if (session.returnTabId != null) tabIds.add(session.returnTabId)
+  for (const tabId of tabIds) {
+    void chrome.scripting
+      .executeScript({ target: { tabId }, func: unmountRecorderCountdown })
+      .catch(() => undefined)
+  }
+}
+
 async function setSession(next: RecorderSession | null): Promise<void> {
+  const prev = current
   current = next
   loaded = true
   if (next) await chrome.storage.session.set({ [RECORDER_SESSION_KEY]: next })
   else await chrome.storage.session.remove(RECORDER_SESSION_KEY)
+  if (!next && prev) clearInPageRecorderUi(prev)
   await updateBadge(next)
   syncBadgeTicker(next)
   syncRecorderContextMenu(next)
@@ -118,15 +138,24 @@ function isNotInvokedError(error: unknown): boolean {
   return /not been invoked|activeTab/i.test(message)
 }
 
+async function beginCountdown(session: RecorderSession, tabId?: number): Promise<void> {
+  const until = Date.now() + COUNTDOWN_SECONDS * 1000
+  await setSession(markCountdown(session, until))
+  const targetTabId = tabId ?? session.tabId ?? session.returnTabId
+  if (targetTabId != null) {
+    await chrome.scripting
+      .executeScript({ target: { tabId: targetTabId }, func: showRecorderCountdown, args: [COUNTDOWN_SECONDS] })
+      .catch(() => undefined)
+  }
+}
+
 async function startTabCapture(id: string, settings: RecorderSettings, tab: chrome.tabs.Tab, streamId: string) {
   const tabId = tab.id!
   await setSession(createSession(id, 'tab', 'offscreen', Date.now(), { tabId, windowId: tab.windowId }))
   try {
     const countdownMs = settings.countdown ? COUNTDOWN_SECONDS * 1000 : 0
     if (countdownMs) {
-      await chrome.scripting
-        .executeScript({ target: { tabId }, func: showRecorderCountdown, args: [COUNTDOWN_SECONDS] })
-        .catch(() => undefined)
+      await beginCountdown(current!, tabId)
     }
     await acquireOffscreen(OFFSCREEN_OWNER)
     const response = (await chrome.runtime.sendMessage({
@@ -349,6 +378,14 @@ export function registerRecorder(): void {
     return { ok: true }
   })
 
+  registerMessageHandler('RECORDER_COUNTDOWN_BEGIN', async (message) => {
+    if (message.type !== 'RECORDER_COUNTDOWN_BEGIN') return null
+    const session = await getSession()
+    if (!session || session.id !== message.id) return { ok: false }
+    await beginCountdown(session, message.tabId)
+    return { ok: true }
+  })
+
   registerMessageHandler('RECORDER_STARTED', async (message) => {
     if (message.type !== 'RECORDER_STARTED') return null
     const session = await getSession()
@@ -384,12 +421,15 @@ export function registerRecorder(): void {
     if (session) await updateBadge(session)
   })
 
-  void chrome.tabs.query({ url: ['http://*/*', 'https://*/*'] }).then((tabs) => {
-    for (const tab of tabs) {
-      if (tab.id == null) continue
-      void chrome.scripting
-        .executeScript({ target: { tabId: tab.id }, func: unmountRecorderPill })
-        .catch(() => undefined)
-    }
+  void getSession().then((session) => {
+    if (session) return
+    void chrome.tabs.query({ url: ['http://*/*', 'https://*/*'] }).then((tabs) => {
+      for (const tab of tabs) {
+        if (tab.id == null) continue
+        void chrome.scripting
+          .executeScript({ target: { tabId: tab.id }, func: unmountRecorderPill })
+          .catch(() => undefined)
+      }
+    })
   })
 }

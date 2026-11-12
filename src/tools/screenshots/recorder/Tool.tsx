@@ -64,7 +64,7 @@ export default function ScreenRecorderTool() {
   const { t } = useTranslation()
   const tool = useCaptureTool('screenshots.recorder')
   useFocusTarget()
-  const { session, elapsed } = useRecorderSession()
+  const { session, elapsed, countdown } = useRecorderSession()
   const { recordings } = useRecordings()
   const [source, setSource] = useState<RecordingSource>('tab')
   const [settings, setSettings] = useState<RecorderSettings>(DEFAULT_RECORDER_SETTINGS)
@@ -112,7 +112,11 @@ export default function ScreenRecorderTool() {
               <span
                 className={`size-3 rounded-full ${paused || stopping ? 'bg-amber-500' : 'animate-pulse bg-red-500'}`}
               />
-              {session.phase === 'pending' ? t('recorder.starting') : formatDuration(elapsed)}
+              {countdown > 0
+                ? String(countdown)
+                : session.phase === 'pending'
+                  ? t('recorder.starting')
+                  : formatDuration(elapsed)}
             </p>
             <p className="text-xs text-muted-foreground">
               {stopping ? t('recorder.saving') : t(`recorder.source.${session.source}`)}

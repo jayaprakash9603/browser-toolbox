@@ -33,6 +33,8 @@ export interface RecorderSession {
   pageTabId?: number
   /** Tab to bring back once the recorder tab has the stream. */
   returnTabId?: number
+  /** Wall-clock time when the pre-roll countdown ends and capture begins. */
+  countdownUntil?: number
 }
 
 export interface RecordingMeta {

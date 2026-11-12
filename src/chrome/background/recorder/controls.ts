@@ -1,11 +1,14 @@
 const COUNTDOWN_HOST_ID = 'toolbox-recorder-countdown'
 
-/** Remove any legacy in-page recorder UI left from older versions. */
+/** Remove any legacy in-page recorder control left from older versions. */
 export function unmountRecorderPill(): void {
   document.getElementById('toolbox-recorder-pill')?.remove()
-  document.getElementById(COUNTDOWN_HOST_ID)?.remove()
   type PillWindow = Window & { __tbxRecorderPill?: unknown }
   delete (window as PillWindow).__tbxRecorderPill
+}
+
+export function unmountRecorderCountdown(): void {
+  document.getElementById(COUNTDOWN_HOST_ID)?.remove()
 }
 
 /**

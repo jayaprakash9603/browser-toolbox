@@ -14,7 +14,17 @@ export function createSession(
 
 export function markStarted(session: RecorderSession, now: number): RecorderSession {
   if (session.phase !== 'pending') return session
-  return { ...session, phase: 'recording', startedAt: now }
+  const { countdownUntil: _drop, ...rest } = session
+  return { ...rest, phase: 'recording', startedAt: now }
+}
+
+export function markCountdown(session: RecorderSession, until: number): RecorderSession {
+  return { ...session, countdownUntil: until }
+}
+
+export function countdownSecondsLeft(session: RecorderSession, now: number): number {
+  if (!session.countdownUntil || session.countdownUntil <= now) return 0
+  return Math.ceil((session.countdownUntil - now) / 1000)
 }
 
 export function markPaused(session: RecorderSession, now: number): RecorderSession {

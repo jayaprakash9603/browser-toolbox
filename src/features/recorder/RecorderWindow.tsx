@@ -150,17 +150,10 @@ function PageRecorder({ id, source, returnTabId }: { id: string; source: Recordi
         await chrome.tabs.update(returnTabId, { active: true }).catch(() => undefined)
       }
       if (settings.countdown) {
-        if (returnTabId != null) {
-          await chrome.scripting
-            .executeScript({
-              target: { tabId: returnTabId },
-              func: showRecorderCountdown,
-              args: [COUNTDOWN_SECONDS],
-            })
-            .catch(() => undefined)
-        } else {
-          showRecorderCountdown(COUNTDOWN_SECONDS)
-        }
+        await chrome.runtime
+          .sendMessage({ type: 'RECORDER_COUNTDOWN_BEGIN', id, tabId: returnTabId })
+          .catch(() => undefined)
+        if (returnTabId == null) showRecorderCountdown(COUNTDOWN_SECONDS)
         await new Promise((resolve) => setTimeout(resolve, COUNTDOWN_SECONDS * 1000 + 150))
       }
       recordingRef.current = startRecording({

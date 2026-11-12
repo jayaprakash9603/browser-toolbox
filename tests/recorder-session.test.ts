@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
-import { createSession, elapsedMs, markPaused, markResumed, markStarted, markStopping } from '@/core/recorder/session'
+import {
+  countdownSecondsLeft,
+  createSession,
+  elapsedMs,
+  markCountdown,
+  markPaused,
+  markResumed,
+  markStarted,
+  markStopping,
+} from '@/core/recorder/session'
 
 describe('recorder session state', () => {
   it('tracks elapsed time across pause and resume', () => {
@@ -28,6 +37,18 @@ describe('recorder session state', () => {
 
     const paused = markStopping(markPaused(markStarted(createSession('r4', 'tab', 'offscreen', 0), 1_000), 3_000), 7_000)
     expect(elapsedMs(paused, 9_000)).toBe(2_000)
+  })
+
+  it('shows countdown seconds on the badge window and clears them when recording starts', () => {
+    const pending = createSession('r5', 'tab', 'offscreen', 0, { tabId: 1 })
+    const counting = markCountdown(pending, 2_500)
+    expect(countdownSecondsLeft(counting, 1_000)).toBe(2)
+    expect(countdownSecondsLeft(counting, 2_400)).toBe(1)
+    expect(countdownSecondsLeft(counting, 2_600)).toBe(0)
+
+    const started = markStarted(counting, 3_000)
+    expect(started.countdownUntil).toBeUndefined()
+    expect(started.phase).toBe('recording')
   })
 
   it('ignores invalid transitions', () => {
