@@ -27,6 +27,7 @@ export function isFontInspectorActive(): boolean {
 export function setFontInspector(enabled: boolean): void {
   if (enabled === fontInspectorActive) return
   fontInspectorActive = enabled
+  void chrome.runtime.sendMessage({ type: 'FONT_INSPECTOR_TAB_STATE', enabled }).catch(() => {})
   const overlay = document.getElementById(FONT_OVERLAY_ID) as HTMLDivElement | null
   if (!enabled) {
     overlay?.remove()

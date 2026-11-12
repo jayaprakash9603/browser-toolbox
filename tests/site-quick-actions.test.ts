@@ -20,14 +20,17 @@ vi.mock('@/core/adblock', async (importOriginal) => {
   }
 })
 
-vi.mock('@/chrome/contentScriptClient', () => ({
-  ensureContentScriptInTab: vi.fn(async () => undefined),
+vi.mock('@/chrome/background/fontInspector', () => ({
+  pushFontInspectorToTab: vi.fn(async () => undefined),
+  resolveFontInspectorForTab: vi.fn(async () => false),
+  toggleFontInspectorForTab: vi.fn(async () => true),
 }))
 
 describe('site quick actions', () => {
   beforeEach(() => {
     resetChromeMockStorage()
     vi.clearAllMocks()
+    chrome.contextMenus.update = vi.fn()
   })
 
   it('toggles adblock allowlist for the tab host', async () => {

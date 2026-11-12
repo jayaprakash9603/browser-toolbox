@@ -189,6 +189,9 @@ export type ExtensionMessage =
   | { type: 'WIREFRAME_TOGGLE'; enabled: boolean }
   | { type: 'FONT_INSPECTOR_GET' }
   | { type: 'FONT_INSPECTOR_TOGGLE'; enabled: boolean }
+  | { type: 'FONT_INSPECTOR_PANEL_GET' }
+  | { type: 'FONT_INSPECTOR_PANEL_SET'; enabled: boolean }
+  | { type: 'FONT_INSPECTOR_TAB_STATE'; enabled: boolean }
   | {
       type: 'PAGE_INSPECTOR_SET'
       options: Partial<import('@/chrome/content/pageInspector/model').PageInspectorOptions>
@@ -386,6 +389,9 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'WIREFRAME_TOGGLE',
   'FONT_INSPECTOR_GET',
   'FONT_INSPECTOR_TOGGLE',
+  'FONT_INSPECTOR_PANEL_GET',
+  'FONT_INSPECTOR_PANEL_SET',
+  'FONT_INSPECTOR_TAB_STATE',
   'PAGE_INSPECTOR_SET',
   'PAGE_INSPECTOR_GET',
   'PAGE_INSPECTOR_ACTION',

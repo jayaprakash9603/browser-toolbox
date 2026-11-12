@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { FONT_INSPECTOR_SESSION_KEY } from '@/core/design/fontInspectorState'
+import { sendMessage } from '@/core/messaging/messageService'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Switch } from '@/shared/components/ui/switch'
 import { useDesignTool } from '../_shared'
-import { sendToActiveTab } from '@/tools/web/tabMessaging'
 
-async function readFontInspectorOnTab(): Promise<boolean> {
-  const data = await sendToActiveTab<{ enabled: boolean }>({ type: 'FONT_INSPECTOR_GET' })
+async function readPanelFontState(): Promise<boolean> {
+  const data = await sendMessage<{ enabled: boolean; tabId: number | null }>({
+    type: 'FONT_INSPECTOR_PANEL_GET',
+  })
   return Boolean(data?.enabled)
 }
 
@@ -17,26 +20,42 @@ export default function FontInspectorTool() {
   const [on, setOn] = useState(false)
 
   const syncFromActiveTab = useCallback(async () => {
-    const enabled = await readFontInspectorOnTab()
+    const enabled = await readPanelFontState()
     setOn(enabled)
   }, [])
 
   useEffect(() => {
     void syncFromActiveTab()
     const tabs = chrome.tabs
-    if (!tabs?.onActivated && !tabs?.onUpdated) return
     const refresh = () => void syncFromActiveTab()
-    tabs.onActivated?.addListener(refresh)
-    tabs.onUpdated?.addListener(refresh)
-    return () => {
-      tabs.onActivated?.removeListener(refresh)
-      tabs.onUpdated?.removeListener(refresh)
+    tabs?.onActivated?.addListener(refresh)
+    tabs?.onUpdated?.addListener(refresh)
+    const onSession = (
+      changes: Record<string, chrome.storage.StorageChange>,
+      area: 'sync' | 'local' | 'managed' | 'session',
+    ) => {
+      if (area === 'session' && changes[FONT_INSPECTOR_SESSION_KEY]) void syncFromActiveTab()
     }
+    chrome.storage.onChanged.addListener(onSession)
+    return () => {
+      tabs?.onActivated?.removeListener(refresh)
+      tabs?.onUpdated?.removeListener(refresh)
+      chrome.storage.onChanged.removeListener(onSession)
+    }
+  }, [syncFromActiveTab])
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void syncFromActiveTab()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
   }, [syncFromActiveTab])
 
   const toggle = async (enabled: boolean) => {
     setOn(enabled)
-    await sendToActiveTab({ type: 'FONT_INSPECTOR_TOGGLE', enabled })
+    await sendMessage({ type: 'FONT_INSPECTOR_PANEL_SET', enabled })
+    void syncFromActiveTab()
   }
 
   return (

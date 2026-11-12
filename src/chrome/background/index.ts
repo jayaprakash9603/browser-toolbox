@@ -57,7 +57,11 @@ import { initClipboardCapture, registerClipboardCapture } from './clipboardCaptu
 import { registerTimer } from './timer'
 import { handleTaskMenuClick, isTaskMenuItem, registerTasks } from './tasks'
 import { handleReadingListMenuClick, isReadingListMenuItem } from './readingList'
+import { registerFontInspector } from './fontInspector'
 import { registerColorPicker } from './colorPicker'
+import { screenshotModeFromMenuAction } from './screenshot/contextMenus'
+import { startScreenshot } from './screenshot/start'
+import type { ScreenshotMode } from '@/core/screenshot/types'
 import { registerFormMemory } from './formMemory'
 import { registerReactDevtools, syncReactDevtoolsState } from './reactDevtools'
 import { registerScriptStudio } from './script-studio'
@@ -132,13 +136,8 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     return
   }
   if (menuItemId.startsWith('toolbox.screenshot.')) {
-    void import('./screenshot/contextMenus').then(({ screenshotModeFromMenuAction }) => {
-      const mode = screenshotModeFromMenuAction(menuItemId)
-      if (!mode) return
-      void import('./screenshot/start').then(({ startScreenshot }) => {
-        void startScreenshot(mode as import('@/core/screenshot/types').ScreenshotMode, tab)
-      })
-    })
+    const mode = screenshotModeFromMenuAction(menuItemId)
+    if (mode) void startScreenshot(mode as ScreenshotMode, tab)
     return
   }
   if (menuItemId === 'toolbox.open' || menuItemId.startsWith('toolbox.open.')) {
@@ -185,6 +184,7 @@ safeRegister('scraper', registerScraperJobHandlers)
 safeRegister('clipboardCapture', registerClipboardCapture)
 safeRegister('timer', registerTimer)
 safeRegister('tasks', registerTasks)
+safeRegister('fontInspector', registerFontInspector)
 safeRegister('colorPicker', registerColorPicker)
 safeRegister('formMemory', registerFormMemory)
 safeRegister('reactDevtools', registerReactDevtools)
