@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { AppWindowIcon, ExternalLinkIcon, LoaderCircleIcon, RefreshCwIcon, SmartphoneIcon, XIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -6,8 +6,9 @@ import { useTranslation } from 'react-i18next'
 import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/utils/cn'
-import { breakpointFor, orientedSize, viewportScale, type Device, type DeviceKind, type ZoomMode } from './devices'
-import { EASE_OUT, KIND_ICON, KIND_TONE, frameInsets, hostnameOf, openSizedWindow, useContentWidth } from './helpers'
+import { breakpointFor, isHandheld, orientedSize, viewportScale, type Device, type ZoomMode } from './devices'
+import { DeviceFrame, frameInsets } from './frames'
+import { EASE_OUT, KIND_ICON, KIND_TONE, hostnameOf, openSizedWindow, useContentWidth } from './helpers'
 import { IconAction } from './parts'
 
 const BODY_PAD = 12
@@ -51,8 +52,8 @@ export function DeviceCard({
   const [bodyRef, bodyWidth] = useContentWidth<HTMLDivElement>()
   const [localReload, setLocalReload] = useState(0)
   const { width, height } = orientedSize(device, rotated)
-  const insets = frameInsets(device.kind, frame)
-  const handheld = device.kind === 'phone' || device.kind === 'tablet'
+  const insets = frameInsets(device, frame)
+  const handheld = isHandheld(device)
   const boxWidth = fitWidth ? bodyWidth : stageWidth == null ? null : stageWidth - BODY_PAD * 2 - 2
   const measuring = boxWidth == null
   const scale = viewportScale(
@@ -133,12 +134,9 @@ export function DeviceCard({
         {measuring ? (
           <div className="w-full animate-pulse rounded-lg bg-muted" style={{ height: Math.min(240, maxHeight) }} />
         ) : (
-          <DeviceShell kind={device.kind} frame={frame} hostname={hostnameOf(url)}>
+          <DeviceFrame device={device} frame={frame} hostname={hostnameOf(url)} rotated={rotated}>
             <div
-              className={cn(
-                'relative shrink-0 overflow-hidden bg-white transition-[width,height] duration-300 ease-out motion-reduce:transition-none',
-                frame ? (device.kind === 'phone' ? 'rounded-[22px]' : device.kind === 'tablet' ? 'rounded-xl' : 'rounded-b-md') : 'rounded-md',
-              )}
+              className="relative shrink-0 overflow-hidden bg-white transition-[width,height] duration-300 ease-out motion-reduce:transition-none"
               style={{ width: screenW, height: screenH }}
             >
               <Viewport
@@ -151,54 +149,11 @@ export function DeviceCard({
                 previewReady={previewReady}
                 embedEnabled={embedEnabled}
               />
-              {frame && device.kind === 'phone' && (
-                <span
-                  aria-hidden
-                  className={cn(
-                    'pointer-events-none absolute rounded-full bg-neutral-950',
-                    rotated ? 'left-1.5 top-1/2 -translate-y-1/2' : 'left-1/2 top-1.5 -translate-x-1/2',
-                  )}
-                  style={
-                    rotated
-                      ? { width: Math.max(6, 30 * scale), height: Math.max(28, 110 * scale) }
-                      : { width: Math.max(28, 110 * scale), height: Math.max(6, 30 * scale) }
-                  }
-                />
-              )}
             </div>
-          </DeviceShell>
+          </DeviceFrame>
         )}
       </div>
     </motion.article>
-  )
-}
-
-export function DeviceShell({ kind, frame, hostname, children }: { kind: DeviceKind; frame: boolean; hostname: string; children: ReactNode }) {
-  if (!frame) return <div className="shrink-0 rounded-md shadow-lg ring-1 ring-border">{children}</div>
-  if (kind === 'phone' || kind === 'tablet') {
-    return (
-      <div
-        className={cn(
-          'relative shrink-0 bg-neutral-900 shadow-xl ring-1 ring-black/20 dark:bg-neutral-800 dark:ring-white/10',
-          kind === 'phone' ? 'rounded-[30px] p-2' : 'rounded-[22px] p-2.5',
-        )}
-      >
-        {children}
-      </div>
-    )
-  }
-  return (
-    <div className="shrink-0 overflow-hidden rounded-md shadow-xl ring-1 ring-border">
-      <div className="flex h-6 items-center gap-1 border-b bg-muted px-2" aria-hidden>
-        <span className="size-2 rounded-full bg-red-400/80" />
-        <span className="size-2 rounded-full bg-amber-400/80" />
-        <span className="size-2 rounded-full bg-emerald-400/80" />
-        <span className="mx-auto min-w-0 max-w-[60%] truncate rounded bg-background px-2 text-[9px] leading-4 text-muted-foreground">
-          {hostname}
-        </span>
-      </div>
-      {children}
-    </div>
   )
 }
 
@@ -210,6 +165,7 @@ export function Viewport({
   scale,
   previewReady,
   embedEnabled,
+  frameId,
 }: {
   src: string
   title: string
@@ -218,44 +174,44 @@ export function Viewport({
   scale: number
   previewReady: boolean
   embedEnabled: boolean
+  frameId?: string
 }) {
   const { t } = useTranslation()
-  const [state, setState] = useState<'preparing' | 'loading' | 'slow' | 'loaded' | 'blocked' | 'disabled'>(
-    !previewReady ? 'preparing' : !embedEnabled ? 'disabled' : 'loading',
-  )
+  const mode = !previewReady ? 'preparing' : !embedEnabled ? 'disabled' : 'live'
+  const [loadState, setLoadState] = useState<'loading' | 'slow' | 'loaded' | 'blocked'>('loading')
+  const [loadKey, setLoadKey] = useState(src)
+  if (loadKey !== src) {
+    setLoadKey(src)
+    setLoadState('loading')
+  }
 
   useEffect(() => {
-    if (!previewReady) {
-      setState('preparing')
-      return
-    }
-    if (!embedEnabled) {
-      setState('disabled')
-      return
-    }
-    setState('loading')
-    const timer = setTimeout(() => setState((s) => (s === 'loading' ? 'slow' : s)), SLOW_LOAD_MS)
+    if (mode !== 'live') return
+    const timer = setTimeout(() => setLoadState((current) => (current === 'loading' ? 'slow' : current)), SLOW_LOAD_MS)
     return () => clearTimeout(timer)
-  }, [previewReady, embedEnabled, src])
+  }, [mode, src])
+
+  const state = mode === 'live' ? loadState : mode
 
   const inspectLoad = (iframe: HTMLIFrameElement) => {
     try {
       const href = iframe.contentWindow?.location.href ?? ''
       if (!href || href === 'about:blank') return
       if (href.startsWith('chrome-error:') || href.includes('chromewebdata')) {
-        setState('blocked')
+        setLoadState('blocked')
         return
       }
     } catch {
       /* cross-origin success */
     }
-    setState('loaded')
+    setLoadState('loaded')
   }
 
   return (
     <>
       <iframe
         title={title}
+        data-rv-frame={frameId ?? title}
         src={previewReady && embedEnabled ? src : 'about:blank'}
         className="absolute left-0 top-0 origin-top-left border-0 bg-white"
         style={{ width, height, transform: `scale(${scale})` }}
@@ -282,12 +238,18 @@ export function Viewport({
             ) : state === 'blocked' ? (
               <div className="flex flex-col items-center gap-2">
                 <p className="max-w-56 text-[11px] leading-4 text-muted-foreground">{t('rv.card.blocked')}</p>
-                <Button variant="outline" size="xs" asChild>
-                  <a href={src} target="_blank" rel="noreferrer">
-                    <ExternalLinkIcon />
-                    {t('rv.card.openTab')}
-                  </a>
-                </Button>
+                <div className="flex flex-wrap justify-center gap-1">
+                  <Button variant="outline" size="xs" asChild>
+                    <a href={src} target="_blank" rel="noreferrer">
+                      <ExternalLinkIcon />
+                      {t('rv.card.openTab')}
+                    </a>
+                  </Button>
+                  <Button variant="outline" size="xs" onClick={() => openSizedWindow(src, width, height)}>
+                    <AppWindowIcon />
+                    {t('rv.card.window')}
+                  </Button>
+                </div>
               </div>
             ) : (
               <>
@@ -301,12 +263,18 @@ export function Viewport({
                       transition={{ duration: 0.25, ease: EASE_OUT }}
                     >
                       <p className="max-w-56 text-[11px] leading-4 text-muted-foreground">{t('rv.card.slow')}</p>
-                      <Button variant="outline" size="xs" asChild>
-                        <a href={src} target="_blank" rel="noreferrer">
-                          <ExternalLinkIcon />
-                          {t('rv.card.openTab')}
-                        </a>
-                      </Button>
+                      <div className="flex flex-wrap justify-center gap-1">
+                        <Button variant="outline" size="xs" asChild>
+                          <a href={src} target="_blank" rel="noreferrer">
+                            <ExternalLinkIcon />
+                            {t('rv.card.openTab')}
+                          </a>
+                        </Button>
+                        <Button variant="outline" size="xs" onClick={() => openSizedWindow(src, width, height)}>
+                          <AppWindowIcon />
+                          {t('rv.card.window')}
+                        </Button>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>

@@ -112,6 +112,7 @@ const chromeMock = {
     onChanged: makeEvent(),
   },
   runtime: {
+    id: 'test-extension-id',
     onMessage: makeEvent(),
     sendMessage: vi.fn(async () => undefined),
     lastError: undefined,
@@ -141,6 +142,7 @@ const chromeMock = {
     onRemoved: makeEvent(),
   },
   tabs: {
+    TAB_ID_NONE: -1,
     query: vi.fn(async () => [{ id: 1, url: 'https://example.com', active: true }]),
     sendMessage: vi.fn(async () => undefined),
     reload: vi.fn(async () => undefined),

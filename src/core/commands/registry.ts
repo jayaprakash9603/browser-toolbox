@@ -126,6 +126,15 @@ export const TOOLBOX_COMMANDS: ToolboxCommandDef[] = [
     opensPanel: false,
     toolId: 'productivity.form-autofill',
   },
+  {
+    id: 'open-mobile-simulator',
+    titleKey: 'shortcuts.commands.openMobileSimulator',
+    descriptionMessage: '__MSG_commandOpenMobileSimulator__',
+    scope: 'global',
+    binding: { default: 'Alt+Shift+M', mac: 'Alt+Shift+M' },
+    opensPanel: false,
+    toolId: 'design.responsive-viewer',
+  },
 ]
 
 export const GLOBAL_TOOLBOX_COMMANDS = TOOLBOX_COMMANDS.filter((c) => c.scope === 'global')

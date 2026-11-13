@@ -14,10 +14,12 @@ import {
   MonitorSmartphoneIcon,
   RefreshCwIcon,
   RotateCwSquareIcon,
+  SmartphoneIcon,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { getActiveBrowserTab } from '@/chrome/contentScriptClient'
+import { useRouter } from '@/app/router'
 import { OptionSwitch } from '@/shared/components/toolkit'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
@@ -27,18 +29,20 @@ import { ControlsFoldToggle } from './ControlsFold'
 import { DeviceCard } from './DeviceCard'
 import { DeviceMenu, SelectedDevices } from './DevicePicker'
 import { DeviceViewer } from './DeviceViewer'
+import SimulatorStudio from './Studio'
 import {
   DEVICES,
-  loadSettings,
+  MAX_SIMULTANEOUS_DEVICES,
   normalizeUrl,
-  storeSettings,
   type Device,
   type ViewerSettings,
 } from './devices'
 import { setFramingAllowed } from './framing'
 import { EASE_OUT, useContentWidth, useWindowHeight } from './helpers'
 import { IconAction, ZoomMenu } from './parts'
+import { openSimulatorStudio, isSimulatorStudioSearch } from './studioUrl'
 import { useControlsFold } from './useControlsFold'
+import { useViewerSettings } from './useViewerSettings'
 
 const TOGGLE_CLASS =
   'size-8 aria-pressed:border-primary/40 aria-pressed:bg-primary/10 aria-pressed:text-primary'
@@ -47,10 +51,16 @@ const toggleIn = (list: readonly string[], id: string) =>
   list.includes(id) ? list.filter((x) => x !== id) : [...list, id]
 
 export default function ResponsiveViewerTool() {
+  const { search } = useRouter()
+  if (isSimulatorStudioSearch(search)) return <SimulatorStudio />
+  return <CompactViewer />
+}
+
+function CompactViewer() {
   const { t } = useTranslation()
   const tool = useDesignTool('design.responsive-viewer')
   const inputId = useId()
-  const [settings, setSettings] = useState<ViewerSettings>(loadSettings)
+  const [settings, setSettings] = useViewerSettings()
   const [draft, setDraft] = useState('')
   const [url, setUrl] = useState<string | null>(null)
   const [urlError, setUrlError] = useState<string | null>(null)
@@ -67,11 +77,9 @@ export default function ResponsiveViewerTool() {
 
   const update = (patch: Partial<ViewerSettings>) => setSettings((prev) => ({ ...prev, ...patch }))
 
-  useEffect(() => storeSettings(settings), [settings])
-
   useEffect(() => {
     let active = true
-    void setFramingAllowed(settings.unblock).then((ok) => {
+    void setFramingAllowed(settings.unblock, settings.mobileUa ? 'mobile' : undefined).then((ok) => {
       if (!active) return
       setAppliedUnblock(settings.unblock)
       if (ok) setReloadKey((k) => k + 1)
@@ -79,7 +87,7 @@ export default function ResponsiveViewerTool() {
     return () => {
       active = false
     }
-  }, [settings.unblock])
+  }, [settings.unblock, settings.mobileUa])
 
   useEffect(() => () => void setFramingAllowed(false), [])
 
@@ -288,8 +296,11 @@ export default function ResponsiveViewerTool() {
                       selected={settings.selected}
                       open={menuOpen}
                       onOpenChange={setMenuOpen}
-                      onToggle={(id) => update({ selected: toggleIn(settings.selected, id) })}
-                      onSelect={(selected) => update({ selected })}
+                      onToggle={(id) => {
+                        const next = toggleIn(settings.selected, id)
+                        update({ selected: next.slice(0, MAX_SIMULTANEOUS_DEVICES) })
+                      }}
+                      onSelect={(selected) => update({ selected: selected.slice(0, MAX_SIMULTANEOUS_DEVICES) })}
                       onAddCustom={(device) =>
                         update({
                           custom: [...settings.custom, device],
@@ -362,6 +373,16 @@ export default function ResponsiveViewerTool() {
                         </motion.span>
                       </IconAction>
                       <span className="mx-0.5 h-5 w-px bg-border" aria-hidden />
+                      <Button
+                        size="sm"
+                        className="h-8 gap-1 px-2"
+                        disabled={!url}
+                        aria-label={t('rv.studio.open')}
+                        onClick={() => openSimulatorStudio({ url: url ?? undefined, device: settings.lastDevice })}
+                      >
+                        <SmartphoneIcon />
+                        <span className="hidden @[560px]:inline">{t('rv.studio.open')}</span>
+                      </Button>
                       <IconAction
                         label={t('rv.full.open')}
                         variant="default"
@@ -505,10 +526,16 @@ function EmptyState({ onUseTab }: { onUseTab: () => void }) {
         <h2 className="text-sm font-semibold">{t('rv.empty.title')}</h2>
         <p className="text-xs leading-5 text-muted-foreground">{t('rv.empty.body')}</p>
       </div>
-      <Button size="sm" onClick={onUseTab}>
-        <LocateFixedIcon />
-        {t('rv.url.currentTab')}
-      </Button>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <Button size="sm" onClick={onUseTab}>
+          <LocateFixedIcon />
+          {t('rv.url.currentTab')}
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => openSimulatorStudio()}>
+          <SmartphoneIcon />
+          {t('rv.studio.open')}
+        </Button>
+      </div>
     </motion.section>
   )
 }

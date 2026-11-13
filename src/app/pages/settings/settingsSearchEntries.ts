@@ -61,6 +61,12 @@ export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
     keywords: ['context menu', 'right click', 'record'],
   },
   {
+    id: 'contextMenuMobileSimulator',
+    labelKey: 'settings.contextMenu.mobileSimulator',
+    fallbackLabel: 'Mobile Simulator in right-click menu',
+    keywords: ['context menu', 'right click', 'mobile', 'simulator', 'responsive', 'device'],
+  },
+  {
     id: 'theme',
     labelKey: 'settings.theme',
     fallbackLabel: 'Theme',

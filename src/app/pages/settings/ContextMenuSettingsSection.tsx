@@ -94,6 +94,12 @@ const ROWS: { key: ContextMenuVisibilityKey; labelKey: string; descKey: string; 
     descKey: 'settings.contextMenu.historyManagerDescription',
     searchId: 'contextMenuHistoryManager',
   },
+  {
+    key: 'mobileSimulator',
+    labelKey: 'settings.contextMenu.mobileSimulator',
+    descKey: 'settings.contextMenu.mobileSimulatorDescription',
+    searchId: 'contextMenuMobileSimulator',
+  },
 ]
 
 export function ContextMenuSettingsSection() {

@@ -165,7 +165,7 @@
     "message": "Clear the form on the current page"
   },
   "commandOpenMobileSimulator": {
-    "message": "Open the current page in One Panel Mobile Simulator"
+    "message": "Cover the current page with a Mobile Simulator overlay"
   },
   "formFilledOne": {
     "message": "Filled 1 field"
@@ -360,7 +360,7 @@
     "message": "Open in Mobile Simulator"
   },
   "contextMenuSimulatorPage": {
-    "message": "Open current page"
+    "message": "Preview on this page"
   },
   "contextMenuSimulatorLink": {
     "message": "Open selected link"

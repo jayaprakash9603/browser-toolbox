@@ -54,6 +54,12 @@ export async function executeToolboxCommand(command: string, tab?: chrome.tabs.T
     return
   }
 
+  if (command === 'open-mobile-simulator') {
+    const { openSimulatorForTab } = await import('./responsiveViewer/menus')
+    await openSimulatorForTab(tab)
+    return
+  }
+
   const def = getToolboxCommand(command)
   const opensPanel = def?.opensPanel ?? command !== 'toggle-pip'
 

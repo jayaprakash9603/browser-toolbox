@@ -89,6 +89,7 @@ describe('command registry', () => {
       'add-page-task',
       'form-fill',
       'form-clear',
+      'open-mobile-simulator',
     ])
     expect(GLOBAL_TOOLBOX_COMMANDS.every((command) => command.binding.default)).toBe(true)
     expect(getCommand('pick-element')?.binding.mac).toBe('Command+Shift+E')

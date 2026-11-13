@@ -13,6 +13,7 @@ export type ContextMenuVisibilityKey =
   | 'chatPulse'
   | 'downloadManager'
   | 'historyManager'
+  | 'mobileSimulator'
 
 export type ContextMenuVisibility = Record<ContextMenuVisibilityKey, boolean>
 
@@ -31,6 +32,7 @@ export const DEFAULT_CONTEXT_MENU_VISIBILITY: ContextMenuVisibility = {
   chatPulse: true,
   downloadManager: true,
   historyManager: true,
+  mobileSimulator: true,
 }
 
 export function resolveContextMenuVisibility(

@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
+import '@/tools/design/responsive-viewer/i18n'
 import { TooltipProvider } from '@/shared/components/ui/tooltip'
 import { ControlsFoldToggle } from '@/tools/design/responsive-viewer/ControlsFold'
 import { useControlsFold } from '@/tools/design/responsive-viewer/useControlsFold'

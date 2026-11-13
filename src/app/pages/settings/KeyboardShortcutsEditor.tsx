@@ -126,6 +126,9 @@ export function KeyboardShortcutsEditor({ showHeader = true }: KeyboardShortcuts
       <p className="rounded-lg border border-dashed bg-muted/20 px-3 py-2 text-[11px] text-muted-foreground">
         {t('shortcuts.hint', { count: TOOLBOX_COMMANDS.length })}
       </p>
+      <p className="rounded-lg border border-dashed bg-muted/20 px-3 py-2 text-[11px] text-muted-foreground">
+        {t('shortcuts.studioHint')}
+      </p>
     </div>
   )
 }

@@ -20,12 +20,14 @@ import {
   CUSTOM_MAX,
   CUSTOM_MIN,
   DEVICE_KINDS,
+  PICKER_KINDS,
   breakpointFor,
   isValidDimension,
   kindForWidth,
   type Device,
   type DeviceKind,
 } from './devices'
+import { DeviceThumb } from './frames'
 import { EASE_OUT, KIND_ICON, KIND_TONE } from './helpers'
 
 type Filter = 'all' | DeviceKind
@@ -82,7 +84,9 @@ export function DeviceMenu({
     (device) =>
       (filter === 'all' || device.kind === filter) &&
       (!search ||
-        `${device.label} ${device.width}x${device.height}`.toLowerCase().includes(search)),
+        `${device.label} ${device.manufacturer ?? ''} ${device.model ?? ''} ${device.width}x${device.height}`
+          .toLowerCase()
+          .includes(search)),
   )
   const groups = DEVICE_KINDS.map((kind) => ({
     kind,
@@ -180,7 +184,7 @@ export function DeviceMenu({
             className="w-full [&>*]:flex-1"
             options={[
               { value: 'all', label: t('rv.kind.all') },
-              ...DEVICE_KINDS.map((kind) => {
+              ...PICKER_KINDS.map((kind) => {
                 const Icon = KIND_ICON[kind]
                 return {
                   value: kind,
@@ -358,7 +362,7 @@ function DeviceRow({
             )}
           </AnimatePresence>
         </span>
-        <KindBadge kind={device.kind} className="size-7" />
+        <DeviceThumb device={device} />
         <span className="flex min-w-0 flex-1 flex-col">
           <span className={cn('truncate text-xs leading-4', on ? 'font-semibold' : 'font-medium')}>
             {device.label}

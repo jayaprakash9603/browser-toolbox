@@ -81,6 +81,7 @@ describe('command registry', () => {
       'add-page-task',
       'form-fill',
       'form-clear',
+      'open-mobile-simulator',
     ])
     expect([...MANIFEST_COMMAND_IDS]).toEqual([
       'open-command-palette',
@@ -92,7 +93,9 @@ describe('command registry', () => {
       'pick-color',
       'form-fill',
       'form-clear',
+      'open-mobile-simulator',
     ])
+    expect(manifest['open-mobile-simulator']).not.toHaveProperty('suggested_key')
     expect(manifest['form-fill']?.suggested_key).toEqual({ default: 'Ctrl+Shift+F', mac: 'Command+Shift+F' })
     expect(manifest['form-clear']?.suggested_key).toEqual({ default: 'Ctrl+Shift+C', mac: 'Command+Shift+C' })
     expect(TOOLBOX_COMMANDS.length).toBeGreaterThanOrEqual(5)

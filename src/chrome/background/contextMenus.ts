@@ -102,6 +102,14 @@ async function rebuildContextMenusOnce(): Promise<void> {
       logger.warn('history manager menu build failed', error)
     }
   }
+  if (menu.mobileSimulator) {
+    try {
+      const { buildSimulatorMenus } = await import('./responsiveViewer/menus')
+      buildSimulatorMenus(createContextMenu)
+    } catch (error) {
+      logger.warn('simulator menu build failed', error)
+    }
+  }
   if (menu.bookmarks) {
     try {
       buildBookmarkMenus(createContextMenu)

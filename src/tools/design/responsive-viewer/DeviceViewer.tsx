@@ -22,9 +22,10 @@ import {
 
 import { ChipRail } from '@/shared/components/ChipRail'
 import { cn } from '@/shared/utils/cn'
-import { DeviceShell, Viewport } from './DeviceCard'
-import { breakpointFor, orientedSize, viewportScale, type Device } from './devices'
-import { EASE_OUT, KIND_ICON, frameInsets, hostnameOf, openSizedWindow } from './helpers'
+import { Viewport } from './DeviceCard'
+import { breakpointFor, isHandheld, orientedSize, viewportScale, type Device } from './devices'
+import { DeviceFrame, frameInsets } from './frames'
+import { EASE_OUT, KIND_ICON, hostnameOf, openSizedWindow } from './helpers'
 import { IconAction } from './parts'
 
 interface DeviceViewerProps {
@@ -250,7 +251,7 @@ function Panel({
   const Icon = KIND_ICON[device.kind]
   const isRotated = rotated.includes(device.id)
   const size = orientedSize(device, isRotated)
-  const handheld = device.kind === 'phone' || device.kind === 'tablet'
+  const handheld = isHandheld(device)
 
   return (
     <motion.div
@@ -473,7 +474,7 @@ function DevicePage({
   }, [])
 
   const { width, height } = orientedSize(device, rotated)
-  const insets = frameInsets(device.kind, frame)
+  const insets = frameInsets(device, frame)
   // The shell adds padding around the screen on top of the bezel insets.
   const chromeX = insets.x * 2
   const chromeY = insets.top + insets.bottom
@@ -495,12 +496,9 @@ function DevicePage({
       className="flex h-full w-full shrink-0 snap-center snap-always items-center justify-center overflow-hidden bg-muted/30 bg-[radial-gradient(circle,color-mix(in_oklab,currentColor_14%,transparent)_1px,transparent_1px)] bg-[length:14px_14px] text-foreground"
     >
       {mounted && stage && (
-        <DeviceShell kind={device.kind} frame={frame} hostname={hostnameOf(url)}>
+        <DeviceFrame device={device} frame={frame} hostname={hostnameOf(url)} rotated={rotated}>
           <div
-            className={cn(
-              'relative shrink-0 overflow-hidden bg-white',
-              frame ? (device.kind === 'phone' ? 'rounded-[22px]' : device.kind === 'tablet' ? 'rounded-xl' : 'rounded-b-md') : 'rounded-md',
-            )}
+            className="relative shrink-0 overflow-hidden bg-white"
             style={{ width: Math.round(width * scale), height: Math.round(height * scale) }}
           >
             <Viewport
@@ -514,7 +512,7 @@ function DevicePage({
               embedEnabled={embedEnabled}
             />
           </div>
-        </DeviceShell>
+        </DeviceFrame>
       )}
     </section>
   )

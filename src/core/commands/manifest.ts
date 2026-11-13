@@ -9,6 +9,7 @@ export const MANIFEST_COMMAND_IDS = [
   'pick-color',
   'form-fill',
   'form-clear',
+  'open-mobile-simulator',
 ] as const
 
 type ManifestCommandId = (typeof MANIFEST_COMMAND_IDS)[number]
@@ -23,6 +24,7 @@ const DESCRIPTIONS: Record<ManifestCommandId, string> = {
   'pick-color': '__MSG_commandPickColor__',
   'form-fill': '__MSG_commandFormFill__',
   'form-clear': '__MSG_commandFormClear__',
+  'open-mobile-simulator': '__MSG_commandOpenMobileSimulator__',
 }
 
 /**

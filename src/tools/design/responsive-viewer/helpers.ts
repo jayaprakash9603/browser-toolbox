@@ -1,5 +1,13 @@
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { LaptopIcon, MonitorIcon, SmartphoneIcon, TabletIcon, type LucideIcon } from 'lucide-react'
+import {
+  LaptopIcon,
+  MonitorIcon,
+  SmartphoneIcon,
+  TabletIcon,
+  TvIcon,
+  WatchIcon,
+  type LucideIcon,
+} from 'lucide-react'
 
 import type { DeviceKind } from './devices'
 
@@ -10,6 +18,8 @@ export const KIND_ICON: Record<DeviceKind, LucideIcon> = {
   tablet: TabletIcon,
   laptop: LaptopIcon,
   desktop: MonitorIcon,
+  watch: WatchIcon,
+  special: TvIcon,
 }
 
 export const KIND_TONE: Record<DeviceKind, string> = {
@@ -17,6 +27,8 @@ export const KIND_TONE: Record<DeviceKind, string> = {
   tablet: 'bg-violet-500/12 text-violet-600 dark:text-violet-300',
   laptop: 'bg-amber-500/14 text-amber-700 dark:text-amber-300',
   desktop: 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300',
+  watch: 'bg-rose-500/12 text-rose-600 dark:text-rose-300',
+  special: 'bg-teal-500/12 text-teal-700 dark:text-teal-300',
 }
 
 /** Content-box width of an element, null until the first measurement. */
@@ -57,14 +69,6 @@ export function openSizedWindow(url: string, width: number, height: number) {
   windows
     .create({ url, type: 'popup', width: width + 16, height: height + 80, focused: true })
     .catch(fallback)
-}
-
-/** Bezel thickness around the screen, in panel pixels (not scaled with the page). */
-export function frameInsets(kind: DeviceKind, frame: boolean) {
-  if (!frame) return { x: 0, top: 0, bottom: 0 }
-  if (kind === 'phone') return { x: 8, top: 8, bottom: 8 }
-  if (kind === 'tablet') return { x: 10, top: 10, bottom: 10 }
-  return { x: 0, top: 24, bottom: 0 }
 }
 
 export function hostnameOf(url: string) {

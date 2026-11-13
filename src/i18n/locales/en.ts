@@ -318,7 +318,7 @@ const en = {
     'Download links, scan pages, and open the Download Manager from the context menu.',
   'settings.contextMenu.mobileSimulator': 'Mobile Simulator',
   'settings.contextMenu.mobileSimulatorDescription':
-    'Open the current page or a selected link in the One Panel Mobile Simulator.',
+    'Cover the current page with a device overlay from the right-click menu, or open a selected link in the simulator.',
   'settings.contextMenu.historyManager': 'History Manager',
   'settings.contextMenu.historyManagerDescription':
     'Search this page or selection in History Manager from the right-click menu.',
