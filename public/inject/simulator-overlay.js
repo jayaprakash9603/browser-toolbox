@@ -20,6 +20,9 @@
       --tbx-row-hover: #f1f5f9;
       --tbx-input-bg: #f8fafc;
       --tbx-input-border: #cbd5e1;
+      --tbx-hint: #64748b;
+      --tbx-menu-bg: #f8fafc;
+      --tbx-menu-border: #cbd5e1;
     }
     .root.theme-dark {
       background: #0b0f14;
@@ -30,7 +33,11 @@
       --tbx-row-hover: #1e2733;
       --tbx-input-bg: #0f141c;
       --tbx-input-border: #334155;
+      --tbx-hint: #cbd5e1;
+      --tbx-menu-bg: #1e2733;
+      --tbx-menu-border: #3d4f63;
     }
+    .root.theme-dark .panel { box-shadow: 0 16px 48px rgba(0,0,0,0.5); }
     .stage {
       display: flex;
       flex-direction: row;
@@ -262,18 +269,13 @@
       color: var(--tbx-panel-muted);
     }
     .device-section:first-child { margin-top: 2px; }
-    .panel[data-panel="settings"],
-    .panel[data-panel="shot-menu"],
-    .panel[data-panel="record-menu"],
-    .panel[data-panel="capture-result"] {
+    .panel[data-panel="settings"] {
       right: 76px; top: 50%; transform: translateY(-50%);
-      width: 260px; max-height: min(70vh, 480px);
+      width: min(292px, 42vw);
+      max-height: min(70vh, 480px);
       padding: 14px; border-radius: 14px;
       border: 1px solid var(--tbx-panel-border);
       box-shadow: 0 16px 40px rgba(15,23,42,0.12);
-    }
-    .panel[data-panel="settings"] {
-      width: min(292px, 42vw);
       gap: 12px;
     }
     .panel[data-panel="settings"]::after {
@@ -288,16 +290,74 @@
       border-right: 1px solid var(--tbx-panel-border);
       border-top: 1px solid var(--tbx-panel-border);
     }
+    .panel[data-panel="shot-menu"],
+    .panel[data-panel="record-menu"],
     .panel[data-panel="capture-result"] {
-      width: min(340px, 42vw);
+      right: 76px;
+      width: min(292px, 42vw);
+      max-height: min(72vh, 520px);
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid var(--tbx-panel-border);
+      box-shadow: 0 16px 40px rgba(15,23,42,0.12);
+      transform: none;
+      gap: 10px;
+    }
+    .panel[data-panel="shot-menu"]::after,
+    .panel[data-panel="record-menu"]::after,
+    .panel[data-panel="capture-result"]::after {
+      content: '';
+      position: absolute;
+      right: -6px;
+      top: var(--tbx-rail-arrow-y, 50%);
+      width: 10px;
+      height: 10px;
+      transform: translateY(-50%) rotate(45deg);
+      background: var(--tbx-panel-bg);
+      border-right: 1px solid var(--tbx-panel-border);
+      border-top: 1px solid var(--tbx-panel-border);
+    }
+    .panel[data-panel="capture-result"] {
+      width: min(340px, 44vw);
     }
     .panel[data-panel="capture-result"] img {
       width: 100%; max-height: 46vh; object-fit: contain;
       border-radius: 10px; background: #f1f5f9; border: 1px solid #e2e8f0;
     }
+    .root.theme-dark .panel[data-panel="capture-result"] img {
+      background: #0f141c;
+      border-color: #334155;
+    }
+    .menu-options { display: flex; flex-direction: column; gap: 8px; }
+    .menu-option {
+      display: flex; align-items: center; justify-content: flex-start; gap: 10px;
+      width: 100%; min-height: 44px; padding: 11px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--tbx-menu-border);
+      background: var(--tbx-menu-bg);
+      color: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer; text-align: left;
+    }
+    .menu-option:hover {
+      border-color: var(--tbx-accent);
+      background: var(--tbx-row-hover);
+    }
+    .root.theme-dark .menu-option {
+      color: #f8fafc;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+    }
+    .root.theme-dark .menu-option:hover {
+      border-color: #5eead4;
+      background: #243041;
+    }
     .capture-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-    .capture-actions .setting-row { flex: 1 1 auto; justify-content: center; font-weight: 600; }
-    .capture-hint { margin: 0; font-size: 11px; color: var(--tbx-panel-muted); line-height: 1.4; }
+    .capture-actions .menu-option { flex: 1 1 auto; justify-content: center; }
+    .capture-hint { margin: 0; font-size: 12px; color: var(--tbx-hint); line-height: 1.45; }
+    .panel[data-panel="shot-menu"] h2,
+    .panel[data-panel="record-menu"] h2,
+    .panel[data-panel="capture-result"] h2 {
+      color: inherit;
+    }
     .panel h2 { margin: 0; font-size: 13px; font-weight: 700; }
     .setting-list { display: flex; flex-direction: column; gap: 6px; }
     .setting-section { margin: 4px 0 0; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--tbx-panel-muted); }
@@ -455,20 +515,24 @@
     <div class="panel" data-panel="shot-menu">
       <h2>Screenshot</h2>
       <p class="capture-hint">Choose what to capture from the simulator.</p>
-      <button type="button" class="setting-row" data-shot="simulator">Simulator screenshot</button>
-      <button type="button" class="setting-row" data-shot="viewport">Visible screen</button>
+      <div class="menu-options">
+        <button type="button" class="menu-option" data-shot="simulator">Simulator screenshot</button>
+        <button type="button" class="menu-option" data-shot="viewport">Visible screen</button>
+      </div>
     </div>
     <div class="panel" data-panel="record-menu">
       <h2>Record</h2>
       <p class="capture-hint">Recording includes the simulator frame and the page inside this tab.</p>
-      <button type="button" class="setting-row" data-record="tab">Start tab recording</button>
+      <div class="menu-options">
+        <button type="button" class="menu-option" data-record="tab">Start tab recording</button>
+      </div>
     </div>
     <div class="panel" data-panel="capture-result">
       <h2 data-capture-title>Screenshot ready</h2>
       <img data-capture-preview alt="Screenshot preview" />
       <div class="capture-actions">
-        <button type="button" class="setting-row" data-capture-download>Download again</button>
-        <button type="button" class="setting-row" data-capture-close>Close</button>
+        <button type="button" class="menu-option" data-capture-download>Download again</button>
+        <button type="button" class="menu-option" data-capture-close>Close</button>
       </div>
     </div>
     <div class="actions">
@@ -482,4 +546,4 @@
       <button type="button" class="round" data-act="settings" aria-label="Settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg></button>
       <button type="button" class="round" data-act="expand" aria-label="Open full simulator"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>
     </div>
-  `,s.append(d);let f=s.querySelector(`.screen`),p=s.querySelector(`iframe`),m=s.querySelector(`.clock`),h=s.querySelector(`.cutout`),g=s.querySelector(`.safari`),_=s.querySelector(`.home`),v=s.querySelector(`.android-nav`),y=s.querySelector(`.blocked`),b=s.querySelector(`.host`),x=s.querySelector(`.chassis`),ee=s.querySelector(`.status`),S=s.querySelector(`.phone-wrap`),C=s.querySelector(`.mockup-img`);b.textContent=e.hostname,p.src=e.url;for(let t of s.querySelectorAll(`.studio-link`))t.href=e.studioUrl;let w=()=>{m.textContent=new Date().toLocaleTimeString(void 0,{hour:`numeric`,minute:`2-digit`})};w();let T=window.setInterval(w,3e4),E={devices:[],favorites:[],recents:[],current:e.deviceId},D=`all`,O=s.querySelector(`.device-search`),k=s.querySelector(`[data-kind-chips]`),A=s.querySelector(`[data-device-list]`),j=s.querySelector(`[data-act="devices"]`),M=s.querySelector(`[data-act="settings"]`),N=s.querySelector(`[data-act="record"]`),P=e=>new Promise(t=>{try{chrome.runtime.sendMessage(e,e=>{t(e&&e.ok!==!1?e.data??e:null)})}catch{t(null)}}),F=e=>{d.classList.toggle(`theme-dark`,e===`dark`),d.classList.toggle(`theme-classic`,e!==`dark`)},I=e=>{d.style.setProperty(`--tbx-fill`,e.finish.fill),d.style.setProperty(`--tbx-ring`,e.finish.ring),d.style.setProperty(`--tbx-button`,e.finish.button),d.setAttribute(`aria-label`,`${e.label} mobile simulator`),p.title=e.label,b.textContent=e.hostname;for(let t of s.querySelectorAll(`.studio-link`))t.href=e.studioUrl},L=()=>{let e=l.ui;for(let t of s.querySelectorAll(`[data-theme-opt]`))t.setAttribute(`aria-pressed`,String(t.dataset.themeOpt===e.theme));let t=s.querySelector(`[data-set="safari"]`),n=s.querySelector(`[data-set="status"]`),r=s.querySelector(`[data-set="nav"]`),i=s.querySelector(`[data-set="mobile-ua"]`),a=s.querySelector(`[data-set="unblock"]`);t&&(t.checked=l.live.showSafari),n&&(n.checked=e.showStatusBar),r&&(r.checked=e.showNavBar),i&&(i.checked=e.mobileUa),a&&(a.checked=e.unblock)},R=e=>{l.ui=e,F(e.theme),L(),U()},z=async()=>{let e=await P({type:`SIMULATOR_OVERLAY_ACTION`,action:`getSettings`,url:l.live.url});e?.theme&&R(e)},B=async e=>{let t=await P({type:`SIMULATOR_OVERLAY_ACTION`,action:`patchSettings`,patch:e,deviceId:l.live.deviceId,url:l.live.url});if(!t?.theme)return;let n=e.mobileUa!==void 0;R(t),n&&(y.style.display=`none`,p.src=l.live.url)},V=s.querySelector(`[data-panel="devices"]`),H=()=>{if(!V.classList.contains(`open`))return;let e=d.getBoundingClientRect(),t=j.getBoundingClientRect(),n=Math.min(window.innerHeight*.78,640);V.style.maxHeight=`${n}px`;let r=t.top-e.top+t.height/2;V.style.setProperty(`--tbx-device-arrow-y`,`${r}px`);let i=Math.min(V.getBoundingClientRect().height||n,n),a=r-i/2;a=Math.max(12,Math.min(a,e.height-i-12)),V.style.top=`${a}px`,V.style.right=`76px`,V.style.transform=`none`},U=()=>{let e=l.live,t=l.rotated?e.height:e.width,n=l.rotated?e.width:e.height,r=Math.max(160,window.innerWidth-108),i=Math.max(160,window.innerHeight-24),a=e.mockupUrl&&e.mockupInsets?e.mockupInsets:null;if(d.classList.toggle(`has-mockup`,!!a),x.classList.toggle(`landscape`,l.rotated),d.classList.toggle(`landscape`,l.rotated),a){let o=l.rotated?{left:a.bottom,top:a.left,right:a.top,bottom:a.right}:a,s=1-o.left-o.right,c=1-o.top-o.bottom,u=t/s,p=n/c,m=Math.min(1,r/u,i/p),h=Math.round(u*m),g=Math.round(p*m);S.style.width=`${h}px`,S.style.height=`${g}px`,f.style.width=`${s*100}%`,f.style.height=`${c*100}%`,f.style.left=`${o.left*100}%`,f.style.top=`${o.top*100}%`,C.hidden=!1,C.src=e.mockupUrl??``,d.style.setProperty(`--tbx-mockup-w`,`${h}px`),d.style.setProperty(`--tbx-mockup-h`,`${g}px`)}else{let e=Math.min(1,r/(t+20),i/(n+20));S.style.width=``,S.style.height=``,f.style.left=``,f.style.top=``,f.style.width=`${Math.round(t*e)}px`,f.style.height=`${Math.round(n*e)}px`,C.hidden=!0,C.removeAttribute(`src`)}let o=e.notch===`punch-hole`?`punch`:e.notch;h.className=!a&&e.notch!==`none`?`cutout ${o}`:`cutout`,g.hidden=!e.showSafari||l.rotated,_.hidden=!l.ui.showNavBar||e.navBar!==`home-indicator`,v.hidden=!l.ui.showNavBar||e.navBar!==`android`||l.rotated,ee.style.display=!l.ui.showStatusBar||e.statusBar===`none`?`none`:``,L(),requestAnimationFrame(()=>H())},W={phone:`Phones`,tablet:`Tablets`,laptop:`Laptops`,desktop:`Desktops`,watch:`Watch`,special:`Special`},G=[`phone`,`tablet`,`laptop`,`desktop`,`watch`,`special`],K=(e,t,n,r)=>D===`favorites`&&!n.has(e.id)||D===`recents`&&!r.has(e.id)||D!==`all`&&D!==`favorites`&&D!==`recents`&&e.kind!==D?!1:!t||`${e.label} ${e.id} ${e.kind}`.toLowerCase().includes(t),q=e=>{let t=document.createElement(`button`);return t.type=`button`,t.className=`device-row`,t.dataset.device=e.id,e.id===l.live.deviceId&&t.setAttribute(`aria-current`,`true`),t.innerHTML=`<span>${n(e.label)}</span><small>${e.width}×${e.height}</small>`,t},J=()=>{let e=O.value.trim().toLowerCase(),t=new Set(E.favorites),n=new Set(E.recents),r=E.devices.filter(r=>K(r,e,t,n)),i=[],a=(e,t)=>{if(!t.length)return;let n=document.createElement(`p`);n.className=`device-section`,n.textContent=e,i.push(n);for(let e of t)i.push(q(e))};if(D===`all`&&!e){a(`Favorites`,E.devices.filter(e=>t.has(e.id))),a(`Recent`,E.recents.map(e=>E.devices.find(t=>t.id===e)).filter(e=>!!e));for(let e of G){let t=E.devices.filter(t=>t.kind===e);t.length&&a(W[e]??e,t)}}else for(let e of r)i.push(q(e));if(!i.length){let t=document.createElement(`p`);t.className=`capture-hint`,t.style.padding=`8px 6px`,t.textContent=e?`No devices match your search.`:`No devices in this category.`,i.push(t)}A.replaceChildren(...i),requestAnimationFrame(()=>H()),k.replaceChildren(...[{id:`all`,label:`All`},{id:`favorites`,label:`Favorites`},{id:`recents`,label:`Recents`},{id:`phone`,label:`Phones`},{id:`tablet`,label:`Tablets`},{id:`laptop`,label:`Laptops`},{id:`desktop`,label:`Desktops`},{id:`watch`,label:`Watch`},{id:`special`,label:`Special`}].map(e=>{let t=document.createElement(`button`);return t.type=`button`,t.className=`chip`,t.dataset.kind=e.id,t.textContent=e.label,t.setAttribute(`aria-pressed`,String(D===e.id)),t}))},Y=s.querySelector(`[data-capture-preview]`),te=s.querySelector(`[data-capture-title]`),X=(e,t=!1)=>{l.panel=t?e:l.panel===e?``:e;for(let e of s.querySelectorAll(`[data-panel]`))e.classList.toggle(`open`,e.getAttribute(`data-panel`)===l.panel);j.setAttribute(`aria-pressed`,String(l.panel===`devices`)),M.setAttribute(`aria-pressed`,String(l.panel===`settings`)),U(),l.panel===`devices`?(ie(),requestAnimationFrame(()=>H())):l.panel===`settings`&&z()},ne=(e,t,n)=>{l.lastCaptureUrl=e,l.lastCaptureName=t,Y.src=e,te.textContent=n===`simulator`?`Simulator screenshot ready`:`Screen capture ready`,X(`capture-result`,!0)},re=async e=>{X(``);let t=await P({type:`SIMULATOR_OVERLAY_ACTION`,action:`screenshot`,captureMode:e,url:l.live.url});if(t?.ok&&t.dataUrl&&t.filename){ne(t.dataUrl,t.filename,t.kind??e);return}X(`shot-menu`,!0)},ie=async()=>{let e=await P({type:`SIMULATOR_OVERLAY_ACTION`,action:`listDevices`});e?.devices&&(E=e,J())};o.__tbxSimApply=e=>{l.live=e,l.ui=e.ui,l.rotated=!1,F(e.ui.theme),I(e),p.getAttribute(`src`)!==e.url&&(p.src=e.url),U(),l.panel===`devices`&&J()},I(e),L(),U(),p.addEventListener(`load`,()=>{try{let e=p.contentWindow?.location.href??``;(e.startsWith(`chrome-error:`)||e.includes(`chromewebdata`))&&(y.style.display=`flex`)}catch{}});let Z=()=>U();window.addEventListener(`resize`,Z);let Q=e=>{if(e.key===`Escape`){if(e.preventDefault(),l.panel){X(``);return}$()}},$=()=>{P({type:`SIMULATOR_OVERLAY_ACTION`,action:`closed`}),window.clearInterval(T),window.removeEventListener(`resize`,Z),document.removeEventListener(`keydown`,Q,!0),document.documentElement.style.overflow=c,o.remove()};return o.__tbxSimDispose=$,document.addEventListener(`keydown`,Q,!0),s.querySelector(`[data-act="close"]`)?.addEventListener(`click`,()=>$()),s.querySelector(`[data-act="rotate"]`)?.addEventListener(`click`,()=>{l.rotated=!l.rotated,U()}),s.querySelector(`[data-act="reload"]`)?.addEventListener(`click`,()=>{y.style.display=`none`,p.src=l.live.url}),j.addEventListener(`click`,()=>X(`devices`)),M.addEventListener(`click`,()=>X(`settings`)),O.addEventListener(`input`,()=>J()),k.addEventListener(`click`,e=>{let t=e.target?.closest(`[data-kind]`)?.dataset.kind;t&&(D=t,J())}),A.addEventListener(`click`,e=>{let t=e.target?.closest(`[data-device]`)?.dataset.device;t&&(P({type:`SIMULATOR_OVERLAY_ACTION`,action:`setDevice`,deviceId:t,url:l.live.url}),X(``))}),s.querySelector(`[data-panel="settings"]`)?.addEventListener(`click`,e=>{let t=e.target?.closest(`[data-theme-opt]`);(t?.dataset.themeOpt===`classic`||t?.dataset.themeOpt===`dark`)&&B({theme:t.dataset.themeOpt})}),s.querySelector(`[data-panel="settings"]`)?.addEventListener(`change`,e=>{let t=e.target;if(t.tagName!==`INPUT`||!t.dataset.set)return;let n=t.dataset.set;if(n===`safari`){l.live={...l.live,showSafari:t.checked},U();return}if(n===`status`){B({showStatusBar:t.checked});return}if(n===`nav`){B({showNavBar:t.checked});return}if(n===`mobile-ua`){B({mobileUa:t.checked});return}n===`unblock`&&B({unblock:t.checked})}),s.querySelector(`[data-act="screenshot"]`)?.addEventListener(`click`,()=>X(`shot-menu`,!0)),s.querySelector(`[data-panel="shot-menu"]`)?.addEventListener(`click`,e=>{let t=e.target?.closest(`[data-shot]`)?.dataset.shot;(t===`simulator`||t===`viewport`)&&re(t)}),N.addEventListener(`click`,()=>{if(N.getAttribute(`aria-pressed`)===`true`){P({type:`RECORDER_STOP`}),N.setAttribute(`aria-pressed`,`false`);return}X(`record-menu`,!0)}),s.querySelector(`[data-panel="record-menu"]`)?.addEventListener(`click`,e=>{e.target?.closest(`[data-record]`)?.dataset.record===`tab`&&(X(``),P({type:`SIMULATOR_OVERLAY_ACTION`,action:`record`,url:l.live.url}),N.setAttribute(`aria-pressed`,`true`))}),s.querySelector(`[data-capture-download]`)?.addEventListener(`click`,()=>{if(!l.lastCaptureUrl)return;let e=document.createElement(`a`);e.href=l.lastCaptureUrl,e.download=l.lastCaptureName||`simulator.png`,e.click()}),s.querySelector(`[data-capture-close]`)?.addEventListener(`click`,()=>X(``)),s.querySelector(`[data-act="expand"]`)?.addEventListener(`click`,()=>{P({type:`SIMULATOR_OVERLAY_ACTION`,action:`expand`,url:l.live.url,deviceId:l.live.deviceId})}),s.querySelector(`[data-act="compare"]`)?.addEventListener(`click`,()=>{P({type:`SIMULATOR_OVERLAY_ACTION`,action:`compare`,url:l.live.url,deviceId:l.live.deviceId})}),document.documentElement.append(o),U(),s.querySelector(`[data-act="devices"]`)?.focus({preventScroll:!0}),!0}e.mountSimulatorOverlay=t})(this.__TBX_SIM_MOUNT_BUNDLE=this.__TBX_SIM_MOUNT_BUNDLE||{}),globalThis.__TBX_MOUNT_SIMULATOR__=globalThis.__TBX_SIM_MOUNT_BUNDLE?.mountSimulatorOverlay;
+  `,s.append(d);let f=s.querySelector(`.screen`),p=s.querySelector(`iframe`),m=s.querySelector(`.clock`),h=s.querySelector(`.cutout`),g=s.querySelector(`.safari`),ee=s.querySelector(`.home`),te=s.querySelector(`.android-nav`),_=s.querySelector(`.blocked`),v=s.querySelector(`.host`),y=s.querySelector(`.chassis`),b=s.querySelector(`.status`),x=s.querySelector(`.phone-wrap`),S=s.querySelector(`.mockup-img`);v.textContent=e.hostname,p.src=e.url;for(let t of s.querySelectorAll(`.studio-link`))t.href=e.studioUrl;let C=()=>{m.textContent=new Date().toLocaleTimeString(void 0,{hour:`numeric`,minute:`2-digit`})};C();let ne=window.setInterval(C,3e4),w={devices:[],favorites:[],recents:[],current:e.deviceId},T=`all`,E=s.querySelector(`.device-search`),D=s.querySelector(`[data-kind-chips]`),O=s.querySelector(`[data-device-list]`),k=s.querySelector(`[data-act="devices"]`),A=s.querySelector(`[data-act="screenshot"]`),j=s.querySelector(`[data-act="settings"]`),M=s.querySelector(`[data-act="record"]`),N=s.querySelector(`[data-panel="shot-menu"]`),P=s.querySelector(`[data-panel="record-menu"]`),F=s.querySelector(`[data-panel="capture-result"]`),I=e=>new Promise(t=>{try{chrome.runtime.sendMessage(e,e=>{t(e&&e.ok!==!1?e.data??e:null)})}catch{t(null)}}),L=e=>{d.classList.toggle(`theme-dark`,e===`dark`),d.classList.toggle(`theme-classic`,e!==`dark`)},R=e=>{d.style.setProperty(`--tbx-fill`,e.finish.fill),d.style.setProperty(`--tbx-ring`,e.finish.ring),d.style.setProperty(`--tbx-button`,e.finish.button),d.setAttribute(`aria-label`,`${e.label} mobile simulator`),p.title=e.label,v.textContent=e.hostname;for(let t of s.querySelectorAll(`.studio-link`))t.href=e.studioUrl},z=()=>{let e=l.ui;for(let t of s.querySelectorAll(`[data-theme-opt]`))t.setAttribute(`aria-pressed`,String(t.dataset.themeOpt===e.theme));let t=s.querySelector(`[data-set="safari"]`),n=s.querySelector(`[data-set="status"]`),r=s.querySelector(`[data-set="nav"]`),i=s.querySelector(`[data-set="mobile-ua"]`),a=s.querySelector(`[data-set="unblock"]`);t&&(t.checked=l.live.showSafari),n&&(n.checked=e.showStatusBar),r&&(r.checked=e.showNavBar),i&&(i.checked=e.mobileUa),a&&(a.checked=e.unblock)},B=e=>{l.ui=e,L(e.theme),z(),q()},V=async()=>{let e=await I({type:`SIMULATOR_OVERLAY_ACTION`,action:`getSettings`,url:l.live.url});e?.theme&&B(e)},H=async e=>{let t=await I({type:`SIMULATOR_OVERLAY_ACTION`,action:`patchSettings`,patch:e,deviceId:l.live.deviceId,url:l.live.url});if(!t?.theme)return;let n=e.mobileUa!==void 0;B(t),n&&(_.style.display=`none`,p.src=l.live.url)},U=s.querySelector(`[data-panel="devices"]`),W=(e,t,n,r)=>{if(!e.classList.contains(`open`))return;let i=d.getBoundingClientRect(),a=t.getBoundingClientRect();e.style.maxHeight=`${r}px`;let o=a.top-i.top+a.height/2;e.style.setProperty(n,`${o}px`);let s=Math.min(e.getBoundingClientRect().height||r,r),c=o-s/2;c=Math.max(12,Math.min(c,i.height-s-12)),e.style.top=`${c}px`,e.style.right=`76px`,e.style.transform=`none`},G=()=>{W(U,k,`--tbx-device-arrow-y`,Math.min(window.innerHeight*.78,640))},K=()=>{let e=Math.min(window.innerHeight*.72,520);l.panel===`shot-menu`&&W(N,A,`--tbx-rail-arrow-y`,e),l.panel===`record-menu`&&W(P,M,`--tbx-rail-arrow-y`,e),l.panel===`capture-result`&&W(F,A,`--tbx-rail-arrow-y`,e)},q=()=>{let e=l.live,t=l.rotated?e.height:e.width,n=l.rotated?e.width:e.height,r=Math.max(160,window.innerWidth-108),i=Math.max(160,window.innerHeight-24),a=e.mockupUrl&&e.mockupInsets?e.mockupInsets:null;if(d.classList.toggle(`has-mockup`,!!a),y.classList.toggle(`landscape`,l.rotated),d.classList.toggle(`landscape`,l.rotated),a){let o=l.rotated?{left:a.bottom,top:a.left,right:a.top,bottom:a.right}:a,s=1-o.left-o.right,c=1-o.top-o.bottom,u=t/s,p=n/c,m=Math.min(1,r/u,i/p),h=Math.round(u*m),g=Math.round(p*m);x.style.width=`${h}px`,x.style.height=`${g}px`,f.style.width=`${s*100}%`,f.style.height=`${c*100}%`,f.style.left=`${o.left*100}%`,f.style.top=`${o.top*100}%`,S.hidden=!1,S.src=e.mockupUrl??``,d.style.setProperty(`--tbx-mockup-w`,`${h}px`),d.style.setProperty(`--tbx-mockup-h`,`${g}px`)}else{let e=Math.min(1,r/(t+20),i/(n+20));x.style.width=``,x.style.height=``,f.style.left=``,f.style.top=``,f.style.width=`${Math.round(t*e)}px`,f.style.height=`${Math.round(n*e)}px`,S.hidden=!0,S.removeAttribute(`src`)}let o=e.notch===`punch-hole`?`punch`:e.notch;h.className=!a&&e.notch!==`none`?`cutout ${o}`:`cutout`,g.hidden=!e.showSafari||l.rotated,ee.hidden=!l.ui.showNavBar||e.navBar!==`home-indicator`,te.hidden=!l.ui.showNavBar||e.navBar!==`android`||l.rotated,b.style.display=!l.ui.showStatusBar||e.statusBar===`none`?`none`:``,z(),requestAnimationFrame(()=>{G(),K()})},re={phone:`Phones`,tablet:`Tablets`,laptop:`Laptops`,desktop:`Desktops`,watch:`Watch`,special:`Special`},ie=[`phone`,`tablet`,`laptop`,`desktop`,`watch`,`special`],ae=(e,t,n,r)=>T===`favorites`&&!n.has(e.id)||T===`recents`&&!r.has(e.id)||T!==`all`&&T!==`favorites`&&T!==`recents`&&e.kind!==T?!1:!t||`${e.label} ${e.id} ${e.kind}`.toLowerCase().includes(t),J=e=>{let t=document.createElement(`button`);return t.type=`button`,t.className=`device-row`,t.dataset.device=e.id,e.id===l.live.deviceId&&t.setAttribute(`aria-current`,`true`),t.innerHTML=`<span>${n(e.label)}</span><small>${e.width}×${e.height}</small>`,t},Y=()=>{let e=E.value.trim().toLowerCase(),t=new Set(w.favorites),n=new Set(w.recents),r=w.devices.filter(r=>ae(r,e,t,n)),i=[],a=(e,t)=>{if(!t.length)return;let n=document.createElement(`p`);n.className=`device-section`,n.textContent=e,i.push(n);for(let e of t)i.push(J(e))};if(T===`all`&&!e){a(`Favorites`,w.devices.filter(e=>t.has(e.id))),a(`Recent`,w.recents.map(e=>w.devices.find(t=>t.id===e)).filter(e=>!!e));for(let e of ie){let t=w.devices.filter(t=>t.kind===e);t.length&&a(re[e]??e,t)}}else for(let e of r)i.push(J(e));if(!i.length){let t=document.createElement(`p`);t.className=`capture-hint`,t.style.padding=`8px 6px`,t.textContent=e?`No devices match your search.`:`No devices in this category.`,i.push(t)}O.replaceChildren(...i),requestAnimationFrame(()=>G()),D.replaceChildren(...[{id:`all`,label:`All`},{id:`favorites`,label:`Favorites`},{id:`recents`,label:`Recents`},{id:`phone`,label:`Phones`},{id:`tablet`,label:`Tablets`},{id:`laptop`,label:`Laptops`},{id:`desktop`,label:`Desktops`},{id:`watch`,label:`Watch`},{id:`special`,label:`Special`}].map(e=>{let t=document.createElement(`button`);return t.type=`button`,t.className=`chip`,t.dataset.kind=e.id,t.textContent=e.label,t.setAttribute(`aria-pressed`,String(T===e.id)),t}))},oe=s.querySelector(`[data-capture-preview]`),se=s.querySelector(`[data-capture-title]`),X=(e,t=!1)=>{l.panel=t?e:l.panel===e?``:e;for(let e of s.querySelectorAll(`[data-panel]`))e.classList.toggle(`open`,e.getAttribute(`data-panel`)===l.panel);k.setAttribute(`aria-pressed`,String(l.panel===`devices`)),j.setAttribute(`aria-pressed`,String(l.panel===`settings`)),q(),l.panel===`devices`?(ue(),requestAnimationFrame(()=>G())):l.panel===`settings`?V():(l.panel===`shot-menu`||l.panel===`record-menu`||l.panel===`capture-result`)&&requestAnimationFrame(()=>K()),A.setAttribute(`aria-pressed`,String(l.panel===`shot-menu`||l.panel===`capture-result`))},ce=(e,t,n)=>{l.lastCaptureUrl=e,l.lastCaptureName=t,oe.src=e,se.textContent=n===`simulator`?`Simulator screenshot ready`:`Screen capture ready`,X(`capture-result`,!0)},le=async e=>{X(``);let t=await I({type:`SIMULATOR_OVERLAY_ACTION`,action:`screenshot`,captureMode:e,url:l.live.url});if(t?.ok&&t.dataUrl&&t.filename){ce(t.dataUrl,t.filename,t.kind??e);return}X(`shot-menu`,!0)},ue=async()=>{let e=await I({type:`SIMULATOR_OVERLAY_ACTION`,action:`listDevices`});e?.devices&&(w=e,Y())};o.__tbxSimApply=e=>{l.live=e,l.ui=e.ui,l.rotated=!1,L(e.ui.theme),R(e),p.getAttribute(`src`)!==e.url&&(p.src=e.url),q(),l.panel===`devices`&&Y()},R(e),z(),q(),p.addEventListener(`load`,()=>{try{let e=p.contentWindow?.location.href??``;(e.startsWith(`chrome-error:`)||e.includes(`chromewebdata`))&&(_.style.display=`flex`)}catch{}});let Z=()=>q();window.addEventListener(`resize`,Z);let Q=e=>{if(e.key===`Escape`){if(e.preventDefault(),l.panel){X(``);return}$()}},$=()=>{I({type:`SIMULATOR_OVERLAY_ACTION`,action:`closed`}),window.clearInterval(ne),window.removeEventListener(`resize`,Z),document.removeEventListener(`keydown`,Q,!0),document.documentElement.style.overflow=c,o.remove()};return o.__tbxSimDispose=$,document.addEventListener(`keydown`,Q,!0),s.querySelector(`[data-act="close"]`)?.addEventListener(`click`,()=>$()),s.querySelector(`[data-act="rotate"]`)?.addEventListener(`click`,()=>{l.rotated=!l.rotated,q()}),s.querySelector(`[data-act="reload"]`)?.addEventListener(`click`,()=>{_.style.display=`none`,p.src=l.live.url}),k.addEventListener(`click`,()=>X(`devices`)),j.addEventListener(`click`,()=>X(`settings`)),E.addEventListener(`input`,()=>Y()),D.addEventListener(`click`,e=>{let t=e.target?.closest(`[data-kind]`)?.dataset.kind;t&&(T=t,Y())}),O.addEventListener(`click`,e=>{let t=e.target?.closest(`[data-device]`)?.dataset.device;t&&(I({type:`SIMULATOR_OVERLAY_ACTION`,action:`setDevice`,deviceId:t,url:l.live.url}),X(``))}),s.querySelector(`[data-panel="settings"]`)?.addEventListener(`click`,e=>{let t=e.target?.closest(`[data-theme-opt]`);(t?.dataset.themeOpt===`classic`||t?.dataset.themeOpt===`dark`)&&H({theme:t.dataset.themeOpt})}),s.querySelector(`[data-panel="settings"]`)?.addEventListener(`change`,e=>{let t=e.target;if(t.tagName!==`INPUT`||!t.dataset.set)return;let n=t.dataset.set;if(n===`safari`){l.live={...l.live,showSafari:t.checked},q();return}if(n===`status`){H({showStatusBar:t.checked});return}if(n===`nav`){H({showNavBar:t.checked});return}if(n===`mobile-ua`){H({mobileUa:t.checked});return}n===`unblock`&&H({unblock:t.checked})}),s.querySelector(`[data-act="screenshot"]`)?.addEventListener(`click`,()=>X(`shot-menu`,!0)),s.querySelector(`[data-panel="shot-menu"]`)?.addEventListener(`click`,e=>{let t=e.target?.closest(`[data-shot]`)?.dataset.shot;(t===`simulator`||t===`viewport`)&&le(t)}),M.addEventListener(`click`,()=>{if(M.getAttribute(`aria-pressed`)===`true`){I({type:`RECORDER_STOP`}),M.setAttribute(`aria-pressed`,`false`);return}X(`record-menu`,!0)}),s.querySelector(`[data-panel="record-menu"]`)?.addEventListener(`click`,e=>{e.target?.closest(`[data-record]`)?.dataset.record===`tab`&&(X(``),I({type:`SIMULATOR_OVERLAY_ACTION`,action:`record`,url:l.live.url}),M.setAttribute(`aria-pressed`,`true`))}),s.querySelector(`[data-capture-download]`)?.addEventListener(`click`,()=>{if(!l.lastCaptureUrl)return;let e=document.createElement(`a`);e.href=l.lastCaptureUrl,e.download=l.lastCaptureName||`simulator.png`,e.click()}),s.querySelector(`[data-capture-close]`)?.addEventListener(`click`,()=>X(``)),s.querySelector(`[data-act="expand"]`)?.addEventListener(`click`,()=>{I({type:`SIMULATOR_OVERLAY_ACTION`,action:`expand`,url:l.live.url,deviceId:l.live.deviceId})}),s.querySelector(`[data-act="compare"]`)?.addEventListener(`click`,()=>{I({type:`SIMULATOR_OVERLAY_ACTION`,action:`compare`,url:l.live.url,deviceId:l.live.deviceId})}),document.documentElement.append(o),q(),s.querySelector(`[data-act="devices"]`)?.focus({preventScroll:!0}),!0}e.mountSimulatorOverlay=t})(this.__TBX_SIM_MOUNT_BUNDLE=this.__TBX_SIM_MOUNT_BUNDLE||{}),globalThis.__TBX_MOUNT_SIMULATOR__=globalThis.__TBX_SIM_MOUNT_BUNDLE?.mountSimulatorOverlay;

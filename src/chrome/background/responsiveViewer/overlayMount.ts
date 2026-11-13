@@ -100,6 +100,9 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       --tbx-row-hover: #f1f5f9;
       --tbx-input-bg: #f8fafc;
       --tbx-input-border: #cbd5e1;
+      --tbx-hint: #64748b;
+      --tbx-menu-bg: #f8fafc;
+      --tbx-menu-border: #cbd5e1;
     }
     .root.theme-dark {
       background: #0b0f14;
@@ -110,7 +113,11 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       --tbx-row-hover: #1e2733;
       --tbx-input-bg: #0f141c;
       --tbx-input-border: #334155;
+      --tbx-hint: #cbd5e1;
+      --tbx-menu-bg: #1e2733;
+      --tbx-menu-border: #3d4f63;
     }
+    .root.theme-dark .panel { box-shadow: 0 16px 48px rgba(0,0,0,0.5); }
     .stage {
       display: flex;
       flex-direction: row;
@@ -342,18 +349,13 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       color: var(--tbx-panel-muted);
     }
     .device-section:first-child { margin-top: 2px; }
-    .panel[data-panel="settings"],
-    .panel[data-panel="shot-menu"],
-    .panel[data-panel="record-menu"],
-    .panel[data-panel="capture-result"] {
+    .panel[data-panel="settings"] {
       right: 76px; top: 50%; transform: translateY(-50%);
-      width: 260px; max-height: min(70vh, 480px);
+      width: min(292px, 42vw);
+      max-height: min(70vh, 480px);
       padding: 14px; border-radius: 14px;
       border: 1px solid var(--tbx-panel-border);
       box-shadow: 0 16px 40px rgba(15,23,42,0.12);
-    }
-    .panel[data-panel="settings"] {
-      width: min(292px, 42vw);
       gap: 12px;
     }
     .panel[data-panel="settings"]::after {
@@ -368,16 +370,74 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       border-right: 1px solid var(--tbx-panel-border);
       border-top: 1px solid var(--tbx-panel-border);
     }
+    .panel[data-panel="shot-menu"],
+    .panel[data-panel="record-menu"],
     .panel[data-panel="capture-result"] {
-      width: min(340px, 42vw);
+      right: 76px;
+      width: min(292px, 42vw);
+      max-height: min(72vh, 520px);
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid var(--tbx-panel-border);
+      box-shadow: 0 16px 40px rgba(15,23,42,0.12);
+      transform: none;
+      gap: 10px;
+    }
+    .panel[data-panel="shot-menu"]::after,
+    .panel[data-panel="record-menu"]::after,
+    .panel[data-panel="capture-result"]::after {
+      content: '';
+      position: absolute;
+      right: -6px;
+      top: var(--tbx-rail-arrow-y, 50%);
+      width: 10px;
+      height: 10px;
+      transform: translateY(-50%) rotate(45deg);
+      background: var(--tbx-panel-bg);
+      border-right: 1px solid var(--tbx-panel-border);
+      border-top: 1px solid var(--tbx-panel-border);
+    }
+    .panel[data-panel="capture-result"] {
+      width: min(340px, 44vw);
     }
     .panel[data-panel="capture-result"] img {
       width: 100%; max-height: 46vh; object-fit: contain;
       border-radius: 10px; background: #f1f5f9; border: 1px solid #e2e8f0;
     }
+    .root.theme-dark .panel[data-panel="capture-result"] img {
+      background: #0f141c;
+      border-color: #334155;
+    }
+    .menu-options { display: flex; flex-direction: column; gap: 8px; }
+    .menu-option {
+      display: flex; align-items: center; justify-content: flex-start; gap: 10px;
+      width: 100%; min-height: 44px; padding: 11px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--tbx-menu-border);
+      background: var(--tbx-menu-bg);
+      color: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer; text-align: left;
+    }
+    .menu-option:hover {
+      border-color: var(--tbx-accent);
+      background: var(--tbx-row-hover);
+    }
+    .root.theme-dark .menu-option {
+      color: #f8fafc;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+    }
+    .root.theme-dark .menu-option:hover {
+      border-color: #5eead4;
+      background: #243041;
+    }
     .capture-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-    .capture-actions .setting-row { flex: 1 1 auto; justify-content: center; font-weight: 600; }
-    .capture-hint { margin: 0; font-size: 11px; color: var(--tbx-panel-muted); line-height: 1.4; }
+    .capture-actions .menu-option { flex: 1 1 auto; justify-content: center; }
+    .capture-hint { margin: 0; font-size: 12px; color: var(--tbx-hint); line-height: 1.45; }
+    .panel[data-panel="shot-menu"] h2,
+    .panel[data-panel="record-menu"] h2,
+    .panel[data-panel="capture-result"] h2 {
+      color: inherit;
+    }
     .panel h2 { margin: 0; font-size: 13px; font-weight: 700; }
     .setting-list { display: flex; flex-direction: column; gap: 6px; }
     .setting-section { margin: 4px 0 0; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--tbx-panel-muted); }
@@ -549,20 +609,24 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     <div class="panel" data-panel="shot-menu">
       <h2>Screenshot</h2>
       <p class="capture-hint">Choose what to capture from the simulator.</p>
-      <button type="button" class="setting-row" data-shot="simulator">Simulator screenshot</button>
-      <button type="button" class="setting-row" data-shot="viewport">Visible screen</button>
+      <div class="menu-options">
+        <button type="button" class="menu-option" data-shot="simulator">Simulator screenshot</button>
+        <button type="button" class="menu-option" data-shot="viewport">Visible screen</button>
+      </div>
     </div>
     <div class="panel" data-panel="record-menu">
       <h2>Record</h2>
       <p class="capture-hint">Recording includes the simulator frame and the page inside this tab.</p>
-      <button type="button" class="setting-row" data-record="tab">Start tab recording</button>
+      <div class="menu-options">
+        <button type="button" class="menu-option" data-record="tab">Start tab recording</button>
+      </div>
     </div>
     <div class="panel" data-panel="capture-result">
       <h2 data-capture-title>Screenshot ready</h2>
       <img data-capture-preview alt="Screenshot preview" />
       <div class="capture-actions">
-        <button type="button" class="setting-row" data-capture-download>Download again</button>
-        <button type="button" class="setting-row" data-capture-close>Close</button>
+        <button type="button" class="menu-option" data-capture-download>Download again</button>
+        <button type="button" class="menu-option" data-capture-close>Close</button>
       </div>
     </div>
     <div class="actions">
@@ -613,8 +677,12 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const chipRow = shadow.querySelector('[data-kind-chips]') as HTMLElement
   const deviceList = shadow.querySelector('[data-device-list]') as HTMLElement
   const deviceBtn = shadow.querySelector('[data-act="devices"]') as HTMLButtonElement
+  const screenshotBtn = shadow.querySelector('[data-act="screenshot"]') as HTMLButtonElement
   const settingsBtn = shadow.querySelector('[data-act="settings"]') as HTMLButtonElement
   const recordBtn = shadow.querySelector('[data-act="record"]') as HTMLButtonElement
+  const shotPanel = shadow.querySelector('[data-panel="shot-menu"]') as HTMLElement
+  const recordPanel = shadow.querySelector('[data-panel="record-menu"]') as HTMLElement
+  const capturePanel = shadow.querySelector('[data-panel="capture-result"]') as HTMLElement
 
   const ask = <T,>(payload: Record<string, unknown>) =>
     new Promise<T | null>((resolve) => {
@@ -699,20 +767,35 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
 
   const devicesPanel = shadow.querySelector('[data-panel="devices"]') as HTMLElement
 
-  const positionDevicesPanel = () => {
-    if (!devicesPanel.classList.contains('open')) return
+  const positionRailPanel = (panel: HTMLElement, btn: HTMLElement, arrowVar: string, maxHeight: number) => {
+    if (!panel.classList.contains('open')) return
     const rootRect = root.getBoundingClientRect()
-    const btnRect = deviceBtn.getBoundingClientRect()
-    const maxH = Math.min(window.innerHeight * 0.78, 640)
-    devicesPanel.style.maxHeight = `${maxH}px`
+    const btnRect = btn.getBoundingClientRect()
+    panel.style.maxHeight = `${maxHeight}px`
     const arrowY = btnRect.top - rootRect.top + btnRect.height / 2
-    devicesPanel.style.setProperty('--tbx-device-arrow-y', `${arrowY}px`)
-    const measured = Math.min(devicesPanel.getBoundingClientRect().height || maxH, maxH)
+    panel.style.setProperty(arrowVar, `${arrowY}px`)
+    const measured = Math.min(panel.getBoundingClientRect().height || maxHeight, maxHeight)
     let top = arrowY - measured / 2
     top = Math.max(12, Math.min(top, rootRect.height - measured - 12))
-    devicesPanel.style.top = `${top}px`
-    devicesPanel.style.right = '76px'
-    devicesPanel.style.transform = 'none'
+    panel.style.top = `${top}px`
+    panel.style.right = '76px'
+    panel.style.transform = 'none'
+  }
+
+  const positionDevicesPanel = () => {
+    positionRailPanel(
+      devicesPanel,
+      deviceBtn,
+      '--tbx-device-arrow-y',
+      Math.min(window.innerHeight * 0.78, 640),
+    )
+  }
+
+  const positionCapturePanels = () => {
+    const capMax = Math.min(window.innerHeight * 0.72, 520)
+    if (state.panel === 'shot-menu') positionRailPanel(shotPanel, screenshotBtn, '--tbx-rail-arrow-y', capMax)
+    if (state.panel === 'record-menu') positionRailPanel(recordPanel, recordBtn, '--tbx-rail-arrow-y', capMax)
+    if (state.panel === 'capture-result') positionRailPanel(capturePanel, screenshotBtn, '--tbx-rail-arrow-y', capMax)
   }
 
   const layout = () => {
@@ -766,7 +849,10 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     status.style.display =
       !state.ui.showStatusBar || live.statusBar === 'none' ? 'none' : ''
     syncSettingsUi()
-    requestAnimationFrame(() => positionDevicesPanel())
+    requestAnimationFrame(() => {
+      positionDevicesPanel()
+      positionCapturePanels()
+    })
   }
 
   const kindLabels: Record<string, string> = {
@@ -888,7 +974,10 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       requestAnimationFrame(() => positionDevicesPanel())
     } else if (state.panel === 'settings') {
       void loadOverlaySettings()
+    } else if (state.panel === 'shot-menu' || state.panel === 'record-menu' || state.panel === 'capture-result') {
+      requestAnimationFrame(() => positionCapturePanels())
     }
+    screenshotBtn.setAttribute('aria-pressed', String(state.panel === 'shot-menu' || state.panel === 'capture-result'))
   }
 
   const showCaptureResult = (dataUrl: string, filename: string, kind: 'simulator' | 'viewport') => {

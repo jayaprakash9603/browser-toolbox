@@ -255,9 +255,28 @@ describe('mobile simulator studio helpers', () => {
     expect(devicesPanel).toBeTruthy()
     expect(host?.shadowRoot?.querySelector('.stage')?.contains(devicesPanel ?? null)).toBe(false)
     expect(devicesPanel?.querySelector('.device-chips-scroll')).toBeTruthy()
+    expect(host?.shadowRoot?.querySelector('[data-panel="shot-menu"] .menu-option')).toBeTruthy()
     expect(host?.shadowRoot?.querySelector('[data-panel="settings"]')).toBeTruthy()
     expect(host?.shadowRoot?.querySelector('[data-set="mobile-ua"]')).toBeTruthy()
     expect(root.classList.contains('theme-classic')).toBe(true)
+    mountSimulatorOverlay(config)
+    expect(document.getElementById(SIMULATOR_OVERLAY_ID)).toBeNull()
+  })
+
+  it('styles screenshot menu options for dark canvas theme', () => {
+    const config = overlayFixture()
+    expect(
+      mountSimulatorOverlay({
+        ...config,
+        ui: { ...config.ui, theme: 'dark' },
+      }),
+    ).toBe(true)
+    const shadow = document.getElementById(SIMULATOR_OVERLAY_ID)?.shadowRoot
+    const root = shadow?.querySelector('.root') as HTMLElement
+    expect(root?.classList.contains('theme-dark')).toBe(true)
+    const option = shadow?.querySelector('[data-panel="shot-menu"] .menu-option') as HTMLElement
+    expect(option).toBeTruthy()
+    expect(getComputedStyle(option).fontWeight).toBe('600')
     mountSimulatorOverlay(config)
     expect(document.getElementById(SIMULATOR_OVERLAY_ID)).toBeNull()
   })
