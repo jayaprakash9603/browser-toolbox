@@ -191,6 +191,19 @@ describe('mobile simulator studio helpers', () => {
     expect(isSyncMessage({ source: 'other', type: 'scroll' })).toBe(false)
   })
 
+  it('remembers an active overlay per tab until close', async () => {
+    const { markOverlaySession, getOverlaySession, clearOverlaySession } = await import(
+      '@/chrome/background/responsiveViewer/overlaySession'
+    )
+    await markOverlaySession(12, { previewUrl: 'https://example.com/app', deviceId: 'iphone-16-pro' })
+    await expect(getOverlaySession(12)).resolves.toMatchObject({
+      previewUrl: 'https://example.com/app',
+      deviceId: 'iphone-16-pro',
+    })
+    await clearOverlaySession(12)
+    await expect(getOverlaySession(12)).resolves.toBeNull()
+  })
+
   it('can strip frame headers for subframes in an overlay tab', async () => {
     const { setOverlayTabFraming, RV_OVERLAY_TAB_FRAMING_RULE_ID } = await import(
       '@/chrome/background/responsiveViewerFraming'

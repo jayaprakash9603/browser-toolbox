@@ -14,6 +14,7 @@ import { mockupFor, mockupSrc } from '@/tools/design/responsive-viewer/mockups'
 import { simulatorStudioUrl } from '@/tools/design/responsive-viewer/studioUrl'
 
 import { setOverlayTabFraming } from '../responsiveViewerFraming'
+import { clearOverlaySession, markOverlaySession } from './overlaySession'
 import { downloadWithName } from '../downloadNames'
 import { startRecorder } from '../recorder'
 
@@ -128,9 +129,21 @@ export async function openSimulatorOverlay(
       },
       args: [SIMULATOR_OVERLAY_MOUNT_KEY, config],
     })
-    return Boolean(injection?.result)
+    const ok = Boolean(injection?.result)
+    if (ok) {
+      await markOverlaySession(tab.id, {
+        previewUrl: config.url,
+        deviceId: config.deviceId,
+        mobileUa,
+      })
+    } else {
+      await clearOverlaySession(tab.id)
+      await setOverlayTabFraming(tab.id, false)
+    }
+    return ok
   } catch (error) {
     console.warn('[simulator] overlay inject failed', error)
+    await clearOverlaySession(tab.id)
     await setOverlayTabFraming(tab.id, false)
     return false
   }
@@ -196,7 +209,10 @@ export async function handleOverlayAction(
     case 'record':
       return startOverlayRecording(tab)
     case 'closed': {
-      if (tab?.id != null) await setOverlayTabFraming(tab.id, false)
+      if (tab?.id != null) {
+        await setOverlayTabFraming(tab.id, false)
+        await clearOverlaySession(tab.id)
+      }
       return { ok: true }
     }
     case 'compare':

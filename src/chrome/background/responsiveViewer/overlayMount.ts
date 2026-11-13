@@ -5,6 +5,9 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const HOST_ID = 'tbx-simulator-overlay'
   if (window !== window.top) return false
 
+  document.getElementById('tbx-simulator-veil')?.remove()
+  delete document.documentElement.dataset.tbxSimVeil
+
   const escapeHtml = (value: string) =>
     value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char] ?? char)
   const iconClose =

@@ -85,6 +85,7 @@ import { registerResponsiveViewerFraming } from './responsiveViewerFraming'
 import { isSimulatorMenuItem } from './responsiveViewer/ids'
 import { handleSimulatorMenuClick } from './responsiveViewer/menus'
 import { registerSimulatorOverlayMessages } from './responsiveViewer/messages'
+import { registerSimulatorOverlayPersistence } from './responsiveViewer/overlayPersist'
 import { registerResponsiveViewerEmulation } from './responsiveViewer/emulation'
 import { configurePanelAction, openExtensionPanel } from '@/platform/panel'
 
@@ -251,5 +252,6 @@ safeRegister('scriptStudio', registerScriptStudio)
 safeRegister('panelNavigation', registerSidePanelNavigation)
 safeRegister('responsiveViewerFraming', registerResponsiveViewerFraming)
 safeRegister('simulatorOverlay', registerSimulatorOverlayMessages)
+safeRegister('simulatorOverlayPersist', registerSimulatorOverlayPersistence)
 safeRegister('responsiveViewerEmulation', registerResponsiveViewerEmulation)
 startMessageRouter()
