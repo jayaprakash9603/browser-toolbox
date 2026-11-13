@@ -262,6 +262,9 @@ describe('mobile simulator studio helpers', () => {
     expect(host?.shadowRoot?.querySelector('[data-panel="shot-menu"] .menu-option')).toBeTruthy()
     expect(host?.shadowRoot?.querySelector('[data-panel="settings"]')).toBeTruthy()
     expect(host?.shadowRoot?.querySelector('[data-set="mobile-ua"]')).toBeTruthy()
+    const settingsIcon = host?.shadowRoot?.querySelector('[data-act="settings"] svg path')?.getAttribute('d') ?? ''
+    expect(settingsIcon).toContain('12.22 2')
+    expect(settingsIcon).not.toContain('M12 1v2')
     expect(root.classList.contains('theme-classic')).toBe(true)
     mountSimulatorOverlay(config)
     expect(document.getElementById(SIMULATOR_OVERLAY_ID)).toBeNull()
@@ -277,11 +280,22 @@ describe('mobile simulator studio helpers', () => {
       configurable: true,
       value: { location: { reload, href: config.url } },
     })
-    const topReload = vi.spyOn(window.location, 'reload').mockImplementation(() => undefined)
     host?.shadowRoot?.querySelector('[data-act="reload"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     expect(reload).toHaveBeenCalledTimes(1)
-    expect(topReload).not.toHaveBeenCalled()
-    topReload.mockRestore()
+    mountSimulatorOverlay(config)
+  })
+
+  it('opens the settings sheet from the pinned gear control', () => {
+    const config = overlayFixture()
+    expect(mountSimulatorOverlay(config)).toBe(true)
+    const shadow = document.getElementById(SIMULATOR_OVERLAY_ID)?.shadowRoot
+    const settingsBtn = shadow?.querySelector('[data-act="settings"]') as HTMLButtonElement
+    expect(settingsBtn?.closest('.actions-primary')).toBeTruthy()
+    settingsBtn?.click()
+    const panel = shadow?.querySelector('[data-panel="settings"]') as HTMLElement
+    expect(panel?.classList.contains('open')).toBe(true)
+    expect(panel?.querySelector('.setting-list')).toBeTruthy()
+    expect(settingsBtn.getAttribute('aria-pressed')).toBe('true')
     mountSimulatorOverlay(config)
   })
 
@@ -386,15 +400,15 @@ describe('mobile simulator studio helpers', () => {
     expect(chrome.tabs.create).toHaveBeenCalledWith({ url: expect.stringContaining('studio=1') })
   })
 
-  it('keeps the current tab when overlay inject fails instead of opening studio', async () => {
+  it('opens studio when overlay inject fails', async () => {
     vi.mocked(chrome.tabs.create).mockClear()
-    vi.mocked(chrome.scripting.executeScript).mockRejectedValueOnce(new Error('Cannot access contents of the page'))
+    vi.mocked(chrome.scripting.executeScript).mockRejectedValueOnce(new Error('Cannot access contents on the page'))
     const result = await openSimulatorForTab(
       { id: 11, url: 'https://example.com/tools' } as chrome.tabs.Tab,
       { url: 'https://example.com/tools', replace: true },
     )
-    expect(chrome.tabs.create).not.toHaveBeenCalled()
-    expect(result.reason).toBe('inject-failed')
+    expect(chrome.tabs.create).toHaveBeenCalledWith({ url: expect.stringContaining('studio=1') })
+    expect(result).toMatchObject({ opened: 'studio', reason: 'inject-failed' })
   })
 
   it('opens the overlay from Compact Viewer messages and reports fallback reasons', async () => {
@@ -430,8 +444,8 @@ describe('mobile simulator studio helpers', () => {
     const command = await openSimulatorForTab({ id: 9, url: 'https://example.com/' } as chrome.tabs.Tab, {
       url: 'https://other.example/',
     })
-    expect(command).toMatchObject({ opened: 'overlay', reason: 'cross-origin' })
-    expect(chrome.tabs.create).not.toHaveBeenCalled()
+    expect(command).toMatchObject({ opened: 'studio', reason: 'cross-origin' })
+    expect(chrome.tabs.create).toHaveBeenCalledWith({ url: expect.stringContaining('studio=1') })
   })
 
   it('lists catalog devices and opens comparison studio from overlay actions', async () => {

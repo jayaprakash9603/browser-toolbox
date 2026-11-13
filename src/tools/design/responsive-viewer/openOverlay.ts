@@ -6,14 +6,14 @@ export async function openSimulatorOverlayFromUi(opts: { url?: string; deviceId?
   const tab = await getActiveBrowserTab().catch(() => undefined)
   const target = opts.url ?? tab?.url
   if (target) await requestSiteAccess(target)
-  const result = await sendMessage<{ opened: 'overlay' | 'studio' }>({
+  const result = await sendMessage<{ opened: 'overlay' | 'studio'; reason?: string }>({
     type: 'SIMULATOR_OPEN_OVERLAY',
     url: target,
     deviceId: opts.deviceId,
     tabId: tab?.id,
   })
   const opened = result?.opened ?? 'studio'
-  if (opened === 'overlay') {
+  if (opened === 'overlay' && !result?.reason) {
     try {
       window.close()
     } catch {

@@ -61,7 +61,10 @@ export async function openSimulatorForTab(
   const overlay = await tryOpenOverlay(target, url, device, opts.replace ?? true)
   if (overlay.ok) return { opened: 'overlay' }
   logger.warn('overlay unavailable on this tab', overlay.reason, url)
-  return { opened: 'overlay', reason: overlay.reason }
+  await chrome.tabs.create({
+    url: simulatorStudioUrl({ device, url: url ?? pageUrl }),
+  })
+  return { opened: 'studio', reason: overlay.reason }
 }
 
 async function tryOpenOverlay(

@@ -41,7 +41,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const iconVideo =
     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>'
   const iconSettings =
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>'
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>'
 
   type Host = HTMLElement & {
     __tbxSimDispose?: () => void
@@ -269,20 +269,43 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     .actions {
       position: absolute;
       right: 14px; top: 50%; transform: translateY(-50%);
-      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      display: flex; flex-direction: column; align-items: center;
       padding: 10px 8px;
-      border-radius: 999px;
+      border-radius: 24px;
       background: rgba(255,255,255,0.9);
       border: 0;
       box-shadow: 0 10px 32px rgba(15,23,42,0.14);
       backdrop-filter: blur(14px);
       z-index: 9;
       max-height: min(92vh, 620px);
+      overflow: hidden;
+      width: 60px;
+    }
+    .actions-primary {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+    .actions-scroll {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(15,23,42,0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
       overflow-x: hidden;
       overflow-y: auto;
       overscroll-behavior: contain;
       scrollbar-width: thin;
     }
+    .root.theme-dark .actions-scroll { border-top-color: #2a3544; }
     .root.theme-dark .actions {
       background: rgba(21,27,36,0.92);
       box-shadow: 0 10px 36px rgba(0,0,0,0.45);
@@ -306,7 +329,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       background: var(--tbx-panel-bg);
       color: inherit;
     }
-    .panel.open { display: flex; }
+    .panel.open { display: flex; z-index: 11; }
     .panel[data-panel="devices"] {
       right: 76px;
       width: min(320px, 44vw);
@@ -369,6 +392,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     .panel[data-panel="settings"] {
       right: 76px;
       width: min(292px, 42vw);
+      min-height: 220px;
       max-height: min(72vh, 520px);
       padding: 14px;
       border-radius: 14px;
@@ -378,11 +402,16 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       transform: none;
       overflow-y: auto;
     }
+    .panel[data-panel="settings"].open:not([style*="top"]) {
+      top: 50%;
+      transform: translateY(-50%);
+    }
     .panel[data-panel="settings"]::after {
       content: '';
       position: absolute;
       right: -6px;
       top: var(--tbx-settings-arrow-y, 50%);
+      z-index: 1;
       width: 10px;
       height: 10px;
       transform: translateY(-50%) rotate(45deg);
@@ -459,6 +488,13 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       color: inherit;
     }
     .panel h2 { margin: 0; font-size: 13px; font-weight: 700; }
+    .panel-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
+    .panel-head svg { flex-shrink: 0; opacity: 0.9; }
     .setting-list { display: flex; flex-direction: column; gap: 6px; }
     .setting-section { margin: 4px 0 0; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--tbx-panel-muted); }
     .theme-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
@@ -588,13 +624,16 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       </div>
       <div class="panel-list" data-device-list></div>
     </div>
-    <div class="panel" data-panel="settings">
-      <h2>Settings</h2>
+    <div class="panel" data-panel="settings" role="dialog" aria-label="Simulator settings">
+      <div class="panel-head">
+        ${iconSettings}
+        <h2>Settings</h2>
+      </div>
       <div class="setting-list">
-        <p class="setting-section">Appearance</p>
-        <div class="theme-pick" role="group" aria-label="Canvas theme">
-          <button type="button" class="theme-opt" data-theme-opt="classic">Classic</button>
-          <button type="button" class="theme-opt" data-theme-opt="dark">Dark</button>
+        <p class="setting-section">Simulator canvas</p>
+        <div class="theme-pick" role="group" aria-label="Simulator canvas theme">
+          <button type="button" class="theme-opt" data-theme-opt="classic" aria-label="Classic light canvas">Classic</button>
+          <button type="button" class="theme-opt" data-theme-opt="dark" aria-label="Dark canvas">Dark</button>
         </div>
         <p class="setting-section">Device chrome</p>
         <label class="setting-switch">
@@ -650,15 +689,19 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       </div>
     </div>
     <div class="actions">
-      <button type="button" class="round" data-act="close" aria-label="Close simulator">${iconClose}</button>
-      <button type="button" class="round" data-act="devices" aria-label="Change device">${iconPhone}</button>
-      <button type="button" class="round" data-act="settings" aria-label="Settings">${iconSettings}</button>
-      <button type="button" class="round" data-act="rotate" aria-label="Rotate">${iconRotate}</button>
-      <button type="button" class="round" data-act="reload" aria-label="Reload">${iconRefresh}</button>
-      <button type="button" class="round" data-act="screenshot" aria-label="Screenshot">${iconCamera}</button>
-      <button type="button" class="round" data-act="record" aria-label="Start recording">${iconVideo}</button>
-      <button type="button" class="round" data-act="compare" aria-label="Compare devices">${iconTabs}</button>
-      <button type="button" class="round" data-act="expand" aria-label="Open full simulator">${iconExpand}</button>
+      <div class="actions-primary">
+        <button type="button" class="round" data-act="close" aria-label="Close simulator">${iconClose}</button>
+        <button type="button" class="round" data-act="devices" aria-label="Change device">${iconPhone}</button>
+        <button type="button" class="round" data-act="settings" aria-label="Settings">${iconSettings}</button>
+      </div>
+      <div class="actions-scroll">
+        <button type="button" class="round" data-act="rotate" aria-label="Rotate">${iconRotate}</button>
+        <button type="button" class="round" data-act="reload" aria-label="Reload">${iconRefresh}</button>
+        <button type="button" class="round" data-act="screenshot" aria-label="Screenshot">${iconCamera}</button>
+        <button type="button" class="round" data-act="record" aria-label="Start recording">${iconVideo}</button>
+        <button type="button" class="round" data-act="compare" aria-label="Compare devices">${iconTabs}</button>
+        <button type="button" class="round" data-act="expand" aria-label="Open full simulator">${iconExpand}</button>
+      </div>
     </div>
   `
   shadow.append(root)
@@ -1005,7 +1048,10 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       requestAnimationFrame(() => positionDevicesPanel())
     } else if (state.panel === 'settings') {
       void loadOverlaySettings()
-      requestAnimationFrame(() => positionSettingsPanel())
+      requestAnimationFrame(() => {
+        positionSettingsPanel()
+        requestAnimationFrame(() => positionSettingsPanel())
+      })
     } else if (state.panel === 'shot-menu' || state.panel === 'record-menu' || state.panel === 'capture-result') {
       requestAnimationFrame(() => positionCapturePanels())
     }
