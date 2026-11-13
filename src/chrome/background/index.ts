@@ -85,6 +85,7 @@ import { registerResponsiveViewerFraming } from './responsiveViewerFraming'
 import { isSimulatorMenuItem } from './responsiveViewer/ids'
 import { handleSimulatorMenuClick } from './responsiveViewer/menus'
 import { registerSimulatorOverlayMessages } from './responsiveViewer/messages'
+import { registerResponsiveViewerEmulation } from './responsiveViewer/emulation'
 import { configurePanelAction, openExtensionPanel } from '@/platform/panel'
 
 const logger = createLogger('background')
@@ -250,7 +251,5 @@ safeRegister('scriptStudio', registerScriptStudio)
 safeRegister('panelNavigation', registerSidePanelNavigation)
 safeRegister('responsiveViewerFraming', registerResponsiveViewerFraming)
 safeRegister('simulatorOverlay', registerSimulatorOverlayMessages)
-safeRegister('responsiveViewerEmulation', () =>
-  import('./responsiveViewer/emulation').then((module) => module.registerResponsiveViewerEmulation()),
-)
+safeRegister('responsiveViewerEmulation', registerResponsiveViewerEmulation)
 startMessageRouter()

@@ -56,6 +56,7 @@ async function main() {
     run('world map', 'node scripts/build-world-map.mjs'),
     run('page scripts', 'node scripts/build-adblock-scripts.mjs'),
     run('script studio runtime', 'node scripts/build-script-studio-runtime.mjs'),
+    run('simulator overlay inject', 'node scripts/build-simulator-overlay.mjs'),
   ])
   await run('bundle', 'vite build')
   await typecheck

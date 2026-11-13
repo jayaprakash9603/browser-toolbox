@@ -1,0 +1,300 @@
+(function(e){Object.defineProperty(e,Symbol.toStringTag,{value:`Module`});function t(e){let t=`tbx-simulator-overlay`;if(window!==window.top)return!1;let n=e=>e.replace(/[&<>"']/g,e=>({"&":`&amp;`,"<":`&lt;`,">":`&gt;`,'"':`&quot;`,"'":`&#39;`})[e]??e),r=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3.2-6.9"/><path d="M21 3v6h-6"/></svg>`,i=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="7" width="14" height="14" rx="2"/><path d="M3 17V5a2 2 0 0 1 2-2h12"/></svg>`,a=document.getElementById(t);if(a){if(e.replace&&a.__tbxSimApply)return a.__tbxSimApply(e),!0;if(a.__tbxSimDispose?.(),a.remove(),!e.replace)return!0}let o=document.createElement(`div`);o.id=t,o.setAttribute(`data-tbx-simulator`,`overlay`),o.style.cssText=`all:initial;position:fixed;inset:0;z-index:2147483646;pointer-events:none;font-family:system-ui,-apple-system,Segoe UI,sans-serif;`;let s=o.attachShadow({mode:`open`}),c=document.documentElement.style.overflow;document.documentElement.style.overflow=`hidden`;let l={rotated:!1,live:e,panel:``},u=document.createElement(`style`);u.textContent=`
+    :host { all: initial; }
+    * { box-sizing: border-box; }
+    button { font: inherit; }
+    .root {
+      pointer-events: auto;
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #eceff3;
+      color: #1e293b;
+      --tbx-accent: #0d9488;
+      --tbx-accent-hover: #0f766e;
+      --tbx-accent-pressed: #115e59;
+    }
+    .root.drawer-open .stage {
+      margin-left: min(340px, 42vw);
+      transition: margin-left 0.2s ease;
+    }
+    .stage {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      max-width: 100%;
+      max-height: 100%;
+      padding: 12px 80px 12px 12px;
+      transition: margin-left 0.2s ease;
+    }
+    .phone-wrap { position: relative; }
+    .mockup-img {
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 6;
+      filter: drop-shadow(0 28px 64px rgba(15,23,42,0.18));
+    }
+    .has-mockup.landscape .mockup-img {
+      inset: auto;
+      left: 50%;
+      top: 50%;
+      width: var(--tbx-mockup-h);
+      height: var(--tbx-mockup-w);
+      transform: translate(-50%, -50%) rotate(90deg);
+    }
+    .chassis {
+      position: relative;
+      padding: 10px;
+      border-radius: 55px;
+      background: var(--tbx-fill);
+      box-shadow: 0 1px 0 var(--tbx-ring), 0 28px 64px rgba(15,23,42,0.18), 0 2px 10px rgba(15,23,42,0.1);
+    }
+    .has-mockup .chassis {
+      position: absolute;
+      inset: 0;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .has-mockup .side { display: none; }
+    .has-mockup .screen {
+      position: absolute;
+      border-radius: 11%;
+    }
+    .side {
+      position: absolute;
+      width: 3px;
+      border-radius: 1px;
+      background: var(--tbx-button);
+    }
+    .screen {
+      position: relative;
+      overflow: hidden;
+      background: #fff;
+      border-radius: 40px;
+      box-shadow: inset 0 0 0 1px rgba(15,23,42,0.06);
+    }
+    iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #fff;
+    }
+    .status {
+      pointer-events: none;
+      position: absolute;
+      inset: 0 0 auto 0;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 34px;
+      padding: 0 22px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      mix-blend-mode: difference;
+    }
+    .status-icons { display: flex; align-items: center; gap: 6px; }
+    .island, .notch, .punch, .pill, .home, .android-nav { pointer-events: none; position: absolute; z-index: 4; background: #0a0a0a; }
+    .island {
+      top: 12px; left: 50%; transform: translateX(-50%);
+      width: 32%; max-width: 126px; height: 4.35%; min-height: 12px; border-radius: 999px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+    }
+    .notch {
+      top: 0; left: 50%; transform: translateX(-50%);
+      width: 34%; height: 20px; border-radius: 0 0 16px 16px;
+    }
+    .punch {
+      top: 10px; left: 50%; transform: translateX(-50%);
+      width: 9px; height: 9px; border-radius: 999px;
+    }
+    .pill {
+      top: 8px; left: 50%; transform: translateX(-50%);
+      width: 22%; height: 6px; border-radius: 999px;
+    }
+    .home {
+      bottom: 7px; left: 50%; transform: translateX(-50%);
+      width: 34%; max-width: 134px; height: 5px; border-radius: 999px; background: rgba(255,255,255,0.92);
+    }
+    .safari:not([hidden]) ~ .home {
+      background: #3a3a3c;
+    }
+    .android-nav {
+      inset: auto 0 0 0; height: 28px; background: transparent;
+      display: flex; align-items: center; justify-content: space-evenly;
+      color: rgba(255,255,255,0.8); mix-blend-mode: difference;
+    }
+    .safari {
+      pointer-events: none;
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      z-index: 3;
+      padding: 6px 12px 18px;
+      background: linear-gradient(180deg, rgba(247,247,248,0.92) 0%, #f4f4f5 40%, #f4f4f5 100%);
+      color: #111827;
+    }
+    .url-pill {
+      display: flex; align-items: center; gap: 8px;
+      height: 36px; padding: 0 10px; border-radius: 12px; background: #fff;
+      box-shadow: 0 0 0 1px rgba(15,23,42,0.06);
+      font-size: 12px;
+    }
+    .url-pill .host { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; color: #374151; }
+    .safari-tools {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 4px; padding: 4px 10px 0; color: #0b84ff;
+    }
+    .safari-tools svg { width: 22px; height: 22px; }
+    .actions {
+      position: absolute;
+      right: 14px; top: 50%; transform: translateY(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 10px 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(15,23,42,0.08);
+      box-shadow: 0 8px 28px rgba(15,23,42,0.1);
+      z-index: 9;
+    }
+    .round {
+      display: flex; align-items: center; justify-content: center;
+      width: 44px; height: 44px; border-radius: 999px;
+      border: 0; background: var(--tbx-accent); color: #fff;
+      box-shadow: 0 2px 10px rgba(13,148,136,0.35);
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .round:hover { background: var(--tbx-accent-hover); }
+    .round:focus-visible { outline: 2px solid #5eead4; outline-offset: 2px; }
+    .round[aria-pressed="true"] { background: var(--tbx-accent-pressed); box-shadow: inset 0 0 0 2px #99f6e4; }
+    .round[data-act="close"] { background: #64748b; box-shadow: 0 2px 8px rgba(71,85,105,0.35); }
+    .round[data-act="close"]:hover { background: #475569; }
+    .panel {
+      display: none; flex-direction: column; gap: 10px;
+      position: absolute; z-index: 8;
+      background: #fff;
+      color: #1e293b;
+    }
+    .panel.open { display: flex; }
+    .panel[data-panel="devices"] {
+      left: 0; top: 0; bottom: 0; right: auto;
+      width: min(340px, 42vw);
+      max-height: none;
+      padding: 16px 14px;
+      border-radius: 0;
+      border-right: 1px solid #dde3ea;
+      box-shadow: 4px 0 24px rgba(15,23,42,0.06);
+    }
+    .panel[data-panel="settings"] {
+      right: 76px; top: 50%; transform: translateY(-50%);
+      width: 260px; max-height: min(70vh, 480px);
+      padding: 14px; border-radius: 14px;
+      border: 1px solid #dde3ea;
+      box-shadow: 0 16px 40px rgba(15,23,42,0.12);
+    }
+    .panel h2 { margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; }
+    .panel input {
+      width: 100%; height: 36px; padding: 0 12px; border-radius: 10px;
+      border: 1px solid #cbd5e1; font-size: 13px; background: #f8fafc;
+    }
+    .panel input:focus { outline: 2px solid #99f6e4; border-color: var(--tbx-accent); }
+    .panel-list { overflow: auto; flex: 1; display: flex; flex-direction: column; gap: 2px; min-height: 0; }
+    .device-row, .setting-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      width: 100%; padding: 10px; border: 0; border-radius: 10px;
+      background: transparent; text-align: left; cursor: pointer; font-size: 13px; color: #0f172a;
+    }
+    .device-row:hover, .setting-row:hover { background: #f1f5f9; }
+    .device-row[aria-current="true"] { background: #ccfbf1; color: #0f766e; font-weight: 600; }
+    .device-row small { color: #64748b; font-weight: 400; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      border: 1px solid #cbd5e1; background: #fff; border-radius: 999px;
+      padding: 4px 10px; font-size: 11px; cursor: pointer; color: #475569;
+    }
+    .chip:hover { border-color: var(--tbx-accent); color: #0f766e; }
+    .chip[aria-pressed="true"] { background: var(--tbx-accent); color: #fff; border-color: var(--tbx-accent); }
+    .blocked {
+      position: absolute; inset: 0; z-index: 5;
+      display: none; flex-direction: column; align-items: center; justify-content: center;
+      gap: 8px; padding: 16px; text-align: center;
+      background: #f4f4f5; color: #52525b; font-size: 12px;
+    }
+    .blocked a { color: #4f46e5; }
+    .landscape .island { top: 50%; left: 12px; transform: translateY(-50%); width: 14px; height: 32%; }
+    .landscape .notch { top: 50%; left: 0; transform: translateY(-50%); width: 16px; height: 22%; border-radius: 0 16px 16px 0; }
+    .landscape .punch { top: 50%; left: 10px; transform: translateY(-50%); }
+    .landscape .home { bottom: auto; left: auto; right: 8px; top: 50%; transform: translateY(-50%); width: 5px; height: 22%; }
+    .landscape .safari { display: none; }
+    .landscape .status { padding: 0 16px; height: 28px; }
+  `,s.append(u);let d=document.createElement(`div`);d.className=`root`,d.setAttribute(`role`,`dialog`),d.setAttribute(`aria-modal`,`true`),d.setAttribute(`aria-label`,`${e.label} mobile simulator`),d.style.setProperty(`--tbx-fill`,e.finish.fill),d.style.setProperty(`--tbx-ring`,e.finish.ring),d.style.setProperty(`--tbx-button`,e.finish.button),d.innerHTML=`
+    <div class="stage">
+      <div class="phone-wrap">
+        <img class="mockup-img" alt="" hidden />
+        <span class="side" style="top:16%;left:-3px;height:7%;border-radius:1px 0 0 1px;"></span>
+        <span class="side" style="top:26%;left:-3px;height:11%;border-radius:1px 0 0 1px;"></span>
+        <span class="side" style="top:39%;left:-3px;height:11%;border-radius:1px 0 0 1px;"></span>
+        <span class="side" style="top:22%;right:-3px;height:14%;border-radius:0 1px 1px 0;"></span>
+        <div class="chassis">
+          <div class="screen">
+            <iframe title="${n(e.label)}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            <div class="status" aria-hidden="true">
+              <span class="clock"></span>
+              <span class="status-icons"><svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="7" width="2" height="3" rx="0.5"/><rect x="4" y="5" width="2" height="5" rx="0.5"/><rect x="8" y="3" width="2" height="7" rx="0.5"/><rect x="12" y="1" width="2" height="9" rx="0.5" opacity="0.45"/></svg><svg width="13" height="10" viewBox="0 0 13 10" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.4 4.2a7 7 0 0 1 10.2 0"/><path d="M3.2 6a4.4 4.4 0 0 1 6.6 0"/><circle cx="6.5" cy="8.4" r="0.9" fill="currentColor" stroke="none"/></svg><svg width="22" height="10" viewBox="0 0 22 10" fill="none"><rect x="0.6" y="1.2" width="18" height="7.6" rx="1.6" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="2.6" width="13" height="4.8" rx="0.6" fill="currentColor"/><rect x="19.2" y="3.2" width="1.8" height="3.6" rx="0.6" fill="currentColor"/></svg></span>
+            </div>
+            <div class="cutout"></div>
+            <div class="safari" hidden>
+              <div class="url-pill">
+                <span aria-hidden="true">AA</span>
+                <span class="host"></span>
+                ${r}
+              </div>
+              <div class="safari-tools" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="m16 6-4-4-4 4"/><path d="M12 2v13"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>${i}
+              </div>
+            </div>
+            <div class="home" hidden></div>
+            <div class="android-nav" hidden>
+              <span style="width:10px;height:10px;border:1px solid currentColor;border-radius:2px;"></span>
+              <span style="width:10px;height:10px;border:1px solid currentColor;border-radius:999px;"></span>
+              <span style="width:10px;height:2px;background:currentColor;border-radius:999px;"></span>
+            </div>
+            <div class="blocked">This site blocked the in-page preview.<br/><a class="studio-link" target="_blank" rel="noopener noreferrer">Open full simulator</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="panel" data-panel="devices">
+      <h2>Devices</h2>
+      <input type="search" class="device-search" placeholder="Search devices" />
+      <div class="chips" data-kind-chips></div>
+      <div class="panel-list" data-device-list></div>
+    </div>
+    <div class="panel" data-panel="settings">
+      <h2>Settings</h2>
+      <button type="button" class="setting-row" data-set="safari">Safari chrome</button>
+      <button type="button" class="setting-row" data-set="status">Status bar</button>
+      <p style="margin:0;font-size:11px;color:#6b7280;line-height:1.4">This overlay previews the page in a device frame. It is not an iOS or Android emulator.</p>
+    </div>
+    <div class="actions">
+      <button type="button" class="round" data-act="close" aria-label="Close simulator"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      <button type="button" class="round" data-act="devices" aria-label="Change device"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg></button>
+      <button type="button" class="round" data-act="rotate" aria-label="Rotate"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg></button>
+      <button type="button" class="round" data-act="reload" aria-label="Reload">${r}</button>
+      <button type="button" class="round" data-act="screenshot" aria-label="Screenshot"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
+      <button type="button" class="round" data-act="record" aria-label="Start recording"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></button>
+      <button type="button" class="round" data-act="compare" aria-label="Compare devices">${i}</button>
+      <button type="button" class="round" data-act="settings" aria-label="Settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg></button>
+      <a class="round studio-link" data-act="studio" target="_blank" rel="noopener noreferrer" aria-label="Open full simulator"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></a>
+    </div>
+  `,s.append(d);let f=s.querySelector(`.screen`),p=s.querySelector(`iframe`),m=s.querySelector(`.clock`),h=s.querySelector(`.cutout`),g=s.querySelector(`.safari`),_=s.querySelector(`.home`),v=s.querySelector(`.android-nav`),y=s.querySelector(`.blocked`),b=s.querySelector(`.host`),x=s.querySelector(`.chassis`),S=s.querySelector(`.status`),C=s.querySelector(`.phone-wrap`),w=s.querySelector(`.mockup-img`);b.textContent=e.hostname,p.src=e.url;for(let t of s.querySelectorAll(`.studio-link`))t.href=e.studioUrl;let T=()=>{m.textContent=new Date().toLocaleTimeString(void 0,{hour:`numeric`,minute:`2-digit`})};T();let E=window.setInterval(T,3e4),D={devices:[],favorites:[],recents:[],current:e.deviceId},O=`all`,k=s.querySelector(`.device-search`),A=s.querySelector(`[data-kind-chips]`),j=s.querySelector(`[data-device-list]`),M=s.querySelector(`[data-act="devices"]`),N=s.querySelector(`[data-act="settings"]`),P=s.querySelector(`[data-act="record"]`),F=e=>new Promise(t=>{try{chrome.runtime.sendMessage(e,e=>{t(e&&e.ok!==!1?e.data??e:null)})}catch{t(null)}}),I=e=>{d.style.setProperty(`--tbx-fill`,e.finish.fill),d.style.setProperty(`--tbx-ring`,e.finish.ring),d.style.setProperty(`--tbx-button`,e.finish.button),d.setAttribute(`aria-label`,`${e.label} mobile simulator`),p.title=e.label,b.textContent=e.hostname;for(let t of s.querySelectorAll(`.studio-link`))t.href=e.studioUrl},L=()=>{let e=l.live,t=l.rotated?e.height:e.width,n=l.rotated?e.width:e.height,r=l.panel===`devices`?Math.min(340,window.innerWidth*.42):0,i=Math.max(160,window.innerWidth-100-r),a=Math.max(160,window.innerHeight-24),o=e.mockupUrl&&e.mockupInsets?e.mockupInsets:null;if(d.classList.toggle(`has-mockup`,!!o),x.classList.toggle(`landscape`,l.rotated),d.classList.toggle(`landscape`,l.rotated),o){let r=l.rotated?{left:o.bottom,top:o.left,right:o.top,bottom:o.right}:o,s=1-r.left-r.right,c=1-r.top-r.bottom,u=t/s,p=n/c,m=Math.min(1,i/u,a/p),h=Math.round(u*m),g=Math.round(p*m);C.style.width=`${h}px`,C.style.height=`${g}px`,f.style.width=`${s*100}%`,f.style.height=`${c*100}%`,f.style.left=`${r.left*100}%`,f.style.top=`${r.top*100}%`,w.hidden=!1,w.src=e.mockupUrl??``,d.style.setProperty(`--tbx-mockup-w`,`${h}px`),d.style.setProperty(`--tbx-mockup-h`,`${g}px`)}else{let e=Math.min(1,i/(t+20),a/(n+20));C.style.width=``,C.style.height=``,f.style.left=``,f.style.top=``,f.style.width=`${Math.round(t*e)}px`,f.style.height=`${Math.round(n*e)}px`,w.hidden=!0,w.removeAttribute(`src`)}let c=e.notch===`punch-hole`?`punch`:e.notch;h.className=!o&&e.notch!==`none`?`cutout ${c}`:`cutout`,g.hidden=!e.showSafari||l.rotated,_.hidden=e.navBar!==`home-indicator`,v.hidden=e.navBar!==`android`||l.rotated,S.style.display=e.statusBar===`none`?`none`:``;let u=s.querySelector(`[data-set="safari"]`),p=s.querySelector(`[data-set="status"]`);u?.setAttribute(`aria-pressed`,String(e.showSafari)),p?.setAttribute(`aria-pressed`,String(e.statusBar!==`none`))},R=()=>{let e=k.value.trim().toLowerCase(),t=new Set(D.favorites),r=new Set(D.recents),i=D.devices.filter(n=>O===`favorites`&&!t.has(n.id)||O===`recents`&&!r.has(n.id)||O!==`all`&&O!==`favorites`&&O!==`recents`&&n.kind!==O?!1:!e||`${n.label} ${n.id}`.toLowerCase().includes(e));j.replaceChildren(...i.map(e=>{let t=document.createElement(`button`);return t.type=`button`,t.className=`device-row`,t.dataset.device=e.id,e.id===l.live.deviceId&&t.setAttribute(`aria-current`,`true`),t.innerHTML=`<span>${n(e.label)}</span><small>${e.width}×${e.height}</small>`,t})),A.replaceChildren(...[{id:`all`,label:`All`},{id:`favorites`,label:`Favorites`},{id:`recents`,label:`Recents`},{id:`phone`,label:`Phones`},{id:`tablet`,label:`Tablets`},{id:`laptop`,label:`Laptops`},{id:`desktop`,label:`Desktops`},{id:`watch`,label:`Watch`},{id:`special`,label:`Special`}].map(e=>{let t=document.createElement(`button`);return t.type=`button`,t.className=`chip`,t.dataset.kind=e.id,t.textContent=e.label,t.setAttribute(`aria-pressed`,String(O===e.id)),t}))},z=e=>{l.panel=l.panel===e?``:e;for(let e of s.querySelectorAll(`[data-panel]`))e.classList.toggle(`open`,e.getAttribute(`data-panel`)===l.panel);d.classList.toggle(`drawer-open`,l.panel===`devices`),M.setAttribute(`aria-pressed`,String(l.panel===`devices`)),N.setAttribute(`aria-pressed`,String(l.panel===`settings`)),L(),l.panel===`devices`&&B()},B=async()=>{let e=await F({type:`SIMULATOR_OVERLAY_ACTION`,action:`listDevices`});e?.devices&&(D=e,R())};o.__tbxSimApply=e=>{l.live=e,l.rotated=!1,I(e),p.getAttribute(`src`)!==e.url&&(p.src=e.url),L(),l.panel===`devices`&&R()},I(e),L(),p.addEventListener(`load`,()=>{try{let e=p.contentWindow?.location.href??``;(e.startsWith(`chrome-error:`)||e.includes(`chromewebdata`))&&(y.style.display=`flex`)}catch{}});let V=()=>L();window.addEventListener(`resize`,V);let H=e=>{if(e.key===`Escape`){if(e.preventDefault(),l.panel){z(``);return}U()}},U=()=>{window.clearInterval(E),window.removeEventListener(`resize`,V),document.removeEventListener(`keydown`,H,!0),document.documentElement.style.overflow=c,o.remove()};o.__tbxSimDispose=U,document.addEventListener(`keydown`,H,!0),s.querySelector(`[data-act="close"]`)?.addEventListener(`click`,()=>U()),s.querySelector(`[data-act="rotate"]`)?.addEventListener(`click`,()=>{l.rotated=!l.rotated,L()}),s.querySelector(`[data-act="reload"]`)?.addEventListener(`click`,()=>{y.style.display=`none`,p.src=l.live.url}),M.addEventListener(`click`,()=>z(`devices`)),N.addEventListener(`click`,()=>z(`settings`)),k.addEventListener(`input`,()=>R()),A.addEventListener(`click`,e=>{let t=e.target?.closest(`[data-kind]`)?.dataset.kind;t&&(O=t,R())}),j.addEventListener(`click`,e=>{let t=e.target?.closest(`[data-device]`)?.dataset.device;t&&(F({type:`SIMULATOR_OVERLAY_ACTION`,action:`setDevice`,deviceId:t,url:l.live.url}),z(``))}),s.querySelector(`[data-set="safari"]`)?.addEventListener(`click`,()=>{l.live={...l.live,showSafari:!l.live.showSafari},L()}),s.querySelector(`[data-set="status"]`)?.addEventListener(`click`,()=>{let e=l.live.statusBar===`none`;l.live={...l.live,statusBar:e?l.live.frameStyle.startsWith(`iphone`)?`ios`:`android`:`none`},L()}),s.querySelector(`[data-act="screenshot"]`)?.addEventListener(`click`,()=>{F({type:`SIMULATOR_OVERLAY_ACTION`,action:`screenshot`,url:l.live.url})}),P.addEventListener(`click`,()=>{if(P.getAttribute(`aria-pressed`)===`true`){F({type:`RECORDER_STOP`}),P.setAttribute(`aria-pressed`,`false`);return}F({type:`SIMULATOR_OVERLAY_ACTION`,action:`record`,url:l.live.url}),P.setAttribute(`aria-pressed`,`true`)}),s.querySelector(`[data-act="compare"]`)?.addEventListener(`click`,()=>{F({type:`SIMULATOR_OVERLAY_ACTION`,action:`compare`,url:l.live.url,deviceId:l.live.deviceId})}),document.documentElement.append(o),l.panel=`devices`;for(let e of s.querySelectorAll(`[data-panel]`))e.classList.toggle(`open`,e.getAttribute(`data-panel`)===`devices`);return d.classList.add(`drawer-open`),M.setAttribute(`aria-pressed`,`true`),B(),L(),s.querySelector(`[data-act="devices"]`)?.focus({preventScroll:!0}),!0}e.mountSimulatorOverlay=t})(this.__TBX_SIM_MOUNT_BUNDLE=this.__TBX_SIM_MOUNT_BUNDLE||{}),globalThis.__TBX_MOUNT_SIMULATOR__=globalThis.__TBX_SIM_MOUNT_BUNDLE?.mountSimulatorOverlay;

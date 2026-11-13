@@ -264,9 +264,18 @@ describe('mobile simulator studio helpers', () => {
   it('injects the overlay from the context menu instead of opening a studio tab', async () => {
     vi.mocked(chrome.tabs.create).mockClear()
     vi.mocked(chrome.scripting.executeScript).mockImplementation(async (injection) => {
-      const run = injection as { func?: (config: SimulatorOverlayConfig) => boolean; args?: [SimulatorOverlayConfig] }
-      const result = run.func && run.args ? run.func(run.args[0]) : false
-      return [{ result }] as unknown as chrome.scripting.InjectionResult[]
+      const run = injection as {
+        files?: string[]
+        func?: ((config: SimulatorOverlayConfig) => boolean) | ((key: string, config: SimulatorOverlayConfig) => boolean)
+        args?: [SimulatorOverlayConfig] | [string, SimulatorOverlayConfig]
+      }
+      if (run.files?.length) return [] as unknown as chrome.scripting.InjectionResult[]
+      if (run.func && run.args) {
+        const cfg = typeof run.args[0] === 'string' ? run.args[1] : run.args[0]
+        const result = cfg ? mountSimulatorOverlay(cfg) : false
+        return [{ result }] as unknown as chrome.scripting.InjectionResult[]
+      }
+      return [{ result: false }] as unknown as chrome.scripting.InjectionResult[]
     })
     await handleSimulatorMenuClick(
       SIMULATOR_PARENT_ID,
@@ -276,11 +285,12 @@ describe('mobile simulator studio helpers', () => {
     expect(chrome.scripting.executeScript).toHaveBeenCalled()
     expect(chrome.tabs.create).not.toHaveBeenCalled()
     expect(document.getElementById(SIMULATOR_OVERLAY_ID)).toBeTruthy()
-    const injection = vi.mocked(chrome.scripting.executeScript).mock.calls[0]?.[0] as {
-      args?: [{ mockupUrl?: string; deviceId?: string }]
-    }
-    expect(injection.args?.[0].deviceId).toBe('iphone-16-pro')
-    expect(injection.args?.[0].mockupUrl).toContain('iphone-16-pro.webp')
+    const mountCall = vi.mocked(chrome.scripting.executeScript).mock.calls.find((call) => {
+      const run = call[0] as { func?: unknown; args?: unknown[] }
+      return Boolean(run.func && run.args && typeof run.args[0] === 'string')
+    })?.[0] as { args?: [string, SimulatorOverlayConfig] }
+    expect(mountCall?.args?.[1].deviceId).toBe('iphone-16-pro')
+    expect(mountCall?.args?.[1].mockupUrl).toContain('iphone-16-pro.webp')
   })
 
   it('falls back to a studio tab on restricted pages', async () => {
@@ -307,9 +317,18 @@ describe('mobile simulator studio helpers', () => {
   it('opens the overlay from Compact Viewer messages and reports fallback reasons', async () => {
     vi.mocked(chrome.tabs.create).mockClear()
     vi.mocked(chrome.scripting.executeScript).mockImplementation(async (injection) => {
-      const run = injection as { func?: (config: SimulatorOverlayConfig) => boolean; args?: [SimulatorOverlayConfig] }
-      const result = run.func && run.args ? run.func(run.args[0]) : false
-      return [{ result }] as unknown as chrome.scripting.InjectionResult[]
+      const run = injection as {
+        files?: string[]
+        func?: ((config: SimulatorOverlayConfig) => boolean) | ((key: string, config: SimulatorOverlayConfig) => boolean)
+        args?: [SimulatorOverlayConfig] | [string, SimulatorOverlayConfig]
+      }
+      if (run.files?.length) return [] as unknown as chrome.scripting.InjectionResult[]
+      if (run.func && run.args) {
+        const cfg = typeof run.args[0] === 'string' ? run.args[1] : run.args[0]
+        const result = cfg ? mountSimulatorOverlay(cfg) : false
+        return [{ result }] as unknown as chrome.scripting.InjectionResult[]
+      }
+      return [{ result: false }] as unknown as chrome.scripting.InjectionResult[]
     })
     const overlay = await handleOpenOverlayMessage(
       { type: 'SIMULATOR_OPEN_OVERLAY', url: 'https://example.com/tools', tabId: 7 },
@@ -359,9 +378,9 @@ describe('mobile simulator studio helpers', () => {
     const menus = readFileSync(resolve('src/chrome/background/responsiveViewer/menus.ts'), 'utf8')
     const messages = readFileSync(resolve('src/chrome/background/responsiveViewer/messages.ts'), 'utf8')
     const index = readFileSync(resolve('src/chrome/background/index.ts'), 'utf8')
-    expect(messages).not.toMatch(/from ['"]\.\/overlay['"]/)
+    expect(messages).not.toMatch(/from ['"]\.\/overlayService['"]/)
     expect(messages).not.toMatch(/responsive-viewer\/(devices|catalog)/)
-    expect(menus).not.toMatch(/from ['"]\.\/overlay['"]/)
+    expect(menus).not.toMatch(/from ['"]\.\/overlayService['"]/)
     expect(menus).not.toMatch(/responsive-viewer\/(devices|catalog)/)
     expect(index).not.toMatch(/responsive-viewer\/(devices|catalog|overlay)/)
     expect(index).toContain('registerSimulatorOverlayMessages')

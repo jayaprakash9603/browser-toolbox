@@ -92,7 +92,7 @@ async function tryOpenOverlay(
   if (!url) return { ok: false, reason: 'no-url' }
   const pattern = originPatternForUrl(url)
   if (pattern) await requestPermissions({ origins: [pattern] })
-  const { canOverlaySimulatorOnTab, openSimulatorOverlay } = await import('./overlay')
+  const { canOverlaySimulatorOnTab, openSimulatorOverlay } = await import('./overlayService')
   const pageUrl = tab.url && !isRestrictedCaptureUrl(tab.url) ? tab.url : url
   if (!canOverlaySimulatorOnTab(pageUrl, url)) return { ok: false, reason: 'cross-origin' }
   if (await openSimulatorOverlay(tab, { url, deviceId: device, replace })) return { ok: true }

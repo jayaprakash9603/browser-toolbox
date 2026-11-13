@@ -11,6 +11,20 @@ import manifest from './manifest.config.ts'
 import { resolveBuildTarget } from './src/platform/targets.ts'
 
 const rootDir = fileURLToPath(new URL('.', import.meta.url))
+const serviceWorkerPreloadPath = fileURLToPath(new URL('./src/shims/service-worker-preload.ts', import.meta.url))
+
+/** Avoid Vite's default preload helper in the extension service worker (no `window`). */
+function serviceWorkerPreloadHelper(): Plugin {
+  return {
+    name: 'service-worker-preload-helper',
+    resolveId(source, importer) {
+      if (!source.includes('preload-helper') || !importer) return null
+      const from = importer.replace(/\\/g, '/')
+      if (!from.includes('/src/chrome/background/')) return null
+      return serviceWorkerPreloadPath
+    },
+  }
+}
 const postmanLiteDist = fileURLToPath(new URL('./node_modules/postman-lite/dist', import.meta.url))
 const buildTarget = resolveBuildTarget(process.env.BUILD_TARGET)
 const outputDir =
@@ -51,6 +65,7 @@ export default defineVitestConfig({
     tailwindcss(),
     crx({ manifest, browser: buildTarget === 'firefox' ? 'firefox' : 'chrome' }),
     exposeContentScriptChunks(),
+    serviceWorkerPreloadHelper(),
   ],
   define: {
     __PROTECTION_THREATS_GENERATED__: JSON.stringify(protectionThreatsGenerated),
