@@ -29,7 +29,7 @@ export default function InsightsTab({ pages, onDayPick }: InsightsTabProps) {
   }
 
   return (
-    <div className="flex flex-col gap-3 pb-4">
+    <div className="flex flex-col gap-4">
       <p className="text-xs text-muted-foreground">{t('historyManager.insights.hourNote')}</p>
       <Suspense fallback={<p className="text-sm text-muted-foreground">{t('historyManager.loading')}</p>}>
         <InsightsCharts data={data} onDayPick={onDayPick} />

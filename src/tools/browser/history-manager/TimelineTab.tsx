@@ -64,7 +64,7 @@ export function TimelineTab({ pages, compact, selected, rowActions }: TimelineTa
   }
 
   return (
-    <div className="flex flex-col gap-4 pb-4">
+    <div className="flex flex-col gap-4">
       {sections.map((section) => (
         <section key={section.key}>
           <Button

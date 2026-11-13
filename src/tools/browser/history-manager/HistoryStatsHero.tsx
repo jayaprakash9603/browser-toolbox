@@ -19,7 +19,7 @@ function StatCell({
   return (
     <article
       className={cn(
-        'min-h-[4rem] rounded-xl border bg-card/95 p-3 shadow-xs',
+        'flex min-h-[4.5rem] flex-col justify-between gap-2 rounded-xl border border-border/70 bg-card/95 p-3 shadow-xs',
         accent === 'active' && 'border-sky-500/25 bg-sky-500/5',
         accent === 'insight' && 'border-violet-500/20 bg-violet-500/5',
         className,
@@ -28,7 +28,7 @@ function StatCell({
       <p className="truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
       <p
         className={cn(
-          'mt-1 truncate text-base font-semibold tabular-nums leading-none tracking-tight',
+          'truncate text-lg font-semibold tabular-nums leading-none tracking-tight',
           accent === 'active' && 'text-sky-800 dark:text-sky-200',
           accent === 'insight' && 'text-violet-900 dark:text-violet-200',
         )}
@@ -45,24 +45,23 @@ export function HistoryStatsHero({ stats }: { stats: HistoryStats }) {
     stats.peakHour === null ? '—' : `${String(stats.peakHour).padStart(2, '0')}:00 (${stats.peakHourCount})`
 
   return (
-    <section aria-label={t('historyManager.stats.aria')} className="space-y-2">
-      <div className="grid grid-cols-2 gap-2 @xs:grid-cols-3 @md:gap-2.5">
-        <StatCell label={t('historyManager.stats.total')} value={stats.totalPages} />
-        <StatCell label={t('historyManager.stats.sites')} value={stats.uniqueDomains} accent="insight" />
-        <StatCell
-          label={t('historyManager.stats.today')}
-          value={stats.todayVisits}
-          accent={stats.todayVisits > 0 ? 'active' : false}
-        />
-        <StatCell label={t('historyManager.stats.yesterday')} value={stats.yesterdayVisits} />
-        <StatCell label={t('historyManager.stats.week')} value={stats.weekVisits} />
-        <StatCell
-          label={t('historyManager.stats.topSite')}
-          value={stats.topDomain ?? '—'}
-          className="col-span-2 @xs:col-span-1"
-        />
-      </div>
-      <StatCell label={t('historyManager.stats.peakHour')} value={peak} accent={stats.peakHourCount > 0 ? 'insight' : false} />
+    <section aria-label={t('historyManager.stats.aria')} className="grid grid-cols-2 gap-2.5 @xs:grid-cols-3">
+      <StatCell label={t('historyManager.stats.total')} value={stats.totalPages} />
+      <StatCell label={t('historyManager.stats.sites')} value={stats.uniqueDomains} accent="insight" />
+      <StatCell
+        label={t('historyManager.stats.today')}
+        value={stats.todayVisits}
+        accent={stats.todayVisits > 0 ? 'active' : false}
+      />
+      <StatCell label={t('historyManager.stats.yesterday')} value={stats.yesterdayVisits} />
+      <StatCell label={t('historyManager.stats.week')} value={stats.weekVisits} />
+      <StatCell label={t('historyManager.stats.topSite')} value={stats.topDomain ?? '—'} />
+      <StatCell
+        label={t('historyManager.stats.peakHour')}
+        value={peak}
+        accent={stats.peakHourCount > 0 ? 'insight' : false}
+        className="col-span-2 @xs:col-span-3"
+      />
     </section>
   )
 }

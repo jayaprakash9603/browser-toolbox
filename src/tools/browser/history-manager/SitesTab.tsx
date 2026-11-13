@@ -40,7 +40,7 @@ export function SitesTab({ pages, compact, selected, rowActions, topLimit, onDel
   }
 
   return (
-    <div className="flex flex-col gap-3 pb-4">
+    <div className="flex flex-col gap-3">
       <Segmented
         fullWidth
         ariaLabel={t('historyManager.sort.most')}
@@ -54,7 +54,7 @@ export function SitesTab({ pages, compact, selected, rowActions, topLimit, onDel
       <ul className="space-y-2">
         {groups.map((group) => (
           <li key={group.domain} className="overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-xs">
-            <div className="flex items-center gap-1 px-2 py-2">
+            <div className="flex items-center gap-2 px-3 py-2.5">
               <button
                 type="button"
                 className="flex min-w-0 flex-1 items-center gap-2.5 text-left"

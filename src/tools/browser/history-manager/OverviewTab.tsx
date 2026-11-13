@@ -5,8 +5,8 @@ import { Area, AreaChart, XAxis } from 'recharts'
 import { deriveHistoryStats, sortByRecent, topDomainsFromPages, visitsByDay, type HistoryPage } from '@/core/history-manager'
 import { chartColor } from '@/shared/chart/series'
 import { ChartContainer } from '@/shared/components/ui/chart'
-import { SiteFavicon } from '@/shared/components/SiteFavicon'
 
+import { DomainRankList } from './DomainRankList'
 import { HistoryStatsHero } from './HistoryStatsHero'
 import { HistoryRow, type HistoryRowActions } from './HistoryRow'
 import { HM_CHART_SHELL, HM_SECTION_TITLE } from './layout'
@@ -24,18 +24,17 @@ export function OverviewTab({ pages, compact, selected, rowActions }: OverviewTa
   const spark = useMemo(() => visitsByDay(pages, 14), [pages])
   const recent = useMemo(() => sortByRecent(pages).slice(0, 8), [pages])
   const top = useMemo(() => topDomainsFromPages(pages, 10), [pages])
-  const maxVisits = top[0]?.visits ?? 1
 
   return (
-    <div className="flex flex-col gap-4 pb-4">
+    <div className="flex flex-col gap-4">
       <HistoryStatsHero stats={stats} />
       <div className={HM_CHART_SHELL}>
         <p className={HM_SECTION_TITLE}>{t('historyManager.insights.visitsByDay')}</p>
         <ChartContainer
           config={{ count: { label: 'Visits', color: chartColor(1) } }}
-          className="aspect-auto h-[116px] w-full"
+          className="aspect-auto h-[128px] w-full"
         >
-          <AreaChart data={spark} margin={{ top: 8, right: 6, left: 0, bottom: 4 }}>
+          <AreaChart data={spark} margin={{ top: 10, right: 8, left: 4, bottom: 8 }}>
             <XAxis dataKey="key" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
             <Area
               type="monotone"
@@ -62,27 +61,7 @@ export function OverviewTab({ pages, compact, selected, rowActions }: OverviewTa
           ))}
         </ul>
       </section>
-      <section>
-        <h3 className={HM_SECTION_TITLE}>{t('historyManager.insights.topDomains')}</h3>
-        <ul className="space-y-2 rounded-xl border border-border/70 bg-card/50 p-3">
-          {top.map((row) => (
-            <li key={row.domain} className="flex items-center gap-2.5 text-sm">
-              <SiteFavicon url={`https://${row.domain}`} />
-              <span className="min-w-0 flex-1 truncate font-medium">{row.domain}</span>
-              <div className="h-2 w-20 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: `${Math.round((row.visits / maxVisits) * 100)}%`,
-                    backgroundColor: chartColor(4),
-                  }}
-                />
-              </div>
-              <span className="w-9 text-right text-xs tabular-nums text-muted-foreground">{row.visits}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <DomainRankList title={t('historyManager.insights.topDomains')} rows={top} />
     </div>
   )
 }

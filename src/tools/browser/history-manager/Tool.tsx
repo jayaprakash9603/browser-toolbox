@@ -166,10 +166,10 @@ export default function HistoryManagerTool() {
 
   return (
     <ToolPage tool={tool} actions={headerActions} contentClassName="flex h-full min-h-0 flex-col overflow-hidden p-0 @container">
-      <div className="mx-[var(--density-page-pad)] mt-2.5">
+      <div className="px-[var(--density-page-pad)] pt-2.5">
         <PermissionNotice active permissions={['history']} origins={[]} message={t('historyManager.permission')} />
       </div>
-      <div className="flex min-h-0 flex-1 flex-col gap-1 px-[var(--density-page-pad)] pb-1">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden px-[var(--density-page-pad)]">
         <div className={HM_TOOLBAR}>
         <div className="flex items-center gap-2">
           <SearchInput
@@ -226,7 +226,7 @@ export default function HistoryManagerTool() {
         )}
         </div>
         {selectedPages.length > 0 && (
-          <div className="mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-primary/25 bg-primary/5 px-2.5 py-2">
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-primary/25 bg-primary/5 px-2.5 py-2">
             <span className="text-xs font-medium">{t('historyManager.bulk.selected', { count: selectedPages.length })}</span>
             <Button type="button" size="xs" variant="destructive" onClick={() => setConfirmBulk(true)}>
               {t('historyManager.bulk.delete')}
@@ -245,7 +245,7 @@ export default function HistoryManagerTool() {
             </Button>
           </div>
         )}
-        <Tabs value={tab} onValueChange={(v) => setTab(v as HistoryManagerTab)} className="flex min-h-0 flex-1 flex-col gap-2.5">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as HistoryManagerTab)} className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <TabsList variant="attached" className="w-full shrink-0 bg-muted/30">
             {HISTORY_MANAGER_TABS.map((key) => {
               const Icon = TAB_ICONS[key]
@@ -322,6 +322,7 @@ export default function HistoryManagerTool() {
             </AnimatePresence>
           </div>
         </Tabs>
+      </div>
         <div className={HM_FOOTER}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -370,7 +371,6 @@ export default function HistoryManagerTool() {
             </DropdownMenu>
           </div>
         </div>
-      </div>
       <CleanupDialog
         open={cleanupOpen}
         onOpenChange={setCleanupOpen}

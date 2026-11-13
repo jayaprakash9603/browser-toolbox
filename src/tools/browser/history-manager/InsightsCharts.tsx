@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { chartColor, chartColorAt } from '@/shared/chart/series'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/shared/components/ui/chart'
 
+import { DomainRankList } from './DomainRankList'
 import { HM_CHART_SHELL, HM_SECTION_TITLE } from './layout'
 
 interface InsightsChartsProps {
@@ -16,7 +17,7 @@ interface InsightsChartsProps {
   onDayPick: (start: number) => void
 }
 
-const CHART_MARGIN = { left: 0, right: 6, top: 10, bottom: 4 }
+const CHART_MARGIN = { left: 4, right: 8, top: 10, bottom: 8 }
 
 function heatClass(count: number, max: number): string {
   if (count <= 0) return 'border-border/50 bg-muted/40 text-muted-foreground'
@@ -31,14 +32,12 @@ export default function InsightsCharts({ data, onDayPick }: InsightsChartsProps)
   const { t } = useTranslation()
   const hourRows = data.byHour.map((count, hour) => ({ hour: `${hour}`, count }))
   const dayRows = data.byDay
-  const maxDomain = Math.max(...data.topDomains.map((d) => d.visits), 1)
   const maxWeekday = Math.max(...data.byWeekday.map((d) => d.count), 1)
   const visitsColor = chartColor(1)
   const hourColor = chartColor(2)
-  const domainBarColor = chartColor(3)
 
   return (
-    <div className="flex flex-col gap-4 pb-2">
+    <div className="flex flex-col gap-4">
       <div className={HM_CHART_SHELL}>
         <p className={HM_SECTION_TITLE}>{t('historyManager.insights.visitsByDay')}</p>
         <ChartContainer config={{ count: { label: 'Visits', color: visitsColor } }} className="aspect-auto h-[148px] w-full">
@@ -77,29 +76,8 @@ export default function InsightsCharts({ data, onDayPick }: InsightsChartsProps)
           </BarChart>
         </ChartContainer>
       </div>
+      <DomainRankList title={t('historyManager.insights.topDomains')} rows={data.topDomains} barToken={3} />
       <section className={HM_CHART_SHELL}>
-        <p className={HM_SECTION_TITLE}>{t('historyManager.insights.topDomains')}</p>
-        <ul className="space-y-2 text-sm">
-          {data.topDomains.map((row) => (
-            <li key={row.domain} className="flex items-center justify-between gap-3">
-              <span className="min-w-0 truncate font-medium">{row.domain}</span>
-              <div className="flex items-center gap-2.5">
-                <div className="h-2 w-16 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${Math.round((row.visits / maxDomain) * 100)}%`,
-                      backgroundColor: domainBarColor,
-                    }}
-                  />
-                </div>
-                <span className="w-8 shrink-0 text-right text-xs tabular-nums text-muted-foreground">{row.visits}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
-      <section>
         <p className={HM_SECTION_TITLE}>{t('historyManager.insights.heatmap')}</p>
         <div className="grid grid-cols-7 gap-2">
           {data.byWeekday.map((row) => (
