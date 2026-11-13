@@ -47,6 +47,8 @@ import { registerScreenshotHandlers } from './screenshot'
 import { handleRecorderMenuClick, isRecorderMenuAction, registerRecorder } from './recorder'
 import { registerHtmlBundleJobHandlers } from './htmlBundleJob'
 import { registerImageDownloadJobHandlers } from './imageDownloadJob'
+import { registerDownloadManager } from './download-manager'
+import { handleDownloadManagerMenuClick, isDownloadManagerMenuItem } from './download-manager/menus'
 import { registerNetMonitor } from './netmon'
 import { registerToolbarIcon } from './toolbarIcon'
 import { registerInterceptor } from './interceptor'
@@ -117,6 +119,10 @@ chrome.permissions.onAdded.addListener((added) => {
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   const menuItemId = String(info.menuItemId)
+  if (isDownloadManagerMenuItem(menuItemId)) {
+    void handleDownloadManagerMenuClick(menuItemId, info, tab)
+    return
+  }
   if (isImageConvertMenuItem(menuItemId)) {
     void handleImageConvertMenuClick(info, tab)
     return
@@ -181,6 +187,7 @@ safeRegister('screenshot', registerScreenshotHandlers)
 safeRegister('recorder', registerRecorder)
 safeRegister('htmlBundleJob', registerHtmlBundleJobHandlers)
 safeRegister('imageDownloadJob', registerImageDownloadJobHandlers)
+safeRegister('downloadManager', registerDownloadManager)
 safeRegister('adblock', registerAdblock)
 safeRegister('protection', registerProtection)
 safeRegister('sitesYoutube', registerSitesYoutube)

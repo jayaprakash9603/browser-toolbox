@@ -7,7 +7,7 @@ import {
 } from '@/core/protection'
 import { createLogger } from '@/core/logging'
 
-import { takeRequestedName } from '../downloadNames'
+import { buildFilenameSuggestion } from '../download-manager/filenameSuggest'
 import { threatCategoryForHost } from './rules'
 
 const logger = createLogger('protection-downloads')
@@ -100,12 +100,18 @@ async function cancelQuietly(id: number): Promise<void> {
 }
 
 async function inspect(item: chrome.downloads.DownloadItem, suggest: Suggest): Promise<void> {
-  if (item.byExtensionId === chrome.runtime.id) {
-    const filename = takeRequestedName(item.url)
-    return suggest(filename ? { filename, conflictAction: 'uniquify' } : undefined)
-  }
   const state = await getProtectionState()
-  if (!state.enabled || !state.downloadGuard) return suggest()
+  const filenameSuggestion = await buildFilenameSuggestion(item)
+
+  async function allowWithFilename(): Promise<void> {
+    if (filenameSuggestion) return suggest(filenameSuggestion)
+    return suggest()
+  }
+
+  if (item.byExtensionId === chrome.runtime.id) {
+    return allowWithFilename()
+  }
+  if (!state.enabled || !state.downloadGuard) return allowWithFilename()
 
   const hosts = itemHosts(item)
   const threatHost = await firstThreat(hosts)
@@ -117,7 +123,7 @@ async function inspect(item: chrome.downloads.DownloadItem, suggest: Suggest): P
     threatCategory: threatHost ? 'threat' : null,
   })
 
-  if (verdict.action === 'allow') return suggest()
+  if (verdict.action === 'allow') return allowWithFilename()
 
   if (verdict.action === 'block') {
     await cancelQuietly(item.id)
@@ -140,7 +146,10 @@ export async function decideDownload(id: number, keep: boolean): Promise<void> {
   if (!entry) return
   pending.delete(id)
   if (keep) {
-    entry.suggest()
+    void chrome.downloads
+      .search({ id })
+      .then((items) => buildFilenameSuggestion(items[0] ?? { id, url: '', filename: '' } as chrome.downloads.DownloadItem))
+      .then((suggestion) => entry.suggest(suggestion))
     return
   }
   await cancelQuietly(id)

@@ -12,6 +12,7 @@ import { collectSeoData } from './seoCollect'
 import { applySeoHighlight, clearSeoHighlight } from './seoHighlight'
 import { collectPageSvgs, svgToJsx } from './collectors/svgs'
 import { collectPageLinks, locatePageLink } from './collectors/links'
+import { scanDownloadableResources } from './collectors/downloadable'
 import { clearPageLinkMarks, markPageLinks } from './collectors/linkMarks'
 import { applyFontTipShow, hideFontTip, isFontInspectorActive, setFontInspector, setWireframe } from './designModes'
 import { handleInspectorFrameFocus } from './inspectorFrameFocus'
@@ -306,6 +307,17 @@ if (!contentAlreadyInstalled) chrome.runtime.onMessage.addListener((raw, sender,
     case 'SCAN_PAGE_IMAGES':
       sendResponse({ ok: true, data: scanImagesOnPage() })
       return false
+    case 'SCAN_DOWNLOADABLE_RESOURCES': {
+      const opts = raw as { includeImages?: boolean; includeMedia?: boolean }
+      sendResponse({
+        ok: true,
+        data: scanDownloadableResources({
+          includeImages: opts.includeImages,
+          includeMedia: opts.includeMedia,
+        }),
+      })
+      return false
+    }
     case 'GET_STORAGE_SNAPSHOT':
       sendResponse({ ok: true, data: collectStorage() })
       return false

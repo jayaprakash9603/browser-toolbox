@@ -60,9 +60,17 @@ const optionalPermissions = [
   'debugger',
   'cookies',
   'bookmarks',
+  'downloads.open',
 ]
 
-const firefoxOptionalPermissions = ['clipboardRead', 'webRequest', 'debugger', 'cookies', 'bookmarks']
+const firefoxOptionalPermissions = [
+  'clipboardRead',
+  'webRequest',
+  'debugger',
+  'cookies',
+  'bookmarks',
+  'downloads.open',
+]
 
 export default defineManifest({
   manifest_version: 3,

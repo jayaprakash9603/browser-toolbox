@@ -14,6 +14,7 @@ import { buildColorPickerMenus } from './colorPicker/menus'
 import { buildSiteQuickActionMenus } from './siteQuickActions'
 import { buildTaskMenus } from './tasks'
 import { buildReadingListMenus } from './readingList'
+import { buildDownloadManagerMenus } from './download-manager/menus'
 
 const logger = createLogger('context-menus')
 
@@ -83,6 +84,13 @@ async function rebuildContextMenusOnce(): Promise<void> {
       buildReadingListMenus(createContextMenu)
     } catch (error) {
       logger.warn('reading list menu build failed', error)
+    }
+  }
+  if (menu.downloadManager) {
+    try {
+      buildDownloadManagerMenus(createContextMenu)
+    } catch (error) {
+      logger.warn('download manager menu build failed', error)
     }
   }
   for (const { name, run, enabled } of builders) {

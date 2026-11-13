@@ -316,6 +316,44 @@ export type ExtensionMessage =
   | { type: 'SCRIPT_STUDIO_CHECK_UPDATES'; scriptIds?: string[] }
   | { type: 'SCRIPT_STUDIO_SET_GLOBAL'; enabled: boolean }
   | { type: 'RV_FRAMING_SET'; allowed: boolean }
+  | { type: 'SCAN_DOWNLOADABLE_RESOURCES'; includeImages?: boolean; includeMedia?: boolean }
+  | { type: 'DOWNLOAD_MANAGER_GET_SNAPSHOT' }
+  | { type: 'DOWNLOAD_MANAGER_SEARCH'; query?: chrome.downloads.DownloadQuery }
+  | {
+      type: 'DOWNLOAD_MANAGER_START'
+      url: string
+      filename?: string
+      saveAs?: boolean
+      referrer?: string
+    }
+  | {
+      type: 'DOWNLOAD_MANAGER_CONTROL'
+      action: 'pause' | 'resume' | 'cancel' | 'erase' | 'removeFile' | 'show' | 'open' | 'retry'
+      ids: number[]
+    }
+  | {
+      type: 'DOWNLOAD_MANAGER_PATCH_SETTINGS'
+      patch: Partial<import('@/core/download-manager').DownloadManagerSettings>
+    }
+  | { type: 'DOWNLOAD_MANAGER_GET_STATE' }
+  | {
+      type: 'DOWNLOAD_MANAGER_ENQUEUE'
+      items: { url: string; filename?: string; referrer?: string; pageUrl?: string; pageTitle?: string }[]
+    }
+  | {
+      type: 'DOWNLOAD_MANAGER_QUEUE_UPDATE'
+      op: 'reorder' | 'remove' | 'clear'
+      order?: string[]
+      id?: string
+      doneOnly?: boolean
+    }
+  | {
+      type: 'DOWNLOAD_MANAGER_SCHEDULE'
+      op?: 'upsert' | 'delete'
+      job?: Omit<import('@/core/download-manager').ScheduledJob, 'createdAt'> & { id?: string }
+      jobId?: string
+    }
+  | { type: 'DOWNLOAD_MANAGER_EXPORT_HISTORY'; format: 'csv' | 'json' }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
@@ -492,6 +530,17 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'SCRIPT_STUDIO_CHECK_UPDATES',
   'SCRIPT_STUDIO_SET_GLOBAL',
   'RV_FRAMING_SET',
+  'SCAN_DOWNLOADABLE_RESOURCES',
+  'DOWNLOAD_MANAGER_GET_SNAPSHOT',
+  'DOWNLOAD_MANAGER_SEARCH',
+  'DOWNLOAD_MANAGER_START',
+  'DOWNLOAD_MANAGER_CONTROL',
+  'DOWNLOAD_MANAGER_PATCH_SETTINGS',
+  'DOWNLOAD_MANAGER_GET_STATE',
+  'DOWNLOAD_MANAGER_ENQUEUE',
+  'DOWNLOAD_MANAGER_QUEUE_UPDATE',
+  'DOWNLOAD_MANAGER_SCHEDULE',
+  'DOWNLOAD_MANAGER_EXPORT_HISTORY',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {

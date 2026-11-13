@@ -13,7 +13,7 @@ The extension installs with no site access. Anything that runs on web pages or r
 | `activeTab`                     | Page tools and the element picker run on the current tab after the user clicks the toolbar icon, a menu item or a keyboard shortcut.                                                                                        |
 | `scripting`                     | Injects page tools on demand, and registers ad-blocking, protection and site add-on scripts while those features are on and site access is granted.                                                                         |
 | `tabs`                          | Reads the active tab and powers Tab Manager and Browser Toolkit. Tasks reads the active tab's URL, title and favicon to offer "save this page", only while the panel is open.                                               |
-| `downloads`                     | Saves screenshots, converted images, page bundles and exports. When web protection is on, the download guard cancels files from known threat hosts.                                                                         |
+| `downloads`                     | Saves screenshots, converted images, page bundles, the Download Manager, and exports. When web protection is on, the download guard cancels files from known threat hosts.                                                 |
 | `offscreen`                     | Recording streams, blobs and audio playback that a service worker cannot handle.                                                                                                                                            |
 | `tabCapture`, `desktopCapture`  | Screen Recorder records the current tab, or a window or screen picked in Chrome's chooser.                                                                                                                                  |
 | `declarativeNetRequest`         | Bundled static rules block ads and trackers, and dynamic rules block known threat hosts, only after the user turns ad blocking or web protection on (both are off by default).                                              |
@@ -34,6 +34,7 @@ The extension installs with no site access. Anything that runs on web pages or r
 | `cookies`                               | Enabling `GM_cookie` for Script Studio scripts.                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `debugger`                              | Turning on Deep intercept and attaching to a tab (Chrome shows its debugging banner).                                                                                                                                                                                                                                                                                                                                                                                |
 | `bookmarks`                             | Opening Bookmark Search; reads Chrome bookmarks locally for search and export (nothing is uploaded).                                                                                                                                                                                                                                                                                                                                                                 |
+| `downloads.open`                        | Opening a finished file from the Download Manager ("Open file"). Does not change where files are saved.                                                                                                                                                                                                                                                                                                                                                            |
 
 `src/core/permissions/siteAccess.ts` holds the request helpers. The background worker listens to `chrome.permissions.onAdded` and re-syncs content script registrations, so features start working in open tabs without a reload.
 
@@ -47,7 +48,7 @@ The extension installs with no site access. Anything that runs on web pages or r
 
 Only when the user starts a tool or turns a feature on:
 
-- API Request Builder, Link Checker, Redirect Tracer, Image Downloader, HTML Bundle: the hosts the user targets.
+- API Request Builder, Link Checker, Redirect Tracer, Image Downloader, Download Manager bulk/sniffer, HTML Bundle: the hosts the user targets.
 - Speed test: `speed.cloudflare.com`, `ipwho.is`, `api.bigdatacloud.net`.
 - SEO PageSpeed: page URL to `www.googleapis.com/pagespeedonline`.
 - Internet monitor: the ping URL the user chooses, and `api.ipify.org` when "Show IP" is on.

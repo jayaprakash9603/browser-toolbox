@@ -98,6 +98,24 @@
   "colorResultClose": {
     "message": "Close"
   },
+  "contextMenuDownloadParent": {
+    "message": "Downloads"
+  },
+  "contextMenuDownloadLink": {
+    "message": "Download this link"
+  },
+  "contextMenuDownloadImage": {
+    "message": "Download this image"
+  },
+  "contextMenuDownloadScan": {
+    "message": "Scan page for files"
+  },
+  "contextMenuDownloadOpen": {
+    "message": "Open Download Manager"
+  },
+  "contextMenuDownloadQueue": {
+    "message": "Add link to queue"
+  },
   "contextMenuColorPicker": {
     "message": "Color picker"
   },

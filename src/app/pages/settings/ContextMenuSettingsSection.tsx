@@ -76,6 +76,12 @@ const ROWS: { key: ContextMenuVisibilityKey; labelKey: string; descKey: string; 
     descKey: 'settings.contextMenu.chatPulseDescription',
     searchId: 'contextMenuChatPulse',
   },
+  {
+    key: 'downloadManager',
+    labelKey: 'settings.contextMenu.downloadManager',
+    descKey: 'settings.contextMenu.downloadManagerDescription',
+    searchId: 'contextMenuDownloadManager',
+  },
 ]
 
 export function ContextMenuSettingsSection() {

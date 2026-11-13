@@ -81,6 +81,7 @@ export const SECTIONS: SectionDefinition[] = [
     icon: LayoutDashboardIcon,
     toolIds: [
       'browser.toolkit',
+      'browser.download-manager',
       'browser.internet-monitor',
       'browser.picture-in-picture',
       'datetime.toolkit',

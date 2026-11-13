@@ -1,4 +1,4 @@
-import { GaugeIcon, PanelsTopLeftIcon, PictureInPicture2Icon, WifiIcon } from 'lucide-react'
+import { DownloadIcon, GaugeIcon, PanelsTopLeftIcon, PictureInPicture2Icon, WifiIcon } from 'lucide-react'
 
 import { defineTool } from '@/core/registry'
 
@@ -81,6 +81,44 @@ export const browserTools = [
       },
     ],
     loader: () => import('@/tools/browser/speed-test/Tool'),
+  }),
+  defineTool({
+    id: 'browser.download-manager',
+    name: 'Download Manager',
+    description: 'View, queue, bulk-save, and organize downloads with native Chrome controls.',
+    category: 'browser',
+    icon: DownloadIcon,
+    keywords: [
+      'download',
+      'downloads',
+      'manager',
+      'queue',
+      'bulk',
+      'images',
+      'history',
+      'sniffer',
+    ],
+    aliases: ['download manager', 'bulk downloader', 'download queue'],
+    route: '/tools/browser/download-manager',
+    capabilities: ['SIDE_PANEL', 'CONTENT_SCRIPT', 'PAGE_ACCESS', 'CONTEXT_MENU'],
+    status: 'active',
+    searchEntries: [
+      {
+        id: 'dm-queue',
+        labelKey: 'downloadManager.tab.queue',
+        fallbackLabel: 'Queue',
+        keywords: ['queue', 'bulk'],
+        params: { tab: 'queue' },
+      },
+      {
+        id: 'dm-sniffer',
+        labelKey: 'downloadManager.tab.sniffer',
+        fallbackLabel: 'Link sniffer',
+        keywords: ['sniffer', 'links'],
+        params: { tab: 'sniffer' },
+      },
+    ],
+    loader: () => import('@/tools/browser/download-manager/Tool'),
   }),
   defineTool({
     id: 'browser.toolkit',

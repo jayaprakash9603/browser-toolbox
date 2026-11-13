@@ -1,5 +1,6 @@
 import { fileToolkitStrings } from './fileToolkitEn'
 import { imageDownloaderStrings } from './imageDownloaderEn'
+import { downloadManagerStrings } from './downloadManagerEn'
 import { imageLinksStrings } from './imageLinksEn'
 import { pdfToolkitStrings } from './pdfToolkitEn'
 import { cssGeneratorStrings } from './cssGeneratorEn'
@@ -357,6 +358,9 @@ const en = {
     'Pause ad blocking or protection and toggle inspectors on this site.',
   'settings.contextMenu.chatPulse': 'WhatsApp ChatPulse',
   'settings.contextMenu.chatPulseDescription': 'Open analytics on WhatsApp Web.',
+  'settings.contextMenu.downloadManager': 'Download Manager',
+  'settings.contextMenu.downloadManagerDescription':
+    'Download links, scan pages, and open the Download Manager from the context menu.',
   'settings.data': 'Data',
   'settings.clearClipboardHistory': 'Clear clipboard history',
   'settings.clearRecentTools': 'Clear recent tools',
@@ -1678,6 +1682,7 @@ const en = {
   ...pdfToolkitStrings,
   ...cssGeneratorStrings,
   ...imageDownloaderStrings,
+  ...downloadManagerStrings,
   ...imageLinksStrings,
   ...sitesYoutubeStrings,
   ...scriptStudioStrings,
