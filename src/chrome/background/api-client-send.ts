@@ -98,7 +98,10 @@ export function registerApiClientSendHandler(): void {
 
     if (type === 'API_CLIENT_CANCEL') {
       const { requestId } = message as { requestId?: string }
-      if (requestId) inFlight.get(requestId)?.abort()
+      if (requestId) {
+        inFlight.get(requestId)?.abort()
+        inFlight.delete(requestId)
+      }
       return false
     }
 

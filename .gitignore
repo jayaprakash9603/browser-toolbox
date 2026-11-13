@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+/script-sandbox.html
 # Chrome Web Store zips from release.bat
 /releases/
 *.local

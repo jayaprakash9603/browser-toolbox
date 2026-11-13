@@ -8,7 +8,8 @@ const candidates = [
   resolve(root, '../postman-lite/dist/script-sandbox.html'),
 ]
 const source = candidates.find((path) => existsSync(path))
-const dest = resolve(root, 'public/script-sandbox.html')
+const destPublic = resolve(root, 'public/script-sandbox.html')
+const destRoot = resolve(root, 'script-sandbox.html')
 
 if (!source) {
   console.warn(
@@ -17,4 +18,5 @@ if (!source) {
   process.exit(0)
 }
 
-copyFileSync(source, dest)
+copyFileSync(source, destPublic)
+copyFileSync(source, destRoot)

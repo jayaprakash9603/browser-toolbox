@@ -80,6 +80,7 @@ export default defineVitestConfig({
         recorder: 'recorder.html',
         recording: 'recording.html',
         'react-devtools-panel': 'react-devtools-panel.html',
+        'script-sandbox': 'script-sandbox.html',
       },
       output: {
         manualChunks(id) {
