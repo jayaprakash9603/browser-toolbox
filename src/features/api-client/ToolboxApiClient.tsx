@@ -52,9 +52,9 @@ export function ToolboxApiClient() {
       locale="en"
       storageNamespace="browser_toolbox_apiclient"
       persistSidebarState={false}
-      defaultSidebarOpen={true}
+      defaultSidebarOpen={false}
       settingsExtras={settingsExtras}
-      features={{ importState: false, shortcutImport: false }}
+      features={{ importState: false }}
     />
   )
 }
