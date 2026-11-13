@@ -86,6 +86,8 @@ describe('clipboard overlay inject', () => {
     const list = host!.shadowRoot?.querySelector('.list') as HTMLElement
     expect(card).toBeTruthy()
     expect(list.querySelectorAll('.item')).toHaveLength(9)
+    expect(list.querySelectorAll('.copied-flash')).toHaveLength(9)
+    expect(host!.shadowRoot?.querySelector('[role="status"]')).toBeTruthy()
     expect(card.className).toContain('card')
     expect(host!.shadowRoot?.querySelector('.chrome')).toBeTruthy()
     expect(host!.shadowRoot?.querySelector('.scroller')).toBeTruthy()

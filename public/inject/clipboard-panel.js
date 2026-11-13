@@ -18,6 +18,7 @@
   var filtersEl
   var countEl
   var toastTimer
+  var toastLeaveTimer
   var resizeObs
   var railEl
   var thumbEl
@@ -56,15 +57,43 @@
     return Promise.resolve(copyTextSync(value))
   }
 
-  function showToast(ok) {
-    if (!toastEl) return
-    toastEl.textContent = ok ? text.copied : text.copyFailed
-    toastEl.classList.toggle('fail', !ok)
-    toastEl.classList.add('show')
+  function copiedFlashEl() {
+    var el = document.createElement('div')
+    el.className = 'copied-flash'
+    el.setAttribute('aria-hidden', 'true')
+    el.innerHTML =
+      '<span class="copied-pill">' +
+      '<svg class="copied-check" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17.5 19 7"/></svg>' +
+      '<svg class="copied-x" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M7 7l10 10"/><path d="M17 7 7 17"/></svg>' +
+      '<span class="copied-label"></span></span>'
+    return el
+  }
+
+  function clearCopied(item) {
+    if (!item) return
+    item.classList.remove('just-copied', 'copied-fail', 'copied-leaving')
+  }
+
+  function showCopied(item, ok) {
+    if (!item) return
+    var prev = listEl ? listEl.querySelector('.item.just-copied') : null
+    if (prev && prev !== item) clearCopied(prev)
+    var label = item.querySelector('.copied-label')
+    if (label) label.textContent = ok ? text.copied : text.copyFailed
+    item.classList.toggle('copied-fail', !ok)
+    item.classList.remove('just-copied', 'copied-leaving')
+    void item.offsetWidth
+    item.classList.add('just-copied')
+    if (toastEl) toastEl.textContent = ok ? text.copied : text.copyFailed
     window.clearTimeout(toastTimer)
+    window.clearTimeout(toastLeaveTimer)
     toastTimer = window.setTimeout(function () {
-      toastEl.classList.remove('show')
-    }, 1200)
+      item.classList.add('copied-leaving')
+      toastLeaveTimer = window.setTimeout(function () {
+        clearCopied(item)
+        if (toastEl) toastEl.textContent = ''
+      }, reduceMotion ? 0 : 160)
+    }, 1400)
   }
 
   function classify(value) {
@@ -335,7 +364,9 @@
     preview.textContent = entry.text
     body.appendChild(preview)
     body.addEventListener('click', function () {
-      copyText(entry.text).then(showToast)
+      copyText(entry.text).then(function (ok) {
+        showCopied(wrap, ok)
+      })
     })
 
     var foot = document.createElement('div')
@@ -350,7 +381,9 @@
     var actions = document.createElement('div')
     actions.className = 'actions'
     actions.appendChild(iconBtn(text.copy, 'copy', function () {
-      copyText(entry.text).then(showToast)
+      copyText(entry.text).then(function (ok) {
+        showCopied(wrap, ok)
+      })
     }))
     actions.appendChild(iconBtn(entry.pinned ? text.unpin : text.pin, entry.pinned ? 'pin on' : 'pin', function () {
       chrome.runtime.sendMessage({
@@ -388,6 +421,7 @@
     foot.appendChild(actions)
     wrap.appendChild(body)
     wrap.appendChild(foot)
+    wrap.appendChild(copiedFlashEl())
     return wrap
   }
 
@@ -419,6 +453,7 @@
     if (host) host.remove()
     host = null
     window.clearTimeout(toastTimer)
+    window.clearTimeout(toastLeaveTimer)
     if (resizeObs) {
       resizeObs.disconnect()
       resizeObs = null
@@ -549,9 +584,10 @@
     '.section{display:flex;align-items:center;gap:6px;padding:2px 2px 0;font-size:10px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:#71717a}' +
     '.section-count{font-variant-numeric:tabular-nums;opacity:.75}' +
     '.section-line{height:1px;flex:1;background:rgba(24,24,27,.1)}' +
-    '.item{width:100%;min-width:0;border-radius:10px;border:1px solid rgba(24,24,27,.1);background:#fff;overflow:hidden}' +
+    '.item{position:relative;width:100%;min-width:0;border-radius:10px;border:1px solid rgba(24,24,27,.1);background:#fff;overflow:hidden}' +
     '.item:hover{border-color:rgba(99,102,241,.28)}' +
     '.item.pinned{border-color:rgba(217,119,6,.35);background:#fffbeb}' +
+    '.item.just-copied{border-color:rgba(99,102,241,.45)}' +
     '.body{display:flex;align-items:flex-start;gap:8px;width:100%;min-width:0;margin:0;padding:8px 10px 2px;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer}' +
     '.kind{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:6px;flex-shrink:0;margin-top:1px;background:#eef2ff;color:#4f46e5}' +
     '.kind.link,.kind.email{background:#e0f2fe;color:#0284c7}' +
@@ -570,11 +606,29 @@
     '.icon.on{color:#d97706}' +
     '.icon.delete:hover{color:#dc2626;background:rgba(220,38,38,.08)}' +
     '.empty{margin:0;padding:18px 12px;text-align:center;font-size:12px;line-height:1.45;color:#71717a}' +
-    '.toast{position:absolute;left:10px;right:10px;bottom:10px;padding:6px 10px;border-radius:8px;background:#18181b;color:#fafafa;' +
-    'font-size:11px;font-weight:600;opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity .15s ease,transform .15s ease}' +
-    '.toast.show{opacity:1;transform:none}' +
-    '.toast.fail{background:#991b1b}' +
-    '@media (prefers-reduced-motion:reduce){.toast{transition:none}}' +
+    '.copied-flash{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.78);' +
+    'backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;pointer-events:none;z-index:2}' +
+    '.item.just-copied .copied-flash{animation:copied-in .18s cubic-bezier(.2,.8,.2,1) forwards}' +
+    '.item.just-copied.copied-leaving .copied-flash{animation:copied-out .16s ease-in forwards}' +
+    '.copied-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 12px 7px 10px;border-radius:999px;background:#4f46e5;color:#fff;' +
+    'font:650 12px/1 system-ui,-apple-system,Segoe UI,sans-serif;box-shadow:0 8px 20px rgba(79,70,229,.28);transform:translateY(6px) scale(.88);opacity:0}' +
+    '.item.just-copied .copied-pill{animation:copied-pill .42s cubic-bezier(.22,1.15,.36,1) .04s forwards}' +
+    '.copied-check,.copied-x{flex:none}' +
+    '.copied-x,.item.copied-fail .copied-check{display:none}' +
+    '.item.copied-fail .copied-x{display:block}' +
+    '.item.copied-fail .copied-pill{background:#dc2626;box-shadow:0 8px 20px rgba(220,38,38,.28)}' +
+    '.copied-check path{stroke-dasharray:22;stroke-dashoffset:22}' +
+    '.item.just-copied:not(.copied-fail) .copied-check path{animation:copied-draw .32s ease-out .12s forwards}' +
+    '.live{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}' +
+    '@keyframes copied-in{to{opacity:1}}' +
+    '@keyframes copied-out{from{opacity:1}to{opacity:0}}' +
+    '@keyframes copied-pill{0%{transform:translateY(6px) scale(.88);opacity:0}62%{transform:translateY(0) scale(1.04);opacity:1}100%{transform:translateY(0) scale(1);opacity:1}}' +
+    '@keyframes copied-draw{to{stroke-dashoffset:0}}' +
+    '@media (prefers-reduced-motion:reduce){' +
+    '.item.just-copied .copied-flash,.item.just-copied.copied-leaving .copied-flash,.item.just-copied .copied-pill,.item.just-copied:not(.copied-fail) .copied-check path{animation:none}' +
+    '.item.just-copied .copied-flash{opacity:1}.item.just-copied.copied-leaving .copied-flash{opacity:0}' +
+    '.item.just-copied .copied-pill{transform:none;opacity:1}.copied-check path{stroke-dashoffset:0}' +
+    '}' +
     '@media (prefers-color-scheme:dark){' +
     '.catcher{background:rgba(0,0,0,.32)}' +
     '.card{background:#18181b;color:#f4f4f5;border-color:rgba(255,255,255,.1);box-shadow:0 12px 36px rgba(0,0,0,.45)}' +
@@ -595,6 +649,10 @@
     '.section-line{background:rgba(255,255,255,.1)}' +
     '.item{background:#27272a;border-color:rgba(255,255,255,.1)}' +
     '.item.pinned{background:#292524;border-color:rgba(251,191,36,.35)}' +
+    '.item.just-copied{border-color:rgba(165,180,252,.55)}' +
+    '.copied-flash{background:rgba(24,24,27,.72)}' +
+    '.copied-pill{background:#6366f1;box-shadow:0 10px 24px rgba(0,0,0,.35)}' +
+    '.item.copied-fail .copied-pill{background:#ef4444}' +
     '.kind{background:rgba(99,102,241,.18);color:#c7d2fe}' +
     '.kind.link,.kind.email{background:rgba(14,165,233,.18);color:#7dd3fc}' +
     '.kind.code{background:rgba(245,158,11,.18);color:#fcd34d}' +
@@ -616,7 +674,7 @@
     '<div class="scroll-rail" hidden role="scrollbar" aria-controls="tbx-clip-list" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">' +
     '<div class="scroll-thumb"></div></div>' +
     '<div class="fade" aria-hidden="true"></div></div>' +
-    '<div class="toast" role="status" aria-live="polite"></div></div></div>'
+    '<div class="live" role="status" aria-live="polite"></div></div></div>'
 
   sh.querySelector('.title').textContent = text.title
   countEl = sh.querySelector('.count')
@@ -628,7 +686,7 @@
   filtersEl.setAttribute('aria-label', text.filterLabel)
   cardEl = sh.querySelector('.card')
   listEl = sh.querySelector('.list')
-  toastEl = sh.querySelector('.toast')
+  toastEl = sh.querySelector('.live')
   railEl = sh.querySelector('.scroll-rail')
   thumbEl = sh.querySelector('.scroll-thumb')
   if (railEl) railEl.setAttribute('aria-label', text.title)

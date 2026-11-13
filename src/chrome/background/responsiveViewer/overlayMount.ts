@@ -315,6 +315,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       overflow-y: auto;
       overscroll-behavior: contain;
       scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
     }
     .root.theme-dark .actions-scroll { border-top-color: #2a3544; }
     .root.theme-dark .actions {
@@ -352,6 +354,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       min-height: 0;
       overflow: hidden;
       flex-direction: row;
+      align-items: stretch;
     }
     .panel[data-panel="devices"].open { display: flex; }
     .panel[data-panel="devices"]::after {
@@ -376,13 +379,19 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .device-sidebar {
       flex-shrink: 0;
+      align-self: stretch;
       width: 76px;
+      min-height: 0;
+      max-height: 100%;
       padding: 10px 6px;
       border-right: 1px solid var(--tbx-panel-border);
       background: var(--tbx-input-bg);
       overflow-y: auto;
+      overflow-x: hidden;
       overscroll-behavior: contain;
       scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
       display: flex;
       flex-direction: column;
       gap: 6px;
@@ -417,17 +426,21 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       flex: 1;
       min-width: 0;
       min-height: 0;
+      max-height: 100%;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
     }
     .panel[data-panel="devices"] .panel-list {
-      flex: 1;
-      min-height: 120px;
-      max-height: min(52vh, 480px);
+      flex: 1 1 auto;
+      min-height: 0;
       padding: 6px 10px 12px;
+      overflow-x: hidden;
       overflow-y: auto;
       overscroll-behavior: contain;
       scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
     }
     .device-section {
       margin: 12px 4px 6px;
@@ -908,6 +921,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   }
 
   const devicesPanel = shadow.querySelector('[data-panel="devices"]') as HTMLElement
+  const actionsScroll = shadow.querySelector('.actions-scroll') as HTMLElement
 
   const positionRailPanel = (panel: HTMLElement, btn: HTMLElement, arrowVar: string, maxHeight: number) => {
     if (!panel.classList.contains('open')) return
@@ -917,11 +931,40 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     const arrowY = btnRect.top - rootRect.top + btnRect.height / 2
     panel.style.setProperty(arrowVar, `${arrowY}px`)
     const measured = Math.min(panel.getBoundingClientRect().height || maxHeight, maxHeight)
+    panel.style.height = `${measured}px`
     let top = arrowY - measured / 2
     top = Math.max(12, Math.min(top, rootRect.height - measured - 12))
     panel.style.top = `${top}px`
     panel.style.right = '76px'
     panel.style.transform = 'none'
+  }
+
+  /** Wheel on page is suppressed while the overlay is open; keep scroll inside popover rails. */
+  const bindOverlayWheelScroll = (el: HTMLElement) => {
+    el.addEventListener(
+      'wheel',
+      (event) => {
+        event.stopPropagation()
+        const canScroll = el.scrollHeight > el.clientHeight + 1
+        if (!canScroll) {
+          event.preventDefault()
+          return
+        }
+        const atTop = el.scrollTop <= 0
+        const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1
+        const delta = event.deltaY
+        if ((delta < 0 && atTop) || (delta > 0 && atBottom)) {
+          event.preventDefault()
+          return
+        }
+        const nextTop = el.scrollTop + delta
+        if (nextTop !== el.scrollTop) {
+          el.scrollTop = nextTop
+          event.preventDefault()
+        }
+      },
+      { passive: false },
+    )
   }
 
   const positionDevicesPanel = () => {
@@ -1124,7 +1167,9 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
 
     deviceList.replaceChildren(...fragments)
     renderKindTabs(fav, recent)
-    requestAnimationFrame(() => positionDevicesPanel())
+    requestAnimationFrame(() => {
+      positionDevicesPanel()
+    })
   }
 
   const capturePreview = shadow.querySelector('[data-capture-preview]') as HTMLImageElement
@@ -1140,7 +1185,9 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     layout()
     if (state.panel === 'devices') {
       void loadDevices()
-      requestAnimationFrame(() => positionDevicesPanel())
+      requestAnimationFrame(() => {
+      positionDevicesPanel()
+    })
     } else if (state.panel === 'settings') {
       void loadOverlaySettings()
       requestAnimationFrame(() => {
@@ -1281,6 +1328,10 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   })
   deviceBtn.addEventListener('click', () => setPanel('devices'))
   settingsBtn.addEventListener('click', () => setPanel('settings'))
+  bindOverlayWheelScroll(deviceList)
+  bindOverlayWheelScroll(kindTabs)
+  bindOverlayWheelScroll(actionsScroll)
+
   searchInput.addEventListener('input', () => renderDevices())
   kindTabs.addEventListener('click', (event) => {
     const kind = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-kind]')?.dataset.kind
