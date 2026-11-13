@@ -1,4 +1,4 @@
-import { ArchiveIcon, GlobeIcon, InfoIcon, ImageIcon, LayersIcon, Link2Icon, LinkIcon } from 'lucide-react'
+import { ArchiveIcon, GlobeIcon, InfoIcon, ImageIcon, LayersIcon, Link2Icon, LinkIcon, RouteIcon } from 'lucide-react'
 
 import { defineTool } from '@/core/registry'
 
@@ -97,14 +97,14 @@ export const webTools = [
   }),
   defineTool({
     id: 'web.redirect-tracer',
-    name: 'Redirect Hop Tracer',
-    description: 'Trace redirect chains and navigation hops for the active tab.',
+    name: 'Redirect Checker',
+    description: 'Trace 301/302 chains for a URL and crawl the page to find links that redirect.',
     category: 'web',
-    icon: Link2Icon,
-    keywords: ['redirect', '301', '302', 'hop', 'redirect path'],
-    aliases: ['redirect path', 'redirect checker'],
+    icon: RouteIcon,
+    keywords: ['redirect', '301', '302', '307', '308', 'hop', 'redirect path', 'canonical', 'crawl'],
+    aliases: ['redirect path', 'redirect checker', 'redirect tracer'],
     route: '/tools/web/redirect-tracer',
-    capabilities: ['SIDE_PANEL'],
+    capabilities: ['SIDE_PANEL', 'CONTENT_SCRIPT', 'PAGE_ACCESS'],
     status: 'active',
     loader: () => import('@/tools/web/redirect-tracer/Tool'),
   }),

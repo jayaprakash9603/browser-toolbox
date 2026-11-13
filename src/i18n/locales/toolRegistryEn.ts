@@ -39,9 +39,9 @@ export const toolRegistryStrings = {
   'tools.web.copy-markdown.description': 'Convert page selection or article content to Markdown.',
   'tools.web.link-checker.name': 'Broken Link Checker',
   'tools.web.link-checker.description': 'Check HTTP status of links on the current page.',
-  'tools.web.redirect-tracer.name': 'Redirect Hop Tracer',
+  'tools.web.redirect-tracer.name': 'Redirect Checker',
   'tools.web.redirect-tracer.description':
-    'Trace redirect chains and navigation hops for the active tab.',
+    'Trace 301/302 chains for a URL and crawl the page to find links that redirect.',
   'tools.web.tech-stack.name': 'Tech Stack Detective',
   'tools.web.tech-stack.description':
     'Find the CMS, frameworks, analytics, CDN, hosting and more behind the active page, and export them to CSV.',

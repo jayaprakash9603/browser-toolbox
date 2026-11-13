@@ -705,7 +705,7 @@ export const TOOL_SEARCH_ENTRIES: Record<string, ToolSearchEntry[]> = {
     {
       id: 'trace',
       labelKey: 'web.redirectTracer.empty',
-      fallbackLabel: 'Redirect trace',
+      fallbackLabel: 'Scan redirects',
       params: {},
     },
   ],

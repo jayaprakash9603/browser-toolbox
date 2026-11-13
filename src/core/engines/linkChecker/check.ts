@@ -9,6 +9,8 @@ export interface LinkCheckRequestOptions {
 export type RedirectHop = {
   url: string
   status: number | null
+  location?: string | null
+  durationMs?: number
 }
 
 export type LinkCheckResult = {

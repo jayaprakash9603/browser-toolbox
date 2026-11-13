@@ -22,7 +22,7 @@ export const consolidationStrings = {
   'sites.linkedin.profile.headline': 'Headline',
   'sites.linkedin.profile.exportCsv': 'Copy CSV row',
   'web.techStack.empty': 'No known technologies detected on this page.',
-  'web.redirectTracer.empty': 'Navigate the tab to record redirect hops.',
+  'web.redirectTracer.empty': 'Scan this page to find redirecting links.',
   'web.linkChecker.run': 'Check links',
   'web.utm.base': 'Landing page URL',
   'web.utm.qr': 'Generate QR',

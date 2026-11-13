@@ -108,44 +108,73 @@ async function checkItem(
   }
 }
 
-async function hop(url: string, timeoutMs: number): Promise<{ status: number | null; location: string | null; timedOut: boolean }> {
+async function hop(
+  url: string,
+  timeoutMs: number,
+): Promise<{ status: number | null; location: string | null; timedOut: boolean; durationMs: number }> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
+  const started = performance.now()
   try {
     const res = await fetch(url, { method: 'GET', redirect: 'manual', cache: 'no-store', signal: controller.signal })
     void res.body?.cancel().catch(() => undefined)
-    return { status: res.status, location: res.headers.get('location'), timedOut: false }
+    return {
+      status: res.status,
+      location: res.headers.get('location'),
+      timedOut: false,
+      durationMs: Math.round(performance.now() - started),
+    }
   } catch {
-    return { status: null, location: null, timedOut: controller.signal.aborted }
+    return {
+      status: null,
+      location: null,
+      timedOut: controller.signal.aborted,
+      durationMs: Math.round(performance.now() - started),
+    }
   } finally {
     clearTimeout(timer)
   }
 }
 
+function withDuration<T extends { hops: RedirectHop[] }>(result: T): T & { durationMs: number } {
+  return { ...result, durationMs: result.hops.reduce((sum, item) => sum + (item.durationMs ?? 0), 0) }
+}
+
 export async function traceRedirects(
   href: string,
   options: LinkCheckRequestOptions = {},
-): Promise<Pick<LinkCheckResult, 'hops' | 'loop' | 'finalUrl' | 'status' | 'redirected' | 'timedOut' | 'error'>> {
+): Promise<Pick<LinkCheckResult, 'hops' | 'loop' | 'finalUrl' | 'status' | 'redirected' | 'timedOut' | 'error' | 'durationMs'>> {
   const timeoutMs = clampTimeout(options.timeoutMs)
   const hops: RedirectHop[] = []
   const seen = new Set<string>()
   let current = href
   for (let index = 0; index < MAX_REDIRECT_HOPS; index += 1) {
-    if (seen.has(current)) return { hops, loop: true, finalUrl: current, status: hops.at(-1)?.status ?? null, redirected: hops.length > 1 }
+    if (seen.has(current)) {
+      return withDuration({ hops, loop: true, finalUrl: current, status: hops.at(-1)?.status ?? null, redirected: hops.length > 1 })
+    }
     seen.add(current)
     const step = await hop(current, timeoutMs)
-    hops.push({ url: current, status: step.status })
-    if (step.timedOut) return { hops, loop: false, finalUrl: current, status: null, redirected: hops.length > 1, timedOut: true, error: 'Timed out' }
+    hops.push({ url: current, status: step.status, location: step.location, durationMs: step.durationMs })
+    if (step.timedOut) {
+      return withDuration({ hops, loop: false, finalUrl: current, status: null, redirected: hops.length > 1, timedOut: true, error: 'Timed out' })
+    }
     if (step.status == null || step.status < 300 || step.status >= 400 || !step.location) {
-      return { hops, loop: false, finalUrl: current, status: step.status, redirected: hops.length > 1 }
+      return withDuration({ hops, loop: false, finalUrl: current, status: step.status, redirected: hops.length > 1 })
     }
     try {
       current = new URL(step.location, current).href
     } catch {
-      return { hops, loop: false, finalUrl: current, status: step.status, redirected: hops.length > 1, error: 'Invalid Location header' }
+      return withDuration({
+        hops,
+        loop: false,
+        finalUrl: current,
+        status: step.status,
+        redirected: hops.length > 1,
+        error: 'Invalid Location header',
+      })
     }
   }
-  return { hops, loop: false, finalUrl: current, status: hops.at(-1)?.status ?? null, redirected: true }
+  return withDuration({ hops, loop: false, finalUrl: current, status: hops.at(-1)?.status ?? null, redirected: true })
 }
 
 export async function checkHttpItems(
