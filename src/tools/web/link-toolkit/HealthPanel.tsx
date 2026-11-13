@@ -31,7 +31,7 @@ export function HealthPanel({ graph, onRecheck }: HealthPanelProps) {
   }, [graph.edges])
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       <p className="text-[11px] leading-relaxed text-muted-foreground">{t('web.links.health.hint')}</p>
       <div className="flex flex-wrap gap-1">
         <Chip label={t('web.links.type.all')} active={filter === 'all'} onClick={() => setFilter('all')} />

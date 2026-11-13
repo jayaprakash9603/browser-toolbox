@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { PauseIcon, PlayIcon, RefreshCwIcon, ShieldAlertIcon, SquareIcon } from 'lucide-react'
+import { Globe2Icon, PauseIcon, PlayIcon, RefreshCwIcon, ShieldAlertIcon, SquareIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { toEntries, type PageLink } from '@/core/engines/links/pageLinks'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
-import { Segmented } from '@/shared/components/ui/segmented'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from '@/shared/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 
@@ -27,6 +32,7 @@ import { LT_SCROLL, LT_TAB_PANEL, LT_TABS_RAIL, LT_TOOLBAR } from './layout'
 
 const TABS = ['overview', 'graph', 'internal', 'external', 'anchors', 'health', 'settings'] as const
 type TabId = (typeof TABS)[number]
+const SCOPES: IntelligenceScope[] = ['page', 'site', 'folder', 'sitemap']
 
 export default function LinkToolkitTool() {
   const { t } = useTranslation()
@@ -66,6 +72,28 @@ export default function LinkToolkitTool() {
     intel.startCheck(hrefs)
   }
 
+  const scopeSelect = (
+    <Select
+      value={intel.settings.scope}
+      onValueChange={(scope) => intel.patchSettings({ scope: scope as IntelligenceScope })}
+    >
+      <SelectTrigger className="h-8 w-[7.25rem] shrink-0 gap-1.5 px-2.5" aria-label={t('web.links.scopeLabel')}>
+        <Globe2Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+        <span className="min-w-0 truncate">{t(`web.links.scope.short.${intel.settings.scope}`)}</span>
+      </SelectTrigger>
+      <SelectContent align="end" className="z-[60]">
+        {SCOPES.map((scope) => (
+          <SelectItem key={scope} value={scope}>
+            {t(`web.links.scope.${scope}`)}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+
+  const showCrawlActions =
+    intel.settings.scope !== 'page' || Boolean(intel.crawl) || intel.failedUrls.length > 0 || Boolean(intel.crawlError)
+
   const actions = (
     <>
       <Button variant="ghost" size="icon-sm" aria-label={t('web.links.rescan')} title={t('web.links.rescan')} onClick={intel.rescan}>
@@ -85,23 +113,13 @@ export default function LinkToolkitTool() {
   return (
     <ToolPage tool={tool} actions={actions} contentClassName="@container flex h-full min-h-0 flex-col overflow-hidden p-0">
       <div className="flex h-full min-h-0 flex-col">
+        {(snapshot || showCrawlActions || !graph) && (
         <div className={LT_TOOLBAR}>
           {snapshot && (
             <p className="truncate text-[11px] font-semibold leading-4">{snapshot.title || snapshot.host}</p>
           )}
-          <Segmented
-            size="sm"
-            fullWidth
-            ariaLabel={t('web.links.scopeLabel')}
-            value={intel.settings.scope}
-            onValueChange={(scope) => intel.patchSettings({ scope: scope as IntelligenceScope })}
-            options={[
-              { value: 'page', label: t('web.links.scope.page') },
-              { value: 'site', label: t('web.links.scope.site') },
-              { value: 'folder', label: t('web.links.scope.folder') },
-              { value: 'sitemap', label: t('web.links.scope.sitemap') },
-            ]}
-          />
+          {!graph ? <div className="flex justify-end">{scopeSelect}</div> : null}
+          {showCrawlActions ? (
           <div className="flex flex-wrap items-center gap-1.5">
             {intel.settings.scope !== 'page' && (
               <Button size="xs" onClick={() => void intel.startCrawl()} disabled={Boolean(intel.crawl)}>
@@ -136,7 +154,9 @@ export default function LinkToolkitTool() {
             )}
             {intel.crawlError && <p className="w-full text-[11px] text-destructive">{t('web.links.crawlFailed')}</p>}
           </div>
+          ) : null}
         </div>
+        )}
 
         {load.status === 'loading' && (
           <p className="px-[var(--density-page-pad)] py-3 text-xs text-muted-foreground">{t('web.links.loading')}</p>
@@ -152,19 +172,20 @@ export default function LinkToolkitTool() {
         )}
 
         {snapshot && graph && (
-          <Tabs value={tab} onValueChange={(value) => setTab(value as TabId)} className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
+          <Tabs value={tab} onValueChange={(value) => setTab(value as TabId)} className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
             <div className={LT_TABS_RAIL}>
-              <TabsList variant="attached" className="w-full shrink-0 bg-muted/30">
+              <TabsList variant="attached" className="min-w-0 flex-1 bg-muted/30">
                 {TABS.map((id) => (
                   <TabsTrigger key={id} value={id} className="px-2 text-xs">
                     {t(`web.links.tab.${id}`)}
                   </TabsTrigger>
                 ))}
               </TabsList>
+              {scopeSelect}
             </div>
             <div className={LT_SCROLL}>
               {intel.stale && (
-                <div className="mb-2 flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-2.5 py-2 text-xs">
+                <div className="mb-3 flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2.5 text-xs">
                   <span className="flex-1">{t('web.links.pageChanged')}</span>
                   <Button size="xs" variant="outline" onClick={intel.rescan}>
                     {t('web.links.rescan')}

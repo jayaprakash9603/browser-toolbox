@@ -93,8 +93,8 @@ export function LinkOverview({
   const percent = progress && progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0
 
   return (
-    <section className="space-y-2 rounded-xl border bg-card p-2.5 shadow-xs" aria-label={t('web.links.overview')}>
-      <div className="flex items-center gap-2">
+    <section className="space-y-2.5 rounded-xl border bg-card p-3 shadow-xs" aria-label={t('web.links.overview')}>
+      <div className="flex items-center gap-2.5">
         <SiteAvatar host={snapshot.host} kind="internal" size="md" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[13px] leading-5 font-semibold">{snapshot.title || snapshot.host || snapshot.url}</p>
@@ -159,7 +159,7 @@ export function LinkOverview({
         </button>
       )}
 
-      <dl className="grid grid-cols-3 divide-x rounded-lg bg-muted/40 py-1.5 text-center">
+      <dl className="grid grid-cols-3 divide-x rounded-lg bg-muted/40 py-2 text-center">
         <Stat label={t('web.links.statTotal')} value={total} />
         <Stat label={t('web.links.statUnique')} value={stats.unique} />
         <Stat label={t('web.links.statSites')} value={stats.externalSites} />

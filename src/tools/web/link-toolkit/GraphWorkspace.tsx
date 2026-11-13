@@ -84,9 +84,9 @@ export function GraphWorkspace({
   }
 
   return (
-    <div className="flex flex-col gap-2 @[720px]:grid @[720px]:grid-cols-[minmax(0,1fr)_16rem] @[720px]:items-start @[720px]:gap-3">
-      <div className="min-w-0 space-y-2">
-        <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-col gap-3 @[720px]:grid @[720px]:grid-cols-[minmax(0,1fr)_16rem] @[720px]:items-start @[720px]:gap-4">
+      <div className="min-w-0 space-y-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           <Segmented
             size="sm"
             value={layout}

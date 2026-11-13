@@ -38,7 +38,7 @@ export function EdgeTable({ graph, kind }: EdgeTableProps) {
   }, [graph, kind, onlyBroken, onlyEmpty, onlyNofollow, search])
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       <SearchInput value={search} onChange={setSearch} placeholder={t('web.links.searchPlaceholder')} ariaLabel={t('web.links.searchPlaceholder')} />
       <div className="flex flex-wrap gap-1">
         {(['none', 'source', 'destination', 'anchor'] as const).map((key) => (

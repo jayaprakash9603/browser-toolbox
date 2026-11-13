@@ -38,17 +38,17 @@ export function OverviewPanel({ graph }: OverviewPanelProps) {
   const health = healthMix(graph, (health) => t(`web.links.health.${health}`))
 
   return (
-    <div className="flex flex-col gap-3 pb-1">
+    <div className="flex flex-col gap-4">
       {stats.incomplete && (
-        <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-2.5 py-2 text-[11px] text-amber-800 dark:text-amber-200">
+        <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-[11px] leading-relaxed text-amber-800 dark:text-amber-200">
           {t('web.links.incompleteCrawl')}
         </p>
       )}
-      <div className="grid grid-cols-2 gap-2 @xs:grid-cols-2 @[520px]:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 @xs:grid-cols-2 @[520px]:grid-cols-4">
         {cards.map(([label, value]) => (
           <div key={label} className={LT_STAT_CARD}>
             <p className="text-[10px] font-medium text-muted-foreground">{label}</p>
-            <p className="mt-1 text-lg font-semibold tabular-nums leading-none">{value}</p>
+            <p className="mt-1.5 text-lg font-semibold tabular-nums leading-none">{value}</p>
           </div>
         ))}
       </div>
@@ -57,7 +57,7 @@ export function OverviewPanel({ graph }: OverviewPanelProps) {
       <MiniChart title={t('web.links.chart.depth')} data={depth} varied />
       <RankList title={t('web.links.chart.topPages')} rows={topPages.map((node) => [node.title || node.url, node.incomingCount])} />
       <RankList title={t('web.links.chart.topDomains')} rows={domains} barToken={2} />
-      <p className="text-[11px] leading-relaxed text-muted-foreground">{t('web.links.importanceHint')}</p>
+      <p className="px-0.5 pt-1 text-[11px] leading-relaxed text-muted-foreground">{t('web.links.importanceHint')}</p>
     </div>
   )
 }
@@ -70,7 +70,7 @@ function MiniChart({ title, data, varied }: { title: string; data: ChartRow[]; v
     <div className={LT_CHART_SHELL}>
       <p className={LT_SECTION_TITLE}>{title}</p>
       <ChartContainer config={{ count: { label: title, color: accent } }} className="aspect-auto h-[96px] w-full min-w-[1px]">
-        <BarChart data={data} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+        <BarChart data={data} margin={{ top: 10, right: 8, left: 4, bottom: 4 }}>
           <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.55} />
           <XAxis dataKey="key" tickLine={false} axisLine={false} fontSize={10} interval={0} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
           <ChartTooltip content={<ChartTooltipContent />} />
@@ -99,15 +99,18 @@ function RankList({
   return (
     <div className={LT_CHART_SHELL}>
       <p className={LT_SECTION_TITLE}>{title}</p>
-      <ul className="space-y-1.5">
+      <ul className="flex flex-col gap-2.5">
         {rows.map(([label, count]) => (
           <li key={label} className="min-w-0">
-            <div className="flex items-center justify-between gap-2 text-[11px]">
-              <span className="truncate">{label}</span>
-              <span className="shrink-0 tabular-nums text-muted-foreground">{count}</span>
+            <div className="flex items-center justify-between gap-3 text-xs leading-5">
+              <span className="min-w-0 truncate font-medium">{label}</span>
+              <span className="shrink-0 tabular-nums text-muted-foreground">{count.toLocaleString()}</span>
             </div>
-            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
-              <div className={cn('h-full rounded-full')} style={{ width: `${(count / max) * 100}%`, backgroundColor: barColor }} />
+            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
+              <div
+                className={cn('h-full rounded-full')}
+                style={{ width: `${Math.max(4, Math.round((count / max) * 100))}%`, backgroundColor: barColor }}
+              />
             </div>
           </li>
         ))}
