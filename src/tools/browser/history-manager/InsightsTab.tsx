@@ -5,6 +5,8 @@ import { topDomainsFromPages, visitsByDay, visitsByHour, visitsByWeekday, type H
 import { EmptyState } from '@/shared/components/EmptyState'
 import { BarChart3Icon } from 'lucide-react'
 
+import { InsightsSkeleton } from './HistorySkeletons'
+
 const InsightsCharts = lazy(() => import('./InsightsCharts'))
 
 interface InsightsTabProps {
@@ -31,7 +33,7 @@ export default function InsightsTab({ pages, onDayPick }: InsightsTabProps) {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-xs text-muted-foreground">{t('historyManager.insights.hourNote')}</p>
-      <Suspense fallback={<p className="text-sm text-muted-foreground">{t('historyManager.loading')}</p>}>
+      <Suspense fallback={<InsightsSkeleton />}>
         <InsightsCharts data={data} onDayPick={onDayPick} />
       </Suspense>
     </div>

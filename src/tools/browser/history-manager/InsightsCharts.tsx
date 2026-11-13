@@ -45,12 +45,14 @@ export default function InsightsCharts({ data, onDayPick }: InsightsChartsProps)
             <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.55} />
             <XAxis dataKey="key" tickLine={false} axisLine={false} fontSize={10} interval="preserveEnd" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
             <YAxis hide />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar dataKey="count" radius={4}>
+            <ChartTooltip content={<ChartTooltipContent />} cursor={{ fill: 'hsl(var(--primary) / 0.1)', stroke: 'none' }} />
+            <Bar dataKey="count" radius={4} maxBarSize={36} stroke="none">
               {dayRows.map((row, index) => (
                 <Cell
                   key={row.key}
-                  className="cursor-pointer"
+                  className="cursor-pointer outline-none"
+                  stroke="none"
+                  onMouseDown={(event) => event.preventDefault()}
                   onClick={() => onDayPick(row.start)}
                   fill={index === dayRows.length - 1 ? chartColor(4) : visitsColor}
                   fillOpacity={index === dayRows.length - 1 ? 1 : 0.85}
@@ -67,10 +69,10 @@ export default function InsightsCharts({ data, onDayPick }: InsightsChartsProps)
             <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.55} />
             <XAxis dataKey="hour" tickLine={false} axisLine={false} fontSize={9} interval={3} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
             <YAxis hide />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar dataKey="count" radius={3}>
+            <ChartTooltip content={<ChartTooltipContent />} cursor={{ fill: 'hsl(var(--primary) / 0.1)', stroke: 'none' }} />
+            <Bar dataKey="count" radius={3} maxBarSize={18} stroke="none">
               {hourRows.map((row, index) => (
-                <Cell key={row.hour} fill={chartColorAt(index % 6)} fillOpacity={0.9} />
+                <Cell key={row.hour} className="outline-none" stroke="none" fill={chartColorAt(index % 6)} fillOpacity={0.9} />
               ))}
             </Bar>
           </BarChart>

@@ -7,6 +7,6 @@ export const HM_ROW =
 export const HM_SECTION_TITLE =
   'mb-2.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground'
 export const HM_CHART_SHELL = 'overflow-hidden rounded-xl border border-border/70 bg-card/80 p-3.5 shadow-xs'
-export const HM_TOOLBAR = 'flex shrink-0 flex-col gap-3 border-b border-border/60 pb-3'
+export const HM_TOOLBAR = 'flex shrink-0 flex-col gap-1.5'
 export const HM_FOOTER =
   'relative z-10 flex shrink-0 items-center justify-between gap-2 border-t border-border/60 bg-background px-[var(--density-page-pad)] py-2.5'

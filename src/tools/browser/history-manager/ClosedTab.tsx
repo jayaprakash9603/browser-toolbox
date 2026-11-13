@@ -5,6 +5,7 @@ import { RotateCcwIcon } from 'lucide-react'
 import { PermissionNotice } from '@/features/site-access/PermissionNotice'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { Button } from '@/shared/components/ui/button'
+import { Skeleton } from '@/shared/components/ui/skeleton'
 import { useToast } from '@/shared/components/toast/useToast'
 
 import {
@@ -63,7 +64,14 @@ export function ClosedTab() {
           {t('siteAccess.allow')}
         </Button>
       )}
-      {loading && <p className="text-sm text-muted-foreground">{t('historyManager.loading')}</p>}
+      {loading && (
+        <div role="status" aria-busy="true" aria-label={t('historyManager.loading')} className="flex flex-col gap-2">
+          <span className="sr-only">{t('historyManager.loading')}</span>
+          {Array.from({ length: 4 }, (_, index) => (
+            <Skeleton key={index} className="h-12 rounded-lg" />
+          ))}
+        </div>
+      )}
       {!loading && granted && sessions.length === 0 && (
         <EmptyState icon={RotateCcwIcon} title={t('historyManager.closed.empty')} />
       )}

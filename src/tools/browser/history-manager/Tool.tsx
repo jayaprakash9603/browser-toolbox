@@ -48,6 +48,7 @@ import { useBrowserTool } from '../_shared'
 import { CleanupDialog, DeleteConfirmDialog, deleteRangeFromPreset } from './CleanupDialog'
 import { ClosedTab } from './ClosedTab'
 import { HistoryFiltersPanel } from './HistoryFiltersPanel'
+import { HistoryTabSkeleton, InsightsSkeleton } from './HistorySkeletons'
 import { HM_FOOTER, HM_LIST_SCROLL, HM_TAB_PANEL, HM_TOOLBAR } from './layout'
 import { OverviewTab } from './OverviewTab'
 import { SitesTab } from './SitesTab'
@@ -176,12 +177,12 @@ export default function HistoryManagerTool() {
 
   return (
     <ToolPage tool={tool} actions={headerActions} contentClassName="flex h-full min-h-0 flex-col overflow-hidden p-0 @container">
-      <div className="px-[var(--density-page-pad)] pt-2.5">
+      <div className="px-[var(--density-page-pad)] pt-2 empty:hidden">
         <PermissionNotice active permissions={['history']} origins={[]} message={t('historyManager.permission')} />
       </div>
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden px-[var(--density-page-pad)]">
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden px-[var(--density-page-pad)] pt-2">
         <div className={HM_TOOLBAR}>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 py-0.5">
           <SearchInput
             value={manager.filters.query}
             onChange={manager.setQuery}
@@ -193,7 +194,7 @@ export default function HistoryManagerTool() {
             type="button"
             size="sm"
             variant={filtersOpen || activeFilterCount > 0 ? 'secondary' : 'outline'}
-            className="shrink-0 gap-1.5"
+            className="h-9 shrink-0 gap-1.5"
             aria-expanded={filtersOpen}
             aria-haspopup="dialog"
             title={`${t('historyManager.filters')} · ${t(`historyManager.range.${manager.filters.range}`)}`}
@@ -262,7 +263,7 @@ export default function HistoryManagerTool() {
             </Button>
           </div>
         )}
-        <Tabs value={tab} onValueChange={(v) => setTab(v as HistoryManagerTab)} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as HistoryManagerTab)} className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
           <TabsList variant="attached" className="w-full shrink-0 bg-muted/30">
             {HISTORY_MANAGER_TABS.map((key) => {
               const Icon = TAB_ICONS[key]
@@ -280,9 +281,7 @@ export default function HistoryManagerTool() {
             )}
             {!historyApiAvailable() && historyGranted && <ErrorState message={t('historyManager.unavailable')} />}
             {manager.error && <ErrorState message={manager.error} />}
-            {manager.loading && enabled && (
-              <p className="py-6 text-center text-sm text-muted-foreground">{t('historyManager.loading')}</p>
-            )}
+            {manager.loading && enabled && <HistoryTabSkeleton tab={tab} />}
             {enabled && !manager.loading && manager.filteredPages.length === 0 && (
               <EmptyState icon={HistoryIcon} title={t(manager.filters.query ? 'historyManager.emptySearch' : 'historyManager.empty')} />
             )}
@@ -327,7 +326,7 @@ export default function HistoryManagerTool() {
                     />
                   </TabsContent>
                   <TabsContent value="insights" className={HM_TAB_PANEL}>
-                    <Suspense fallback={<p className="text-sm text-muted-foreground">{t('historyManager.loading')}</p>}>
+                    <Suspense fallback={<InsightsSkeleton withNote />}>
                       <InsightsTab pages={manager.filteredPages} onDayPick={onDayPick} />
                     </Suspense>
                   </TabsContent>
