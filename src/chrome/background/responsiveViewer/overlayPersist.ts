@@ -2,44 +2,42 @@ import { createLogger } from '@/core/logging'
 import { isRestrictedCaptureUrl } from '@/core/screenshot/restricted'
 
 import { openSimulatorOverlay } from './overlayService'
-import { clearOverlaySession, getOverlaySession, markOverlaySession } from './overlaySession'
+import { clearOverlaySession, getOverlaySession } from './overlaySession'
 
 const logger = createLogger('simulator-persist')
 const VEIL_ID = 'tbx-simulator-veil'
 const restoring = new Set<number>()
 
-function previewUrlForTab(tabUrl: string | undefined, sessionUrl: string): string {
+/** Preview URL is iframe-only; do not mirror host tab navigations into the simulator. */
+export function sessionPreviewUrl(tabUrl: string | undefined, sessionUrl: string): string {
   if (!tabUrl || isRestrictedCaptureUrl(tabUrl)) return sessionUrl
-  try {
-    const live = new URL(tabUrl)
-    const saved = new URL(sessionUrl)
-    if (live.origin === saved.origin) return live.href
-  } catch {
-    /* keep session url */
-  }
   return sessionUrl
 }
 
-async function applySimulatorVeil(tabId: number): Promise<void> {
+async function overlayHostPresent(tabId: number): Promise<boolean> {
+  try {
+    const [row] = await chrome.scripting.executeScript({
+      target: { tabId },
+      func: () => Boolean(document.getElementById('tbx-simulator-overlay')),
+    })
+    return Boolean(row?.result)
+  } catch {
+    return false
+  }
+}
+
+async function clearStaleSimulatorVeil(tabId: number): Promise<void> {
   try {
     await chrome.scripting.executeScript({
       target: { tabId },
-      injectImmediately: true,
       func: (veilId: string) => {
-        if (document.getElementById(veilId)) return
-        const veil = document.createElement('div')
-        veil.id = veilId
-        veil.setAttribute('data-tbx-simulator', 'veil')
-        veil.style.cssText =
-          'position:fixed;inset:0;z-index:2147483645;background:#eceff3;pointer-events:auto;'
-        document.documentElement.style.overflow = 'hidden'
-        document.documentElement.dataset.tbxSimVeil = '1'
-        document.documentElement.append(veil)
+        document.getElementById(veilId)?.remove()
+        delete document.documentElement.dataset.tbxSimVeil
       },
       args: [VEIL_ID],
     })
   } catch (error) {
-    logger.debug('veil inject skipped', tabId, error)
+    logger.debug('veil cleanup skipped', tabId, error)
   }
 }
 
@@ -53,10 +51,7 @@ async function restoreOverlay(tabId: number, tab: chrome.tabs.Tab): Promise<void
   }
   restoring.add(tabId)
   try {
-    const url = previewUrlForTab(tab.url, session.previewUrl)
-    if (url !== session.previewUrl) {
-      await markOverlaySession(tabId, { ...session, previewUrl: url })
-    }
+    const url = sessionPreviewUrl(tab.url, session.previewUrl)
     await openSimulatorOverlay(tab, { url, deviceId: session.deviceId, replace: true })
   } catch (error) {
     logger.warn('overlay restore failed', tabId, error)
@@ -70,8 +65,12 @@ export function registerSimulatorOverlayPersistence(): void {
     void (async () => {
       const session = await getOverlaySession(tabId)
       if (!session) return
-      if (changeInfo.status === 'loading') await applySimulatorVeil(tabId)
-      if (changeInfo.status === 'complete') await restoreOverlay(tabId, tab)
+      if (changeInfo.status !== 'complete') return
+      if (await overlayHostPresent(tabId)) {
+        await clearStaleSimulatorVeil(tabId)
+        return
+      }
+      await restoreOverlay(tabId, tab)
     })()
   })
 

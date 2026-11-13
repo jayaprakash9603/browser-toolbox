@@ -641,6 +641,30 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .chip:hover { border-color: var(--tbx-accent); color: #0f766e; }
     .chip[aria-pressed="true"] { background: var(--tbx-accent); color: #fff; border-color: var(--tbx-accent); }
+    .preview-loading {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: #f8fafc;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .preview-loading[data-active='true'] { display: flex; }
+    .preview-loading-spin {
+      width: 22px;
+      height: 22px;
+      border: 2px solid #cbd5e1;
+      border-top-color: var(--tbx-accent);
+      border-radius: 999px;
+      animation: tbx-sim-spin 0.75s linear infinite;
+    }
+    @keyframes tbx-sim-spin { to { transform: rotate(360deg); } }
     .blocked {
       position: absolute; inset: 0; z-index: 5;
       display: none; flex-direction: column; align-items: center; justify-content: center;
@@ -679,6 +703,10 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
         <div class="chassis">
           <div class="screen">
             <iframe title="${escapeHtml(config.label)}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            <div class="preview-loading" data-preview-loading aria-hidden="true">
+              <span class="preview-loading-spin" aria-hidden="true"></span>
+              <span>Loading…</span>
+            </div>
             <div class="status" aria-hidden="true">
               <span class="clock"></span>
               <span class="status-icons">${iconSignal}${iconWifi}${iconBattery}</span>
@@ -805,6 +833,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const home = shadow.querySelector('.home') as HTMLElement
   const androidNav = shadow.querySelector('.android-nav') as HTMLElement
   const blocked = shadow.querySelector('.blocked') as HTMLElement
+  const previewLoading = shadow.querySelector('[data-preview-loading]') as HTMLElement
   const hostLabel = shadow.querySelector('.host') as HTMLElement
   const chassis = shadow.querySelector('.chassis') as HTMLElement
   const status = shadow.querySelector('.status') as HTMLElement
@@ -812,6 +841,26 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const mockupImg = shadow.querySelector('.mockup-img') as HTMLImageElement
 
   hostLabel.textContent = config.hostname
+  let previewLoads = 0
+  const setPreviewLoading = (active: boolean) => {
+    previewLoading.dataset.active = active ? 'true' : 'false'
+    previewLoading.setAttribute('aria-hidden', active ? 'false' : 'true')
+  }
+  const beginPreviewLoad = () => {
+    previewLoads += 1
+    setPreviewLoading(true)
+  }
+  const endPreviewLoad = () => {
+    previewLoads = Math.max(0, previewLoads - 1)
+    if (previewLoads === 0) setPreviewLoading(false)
+  }
+  const setPreviewUrl = (url: string) => {
+    if (iframe.getAttribute('src') === url) return
+    beginPreviewLoad()
+    blocked.style.display = 'none'
+    iframe.src = url
+  }
+  beginPreviewLoad()
   iframe.src = config.url
   for (const link of shadow.querySelectorAll<HTMLAnchorElement>('.studio-link')) {
     link.href = config.studioUrl
@@ -915,8 +964,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     const reloadNeeded = patch.mobileUa !== undefined
     applyOverlaySettings(next)
     if (reloadNeeded) {
-      blocked.style.display = 'none'
-      iframe.src = state.live.url
+      setPreviewUrl(state.live.url)
     }
   }
 
@@ -1236,7 +1284,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     state.rotated = false
     applyTheme(next.ui.theme)
     paintFinish(next)
-    if (iframe.getAttribute('src') !== next.url) iframe.src = next.url
+    if (iframe.getAttribute('src') !== next.url) setPreviewUrl(next.url)
     layout()
     if (state.panel === 'devices') renderDevices()
   }
@@ -1246,6 +1294,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   layout()
 
   iframe.addEventListener('load', () => {
+    endPreviewLoad()
     try {
       const href = iframe.contentWindow?.location.href ?? ''
       if (href.startsWith('chrome-error:') || href.includes('chromewebdata')) {
@@ -1271,6 +1320,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
 
   const reloadPreview = () => {
     blocked.style.display = 'none'
+    beginPreviewLoad()
     try {
       iframe.contentWindow?.location.reload()
       return

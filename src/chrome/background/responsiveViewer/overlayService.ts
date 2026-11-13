@@ -134,10 +134,16 @@ export async function openSimulatorOverlay(
   }
   await setOverlayTabFraming(tab.id, true, mobileUa)
   try {
-    await chrome.scripting.executeScript({
+    const [probe] = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
-      files: [SIMULATOR_OVERLAY_JS],
+      func: () => Boolean(document.getElementById('tbx-simulator-overlay')),
     })
+    if (!probe?.result) {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: [SIMULATOR_OVERLAY_JS],
+      })
+    }
     const [injection] = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       func: (mountKey: string, cfg: SimulatorOverlayConfig) => {

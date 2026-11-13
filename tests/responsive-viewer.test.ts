@@ -18,6 +18,7 @@ import {
   SIMULATOR_OVERLAY_ID,
   type SimulatorOverlayConfig,
 } from '@/chrome/background/responsiveViewer/overlay'
+import { sessionPreviewUrl } from '@/chrome/background/responsiveViewer/overlayPersist'
 import { handleOpenOverlayMessage } from '@/chrome/background/responsiveViewer/openSimulator'
 import { CHASSIS } from '@/tools/design/responsive-viewer/chassis'
 import {
@@ -233,6 +234,13 @@ describe('mobile simulator studio helpers', () => {
     expect(canOverlaySimulatorOnTab('chrome://extensions', 'https://example.com/')).toBe(false)
   })
 
+  it('keeps the saved iframe preview URL when the host tab navigates', () => {
+    expect(sessionPreviewUrl('https://example.com/dashboard', 'https://example.com/welcome')).toBe(
+      'https://example.com/welcome',
+    )
+    expect(sessionPreviewUrl('chrome://extensions', 'https://example.com/welcome')).toBe('https://example.com/welcome')
+  })
+
   it('mounts a white on-page overlay using the device chassis color', () => {
     const config = overlayFixture()
     expect(mountSimulatorOverlay(config)).toBe(true)
@@ -241,6 +249,7 @@ describe('mobile simulator studio helpers', () => {
     const root = host?.shadowRoot?.querySelector('.root') as HTMLElement
     expect(root.style.getPropertyValue('--tbx-fill')).toBe(config.finish.fill)
     expect(host?.shadowRoot?.querySelector('iframe')?.src).toContain('https://example.com/tools')
+    expect(host?.shadowRoot?.querySelector('[data-preview-loading]')).toBeTruthy()
     expect(root.classList.contains('drawer-open')).toBe(false)
     expect(host?.shadowRoot?.querySelector('[data-panel="devices"]')?.classList.contains('open')).toBe(false)
     const mockup = host?.shadowRoot?.querySelector('.mockup-img') as HTMLImageElement
@@ -373,6 +382,9 @@ describe('mobile simulator studio helpers', () => {
         const result = cfg ? mountSimulatorOverlay(cfg) : false
         return [{ result }] as unknown as chrome.scripting.InjectionResult[]
       }
+      if (run.func) {
+        return [{ result: Boolean(document.getElementById(SIMULATOR_OVERLAY_ID)) }] as unknown as chrome.scripting.InjectionResult[]
+      }
       return [{ result: false }] as unknown as chrome.scripting.InjectionResult[]
     })
     await handleSimulatorMenuClick(
@@ -425,6 +437,9 @@ describe('mobile simulator studio helpers', () => {
         const cfg = typeof run.args[0] === 'string' ? run.args[1] : run.args[0]
         const result = cfg ? mountSimulatorOverlay(cfg) : false
         return [{ result }] as unknown as chrome.scripting.InjectionResult[]
+      }
+      if (run.func) {
+        return [{ result: Boolean(document.getElementById(SIMULATOR_OVERLAY_ID)) }] as unknown as chrome.scripting.InjectionResult[]
       }
       return [{ result: false }] as unknown as chrome.scripting.InjectionResult[]
     })
