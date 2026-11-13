@@ -85,6 +85,8 @@ const CHROME_UI_FALLBACKS: Record<string, string> = {
   colorCopyAgain: 'Copy again',
   colorPickPageAgain: 'Pick from page again',
   colorPickScreenAgain: 'Pick from screen again',
+  colorClickToPick: 'Click to pick a color',
+  colorClickToCancel: 'Esc to cancel',
   formFilledOne: 'Filled 1 field',
   formFilledOther: 'Filled {count} fields',
   formCleared: 'Cleared {count} fields',

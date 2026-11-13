@@ -17,6 +17,7 @@ import {
   COLOR_FORMATS,
   SHADE_LIGHTNESS,
   formatColor,
+  normalizeHex,
   type ColorFormat,
   type PickedColor,
 } from '@/core/color-picker/model'
@@ -35,6 +36,7 @@ import { useShortcutDisplay } from '@/features/shortcuts/useShortcutDisplay'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { cn } from '@/shared/utils/cn'
 import { useDesignTool } from '../_shared'
+import { pickWithEyeDropper } from './eyedropper'
 import { useColorPickerStore } from './hooks'
 import './i18n'
 
@@ -97,23 +99,46 @@ export default function ColorPickerTool() {
     [remember],
   )
 
+  const applyPickedHex = useCallback(
+    (raw: string) => {
+      const next = normalizeHex(raw)
+      if (!next) return
+      select(next)
+      const parsed = parseColor(next)
+      if (parsed.ok) void copy('hex', formatColor(parsed.value, state.format))
+    },
+    [copy, select, state.format],
+  )
+
   const pickFromPage = useCallback(async () => {
     setBusy('page')
     try {
+      const result = await pickWithEyeDropper()
+      if (result.ok) {
+        applyPickedHex(result.hex)
+        return
+      }
+      if (result.reason === 'cancelled') return
       await sendMessage({ type: 'COLOR_PICK_START' })
     } finally {
-      window.setTimeout(() => setBusy(null), 200)
+      setBusy(null)
     }
-  }, [])
+  }, [applyPickedHex])
 
   const pickFromScreen = useCallback(async () => {
     setBusy('screen')
     try {
+      const result = await pickWithEyeDropper()
+      if (result.ok) {
+        applyPickedHex(result.hex)
+        return
+      }
+      if (result.reason === 'cancelled') return
       await sendMessage({ type: 'COLOR_PICK_SCREEN' })
     } finally {
-      window.setTimeout(() => setBusy(null), 200)
+      setBusy(null)
     }
-  }, [])
+  }, [applyPickedHex])
 
   const shades = useMemo(() => {
     if (!value) return []

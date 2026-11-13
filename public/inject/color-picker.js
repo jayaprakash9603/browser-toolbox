@@ -396,9 +396,31 @@
     chrome.runtime.sendMessage({ type: 'COLOR_PICKED', hex: hex, format: format, url: location.href }).catch(function () {})
   }
 
-  function startScreen() {
+  function requestLoupe() {
+    chrome.runtime.sendMessage({ type: 'COLOR_PICK_LOUPE' }).catch(function () {})
+  }
+
+  function hasUserActivation() {
+    try {
+      return Boolean(navigator.userActivation && navigator.userActivation.isActive)
+    } catch (e) {
+      return false
+    }
+  }
+
+  function disposeHost() {
+    var prev = document.getElementById(HOST_ID)
+    if (prev && prev.__dispose) prev.__dispose()
+    else if (prev) prev.remove()
+  }
+
+  function openEyeDropper(fromArm) {
     var Eye = window.EyeDropper
-    if (!Eye) return
+    if (!Eye) {
+      if (opts.image) startPage()
+      else requestLoupe()
+      return
+    }
     new Eye()
       .open()
       .then(function (result) {
@@ -407,7 +429,82 @@
         var fmt = FORMATS.indexOf(opts.format) >= 0 ? opts.format : 'hex'
         finishPick(rgb.r, rgb.g, rgb.b, fmt)
       })
-      .catch(function () {})
+      .catch(function (err) {
+        var name = err && err.name
+        if (name === 'AbortError') return
+        if (!fromArm && name === 'NotAllowedError') {
+          armEyeDropper()
+          return
+        }
+        if (opts.image) startPage()
+        else requestLoupe()
+      })
+  }
+
+  function armEyeDropper() {
+    disposeHost()
+    var text = opts.text || {}
+    var host = document.createElement('div')
+    host.id = HOST_ID
+    host.setAttribute('data-tbx-color-arm', 'true')
+    host.style.cssText = 'position:fixed;inset:0;z-index:2147483646;'
+    var shadow = host.attachShadow({ mode: 'open' })
+    shadow.innerHTML =
+      '<style>:host{all:initial}*{box-sizing:border-box}' +
+      '.root{position:absolute;inset:0;cursor:crosshair;background:rgba(8,8,12,.18);' +
+      'font:600 13px/1.3 system-ui,sans-serif;color:#fafafa}' +
+      '.banner{position:absolute;left:50%;top:18px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;' +
+      'padding:10px 16px;border-radius:999px;background:rgba(20,20,24,.92);border:1px solid rgba(255,255,255,.14);' +
+      'box-shadow:0 10px 32px rgba(0,0,0,.35);white-space:nowrap;pointer-events:none}' +
+      '.banner b{font-weight:700}' +
+      '.banner span{opacity:.7;font-weight:500;font-size:12px}' +
+      '</style>' +
+      '<div class="root" tabindex="0" role="button" aria-label="' +
+      (text.clickToPick || 'Click to pick a color') +
+      '">' +
+      '<div class="banner"><b>' +
+      (text.clickToPick || 'Click to pick a color') +
+      '</b><span>' +
+      (text.clickToCancel || 'Esc to cancel') +
+      '</span></div></div>'
+
+    var root = shadow.querySelector('.root')
+    function close() {
+      window.removeEventListener('keydown', onKey, true)
+      host.remove()
+    }
+    host.__dispose = close
+    function onKey(e) {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopImmediatePropagation()
+        close()
+      }
+    }
+    function begin(e) {
+      e.preventDefault()
+      e.stopPropagation()
+      close()
+      openEyeDropper(true)
+    }
+    root.addEventListener('click', begin)
+    window.addEventListener('keydown', onKey, true)
+    document.documentElement.appendChild(host)
+    try {
+      root.focus({ preventScroll: true })
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function startScreen() {
+    if (!window.EyeDropper) {
+      if (opts.image) startPage()
+      else requestLoupe()
+      return
+    }
+    if (hasUserActivation()) openEyeDropper(false)
+    else armEyeDropper()
   }
 
   function startPage() {

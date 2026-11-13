@@ -23,6 +23,8 @@ export interface ColorPickerPageText {
   copyAgain: string
   pickPageAgain: string
   pickScreenAgain: string
+  clickToPick: string
+  clickToCancel: string
 }
 
 export interface ColorPickerPageOptions {

@@ -42,6 +42,8 @@ function pageText(): ColorPickerPageText {
     copyAgain: getChromeMessage('colorCopyAgain'),
     pickPageAgain: getChromeMessage('colorPickPageAgain'),
     pickScreenAgain: getChromeMessage('colorPickScreenAgain'),
+    clickToPick: getChromeMessage('colorClickToPick'),
+    clickToCancel: getChromeMessage('colorClickToCancel'),
   }
 }
 
@@ -80,15 +82,41 @@ async function injectColorPicker(
   })
 }
 
-/**
- * Freezes the visible tab, then lets the user pick from a magnifier loupe. Works with the side
- * panel closed: everything runs in the page and the background, never in the panel.
- */
+/** Prefer a scriptable web tab: the sender/command tab, else the focused window's page. */
 async function resolvePickTab(tab?: chrome.tabs.Tab): Promise<chrome.tabs.Tab | undefined> {
-  if (tab?.id != null && tab.url) return tab
-  return (await getActiveWebTab()) ?? tab
+  if (tab?.id != null && !isRestrictedCaptureUrl(tab.url)) return tab
+  const active = await getActiveWebTab()
+  if (active?.id != null && !isRestrictedCaptureUrl(active.url)) return active
+  return tab?.id != null ? tab : active
 }
 
+async function captureVisiblePng(tab: chrome.tabs.Tab): Promise<string | undefined> {
+  try {
+    if (tab.windowId != null) {
+      return await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' })
+    }
+    return await chrome.tabs.captureVisibleTab({ format: 'png' })
+  } catch (error) {
+    logger.warn('visible tab capture failed', error)
+    return undefined
+  }
+}
+
+async function injectPageLoupe(tab: chrome.tabs.Tab, image: string, format: ReturnType<typeof pageFormatFor>): Promise<void> {
+  if (tab.id == null) return
+  await injectColorPicker(tab.id, {
+    mode: 'page',
+    forceLoupe: true,
+    image,
+    format,
+    text: pageText(),
+  })
+}
+
+/**
+ * Page pick from a command / context menu has no page user-activation, so EyeDropper.open()
+ * would fail silently. Capture the tab (activeTab is granted) and open the magnifier loupe.
+ */
 export async function pickColorOnPage(tab?: chrome.tabs.Tab): Promise<void> {
   if (running) return
   running = true
@@ -98,10 +126,16 @@ export async function pickColorOnPage(tab?: chrome.tabs.Tab): Promise<void> {
       await openPanelFallback(target)
       return
     }
+    const format = pageFormatFor(state.format)
     try {
+      const image = await captureVisiblePng(target)
+      if (image) {
+        await injectPageLoupe(target, image, format)
+        return
+      }
       await injectColorPicker(target.id, {
         mode: 'page',
-        format: pageFormatFor(state.format),
+        format,
         text: pageText(),
       })
       return
@@ -114,6 +148,10 @@ export async function pickColorOnPage(tab?: chrome.tabs.Tab): Promise<void> {
   }
 }
 
+/**
+ * Screen pick injects EyeDropper. Without a page gesture the script arms a click-to-pick overlay
+ * so the next click is a valid user activation.
+ */
 export async function pickColorFromScreen(tab?: chrome.tabs.Tab): Promise<void> {
   if (running) return
   running = true
@@ -148,36 +186,22 @@ export function registerColorPicker(): void {
   })
 
   registerMessageHandler('COLOR_PICK_START', async (_message, sender) => {
-    const tab = sender.tab ?? (await chrome.tabs.query({ active: true, lastFocusedWindow: true }))[0]
-    await pickColorOnPage(tab)
+    await pickColorOnPage(sender.tab)
     return { started: true }
   })
 
   registerMessageHandler('COLOR_PICK_SCREEN', async (_message, sender) => {
-    const tab = sender.tab ?? (await chrome.tabs.query({ active: true, lastFocusedWindow: true }))[0]
-    await pickColorFromScreen(tab)
+    await pickColorFromScreen(sender.tab)
     return { started: true }
   })
 
   registerMessageHandler('COLOR_PICK_LOUPE', async (_message, sender) => {
-    const tab = sender.tab
-    if (tab?.id == null || tab.windowId == null) return { ok: false as const }
-    if (isRestrictedCaptureUrl(tab.url)) return { ok: false as const }
+    const tab = await resolvePickTab(sender.tab)
+    if (tab?.id == null || isRestrictedCaptureUrl(tab.url)) return { ok: false as const }
     const state = await loadColorPickerState()
-    await new Promise<void>((resolve) => {
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-    })
-    const image = await chrome.tabs.captureVisibleTab(tab.windowId, {
-      format: 'jpeg',
-      quality: 90,
-    })
-    await injectColorPicker(tab.id, {
-      mode: 'page',
-      forceLoupe: true,
-      image,
-      format: pageFormatFor(state.format),
-      text: pageText(),
-    })
+    const image = await captureVisiblePng(tab)
+    if (!image) return { ok: false as const }
+    await injectPageLoupe(tab, image, pageFormatFor(state.format))
     return { ok: true as const }
   })
 
