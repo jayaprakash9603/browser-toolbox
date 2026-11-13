@@ -89,7 +89,6 @@ export default function HistoryManagerTool() {
   const [cleanupOpen, setCleanupOpen] = useState(false)
   const [confirmBulk, setConfirmBulk] = useState(false)
   const [domainDelete, setDomainDelete] = useState<{ domain: string; pages: HistoryPage[] } | null>(null)
-  const [topLimit, setTopLimit] = useState(20)
 
   useEffect(() => {
     const q = parseSearchParam(search, 'q')
@@ -300,28 +299,11 @@ export default function HistoryManagerTool() {
                     <TimelineTab pages={manager.filteredPages} compact={manager.density === 'compact'} selected={selected} rowActions={rowActions} />
                   </TabsContent>
                   <TabsContent value="sites" className={HM_TAB_PANEL}>
-                    <div className="mb-1 flex flex-wrap items-center gap-1.5">
-                      <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                        {t('historyManager.top.limit')}
-                      </span>
-                      {[10, 20, 50].map((n) => (
-                        <Button
-                          key={n}
-                          size="xs"
-                          variant={topLimit === n ? 'secondary' : 'outline'}
-                          className={topLimit === n ? 'border-primary/30' : 'border-border/70'}
-                          onClick={() => setTopLimit(n)}
-                        >
-                          {n}
-                        </Button>
-                      ))}
-                    </div>
                     <SitesTab
                       pages={manager.filteredPages}
                       compact={manager.density === 'compact'}
                       selected={selected}
                       rowActions={rowActions}
-                      topLimit={topLimit}
                       onDeleteDomain={(domain, pages) => setDomainDelete({ domain, pages })}
                     />
                   </TabsContent>
