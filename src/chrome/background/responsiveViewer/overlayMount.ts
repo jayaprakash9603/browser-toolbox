@@ -68,7 +68,13 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const previousOverflow = document.documentElement.style.overflow
   document.documentElement.style.overflow = 'hidden'
 
-  const state = { rotated: false, live: config, panel: '' as '' | 'devices' | 'settings' }
+  const state = {
+    rotated: false,
+    live: config,
+    panel: '' as '' | 'devices' | 'settings' | 'shot-menu' | 'record-menu' | 'capture-result',
+    lastCaptureUrl: '',
+    lastCaptureName: '',
+  }
 
   const style = document.createElement('style')
   style.textContent = `
@@ -266,13 +272,26 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       border: 1px solid #dde3ea;
       box-shadow: 0 16px 40px rgba(15,23,42,0.12);
     }
-    .panel[data-panel="settings"] {
+    .panel[data-panel="settings"],
+    .panel[data-panel="shot-menu"],
+    .panel[data-panel="record-menu"],
+    .panel[data-panel="capture-result"] {
       right: 76px; top: 50%; transform: translateY(-50%);
       width: 260px; max-height: min(70vh, 480px);
       padding: 14px; border-radius: 14px;
       border: 1px solid #dde3ea;
       box-shadow: 0 16px 40px rgba(15,23,42,0.12);
     }
+    .panel[data-panel="capture-result"] {
+      width: min(340px, 42vw);
+    }
+    .panel[data-panel="capture-result"] img {
+      width: 100%; max-height: 46vh; object-fit: contain;
+      border-radius: 10px; background: #f1f5f9; border: 1px solid #e2e8f0;
+    }
+    .capture-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .capture-actions .setting-row { flex: 1 1 auto; justify-content: center; font-weight: 600; }
+    .capture-hint { margin: 0; font-size: 11px; color: #64748b; line-height: 1.4; }
     .panel h2 { margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; }
     .panel input {
       width: 100%; height: 36px; padding: 0 12px; border-radius: 10px;
@@ -367,7 +386,26 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       <h2>Settings</h2>
       <button type="button" class="setting-row" data-set="safari">Safari chrome</button>
       <button type="button" class="setting-row" data-set="status">Status bar</button>
-      <p style="margin:0;font-size:11px;color:#6b7280;line-height:1.4">This overlay previews the page in a device frame. It is not an iOS or Android emulator.</p>
+      <p class="capture-hint">This overlay previews the page in a device frame. It is not an iOS or Android emulator.</p>
+    </div>
+    <div class="panel" data-panel="shot-menu">
+      <h2>Screenshot</h2>
+      <p class="capture-hint">Choose what to capture from the simulator.</p>
+      <button type="button" class="setting-row" data-shot="simulator">Simulator screenshot</button>
+      <button type="button" class="setting-row" data-shot="viewport">Visible screen</button>
+    </div>
+    <div class="panel" data-panel="record-menu">
+      <h2>Record</h2>
+      <p class="capture-hint">Recording includes the simulator frame and the page inside this tab.</p>
+      <button type="button" class="setting-row" data-record="tab">Start tab recording</button>
+    </div>
+    <div class="panel" data-panel="capture-result">
+      <h2 data-capture-title>Screenshot ready</h2>
+      <img data-capture-preview alt="Screenshot preview" />
+      <div class="capture-actions">
+        <button type="button" class="setting-row" data-capture-download>Download again</button>
+        <button type="button" class="setting-row" data-capture-close>Close</button>
+      </div>
     </div>
     <div class="actions">
       <button type="button" class="round" data-act="close" aria-label="Close simulator">${iconClose}</button>
@@ -378,7 +416,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       <button type="button" class="round" data-act="record" aria-label="Start recording">${iconVideo}</button>
       <button type="button" class="round" data-act="compare" aria-label="Compare devices">${iconTabs}</button>
       <button type="button" class="round" data-act="settings" aria-label="Settings">${iconSettings}</button>
-      <a class="round studio-link" data-act="studio" target="_blank" rel="noopener noreferrer" aria-label="Open full simulator">${iconExpand}</a>
+      <button type="button" class="round" data-act="expand" aria-label="Open full simulator">${iconExpand}</button>
     </div>
   `
   shadow.append(root)
@@ -547,8 +585,11 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     )
   }
 
-  const setPanel = (name: '' | 'devices' | 'settings') => {
-    state.panel = state.panel === name ? '' : name
+  const capturePreview = shadow.querySelector('[data-capture-preview]') as HTMLImageElement
+  const captureTitle = shadow.querySelector('[data-capture-title]') as HTMLElement
+
+  const setPanel = (name: typeof state.panel, forceOpen = false) => {
+    state.panel = forceOpen ? name : state.panel === name ? '' : name
     for (const panel of shadow.querySelectorAll('[data-panel]')) {
       panel.classList.toggle('open', panel.getAttribute('data-panel') === state.panel)
     }
@@ -556,6 +597,29 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     settingsBtn.setAttribute('aria-pressed', String(state.panel === 'settings'))
     layout()
     if (state.panel === 'devices') void loadDevices()
+  }
+
+  const showCaptureResult = (dataUrl: string, filename: string, kind: 'simulator' | 'viewport') => {
+    state.lastCaptureUrl = dataUrl
+    state.lastCaptureName = filename
+    capturePreview.src = dataUrl
+    captureTitle.textContent = kind === 'simulator' ? 'Simulator screenshot ready' : 'Screen capture ready'
+    setPanel('capture-result', true)
+  }
+
+  const runScreenshot = async (mode: 'simulator' | 'viewport') => {
+    setPanel('')
+    const result = await ask<{ ok: boolean; dataUrl?: string; filename?: string; kind?: 'simulator' | 'viewport'; error?: string }>({
+      type: 'SIMULATOR_OVERLAY_ACTION',
+      action: 'screenshot',
+      captureMode: mode,
+      url: state.live.url,
+    })
+    if (result?.ok && result.dataUrl && result.filename) {
+      showCaptureResult(result.dataUrl, result.filename, result.kind ?? mode)
+      return
+    }
+    setPanel('shot-menu', true)
   }
 
   const loadDevices = async () => {
@@ -653,8 +717,10 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     layout()
   })
-  shadow.querySelector('[data-act="screenshot"]')?.addEventListener('click', () => {
-    void ask({ type: 'SIMULATOR_OVERLAY_ACTION', action: 'screenshot', url: state.live.url })
+  shadow.querySelector('[data-act="screenshot"]')?.addEventListener('click', () => setPanel('shot-menu', true))
+  shadow.querySelector('[data-panel="shot-menu"]')?.addEventListener('click', (event) => {
+    const mode = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-shot]')?.dataset.shot
+    if (mode === 'simulator' || mode === 'viewport') void runScreenshot(mode)
   })
   recordBtn.addEventListener('click', () => {
     const pressed = recordBtn.getAttribute('aria-pressed') === 'true'
@@ -663,8 +729,30 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       recordBtn.setAttribute('aria-pressed', 'false')
       return
     }
+    setPanel('record-menu', true)
+  })
+  shadow.querySelector('[data-panel="record-menu"]')?.addEventListener('click', (event) => {
+    const kind = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-record]')?.dataset.record
+    if (kind !== 'tab') return
+    setPanel('')
     void ask({ type: 'SIMULATOR_OVERLAY_ACTION', action: 'record', url: state.live.url })
     recordBtn.setAttribute('aria-pressed', 'true')
+  })
+  shadow.querySelector('[data-capture-download]')?.addEventListener('click', () => {
+    if (!state.lastCaptureUrl) return
+    const link = document.createElement('a')
+    link.href = state.lastCaptureUrl
+    link.download = state.lastCaptureName || 'simulator.png'
+    link.click()
+  })
+  shadow.querySelector('[data-capture-close]')?.addEventListener('click', () => setPanel(''))
+  shadow.querySelector('[data-act="expand"]')?.addEventListener('click', () => {
+    void ask({
+      type: 'SIMULATOR_OVERLAY_ACTION',
+      action: 'expand',
+      url: state.live.url,
+      deviceId: state.live.deviceId,
+    })
   })
   shadow.querySelector('[data-act="compare"]')?.addEventListener('click', () => {
     void ask({

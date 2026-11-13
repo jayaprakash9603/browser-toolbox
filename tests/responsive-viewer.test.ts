@@ -249,7 +249,7 @@ describe('mobile simulator studio helpers', () => {
     expect(root.classList.contains('has-mockup')).toBe(true)
     const acts = [...(host?.shadowRoot?.querySelectorAll('[data-act]') ?? [])].map((el) => el.getAttribute('data-act'))
     expect(acts).toEqual(
-      expect.arrayContaining(['devices', 'rotate', 'reload', 'screenshot', 'record', 'compare', 'settings', 'studio']),
+      expect.arrayContaining(['devices', 'rotate', 'reload', 'screenshot', 'record', 'compare', 'settings', 'expand']),
     )
     expect(host?.shadowRoot?.querySelector('[data-panel="devices"]')).toBeTruthy()
     expect(host?.shadowRoot?.querySelector('[data-panel="settings"]')).toBeTruthy()

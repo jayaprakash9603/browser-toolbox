@@ -176,12 +176,96 @@ async function listOverlayDevices() {
   }
 }
 
-async function captureOverlayScreenshot(tab?: chrome.tabs.Tab) {
-  if (tab?.windowId == null) return { ok: false as const, error: 'no-tab' }
+type CaptureRect = { x: number; y: number; width: number; height: number; dpr: number }
+
+async function readSimulatorCaptureRect(tabId: number): Promise<CaptureRect | null> {
+  const [injection] = await chrome.scripting.executeScript({
+    target: { tabId },
+    func: () => {
+      const host = document.getElementById('tbx-simulator-overlay')
+      const wrap = host?.shadowRoot?.querySelector('.phone-wrap')
+      if (!wrap) return null
+      const rect = wrap.getBoundingClientRect()
+      return {
+        x: rect.x,
+        y: rect.y,
+        width: rect.width,
+        height: rect.height,
+        dpr: window.devicePixelRatio || 1,
+      }
+    },
+  })
+  return (injection?.result as CaptureRect | null | undefined) ?? null
+}
+
+async function setSimulatorRailVisible(tabId: number, visible: boolean): Promise<void> {
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    func: (show: boolean) => {
+      const actions = document.getElementById('tbx-simulator-overlay')?.shadowRoot?.querySelector('.actions') as
+        | HTMLElement
+        | undefined
+      if (!actions) return
+      actions.style.visibility = show ? '' : 'hidden'
+    },
+    args: [visible],
+  })
+}
+
+async function cropTabCaptureInPage(tabId: number, dataUrl: string, rect: CaptureRect): Promise<string | null> {
+  const [injection] = await chrome.scripting.executeScript({
+    target: { tabId },
+    func: async (url: string, box: CaptureRect) => {
+      try {
+        const blob = await (await fetch(url)).blob()
+        const bitmap = await createImageBitmap(blob)
+        const sx = Math.max(0, Math.round(box.x * box.dpr))
+        const sy = Math.max(0, Math.round(box.y * box.dpr))
+        const sw = Math.max(1, Math.round(box.width * box.dpr))
+        const sh = Math.max(1, Math.round(box.height * box.dpr))
+        const canvas = document.createElement('canvas')
+        canvas.width = sw
+        canvas.height = sh
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return null
+        ctx.drawImage(bitmap, sx, sy, sw, sh, 0, 0, sw, sh)
+        bitmap.close()
+        return canvas.toDataURL('image/png')
+      } catch {
+        return null
+      }
+    },
+    args: [dataUrl, rect],
+  })
+  return (injection?.result as string | null | undefined) ?? null
+}
+
+async function captureViewportScreenshot(tab?: chrome.tabs.Tab) {
+  if (tab?.windowId == null || tab.id == null) return { ok: false as const, error: 'no-tab' }
   const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' })
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')
-  await downloadWithName({ url: dataUrl, filename: `one-panel-simulator-${stamp}.png`, saveAs: false })
-  return { ok: true as const }
+  const filename = `one-panel-screen-${stamp}.png`
+  await downloadWithName({ url: dataUrl, filename, saveAs: false })
+  return { ok: true as const, dataUrl, filename, kind: 'viewport' as const }
+}
+
+async function captureSimulatorScreenshot(tab?: chrome.tabs.Tab) {
+  if (tab?.windowId == null || tab.id == null) return { ok: false as const, error: 'no-tab' }
+  const rect = await readSimulatorCaptureRect(tab.id)
+  if (!rect || rect.width < 2 || rect.height < 2) return { ok: false as const, error: 'no-frame' }
+  await setSimulatorRailVisible(tab.id, false)
+  let dataUrl: string
+  try {
+    dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' })
+  } finally {
+    await setSimulatorRailVisible(tab.id, true)
+  }
+  const cropped = await cropTabCaptureInPage(tab.id, dataUrl, rect)
+  if (!cropped) return { ok: false as const, error: 'crop-failed' }
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')
+  const filename = `one-panel-simulator-${stamp}.png`
+  await downloadWithName({ url: cropped, filename, saveAs: false })
+  return { ok: true as const, dataUrl: cropped, filename, kind: 'simulator' as const }
 }
 
 async function startOverlayRecording(tab?: chrome.tabs.Tab) {
@@ -205,7 +289,7 @@ export async function handleOverlayAction(
       return { ok: await openSimulatorOverlay(tab, { url, deviceId: message.deviceId, replace: true }) }
     }
     case 'screenshot':
-      return captureOverlayScreenshot(tab)
+      return message.captureMode === 'viewport' ? captureViewportScreenshot(tab) : captureSimulatorScreenshot(tab)
     case 'record':
       return startOverlayRecording(tab)
     case 'closed': {
@@ -221,9 +305,24 @@ export async function handleOverlayAction(
         url: simulatorStudioUrl({
           url: url && !isRestrictedCaptureUrl(url) ? url : undefined,
           device: message.deviceId,
-          layout: message.action === 'compare' ? 'grid' : undefined,
+          layout: message.action === 'compare' ? 'grid' : 'focus',
         }),
       })
+      if (message.action === 'expand' && tab?.id != null) {
+        await setOverlayTabFraming(tab.id, false)
+        await clearOverlaySession(tab.id)
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: () => {
+            const host = document.getElementById('tbx-simulator-overlay') as
+              | (HTMLElement & { __tbxSimDispose?: () => void })
+              | null
+            host?.__tbxSimDispose?.()
+            document.getElementById('tbx-simulator-veil')?.remove()
+            document.documentElement.style.overflow = ''
+          },
+        }).catch(() => undefined)
+      }
       return { ok: true }
     }
     default:

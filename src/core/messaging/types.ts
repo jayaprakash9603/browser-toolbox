@@ -350,6 +350,7 @@ export type ExtensionMessage =
       action: 'listDevices' | 'setDevice' | 'screenshot' | 'record' | 'compare' | 'expand' | 'closed'
       deviceId?: string
       url?: string
+      captureMode?: 'simulator' | 'viewport'
     }
   | { type: 'SCAN_DOWNLOADABLE_RESOURCES'; includeImages?: boolean; includeMedia?: boolean }
   | { type: 'DOWNLOAD_MANAGER_GET_SNAPSHOT' }
