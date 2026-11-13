@@ -371,6 +371,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .panel.rail-popover .capture-hint { color: var(--tbx-hint); }
     .popover-head {
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       gap: 10px;
@@ -390,6 +391,37 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       gap: 6px;
     }
     .panel.rail-popover .setting-card .setting-section { margin-top: 0; color: #cbd5e1; }
+    .panel.rail-popover {
+      overflow-x: hidden;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+    }
+    .panel.rail-popover .setting-list {
+      flex: 1;
+      min-height: 0;
+      min-width: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+      padding-right: 2px;
+    }
+    .panel.rail-popover .setting-switch span:first-child {
+      color: #e8edf4;
+      min-width: 0;
+    }
+    .panel.rail-popover .theme-opt {
+      background: #232d3b;
+      border-color: #3d4f63;
+      color: #e8edf4;
+    }
+    .panel.rail-popover .theme-opt:hover { border-color: #5eead4; color: #99f6e4; }
+    .panel.rail-popover .theme-opt[aria-pressed="true"] {
+      background: var(--tbx-accent);
+      border-color: var(--tbx-accent);
+      color: #fff;
+    }
+    .panel.rail-popover .switch-track { background: #3d4f63; }
     .menu-option {
       display: flex; align-items: flex-start; gap: 12px;
       width: 100%; min-height: 52px; padding: 10px 12px;
@@ -612,18 +644,13 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .panel[data-panel="settings"] {
       right: 76px;
-      width: min(318px, 44vw);
-      min-height: 220px;
+      width: min(318px, calc(100vw - 120px));
+      max-width: 318px;
+      min-height: 0;
       max-height: min(72vh, 520px);
       padding: 14px;
       border-radius: 14px;
-      gap: 12px;
-      transform: none;
-      overflow-y: auto;
-    }
-    .panel[data-panel="settings"].open:not([style*="top"]) {
-      top: 50%;
-      transform: translateY(-50%);
+      gap: 10px;
     }
     .panel[data-panel="settings"]::after {
       content: '';
@@ -643,12 +670,16 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     .panel[data-panel="capture-result"],
     .panel[data-panel="compare-menu"] {
       right: 76px;
-      width: min(318px, 44vw);
+      width: min(318px, calc(100vw - 120px));
+      max-width: 318px;
       max-height: min(72vh, 520px);
       padding: 14px;
       border-radius: 14px;
-      transform: none;
       gap: 10px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
     }
     .panel[data-panel="shot-menu"]::after,
     .panel[data-panel="record-menu"]::after,
@@ -689,7 +720,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       margin-bottom: 2px;
     }
     .panel-head svg { flex-shrink: 0; opacity: 0.9; }
-    .setting-list { display: flex; flex-direction: column; gap: 6px; }
+    .setting-list { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
     .setting-section { margin: 4px 0 0; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--tbx-panel-muted); }
     .theme-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
     .theme-opt {
@@ -1156,20 +1187,33 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const devicesPanel = shadow.querySelector('[data-panel="devices"]') as HTMLElement
   const actionsScroll = shadow.querySelector('.actions-scroll') as HTMLElement
 
-  const positionRailPanel = (panel: HTMLElement, btn: HTMLElement, arrowVar: string, maxHeight: number) => {
+  /** Vertically centered beside the rail; arrow still points at the triggering control (Mobile Simulator style). */
+  const positionCenteredRailPopover = (
+    panel: HTMLElement,
+    btn: HTMLElement,
+    arrowVar: string,
+    maxHeight: number,
+    opts: { lockHeight?: boolean } = {},
+  ) => {
     if (!panel.classList.contains('open')) return
     const rootRect = root.getBoundingClientRect()
     const btnRect = btn.getBoundingClientRect()
-    panel.style.maxHeight = `${maxHeight}px`
     const arrowY = btnRect.top - rootRect.top + btnRect.height / 2
     panel.style.setProperty(arrowVar, `${arrowY}px`)
-    const measured = Math.min(panel.getBoundingClientRect().height || maxHeight, maxHeight)
-    panel.style.height = `${measured}px`
-    let top = arrowY - measured / 2
-    top = Math.max(12, Math.min(top, rootRect.height - measured - 12))
-    panel.style.top = `${top}px`
     panel.style.right = '76px'
-    panel.style.transform = 'none'
+    panel.style.top = '50%'
+    panel.style.transform = 'translateY(-50%)'
+    panel.style.maxHeight = `${maxHeight}px`
+    if (opts.lockHeight) {
+      const measured = Math.min(panel.getBoundingClientRect().height || maxHeight, maxHeight)
+      panel.style.height = `${measured}px`
+    } else {
+      panel.style.height = ''
+    }
+  }
+
+  const positionRailPanel = (panel: HTMLElement, btn: HTMLElement, arrowVar: string, maxHeight: number) => {
+    positionCenteredRailPopover(panel, btn, arrowVar, maxHeight, { lockHeight: true })
   }
 
   /** Wheel on page is suppressed while the overlay is open; keep scroll inside popover rails. */
@@ -1211,14 +1255,14 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
 
   const positionCapturePanels = () => {
     const capMax = Math.min(window.innerHeight * 0.72, 520)
-    if (state.panel === 'shot-menu') positionRailPanel(shotPanel, screenshotBtn, '--tbx-rail-arrow-y', capMax)
-    if (state.panel === 'record-menu') positionRailPanel(recordPanel, recordBtn, '--tbx-rail-arrow-y', capMax)
-    if (state.panel === 'capture-result') positionRailPanel(capturePanel, screenshotBtn, '--tbx-rail-arrow-y', capMax)
-    if (state.panel === 'compare-menu') positionRailPanel(comparePanel, compareBtn, '--tbx-rail-arrow-y', capMax)
+    if (state.panel === 'shot-menu') positionCenteredRailPopover(shotPanel, screenshotBtn, '--tbx-rail-arrow-y', capMax)
+    if (state.panel === 'record-menu') positionCenteredRailPopover(recordPanel, recordBtn, '--tbx-rail-arrow-y', capMax)
+    if (state.panel === 'capture-result') positionCenteredRailPopover(capturePanel, screenshotBtn, '--tbx-rail-arrow-y', capMax)
+    if (state.panel === 'compare-menu') positionCenteredRailPopover(comparePanel, compareBtn, '--tbx-rail-arrow-y', capMax)
   }
 
   const positionSettingsPanel = () => {
-    positionRailPanel(
+    positionCenteredRailPopover(
       settingsPanel,
       settingsBtn,
       '--tbx-settings-arrow-y',
@@ -1573,9 +1617,11 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   })
   deviceBtn.addEventListener('click', () => setPanel('devices'))
   settingsBtn.addEventListener('click', () => setPanel('settings'))
+  const settingsScroll = settingsPanel.querySelector('.setting-list') as HTMLElement
   bindOverlayWheelScroll(deviceList)
   bindOverlayWheelScroll(kindTabs)
   bindOverlayWheelScroll(actionsScroll)
+  bindOverlayWheelScroll(settingsScroll)
 
   searchInput.addEventListener('input', () => renderDevices())
   kindTabs.addEventListener('click', (event) => {
