@@ -70,12 +70,13 @@ describe('clipboard overlay inject', () => {
     vi.unstubAllGlobals()
   })
 
-  it('scrolls the entire overlay card instead of clipping history', () => {
-    expect(source).toMatch(/\.card\{[^}]*overflow-y:auto/)
-    expect(source).toMatch(/max-height:calc\(100dvh - 24px\)/)
+  it('scrolls only the copied-text list with a thin scrollbar', () => {
+    expect(source).toMatch(/\.list\{[^}]*overflow-y:auto/)
+    expect(source).toMatch(/\.section,\.item,\.empty\{flex:none\}/)
+    expect(source).toMatch(/\.scroll-rail\{[^}]*width:4px/)
     expect(source).toMatch(/class="scroll-rail"/)
+    expect(source).toMatch(/\.card\{[^}]*overflow:hidden/)
     expect(source).not.toMatch(/height:fit-content/)
-    expect(source).not.toMatch(/\.list\{[^}]*overflow-y:auto/)
   })
 
   it('renders history items inside the overlay card', () => {
@@ -87,6 +88,7 @@ describe('clipboard overlay inject', () => {
     expect(list.querySelectorAll('.item')).toHaveLength(9)
     expect(card.className).toContain('card')
     expect(host!.shadowRoot?.querySelector('.chrome')).toBeTruthy()
+    expect(host!.shadowRoot?.querySelector('.scroller')).toBeTruthy()
     expect(host!.shadowRoot?.querySelector('.scroll-rail')).toBeTruthy()
   })
 })
