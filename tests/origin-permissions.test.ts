@@ -9,14 +9,16 @@ import {
 describe('optional origin permissions', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('normalizes a selected host and ignores path, query, and port', () => {
+  it('normalizes a selected host and keeps non-default ports in the match pattern', () => {
     expect(getHostPermissionPattern('HTTPS://Api.Example.com:8443/v1?key=value')).toBe(
-      'https://api.example.com/*',
+      'https://api.example.com:8443/*',
     )
   })
 
   it('supports local HTTP API hosts', () => {
-    expect(getHostPermissionPattern('http://localhost:3000/health')).toBe('http://localhost/*')
+    expect(getHostPermissionPattern('http://localhost:3000/health')).toBe(
+      'http://localhost:3000/*',
+    )
   })
 
   it.each(['file:///tmp/data.json', 'javascript:alert(1)', 'https://user:pass@example.com', 'not a URL'])(
@@ -39,7 +41,9 @@ describe('optional origin permissions', () => {
     vi.mocked(chrome.permissions.request).mockResolvedValueOnce(true as never)
 
     await expect(requestHostAccess('http://127.0.0.1:8080/api')).resolves.toBe(true)
-    expect(chrome.permissions.request).toHaveBeenCalledWith({ origins: ['http://127.0.0.1/*'] })
+    expect(chrome.permissions.request).toHaveBeenCalledWith({
+      origins: ['http://127.0.0.1:8080/*'],
+    })
   })
 
   it('does not prompt for invalid schemes', async () => {

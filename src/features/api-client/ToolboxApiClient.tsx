@@ -54,7 +54,6 @@ export function ToolboxApiClient() {
       persistSidebarState={false}
       defaultSidebarOpen={false}
       settingsExtras={settingsExtras}
-      features={{ importState: false }}
     />
   )
 }

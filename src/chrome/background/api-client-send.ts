@@ -1,7 +1,17 @@
 import type { ApiClientResponse, ApiClientSendPayload } from 'postman-lite'
-import { executeHttpRequest } from 'postman-lite/core'
+import {
+  deserializeBodyFromTransport,
+  executeHttpRequest,
+  type FetchFn,
+} from 'postman-lite/core'
 
 import { createLogger } from '@/core/logging'
+import {
+  getHostPermissionPattern,
+  hasHostAccess,
+} from '@/core/permissions/originPermissions'
+
+import { ensureApiClientDnrBypass } from './api-client-dnr'
 
 const logger = createLogger('api-client-send')
 
@@ -12,14 +22,67 @@ function messageType(message: unknown): string | undefined {
   return (message as { type?: string }).type
 }
 
+function requestUrl(input: RequestInfo | URL): string {
+  if (typeof input === 'string') return input
+  if (input instanceof URL) return input.href
+  if (input instanceof Request) return input.url
+  return String(input)
+}
+
+function permissionDeniedMessage(url: string): string | null {
+  const pattern = getHostPermissionPattern(url)
+  if (!pattern) return null
+  const label = pattern.replace(/\/\*$/, '')
+  return `Access to ${label} was not granted. Allow it, then send again.`
+}
+
+async function assertHostAccessForUrl(url: string): Promise<void> {
+  const pattern = getHostPermissionPattern(url)
+  if (!pattern) return
+  if (!(await hasHostAccess(url))) {
+    const message = permissionDeniedMessage(url)
+    throw new TypeError(message ?? 'Host access was not granted.')
+  }
+}
+
+function createPermissionAwareFetch(): FetchFn {
+  return async (input, init) => {
+    const url = requestUrl(input)
+    await assertHostAccessForUrl(url)
+    try {
+      return await fetch(input, init)
+    } catch (error) {
+      if (error instanceof TypeError && /failed to fetch/i.test(error.message)) {
+        const denied = permissionDeniedMessage(url)
+        if (denied && !(await hasHostAccess(url))) {
+          throw new TypeError(denied)
+        }
+        throw new TypeError(
+          'Network request failed. Confirm host access, TLS, and that blockers are not stopping this URL.',
+        )
+      }
+      throw error
+    }
+  }
+}
+
+function prepareSendPayload(payload: ApiClientSendPayload): ApiClientSendPayload {
+  return {
+    ...payload,
+    body: deserializeBodyFromTransport(payload.body) as ApiClientSendPayload['body'],
+  }
+}
+
 async function runRequest(
   requestId: string | undefined,
   payload: ApiClientSendPayload,
 ): Promise<ApiClientResponse> {
   const controller = new AbortController()
   if (requestId) inFlight.set(requestId, controller)
+  const prepared = prepareSendPayload(payload)
+  const fetchFn = createPermissionAwareFetch()
   try {
-    return await executeHttpRequest(fetch, payload, { signal: controller.signal })
+    return await executeHttpRequest(fetchFn, prepared, { signal: controller.signal })
   } catch (error) {
     logger.warn('API_CLIENT_SEND failed', error)
     return { ok: false, error: error instanceof Error ? error.message : String(error) }
@@ -29,6 +92,7 @@ async function runRequest(
 }
 
 export function registerApiClientSendHandler(): void {
+  void ensureApiClientDnrBypass()
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     const type = messageType(message)
 

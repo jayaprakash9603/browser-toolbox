@@ -9,7 +9,7 @@ export function getHostPermissionPattern(value: string): string | null {
     ) {
       return null
     }
-    return `${url.protocol}//${url.hostname}/*`
+    return `${url.origin}/*`
   } catch {
     return null
   }

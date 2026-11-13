@@ -49,7 +49,7 @@ export function originPatternForUrl(url: string | undefined): string | null {
   try {
     const parsed = new URL(url)
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null
-    return `${parsed.protocol}//${parsed.hostname}/*`
+    return `${parsed.origin}/*`
   } catch {
     return null
   }

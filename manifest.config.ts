@@ -96,6 +96,13 @@ export default defineManifest({
   optional_permissions: isFirefox ? firefoxOptionalPermissions : optionalPermissions,
   optional_host_permissions: ['<all_urls>'],
   ...(isFirefox
+    ? {}
+    : {
+        sandbox: {
+          pages: ['script-sandbox.html'],
+        },
+      }),
+  ...(isFirefox
     ? {
         sidebar_action: {
           default_panel: 'index.html',
