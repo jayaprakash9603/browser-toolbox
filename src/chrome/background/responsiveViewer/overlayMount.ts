@@ -53,6 +53,13 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     watch: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 2h6M9 22h6"/></svg>',
     special: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>',
   }
+  const iconShotDevice =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>'
+  const iconShotTab =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 22h8M12 18v4"/></svg>'
+  const iconRecordTab =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>'
+  const iconCompareGrid = iconTabs.replace('width="16" height="16"', '')
 
   type Host = HTMLElement & {
     __tbxSimDispose?: () => void
@@ -83,7 +90,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     rotated: false,
     live: config,
     ui: config.ui,
-    panel: '' as '' | 'devices' | 'settings' | 'shot-menu' | 'record-menu' | 'capture-result',
+    panel: '' as '' | 'devices' | 'settings' | 'shot-menu' | 'record-menu' | 'capture-result' | 'compare-menu',
     lastCaptureUrl: '',
     lastCaptureName: '',
     previewReload: 0,
@@ -343,6 +350,77 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       color: inherit;
     }
     .panel.open { display: flex; z-index: 11; }
+    .panel.rail-popover {
+      --tbx-panel-bg: #1a222d;
+      --tbx-panel-border: #3a4659;
+      --tbx-panel-muted: #94a3b8;
+      --tbx-row-hover: #243041;
+      --tbx-input-bg: #0f141c;
+      --tbx-input-border: #3d4f63;
+      --tbx-hint: #9aa8bb;
+      --tbx-menu-bg: #232d3b;
+      --tbx-menu-border: #3d4f63;
+      background: var(--tbx-panel-bg);
+      color: #e8edf4;
+      box-shadow: 0 18px 46px rgba(0,0,0,0.45);
+    }
+    .panel.rail-popover::after {
+      background: var(--tbx-panel-bg);
+      border-right-color: var(--tbx-panel-border);
+      border-top-color: var(--tbx-panel-border);
+    }
+    .panel.rail-popover .capture-hint { color: var(--tbx-hint); }
+    .popover-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--tbx-panel-border);
+      margin-bottom: 2px;
+    }
+    .popover-head h2 { margin: 0; font-size: 15px; font-weight: 700; flex: 1; }
+    .popover-head svg { flex-shrink: 0; opacity: 0.95; color: #cbd5e1; }
+    .panel.rail-popover .setting-card {
+      border: 1px solid var(--tbx-panel-border);
+      border-radius: 12px;
+      padding: 10px 10px 8px;
+      background: rgba(15,20,28,0.55);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .panel.rail-popover .setting-card .setting-section { margin-top: 0; color: #cbd5e1; }
+    .menu-option {
+      display: flex; align-items: flex-start; gap: 12px;
+      width: 100%; min-height: 52px; padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--tbx-menu-border);
+      background: var(--tbx-menu-bg);
+      color: inherit; cursor: pointer; text-align: left;
+    }
+    .menu-option-icon {
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; border-radius: 10px;
+      background: rgba(13,148,136,0.14);
+      color: #5eead4;
+    }
+    .panel.device-picker .menu-option-icon { background: rgba(13,148,136,0.12); color: var(--tbx-accent); }
+    .menu-option-icon svg { width: 20px; height: 20px; }
+    .menu-option-copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; padding-top: 2px; }
+    .menu-option-title { font-size: 13px; font-weight: 700; line-height: 1.25; }
+    .menu-option-desc { font-size: 11px; font-weight: 500; color: var(--tbx-hint); line-height: 1.35; }
+    .menu-option:hover {
+      border-color: var(--tbx-accent);
+      background: var(--tbx-row-hover);
+    }
+    .capture-result-body {
+      display: flex; flex-direction: column; gap: 10px;
+      border: 1px solid var(--tbx-panel-border);
+      border-radius: 12px;
+      padding: 10px;
+      background: rgba(15,20,28,0.55);
+    }
     .panel[data-panel="devices"] {
       right: 76px;
       width: min(380px, 50vw);
@@ -376,6 +454,57 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       gap: 10px;
       padding: 14px 14px 10px;
       border-bottom: 1px solid var(--tbx-panel-border);
+    }
+    .device-panel-head h2 { margin: 0; font-size: 15px; font-weight: 700; color: #0f172a; }
+    .device-current {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--tbx-panel-border);
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    }
+    .device-current-thumb {
+      flex-shrink: 0;
+      border: 2px solid #94a3b8;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.8);
+    }
+    .device-current-label {
+      margin: 0;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--tbx-panel-muted);
+    }
+    .device-current-name {
+      margin: 2px 0 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .device-search-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 10px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid var(--tbx-input-border);
+      background: var(--tbx-input-bg);
+    }
+    .device-search-wrap svg { flex-shrink: 0; color: var(--tbx-panel-muted); width: 16px; height: 16px; }
+    .device-search-wrap input {
+      border: 0; padding: 0; height: auto; background: transparent; flex: 1; min-width: 0;
+    }
+    .device-search-wrap input:focus { outline: none; }
+    .panel.device-picker .kind-tab[aria-pressed="true"] {
+      background: #2563eb;
+      border-color: #2563eb;
+      box-shadow: 0 2px 10px rgba(37,99,235,0.35);
     }
     .device-sidebar {
       flex-shrink: 0;
@@ -483,13 +612,11 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .panel[data-panel="settings"] {
       right: 76px;
-      width: min(292px, 42vw);
+      width: min(318px, 44vw);
       min-height: 220px;
       max-height: min(72vh, 520px);
       padding: 14px;
       border-radius: 14px;
-      border: 1px solid var(--tbx-panel-border);
-      box-shadow: 0 16px 40px rgba(15,23,42,0.12);
       gap: 12px;
       transform: none;
       overflow-y: auto;
@@ -513,20 +640,20 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .panel[data-panel="shot-menu"],
     .panel[data-panel="record-menu"],
-    .panel[data-panel="capture-result"] {
+    .panel[data-panel="capture-result"],
+    .panel[data-panel="compare-menu"] {
       right: 76px;
-      width: min(292px, 42vw);
+      width: min(318px, 44vw);
       max-height: min(72vh, 520px);
       padding: 14px;
       border-radius: 14px;
-      border: 1px solid var(--tbx-panel-border);
-      box-shadow: 0 16px 40px rgba(15,23,42,0.12);
       transform: none;
       gap: 10px;
     }
     .panel[data-panel="shot-menu"]::after,
     .panel[data-panel="record-menu"]::after,
-    .panel[data-panel="capture-result"]::after {
+    .panel[data-panel="capture-result"]::after,
+    .panel[data-panel="compare-menu"]::after {
       content: '';
       position: absolute;
       right: -6px;
@@ -543,36 +670,11 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .panel[data-panel="capture-result"] img {
       width: 100%; max-height: 46vh; object-fit: contain;
-      border-radius: 10px; background: #f1f5f9; border: 1px solid #e2e8f0;
-    }
-    .root.theme-dark .panel[data-panel="capture-result"] img {
-      background: #0f141c;
-      border-color: #334155;
+      border-radius: 10px; background: #0b0f14; border: 1px solid var(--tbx-panel-border);
     }
     .menu-options { display: flex; flex-direction: column; gap: 8px; }
-    .menu-option {
-      display: flex; align-items: center; justify-content: flex-start; gap: 10px;
-      width: 100%; min-height: 44px; padding: 11px 14px;
-      border-radius: 12px;
-      border: 1px solid var(--tbx-menu-border);
-      background: var(--tbx-menu-bg);
-      color: inherit; font-size: 13px; font-weight: 600;
-      cursor: pointer; text-align: left;
-    }
-    .menu-option:hover {
-      border-color: var(--tbx-accent);
-      background: var(--tbx-row-hover);
-    }
-    .root.theme-dark .menu-option {
-      color: #f8fafc;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
-    }
-    .root.theme-dark .menu-option:hover {
-      border-color: #5eead4;
-      background: #243041;
-    }
     .capture-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-    .capture-actions .menu-option { flex: 1 1 auto; justify-content: center; }
+    .capture-actions .menu-option { flex: 1 1 auto; justify-content: center; align-items: center; min-height: 44px; }
     .capture-hint { margin: 0; font-size: 12px; color: var(--tbx-hint); line-height: 1.45; }
     .panel[data-panel="shot-menu"] h2,
     .panel[data-panel="record-menu"] h2,
@@ -733,78 +835,151 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
         </div>
       </div>
     </div>
-    <div class="panel" data-panel="devices" role="dialog" aria-label="Choose device">
+    <div class="panel device-picker" data-panel="devices" role="dialog" aria-label="Choose device">
       <div class="device-sidebar" data-kind-tabs role="tablist" aria-label="Device categories"></div>
       <div class="device-main">
         <div class="device-panel-head">
-          <h2>Devices</h2>
-          <input type="search" class="device-search" placeholder="Search devices" aria-label="Search devices" />
+          <h2>Change device or compare</h2>
+          <div class="device-current">
+            <span class="device-current-thumb device-thumb" data-current-device-thumb data-kind="phone" aria-hidden="true"></span>
+            <div>
+              <p class="device-current-label">Current device</p>
+              <p class="device-current-name" data-current-device-name>${escapeHtml(config.label)}</p>
+            </div>
+          </div>
+          <div class="device-search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input type="search" class="device-search" placeholder="Search devices" aria-label="Search devices" />
+          </div>
         </div>
         <div class="panel-list" data-device-list></div>
       </div>
     </div>
-    <div class="panel" data-panel="settings" role="dialog" aria-label="Simulator settings">
-      <div class="panel-head">
+    <div class="panel rail-popover" data-panel="settings" role="dialog" aria-label="Simulator settings">
+      <div class="popover-head">
         ${iconSettings}
-        <h2>Settings</h2>
+        <h2>Configuration</h2>
       </div>
       <div class="setting-list">
-        <p class="setting-section">Simulator canvas</p>
-        <div class="theme-pick" role="group" aria-label="Simulator canvas theme">
-          <button type="button" class="theme-opt" data-theme-opt="classic" aria-label="Classic light canvas">Classic</button>
-          <button type="button" class="theme-opt" data-theme-opt="dark" aria-label="Dark canvas">Dark</button>
+        <div class="setting-card">
+          <p class="setting-section">Display</p>
+          <div class="theme-pick" role="group" aria-label="Simulator canvas theme">
+            <button type="button" class="theme-opt" data-theme-opt="classic" aria-label="Classic light canvas">Classic</button>
+            <button type="button" class="theme-opt" data-theme-opt="dark" aria-label="Dark canvas">Dark</button>
+          </div>
         </div>
-        <p class="setting-section">Device chrome</p>
-        <label class="setting-switch">
-          <span>Safari chrome</span>
-          <input type="checkbox" data-set="safari" />
-          <span class="switch-track" aria-hidden="true"></span>
-        </label>
-        <label class="setting-switch">
-          <span>Status bar</span>
-          <input type="checkbox" data-set="status" />
-          <span class="switch-track" aria-hidden="true"></span>
-        </label>
-        <label class="setting-switch">
-          <span>Navigation bar</span>
-          <input type="checkbox" data-set="nav" />
-          <span class="switch-track" aria-hidden="true"></span>
-        </label>
-        <p class="setting-section">Preview</p>
-        <label class="setting-switch">
-          <span>Mobile User-Agent</span>
-          <input type="checkbox" data-set="mobile-ua" />
-          <span class="switch-track" aria-hidden="true"></span>
-        </label>
-        <label class="setting-switch">
-          <span>Load sites that block embedding</span>
-          <input type="checkbox" data-set="unblock" />
-          <span class="switch-track" aria-hidden="true"></span>
-        </label>
-        <p class="capture-hint">Simulator also applies these options in the full studio.</p>
+        <div class="setting-card">
+          <p class="setting-section">Device chrome</p>
+          <label class="setting-switch">
+            <span>Safari chrome</span>
+            <input type="checkbox" data-set="safari" />
+            <span class="switch-track" aria-hidden="true"></span>
+          </label>
+          <label class="setting-switch">
+            <span>Status bar</span>
+            <input type="checkbox" data-set="status" />
+            <span class="switch-track" aria-hidden="true"></span>
+          </label>
+          <label class="setting-switch">
+            <span>Navigation bar</span>
+            <input type="checkbox" data-set="nav" />
+            <span class="switch-track" aria-hidden="true"></span>
+          </label>
+        </div>
+        <div class="setting-card">
+          <p class="setting-section">Preview</p>
+          <label class="setting-switch">
+            <span>Mobile User-Agent</span>
+            <input type="checkbox" data-set="mobile-ua" />
+            <span class="switch-track" aria-hidden="true"></span>
+          </label>
+          <label class="setting-switch">
+            <span>Load sites that block embedding</span>
+            <input type="checkbox" data-set="unblock" />
+            <span class="switch-track" aria-hidden="true"></span>
+          </label>
+        </div>
+        <p class="capture-hint">These options also apply in the full simulator studio.</p>
       </div>
     </div>
-    <div class="panel" data-panel="shot-menu">
-      <h2>Screenshot</h2>
-      <p class="capture-hint">Choose what to capture from the simulator.</p>
+    <div class="panel rail-popover" data-panel="shot-menu">
+      <div class="popover-head">
+        ${iconCamera}
+        <h2>Take a screenshot</h2>
+      </div>
+      <p class="capture-hint">Choose how to export the capture from this tab.</p>
       <div class="menu-options">
-        <button type="button" class="menu-option" data-shot="simulator">Simulator screenshot</button>
-        <button type="button" class="menu-option" data-shot="viewport">Visible screen</button>
+        <button type="button" class="menu-option" data-shot="simulator">
+          <span class="menu-option-icon">${iconShotDevice}</span>
+          <span class="menu-option-copy">
+            <span class="menu-option-title">Capture with the device</span>
+            <span class="menu-option-desc">Frame, status bar, and on-screen chrome</span>
+          </span>
+        </button>
+        <button type="button" class="menu-option" data-shot="viewport">
+          <span class="menu-option-icon">${iconShotTab}</span>
+          <span class="menu-option-copy">
+            <span class="menu-option-title">Capture the entire tab</span>
+            <span class="menu-option-desc">Everything visible in this browser tab</span>
+          </span>
+        </button>
       </div>
     </div>
-    <div class="panel" data-panel="record-menu">
-      <h2>Record</h2>
-      <p class="capture-hint">Recording includes the simulator frame and the page inside this tab.</p>
+    <div class="panel rail-popover" data-panel="record-menu">
+      <div class="popover-head">
+        ${iconVideo}
+        <h2>Record a screen video</h2>
+      </div>
+      <p class="capture-hint">Record the simulator and page together in this tab.</p>
       <div class="menu-options">
-        <button type="button" class="menu-option" data-record="tab">Start tab recording</button>
+        <button type="button" class="menu-option" data-record="tab">
+          <span class="menu-option-icon">${iconRecordTab}</span>
+          <span class="menu-option-copy">
+            <span class="menu-option-title">Record this browser tab</span>
+            <span class="menu-option-desc">Starts tab capture with the device visible</span>
+          </span>
+        </button>
       </div>
     </div>
-    <div class="panel" data-panel="capture-result">
-      <h2 data-capture-title>Screenshot ready</h2>
-      <img data-capture-preview alt="Screenshot preview" />
-      <div class="capture-actions">
-        <button type="button" class="menu-option" data-capture-download>Download again</button>
-        <button type="button" class="menu-option" data-capture-close>Close</button>
+    <div class="panel rail-popover" data-panel="compare-menu">
+      <div class="popover-head">
+        ${iconTabs}
+        <h2>Compare devices</h2>
+      </div>
+      <p class="capture-hint">Open comparison tools in the full simulator studio.</p>
+      <div class="menu-options">
+        <button type="button" class="menu-option" data-compare="grid">
+          <span class="menu-option-icon">${iconCompareGrid}</span>
+          <span class="menu-option-copy">
+            <span class="menu-option-title">Compare devices</span>
+            <span class="menu-option-desc">Side-by-side device grid in studio</span>
+          </span>
+        </button>
+        <button type="button" class="menu-option" data-compare="visible">
+          <span class="menu-option-icon">${iconCompareGrid}</span>
+          <span class="menu-option-copy">
+            <span class="menu-option-title">Visible devices in the tab</span>
+            <span class="menu-option-desc">Multi-device layout for this preview</span>
+          </span>
+        </button>
+      </div>
+    </div>
+    <div class="panel rail-popover" data-panel="capture-result">
+      <div class="popover-head">
+        ${iconCamera}
+        <h2 data-capture-title>Screenshot ready</h2>
+      </div>
+      <div class="capture-result-body">
+        <img data-capture-preview alt="Screenshot preview" />
+        <p class="capture-hint">Right-click the image to copy or save it in large format.</p>
+        <div class="capture-actions">
+          <button type="button" class="menu-option" data-capture-download>
+            <span class="menu-option-title">Download again</span>
+          </button>
+          <button type="button" class="menu-option" data-capture-close>
+            <span class="menu-option-title">Close</span>
+          </button>
+        </div>
       </div>
     </div>
     <div class="actions">
@@ -882,11 +1057,21 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const deviceBtn = shadow.querySelector('[data-act="devices"]') as HTMLButtonElement
   const screenshotBtn = shadow.querySelector('[data-act="screenshot"]') as HTMLButtonElement
   const settingsBtn = shadow.querySelector('[data-act="settings"]') as HTMLButtonElement
+  const compareBtn = shadow.querySelector('[data-act="compare"]') as HTMLButtonElement
   const recordBtn = shadow.querySelector('[data-act="record"]') as HTMLButtonElement
   const shotPanel = shadow.querySelector('[data-panel="shot-menu"]') as HTMLElement
   const recordPanel = shadow.querySelector('[data-panel="record-menu"]') as HTMLElement
   const capturePanel = shadow.querySelector('[data-panel="capture-result"]') as HTMLElement
   const settingsPanel = shadow.querySelector('[data-panel="settings"]') as HTMLElement
+  const comparePanel = shadow.querySelector('[data-panel="compare-menu"]') as HTMLElement
+  const currentDeviceName = shadow.querySelector('[data-current-device-name]') as HTMLElement
+  const currentDeviceThumb = shadow.querySelector('[data-current-device-thumb]') as HTMLElement
+
+  const syncCurrentDevice = () => {
+    currentDeviceName.textContent = state.live.label
+    const fromCatalog = catalog.devices.find((d) => d.id === state.live.deviceId)
+    currentDeviceThumb.dataset.kind = fromCatalog?.kind ?? 'phone'
+  }
 
   const ask = <T,>(payload: Record<string, unknown>) =>
     new Promise<T | null>((resolve) => {
@@ -1029,6 +1214,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     if (state.panel === 'shot-menu') positionRailPanel(shotPanel, screenshotBtn, '--tbx-rail-arrow-y', capMax)
     if (state.panel === 'record-menu') positionRailPanel(recordPanel, recordBtn, '--tbx-rail-arrow-y', capMax)
     if (state.panel === 'capture-result') positionRailPanel(capturePanel, screenshotBtn, '--tbx-rail-arrow-y', capMax)
+    if (state.panel === 'compare-menu') positionRailPanel(comparePanel, compareBtn, '--tbx-rail-arrow-y', capMax)
   }
 
   const positionSettingsPanel = () => {
@@ -1215,6 +1401,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
 
     deviceList.replaceChildren(...fragments)
     renderKindTabs(fav, recent)
+    syncCurrentDevice()
     requestAnimationFrame(() => {
       positionDevicesPanel()
     })
@@ -1230,6 +1417,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     deviceBtn.setAttribute('aria-pressed', String(state.panel === 'devices'))
     settingsBtn.setAttribute('aria-pressed', String(state.panel === 'settings'))
+    compareBtn.setAttribute('aria-pressed', String(state.panel === 'compare-menu'))
     layout()
     if (state.panel === 'devices') {
       void loadDevices()
@@ -1242,7 +1430,12 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
         positionSettingsPanel()
         requestAnimationFrame(() => positionSettingsPanel())
       })
-    } else if (state.panel === 'shot-menu' || state.panel === 'record-menu' || state.panel === 'capture-result') {
+    } else if (
+      state.panel === 'shot-menu' ||
+      state.panel === 'record-menu' ||
+      state.panel === 'capture-result' ||
+      state.panel === 'compare-menu'
+    ) {
       requestAnimationFrame(() => positionCapturePanels())
     }
     screenshotBtn.setAttribute('aria-pressed', String(state.panel === 'shot-menu' || state.panel === 'capture-result'))
@@ -1252,7 +1445,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     state.lastCaptureUrl = dataUrl
     state.lastCaptureName = filename
     capturePreview.src = dataUrl
-    captureTitle.textContent = kind === 'simulator' ? 'Simulator screenshot ready' : 'Screen capture ready'
+    captureTitle.textContent = kind === 'simulator' ? 'Capture with the device' : 'Capture the entire tab'
     setPanel('capture-result', true)
   }
 
@@ -1287,10 +1480,12 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     if (iframe.getAttribute('src') !== next.url) setPreviewUrl(next.url)
     layout()
     if (state.panel === 'devices') renderDevices()
+    syncCurrentDevice()
   }
   host.__tbxSimApply = apply
   paintFinish(config)
   syncSettingsUi()
+  syncCurrentDevice()
   layout()
 
   iframe.addEventListener('load', () => {
@@ -1468,7 +1663,11 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       deviceId: state.live.deviceId,
     })
   })
-  shadow.querySelector('[data-act="compare"]')?.addEventListener('click', () => {
+  shadow.querySelector('[data-act="compare"]')?.addEventListener('click', () => setPanel('compare-menu', true))
+  shadow.querySelector('[data-panel="compare-menu"]')?.addEventListener('click', (event) => {
+    const picked = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-compare]')
+    if (!picked) return
+    setPanel('')
     void ask({
       type: 'SIMULATOR_OVERLAY_ACTION',
       action: 'compare',

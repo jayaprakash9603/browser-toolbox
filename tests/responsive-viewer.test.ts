@@ -269,6 +269,9 @@ describe('mobile simulator studio helpers', () => {
     expect(host?.shadowRoot?.querySelector('.stage')?.contains(devicesPanel ?? null)).toBe(false)
     expect(devicesPanel?.querySelector('[data-kind-tabs]')).toBeTruthy()
     expect(devicesPanel?.querySelector('.device-sidebar')).toBeTruthy()
+    expect(devicesPanel?.querySelector('[data-current-device-name]')?.textContent).toContain(config.label)
+    expect(devicesPanel?.classList.contains('device-picker')).toBe(true)
+    expect(host?.shadowRoot?.querySelector('[data-panel="settings"]')?.classList.contains('rail-popover')).toBe(true)
     expect(host?.shadowRoot?.querySelector('[data-panel="shot-menu"] .menu-option')).toBeTruthy()
     expect(host?.shadowRoot?.querySelector('[data-panel="settings"]')).toBeTruthy()
     expect(host?.shadowRoot?.querySelector('[data-set="mobile-ua"]')).toBeTruthy()
@@ -320,9 +323,9 @@ describe('mobile simulator studio helpers', () => {
     const shadow = document.getElementById(SIMULATOR_OVERLAY_ID)?.shadowRoot
     const root = shadow?.querySelector('.root') as HTMLElement
     expect(root?.classList.contains('theme-dark')).toBe(true)
-    const option = shadow?.querySelector('[data-panel="shot-menu"] .menu-option') as HTMLElement
-    expect(option).toBeTruthy()
-    expect(getComputedStyle(option).fontWeight).toBe('600')
+    const optionTitle = shadow?.querySelector('[data-panel="shot-menu"] .menu-option-title') as HTMLElement
+    expect(optionTitle?.textContent).toContain('Capture with the device')
+    expect(getComputedStyle(optionTitle).fontWeight).toBe('700')
     mountSimulatorOverlay(config)
     expect(document.getElementById(SIMULATOR_OVERLAY_ID)).toBeNull()
   })
