@@ -207,6 +207,7 @@ async function listOverlayDevices() {
       id: device.id,
       label: device.label,
       kind: device.kind,
+      manufacturer: device.manufacturer ?? 'Other',
       width: device.width,
       height: device.height,
     })),

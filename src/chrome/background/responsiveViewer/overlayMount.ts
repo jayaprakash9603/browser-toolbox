@@ -42,6 +42,17 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>'
   const iconSettings =
     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>'
+  const kindIcons: Record<string, string> = {
+    all: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>',
+    favorites: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.3 6.2 21l1.6-6.6L2 9.3l6.8-.5L12 2l3.2 6.8 6.8.5-5.8 5.1 1.6 6.6z"/></svg>',
+    recents: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+    phone: iconPhone.replace('width="16" height="16"', ''),
+    tablet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M11 18h2"/></svg>',
+    laptop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="12" rx="1"/><path d="M2 19h20"/></svg>',
+    desktop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="14" rx="1"/><path d="M8 22h8M12 18v4"/></svg>',
+    watch: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 2h6M9 22h6"/></svg>',
+    special: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>',
+  }
 
   type Host = HTMLElement & {
     __tbxSimDispose?: () => void
@@ -332,7 +343,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     .panel.open { display: flex; z-index: 11; }
     .panel[data-panel="devices"] {
       right: 76px;
-      width: min(320px, 44vw);
+      width: min(380px, 50vw);
       max-height: min(78vh, 640px);
       padding: 0;
       border-radius: 14px;
@@ -340,7 +351,9 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       box-shadow: 0 16px 40px rgba(15,23,42,0.12);
       min-height: 0;
       overflow: hidden;
+      flex-direction: row;
     }
+    .panel[data-panel="devices"].open { display: flex; }
     .panel[data-panel="devices"]::after {
       content: '';
       position: absolute;
@@ -361,34 +374,100 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       padding: 14px 14px 10px;
       border-bottom: 1px solid var(--tbx-panel-border);
     }
-    .device-chips-scroll {
+    .device-sidebar {
       flex-shrink: 0;
-      padding: 0 14px 10px;
-      overflow-x: auto;
-      overflow-y: hidden;
-      overscroll-behavior-x: contain;
+      width: 76px;
+      padding: 10px 6px;
+      border-right: 1px solid var(--tbx-panel-border);
+      background: var(--tbx-input-bg);
+      overflow-y: auto;
+      overscroll-behavior: contain;
       scrollbar-width: thin;
-      border-bottom: 1px solid var(--tbx-panel-border);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
-    .device-chips-scroll .chips { flex-wrap: nowrap; width: max-content; padding-bottom: 2px; }
+    .kind-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+      padding: 8px 4px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: transparent;
+      color: inherit;
+      font-size: 9px;
+      font-weight: 600;
+      line-height: 1.15;
+      cursor: pointer;
+      text-align: center;
+    }
+    .kind-tab:hover { background: var(--tbx-row-hover); }
+    .kind-tab[aria-pressed="true"] {
+      background: var(--tbx-accent);
+      border-color: var(--tbx-accent);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(13,148,136,0.35);
+    }
+    .kind-tab svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .kind-tab .kind-count { font-size: 8px; font-weight: 700; opacity: 0.85; tabular-nums; }
+    .device-main {
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
     .panel[data-panel="devices"] .panel-list {
       flex: 1;
       min-height: 120px;
       max-height: min(52vh, 480px);
-      padding: 8px 10px 12px;
+      padding: 6px 10px 12px;
       overflow-y: auto;
       overscroll-behavior: contain;
       scrollbar-width: thin;
     }
     .device-section {
-      margin: 10px 4px 6px;
+      margin: 12px 4px 6px;
+      padding-bottom: 4px;
       font-size: 10px;
       font-weight: 700;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
       color: var(--tbx-panel-muted);
+      border-bottom: 1px solid var(--tbx-panel-border);
     }
-    .device-section:first-child { margin-top: 2px; }
+    .device-section:first-child { margin-top: 4px; }
+    .device-thumb {
+      flex-shrink: 0;
+      border: 2px solid #94a3b8;
+      border-radius: 6px;
+      background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.6);
+    }
+    .root.theme-dark .device-thumb {
+      border-color: #475569;
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    }
+    .device-thumb[data-kind="phone"] { width: 22px; height: 36px; border-radius: 7px; }
+    .device-thumb[data-kind="tablet"] { width: 30px; height: 36px; border-radius: 6px; }
+    .device-thumb[data-kind="laptop"] { width: 34px; height: 24px; border-radius: 4px 4px 2px 2px; }
+    .device-thumb[data-kind="desktop"] { width: 34px; height: 26px; border-radius: 4px; }
+    .device-thumb[data-kind="watch"] { width: 22px; height: 26px; border-radius: 8px; }
+    .device-thumb[data-kind="special"] { width: 28px; height: 28px; border-radius: 6px; }
+    .device-copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+    .device-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .device-meta { font-size: 10px; color: var(--tbx-panel-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .device-row { gap: 10px; padding: 8px 10px; }
+    .device-row[aria-current="true"]::after {
+      content: '✓';
+      flex-shrink: 0;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--tbx-accent);
+    }
     .panel[data-panel="settings"] {
       right: 76px;
       width: min(292px, 42vw);
@@ -534,14 +613,13 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     .panel input:focus { outline: 2px solid #99f6e4; border-color: var(--tbx-accent); }
     .panel-list { overflow: auto; flex: 1; display: flex; flex-direction: column; gap: 2px; min-height: 0; }
     .device-row, .setting-row {
-      display: flex; align-items: center; justify-content: space-between; gap: 8px;
-      width: 100%; padding: 10px; border: 0; border-radius: 10px;
-      background: transparent; text-align: left; cursor: pointer; font-size: 13px; color: inherit;
+      display: flex; align-items: center;
+      width: 100%; border: 0; border-radius: 10px;
+      background: transparent; text-align: left; cursor: pointer; color: inherit;
     }
     .device-row:hover, .setting-row:hover { background: var(--tbx-row-hover); }
-    .device-row[aria-current="true"] { background: #ccfbf1; color: #0f766e; font-weight: 600; }
+    .device-row[aria-current="true"] { background: #ccfbf1; color: #0f766e; }
     .root.theme-dark .device-row[aria-current="true"] { background: #134e4a; color: #99f6e4; }
-    .device-row small { color: var(--tbx-panel-muted); font-weight: 400; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .chip {
       border: 1px solid var(--tbx-input-border); background: var(--tbx-input-bg); border-radius: 999px;
@@ -614,15 +692,15 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
         </div>
       </div>
     </div>
-    <div class="panel" data-panel="devices">
-      <div class="device-panel-head">
-        <h2>Devices</h2>
-        <input type="search" class="device-search" placeholder="Search devices" aria-label="Search devices" />
+    <div class="panel" data-panel="devices" role="dialog" aria-label="Choose device">
+      <div class="device-sidebar" data-kind-tabs role="tablist" aria-label="Device categories"></div>
+      <div class="device-main">
+        <div class="device-panel-head">
+          <h2>Devices</h2>
+          <input type="search" class="device-search" placeholder="Search devices" aria-label="Search devices" />
+        </div>
+        <div class="panel-list" data-device-list></div>
       </div>
-      <div class="device-chips-scroll">
-        <div class="chips" data-kind-chips></div>
-      </div>
-      <div class="panel-list" data-device-list></div>
     </div>
     <div class="panel" data-panel="settings" role="dialog" aria-label="Simulator settings">
       <div class="panel-head">
@@ -732,12 +810,12 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   tick()
   const clockId = window.setInterval(tick, 30_000)
 
-  type DeviceRow = { id: string; label: string; kind: string; width: number; height: number }
+  type DeviceRow = { id: string; label: string; kind: string; manufacturer: string; width: number; height: number }
   type DeviceList = { devices: DeviceRow[]; favorites: string[]; recents: string[]; current: string }
   let catalog: DeviceList = { devices: [], favorites: [], recents: [], current: config.deviceId }
-  let kindFilter = 'all'
+  let kindFilter = 'phone'
   const searchInput = shadow.querySelector('.device-search') as HTMLInputElement
-  const chipRow = shadow.querySelector('[data-kind-chips]') as HTMLElement
+  const kindTabs = shadow.querySelector('[data-kind-tabs]') as HTMLElement
   const deviceList = shadow.querySelector('[data-device-list]') as HTMLElement
   const deviceBtn = shadow.querySelector('[data-act="devices"]') as HTMLButtonElement
   const screenshotBtn = shadow.querySelector('[data-act="screenshot"]') as HTMLButtonElement
@@ -929,16 +1007,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     })
   }
 
-  const kindLabels: Record<string, string> = {
-    phone: 'Phones',
-    tablet: 'Tablets',
-    laptop: 'Laptops',
-    desktop: 'Desktops',
-    watch: 'Watch',
-    special: 'Special',
-  }
-  const kindOrder = ['phone', 'tablet', 'laptop', 'desktop', 'watch', 'special'] as const
-
   const deviceMatchesFilter = (
     device: DeviceRow,
     query: string,
@@ -951,7 +1019,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       return false
     }
     if (!query) return true
-    return `${device.label} ${device.id} ${device.kind}`.toLowerCase().includes(query)
+    return `${device.label} ${device.id} ${device.kind} ${device.manufacturer}`.toLowerCase().includes(query)
   }
 
   const makeDeviceRow = (device: DeviceRow) => {
@@ -960,8 +1028,59 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     button.className = 'device-row'
     button.dataset.device = device.id
     if (device.id === state.live.deviceId) button.setAttribute('aria-current', 'true')
-    button.innerHTML = `<span>${escapeHtml(device.label)}</span><small>${device.width}×${device.height}</small>`
+    button.innerHTML = `
+      <span class="device-thumb" data-kind="${escapeHtml(device.kind)}" aria-hidden="true"></span>
+      <span class="device-copy">
+        <span class="device-name">${escapeHtml(device.label)}</span>
+        <span class="device-meta">${escapeHtml(device.manufacturer)} · ${device.width}×${device.height}</span>
+      </span>`
     return button
+  }
+
+  const countForKind = (id: string, fav: Set<string>, _recent: Set<string>) => {
+    if (id === 'favorites') return catalog.devices.filter((d) => fav.has(d.id)).length
+    if (id === 'recents') return catalog.recents.filter((rid) => catalog.devices.some((d) => d.id === rid)).length
+    if (id === 'all') return catalog.devices.length
+    return catalog.devices.filter((d) => d.kind === id).length
+  }
+
+  const renderKindTabs = (fav: Set<string>, recent: Set<string>) => {
+    const tabs: { id: string; label: string }[] = [
+      { id: 'phone', label: 'Phones' },
+      { id: 'tablet', label: 'Tablets' },
+      { id: 'laptop', label: 'Laptops' },
+      { id: 'desktop', label: 'Desktop' },
+      { id: 'watch', label: 'Watch' },
+      { id: 'special', label: 'Special' },
+      { id: 'all', label: 'All' },
+      { id: 'favorites', label: 'Stars' },
+      { id: 'recents', label: 'Recent' },
+    ]
+    kindTabs.replaceChildren(
+      ...tabs.map((tab) => {
+        const button = document.createElement('button')
+        button.type = 'button'
+        button.className = 'kind-tab'
+        button.dataset.kind = tab.id
+        button.setAttribute('role', 'tab')
+        button.setAttribute('aria-pressed', String(kindFilter === tab.id))
+        button.setAttribute('aria-selected', String(kindFilter === tab.id))
+        const count = countForKind(tab.id, fav, recent)
+        button.innerHTML = `${kindIcons[tab.id] ?? kindIcons.all}<span>${tab.label}</span><span class="kind-count">${count}</span>`
+        return button
+      }),
+    )
+  }
+
+  const groupByManufacturer = (devices: DeviceRow[]) => {
+    const map = new Map<string, DeviceRow[]>()
+    for (const device of devices) {
+      const key = device.manufacturer || 'Other'
+      const bucket = map.get(key) ?? []
+      bucket.push(device)
+      map.set(key, bucket)
+    }
+    return [...map.entries()].sort(([a], [b]) => a.localeCompare(b))
   }
 
   const renderDevices = () => {
@@ -981,21 +1100,18 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       for (const device of devices) fragments.push(makeDeviceRow(device))
     }
 
-    if (kindFilter === 'all' && !query) {
-      pushSection(
-        'Favorites',
-        catalog.devices.filter((d) => fav.has(d.id)),
-      )
+    if (kindFilter === 'recents' && !query) {
       const recentDevices = catalog.recents
         .map((id) => catalog.devices.find((d) => d.id === id))
         .filter((d): d is DeviceRow => Boolean(d))
-      pushSection('Recent', recentDevices)
-      for (const kind of kindOrder) {
-        const group = catalog.devices.filter((d) => d.kind === kind)
-        if (group.length) pushSection(kindLabels[kind] ?? kind, group)
-      }
+      pushSection('Recent devices', recentDevices)
+    } else if (kindFilter === 'favorites' && !query) {
+      pushSection('Favorite devices', catalog.devices.filter((d) => fav.has(d.id)))
     } else {
-      for (const device of matches) fragments.push(makeDeviceRow(device))
+      const sorted = [...matches].sort((a, b) => a.label.localeCompare(b.label))
+      for (const [manufacturer, group] of groupByManufacturer(sorted)) {
+        pushSection(manufacturer, group)
+      }
     }
 
     if (!fragments.length) {
@@ -1007,29 +1123,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
 
     deviceList.replaceChildren(...fragments)
+    renderKindTabs(fav, recent)
     requestAnimationFrame(() => positionDevicesPanel())
-    const chips: { id: string; label: string }[] = [
-      { id: 'all', label: 'All' },
-      { id: 'favorites', label: 'Favorites' },
-      { id: 'recents', label: 'Recents' },
-      { id: 'phone', label: 'Phones' },
-      { id: 'tablet', label: 'Tablets' },
-      { id: 'laptop', label: 'Laptops' },
-      { id: 'desktop', label: 'Desktops' },
-      { id: 'watch', label: 'Watch' },
-      { id: 'special', label: 'Special' },
-    ]
-    chipRow.replaceChildren(
-      ...chips.map((chip) => {
-        const button = document.createElement('button')
-        button.type = 'button'
-        button.className = 'chip'
-        button.dataset.kind = chip.id
-        button.textContent = chip.label
-        button.setAttribute('aria-pressed', String(kindFilter === chip.id))
-        return button
-      }),
-    )
   }
 
   const capturePreview = shadow.querySelector('[data-capture-preview]') as HTMLImageElement
@@ -1187,7 +1282,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   deviceBtn.addEventListener('click', () => setPanel('devices'))
   settingsBtn.addEventListener('click', () => setPanel('settings'))
   searchInput.addEventListener('input', () => renderDevices())
-  chipRow.addEventListener('click', (event) => {
+  kindTabs.addEventListener('click', (event) => {
     const kind = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-kind]')?.dataset.kind
     if (!kind) return
     kindFilter = kind
