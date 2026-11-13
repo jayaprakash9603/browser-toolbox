@@ -15,7 +15,13 @@ import {
 } from 'lucide-react'
 
 import { useRouter } from '@/app/router'
-import type { Annotation, AnnotationTool } from '@/core/engines/capture'
+import {
+  drawAnnotationDraft,
+  isCommittedAnnotationDrag,
+  isDragAnnotationTool,
+  type Annotation,
+  type AnnotationTool,
+} from '@/core/engines/capture'
 import { sendMessage } from '@/core/messaging/messageService'
 import type { ScreenshotFrame, ScreenshotSession } from '@/core/screenshot/types'
 import { captureAutoAction, withoutAutoAction, type CaptureAutoAction } from '@/core/screenshot/viewerUrl'
@@ -179,25 +185,58 @@ function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: Ca
   const [viewport, setViewport] = useState({ width: 0, height: 0 })
   const effectiveZoomRef = useRef(1)
   const baseCanvasRef = useRef<HTMLCanvasElement | null>(null)
-  const dragStart = useRef<{ x: number; y: number } | null>(null)
+  const dragStart = useRef<{
+    x: number
+    y: number
+    tool: AnnotationTool
+    color: string
+    pointerId: number
+  } | null>(null)
+  const draftRef = useRef<Annotation | null>(null)
+  const annotationsRef = useRef<Annotation[]>([])
+  const paintRaf = useRef(0)
   const markerCount = useRef(0)
   const undoStack = useRef<Annotation[][]>([])
   const redoStack = useRef<Annotation[][]>([])
   const autoRan = useRef(false)
 
+  annotationsRef.current = annotations
+
   const frame = session?.frames[frameIndex]
 
-  const redraw = useCallback(() => {
+  const paint = useCallback((draft: Annotation | null = draftRef.current) => {
     const base = baseCanvasRef.current
     const view = canvasRef.current
     if (!base || !view) return
-    view.width = base.width
-    view.height = base.height
+    if (view.width !== base.width) view.width = base.width
+    if (view.height !== base.height) view.height = base.height
     const ctx = view.getContext('2d')
     if (!ctx) return
     ctx.drawImage(base, 0, 0)
-    applyAnnotations(view, annotations)
-  }, [annotations])
+    applyAnnotations(view, annotationsRef.current)
+    if (draft) drawAnnotationDraft(view, draft, effectiveZoomRef.current)
+  }, [])
+
+  const cancelPaintRaf = () => {
+    if (!paintRaf.current) return
+    cancelAnimationFrame(paintRaf.current)
+    paintRaf.current = 0
+  }
+
+  const flushPaint = (draft: Annotation | null) => {
+    cancelPaintRaf()
+    draftRef.current = draft
+    paint(draft)
+  }
+
+  const schedulePaint = (draft: Annotation | null) => {
+    draftRef.current = draft
+    if (paintRaf.current) return
+    paintRaf.current = requestAnimationFrame(() => {
+      paintRaf.current = 0
+      paint(draftRef.current)
+    })
+  }
 
   useEffect(() => {
     void loadScreenshotSettings().then((loaded) => {
@@ -235,7 +274,7 @@ function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: Ca
         markerCount.current = 0
         undoStack.current = []
         redoStack.current = []
-        redraw()
+        paint(null)
       })
       .catch((cause: unknown) => {
         if (!cancelled) setError(cause instanceof Error ? cause.message : 'Could not render the capture.')
@@ -247,8 +286,10 @@ function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: Ca
   }, [frame, settingsLoaded, settings.pageInfoStamp, settings.pageInfoPosition])
 
   useEffect(() => {
-    redraw()
-  }, [annotations, redraw])
+    paint(draftRef.current)
+  }, [annotations, paint])
+
+  useEffect(() => () => cancelPaintRaf(), [])
 
   const undo = () => {
     const prev = undoStack.current.pop()
@@ -532,25 +573,141 @@ function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: Ca
         void runExport('Saved', 'image', () => save(format, 'image'))
       }
     }
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      if (!dragStart.current && !draftRef.current) return
+      event.preventDefault()
+      dragStart.current = null
+      flushPaint(null)
+    }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    window.addEventListener('keydown', onEscape)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('keydown', onEscape)
+    }
   })
 
-  const imagePoint = (event: React.MouseEvent): { x: number; y: number } => {
+  const imagePoint = (event: { clientX: number; clientY: number }): { x: number; y: number } => {
     const canvas = canvasRef.current
     if (!canvas) return { x: 0, y: 0 }
     const rect = canvas.getBoundingClientRect()
+    const width = rect.width || 1
+    const height = rect.height || 1
     return {
-      x: (event.clientX - rect.left) * (canvas.width / rect.width),
-      y: (event.clientY - rect.top) * (canvas.height / rect.height),
+      x: (event.clientX - rect.left) * (canvas.width / width),
+      y: (event.clientY - rect.top) * (canvas.height / height),
     }
   }
 
   const pushAnnotation = (note: Annotation) => {
-    undoStack.current.push(annotations)
+    undoStack.current.push(annotationsRef.current)
     redoStack.current = []
-    setAnnotations((prev) => [...prev, note])
+    const next = [...annotationsRef.current, note]
+    annotationsRef.current = next
+    setAnnotations(next)
   }
+
+  const beginDraw = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (event.button !== 0 && event.pointerType === 'mouse') return
+    const point = imagePoint(event)
+    if (activeTool === 'text') {
+      if (text.trim()) {
+        pushAnnotation({ tool: 'text', color, x1: point.x, y1: point.y, x2: point.x, y2: point.y, text })
+      }
+      return
+    }
+    if (activeTool === 'marker') {
+      markerCount.current += 1
+      pushAnnotation({
+        tool: 'marker',
+        color,
+        x1: point.x,
+        y1: point.y,
+        x2: point.x,
+        y2: point.y,
+        number: markerCount.current,
+      })
+      return
+    }
+    if (!isDragAnnotationTool(activeTool)) return
+    event.preventDefault()
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId)
+    } catch {
+      /* Capture is best-effort; move events still work while over the canvas. */
+    }
+    dragStart.current = {
+      x: point.x,
+      y: point.y,
+      tool: activeTool,
+      color,
+      pointerId: event.pointerId,
+    }
+  }
+
+  const moveDraw = (event: { pointerId: number; clientX: number; clientY: number }) => {
+    const start = dragStart.current
+    if (!start || start.pointerId !== event.pointerId) return
+    const end = imagePoint(event)
+    schedulePaint({
+      tool: start.tool,
+      color: start.color,
+      x1: start.x,
+      y1: start.y,
+      x2: end.x,
+      y2: end.y,
+    })
+  }
+
+  const endDraw = (event: { pointerId: number; clientX: number; clientY: number }) => {
+    const start = dragStart.current
+    if (!start || start.pointerId !== event.pointerId) return
+    dragStart.current = null
+    const view = canvasRef.current
+    if (view?.hasPointerCapture(event.pointerId)) {
+      try {
+        view.releasePointerCapture(event.pointerId)
+      } catch {
+        /* already released */
+      }
+    }
+    const end = imagePoint(event)
+    if (!isCommittedAnnotationDrag(start, end)) {
+      flushPaint(null)
+      return
+    }
+    pushAnnotation({
+      tool: start.tool,
+      color: start.color,
+      x1: start.x,
+      y1: start.y,
+      x2: end.x,
+      y2: end.y,
+    })
+    flushPaint(null)
+  }
+
+  const cancelDraw = (event: { pointerId: number }) => {
+    const start = dragStart.current
+    if (!start || start.pointerId !== event.pointerId) return
+    dragStart.current = null
+    flushPaint(null)
+  }
+
+  useEffect(() => {
+    const onMove = (event: PointerEvent) => moveDraw(event)
+    const onUp = (event: PointerEvent) => endDraw(event)
+    const onCancel = (event: PointerEvent) => cancelDraw(event)
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onCancel)
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onCancel)
+    }
+  })
 
   if (loading) {
     return <CenteredMessage>Loading capture…</CenteredMessage>
@@ -569,7 +726,7 @@ function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: Ca
       className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/15 md:flex-row"
     >
       <div className="@container flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="flex shrink-0 items-center gap-2 border-b border-border/60 bg-background/95 px-2 py-1.5 backdrop-blur-sm sm:px-3">
+        <div className="flex shrink-0 items-center gap-2 border-b border-border/60 bg-background/95 px-3 py-2 backdrop-blur-sm">
           <BackButton to="/tools/screenshots/capture" className="size-8 rounded-lg" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold leading-tight text-foreground">
@@ -620,39 +777,11 @@ function CaptureEditor({ sessionId, auto }: { sessionId: string | null; auto: Ca
             <div className="w-fit rounded-xl bg-background/60 p-1.5 shadow-lg ring-1 ring-border/60 backdrop-blur-[2px]">
             <canvas
               ref={canvasRef}
-              className="block max-w-none cursor-crosshair rounded-md border border-border/40 bg-background"
+              draggable={false}
+              className="block max-w-none cursor-crosshair touch-none select-none rounded-md border border-border/40 bg-background"
               style={canvasStyle}
-              onMouseDown={(event) => {
-              const point = imagePoint(event)
-              if (activeTool === 'text') {
-                if (text.trim()) {
-                  pushAnnotation({ tool: 'text', color, x1: point.x, y1: point.y, x2: point.x, y2: point.y, text })
-                }
-                return
-              }
-              if (activeTool === 'marker') {
-                markerCount.current += 1
-                pushAnnotation({
-                  tool: 'marker',
-                  color,
-                  x1: point.x,
-                  y1: point.y,
-                  x2: point.x,
-                  y2: point.y,
-                  number: markerCount.current,
-                })
-                return
-              }
-              dragStart.current = point
-            }}
-            onMouseUp={(event) => {
-              const start = dragStart.current
-              if (!start) return
-              dragStart.current = null
-              const end = imagePoint(event)
-              pushAnnotation({ tool: activeTool, color, x1: start.x, y1: start.y, x2: end.x, y2: end.y })
-            }}
-          />
+              onPointerDown={beginDraw}
+            />
             </div>
           </div>
         </div>

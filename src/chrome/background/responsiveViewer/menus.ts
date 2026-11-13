@@ -1,17 +1,10 @@
-import { getChromeMessage } from '@/core/i18n/chromeMessages'
+import { createLogger } from '@/core/logging'
+import { originPatternForUrl, requestPermissions } from '@/core/permissions/siteAccess'
 import { isRestrictedCaptureUrl } from '@/core/screenshot/restricted'
 import { STORAGE_KEY } from '@/tools/design/responsive-viewer/storageKey'
 import { simulatorStudioUrl } from '@/tools/design/responsive-viewer/studioUrl'
-import { setPanelRouteIntent } from '@/core/panel/navigationSession'
-import { openExtensionPanel } from '@/platform/panel'
-import { startScreenshot } from '../screenshot/start'
-import {
-  SIMULATOR_CAPTURE,
-  SIMULATOR_OPEN_LINK,
-  SIMULATOR_PANEL,
-  SIMULATOR_PARENT_ID,
-} from './ids'
 
+export { buildSimulatorMenus } from './menuItem'
 export {
   SIMULATOR_CAPTURE,
   SIMULATOR_OPEN_DEVICE,
@@ -22,15 +15,7 @@ export {
   isSimulatorMenuItem,
 } from './ids'
 
-export function buildSimulatorMenus(create: (properties: chrome.contextMenus.CreateProperties) => void): void {
-  // Leaf item: Chrome will not fire clicks on a parent that has children, so this
-  // must stay a single entry. Under One Panel's grouped menu it opens the overlay.
-  create({
-    id: SIMULATOR_PARENT_ID,
-    title: getChromeMessage('contextMenuSimulator') ?? 'Mobile Simulator',
-    contexts: ['page', 'frame', 'link', 'image', 'selection'],
-  })
-}
+const logger = createLogger('simulator')
 
 async function lastDeviceId(): Promise<string | undefined> {
   try {
@@ -43,44 +28,73 @@ async function lastDeviceId(): Promise<string | undefined> {
   }
 }
 
+async function resolveTab(tab?: chrome.tabs.Tab): Promise<chrome.tabs.Tab | undefined> {
+  if (tab?.id != null) {
+    if (tab.url) return tab
+    try {
+      return await chrome.tabs.get(tab.id)
+    } catch {
+      return tab
+    }
+  }
+  try {
+    const [active] = await chrome.tabs.query({ active: true, lastFocusedWindow: true })
+    return active ?? tab
+  } catch {
+    return tab
+  }
+}
+
+export type SimulatorOpenResult = { opened: 'overlay' | 'studio'; reason?: string }
+
 export async function handleSimulatorMenuClick(
-  menuItemId: string,
-  info: chrome.contextMenus.OnClickData,
+  _menuItemId: string,
+  _info: chrome.contextMenus.OnClickData,
   tab?: chrome.tabs.Tab,
 ): Promise<void> {
-  if (menuItemId === SIMULATOR_CAPTURE) {
-    await startScreenshot('visible', tab)
-    return
-  }
-  if (menuItemId === SIMULATOR_PANEL) {
-    await setPanelRouteIntent('/tools/design/responsive-viewer')
-    if (tab?.windowId != null) await openExtensionPanel({ windowId: tab.windowId, tabId: tab.id })
-    return
-  }
-
-  const link = typeof info.linkUrl === 'string' ? info.linkUrl : undefined
-  const page = tab?.url
-  const target = menuItemId === SIMULATOR_OPEN_LINK ? link : link ?? page
-  const device = await lastDeviceId()
-  if (await tryOpenOverlay(tab, target, device)) return
-  await chrome.tabs.create({
-    url: simulatorStudioUrl({
-      url: target && !isRestrictedCaptureUrl(target) ? target : undefined,
-      device,
-    }),
-  })
+  const target = await resolveTab(tab)
+  const pageUrl = target?.url && !isRestrictedCaptureUrl(target.url) ? target.url : undefined
+  await openSimulatorForTab(target, { url: pageUrl, replace: true })
 }
 
-export async function openSimulatorForTab(tab?: chrome.tabs.Tab): Promise<void> {
-  const url = tab?.url && !isRestrictedCaptureUrl(tab.url) ? tab.url : undefined
-  const device = await lastDeviceId()
-  if (await tryOpenOverlay(tab, url, device)) return
-  await chrome.tabs.create({ url: simulatorStudioUrl({ url, device }) })
+export async function openSimulatorForTab(
+  tab?: chrome.tabs.Tab,
+  opts: { url?: string; deviceId?: string; replace?: boolean } = {},
+): Promise<SimulatorOpenResult> {
+  const target = await resolveTab(tab)
+  const pageUrl = target?.url && !isRestrictedCaptureUrl(target.url) ? target.url : undefined
+  const url = opts.url && !isRestrictedCaptureUrl(opts.url) ? opts.url : pageUrl
+  const device = opts.deviceId ?? (await lastDeviceId())
+
+  const restricted =
+    (typeof opts.url === 'string' && isRestrictedCaptureUrl(opts.url)) ||
+    (typeof target?.url === 'string' && isRestrictedCaptureUrl(target.url))
+  if (restricted) {
+    await chrome.tabs.create({
+      url: simulatorStudioUrl({ device, url: pageUrl ?? url }),
+    })
+    return { opened: 'studio', reason: 'restricted' }
+  }
+
+  const overlay = await tryOpenOverlay(target, url, device, opts.replace ?? true)
+  if (overlay.ok) return { opened: 'overlay' }
+  logger.warn('overlay unavailable on this tab', overlay.reason, url)
+  return { opened: 'overlay', reason: overlay.reason }
 }
 
-async function tryOpenOverlay(tab: chrome.tabs.Tab | undefined, url: string | undefined, device?: string): Promise<boolean> {
-  if (tab?.id == null || !url) return false
+async function tryOpenOverlay(
+  tab: chrome.tabs.Tab | undefined,
+  url: string | undefined,
+  device?: string,
+  replace = true,
+): Promise<{ ok: true } | { ok: false; reason: string }> {
+  if (tab?.id == null) return { ok: false, reason: 'no-tab' }
+  if (!url) return { ok: false, reason: 'no-url' }
+  const pattern = originPatternForUrl(url)
+  if (pattern) await requestPermissions({ origins: [pattern] })
   const { canOverlaySimulatorOnTab, openSimulatorOverlay } = await import('./overlay')
-  if (!canOverlaySimulatorOnTab(tab.url, url)) return false
-  return openSimulatorOverlay(tab, { url, deviceId: device })
+  const pageUrl = tab.url && !isRestrictedCaptureUrl(tab.url) ? tab.url : url
+  if (!canOverlaySimulatorOnTab(pageUrl, url)) return { ok: false, reason: 'cross-origin' }
+  if (await openSimulatorOverlay(tab, { url, deviceId: device, replace })) return { ok: true }
+  return { ok: false, reason: 'inject-failed' }
 }

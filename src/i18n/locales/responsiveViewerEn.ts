@@ -82,6 +82,7 @@ export const responsiveViewerStrings = {
   'rv.studio.open': 'Open Mobile Simulator',
   'rv.studio.close': 'Close simulator',
   'rv.studio.settings': 'Device settings',
+  'rv.studio.lightCanvas': 'Light workspace',
   'rv.studio.toggleRail': 'Toggle device library',
   'rv.devices.add': 'Add device',
   'rv.devices.favorites': 'Favorites',

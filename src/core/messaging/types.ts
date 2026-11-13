@@ -344,6 +344,13 @@ export type ExtensionMessage =
       network: 'online' | '4g' | 'slow-4g' | '3g' | 'slow-3g' | 'offline'
     }
   | { type: 'RV_EMULATE_STOP'; tabId: number }
+  | { type: 'SIMULATOR_OPEN_OVERLAY'; url?: string; deviceId?: string; tabId?: number }
+  | {
+      type: 'SIMULATOR_OVERLAY_ACTION'
+      action: 'listDevices' | 'setDevice' | 'screenshot' | 'record' | 'compare' | 'expand'
+      deviceId?: string
+      url?: string
+    }
   | { type: 'SCAN_DOWNLOADABLE_RESOURCES'; includeImages?: boolean; includeMedia?: boolean }
   | { type: 'DOWNLOAD_MANAGER_GET_SNAPSHOT' }
   | { type: 'DOWNLOAD_MANAGER_SEARCH'; query?: chrome.downloads.DownloadQuery }
@@ -563,6 +570,8 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'RV_FRAMING_SET',
   'RV_EMULATE_START',
   'RV_EMULATE_STOP',
+  'SIMULATOR_OPEN_OVERLAY',
+  'SIMULATOR_OVERLAY_ACTION',
   'SCAN_DOWNLOADABLE_RESOURCES',
   'DOWNLOAD_MANAGER_GET_SNAPSHOT',
   'DOWNLOAD_MANAGER_SEARCH',

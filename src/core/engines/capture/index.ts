@@ -137,13 +137,40 @@ export interface Annotation {
   number?: number
 }
 
-export function drawAnnotations(canvas: HTMLCanvasElement, annotations: Annotation[]): void {
+export function isDragAnnotationTool(tool: AnnotationTool): boolean {
+  return tool !== 'text' && tool !== 'marker'
+}
+
+export function isCommittedAnnotationDrag(
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+  minDistance = 2,
+): boolean {
+  return Math.hypot(end.x - start.x, end.y - start.y) >= minDistance
+}
+
+/** Keep rubber-band strokes ~2 CSS pixels so the draft stays visible when zoomed out. */
+export function annotationDraftLineWidth(zoom: number): number {
+  if (!Number.isFinite(zoom) || zoom <= 0) return 2.5
+  return Math.max(2.5, 2 / zoom)
+}
+
+export function drawAnnotations(
+  canvas: HTMLCanvasElement,
+  annotations: Annotation[],
+  options?: { lineWidth?: number; dashed?: boolean },
+): void {
   const ctx = canvas.getContext('2d')
   if (!ctx) return
+  const lineWidth = options?.lineWidth ?? 2.5
+  ctx.save()
+  if (options?.dashed) {
+    ctx.setLineDash([Math.max(6, lineWidth * 3), Math.max(4, lineWidth * 2)])
+  }
   for (const note of annotations) {
     ctx.strokeStyle = note.color
     ctx.fillStyle = note.color
-    ctx.lineWidth = 2.5
+    ctx.lineWidth = lineWidth
     const { x1, y1, x2, y2 } = note
     switch (note.tool) {
       case 'rect':
@@ -163,7 +190,7 @@ export function drawAnnotations(canvas: HTMLCanvasElement, annotations: Annotati
         ctx.stroke()
         break
       case 'arrow': {
-        const headLength = 12
+        const headLength = Math.max(12, lineWidth * 4)
         const angle = Math.atan2(y2 - y1, x2 - x1)
         ctx.beginPath()
         ctx.moveTo(x1, y1)
@@ -209,6 +236,28 @@ export function drawAnnotations(canvas: HTMLCanvasElement, annotations: Annotati
         break
     }
   }
+  ctx.restore()
+}
+
+export function drawAnnotationDraft(canvas: HTMLCanvasElement, note: Annotation, zoom = 1): void {
+  const lineWidth = annotationDraftLineWidth(zoom)
+  if (note.tool === 'blur' || note.tool === 'highlight') {
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    const { x1, y1, x2, y2 } = note
+    ctx.save()
+    ctx.fillStyle = note.color
+    ctx.globalAlpha = note.tool === 'highlight' ? 0.3 : 0.22
+    ctx.fillRect(x1, y1, x2 - x1, y2 - y1)
+    ctx.globalAlpha = 1
+    ctx.strokeStyle = note.color
+    ctx.lineWidth = lineWidth
+    ctx.setLineDash([lineWidth * 4, lineWidth * 2])
+    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1)
+    ctx.restore()
+    return
+  }
+  drawAnnotations(canvas, [note], { lineWidth, dashed: true })
 }
 
 export async function renderAnnotated(

@@ -78,6 +78,7 @@ import {
 } from './media'
 import { IconAction } from './parts'
 import { injectSyncIntoStudio, isSyncMessage, readMetricsInTab, scanOverflowInTab, type OverflowHit, type PageMetrics } from './sync'
+import { DeviceMenu } from './DevicePicker'
 import { studioParamsFromSearch } from './studioUrl'
 import { useViewerSettings } from './useViewerSettings'
 import { CustomBuilder } from './CustomBuilder'
@@ -107,8 +108,9 @@ export default function SimulatorStudio() {
   const [reloadKey, setReloadKey] = useState(0)
   const [query, setQuery] = useState('')
   const [kindFilter, setKindFilter] = useState<DeviceKind | 'all' | 'favorites'>('all')
-  const [railOpen, setRailOpen] = useState(true)
-  const [inspectorOpen, setInspectorOpen] = useState(true)
+  const [railOpen, setRailOpen] = useState(false)
+  const [inspectorOpen, setInspectorOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const [builderOpen, setBuilderOpen] = useState(false)
   const [presetOpen, setPresetOpen] = useState(false)
   const [shotOpen, setShotOpen] = useState(false)
@@ -186,6 +188,14 @@ export default function SimulatorStudio() {
       selected: prev.selected.includes(device.id) ? prev.selected : [device.id],
     }))
   }, [params.device, settings.custom, setSettings])
+
+  useEffect(() => {
+    const layout = params.layout
+    if (layout !== 'grid' && layout !== 'row' && layout !== 'vertical' && layout !== 'freeform' && layout !== 'focus') {
+      return
+    }
+    setSettings((prev) => (prev.studioLayout === layout ? prev : { ...prev, studioLayout: layout }))
+  }, [params.layout, setSettings])
 
   const rotateFocused = () => {
     if (!focused || !isHandheld(focused)) return
@@ -300,6 +310,7 @@ export default function SimulatorStudio() {
   })
 
   const presentation = settings.presentation.hideChrome
+  const light = settings.studioTheme === 'light'
   const canvasBg =
     settings.presentation.customBackground || CANVAS_BG[settings.presentation.background] || CANVAS_BG.dark
 
@@ -307,13 +318,18 @@ export default function SimulatorStudio() {
     <MotionConfig reducedMotion="user">
       <div
         className={cn(
-          'rv-studio flex h-full min-h-0 flex-col overflow-hidden text-zinc-100',
-          settings.studioTheme === 'light' ? 'bg-zinc-100 text-zinc-900' : 'bg-[#07080a]',
+          'rv-studio flex h-full min-h-0 flex-col overflow-hidden',
+          light ? 'bg-zinc-100 text-zinc-900' : 'bg-[#07080a] text-zinc-100',
         )}
-        style={{ colorScheme: settings.studioTheme === 'light' ? 'light' : 'dark' }}
+        style={{ colorScheme: light ? 'light' : 'dark' }}
       >
         {!presentation && (
-          <header className="flex h-12 shrink-0 items-center gap-2 border-b border-white/10 bg-black/40 px-2.5 backdrop-blur-md">
+          <header
+            className={cn(
+              'flex h-12 shrink-0 items-center gap-2 border-b px-2.5 backdrop-blur-md',
+              light ? 'border-zinc-200 bg-white/90' : 'border-white/10 bg-black/40',
+            )}
+          >
             <BrandLogo size={22} />
             <span className="hidden text-xs font-semibold tracking-tight @[720px]:inline">{t('rv.studio.brand')}</span>
             <form
@@ -327,7 +343,7 @@ export default function SimulatorStudio() {
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 placeholder={t('rv.url.placeholder')}
-                className="h-8 border-white/10 bg-white/5 font-mono text-xs"
+                className={cn('h-8 font-mono text-xs', light ? 'border-zinc-200 bg-white' : 'border-white/10 bg-white/5')}
                 spellCheck={false}
               />
               <IconAction label={t('rv.url.load')} onClick={() => loadUrl(draft)}>
@@ -337,10 +353,40 @@ export default function SimulatorStudio() {
             <IconAction label={t('rv.url.reloadAll')} onClick={() => setReloadKey((key) => key + 1)} disabled={!url}>
               <RefreshCwIcon />
             </IconAction>
-            <DeviceAdd
+            <DeviceMenu
               devices={allDevices}
-              onPick={(id) => selectDevice(id, shown.length > 0)}
-              disabled={shown.length >= MAX_SIMULTANEOUS_DEVICES && shown.length > 0}
+              selected={settings.selected}
+              open={menuOpen}
+              onOpenChange={setMenuOpen}
+              onToggle={(id) => {
+                setSettings((prev) => {
+                  const selected = prev.selected.includes(id)
+                    ? prev.selected.filter((item) => item !== id)
+                    : [...prev.selected, id].slice(0, MAX_SIMULTANEOUS_DEVICES)
+                  const next = selected.length > 0 ? selected : [id]
+                  return rememberDevice({ ...prev, selected: next }, id)
+                })
+              }}
+              onSelect={(selected) =>
+                setSettings((prev) =>
+                  rememberDevice({ ...prev, selected: selected.slice(0, MAX_SIMULTANEOUS_DEVICES) }, selected[0] ?? prev.lastDevice),
+                )
+              }
+              onAddCustom={(device) =>
+                setSettings((prev) => ({
+                  ...prev,
+                  custom: [...prev.custom, device],
+                  selected: [...prev.selected, device.id].slice(0, MAX_SIMULTANEOUS_DEVICES),
+                }))
+              }
+              onRemoveCustom={(id) =>
+                setSettings((prev) => ({
+                  ...prev,
+                  custom: prev.custom.filter((item) => item.id !== id),
+                  selected: prev.selected.filter((item) => item !== id),
+                  rotated: prev.rotated.filter((item) => item !== id),
+                }))
+              }
             />
             <LayoutPicker value={settings.studioLayout} onChange={(studioLayout) => update({ studioLayout })} />
             <IconAction label={t('rv.shot.open')} onClick={() => setShotOpen(true)} disabled={!url}>
@@ -473,7 +519,12 @@ export default function SimulatorStudio() {
             )}
 
             {!presentation && (
-              <footer className="flex h-10 shrink-0 items-center gap-2 border-t border-white/10 bg-black/40 px-2.5 text-[11px] backdrop-blur-md">
+              <footer
+                className={cn(
+                  'flex h-10 shrink-0 items-center gap-2 border-t px-2.5 text-[11px] backdrop-blur-md',
+                  light ? 'border-zinc-200 bg-white/90' : 'border-white/10 bg-black/40',
+                )}
+              >
                 <Button variant="ghost" size="icon-xs" onClick={() => setRailOpen((open) => !open)} aria-label={t('rv.studio.toggleRail')}>
                   <Columns2Icon />
                 </Button>
@@ -1062,6 +1113,17 @@ function Inspector({
       <Row label={t('rv.view.frame')}>
         <Switch checked={settings.frame} onCheckedChange={(frame) => onChange({ frame })} />
       </Row>
+      <Row label={t('rv.studio.lightCanvas')}>
+        <Switch
+          checked={settings.studioTheme === 'light'}
+          onCheckedChange={(on) =>
+            onChange({
+              studioTheme: on ? 'light' : 'dark',
+              presentation: { ...settings.presentation, background: on ? 'white' : 'dark' },
+            })
+          }
+        />
+      </Row>
       <div className="flex flex-wrap gap-1">
         <button
           type="button"
@@ -1209,28 +1271,6 @@ function RoundAction({ label, onClick, children }: { label: string; onClick: () 
       </TooltipTrigger>
       <TooltipContent>{label}</TooltipContent>
     </Tooltip>
-  )
-}
-
-function DeviceAdd({ devices, onPick, disabled }: { devices: Device[]; onPick: (id: string) => void; disabled?: boolean }) {
-  const { t } = useTranslation()
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button size="sm" variant="outline" className="h-8" disabled={disabled}>
-          <PlusIcon />
-          {t('rv.devices.add')}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="max-h-72 w-64 overflow-y-auto p-1">
-        {devices.slice(0, 40).map((device) => (
-          <button key={device.id} type="button" className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent" onClick={() => onPick(device.id)}>
-            <DeviceThumb device={device} />
-            {device.label}
-          </button>
-        ))}
-      </PopoverContent>
-    </Popover>
   )
 }
 

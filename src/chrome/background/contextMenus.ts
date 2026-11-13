@@ -17,6 +17,7 @@ import { buildReadingListMenus } from './readingList'
 import { buildDownloadManagerMenus } from './download-manager/menus'
 import { buildHistoryManagerMenus } from './history-manager/menus'
 import { buildBookmarkMenus } from './bookmarks'
+import { buildSimulatorMenus } from './responsiveViewer/menuItem'
 
 const logger = createLogger('context-menus')
 
@@ -50,6 +51,7 @@ async function rebuildContextMenusOnce(): Promise<void> {
       contexts: ['all'],
     })
   }
+  if (menu.mobileSimulator) buildSimulatorMenus(createContextMenu)
   if (menu.siteQuickActions) buildSiteQuickActionMenus(createContextMenu)
   if (menu.colorPicker) buildColorPickerMenus(createContextMenu)
   if (menu.clipboardHistory && settings.clipboardHistoryEnabled) {
@@ -100,14 +102,6 @@ async function rebuildContextMenusOnce(): Promise<void> {
       buildHistoryManagerMenus(createContextMenu)
     } catch (error) {
       logger.warn('history manager menu build failed', error)
-    }
-  }
-  if (menu.mobileSimulator) {
-    try {
-      const { buildSimulatorMenus } = await import('./responsiveViewer/menus')
-      buildSimulatorMenus(createContextMenu)
-    } catch (error) {
-      logger.warn('simulator menu build failed', error)
     }
   }
   if (menu.bookmarks) {

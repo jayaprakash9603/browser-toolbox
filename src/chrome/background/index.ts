@@ -83,6 +83,8 @@ import { registerScriptStudio } from './script-studio'
 import { registerSidePanelNavigation } from './panelNavigation'
 import { registerResponsiveViewerFraming } from './responsiveViewerFraming'
 import { isSimulatorMenuItem } from './responsiveViewer/ids'
+import { handleSimulatorMenuClick } from './responsiveViewer/menus'
+import { registerSimulatorOverlayMessages } from './responsiveViewer/messages'
 import { configurePanelAction, openExtensionPanel } from '@/platform/panel'
 
 const logger = createLogger('background')
@@ -183,9 +185,9 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     return
   }
   if (isSimulatorMenuItem(menuItemId)) {
-    void import('./responsiveViewer/menus').then(({ handleSimulatorMenuClick }) =>
-      handleSimulatorMenuClick(menuItemId, info, tab),
-    )
+    void handleSimulatorMenuClick(menuItemId, info, tab).catch((error) => {
+      logger.error('simulator menu click failed', error)
+    })
     return
   }
   if (menuItemId === 'toolbox.open' || menuItemId.startsWith('toolbox.open.')) {
@@ -247,6 +249,7 @@ safeRegister('reactDevtools', registerReactDevtools)
 safeRegister('scriptStudio', registerScriptStudio)
 safeRegister('panelNavigation', registerSidePanelNavigation)
 safeRegister('responsiveViewerFraming', registerResponsiveViewerFraming)
+safeRegister('simulatorOverlay', registerSimulatorOverlayMessages)
 safeRegister('responsiveViewerEmulation', () =>
   import('./responsiveViewer/emulation').then((module) => module.registerResponsiveViewerEmulation()),
 )

@@ -255,7 +255,7 @@ export interface ViewerSettings {
 export const DEFAULT_PRESENTATION: PresentationSettings = {
   heading: '',
   description: '',
-  background: 'dark',
+  background: 'white',
   customBackground: '',
   hideChrome: false,
   showLabels: true,
@@ -284,7 +284,7 @@ export const DEFAULT_SETTINGS: ViewerSettings = {
   showLabels: true,
   showSafeArea: false,
   performanceMode: false,
-  studioTheme: 'dark',
+  studioTheme: 'light',
   breakpointSet: 'tailwind',
   customBreakpoints: [],
   positions: {},
@@ -324,9 +324,10 @@ function parsePresentation(value: unknown): PresentationSettings {
     raw.background === 'white' ||
     raw.background === 'black' ||
     raw.background === 'gradient' ||
-    raw.background === 'transparent'
+    raw.background === 'transparent' ||
+    raw.background === 'dark'
       ? raw.background
-      : 'dark'
+      : DEFAULT_PRESENTATION.background
   return {
     heading: typeof raw.heading === 'string' ? raw.heading : '',
     description: typeof raw.description === 'string' ? raw.description : '',
@@ -449,7 +450,9 @@ export function parseSettings(raw: string | null): ViewerSettings {
       showSafeArea: Boolean(parsed.showSafeArea),
       performanceMode: Boolean(parsed.performanceMode),
       studioTheme:
-        parsed.studioTheme === 'light' || parsed.studioTheme === 'system' ? parsed.studioTheme : 'dark',
+        parsed.studioTheme === 'light' || parsed.studioTheme === 'system' || parsed.studioTheme === 'dark'
+          ? parsed.studioTheme
+          : DEFAULT_SETTINGS.studioTheme,
       breakpointSet:
         parsed.breakpointSet === 'bootstrap' || parsed.breakpointSet === 'custom' ? parsed.breakpointSet : 'tailwind',
       customBreakpoints: parseBreakpoints(parsed.customBreakpoints),

@@ -40,7 +40,8 @@ import {
 import { setFramingAllowed } from './framing'
 import { EASE_OUT, useContentWidth, useWindowHeight } from './helpers'
 import { IconAction, ZoomMenu } from './parts'
-import { openSimulatorStudio, isSimulatorStudioSearch } from './studioUrl'
+import { openSimulatorOverlayFromUi } from './openOverlay'
+import { isSimulatorStudioSearch } from './studioUrl'
 import { useControlsFold } from './useControlsFold'
 import { useViewerSettings } from './useViewerSettings'
 
@@ -378,7 +379,7 @@ function CompactViewer() {
                         className="h-8 gap-1 px-2"
                         disabled={!url}
                         aria-label={t('rv.studio.open')}
-                        onClick={() => openSimulatorStudio({ url: url ?? undefined, device: settings.lastDevice })}
+                        onClick={() => void openSimulatorOverlayFromUi({ url: url ?? undefined, deviceId: settings.lastDevice })}
                       >
                         <SmartphoneIcon />
                         <span className="hidden @[560px]:inline">{t('rv.studio.open')}</span>
@@ -531,7 +532,7 @@ function EmptyState({ onUseTab }: { onUseTab: () => void }) {
           <LocateFixedIcon />
           {t('rv.url.currentTab')}
         </Button>
-        <Button size="sm" variant="outline" onClick={() => openSimulatorStudio()}>
+        <Button size="sm" variant="outline" onClick={() => void openSimulatorOverlayFromUi()}>
           <SmartphoneIcon />
           {t('rv.studio.open')}
         </Button>

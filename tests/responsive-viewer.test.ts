@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { buildResponsiveViewerFramingRules } from '@/chrome/background/responsiveViewerFraming'
@@ -7,9 +9,12 @@ import {
   buildSimulatorMenus,
   handleSimulatorMenuClick,
   isSimulatorMenuItem,
+  openSimulatorForTab,
 } from '@/chrome/background/responsiveViewer/menus'
 import {
   canOverlaySimulatorOnTab,
+  handleOpenOverlayMessage,
+  handleOverlayAction,
   mountSimulatorOverlay,
   SIMULATOR_OVERLAY_ID,
   type SimulatorOverlayConfig,
@@ -97,6 +102,7 @@ describe('responsive viewer model', () => {
     expect(restored).toMatchObject({ zoom: '0.5', layout: 'row', frame: false, unblock: false, rotated: ['iphone'] })
     expect(restored.lastDevice).toBe('iphone')
     expect(restored.studioLayout).toBe('focus')
+    expect(restored.studioTheme).toBe('light')
     expect(restored.mobileUa).toBe(false)
   })
 
@@ -110,6 +116,8 @@ describe('responsive viewer model', () => {
     expect(findDevice('iphone-16-pro')?.specStatus).toBe('verified')
     expect(findDevice('galaxy-s26')?.specStatus).toBe('approximate')
     expect(DEVICES.length).toBeGreaterThan(40)
+    expect(DEFAULT_SETTINGS.studioTheme).toBe('light')
+    expect(DEFAULT_SETTINGS.presentation.background).toBe('white')
     expect(DEFAULT_SETTINGS.frameColor).toBe('auto')
     expect(resolveFrameFinish('auto', { frameColor: 'titanium' })).toBe('titanium')
     expect(resolveFrameFinish('black', { frameColor: 'titanium' })).toBe('black')
@@ -150,10 +158,13 @@ describe('mobile simulator studio helpers', () => {
     expect(simulatorStudioHash({ url: 'https://example.com/', device: 'iphone-16-pro' })).toBe(
       '/tools/design/responsive-viewer?studio=1&url=https%3A%2F%2Fexample.com%2F&device=iphone-16-pro',
     )
+    expect(simulatorStudioHash({ url: 'https://example.com/', layout: 'grid' })).toContain('layout=grid')
     expect(studioParamsFromSearch('?studio=1&url=https://example.com&device=pixel')).toEqual({
       url: 'https://example.com',
       device: 'pixel',
+      layout: null,
     })
+    expect(studioParamsFromSearch('?studio=1&layout=grid')).toMatchObject({ layout: 'grid' })
   })
 
   it('can set a shared iframe User-Agent on framing rules', () => {
@@ -169,7 +180,7 @@ describe('mobile simulator studio helpers', () => {
     expect(created).toHaveLength(1)
     expect(created[0]?.id).toBe(SIMULATOR_PARENT_ID)
     expect(created[0]?.parentId).toBeUndefined()
-    expect(created[0]?.contexts).toEqual(expect.arrayContaining(['page', 'link']))
+    expect(created[0]?.contexts).toEqual(['all'])
     expect(isSimulatorMenuItem(SIMULATOR_PARENT_ID)).toBe(true)
     expect(isSimulatorMenuItem(SIMULATOR_OPEN_PAGE)).toBe(true)
     expect(isSimulatorMenuItem('toolbox.screenshot')).toBe(false)
@@ -194,13 +205,45 @@ describe('mobile simulator studio helpers', () => {
     const root = host?.shadowRoot?.querySelector('.root') as HTMLElement
     expect(root.style.getPropertyValue('--tbx-fill')).toBe(config.finish.fill)
     expect(host?.shadowRoot?.querySelector('iframe')?.src).toContain('https://example.com/tools')
-    expect(getComputedStyle(root).backgroundColor === 'rgb(255, 255, 255)' || root.className).toBeTruthy()
+    expect(root.classList.contains('drawer-open')).toBe(true)
     const mockup = host?.shadowRoot?.querySelector('.mockup-img') as HTMLImageElement
     expect(mockup?.hidden).toBe(false)
     expect(mockup?.getAttribute('src')).toContain('iphone-16-pro.webp')
     expect(root.classList.contains('has-mockup')).toBe(true)
+    const acts = [...(host?.shadowRoot?.querySelectorAll('[data-act]') ?? [])].map((el) => el.getAttribute('data-act'))
+    expect(acts).toEqual(
+      expect.arrayContaining(['devices', 'rotate', 'reload', 'screenshot', 'record', 'compare', 'settings', 'studio']),
+    )
+    expect(host?.shadowRoot?.querySelector('[data-panel="devices"]')).toBeTruthy()
+    expect(host?.shadowRoot?.querySelector('[data-panel="settings"]')).toBeTruthy()
     mountSimulatorOverlay(config)
     expect(document.getElementById(SIMULATOR_OVERLAY_ID)).toBeNull()
+  })
+
+  it('updates the overlay in place when replace is set', () => {
+    const config = overlayFixture()
+    expect(mountSimulatorOverlay(config)).toBe(true)
+    const host = document.getElementById(SIMULATOR_OVERLAY_ID)
+    const pixel = mockupFor('pixel')
+    expect(pixel).toBeTruthy()
+    expect(
+      mountSimulatorOverlay({
+        ...config,
+        replace: true,
+        deviceId: 'pixel',
+        label: 'Pixel 8',
+        mockupUrl: mockupSrc(pixel!.file),
+        mockupInsets: pixel ?? undefined,
+        width: 412,
+        height: 915,
+        showSafari: false,
+      }),
+    ).toBe(true)
+    expect(document.getElementById(SIMULATOR_OVERLAY_ID)).toBe(host)
+    expect(host?.shadowRoot?.querySelector('.root')?.getAttribute('aria-label')).toBe('Pixel 8 mobile simulator')
+    expect((host?.shadowRoot?.querySelector('.mockup-img') as HTMLImageElement | null)?.getAttribute('src')).toContain(
+      'pixel-8.webp',
+    )
   })
 
   it('maps catalog phones onto MIT mockup frames and leaves Galaxy on the CSS chassis', () => {
@@ -247,7 +290,84 @@ describe('mobile simulator studio helpers', () => {
       { menuItemId: SIMULATOR_PARENT_ID } as chrome.contextMenus.OnClickData,
       { id: 8, url: 'chrome://extensions' } as chrome.tabs.Tab,
     )
-    expect(chrome.tabs.create).toHaveBeenCalled()
+    expect(chrome.tabs.create).toHaveBeenCalledWith({ url: expect.stringContaining('studio=1') })
+  })
+
+  it('keeps the current tab when overlay inject fails instead of opening studio', async () => {
+    vi.mocked(chrome.tabs.create).mockClear()
+    vi.mocked(chrome.scripting.executeScript).mockRejectedValueOnce(new Error('Cannot access contents of the page'))
+    const result = await openSimulatorForTab(
+      { id: 11, url: 'https://example.com/tools' } as chrome.tabs.Tab,
+      { url: 'https://example.com/tools', replace: true },
+    )
+    expect(chrome.tabs.create).not.toHaveBeenCalled()
+    expect(result.reason).toBe('inject-failed')
+  })
+
+  it('opens the overlay from Compact Viewer messages and reports fallback reasons', async () => {
+    vi.mocked(chrome.tabs.create).mockClear()
+    vi.mocked(chrome.scripting.executeScript).mockImplementation(async (injection) => {
+      const run = injection as { func?: (config: SimulatorOverlayConfig) => boolean; args?: [SimulatorOverlayConfig] }
+      const result = run.func && run.args ? run.func(run.args[0]) : false
+      return [{ result }] as unknown as chrome.scripting.InjectionResult[]
+    })
+    const overlay = await handleOpenOverlayMessage(
+      { type: 'SIMULATOR_OPEN_OVERLAY', url: 'https://example.com/tools', tabId: 7 },
+      {},
+    )
+    expect(overlay).toEqual({ opened: 'overlay' })
+    expect(chrome.tabs.create).not.toHaveBeenCalled()
+
+    const studio = await handleOpenOverlayMessage(
+      { type: 'SIMULATOR_OPEN_OVERLAY', url: 'chrome://extensions', tabId: 8 },
+      { tab: { id: 8, url: 'chrome://extensions' } as chrome.tabs.Tab },
+    )
+    expect(studio).toMatchObject({ opened: 'studio', reason: 'restricted' })
+
+    vi.mocked(chrome.tabs.create).mockClear()
+    const command = await openSimulatorForTab({ id: 9, url: 'https://example.com/' } as chrome.tabs.Tab, {
+      url: 'https://other.example/',
+    })
+    expect(command).toMatchObject({ opened: 'overlay', reason: 'cross-origin' })
+    expect(chrome.tabs.create).not.toHaveBeenCalled()
+  })
+
+  it('lists catalog devices and opens comparison studio from overlay actions', async () => {
+    vi.mocked(chrome.tabs.create).mockClear()
+    const list = (await handleOverlayAction({ type: 'SIMULATOR_OVERLAY_ACTION', action: 'listDevices' }, {})) as {
+      devices: { id: string }[]
+      current: string
+    }
+    expect(list.devices.some((device) => device.id === 'iphone-16-pro')).toBe(true)
+    expect(list.current).toBe('iphone-16-pro')
+
+    await handleOverlayAction(
+      {
+        type: 'SIMULATOR_OVERLAY_ACTION',
+        action: 'compare',
+        url: 'https://example.com/tools',
+        deviceId: 'iphone-16-pro',
+      },
+      {},
+    )
+    expect(chrome.tabs.create).toHaveBeenCalledWith({
+      url: expect.stringMatching(/studio=1.*layout=grid/),
+    })
+  })
+
+  it('keeps the device catalog out of the service worker static overlay registrar', () => {
+    const menus = readFileSync(resolve('src/chrome/background/responsiveViewer/menus.ts'), 'utf8')
+    const messages = readFileSync(resolve('src/chrome/background/responsiveViewer/messages.ts'), 'utf8')
+    const index = readFileSync(resolve('src/chrome/background/index.ts'), 'utf8')
+    expect(messages).not.toMatch(/from ['"]\.\/overlay['"]/)
+    expect(messages).not.toMatch(/responsive-viewer\/(devices|catalog)/)
+    expect(menus).not.toMatch(/from ['"]\.\/overlay['"]/)
+    expect(menus).not.toMatch(/responsive-viewer\/(devices|catalog)/)
+    expect(index).not.toMatch(/responsive-viewer\/(devices|catalog|overlay)/)
+    expect(index).toContain('registerSimulatorOverlayMessages')
+    const tool = readFileSync(resolve('src/tools/design/responsive-viewer/Tool.tsx'), 'utf8')
+    expect(tool).toContain('openSimulatorOverlayFromUi')
+    expect(tool).not.toContain('openSimulatorStudio')
   })
 })
 

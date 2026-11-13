@@ -1,4 +1,5 @@
 import { isRestrictedCaptureUrl } from '@/core/screenshot/restricted'
+import type { ExtensionMessage } from '@/core/messaging/types'
 import { CHASSIS } from '@/tools/design/responsive-viewer/chassis'
 import { simulatorStudioUrl } from '@/tools/design/responsive-viewer/studioUrl'
 import type { FrameColor, FrameStyle, NavBarStyle, NotchStyle, StatusBarStyle } from '@/tools/design/responsive-viewer/devices'
@@ -35,6 +36,7 @@ export interface SimulatorOverlayConfig {
   studioUrl: string
   mockupUrl?: string
   mockupInsets?: SimulatorOverlayInsets
+  replace?: boolean
 }
 
 export function canOverlaySimulatorOnTab(tabUrl: string | undefined, targetUrl: string): boolean {
@@ -81,13 +83,28 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>'
   const iconTabs =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="7" width="14" height="14" rx="2"/><path d="M3 17V5a2 2 0 0 1 2-2h12"/></svg>'
+  const iconPhone =
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>'
+  const iconCamera =
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>'
+  const iconVideo =
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>'
+  const iconSettings =
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>'
 
-  type Host = HTMLElement & { __tbxSimDispose?: () => void }
+  type Host = HTMLElement & {
+    __tbxSimDispose?: () => void
+    __tbxSimApply?: (next: SimulatorOverlayConfig) => void
+  }
   const existing = document.getElementById(HOST_ID) as Host | null
   if (existing) {
+    if (config.replace && existing.__tbxSimApply) {
+      existing.__tbxSimApply(config)
+      return true
+    }
     existing.__tbxSimDispose?.()
     existing.remove()
-    return true
+    if (!config.replace) return true
   }
 
   const host = document.createElement('div') as Host
@@ -100,7 +117,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const previousOverflow = document.documentElement.style.overflow
   document.documentElement.style.overflow = 'hidden'
 
-  const state = { rotated: false }
+  const state = { rotated: false, live: config, panel: '' as '' | 'devices' | 'settings' }
 
   const style = document.createElement('style')
   style.textContent = `
@@ -114,8 +131,15 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #ffffff;
-      color: #111827;
+      background: #eceff3;
+      color: #1e293b;
+      --tbx-accent: #0d9488;
+      --tbx-accent-hover: #0f766e;
+      --tbx-accent-pressed: #115e59;
+    }
+    .root.drawer-open .stage {
+      margin-left: min(340px, 42vw);
+      transition: margin-left 0.2s ease;
     }
     .stage {
       display: flex;
@@ -124,7 +148,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       gap: 16px;
       max-width: 100%;
       max-height: 100%;
-      padding: 16px 72px 16px 16px;
+      padding: 12px 80px 12px 12px;
+      transition: margin-left 0.2s ease;
     }
     .phone-wrap { position: relative; }
     .mockup-img {
@@ -173,8 +198,9 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     .screen {
       position: relative;
       overflow: hidden;
-      background: #000;
+      background: #fff;
       border-radius: 40px;
+      box-shadow: inset 0 0 0 1px rgba(15,23,42,0.06);
     }
     iframe {
       position: absolute;
@@ -253,19 +279,73 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     .safari-tools svg { width: 22px; height: 22px; }
     .actions {
       position: absolute;
-      right: 16px; top: 50%; transform: translateY(-50%);
-      display: flex; flex-direction: column; gap: 10px;
+      right: 14px; top: 50%; transform: translateY(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 10px 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(15,23,42,0.08);
+      box-shadow: 0 8px 28px rgba(15,23,42,0.1);
+      z-index: 9;
     }
-    .round, .close-x {
+    .round {
       display: flex; align-items: center; justify-content: center;
-      width: 40px; height: 40px; border-radius: 999px;
-      border: 1px solid #e5e7eb; background: #fff; color: #111827;
-      box-shadow: 0 8px 20px rgba(15,23,42,0.12);
+      width: 44px; height: 44px; border-radius: 999px;
+      border: 0; background: var(--tbx-accent); color: #fff;
+      box-shadow: 0 2px 10px rgba(13,148,136,0.35);
       cursor: pointer;
+      text-decoration: none;
     }
-    .round:hover, .close-x:hover { background: #f8fafc; }
-    .round:focus-visible, .close-x:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; }
-    .close-x { position: absolute; top: 16px; right: 16px; }
+    .round:hover { background: var(--tbx-accent-hover); }
+    .round:focus-visible { outline: 2px solid #5eead4; outline-offset: 2px; }
+    .round[aria-pressed="true"] { background: var(--tbx-accent-pressed); box-shadow: inset 0 0 0 2px #99f6e4; }
+    .round[data-act="close"] { background: #64748b; box-shadow: 0 2px 8px rgba(71,85,105,0.35); }
+    .round[data-act="close"]:hover { background: #475569; }
+    .panel {
+      display: none; flex-direction: column; gap: 10px;
+      position: absolute; z-index: 8;
+      background: #fff;
+      color: #1e293b;
+    }
+    .panel.open { display: flex; }
+    .panel[data-panel="devices"] {
+      left: 0; top: 0; bottom: 0; right: auto;
+      width: min(340px, 42vw);
+      max-height: none;
+      padding: 16px 14px;
+      border-radius: 0;
+      border-right: 1px solid #dde3ea;
+      box-shadow: 4px 0 24px rgba(15,23,42,0.06);
+    }
+    .panel[data-panel="settings"] {
+      right: 76px; top: 50%; transform: translateY(-50%);
+      width: 260px; max-height: min(70vh, 480px);
+      padding: 14px; border-radius: 14px;
+      border: 1px solid #dde3ea;
+      box-shadow: 0 16px 40px rgba(15,23,42,0.12);
+    }
+    .panel h2 { margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; }
+    .panel input {
+      width: 100%; height: 36px; padding: 0 12px; border-radius: 10px;
+      border: 1px solid #cbd5e1; font-size: 13px; background: #f8fafc;
+    }
+    .panel input:focus { outline: 2px solid #99f6e4; border-color: var(--tbx-accent); }
+    .panel-list { overflow: auto; flex: 1; display: flex; flex-direction: column; gap: 2px; min-height: 0; }
+    .device-row, .setting-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      width: 100%; padding: 10px; border: 0; border-radius: 10px;
+      background: transparent; text-align: left; cursor: pointer; font-size: 13px; color: #0f172a;
+    }
+    .device-row:hover, .setting-row:hover { background: #f1f5f9; }
+    .device-row[aria-current="true"] { background: #ccfbf1; color: #0f766e; font-weight: 600; }
+    .device-row small { color: #64748b; font-weight: 400; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      border: 1px solid #cbd5e1; background: #fff; border-radius: 999px;
+      padding: 4px 10px; font-size: 11px; cursor: pointer; color: #475569;
+    }
+    .chip:hover { border-color: var(--tbx-accent); color: #0f766e; }
+    .chip[aria-pressed="true"] { background: var(--tbx-accent); color: #fff; border-color: var(--tbx-accent); }
     .blocked {
       position: absolute; inset: 0; z-index: 5;
       display: none; flex-direction: column; align-items: center; justify-content: center;
@@ -292,7 +372,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   root.style.setProperty('--tbx-button', config.finish.button)
 
   root.innerHTML = `
-    <button type="button" class="close-x" aria-label="Close simulator">${iconClose}</button>
     <div class="stage">
       <div class="phone-wrap">
         <img class="mockup-img" alt="" hidden />
@@ -329,9 +408,27 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
         </div>
       </div>
     </div>
+    <div class="panel" data-panel="devices">
+      <h2>Devices</h2>
+      <input type="search" class="device-search" placeholder="Search devices" />
+      <div class="chips" data-kind-chips></div>
+      <div class="panel-list" data-device-list></div>
+    </div>
+    <div class="panel" data-panel="settings">
+      <h2>Settings</h2>
+      <button type="button" class="setting-row" data-set="safari">Safari chrome</button>
+      <button type="button" class="setting-row" data-set="status">Status bar</button>
+      <p style="margin:0;font-size:11px;color:#6b7280;line-height:1.4">This overlay previews the page in a device frame. It is not an iOS or Android emulator.</p>
+    </div>
     <div class="actions">
+      <button type="button" class="round" data-act="close" aria-label="Close simulator">${iconClose}</button>
+      <button type="button" class="round" data-act="devices" aria-label="Change device">${iconPhone}</button>
       <button type="button" class="round" data-act="rotate" aria-label="Rotate">${iconRotate}</button>
       <button type="button" class="round" data-act="reload" aria-label="Reload">${iconRefresh}</button>
+      <button type="button" class="round" data-act="screenshot" aria-label="Screenshot">${iconCamera}</button>
+      <button type="button" class="round" data-act="record" aria-label="Start recording">${iconVideo}</button>
+      <button type="button" class="round" data-act="compare" aria-label="Compare devices">${iconTabs}</button>
+      <button type="button" class="round" data-act="settings" aria-label="Settings">${iconSettings}</button>
       <a class="round studio-link" data-act="studio" target="_blank" rel="noopener noreferrer" aria-label="Open full simulator">${iconExpand}</a>
     </div>
   `
@@ -363,12 +460,48 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   tick()
   const clockId = window.setInterval(tick, 30_000)
 
+  type DeviceRow = { id: string; label: string; kind: string; width: number; height: number }
+  type DeviceList = { devices: DeviceRow[]; favorites: string[]; recents: string[]; current: string }
+  let catalog: DeviceList = { devices: [], favorites: [], recents: [], current: config.deviceId }
+  let kindFilter = 'all'
+  const searchInput = shadow.querySelector('.device-search') as HTMLInputElement
+  const chipRow = shadow.querySelector('[data-kind-chips]') as HTMLElement
+  const deviceList = shadow.querySelector('[data-device-list]') as HTMLElement
+  const deviceBtn = shadow.querySelector('[data-act="devices"]') as HTMLButtonElement
+  const settingsBtn = shadow.querySelector('[data-act="settings"]') as HTMLButtonElement
+  const recordBtn = shadow.querySelector('[data-act="record"]') as HTMLButtonElement
+
+  const ask = <T,>(payload: Record<string, unknown>) =>
+    new Promise<T | null>((resolve) => {
+      try {
+        chrome.runtime.sendMessage(payload, (raw: { ok?: boolean; data?: T } | undefined) => {
+          resolve(raw && raw.ok !== false ? ((raw.data ?? raw) as T) : null)
+        })
+      } catch {
+        resolve(null)
+      }
+    })
+
+  const paintFinish = (next: SimulatorOverlayConfig) => {
+    root.style.setProperty('--tbx-fill', next.finish.fill)
+    root.style.setProperty('--tbx-ring', next.finish.ring)
+    root.style.setProperty('--tbx-button', next.finish.button)
+    root.setAttribute('aria-label', `${next.label} mobile simulator`)
+    iframe.title = next.label
+    hostLabel.textContent = next.hostname
+    for (const link of shadow.querySelectorAll<HTMLAnchorElement>('.studio-link')) {
+      link.href = next.studioUrl
+    }
+  }
+
   const layout = () => {
-    const width = state.rotated ? config.height : config.width
-    const height = state.rotated ? config.width : config.height
-    const maxW = Math.max(160, window.innerWidth - 120)
-    const maxH = Math.max(160, window.innerHeight - 32)
-    const mockup = config.mockupUrl && config.mockupInsets ? config.mockupInsets : null
+    const live = state.live
+    const width = state.rotated ? live.height : live.width
+    const height = state.rotated ? live.width : live.height
+    const drawer = state.panel === 'devices' ? Math.min(340, window.innerWidth * 0.42) : 0
+    const maxW = Math.max(160, window.innerWidth - 100 - drawer)
+    const maxH = Math.max(160, window.innerHeight - 24)
+    const mockup = live.mockupUrl && live.mockupInsets ? live.mockupInsets : null
     root.classList.toggle('has-mockup', Boolean(mockup))
     chassis.classList.toggle('landscape', state.rotated)
     root.classList.toggle('landscape', state.rotated)
@@ -390,7 +523,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       screen.style.left = `${insets.left * 100}%`
       screen.style.top = `${insets.top * 100}%`
       mockupImg.hidden = false
-      mockupImg.src = config.mockupUrl ?? ''
+      mockupImg.src = live.mockupUrl ?? ''
       root.style.setProperty('--tbx-mockup-w', `${wrapW}px`)
       root.style.setProperty('--tbx-mockup-h', `${wrapH}px`)
     } else {
@@ -405,13 +538,95 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       mockupImg.hidden = true
       mockupImg.removeAttribute('src')
     }
-    const notchClass = config.notch === 'punch-hole' ? 'punch' : config.notch
-    cutout.className = !mockup && config.notch !== 'none' ? `cutout ${notchClass}` : 'cutout'
-    safari.hidden = !config.showSafari || state.rotated
-    home.hidden = config.navBar !== 'home-indicator'
-    androidNav.hidden = config.navBar !== 'android' || state.rotated
-    status.style.display = config.statusBar === 'none' ? 'none' : ''
+    const notchClass = live.notch === 'punch-hole' ? 'punch' : live.notch
+    cutout.className = !mockup && live.notch !== 'none' ? `cutout ${notchClass}` : 'cutout'
+    safari.hidden = !live.showSafari || state.rotated
+    home.hidden = live.navBar !== 'home-indicator'
+    androidNav.hidden = live.navBar !== 'android' || state.rotated
+    status.style.display = live.statusBar === 'none' ? 'none' : ''
+    const safariRow = shadow.querySelector('[data-set="safari"]') as HTMLButtonElement | null
+    const statusRow = shadow.querySelector('[data-set="status"]') as HTMLButtonElement | null
+    safariRow?.setAttribute('aria-pressed', String(live.showSafari))
+    statusRow?.setAttribute('aria-pressed', String(live.statusBar !== 'none'))
   }
+
+  const renderDevices = () => {
+    const query = searchInput.value.trim().toLowerCase()
+    const fav = new Set(catalog.favorites)
+    const recent = new Set(catalog.recents)
+    const rows = catalog.devices.filter((device) => {
+      if (kindFilter === 'favorites' && !fav.has(device.id)) return false
+      if (kindFilter === 'recents' && !recent.has(device.id)) return false
+      if (kindFilter !== 'all' && kindFilter !== 'favorites' && kindFilter !== 'recents' && device.kind !== kindFilter) {
+        return false
+      }
+      if (!query) return true
+      return `${device.label} ${device.id}`.toLowerCase().includes(query)
+    })
+    deviceList.replaceChildren(
+      ...rows.map((device) => {
+        const button = document.createElement('button')
+        button.type = 'button'
+        button.className = 'device-row'
+        button.dataset.device = device.id
+        if (device.id === state.live.deviceId) button.setAttribute('aria-current', 'true')
+        button.innerHTML = `<span>${escapeHtml(device.label)}</span><small>${device.width}×${device.height}</small>`
+        return button
+      }),
+    )
+    const chips: { id: string; label: string }[] = [
+      { id: 'all', label: 'All' },
+      { id: 'favorites', label: 'Favorites' },
+      { id: 'recents', label: 'Recents' },
+      { id: 'phone', label: 'Phones' },
+      { id: 'tablet', label: 'Tablets' },
+      { id: 'laptop', label: 'Laptops' },
+      { id: 'desktop', label: 'Desktops' },
+      { id: 'watch', label: 'Watch' },
+      { id: 'special', label: 'Special' },
+    ]
+    chipRow.replaceChildren(
+      ...chips.map((chip) => {
+        const button = document.createElement('button')
+        button.type = 'button'
+        button.className = 'chip'
+        button.dataset.kind = chip.id
+        button.textContent = chip.label
+        button.setAttribute('aria-pressed', String(kindFilter === chip.id))
+        return button
+      }),
+    )
+  }
+
+  const setPanel = (name: '' | 'devices' | 'settings') => {
+    state.panel = state.panel === name ? '' : name
+    for (const panel of shadow.querySelectorAll('[data-panel]')) {
+      panel.classList.toggle('open', panel.getAttribute('data-panel') === state.panel)
+    }
+    root.classList.toggle('drawer-open', state.panel === 'devices')
+    deviceBtn.setAttribute('aria-pressed', String(state.panel === 'devices'))
+    settingsBtn.setAttribute('aria-pressed', String(state.panel === 'settings'))
+    layout()
+    if (state.panel === 'devices') void loadDevices()
+  }
+
+  const loadDevices = async () => {
+    const next = await ask<DeviceList>({ type: 'SIMULATOR_OVERLAY_ACTION', action: 'listDevices' })
+    if (!next?.devices) return
+    catalog = next
+    renderDevices()
+  }
+
+  const apply = (next: SimulatorOverlayConfig) => {
+    state.live = next
+    state.rotated = false
+    paintFinish(next)
+    if (iframe.getAttribute('src') !== next.url) iframe.src = next.url
+    layout()
+    if (state.panel === 'devices') renderDevices()
+  }
+  host.__tbxSimApply = apply
+  paintFinish(config)
   layout()
 
   iframe.addEventListener('load', () => {
@@ -429,10 +644,13 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   window.addEventListener('resize', onResize)
 
   const onKey = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      event.preventDefault()
-      dispose()
+    if (event.key !== 'Escape') return
+    event.preventDefault()
+    if (state.panel) {
+      setPanel('')
+      return
     }
+    dispose()
   }
 
   const dispose = () => {
@@ -445,44 +663,107 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   host.__tbxSimDispose = dispose
   document.addEventListener('keydown', onKey, true)
 
-  shadow.querySelector('.close-x')?.addEventListener('click', () => dispose())
+  shadow.querySelector('[data-act="close"]')?.addEventListener('click', () => dispose())
   shadow.querySelector('[data-act="rotate"]')?.addEventListener('click', () => {
     state.rotated = !state.rotated
     layout()
   })
   shadow.querySelector('[data-act="reload"]')?.addEventListener('click', () => {
     blocked.style.display = 'none'
-    iframe.src = config.url
+    iframe.src = state.live.url
+  })
+  deviceBtn.addEventListener('click', () => setPanel('devices'))
+  settingsBtn.addEventListener('click', () => setPanel('settings'))
+  searchInput.addEventListener('input', () => renderDevices())
+  chipRow.addEventListener('click', (event) => {
+    const kind = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-kind]')?.dataset.kind
+    if (!kind) return
+    kindFilter = kind
+    renderDevices()
+  })
+  deviceList.addEventListener('click', (event) => {
+    const id = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-device]')?.dataset.device
+    if (!id) return
+    void ask({
+      type: 'SIMULATOR_OVERLAY_ACTION',
+      action: 'setDevice',
+      deviceId: id,
+      url: state.live.url,
+    })
+    setPanel('')
+  })
+  shadow.querySelector('[data-set="safari"]')?.addEventListener('click', () => {
+    state.live = { ...state.live, showSafari: !state.live.showSafari }
+    layout()
+  })
+  shadow.querySelector('[data-set="status"]')?.addEventListener('click', () => {
+    const off = state.live.statusBar === 'none'
+    state.live = {
+      ...state.live,
+      statusBar: off ? (state.live.frameStyle.startsWith('iphone') ? 'ios' : 'android') : 'none',
+    }
+    layout()
+  })
+  shadow.querySelector('[data-act="screenshot"]')?.addEventListener('click', () => {
+    void ask({ type: 'SIMULATOR_OVERLAY_ACTION', action: 'screenshot', url: state.live.url })
+  })
+  recordBtn.addEventListener('click', () => {
+    const pressed = recordBtn.getAttribute('aria-pressed') === 'true'
+    if (pressed) {
+      void ask({ type: 'RECORDER_STOP' })
+      recordBtn.setAttribute('aria-pressed', 'false')
+      return
+    }
+    void ask({ type: 'SIMULATOR_OVERLAY_ACTION', action: 'record', url: state.live.url })
+    recordBtn.setAttribute('aria-pressed', 'true')
+  })
+  shadow.querySelector('[data-act="compare"]')?.addEventListener('click', () => {
+    void ask({
+      type: 'SIMULATOR_OVERLAY_ACTION',
+      action: 'compare',
+      url: state.live.url,
+      deviceId: state.live.deviceId,
+    })
   })
 
   document.documentElement.append(host)
-  ;(shadow.querySelector('.close-x') as HTMLButtonElement | null)?.focus({ preventScroll: true })
+  state.panel = 'devices'
+  for (const panel of shadow.querySelectorAll('[data-panel]')) {
+    panel.classList.toggle('open', panel.getAttribute('data-panel') === 'devices')
+  }
+  root.classList.add('drawer-open')
+  deviceBtn.setAttribute('aria-pressed', 'true')
+  void loadDevices()
+  layout()
+  ;(shadow.querySelector('[data-act="devices"]') as HTMLButtonElement | null)?.focus({ preventScroll: true })
   return true
 }
 
-export async function openSimulatorOverlay(
-  tab: chrome.tabs.Tab,
-  opts: { url: string; deviceId?: string },
-): Promise<boolean> {
-  if (tab.id == null) return false
+async function overlayConfigFor(
+  url: string,
+  deviceId?: string,
+  replace = false,
+): Promise<SimulatorOverlayConfig | null> {
   const [{ findDevice, DEFAULT_DEVICE_ID, orientedSize }, { mockupFor, mockupSrc }] = await Promise.all([
     import('@/tools/design/responsive-viewer/devices'),
     import('@/tools/design/responsive-viewer/mockups'),
   ])
-  const device = findDevice(opts.deviceId ?? DEFAULT_DEVICE_ID) ?? findDevice(DEFAULT_DEVICE_ID)
-  if (!device) return false
+  const settings = await readViewerSettings()
+  const device =
+    findDevice(deviceId ?? settings.lastDevice ?? DEFAULT_DEVICE_ID, settings.custom) ?? findDevice(DEFAULT_DEVICE_ID)
+  if (!device) return null
   const size = orientedSize(device, false)
-  const color = device.frameColor ?? 'black'
+  const color = device.frameColor ?? 'silver'
   const finish = CHASSIS[color]
   const mockup = mockupFor(device.id)
-  let hostname = opts.url
+  let hostname = url
   try {
-    hostname = new URL(opts.url).host
+    hostname = new URL(url).host
   } catch {
     /* keep raw */
   }
-  const config: SimulatorOverlayConfig = {
-    url: opts.url,
+  return {
+    url,
     label: device.label,
     deviceId: device.id,
     width: size.width,
@@ -495,20 +776,163 @@ export async function openSimulatorOverlay(
     frameStyle: device.frameStyle ?? 'iphone',
     showSafari: device.frameStyle === 'iphone' || device.frameStyle === 'iphone-home',
     hostname,
-    studioUrl: simulatorStudioUrl({ url: opts.url, device: device.id }),
+    studioUrl: simulatorStudioUrl({ url, device: device.id }),
     mockupUrl: mockup ? mockupSrc(mockup.file) : undefined,
     mockupInsets: mockup
       ? { left: mockup.left, top: mockup.top, right: mockup.right, bottom: mockup.bottom }
       : undefined,
+    replace,
+  }
+}
+
+function fallbackOverlayConfig(url: string, replace = false): SimulatorOverlayConfig {
+  const finish = CHASSIS.silver
+  let hostname = url
+  try {
+    hostname = new URL(url).host
+  } catch {
+    /* keep raw */
+  }
+  return {
+    url,
+    label: 'iPhone 16 Pro',
+    deviceId: 'iphone-16-pro',
+    width: 402,
+    height: 874,
+    color: 'titanium',
+    finish: { fill: finish.fill, ring: finish.ring, button: finish.button },
+    notch: 'island',
+    navBar: 'home-indicator',
+    statusBar: 'ios',
+    frameStyle: 'iphone',
+    showSafari: true,
+    hostname,
+    studioUrl: simulatorStudioUrl({ url, device: 'iphone-16-pro' }),
+    replace,
+  }
+}
+
+export async function openSimulatorOverlay(
+  tab: chrome.tabs.Tab,
+  opts: { url: string; deviceId?: string; replace?: boolean },
+): Promise<boolean> {
+  if (tab.id == null) return false
+  let config: SimulatorOverlayConfig
+  try {
+    config = (await overlayConfigFor(opts.url, opts.deviceId, opts.replace)) ?? fallbackOverlayConfig(opts.url, opts.replace)
+  } catch (error) {
+    console.warn('[simulator] overlay config failed', error)
+    config = fallbackOverlayConfig(opts.url, opts.replace)
   }
   try {
     const [injection] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id, frameIds: [0] },
+      target: { tabId: tab.id },
       func: mountSimulatorOverlay,
       args: [config],
     })
     return Boolean(injection?.result)
-  } catch {
+  } catch (error) {
+    console.warn('[simulator] overlay inject failed', error)
     return false
+  }
+}
+
+async function resolveOverlayTab(tabId?: number, fallback?: chrome.tabs.Tab): Promise<chrome.tabs.Tab | undefined> {
+  if (tabId == null) return fallback
+  try {
+    return await chrome.tabs.get(tabId)
+  } catch {
+    return fallback
+  }
+}
+
+async function readViewerSettings() {
+  const { STORAGE_KEY, parseSettings } = await import('@/tools/design/responsive-viewer/devices')
+  const stored = await chrome.storage.local.get(STORAGE_KEY)
+  const raw = stored[STORAGE_KEY]
+  return parseSettings(typeof raw === 'string' ? raw : raw ? JSON.stringify(raw) : null)
+}
+
+async function persistLastDevice(id: string): Promise<void> {
+  const { STORAGE_KEY, rememberDevice } = await import('@/tools/design/responsive-viewer/devices')
+  const settings = rememberDevice(await readViewerSettings(), id)
+  await chrome.storage.local.set({ [STORAGE_KEY]: JSON.stringify(settings) })
+}
+
+async function listOverlayDevices() {
+  const { DEVICES } = await import('@/tools/design/responsive-viewer/devices')
+  const settings = await readViewerSettings()
+  return {
+    devices: [...DEVICES, ...settings.custom].map((device) => ({
+      id: device.id,
+      label: device.label,
+      kind: device.kind,
+      width: device.width,
+      height: device.height,
+    })),
+    favorites: settings.favorites,
+    recents: settings.recents,
+    current: settings.lastDevice,
+  }
+}
+
+async function captureOverlayScreenshot(tab?: chrome.tabs.Tab) {
+  if (tab?.windowId == null) return { ok: false as const, error: 'no-tab' }
+  const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' })
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')
+  const { downloadWithName } = await import('../downloadNames')
+  await downloadWithName({ url: dataUrl, filename: `one-panel-simulator-${stamp}.png`, saveAs: false })
+  return { ok: true as const }
+}
+
+async function startOverlayRecording(tab?: chrome.tabs.Tab) {
+  const { startRecorder } = await import('../recorder')
+  const { DEFAULT_RECORDER_SETTINGS } = await import('@/core/recorder/settings')
+  await startRecorder('tab', { ...DEFAULT_RECORDER_SETTINGS, countdown: false, mic: false }, tab)
+  return { ok: true as const }
+}
+
+export async function handleOpenOverlayMessage(
+  message: ExtensionMessage,
+  sender: chrome.runtime.MessageSender,
+): Promise<{ opened: 'overlay' | 'studio'; reason?: string } | null> {
+  if (message.type !== 'SIMULATOR_OPEN_OVERLAY') return null
+  const tab = await resolveOverlayTab(message.tabId ?? sender.tab?.id, sender.tab)
+  const { openSimulatorForTab } = await import('./menus')
+  return openSimulatorForTab(tab, { url: message.url, deviceId: message.deviceId, replace: true })
+}
+
+export async function handleOverlayAction(
+  message: ExtensionMessage,
+  sender: chrome.runtime.MessageSender,
+): Promise<unknown> {
+  if (message.type !== 'SIMULATOR_OVERLAY_ACTION') return null
+  const tab = sender.tab
+  const url = message.url ?? tab?.url
+  switch (message.action) {
+    case 'listDevices':
+      return listOverlayDevices()
+    case 'setDevice': {
+      if (!tab || !message.deviceId || !url) return { ok: false, error: 'no-tab' }
+      await persistLastDevice(message.deviceId)
+      return { ok: await openSimulatorOverlay(tab, { url, deviceId: message.deviceId, replace: true }) }
+    }
+    case 'screenshot':
+      return captureOverlayScreenshot(tab)
+    case 'record':
+      return startOverlayRecording(tab)
+    case 'compare':
+    case 'expand': {
+      await chrome.tabs.create({
+        url: simulatorStudioUrl({
+          url: url && !isRestrictedCaptureUrl(url) ? url : undefined,
+          device: message.deviceId,
+          layout: message.action === 'compare' ? 'grid' : undefined,
+        }),
+      })
+      return { ok: true }
+    }
+    default:
+      return { ok: false }
   }
 }

@@ -42,4 +42,13 @@ describe('context menu rebuild queue', () => {
     expect(buildPipMenus).toHaveBeenCalled()
     expect(buildChatPulseMenus).toHaveBeenCalled()
   })
+
+  it('puts Mobile Simulator next to Open One Panel so a page right-click can open the overlay', async () => {
+    await enqueueContextMenuRebuild()
+    const created = vi.mocked(chrome.contextMenus.create).mock.calls.map(([properties]) => properties)
+    const ids = created.map((item) => item?.id)
+    expect(ids).toContain('toolbox.simulator')
+    expect(ids.indexOf('toolbox.simulator')).toBe(ids.indexOf('toolbox.open') + 1)
+    expect(created.find((item) => item?.id === 'toolbox.simulator')?.contexts).toEqual(['all'])
+  })
 })
