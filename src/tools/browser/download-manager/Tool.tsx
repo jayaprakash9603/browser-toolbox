@@ -72,7 +72,7 @@ export default function DownloadManagerTool() {
   const tool = useBrowserTool('browser.download-manager')
   const { state, patchSettings } = useDownloadManagerState()
   const [tab, setTab] = useDeepLinkTab<DownloadManagerTab>('tab', DOWNLOAD_MANAGER_TABS, 'downloads')
-  const pollLive = tab === 'downloads' || tab === 'history'
+  const pollLive = tab !== 'settings'
   const { snapshot, refresh } = useDownloadLiveSnapshot(pollLive)
   const [query, setQuery] = useState('')
   const [quickUrl, setQuickUrl] = useState('')
@@ -182,7 +182,7 @@ export default function DownloadManagerTool() {
     [images],
   )
 
-  const showDashboardChrome = tab === 'downloads' || tab === 'history'
+  const showDownloadSearch = tab === 'downloads' || tab === 'history'
 
   const toggleSelect = (id: number, on: boolean) => {
     setSelectedIds((prev) => {
@@ -200,40 +200,38 @@ export default function DownloadManagerTool() {
   return (
     <ToolPage tool={tool} contentClassName="flex h-full min-h-0 flex-col overflow-hidden p-0 @container">
       <div className="flex min-h-0 flex-1 flex-col gap-3 p-[var(--density-page-pad)]">
-        {showDashboardChrome ? (
-          <>
-            <DownloadStatsHero snapshot={snapshot} />
-            <div className="flex flex-col gap-2.5 @md:flex-row @md:items-center">
-              <SearchInput
-                value={query}
-                onChange={setQuery}
-                className="flex-1"
-                placeholder={t('downloadManager.searchDownloads')}
+        <DownloadStatsHero snapshot={snapshot} />
+        {showDownloadSearch ? (
+          <div className="flex flex-col gap-2.5 @md:flex-row @md:items-center">
+            <SearchInput
+              value={query}
+              onChange={setQuery}
+              className="flex-1"
+              placeholder={t('downloadManager.searchDownloads')}
+            />
+            <div className="flex gap-2">
+              <Input
+                value={quickUrl}
+                onChange={(e) => setQuickUrl(e.target.value)}
+                placeholder={t('downloadManager.quickAddUrl')}
+                className="h-10 min-w-0 flex-1"
               />
-              <div className="flex gap-2">
-                <Input
-                  value={quickUrl}
-                  onChange={(e) => setQuickUrl(e.target.value)}
-                  placeholder={t('downloadManager.quickAddUrl')}
-                  className="h-10 min-w-0 flex-1"
-                />
-                <Button
-                  size="sm"
-                  className="h-10 shrink-0 px-3"
-                  onClick={() => {
-                    const url = quickUrl.trim()
-                    if (!url) return
-                    void startUrlDownload(url).then(() => {
-                      setQuickUrl('')
-                      void refresh()
-                    })
-                  }}
-                >
-                  <DownloadIcon className="size-3.5" />
-                </Button>
-              </div>
+              <Button
+                size="sm"
+                className="h-10 shrink-0 px-3"
+                onClick={() => {
+                  const url = quickUrl.trim()
+                  if (!url) return
+                  void startUrlDownload(url).then(() => {
+                    setQuickUrl('')
+                    void refresh()
+                  })
+                }}
+              >
+                <DownloadIcon className="size-3.5" />
+              </Button>
             </div>
-          </>
+          </div>
         ) : null}
         <Tabs value={tab} onValueChange={(v) => setTab(v as DownloadManagerTab)} className="flex min-h-0 flex-1 flex-col gap-3">
           <TabsList variant="attached" className="w-full shrink-0">
