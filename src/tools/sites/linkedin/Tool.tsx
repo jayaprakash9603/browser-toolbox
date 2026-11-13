@@ -1,3 +1,4 @@
+import '@/tools/sites/_consolidation/i18n'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 

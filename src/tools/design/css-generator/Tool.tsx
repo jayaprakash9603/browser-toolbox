@@ -1,3 +1,4 @@
+import './i18n'
 import { useId, useRef, useState, type ReactNode } from 'react'
 import { useReducedMotion } from 'motion/react'
 import {

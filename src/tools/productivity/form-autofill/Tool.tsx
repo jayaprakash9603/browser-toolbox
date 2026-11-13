@@ -1,3 +1,4 @@
+import './i18n'
 import '@universal-form-autofill/sdk/style.css'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'

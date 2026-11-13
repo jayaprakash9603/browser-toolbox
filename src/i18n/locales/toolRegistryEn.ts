@@ -5,6 +5,12 @@ export const toolRegistryStrings = {
   'tools.browser.picture-in-picture.name': 'Picture-in-Picture',
   'tools.browser.picture-in-picture.description':
     'Float the page video in a always-on-top window with Alt+P or the context menu.',
+  'tools.browser.download-manager.name': 'Download Manager',
+  'tools.browser.download-manager.description':
+    'Manage Chrome downloads, queues, bulk and image saves, link sniffing, and history — powered by the native Downloads API.',
+  'tools.browser.history-manager.name': 'History Manager',
+  'tools.browser.history-manager.description':
+    'Search, analyze, export and clean your browsing history with timeline, site groups and insights.',
   'tools.data.data-scraper.name': 'Data Scraper',
   'tools.data.data-scraper.description':
     'Extract tables and lists from any site with heuristics, point-and-click selectors, pagination, and CSV/Excel export.',

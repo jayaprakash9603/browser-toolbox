@@ -43,6 +43,12 @@ export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
     keywords: ['context menu', 'right click', 'open panel'],
   },
   {
+    id: 'contextMenuBookmarks',
+    labelKey: 'settings.contextMenu.bookmarks',
+    fallbackLabel: 'Smart Bookmark Organizer in right-click menu',
+    keywords: ['context menu', 'right click', 'bookmark', 'save page'],
+  },
+  {
     id: 'contextMenuScreenshot',
     labelKey: 'settings.contextMenu.screenshot',
     fallbackLabel: 'Capture in right-click menu',

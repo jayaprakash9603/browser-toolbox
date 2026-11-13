@@ -90,8 +90,8 @@ describe('xml engine', () => {
 })
 
 describe('sql engine', () => {
-  it('formats with uppercase keywords', () => {
-    const result = formatSql('select id, name from users where active = true')
+  it('formats with uppercase keywords', async () => {
+    const result = await formatSql('select id, name from users where active = true')
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.value).toContain('SELECT')
@@ -99,21 +99,21 @@ describe('sql engine', () => {
     }
   })
 
-  it('supports dialect selection', () => {
+  it('supports dialect selection', async () => {
     expect(SQL_DIALECTS.length).toBeGreaterThanOrEqual(8)
-    const result = formatSql('select top 1 * from users', 'transactsql')
+    const result = await formatSql('select top 1 * from users', 'transactsql')
     expect(result.ok).toBe(true)
   })
 
-  it('minifies to a single line', () => {
-    const result = minifySql('select id\nfrom users\nwhere active = true')
+  it('minifies to a single line', async () => {
+    const result = await minifySql('select id\nfrom users\nwhere active = true')
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.value).not.toContain('\n')
   })
 
-  it('rejects empty input and invalid sql', () => {
-    expect(formatSql('').ok).toBe(false)
-    expect(validateSql('select from where (((').valid).toBe(false)
+  it('rejects empty input and invalid sql', async () => {
+    expect((await formatSql('')).ok).toBe(false)
+    expect((await validateSql('select from where (((')).valid).toBe(false)
   })
 })
 

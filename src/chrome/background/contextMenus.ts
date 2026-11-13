@@ -16,6 +16,7 @@ import { buildTaskMenus } from './tasks'
 import { buildReadingListMenus } from './readingList'
 import { buildDownloadManagerMenus } from './download-manager/menus'
 import { buildHistoryManagerMenus } from './history-manager/menus'
+import { buildBookmarkMenus } from './bookmarks'
 
 const logger = createLogger('context-menus')
 
@@ -99,6 +100,13 @@ async function rebuildContextMenusOnce(): Promise<void> {
       buildHistoryManagerMenus(createContextMenu)
     } catch (error) {
       logger.warn('history manager menu build failed', error)
+    }
+  }
+  if (menu.bookmarks) {
+    try {
+      buildBookmarkMenus(createContextMenu)
+    } catch (error) {
+      logger.warn('bookmark menu build failed', error)
     }
   }
   for (const { name, run, enabled } of builders) {

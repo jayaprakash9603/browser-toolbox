@@ -8,6 +8,8 @@ import {
   parseSitemapLocs,
   type DiscoverSource,
 } from '@/core/engines/linkChecker/discover'
+import { isRobotsPathDisallowed } from '@/core/engines/linkChecker/robotsRules'
+import { buildLinkGraph } from '@/core/engines/links/graph'
 import { collectPageLinksFromHtml, mergePageLinkSnapshots } from '@/core/engines/links/collectFromHtml'
 
 function page(hrefs: string[]): string {
@@ -161,6 +163,68 @@ describe('discoverSiteLinks', () => {
       impl,
     )
     expect(result.snapshot.links.some((link) => link.href === 'https://x.test/from-map')).toBe(true)
+  })
+})
+
+describe('discoverSiteLinks graph mode', () => {
+  it('records per-page snapshots and real edges without changing flat unique URLs', async () => {
+    const { impl } = source({
+      '/': page(['/about', 'https://out.test/x']),
+      '/about': '<html><head><title>About</title></head><body><a href="/">Home</a></body></html>',
+    })
+    const result = await discoverSiteLinks(
+      'https://x.test/',
+      { maxDepth: 2, maxPages: 10, concurrency: 1, scope: 'site', recordGraph: true },
+      impl,
+    )
+    expect(result.pages?.some((item) => item.fetched && item.snapshot?.title === 'About')).toBe(true)
+    const graph = buildLinkGraph(result.pages ?? [], { startUrl: 'https://x.test/' })
+    expect(graph.edges.some((edge) => edge.destinationUrl.includes('/about'))).toBe(true)
+    expect(result.snapshot.links.some((link) => link.href === 'https://out.test/x')).toBe(true)
+  })
+
+  it('keeps include-pattern pages and skips the rest', async () => {
+    const { fetchOrder, impl } = source({
+      '/': page(['/about', '/blog']),
+      '/about': page([]),
+      '/blog': page([]),
+    })
+    await discoverSiteLinks(
+      'https://x.test/',
+      { maxDepth: 2, maxPages: 10, concurrency: 1, scope: 'site', recordGraph: true, include: ['about'] },
+      impl,
+    )
+    expect(fetchOrder.some((url) => url.includes('/about'))).toBe(true)
+    expect(fetchOrder.some((url) => url.includes('/blog'))).toBe(false)
+  })
+
+  it('does not fetch robots-disallowed paths when respectRobots is on', async () => {
+    const { fetchOrder, impl } = source(
+      {
+        '/': page(['/hidden', '/about']),
+        '/hidden': page([]),
+        '/about': page([]),
+      },
+      {
+        fetchText: async (url) => (url.endsWith('/robots.txt') ? 'User-agent: *\nDisallow: /hidden\n' : null),
+      },
+    )
+    await discoverSiteLinks(
+      'https://x.test/',
+      { maxDepth: 2, maxPages: 10, concurrency: 1, scope: 'site', recordGraph: true, respectRobots: true },
+      impl,
+    )
+    expect(fetchOrder.some((url) => url.includes('/hidden'))).toBe(false)
+    expect(fetchOrder.some((url) => url.includes('/about'))).toBe(true)
+  })
+})
+
+describe('robots rules', () => {
+  it('uses the longest matching Allow or Disallow for User-agent *', () => {
+    const text = 'User-agent: *\nDisallow: /hidden\nAllow: /hidden/ok\n'
+    expect(isRobotsPathDisallowed('https://x.test/hidden', text)).toBe(true)
+    expect(isRobotsPathDisallowed('https://x.test/hidden/ok', text)).toBe(false)
+    expect(isRobotsPathDisallowed('https://x.test/about', text)).toBe(false)
   })
 })
 

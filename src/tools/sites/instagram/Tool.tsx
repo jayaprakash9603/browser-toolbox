@@ -1,3 +1,4 @@
+import './i18n'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageIcon } from 'lucide-react'

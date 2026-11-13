@@ -1,3 +1,4 @@
+import '@/features/tech-stack/i18n'
 import { TechStackView } from './TechStackView'
 
 export default function TechStackPopoverBody({ onNavigate }: { onNavigate: () => void }) {

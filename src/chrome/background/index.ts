@@ -62,13 +62,18 @@ import { initClipboardCapture, registerClipboardCapture } from './clipboardCaptu
 import { registerTimer } from './timer'
 import { handleTaskMenuClick, isTaskMenuItem, registerTasks } from './tasks'
 import { handleReadingListMenuClick, isReadingListMenuItem } from './readingList'
+import {
+  handleBookmarkMenuClick,
+  isBookmarkMenuItem,
+  registerBookmarkAlarms,
+} from './bookmarks'
 import { registerElementInspector } from './elementInspector'
 import { registerFontInspector } from './fontInspector'
 import { registerInspectorFrameFocus } from './inspectorFrameFocus'
-import { pickColorOnPage, registerColorPicker } from './colorPicker'
+import { pickColorFromScreen, pickColorOnPage, registerColorPicker } from './colorPicker'
 import { openClipboardPanelOnTab, registerClipboardPanel } from './clipboardPanel'
 import { isClipboardPanelMenuItem } from './clipboardPanel/menus'
-import { isColorPickerMenuItem } from './colorPicker/menus'
+import { colorPickerMenuAction, isColorPickerMenuItem } from './colorPicker/menus'
 import { screenshotModeFromMenuAction } from './screenshot/contextMenus'
 import { startScreenshot } from './screenshot/start'
 import type { ScreenshotMode } from '@/core/screenshot/types'
@@ -145,6 +150,10 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     void handleReadingListMenuClick(info, tab)
     return
   }
+  if (isBookmarkMenuItem(menuItemId)) {
+    void handleBookmarkMenuClick(menuItemId, info, tab)
+    return
+  }
   if (isChatPulseMenuItem(menuItemId) && tab?.id != null) {
     void sendOpenAnalyticsToTab(tab.id)
     return
@@ -154,7 +163,9 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     return
   }
   if (isColorPickerMenuItem(menuItemId)) {
-    void pickColorOnPage(tab)
+    const action = colorPickerMenuAction(menuItemId)
+    if (action === 'page') void pickColorOnPage(tab)
+    else if (action === 'screen') void pickColorFromScreen(tab)
     return
   }
   if (isClipboardPanelMenuItem(menuItemId)) {
@@ -218,6 +229,7 @@ safeRegister('scraper', registerScraperJobHandlers)
 safeRegister('clipboardCapture', registerClipboardCapture)
 safeRegister('timer', registerTimer)
 safeRegister('tasks', registerTasks)
+safeRegister('bookmarks', registerBookmarkAlarms)
 safeRegister('elementInspector', registerElementInspector)
 safeRegister('fontInspector', registerFontInspector)
 safeRegister('inspectorFrameFocus', registerInspectorFrameFocus)

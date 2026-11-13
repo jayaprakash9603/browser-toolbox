@@ -1,3 +1,4 @@
+import '@/app/pages/settings/palette-i18n'
 import {
   BrushIcon,
   ClipboardIcon,

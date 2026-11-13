@@ -1,3 +1,5 @@
+import './i18n'
+import { lazy, Suspense } from 'react'
 import { BookOpenIcon, ListIcon, NetworkIcon, SettingsIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -10,10 +12,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 
 import { useApiTool } from '../_shared'
-import { LibraryTab } from './LibraryTab'
-import { NetworkTab } from './NetworkTab'
+import { Skeleton } from '@/shared/components/ui/skeleton'
 import { RulesTab } from './RulesTab'
 import { SettingsTab } from './SettingsTab'
+
+const NetworkTab = lazy(() => import('./NetworkTab').then((m) => ({ default: m.NetworkTab })))
+const LibraryTab = lazy(() => import('./LibraryTab').then((m) => ({ default: m.LibraryTab })))
 
 const TAB_ICONS = {
   rules: ListIcon,
@@ -62,10 +66,14 @@ export default function HttpInterceptorTool() {
           <RulesTab state={state} onStateChange={setState} />
         </TabsContent>
         <TabsContent value="network">
-          <NetworkTab />
+          <Suspense fallback={<Skeleton className="h-48 w-full rounded-xl" />}>
+            <NetworkTab />
+          </Suspense>
         </TabsContent>
         <TabsContent value="library">
-          <LibraryTab state={state} onStateChange={setState} />
+          <Suspense fallback={<Skeleton className="h-48 w-full rounded-xl" />}>
+            <LibraryTab state={state} onStateChange={setState} />
+          </Suspense>
         </TabsContent>
         <TabsContent value="settings">
           <SettingsTab state={state} patchSettings={patchSettings} />

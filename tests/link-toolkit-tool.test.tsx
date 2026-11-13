@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nextProvider } from 'react-i18next'
 
 import type { PageLink, PageLinksSnapshot } from '@/core/engines/links/pageLinks'
+import { sendMessage } from '@/core/messaging'
 import i18n from '@/i18n'
 import { registerModules } from '@/modules'
 import { TooltipProvider } from '@/shared/components/ui/tooltip'
@@ -30,6 +31,7 @@ function link(partial: Partial<PageLink> & Pick<PageLink, 'index' | 'href' | 'ki
     insecure: false,
     visible: true,
     anchorMissing: false,
+    hasImage: false,
     ...partial,
   }
 }
@@ -81,12 +83,30 @@ function renderTool() {
   )
 }
 
+async function openTab(user: ReturnType<typeof userEvent.setup>, name: string) {
+  await user.click(await screen.findByRole('tab', { name }))
+}
+
+async function openInternal(user: ReturnType<typeof userEvent.setup>) {
+  await screen.findByRole('tab', { name: 'Internal' })
+  await openTab(user, 'Internal')
+  await screen.findByText('Unique URLs')
+}
+
 function rows() {
   return screen.getAllByRole('listitem').filter((item) => item.querySelector('[aria-expanded]'))
 }
 
 beforeEach(() => {
   tabMock.locate = { found: true, visible: true }
+  HTMLCanvasElement.prototype.getContext = vi.fn(() => null)
+  vi.mocked(sendMessage).mockImplementation(async (message) => {
+    if (message.type !== 'CHECK_HTTP_URLS') return undefined
+    return message.items.map(({ href }) => {
+      const broken = href.includes('broken.test')
+      return { href, text: '', status: broken ? 404 : 200, ok: !broken }
+    })
+  })
 })
 
 afterEach(() => {
@@ -97,7 +117,7 @@ describe('Link Toolkit', () => {
   it('summarises the page and merges repeated URLs', async () => {
     const user = userEvent.setup()
     renderTool()
-    expect(await screen.findByText('Example home')).toBeInTheDocument()
+    await openInternal(user)
     const stats = screen.getByText('Unique URLs').closest('dl')!
     expect(within(stats).getByText('8')).toBeInTheDocument()
     expect(within(stats).getByText('7')).toBeInTheDocument()
@@ -107,12 +127,12 @@ describe('Link Toolkit', () => {
 
     await user.click(screen.getByRole('switch', { name: 'Merge' }))
     expect(rows()).toHaveLength(8)
-  })
+  }, 15_000)
 
   it('filters by type, search and quick filters', async () => {
     const user = userEvent.setup()
     renderTool()
-    await screen.findByText('Example home')
+    await openInternal(user)
 
     const types = within(screen.getByRole('group', { name: 'Filter by link type' }))
     const quick = within(screen.getByRole('group', { name: 'Quick filters' }))
@@ -140,7 +160,7 @@ describe('Link Toolkit', () => {
   it('checks link status and isolates broken links', async () => {
     const user = userEvent.setup()
     renderTool()
-    await screen.findByText('Example home')
+    await openInternal(user)
 
     await user.click(screen.getByRole('button', { name: 'Check links' }))
     const summary = await screen.findByRole('button', { name: /1 broken · 4 working/ })
@@ -154,7 +174,7 @@ describe('Link Toolkit', () => {
   it('groups links by destination site', async () => {
     const user = userEvent.setup()
     renderTool()
-    await screen.findByText('Example home')
+    await openInternal(user)
 
     await user.click(screen.getByRole('radio', { name: /Sites/ }))
     expect(screen.getByText('5 destinations')).toBeInTheDocument()
@@ -171,9 +191,40 @@ describe('Link Toolkit', () => {
     const user = userEvent.setup()
     tabMock.locate = { found: true, visible: false }
     renderTool()
-    await screen.findByText('Example home')
+    await openInternal(user)
 
     await user.click(screen.getAllByRole('button', { name: 'Show on page' })[0])
     expect(await screen.findAllByText('That link exists but is hidden on the page right now.')).not.toHaveLength(0)
+  })
+
+  it('opens inner workspace tabs and graphs the current page', async () => {
+    const user = userEvent.setup()
+    renderTool()
+    expect(await screen.findByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByText('Pages discovered')).toBeInTheDocument()
+    await openTab(user, 'Graph')
+    expect(screen.getByRole('img', { name: 'Graph' })).toBeInTheDocument()
+    expect(within(screen.getByRole('list', { name: 'Pages in graph' })).getAllByRole('button')).toHaveLength(5)
+    await openTab(user, 'Health')
+    expect(screen.getByText(/Timeouts, network errors/)).toBeInTheDocument()
+  })
+
+  it('does not label timeouts as broken on Health', async () => {
+    const user = userEvent.setup()
+    vi.mocked(sendMessage).mockImplementation(async (message) => {
+      if (message.type !== 'CHECK_HTTP_URLS') return undefined
+      return message.items.map(({ href }) => {
+        if (href.includes('github.com')) return { href, text: '', status: null, ok: false, timedOut: true }
+        const broken = href.includes('broken.test')
+        return { href, text: '', status: broken ? 404 : 200, ok: !broken }
+      })
+    })
+    renderTool()
+    await openInternal(user)
+    await user.click(screen.getByRole('button', { name: 'Check links' }))
+    expect(await screen.findByRole('button', { name: /1 broken · 3 working/ })).toBeInTheDocument()
+    await openTab(user, 'Health')
+    expect(screen.getByText('Timeout')).toBeInTheDocument()
+    expect(screen.queryByText('404 Broken')).not.toBeInTheDocument()
   })
 })

@@ -1,3 +1,4 @@
+import './i18n'
 import { useEffect, useId, useMemo, useState, type FormEvent } from 'react'
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'motion/react'
 import {

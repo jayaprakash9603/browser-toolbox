@@ -6,6 +6,12 @@ import { BOOKMARKS, CAPTIONS, MATCH_IDS, MD_PREVIEW, QUERY } from './script'
 
 const ROW = 32
 const gone = { height: 0, marginBottom: 0, opacity: 0 }
+const STATS = [
+  { label: 'Bookmarks', value: '48' },
+  { label: 'Unread', value: '6' },
+  { label: 'Dupes', value: '2' },
+] as const
+const NAV = ['All', 'Collections', 'Projects', 'Fav', 'Reading'] as const
 
 const build: Build = ({ tl, q, step, final, move, click, type, wait, cursorOut }) => {
   const hide = BOOKMARKS.filter((b) => !MATCH_IDS.has(b.id)).map((b) => q(`row-${b.id}`))
@@ -37,29 +43,40 @@ const build: Build = ({ tl, q, step, final, move, click, type, wait, cursorOut }
 export default function Demo() {
   return (
     <DemoStage
-      label={`Bookmark Search: filter "${QUERY}", review matches, export Markdown links`}
+      label={`Smart Bookmark Organizer: filter "${QUERY}", review matches, export Markdown links`}
       steps={CAPTIONS}
       build={build}
     >
-      <PanelChrome title="Bookmark Search" icon={BookmarkIcon} compact>
+      <PanelChrome title="Smart Bookmark Organizer" icon={BookmarkIcon} compact>
         <div className="flex h-full flex-col text-[10px]">
-          <div className="relative mb-2">
+          <div className="relative mb-1.5">
             <SearchIcon className="pointer-events-none absolute left-2 top-1/2 size-3 -translate-y-1/2 text-muted" aria-hidden />
             <span
               data-d="search"
               className="flex h-7 items-center rounded-md border border-line bg-canvas/80 pl-7 pr-2"
             >
               <span data-d="search-ph" className="text-muted">
-                Search bookmarks…
+                Search title, URL, tags…
               </span>
               <span data-d="search-text" className="text-ink" />
             </span>
           </div>
+          <div className="mb-1.5 flex gap-1 overflow-hidden">
+            {STATS.map((stat) => (
+              <span
+                key={stat.label}
+                className="flex h-6 shrink-0 items-center gap-1 rounded-md border border-line bg-canvas/70 px-1.5"
+              >
+                <span className="text-[8px] text-muted">{stat.label}</span>
+                <span className="text-[9px] font-semibold tabular-nums text-ink">{stat.value}</span>
+              </span>
+            ))}
+          </div>
           <div className="mb-2 flex flex-wrap gap-1">
-            {['All', 'Work', 'Docs', 'Personal'].map((chip, index) => (
+            {NAV.map((chip, index) => (
               <span
                 key={chip}
-                className={`rounded px-1.5 py-0.5 text-[8.5px] ${index === 0 ? 'bg-ink/10 text-ink' : 'text-muted'}`}
+                className={`rounded-full px-1.5 py-0.5 text-[8.5px] ${index === 0 ? 'bg-ink text-canvas' : 'text-muted'}`}
               >
                 {chip}
               </span>

@@ -1,3 +1,4 @@
+import './i18n'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TargetIcon, ZapIcon } from 'lucide-react'

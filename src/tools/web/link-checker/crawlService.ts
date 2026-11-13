@@ -1,9 +1,9 @@
-import type { CrawlProgress } from '@/core/engines/htmlArchive/crawl'
 import type { SiteLinksCrawlResult } from '@/chrome/content/linkCheckerCrawl'
 import { ensureContentScriptInTab, getActiveBrowserTab } from '@/chrome/contentScriptClient'
+import type { CrawlOptions, CrawlProgress } from '@/core/engines/htmlArchive/crawl'
+import type { DiscoverGraphOptions } from '@/core/engines/linkChecker/discover'
+import type { GraphPageInput } from '@/core/engines/links/graph'
 import type { ExtensionResponse } from '@/core/messaging/types'
-
-import type { CrawlOptions } from '@/core/engines/htmlArchive/crawl'
 
 let activeCrawlId: string | null = null
 
@@ -19,9 +19,19 @@ export async function stopActiveSiteLinkCrawl(): Promise<void> {
   await chrome.tabs.sendMessage(tab.id, { type: 'STOP_LINK_CRAWL', crawlId }).catch(() => {})
 }
 
+export async function pauseActiveSiteLinkCrawl(paused: boolean): Promise<void> {
+  const crawlId = activeCrawlId
+  if (!crawlId) return
+  const tab = await getActiveBrowserTab()
+  if (tab?.id == null) return
+  await chrome.tabs.sendMessage(tab.id, { type: 'PAUSE_LINK_CRAWL', crawlId, paused }).catch(() => {})
+}
+
 export async function crawlSiteLinks(
   crawl: CrawlOptions,
   onProgress: (progress: CrawlProgress) => void,
+  graph?: DiscoverGraphOptions & { seedUrls?: string[] },
+  onPage?: (page: GraphPageInput) => void,
 ): Promise<SiteLinksCrawlResult> {
   const tab = await getActiveBrowserTab()
   if (tab?.id == null) throw new Error('No active tab')
@@ -30,10 +40,15 @@ export async function crawlSiteLinks(
   activeCrawlId = crawlId
 
   return new Promise((resolve, reject) => {
-    const onMessage = (message: { type?: string; crawlId?: string; progress?: CrawlProgress }) => {
-      if (message?.type === 'LINK_CRAWL_PROGRESS' && message.crawlId === crawlId && message.progress) {
-        onProgress(message.progress)
-      }
+    const onMessage = (message: {
+      type?: string
+      crawlId?: string
+      progress?: CrawlProgress
+      page?: GraphPageInput
+    }) => {
+      if (message.crawlId !== crawlId) return false
+      if (message.type === 'LINK_CRAWL_PROGRESS' && message.progress) onProgress(message.progress)
+      if (message.type === 'LINK_CRAWL_PAGE' && message.page) onPage?.(message.page)
       return false
     }
     chrome.runtime.onMessage.addListener(onMessage)
@@ -44,7 +59,7 @@ export async function crawlSiteLinks(
     }
 
     void chrome.tabs
-      .sendMessage(tab.id!, { type: 'CRAWL_SITE_FOR_LINKS', crawlId, crawl })
+      .sendMessage(tab.id!, { type: 'CRAWL_SITE_FOR_LINKS', crawlId, crawl, graph })
       .then((response) => {
         finish()
         const typed = response as ExtensionResponse<SiteLinksCrawlResult>

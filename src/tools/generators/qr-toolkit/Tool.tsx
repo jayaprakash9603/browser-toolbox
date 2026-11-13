@@ -1,3 +1,4 @@
+import './i18n'
 import { useEffect, useState } from 'react'
 import * as TabsPrimitive from '@radix-ui/react-tabs'
 import { useTranslation } from 'react-i18next'

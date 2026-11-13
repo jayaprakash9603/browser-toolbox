@@ -1,3 +1,4 @@
+import './i18n'
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import {

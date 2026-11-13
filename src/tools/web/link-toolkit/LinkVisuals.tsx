@@ -109,21 +109,34 @@ export function StatusPill({ info }: { info: LinkStatusInfo | undefined }) {
       </span>
     )
   }
-  const label = info.status == null ? t('web.links.status.failed') : info.ok ? `${info.status} ${t('web.links.status.ok')}` : `${info.status} ${t('web.links.status.broken')}`
+  const health = info.health
+  const broken = health === 'broken'
+  const ok = health === 'ok' || (info.ok && health !== 'timeout' && health !== 'network' && health !== 'blocked' && health !== 'redirect' && health !== 'server')
+  const label = pillLabel(info, t)
   return (
     <span
       className={cn(
         'inline-flex items-center gap-1 rounded-full px-1.5 py-px text-[10px] font-semibold tabular-nums',
-        info.ok
-          ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-400'
-          : 'bg-destructive/12 text-destructive',
+        broken
+          ? 'bg-destructive/12 text-destructive'
+          : ok
+            ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-400'
+            : 'bg-amber-500/12 text-amber-800 dark:text-amber-200',
       )}
       title={info.error}
     >
-      <span className={cn('size-1.5 rounded-full', info.ok ? 'bg-emerald-500' : 'bg-destructive')} aria-hidden />
+      <span className={cn('size-1.5 rounded-full', broken ? 'bg-destructive' : ok ? 'bg-emerald-500' : 'bg-amber-500')} aria-hidden />
       {label}
     </span>
   )
+}
+
+function pillLabel(info: LinkStatusInfo, t: (key: string) => string): string {
+  if (info.health === 'ok' && info.status != null) return `${info.status} ${t('web.links.status.ok')}`
+  if (info.health === 'broken' && info.status != null) return `${info.status} ${t('web.links.status.broken')}`
+  if (info.health) return t(`web.links.health.${info.health}`)
+  if (info.status == null) return t('web.links.status.failed')
+  return info.ok ? `${info.status} ${t('web.links.status.ok')}` : `${info.status} ${t('web.links.status.broken')}`
 }
 
 export function Tag({ children, tone = 'neutral', title }: { children: ReactNode; tone?: 'neutral' | 'warning' | 'info'; title?: string }) {

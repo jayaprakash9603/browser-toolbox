@@ -1,3 +1,4 @@
+import './i18n'
 import { useCallback, useState, type ReactNode } from 'react'
 import * as TabsPrimitive from '@radix-ui/react-tabs'
 import { MotionConfig, motion } from 'motion/react'

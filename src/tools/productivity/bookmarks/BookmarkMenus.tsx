@@ -39,11 +39,15 @@ export function AddMenu({
   onNewBookmark,
   onBookmarkTab,
   onNewFolder,
+  onNewCollection,
+  onNewProject,
 }: {
   disabled: boolean
   onNewBookmark: () => void
   onBookmarkTab: () => void
   onNewFolder: () => void
+  onNewCollection: () => void
+  onNewProject: () => void
 }) {
   const { t } = useTranslation()
   return (
@@ -69,6 +73,14 @@ export function AddMenu({
           <FolderPlusIcon className="size-4" />
           {t('bookmarks.newFolder')}
         </DropdownMenuItem>
+        <DropdownMenuItem onSelect={onNewCollection}>
+          <LayersIcon className="size-4" />
+          {t('bookmarks.newCollection')}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={onNewProject}>
+          <LayersIcon className="size-4" />
+          {t('bookmarks.newProject')}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -81,6 +93,11 @@ interface MoreMenuProps {
   onCopy: (text: string, successKey: string) => void
   onDownload: (text: string, mime: string, ext: string) => void
   onOpenBatch: () => void
+  onImport: () => void
+  onScan: () => void
+  onOrganize: () => void
+  onExportNested: () => void
+  onExportOverlay: () => void
 }
 
 export function MoreMenu({
@@ -90,6 +107,11 @@ export function MoreMenu({
   onCopy,
   onDownload,
   onOpenBatch,
+  onImport,
+  onScan,
+  onOrganize,
+  onExportNested,
+  onExportOverlay,
 }: MoreMenuProps) {
   const { t } = useTranslation()
   const empty = rows.length === 0
@@ -110,6 +132,18 @@ export function MoreMenu({
         <DropdownMenuItem disabled={loading} onSelect={onRefresh}>
           <RefreshCwIcon className="size-4" />
           {t('bookmarks.refresh')}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={onImport}>
+          <DownloadIcon className="size-4" />
+          {t('bookmarks.import')}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={onScan}>
+          <RefreshCwIcon className="size-4" />
+          {t('bookmarks.scan')}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={onOrganize}>
+          <LayersIcon className="size-4" />
+          {t('bookmarks.organize.run')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="text-[10px] tracking-wide text-muted-foreground uppercase">
@@ -176,6 +210,14 @@ export function MoreMenu({
         >
           <FileCodeIcon className="size-4" />
           {t('bookmarks.exportHtml')}
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={empty} onSelect={onExportNested}>
+          <FileCodeIcon className="size-4" />
+          {t('bookmarks.exportNestedHtml')}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={onExportOverlay}>
+          <FileJsonIcon className="size-4" />
+          {t('bookmarks.exportOverlay')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem disabled={empty} onSelect={onOpenBatch}>

@@ -1,3 +1,4 @@
+import './i18n'
 import { lazy, Suspense, useRef, useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'

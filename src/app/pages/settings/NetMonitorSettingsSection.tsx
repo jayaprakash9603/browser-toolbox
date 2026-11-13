@@ -1,3 +1,4 @@
+import '@/tools/browser/internet-monitor/i18n'
 import { useTranslation } from 'react-i18next'
 
 import { SettingsLinkRow, SettingsRow } from '@/app/pages/settings/ui'

@@ -1,4 +1,3 @@
-import { js_beautify } from 'js-beautify'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -71,7 +70,11 @@ export function ScriptEditor({ record, settings, code, values, onSave, onValuesS
         <Button
           size="sm"
           variant="secondary"
-          onClick={() => setSource(js_beautify(source, { indent_size: settings.editorIndent }))}
+          onClick={() => {
+            void import('js-beautify').then(({ js_beautify }) =>
+              setSource(js_beautify(source, { indent_size: settings.editorIndent })),
+            )
+          }}
         >
           {t('scriptStudio.editor.beautify')}
         </Button>

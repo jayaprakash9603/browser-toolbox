@@ -44,8 +44,8 @@ export const MD_PREVIEW = [
 
 export const STEPS: WalkStep[] = [
   {
-    title: 'Search bookmarks',
-    body: 'Type a keyword to slice through titles and URLs without opening the browser menu.',
+    title: 'Search the workspace',
+    body: 'Type a keyword to slice through titles, URLs, tags and notes without leaving the panel.',
   },
   {
     title: 'Scan paths and titles',

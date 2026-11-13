@@ -1,3 +1,5 @@
+import { canonicalizeBookmarkUrl } from '@/core/bookmarks/urls'
+
 export interface BookmarkRow {
   id: string
   title: string
@@ -25,7 +27,7 @@ export interface BookmarkLibrary {
   folders: BookmarkFolder[]
 }
 
-export type BookmarkSort = 'manual' | 'recent' | 'title' | 'domain'
+export type BookmarkSort = 'manual' | 'recent' | 'oldest' | 'title' | 'domain' | 'accessed' | 'mostAccessed'
 export type BookmarkView = 'all' | 'recent' | 'duplicates'
 
 export const FOLDER_SEPARATOR = ' › '
@@ -35,7 +37,7 @@ const ROOT_NODE_ID = '0'
 
 export function parseBookmarkTree(
   nodes: readonly chrome.bookmarks.BookmarkTreeNode[],
-  limit = 5000,
+  limit = 20000,
 ): BookmarkLibrary {
   const rows: BookmarkRow[] = []
   const folders: BookmarkFolder[] = []
@@ -114,12 +116,15 @@ export function bookmarkDomain(url: string): string {
 }
 
 export function normalizeBookmarkUrl(url: string): string {
-  return url
-    .trim()
-    .replace(/#.*$/, '')
-    .replace(/^https?:\/\/(www\.)?/i, '')
-    .replace(/\/+$/, '')
-    .toLowerCase()
+  return canonicalizeBookmarkUrl(url)
+}
+
+export const CHROME_SEARCH_FALLBACK = 3000
+
+export async function searchChromeBookmarkIds(query: string): Promise<string[]> {
+  if (!query.trim() || !chrome.bookmarks?.search) return []
+  const hits = await chrome.bookmarks.search(query.trim())
+  return hits.filter((node) => Boolean(node.url)).map((node) => node.id)
 }
 
 export function duplicateBookmarkIds(rows: readonly BookmarkRow[]): Set<string> {
@@ -324,7 +329,8 @@ export function sortBookmarkRows(rows: readonly BookmarkRow[], sort: BookmarkSor
       (a, b) => bookmarkDomain(a.url).localeCompare(bookmarkDomain(b.url)) || byTitle(a, b),
     )
   }
-  if (sort === 'manual') return next
+  if (sort === 'manual' || sort === 'accessed' || sort === 'mostAccessed') return next
+  if (sort === 'oldest') return next.sort((a, b) => (a.dateAdded ?? 0) - (b.dateAdded ?? 0))
   return next.sort((a, b) => (b.dateAdded ?? 0) - (a.dateAdded ?? 0))
 }
 

@@ -1,6 +1,11 @@
 import { sameOrigin } from '@/core/engines/htmlArchive'
-import type { CrawlOptions, CrawlProgress, FetchedPage } from '@/core/engines/htmlArchive/crawl'
-import { discoverSiteLinks, type DiscoverResult } from '@/core/engines/linkChecker/discover'
+import type { FetchedPage } from '@/core/engines/htmlArchive/crawl'
+import {
+  discoverSiteLinks,
+  type DiscoverGraphOptions,
+  type DiscoverHooks,
+  type DiscoverResult,
+} from '@/core/engines/linkChecker/discover'
 
 import { collectPageLinks } from './collectors/links'
 
@@ -29,12 +34,8 @@ async function fetchText(url: string, signal: AbortSignal): Promise<string | nul
 export type SiteLinksCrawlResult = DiscoverResult
 
 export async function crawlSiteForLinks(
-  input: Partial<CrawlOptions>,
-  hooks: {
-    signal?: AbortSignal
-    stopSignal?: AbortSignal
-    onProgress?: (progress: CrawlProgress) => void
-  } = {},
+  input: DiscoverGraphOptions & { seedUrls?: string[] },
+  hooks: DiscoverHooks = {},
 ): Promise<SiteLinksCrawlResult> {
   const live = collectPageLinks()
   const result = await discoverSiteLinks(
@@ -44,12 +45,10 @@ export async function crawlSiteForLinks(
       fetchPage: fetchPageHtml,
       fetchText,
       startHrefs: () => live.links.map((link) => link.href),
+      startSnapshot: () => live,
+      seedUrls: input.seedUrls,
     },
-    {
-      signal: hooks.signal,
-      stopSignal: hooks.stopSignal,
-      onProgress: hooks.onProgress,
-    },
+    hooks,
   )
   return {
     ...result,
@@ -58,6 +57,8 @@ export async function crawlSiteForLinks(
       url: live.url,
       title: live.title || result.snapshot.title,
       host: live.host || result.snapshot.host,
+      canonical: live.canonical ?? result.snapshot.canonical,
+      robots: live.robots ?? result.snapshot.robots,
     },
   }
 }

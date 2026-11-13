@@ -1,3 +1,4 @@
+import './i18n'
 import { useTranslation } from 'react-i18next'
 import { DatabaseIcon, ShieldAlertIcon, CreditCardIcon } from 'lucide-react'
 

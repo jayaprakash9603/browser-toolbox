@@ -1,3 +1,4 @@
+import './i18n'
 import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from 'react'
 import * as TabsPrimitive from '@radix-ui/react-tabs'
 import { MotionConfig, motion, useReducedMotion } from 'motion/react'

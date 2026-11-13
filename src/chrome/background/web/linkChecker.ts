@@ -1,8 +1,10 @@
 import { registerMessageHandler } from '@/core/messaging'
 import {
   clampTimeout,
+  MAX_REDIRECT_HOPS,
   type LinkCheckRequestOptions,
   type LinkCheckResult,
+  type RedirectHop,
 } from '@/core/engines/linkChecker/check'
 
 const MAX_ITEMS = 80
@@ -106,10 +108,60 @@ async function checkItem(
   }
 }
 
+async function hop(url: string, timeoutMs: number): Promise<{ status: number | null; location: string | null; timedOut: boolean }> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const res = await fetch(url, { method: 'GET', redirect: 'manual', cache: 'no-store', signal: controller.signal })
+    void res.body?.cancel().catch(() => undefined)
+    return { status: res.status, location: res.headers.get('location'), timedOut: false }
+  } catch {
+    return { status: null, location: null, timedOut: controller.signal.aborted }
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+export async function traceRedirects(
+  href: string,
+  options: LinkCheckRequestOptions = {},
+): Promise<Pick<LinkCheckResult, 'hops' | 'loop' | 'finalUrl' | 'status' | 'redirected' | 'timedOut' | 'error'>> {
+  const timeoutMs = clampTimeout(options.timeoutMs)
+  const hops: RedirectHop[] = []
+  const seen = new Set<string>()
+  let current = href
+  for (let index = 0; index < MAX_REDIRECT_HOPS; index += 1) {
+    if (seen.has(current)) return { hops, loop: true, finalUrl: current, status: hops.at(-1)?.status ?? null, redirected: hops.length > 1 }
+    seen.add(current)
+    const step = await hop(current, timeoutMs)
+    hops.push({ url: current, status: step.status })
+    if (step.timedOut) return { hops, loop: false, finalUrl: current, status: null, redirected: hops.length > 1, timedOut: true, error: 'Timed out' }
+    if (step.status == null || step.status < 300 || step.status >= 400 || !step.location) {
+      return { hops, loop: false, finalUrl: current, status: step.status, redirected: hops.length > 1 }
+    }
+    try {
+      current = new URL(step.location, current).href
+    } catch {
+      return { hops, loop: false, finalUrl: current, status: step.status, redirected: hops.length > 1, error: 'Invalid Location header' }
+    }
+  }
+  return { hops, loop: false, finalUrl: current, status: hops.at(-1)?.status ?? null, redirected: true }
+}
+
+export async function checkHttpItems(
+  items: { href: string; text: string }[],
+  options?: LinkCheckRequestOptions,
+): Promise<LinkCheckResult[]> {
+  return Promise.all(items.slice(0, MAX_ITEMS).map((item) => checkItem(item, options)))
+}
+
 export function registerLinkChecker(): void {
   registerMessageHandler('CHECK_HTTP_URLS', async (message) => {
     if (message.type !== 'CHECK_HTTP_URLS') return null
-    const items = message.items.slice(0, MAX_ITEMS)
-    return Promise.all(items.map((item) => checkItem(item, message.options)))
+    return checkHttpItems(message.items, message.options)
+  })
+  registerMessageHandler('TRACE_HTTP_REDIRECTS', async (message) => {
+    if (message.type !== 'TRACE_HTTP_REDIRECTS') return null
+    return traceRedirects(message.href, message.options)
   })
 }

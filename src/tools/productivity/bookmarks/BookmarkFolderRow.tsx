@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import {
   ChevronRightIcon,
   FolderIcon,
+  FolderInputIcon,
   MoreVerticalIcon,
   PencilIcon,
   Trash2Icon,
@@ -24,9 +25,10 @@ interface BookmarkFolderRowProps {
   onOpen: (folder: BookmarkFolder) => void
   onRename: (folder: BookmarkFolder) => void
   onDelete: (folder: BookmarkFolder) => void
+  onMove?: (folder: BookmarkFolder) => void
 }
 
-export function BookmarkFolderRow({ folder, onOpen, onRename, onDelete }: BookmarkFolderRowProps) {
+export function BookmarkFolderRow({ folder, onOpen, onRename, onDelete, onMove }: BookmarkFolderRowProps) {
   const { t } = useTranslation()
   const reduce = useReducedMotion()
 
@@ -78,6 +80,12 @@ export function BookmarkFolderRow({ folder, onOpen, onRename, onDelete }: Bookma
               <PencilIcon className="size-4" />
               {t('bookmarks.renameFolder')}
             </DropdownMenuItem>
+            {onMove && (
+              <DropdownMenuItem onSelect={() => onMove(folder)}>
+                <FolderInputIcon className="size-4" />
+                {t('bookmarks.moveFolder')}
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"

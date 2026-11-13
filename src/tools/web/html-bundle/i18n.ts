@@ -1,5 +1,6 @@
-import i18n from '@/i18n'
+import { registerToolLocale } from '@/i18n/registerToolLocale'
+import { htmlBundleStrings } from '@/i18n/locales/htmlBundleEn'
 import { htmlBundleCrawlStrings } from '@/i18n/locales/htmlBundleCrawlEn'
 
-// Registered with the lazily loaded tool so the crawl strings stay out of the side panel boot bundle.
-i18n.addResources('en', 'translation', htmlBundleCrawlStrings)
+registerToolLocale(htmlBundleStrings)
+registerToolLocale(htmlBundleCrawlStrings)

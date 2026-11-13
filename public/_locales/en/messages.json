@@ -194,6 +194,33 @@
   "contextMenuReadingListSelection": {
     "message": "Save to Reading List"
   },
+  "contextMenuBookmarksParent": {
+    "message": "Smart Bookmark Organizer"
+  },
+  "contextMenuBookmarksPage": {
+    "message": "Save page as bookmark"
+  },
+  "contextMenuBookmarksLink": {
+    "message": "Save link as bookmark"
+  },
+  "contextMenuBookmarksFavorite": {
+    "message": "Add to favorites"
+  },
+  "contextMenuBookmarksCollection": {
+    "message": "Add to collection"
+  },
+  "contextMenuBookmarksReading": {
+    "message": "Add to reading list"
+  },
+  "contextMenuBookmarksNote": {
+    "message": "Save selection as bookmark note"
+  },
+  "contextMenuBookmarksOpen": {
+    "message": "Open Smart Bookmark Organizer"
+  },
+  "bookmarkReminderTitle": {
+    "message": "Reading reminder"
+  },
   "taskReminderTitle": {
     "message": "Task reminder"
   },

@@ -6,6 +6,7 @@ export type ContextMenuVisibilityKey =
   | 'screenRecorder'
   | 'tasks'
   | 'readingList'
+  | 'bookmarks'
   | 'saveImageAs'
   | 'pictureInPicture'
   | 'siteQuickActions'
@@ -23,6 +24,7 @@ export const DEFAULT_CONTEXT_MENU_VISIBILITY: ContextMenuVisibility = {
   screenRecorder: true,
   tasks: true,
   readingList: true,
+  bookmarks: true,
   saveImageAs: true,
   pictureInPicture: true,
   siteQuickActions: true,

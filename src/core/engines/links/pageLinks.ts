@@ -2,6 +2,8 @@ export type LinkKind = 'internal' | 'external' | 'anchor' | 'email' | 'phone' | 
 export type LinkSection = 'header' | 'nav' | 'main' | 'aside' | 'footer' | 'other'
 export type LinkTextSource = 'text' | 'aria' | 'title' | 'image' | 'none'
 
+export type RelFlag = 'nofollow' | 'sponsored' | 'ugc'
+
 export interface PageLink {
   index: number
   href: string
@@ -18,6 +20,7 @@ export interface PageLink {
   insecure: boolean
   visible: boolean
   anchorMissing: boolean
+  hasImage: boolean
 }
 
 export interface PageLinksSnapshot {
@@ -26,6 +29,8 @@ export interface PageLinksSnapshot {
   host: string
   links: PageLink[]
   truncated: boolean
+  canonical?: string | null
+  robots?: string | null
 }
 
 /** One URL with every place it appears on the page. */
@@ -43,6 +48,10 @@ export interface LinkStatusInfo {
   status: number | null
   ok: boolean
   error?: string
+  health?: 'broken' | 'server' | 'timeout' | 'network' | 'blocked' | 'redirect' | 'ok'
+  redirected?: boolean
+  finalUrl?: string
+  timedOut?: boolean
 }
 
 export type StatusLookup = (href: string) => LinkStatusInfo | undefined
@@ -80,6 +89,10 @@ export function classifyHref(rawHref: string, absolute: string, pageUrl: string)
     url.origin === page.origin && url.pathname === page.pathname && url.search === page.search
   if (raw.startsWith('#') || (samePage && absolute.includes('#'))) return 'anchor'
   return bareHost(url.hostname) === bareHost(page.hostname) ? 'internal' : 'external'
+}
+
+export function hasRelFlag(rel: readonly string[], flag: RelFlag): boolean {
+  return rel.some((token) => token === flag)
 }
 
 export function isFileUrl(href: string): boolean {
@@ -158,7 +171,9 @@ export function hasFlag(entry: LinkEntry, flag: LinkFlag, duplicateHrefs: Set<st
       return link.download
     case 'broken': {
       const info = status?.(link.href)
-      return Boolean(info && !info.checking && !info.ok)
+      if (!info || info.checking) return false
+      if (info.health) return info.health === 'broken'
+      return !info.ok
     }
   }
 }

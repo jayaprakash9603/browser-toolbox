@@ -96,8 +96,11 @@ export function BookmarkFilters({
               {t('bookmarks.sort.manual')}
             </SelectItem>
             <SelectItem value="recent">{t('bookmarks.sort.recent')}</SelectItem>
+            <SelectItem value="oldest">{t('bookmarks.sort.oldest')}</SelectItem>
             <SelectItem value="title">{t('bookmarks.sort.title')}</SelectItem>
             <SelectItem value="domain">{t('bookmarks.sort.domain')}</SelectItem>
+            <SelectItem value="accessed">{t('bookmarks.sort.accessed')}</SelectItem>
+            <SelectItem value="mostAccessed">{t('bookmarks.sort.mostAccessed')}</SelectItem>
           </SelectContent>
         </Select>
       </FilterField>

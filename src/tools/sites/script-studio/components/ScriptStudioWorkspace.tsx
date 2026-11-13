@@ -12,7 +12,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { sendMessage } from '@/core/messaging'
@@ -24,14 +24,17 @@ import { cn } from '@/shared/utils/cn'
 
 import type { useScriptStudio } from '../hooks/useScriptStudio'
 import { useTabScriptRuns } from '../hooks/useTabScriptRuns'
-import { BackupView } from './BackupView'
-import { GalleryView } from './GalleryView'
-import { LibraryView } from './LibraryView'
-import { ApiReferencePanel, ScriptEditor } from './ScriptEditor'
-import { SettingsView } from './SettingsView'
+import { Skeleton } from '@/shared/components/ui/skeleton'
 import { SetupWizard } from './SetupWizard'
 import { StudioGuide } from './StudioGuide'
-import { ThisPagePanel } from './ThisPagePanel'
+
+const BackupView = lazy(() => import('./BackupView').then((m) => ({ default: m.BackupView })))
+const GalleryView = lazy(() => import('./GalleryView').then((m) => ({ default: m.GalleryView })))
+const LibraryView = lazy(() => import('./LibraryView').then((m) => ({ default: m.LibraryView })))
+const SettingsView = lazy(() => import('./SettingsView').then((m) => ({ default: m.SettingsView })))
+const ThisPagePanel = lazy(() => import('./ThisPagePanel').then((m) => ({ default: m.ThisPagePanel })))
+const ScriptEditor = lazy(() => import('./ScriptEditor').then((m) => ({ default: m.ScriptEditor })))
+const ApiReferencePanel = lazy(() => import('./ScriptEditor').then((m) => ({ default: m.ApiReferencePanel })))
 import { FULL_TAB_TABS, PANEL_TABS, type StudioTab } from './workspaceTabs'
 
 const TAB_ICONS: Record<StudioTab, LucideIcon> = {
@@ -263,7 +266,7 @@ export function ScriptStudioWorkspace({ studio: ss, surface, tab, onTabChange, e
             transition={{ duration: 0.2, ease: [0.2, 0.8, 0.2, 1] }}
           >
             <TabsContent value={tab} forceMount>
-              {renderTab(tab)}
+              <Suspense fallback={<Skeleton className="h-56 w-full rounded-xl" />}>{renderTab(tab)}</Suspense>
             </TabsContent>
           </motion.div>
         </AnimatePresence>

@@ -53,6 +53,12 @@ const ROWS: { key: ContextMenuVisibilityKey; labelKey: string; descKey: string; 
     searchId: 'contextMenuReadingList',
   },
   {
+    key: 'bookmarks',
+    labelKey: 'settings.contextMenu.bookmarks',
+    descKey: 'settings.contextMenu.bookmarksDescription',
+    searchId: 'contextMenuBookmarks',
+  },
+  {
     key: 'saveImageAs',
     labelKey: 'settings.contextMenu.saveImageAs',
     descKey: 'settings.contextMenu.saveImageAsDescription',

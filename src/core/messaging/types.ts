@@ -232,12 +232,28 @@ export type ExtensionMessage =
       options?: import('@/core/engines/linkChecker/check').LinkCheckRequestOptions
     }
   | { type: 'GET_PAGE_LINKS' }
-  | { type: 'CRAWL_SITE_FOR_LINKS'; crawlId: string; crawl: import('@/core/engines/htmlArchive/crawl').CrawlOptions }
+  | {
+      type: 'CRAWL_SITE_FOR_LINKS'
+      crawlId: string
+      crawl: import('@/core/engines/htmlArchive/crawl').CrawlOptions
+      graph?: import('@/core/engines/linkChecker/discover').DiscoverGraphOptions & { seedUrls?: string[] }
+    }
   | { type: 'STOP_LINK_CRAWL'; crawlId: string }
+  | { type: 'PAUSE_LINK_CRAWL'; crawlId: string; paused: boolean }
   | {
       type: 'LINK_CRAWL_PROGRESS'
       crawlId: string
       progress: import('@/core/engines/htmlArchive/crawl').CrawlProgress
+    }
+  | {
+      type: 'LINK_CRAWL_PAGE'
+      crawlId: string
+      page: import('@/core/engines/links/graph').GraphPageInput
+    }
+  | {
+      type: 'TRACE_HTTP_REDIRECTS'
+      href: string
+      options?: import('@/core/engines/linkChecker/check').LinkCheckRequestOptions
     }
   | { type: 'LOCATE_PAGE_LINK'; index: number; href: string }
   | { type: 'MARK_PAGE_LINKS'; marks: import('@/core/engines/linkChecker/report').PageLinkMark[] }
@@ -481,7 +497,10 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'GET_PAGE_LINKS',
   'CRAWL_SITE_FOR_LINKS',
   'STOP_LINK_CRAWL',
+  'PAUSE_LINK_CRAWL',
   'LINK_CRAWL_PROGRESS',
+  'LINK_CRAWL_PAGE',
+  'TRACE_HTTP_REDIRECTS',
   'LOCATE_PAGE_LINK',
   'MARK_PAGE_LINKS',
   'CLEAR_PAGE_LINK_MARKS',

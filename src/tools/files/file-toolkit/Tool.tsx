@@ -1,18 +1,21 @@
-import { useState, type ReactNode } from 'react'
+import './i18n'
+import { lazy, Suspense, useState, type ReactNode } from 'react'
 import * as TabsPrimitive from '@radix-ui/react-tabs'
 
 import { ToolPage } from '@/shared/components/ToolPage'
+import { Skeleton } from '@/shared/components/ui/skeleton'
 import { TabsContent } from '@/shared/components/ui/tabs'
 import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useFileTool } from '../_shared'
-import { ArchivePanel } from './ArchivePanel'
-import { ConvertPanel } from './ConvertPanel'
-import { ImagesPdfPanel } from './ImagesPdfPanel'
-import { InspectPanel } from './InspectPanel'
 import { MODES, toQueueItems, type Mode, type QueueItem } from './modes'
 import { ModeTiles, ToolkitHero } from './ToolkitChrome'
-import { ViewPanel } from './ViewPanel'
-import { WritePanel } from './WritePanel'
+
+const ArchivePanel = lazy(() => import('./ArchivePanel').then((m) => ({ default: m.ArchivePanel })))
+const ConvertPanel = lazy(() => import('./ConvertPanel').then((m) => ({ default: m.ConvertPanel })))
+const ImagesPdfPanel = lazy(() => import('./ImagesPdfPanel').then((m) => ({ default: m.ImagesPdfPanel })))
+const InspectPanel = lazy(() => import('./InspectPanel').then((m) => ({ default: m.InspectPanel })))
+const ViewPanel = lazy(() => import('./ViewPanel').then((m) => ({ default: m.ViewPanel })))
+const WritePanel = lazy(() => import('./WritePanel').then((m) => ({ default: m.WritePanel })))
 
 /** Tabs from the previous layout keep working in bookmarks and search results. */
 const LEGACY_TABS = ['csv', 'json', 'text'] as const
@@ -33,7 +36,7 @@ export default function FileToolkitTool() {
   // Panels mount on first visit and then stay mounted so queued files and settings survive tab switches.
   const panel = (value: Mode, content: ReactNode) => (
     <TabsContent value={value} forceMount className="mt-0 flex flex-col gap-3 data-[state=inactive]:hidden">
-      {visited.has(value) && content}
+      {visited.has(value) ? <Suspense fallback={<Skeleton className="h-40 w-full rounded-xl" />}>{content}</Suspense> : null}
     </TabsContent>
   )
 

@@ -11,17 +11,30 @@ import {
   type CrawlSummary,
   type FetchedPage,
 } from '@/core/engines/htmlArchive/crawl'
+import { collectPageLinksFromHtml } from '@/core/engines/links/collectFromHtml'
+import type { GraphPageInput } from '@/core/engines/links/graph'
 import { bareHost, classifyHref, isFileUrl, type PageLink, type PageLinksSnapshot } from '@/core/engines/links/pageLinks'
 
 import { MAX_SITE_TARGETS, stripHash } from './report'
+import { isRobotsPathDisallowed } from './robotsRules'
 
 export const MAX_DISCOVER_CONCURRENCY = 16
 export const DEFAULT_DISCOVER_CONCURRENCY = 8
+
+export interface DiscoverGraphOptions extends Partial<CrawlOptions> {
+  recordGraph?: boolean
+  keepQuery?: boolean
+  respectRobots?: boolean
+  sitemapOnly?: boolean
+  include?: string[]
+}
 
 export interface DiscoverSource {
   fetchPage: (url: string, signal: AbortSignal) => Promise<FetchedPage>
   /** hrefs already visible on the start page (current tab). */
   startHrefs?: () => string[]
+  startSnapshot?: () => PageLinksSnapshot | null
+  seedUrls?: string[]
   /** Optional GET for robots.txt / sitemap.xml. Failures are ignored. */
   fetchText?: (url: string, signal: AbortSignal) => Promise<string | null>
 }
@@ -30,12 +43,16 @@ export interface DiscoverHooks {
   signal?: AbortSignal
   stopSignal?: AbortSignal
   onProgress?: (progress: CrawlProgress) => void
+  pauseRef?: { current: boolean }
+  onPage?: (page: GraphPageInput) => void
 }
 
 export interface DiscoverResult {
   snapshot: PageLinksSnapshot
   pageCount: number
   summary: CrawlSummary
+  pages?: GraphPageInput[]
+  failedUrls?: string[]
 }
 
 export function clampDiscoverOptions(options: Partial<CrawlOptions>): CrawlOptions {
@@ -97,6 +114,7 @@ export function hrefToPageLink(href: string, pageUrl: string, index: number): Pa
     insecure: pageProtocol === 'https:' && protocol === 'http:',
     visible: true,
     anchorMissing: false,
+    hasImage: false,
   }
 }
 
@@ -154,11 +172,15 @@ function sameOrigin(url: string, origin: string): boolean {
  */
 export async function discoverSiteLinks(
   startUrl: string,
-  input: Partial<CrawlOptions>,
+  input: DiscoverGraphOptions,
   source: DiscoverSource,
   hooks: DiscoverHooks = {},
 ): Promise<DiscoverResult> {
   const options = clampDiscoverOptions(input)
+  const recordGraph = input.recordGraph === true
+  const sitemapOnly = input.sitemapOnly === true
+  const respectRobots = input.respectRobots ?? recordGraph
+  const include = (input.include ?? []).map((part) => part.trim().toLowerCase()).filter(Boolean)
   const start = pageUrlOf(startUrl)
   const origin = (() => {
     try {
@@ -172,8 +194,11 @@ export async function discoverSiteLinks(
 
   const pageSeen = new Set<string>()
   const checks = new Map<string, PageLink>()
+  const graphPages = new Map<string, GraphPageInput>()
+  const failedUrls: string[] = []
   const stack: { url: string; depth: number }[] = []
   const stats = { skipped: 0, failed: 0, depth: 0 }
+  let robotsText: string | null = null
   let reserved = 0
   let pagesFetched = 0
   let inFlight = 0
@@ -230,26 +255,60 @@ export async function discoverSiteLinks(
       if (!isInCrawlScope(url, start, options.scope) || !looksLikePageUrl(url)) return
       const lower = url.toLowerCase()
       if (options.exclude.some((part) => lower.includes(part))) return
+      if (include.length > 0 && !include.some((part) => lower.includes(part))) return
       if (!canStack()) return
+    }
+    if (respectRobots && robotsText && isRobotsPathDisallowed(url, robotsText)) {
+      pageSeen.add(key)
+      recordGraphPage({ url, crawlDepth: depth, fetched: false, robotsBlocked: true })
+      return
     }
     pageSeen.add(key)
     stack.push({ url: pageUrlOf(url), depth })
     wake()
   }
 
-  const consider = (href: string, depth: number) => {
+  const consider = (href: string, depth: number, fromSitemap = false) => {
     recordCheck(href)
-    enqueuePage(href, depth)
+    if (sitemapOnly && !fromSitemap) return
+    enqueuePage(href, depth, sitemapOnly && fromSitemap)
+  }
+
+  const recordGraphPage = (page: GraphPageInput) => {
+    if (!recordGraph) return
+    const key = crawlKey(page.url)
+    graphPages.set(key, page)
+    hooks.onPage?.(page)
   }
 
   const ingestHtml = (html: string, pageUrl: string, depth: number) => {
+    if (recordGraph) {
+      const snapshot = collectPageLinksFromHtml(html, pageUrl)
+      recordGraphPage({
+        url: snapshot.url,
+        title: snapshot.title,
+        crawlDepth: depth,
+        fetched: true,
+        snapshot,
+        canonical: snapshot.canonical,
+        robots: snapshot.robots,
+        lastCrawledAt: Date.now(),
+      })
+      const hrefs = snapshot.links.map((link) => link.href)
+      for (let i = hrefs.length - 1; i >= 0; i -= 1) consider(hrefs[i], depth + 1)
+      return
+    }
     const hrefs = extractPageLinks(html, pageUrl)
     for (let i = hrefs.length - 1; i >= 0; i -= 1) consider(hrefs[i], depth + 1)
   }
 
+  if (source.fetchText && origin) {
+    robotsText = await source.fetchText(`${origin}/robots.txt`, work).catch(() => null)
+  }
+
   const seedSitemaps = async () => {
     if (!source.fetchText || !origin) return
-    const robots = await source.fetchText(`${origin}/robots.txt`, work).catch(() => null)
+    const robots = robotsText
     const sitemapUrls: string[] = []
     const seen = new Set<string>()
     const addSitemap = (raw: string) => {
@@ -275,7 +334,7 @@ export async function discoverSiteLinks(
         nested.push(...locs)
         continue
       }
-      for (const loc of locs) consider(loc, 1)
+      for (const loc of locs) consider(loc, 1, true)
     }
     for (const sitemapUrl of nested) {
       if (halted()) return
@@ -286,7 +345,7 @@ export async function discoverSiteLinks(
       }
       const xml = await source.fetchText(sitemapUrl, work).catch(() => null)
       if (!xml || /<sitemapindex/i.test(xml)) continue
-      for (const loc of parseSitemapLocs(xml)) consider(loc, 1)
+      for (const loc of parseSitemapLocs(xml)) consider(loc, 1, true)
     }
   }
 
@@ -307,7 +366,11 @@ export async function discoverSiteLinks(
     }
     pageSeen.add(crawlKey(url))
     if (html == null) {
-      if (!halted()) stats.failed += 1
+      if (!halted()) {
+        stats.failed += 1
+        failedUrls.push(item.url)
+        recordGraphPage({ url: item.url, crawlDepth: item.depth, fetched: false })
+      }
       return false
     }
     recordCheck(url)
@@ -322,16 +385,48 @@ export async function discoverSiteLinks(
     pageSeen.add(crawlKey(start))
     reserved = 1
     pagesFetched = 1
+    const live = source.startSnapshot?.()
+    if (live) {
+      recordGraphPage({
+        url: live.url,
+        title: live.title,
+        crawlDepth: 0,
+        fetched: true,
+        snapshot: live,
+        canonical: live.canonical,
+        robots: live.robots,
+        lastCrawledAt: Date.now(),
+      })
+    }
     for (let i = startHrefs.length - 1; i >= 0; i -= 1) consider(startHrefs[i], 1)
   } else {
     enqueuePage(start, 0, true)
   }
+  for (const seed of source.seedUrls ?? []) enqueuePage(seed, 1, true)
 
   if (source.fetchText) await seedSitemaps()
   report()
 
+  const waitIfPaused = async () => {
+    while (hooks.pauseRef?.current && !halted()) {
+      await new Promise<void>((resolve) => {
+        const timer = setTimeout(resolve, 120)
+        work.addEventListener(
+          'abort',
+          () => {
+            clearTimeout(timer)
+            resolve()
+          },
+          { once: true },
+        )
+      })
+    }
+  }
+
   const lane = async () => {
     for (;;) {
+      if (halted()) return
+      await waitIfPaused()
       if (halted()) return
       if (stack.length === 0 || reserved >= options.maxPages || checks.size >= maxTargets) {
         if (inFlight === 0) {
@@ -394,5 +489,6 @@ export async function discoverSiteLinks(
       depth: stats.depth,
       reason,
     },
+    ...(recordGraph ? { pages: [...graphPages.values()], failedUrls } : {}),
   }
 }

@@ -1,11 +1,13 @@
-import type { PointerEvent } from 'react'
+import type { PointerEvent, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowDownIcon,
   ArrowUpIcon,
+  BookOpenIcon,
   CopyIcon,
   ExternalLinkIcon,
   GripVerticalIcon,
+  HeartIcon,
   LinkIcon,
   MoreVerticalIcon,
   PencilIcon,
@@ -36,6 +38,8 @@ export interface BookmarkRowActions {
   onDelete: () => void
   onMoveUp?: () => void
   onMoveDown?: () => void
+  onFavorite?: () => void
+  onReading?: (status: 'unread' | 'reading' | 'completed' | 'archived') => void
 }
 
 interface BookmarkResultRowProps extends BookmarkRowActions {
@@ -45,6 +49,7 @@ interface BookmarkResultRowProps extends BookmarkRowActions {
   showFolder?: boolean
   reorderable?: boolean
   onDragEnd?: () => void
+  badges?: ReactNode
 }
 
 const ROW_CLASS =
@@ -118,6 +123,7 @@ function RowBody({
   row,
   duplicate,
   showFolder,
+  badges,
   onOpen,
   onCopyUrl,
   onCopyMarkdown,
@@ -125,6 +131,8 @@ function RowBody({
   onDelete,
   onMoveUp,
   onMoveDown,
+  onFavorite,
+  onReading,
 }: Omit<BookmarkResultRowProps, 'highlighted' | 'reorderable' | 'onDragEnd'>) {
   const { t } = useTranslation()
   return (
@@ -160,6 +168,7 @@ function RowBody({
               </>
             )}
           </span>
+          {badges}
         </span>
       </button>
 
@@ -189,6 +198,18 @@ function RowBody({
             <PencilIcon className="size-4" />
             {t('bookmarks.edit')}
           </DropdownMenuItem>
+          {onFavorite && (
+            <DropdownMenuItem onSelect={onFavorite}>
+              <HeartIcon className="size-4" />
+              {t('bookmarks.favorite')}
+            </DropdownMenuItem>
+          )}
+          {onReading && (
+            <DropdownMenuItem onSelect={() => onReading('unread')}>
+              <BookOpenIcon className="size-4" />
+              {t('bookmarks.markUnread')}
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem onSelect={onCopyUrl}>
             <LinkIcon className="size-4" />
             {t('bookmarks.copyUrl')}

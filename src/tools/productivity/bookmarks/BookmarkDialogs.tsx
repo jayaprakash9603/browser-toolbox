@@ -13,6 +13,9 @@ import {
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 
+import type { BookmarkWorkspace, ReadingPriority, ReadingStatus } from '@/core/bookmarks'
+
+import { BookmarkOverlayFields } from './BookmarkOverlayFields'
 import { FolderSelect } from './FolderSelect'
 import type { BookmarkFolder, BookmarkRow } from './service'
 
@@ -20,6 +23,13 @@ export interface BookmarkFormValues {
   title: string
   url: string
   parentId: string
+  notes: string
+  description: string
+  tagIds: string[]
+  collectionIds: string[]
+  readingStatus: ReadingStatus | ''
+  priority: ReadingPriority
+  reminderAt: string
 }
 
 export interface BookmarkDraft {
@@ -33,20 +43,23 @@ export interface BookmarkDraft {
 
 export interface FolderDraft {
   key: string
-  mode: 'create' | 'rename'
+  mode: 'create' | 'rename' | 'move'
   folder?: BookmarkFolder
   name: string
   parentId: string
+  excludeIds?: ReadonlySet<string>
 }
 
 interface BookmarkFormDialogProps {
   draft: BookmarkDraft | null
   folders: readonly BookmarkFolder[]
+  workspace: BookmarkWorkspace
   onClose: () => void
   onSubmit: (values: BookmarkFormValues, draft: BookmarkDraft) => void
+  onCreateTag: (name: string) => string
 }
 
-export function BookmarkFormDialog({ draft, folders, onClose, onSubmit }: BookmarkFormDialogProps) {
+export function BookmarkFormDialog({ draft, folders, workspace, onClose, onSubmit, onCreateTag }: BookmarkFormDialogProps) {
   const { t } = useTranslation()
   const title =
     draft?.mode === 'edit' ? t('bookmarks.editDialogTitle') : t('bookmarks.createDialogTitle')
@@ -62,8 +75,10 @@ export function BookmarkFormDialog({ draft, folders, onClose, onSubmit }: Bookma
             key={draft.key}
             draft={draft}
             folders={folders}
+            workspace={workspace}
             onClose={onClose}
             onSubmit={onSubmit}
+            onCreateTag={onCreateTag}
           />
         )}
       </DialogContent>
@@ -74,24 +89,48 @@ export function BookmarkFormDialog({ draft, folders, onClose, onSubmit }: Bookma
 function BookmarkForm({
   draft,
   folders,
+  workspace,
   onClose,
   onSubmit,
+  onCreateTag,
 }: Omit<BookmarkFormDialogProps, 'draft'> & { draft: BookmarkDraft }) {
   const { t } = useTranslation()
+  const meta = draft.row ? workspace.items[draft.row.id] : undefined
   const [title, setTitle] = useState(draft.title)
   const [url, setUrl] = useState(draft.url)
   const [parentId, setParentId] = useState(draft.parentId)
+  const [notes, setNotes] = useState(meta?.notes ?? '')
+  const [description, setDescription] = useState(meta?.description ?? '')
+  const [tagIds, setTagIds] = useState<string[]>(meta?.tagIds ?? [])
+  const [collectionIds, setCollectionIds] = useState<string[]>(meta?.collectionIds ?? [])
+  const [readingStatus, setReadingStatus] = useState<ReadingStatus | ''>(meta?.readingStatus ?? '')
+  const [priority, setPriority] = useState<ReadingPriority>(meta?.priority ?? 'normal')
+  const [reminderAt, setReminderAt] = useState(
+    meta?.reminderAt ? new Date(meta.reminderAt).toISOString().slice(0, 16) : '',
+  )
   const [touched, setTouched] = useState(false)
   const urlValid = /^https?:\/\//i.test(url.trim())
   const valid = urlValid && title.trim().length > 0
+  const values = (): BookmarkFormValues => ({
+    title: title.trim(),
+    url: url.trim(),
+    parentId,
+    notes,
+    description,
+    tagIds,
+    collectionIds,
+    readingStatus,
+    priority,
+    reminderAt,
+  })
 
   return (
     <form
-      className="grid gap-3"
+      className="grid max-h-[70vh] gap-3 overflow-y-auto pr-1"
       onSubmit={(event) => {
         event.preventDefault()
         setTouched(true)
-        if (valid) onSubmit({ title: title.trim(), url: url.trim(), parentId }, draft)
+        if (valid) onSubmit(values(), draft)
       }}
     >
       <div className="grid gap-1.5">
@@ -131,6 +170,31 @@ function BookmarkForm({
           onValueChange={setParentId}
         />
       </div>
+      <BookmarkOverlayFields
+        workspace={workspace}
+        notes={notes}
+        description={description}
+        tagIds={tagIds}
+        collectionIds={collectionIds}
+        readingStatus={readingStatus}
+        priority={priority}
+        reminderAt={reminderAt}
+        onNotes={setNotes}
+        onDescription={setDescription}
+        onToggleTag={(id) =>
+          setTagIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]))
+        }
+        onCreateTag={(name) => {
+          const id = onCreateTag(name)
+          setTagIds((current) => [...current, id])
+        }}
+        onToggleCollection={(id) =>
+          setCollectionIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]))
+        }
+        onReadingStatus={setReadingStatus}
+        onPriority={setPriority}
+        onReminder={setReminderAt}
+      />
       <DialogFooter>
         <Button type="button" variant="outline" size="sm" onClick={onClose}>
           {t('common.cancel')}
@@ -153,7 +217,11 @@ interface FolderFormDialogProps {
 export function FolderFormDialog({ draft, folders, onClose, onSubmit }: FolderFormDialogProps) {
   const { t } = useTranslation()
   const title =
-    draft?.mode === 'rename' ? t('bookmarks.folderDialogRename') : t('bookmarks.folderDialogCreate')
+    draft?.mode === 'rename'
+      ? t('bookmarks.folderDialogRename')
+      : draft?.mode === 'move'
+        ? t('bookmarks.folderDialogMove')
+        : t('bookmarks.folderDialogCreate')
   return (
     <Dialog open={Boolean(draft)} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-sm">
@@ -197,7 +265,7 @@ function FolderForm({
         <Label htmlFor="folder-name">{t('bookmarks.fieldFolderName')}</Label>
         <Input id="folder-name" autoFocus value={name} onChange={(e) => setName(e.target.value)} />
       </div>
-      {draft.mode === 'create' && (
+      {draft.mode !== 'rename' && (
         <div className="grid gap-1.5">
           <Label htmlFor="folder-parent">{t('bookmarks.fieldParentFolder')}</Label>
           <FolderSelect
@@ -205,6 +273,7 @@ function FolderForm({
             folders={folders}
             value={parentId}
             onValueChange={setParentId}
+            excludeIds={draft.excludeIds}
           />
         </div>
       )}
@@ -213,7 +282,7 @@ function FolderForm({
           {t('common.cancel')}
         </Button>
         <Button type="submit" size="sm" disabled={!name.trim()}>
-          {draft.mode === 'rename' ? t('bookmarks.saveChanges') : t('bookmarks.createFolder')}
+          {draft.mode === 'create' ? t('bookmarks.createFolder') : t('bookmarks.saveChanges')}
         </Button>
       </DialogFooter>
     </form>

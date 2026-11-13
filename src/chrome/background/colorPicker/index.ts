@@ -84,16 +84,20 @@ async function injectColorPicker(
  * Freezes the visible tab, then lets the user pick from a magnifier loupe. Works with the side
  * panel closed: everything runs in the page and the background, never in the panel.
  */
+async function resolvePickTab(tab?: chrome.tabs.Tab): Promise<chrome.tabs.Tab | undefined> {
+  if (tab?.id != null && tab.url) return tab
+  return (await getActiveWebTab()) ?? tab
+}
+
 export async function pickColorOnPage(tab?: chrome.tabs.Tab): Promise<void> {
   if (running) return
   running = true
   try {
-    const target = tab?.id != null && tab.url ? tab : ((await getActiveWebTab()) ?? tab)
+    const [target, state] = await Promise.all([resolvePickTab(tab), loadColorPickerState()])
     if (target?.id == null || isRestrictedCaptureUrl(target.url)) {
       await openPanelFallback(target)
       return
     }
-    const state = await loadColorPickerState()
     try {
       await injectColorPicker(target.id, {
         mode: 'page',
@@ -114,12 +118,11 @@ export async function pickColorFromScreen(tab?: chrome.tabs.Tab): Promise<void> 
   if (running) return
   running = true
   try {
-    const target = tab?.id != null && tab.url ? tab : ((await getActiveWebTab()) ?? tab)
+    const [target, state] = await Promise.all([resolvePickTab(tab), loadColorPickerState()])
     if (target?.id == null || isRestrictedCaptureUrl(target.url)) {
       await openPanelFallback(target)
       return
     }
-    const state = await loadColorPickerState()
     try {
       await injectColorPicker(target.id, {
         mode: 'screen',

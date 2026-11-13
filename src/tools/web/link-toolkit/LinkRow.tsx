@@ -61,7 +61,7 @@ export const LinkRow = memo(function LinkRow({ entry, status, expanded, onToggle
       className={cn(
         'rounded-lg border bg-card transition-colors hover:border-primary/30',
         expanded && 'border-primary/30 shadow-sm',
-        status && !status.checking && !status.ok && 'border-destructive/30',
+        status && !status.checking && status.health === 'broken' && 'border-destructive/30',
       )}
     >
       <div className="flex items-start gap-2.5 p-2.5">

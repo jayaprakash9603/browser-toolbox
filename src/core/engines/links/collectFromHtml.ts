@@ -7,6 +7,7 @@ import {
   type PageLink,
   type PageLinksSnapshot,
 } from '@/core/engines/links/pageLinks'
+import { anchorHasImage, extractPageMeta } from '@/core/engines/links/pageMeta'
 
 const MAX_LINKS = 5000
 const MAX_TEXT = 160
@@ -111,15 +112,19 @@ export function collectPageLinksFromHtml(html: string, pageUrl: string, title?: 
       insecure: pageProtocol === 'https:' && protocol === 'http:',
       visible: true,
       anchorMissing: false,
+      hasImage: anchorHasImage(anchor),
     }
   })
 
+  const meta = extractPageMeta(doc, pageUrl)
   return {
     url: pageUrl,
     title: title ?? extractTitle(html),
     host: pageHost,
     links,
     truncated: anchors.length > MAX_LINKS,
+    canonical: meta.canonical,
+    robots: meta.robots,
   }
 }
 

@@ -86,6 +86,7 @@ export default defineVitestConfig({
         manualChunks(id) {
           const norm = id.replace(/\\/g, '/')
           if (norm.includes('/src/core/script-studio/')) return 'script-studio-core'
+          if (norm.includes('node_modules/@codemirror/')) return 'codemirror'
         },
       },
     },

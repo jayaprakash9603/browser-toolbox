@@ -37,6 +37,7 @@ function link(partial: Partial<PageLink> & Pick<PageLink, 'index' | 'href' | 'ki
     insecure: false,
     visible: true,
     anchorMissing: false,
+    hasImage: false,
     ...partial,
   }
 }

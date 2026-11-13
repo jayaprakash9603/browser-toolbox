@@ -6,6 +6,11 @@ export interface LinkCheckRequestOptions {
   method?: LinkCheckMethod
 }
 
+export type RedirectHop = {
+  url: string
+  status: number | null
+}
+
 export type LinkCheckResult = {
   href: string
   text: string
@@ -17,7 +22,11 @@ export type LinkCheckResult = {
   durationMs?: number
   method?: 'HEAD' | 'GET'
   timedOut?: boolean
+  hops?: RedirectHop[]
+  loop?: boolean
 }
+
+export const MAX_REDIRECT_HOPS = 10
 
 export const DEFAULT_CHECK_TIMEOUT_MS = 10_000
 export const MAX_CHECK_TIMEOUT_MS = 60_000

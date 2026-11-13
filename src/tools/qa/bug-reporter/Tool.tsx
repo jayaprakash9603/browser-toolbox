@@ -1,3 +1,4 @@
+import './i18n'
 import { useCallback, useId, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {

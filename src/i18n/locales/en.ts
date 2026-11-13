@@ -1,55 +1,5 @@
-import { fileToolkitStrings } from './fileToolkitEn'
-import { imageDownloaderStrings } from './imageDownloaderEn'
-import { downloadManagerStrings } from './downloadManagerEn'
-import { historyManagerStrings } from './historyManagerEn'
-import { imageLinksStrings } from './imageLinksEn'
-import { pdfToolkitStrings } from './pdfToolkitEn'
-import { cssGeneratorStrings } from './cssGeneratorEn'
-import { interceptorStrings } from './interceptorEn'
-import { netmonStrings } from './netmonEn'
-import { tasksStrings } from './tasksEn'
-import { autofillStrings } from './autofillEn'
-import { paletteStrings } from './paletteEn'
-import { speedtestStrings } from './speedtestEn'
-import { tabManagerStrings } from './tabManagerEn'
-import { datetimeStrings } from './datetimeEn'
-import { qrToolkitStrings } from './qrToolkitEn'
-import { browserToolkitStrings } from './browserToolkitEn'
-import { sitesWhatsappStrings } from './sitesWhatsappEn'
-import { consolidationStrings } from './consolidationEn'
-import { dataScraperStrings } from './dataScraperEn'
-import { sitesInstagramStrings } from './sitesInstagramEn'
-import { sitesYoutubeStrings } from './sitesYoutubeEn'
-import { scriptStudioStrings } from './scriptStudioEn'
-import { reactDevtoolsStrings } from './reactDevtoolsEn'
 import { toolRegistryStrings } from './toolRegistryEn'
 import { workspaceStrings } from './workspaceEn'
-import { testDataStrings } from './testDataEn'
-import { paletteGeneratorStrings } from './paletteGeneratorEn'
-import { pageInspectorStrings } from './pageInspectorEn'
-import { responsiveViewerStrings } from './responsiveViewerEn'
-import { saveImageAsStrings } from './saveImageAsEn'
-import { calculatorStrings } from './calculatorEn'
-import { htmlBundleStrings } from './htmlBundleEn'
-import { a11yStrings } from './a11yEn'
-import { allToolsViewerStrings } from './allToolsViewerEn'
-import { bookmarksStrings } from './bookmarksEn'
-import { captureStrings } from './captureEn'
-import { colorPickerStrings } from './colorPickerEn'
-import { demoStrings } from './demoEn'
-import { diffStrings } from './diffEn'
-import { htmlBundleCrawlStrings } from './htmlBundleCrawlEn'
-import { notesStrings } from './notesEn'
-import { readingListStrings } from './readingListEn'
-import { selectorStudioStrings } from './selectorStudioEn'
-import { snippetsStrings } from './snippetsEn'
-import { storageInspectorStrings } from './storageInspectorEn'
-import { techStackStrings } from './techStackEn'
-import { workspacesStrings } from './workspacesEn'
-import { hashToolkitStrings } from './hashToolkitEn'
-import { linkCheckerStrings } from './linkCheckerEn'
-import { bugReporterStrings } from './bugReporterEn'
-import { elementInspectorStrings } from './elementInspectorEn'
 
 const en = {
   'app.name': 'One Panel',
@@ -349,6 +299,9 @@ const en = {
   'settings.contextMenu.tasksDescription': 'Save the page, link, or selection to tasks.',
   'settings.contextMenu.readingList': 'Reading list',
   'settings.contextMenu.readingListDescription': 'Save selected text to the reading list.',
+  'settings.contextMenu.bookmarks': 'Smart Bookmark Organizer',
+  'settings.contextMenu.bookmarksDescription':
+    'Save the page, a link, or selected text into the bookmark workspace.',
   'settings.contextMenu.saveImageAs': 'Save image as',
   'settings.contextMenu.saveImageAsDescription':
     'Convert and download images from the image right-click menu.',
@@ -362,6 +315,9 @@ const en = {
   'settings.contextMenu.downloadManager': 'Download Manager',
   'settings.contextMenu.downloadManagerDescription':
     'Download links, scan pages, and open the Download Manager from the context menu.',
+  'settings.contextMenu.historyManager': 'History Manager',
+  'settings.contextMenu.historyManagerDescription':
+    'Search this page or selection in History Manager from the right-click menu.',
   'settings.data': 'Data',
   'settings.clearClipboardHistory': 'Clear clipboard history',
   'settings.clearRecentTools': 'Clear recent tools',
@@ -1063,7 +1019,7 @@ const en = {
     'Parse, encode, decode and clean URLs with a query-param editor.',
   'tools.web.link-toolkit.name': 'Link Toolkit',
   'tools.web.link-toolkit.description':
-    'Extract internal and external links from the current page.',
+    'Map page and site links as a graph, with health, anchors, and crawl.',
   'tools.web.image-links.name': 'Image Links',
   'tools.web.image-links.description':
     'Preview every image on the page, audit alt text, export the list, and download images or a ZIP.',
@@ -1511,9 +1467,9 @@ const en = {
   'tools.productivity.workspaces.name': 'Tab Sessions',
   'tools.productivity.workspaces.description':
     'Save open tabs as named sessions and restore them in a fresh window for projects or research.',
-  'tools.productivity.bookmarks.name': 'Bookmark Search',
+  'tools.productivity.bookmarks.name': 'Smart Bookmark Organizer',
   'tools.productivity.bookmarks.description':
-    'Search Chrome bookmarks, open links quickly and export lists as Markdown or JSON.',
+    'Visual bookmark workspace with collections, tags, notes, reading status, health checks and smart organization.',
   'tools.productivity.reading-list.name': 'Reading List',
   'tools.productivity.reading-list.description':
     'Save the current tab with a note, mark read/unread and export Markdown for research.',
@@ -1679,56 +1635,6 @@ const en = {
   'files.showMore': 'Show {{count}} more rows',
   'files.rowNumber': 'Row',
   'files.emptyCsv': 'This file has a header row but no data rows.',
-  ...fileToolkitStrings,
-  ...pdfToolkitStrings,
-  ...cssGeneratorStrings,
-  ...imageDownloaderStrings,
-  ...downloadManagerStrings,
-  ...historyManagerStrings,
-  ...imageLinksStrings,
-  ...sitesYoutubeStrings,
-  ...scriptStudioStrings,
-  ...sitesWhatsappStrings,
-  ...sitesInstagramStrings,
-  ...reactDevtoolsStrings,
-  ...testDataStrings,
-  ...netmonStrings,
-  ...speedtestStrings,
-  ...browserToolkitStrings,
-  ...interceptorStrings,
-  ...consolidationStrings,
-  ...dataScraperStrings,
-  ...tasksStrings,
-  ...autofillStrings,
-  ...paletteStrings,
-  ...tabManagerStrings,
-  ...datetimeStrings,
-  ...qrToolkitStrings,
-  ...paletteGeneratorStrings,
-  ...pageInspectorStrings,
-  ...responsiveViewerStrings,
-  ...saveImageAsStrings,
-  ...calculatorStrings,
-  ...htmlBundleStrings,
-  ...hashToolkitStrings,
-  ...linkCheckerStrings,
-  ...bugReporterStrings,
-  ...elementInspectorStrings,
-  ...a11yStrings,
-  ...allToolsViewerStrings,
-  ...bookmarksStrings,
-  ...captureStrings,
-  ...colorPickerStrings,
-  ...demoStrings,
-  ...diffStrings,
-  ...htmlBundleCrawlStrings,
-  ...notesStrings,
-  ...readingListStrings,
-  ...selectorStudioStrings,
-  ...snippetsStrings,
-  ...storageInspectorStrings,
-  ...techStackStrings,
-  ...workspacesStrings,
   ...toolRegistryStrings,
   ...workspaceStrings,
 } as const

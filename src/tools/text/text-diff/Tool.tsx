@@ -1,3 +1,4 @@
+import './i18n'
 import {
   useCallback,
   useDeferredValue,
@@ -39,8 +40,6 @@ import { useTranslation } from 'react-i18next'
 
 import { alignDiff, applySection, buildView, type DiffSection, type ViewFilter } from '@/core/engines/diff'
 import { consumePayload } from '@/core/payloads'
-import i18n from '@/i18n'
-import { diffStrings } from '@/i18n/locales/diffEn'
 import { IconAction } from '@/shared/components/EditorPane'
 import { TextPaneGrid } from '@/shared/components/TextPaneGrid'
 import { ToolPage } from '@/shared/components/ToolPage'
@@ -63,9 +62,6 @@ import { downloadText, htmlReport, unifiedPatch } from './report'
 import { RulesPopover } from './RulesPopover'
 import { SourcePane } from './SourcePane'
 import { StatusBar } from './StatusBar'
-
-// Registered with the tool chunk rather than en.ts so the side panel's startup bundle stays within budget.
-i18n.addResources('en', 'translation', diffStrings)
 
 type Mode = 'edit' | 'compare'
 

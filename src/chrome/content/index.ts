@@ -30,6 +30,7 @@ const activeBuilds = new Map<string, AbortController>()
 /** Ends a crawl early and zips what it has; `activeBuilds` cancels without a ZIP. */
 const crawlStops = new Map<string, AbortController>()
 const linkCrawlStops = new Map<string, AbortController>()
+const linkCrawlPauses = new Map<string, { current: boolean }>()
 
 function throttledProgress(buildId: string) {
   let lastSent = 0
@@ -193,20 +194,33 @@ if (!contentAlreadyInstalled) chrome.runtime.onMessage.addListener((raw, sender,
       sendResponse({ ok: true, data: collectPageLinks() })
       return false
     case 'CRAWL_SITE_FOR_LINKS': {
-      const { crawlId, crawl } = raw as { crawlId: string; crawl: import('@/core/engines/htmlArchive/crawl').CrawlOptions }
+      const { crawlId, crawl, graph } = raw as {
+        crawlId: string
+        crawl: import('@/core/engines/htmlArchive/crawl').CrawlOptions
+        graph?: import('@/core/engines/linkChecker/discover').DiscoverGraphOptions & { seedUrls?: string[] }
+      }
       const stop = new AbortController()
+      const pauseRef = { current: false }
       linkCrawlStops.set(crawlId, stop)
-      void crawlSiteForLinks(crawl, {
-        stopSignal: stop.signal,
-        onProgress: (progress) =>
-          void chrome.runtime.sendMessage({ type: 'LINK_CRAWL_PROGRESS', crawlId, progress }).catch(() => {}),
-      })
+      linkCrawlPauses.set(crawlId, pauseRef)
+      void crawlSiteForLinks(
+        { ...crawl, ...graph },
+        {
+          stopSignal: stop.signal,
+          pauseRef,
+          onProgress: (progress) =>
+            void chrome.runtime.sendMessage({ type: 'LINK_CRAWL_PROGRESS', crawlId, progress }).catch(() => {}),
+          onPage: (page) => void chrome.runtime.sendMessage({ type: 'LINK_CRAWL_PAGE', crawlId, page }).catch(() => {}),
+        },
+      )
         .then((data) => {
           linkCrawlStops.delete(crawlId)
+          linkCrawlPauses.delete(crawlId)
           sendResponse({ ok: true, data })
         })
         .catch((error: unknown) => {
           linkCrawlStops.delete(crawlId)
+          linkCrawlPauses.delete(crawlId)
           sendResponse({
             ok: false,
             error: error instanceof Error ? error.message : 'Could not crawl this site for links.',
@@ -218,6 +232,12 @@ if (!contentAlreadyInstalled) chrome.runtime.onMessage.addListener((raw, sender,
       linkCrawlStops.get(raw.crawlId)?.abort()
       sendResponse({ ok: true, data: { stopping: linkCrawlStops.has(raw.crawlId) } })
       return false
+    case 'PAUSE_LINK_CRAWL': {
+      const pause = linkCrawlPauses.get(raw.crawlId)
+      if (pause) pause.current = raw.paused
+      sendResponse({ ok: true, data: { paused: pause?.current ?? false } })
+      return false
+    }
     case 'LOCATE_PAGE_LINK': {
       const { index, href } = raw as { index: number; href: string }
       sendResponse({ ok: true, data: locatePageLink(index, href) })

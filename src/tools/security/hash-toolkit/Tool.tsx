@@ -1,3 +1,4 @@
+import './i18n'
 import { useMemo, type ReactNode } from 'react'
 import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { useTranslation } from 'react-i18next'

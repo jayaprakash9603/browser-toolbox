@@ -1,3 +1,4 @@
+import './i18n'
 import { ActivityIcon, BarChart3Icon, ListIcon, SettingsIcon } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { type ReactNode } from 'react'

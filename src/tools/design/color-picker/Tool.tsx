@@ -5,7 +5,9 @@ import {
   ArrowUpRightIcon,
   CheckIcon,
   CopyIcon,
+  MousePointerClickIcon,
   PaletteIcon,
+  PipetteIcon,
   StarIcon,
   Trash2Icon,
   XIcon,
@@ -27,7 +29,9 @@ import {
   rgbToOklch,
   type Rgb,
 } from '@/core/engines/color'
+import { sendMessage } from '@/core/messaging'
 import { Link } from '@/app/router'
+import { useShortcutDisplay } from '@/features/shortcuts/useShortcutDisplay'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { cn } from '@/shared/utils/cn'
 import { useDesignTool } from '../_shared'
@@ -75,7 +79,9 @@ export default function ColorPickerTool() {
   const { t } = useTranslation()
   const tool = useDesignTool('design.color-picker')
   const reduce = useReducedMotion()
+  const shortcut = useShortcutDisplay('pick-color')
   const [picked, setPicked] = useState<string | null>(null)
+  const [busy, setBusy] = useState<'page' | 'screen' | null>(null)
   const { copiedKey, copy } = useCopied()
 
   const { state, setFormat, remember, removeColor, clearHistory } = useColorPickerStore(setPicked)
@@ -90,6 +96,24 @@ export default function ColorPickerTool() {
     },
     [remember],
   )
+
+  const pickFromPage = useCallback(async () => {
+    setBusy('page')
+    try {
+      await sendMessage({ type: 'COLOR_PICK_START' })
+    } finally {
+      window.setTimeout(() => setBusy(null), 200)
+    }
+  }, [])
+
+  const pickFromScreen = useCallback(async () => {
+    setBusy('screen')
+    try {
+      await sendMessage({ type: 'COLOR_PICK_SCREEN' })
+    } finally {
+      window.setTimeout(() => setBusy(null), 200)
+    }
+  }, [])
 
   const shades = useMemo(() => {
     if (!value) return []
@@ -118,8 +142,37 @@ export default function ColorPickerTool() {
   return (
     <ToolPage tool={tool}>
       <div className="flex flex-col gap-4">
-        <section className="flex flex-col gap-2" aria-label={t('colorPicker.chooseCustom')}>
-          <label className="relative flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg border bg-background text-[13px] font-medium transition-colors focus-within:outline-2 focus-within:outline-ring hover:bg-accent">
+        <section className="flex flex-col gap-2" aria-label={t('colorPicker.pickPage')}>
+          <motion.button
+            type="button"
+            onClick={() => void pickFromPage()}
+            disabled={busy != null}
+            whileTap={reduce ? undefined : { scale: 0.98 }}
+            className="group flex items-center gap-3 rounded-xl bg-primary px-3.5 py-3 text-left text-primary-foreground shadow-sm transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-70"
+          >
+            <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-foreground/15">
+              <PipetteIcon className="size-4.5 transition-transform duration-200 group-hover:-rotate-12" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold">{t('colorPicker.pickPage')}</span>
+              <span className="block text-xs opacity-80">{t('colorPicker.pickPageHint')}</span>
+            </span>
+            <kbd className="shrink-0 rounded-md bg-primary-foreground/15 px-1.5 py-0.5 font-mono text-[10px]">
+              {shortcut}
+            </kbd>
+          </motion.button>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => void pickFromScreen()}
+              disabled={busy != null}
+              title={t('colorPicker.pickScreenHint')}
+              className="flex h-9 items-center justify-center gap-1.5 rounded-lg border bg-background text-[13px] font-medium transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-70"
+            >
+              <MousePointerClickIcon className="size-4" /> {t('colorPicker.pickScreen')}
+            </button>
+            <label className="relative flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg border bg-background text-[13px] font-medium transition-colors focus-within:outline-2 focus-within:outline-ring hover:bg-accent">
               <span
                 className="size-4 rounded-full border border-black/10 dark:border-white/15"
                 style={{ background: hex ?? 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)' }}
@@ -134,6 +187,7 @@ export default function ColorPickerTool() {
                 aria-label={t('colorPicker.chooseCustom')}
               />
             </label>
+          </div>
         </section>
 
         <AnimatePresence mode="popLayout" initial={false}>

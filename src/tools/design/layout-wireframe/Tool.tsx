@@ -1,3 +1,4 @@
+import './i18n'
 import { useCallback, useEffect, useRef, useState, type ComponentType, type ReactNode, type SVGProps } from 'react'
 import {
   BoxIcon,

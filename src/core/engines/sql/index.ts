@@ -1,4 +1,4 @@
-import { format, type SqlLanguage } from 'sql-formatter'
+import type { SqlLanguage } from 'sql-formatter'
 
 export type SqlDialect = SqlLanguage
 
@@ -17,9 +17,10 @@ export const SQL_DIALECTS: { id: SqlDialect; name: string }[] = [
 
 export type SqlResult = { ok: true; value: string } | { ok: false; error: string }
 
-export function formatSql(source: string, dialect: SqlDialect = 'sql'): SqlResult {
+export async function formatSql(source: string, dialect: SqlDialect = 'sql'): Promise<SqlResult> {
   if (!source.trim()) return { ok: false, error: 'Input is empty.' }
   try {
+    const { format } = await import('sql-formatter')
     return { ok: true, value: format(source, { language: dialect, keywordCase: 'upper' }) }
   } catch (cause) {
     return {
@@ -29,9 +30,10 @@ export function formatSql(source: string, dialect: SqlDialect = 'sql'): SqlResul
   }
 }
 
-export function minifySql(source: string): SqlResult {
+export async function minifySql(source: string): Promise<SqlResult> {
   if (!source.trim()) return { ok: false, error: 'Input is empty.' }
   try {
+    const { format } = await import('sql-formatter')
     return {
       ok: true,
       value: format(source, {
@@ -50,7 +52,7 @@ export function minifySql(source: string): SqlResult {
   }
 }
 
-export function validateSql(source: string): { valid: boolean; error?: string } {
-  const result = formatSql(source)
+export async function validateSql(source: string): Promise<{ valid: boolean; error?: string }> {
+  const result = await formatSql(source)
   return result.ok ? { valid: true } : { valid: false, error: result.error }
 }

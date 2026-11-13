@@ -1,3 +1,4 @@
+import './i18n'
 import { toolRegistry } from '@/core/registry'
 
 export function useCalcTool(toolId: string) {

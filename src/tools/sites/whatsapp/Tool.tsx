@@ -1,3 +1,4 @@
+import './i18n'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BriefcaseBusinessIcon, DownloadIcon, MessageCircleIcon, SlidersHorizontalIcon, WrenchIcon } from 'lucide-react'

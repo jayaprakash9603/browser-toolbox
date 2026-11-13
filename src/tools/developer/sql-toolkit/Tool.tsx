@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { usePayloadText } from '@/shared/hooks/usePayloadText'
@@ -31,9 +31,19 @@ export default function SqlToolkitTool() {
   usePayloadText(tool.id, setInput)
   const [dialect, setDialect] = useState<SqlDialect>('sql')
 
-  const result = useMemo(() => {
-    if (!input.trim()) return null
-    return tab === 'format' ? formatSql(input, dialect) : minifySql(input)
+  const [result, setResult] = useState<Awaited<ReturnType<typeof formatSql>> | null>(null)
+  useEffect(() => {
+    if (!input.trim()) {
+      setResult(null)
+      return
+    }
+    let cancelled = false
+    void (tab === 'format' ? formatSql(input, dialect) : minifySql(input)).then((value) => {
+      if (!cancelled) setResult(value)
+    })
+    return () => {
+      cancelled = true
+    }
   }, [input, dialect, tab])
 
   return (

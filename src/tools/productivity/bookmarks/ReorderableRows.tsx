@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Reorder } from 'motion/react'
 
 import type { BookmarkRow } from './service'
@@ -10,33 +10,24 @@ interface ReorderableRowsProps {
 }
 
 export function ReorderableRows({ rows, renderRow, onCommit }: ReorderableRowsProps) {
-  const idKey = rows.map((row) => row.id).join('|')
-  const [order, setOrder] = useState<string[]>(() => rows.map((row) => row.id))
-  const latest = useRef(order)
+  const ids = useMemo(() => rows.map((row) => row.id), [rows])
+  const idKey = ids.join('|')
+  const [snapshot, setSnapshot] = useState({ key: idKey, order: ids })
+  if (snapshot.key !== idKey) setSnapshot({ key: idKey, order: ids })
+  const order = snapshot.key === idKey ? snapshot.order : ids
   const byId = useMemo(() => new Map(rows.map((row) => [row.id, row])), [rows])
-
-  useEffect(() => {
-    const next = idKey ? idKey.split('|') : []
-    latest.current = next
-    setOrder(next)
-  }, [idKey])
-
-  const handleReorder = (next: string[]) => {
-    latest.current = next
-    setOrder(next)
-  }
 
   return (
     <Reorder.Group
       as="div"
       axis="y"
       values={order}
-      onReorder={handleReorder}
+      onReorder={(next) => setSnapshot({ key: idKey, order: next })}
       className="flex select-none flex-col gap-1.5"
     >
       {order.map((id, index) => {
         const row = byId.get(id)
-        return row ? renderRow(row, index, () => onCommit(id, latest.current)) : null
+        return row ? renderRow(row, index, () => onCommit(id, order)) : null
       })}
     </Reorder.Group>
   )
