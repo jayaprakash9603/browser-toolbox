@@ -6,9 +6,5 @@ export {
   type SimulatorOverlayInsets,
 } from './overlayTypes'
 export { mountSimulatorOverlay } from './overlayMount'
-export {
-  SIMULATOR_OVERLAY_JS,
-  handleOpenOverlayMessage,
-  handleOverlayAction,
-  openSimulatorOverlay,
-} from './overlayService'
+export { handleOpenOverlayMessage } from './openSimulator'
+export { SIMULATOR_OVERLAY_JS, handleOverlayAction, openSimulatorOverlay } from './overlayService'

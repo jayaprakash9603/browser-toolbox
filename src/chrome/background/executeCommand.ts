@@ -10,6 +10,7 @@ import { runFormCommand } from './formMemory'
 import { openScreenshotCaptureMenu } from './screenshot/menu'
 import { modeFromCommand, startScreenshot } from './screenshot/start'
 import { openExtensionPanel } from '@/platform/panel'
+import { openSimulatorForTab } from './responsiveViewer/openSimulator'
 
 const logger = createLogger('commands')
 
@@ -55,7 +56,6 @@ export async function executeToolboxCommand(command: string, tab?: chrome.tabs.T
   }
 
   if (command === 'open-mobile-simulator') {
-    const { openSimulatorForTab } = await import('./responsiveViewer/menus')
     await openSimulatorForTab(tab)
     return
   }

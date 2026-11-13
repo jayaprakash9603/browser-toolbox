@@ -13,12 +13,12 @@ import {
 } from '@/chrome/background/responsiveViewer/menus'
 import {
   canOverlaySimulatorOnTab,
-  handleOpenOverlayMessage,
   handleOverlayAction,
   mountSimulatorOverlay,
   SIMULATOR_OVERLAY_ID,
   type SimulatorOverlayConfig,
 } from '@/chrome/background/responsiveViewer/overlay'
+import { handleOpenOverlayMessage } from '@/chrome/background/responsiveViewer/openSimulator'
 import { CHASSIS } from '@/tools/design/responsive-viewer/chassis'
 import {
   DEFAULT_DEVICE_ID,
@@ -378,10 +378,11 @@ describe('mobile simulator studio helpers', () => {
     const menus = readFileSync(resolve('src/chrome/background/responsiveViewer/menus.ts'), 'utf8')
     const messages = readFileSync(resolve('src/chrome/background/responsiveViewer/messages.ts'), 'utf8')
     const index = readFileSync(resolve('src/chrome/background/index.ts'), 'utf8')
-    expect(messages).not.toMatch(/from ['"]\.\/overlayService['"]/)
-    expect(messages).not.toMatch(/responsive-viewer\/(devices|catalog)/)
+    expect(messages).toMatch(/from ['"]\.\/openSimulator['"]/)
+    expect(messages).toMatch(/from ['"]\.\/overlayService['"]/)
+    expect(messages).not.toMatch(/await import\(/)
     expect(menus).not.toMatch(/from ['"]\.\/overlayService['"]/)
-    expect(menus).not.toMatch(/responsive-viewer\/(devices|catalog)/)
+    expect(menus).not.toMatch(/await import\(/)
     expect(index).not.toMatch(/responsive-viewer\/(devices|catalog|overlay)/)
     expect(index).toContain('registerSimulatorOverlayMessages')
     const tool = readFileSync(resolve('src/tools/design/responsive-viewer/Tool.tsx'), 'utf8')

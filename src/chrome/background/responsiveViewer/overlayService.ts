@@ -1,4 +1,3 @@
-import type { ExtensionMessage } from '@/core/messaging/types'
 import { DEFAULT_RECORDER_SETTINGS } from '@/core/recorder/settings'
 import { isRestrictedCaptureUrl } from '@/core/screenshot/restricted'
 import { CHASSIS } from '@/tools/design/responsive-viewer/chassis'
@@ -17,6 +16,7 @@ import { simulatorStudioUrl } from '@/tools/design/responsive-viewer/studioUrl'
 import { downloadWithName } from '../downloadNames'
 import { startRecorder } from '../recorder'
 
+import type { ExtensionMessage } from '@/core/messaging/types'
 import type { SimulatorOverlayConfig } from './overlayTypes'
 export { canOverlaySimulatorOnTab } from './overlayTypes'
 
@@ -127,15 +127,6 @@ export async function openSimulatorOverlay(
   }
 }
 
-async function resolveOverlayTab(tabId?: number, fallback?: chrome.tabs.Tab): Promise<chrome.tabs.Tab | undefined> {
-  if (tabId == null) return fallback
-  try {
-    return await chrome.tabs.get(tabId)
-  } catch {
-    return fallback
-  }
-}
-
 async function readViewerSettings() {
   const stored = await chrome.storage.local.get(STORAGE_KEY)
   const raw = stored[STORAGE_KEY]
@@ -174,16 +165,6 @@ async function captureOverlayScreenshot(tab?: chrome.tabs.Tab) {
 async function startOverlayRecording(tab?: chrome.tabs.Tab) {
   await startRecorder('tab', { ...DEFAULT_RECORDER_SETTINGS, countdown: false, mic: false }, tab)
   return { ok: true as const }
-}
-
-export async function handleOpenOverlayMessage(
-  message: ExtensionMessage,
-  sender: chrome.runtime.MessageSender,
-): Promise<{ opened: 'overlay' | 'studio'; reason?: string } | null> {
-  if (message.type !== 'SIMULATOR_OPEN_OVERLAY') return null
-  const tab = await resolveOverlayTab(message.tabId ?? sender.tab?.id, sender.tab)
-  const { openSimulatorForTab } = await import('./menus')
-  return openSimulatorForTab(tab, { url: message.url, deviceId: message.deviceId, replace: true })
 }
 
 export async function handleOverlayAction(
