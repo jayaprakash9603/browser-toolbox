@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { registerApiClientSendHandler } from '@/chrome/background/api-client-send'
+import { resetApiClientResponseHeaderCaptureForTests } from '@/chrome/background/api-client-response-headers'
 import { API_CLIENT_DNR_RULE_ID } from '@/chrome/background/api-client-dnr'
 
 type RuntimeListener = (
@@ -26,9 +27,41 @@ const basePayload = {
   enableSslVerification: false,
 }
 
+type WebRequestListener<T> = (details: T) => void
+
+const webRequestBeforeRequest: WebRequestListener<chrome.webRequest.OnBeforeRequestDetails>[] =
+  []
+const webRequestHeadersReceived: WebRequestListener<chrome.webRequest.OnHeadersReceivedDetails>[] =
+  []
+
 beforeEach(() => {
   messageListeners.length = 0
-  vi.mocked(chrome.permissions.contains).mockResolvedValue(true as never)
+  webRequestBeforeRequest.length = 0
+  webRequestHeadersReceived.length = 0
+  resetApiClientResponseHeaderCaptureForTests()
+  Object.assign(chrome, {
+    webRequest: {
+      onBeforeRequest: {
+        addListener: vi.fn((listener: WebRequestListener<chrome.webRequest.OnBeforeRequestDetails>) => {
+          webRequestBeforeRequest.push(listener)
+        }),
+      },
+      onHeadersReceived: {
+        addListener: vi.fn(
+          (listener: WebRequestListener<chrome.webRequest.OnHeadersReceivedDetails>) => {
+            webRequestHeadersReceived.push(listener)
+          },
+        ),
+      },
+      onCompleted: { addListener: vi.fn() },
+      onErrorOccurred: { addListener: vi.fn() },
+    },
+  })
+  vi.mocked(chrome.permissions.contains).mockImplementation(async (request) => {
+    const permissions = (request as { permissions?: string[] }).permissions
+    if (permissions?.includes('webRequest')) return true as never
+    return true as never
+  })
   vi.spyOn(chrome.runtime.onMessage, 'addListener').mockImplementation((listener) => {
     messageListeners.push(listener as RuntimeListener)
   })

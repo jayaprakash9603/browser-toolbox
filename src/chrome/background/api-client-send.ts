@@ -2,6 +2,7 @@ import type { ApiClientResponse, ApiClientSendPayload } from 'postman-lite'
 import {
   deserializeBodyFromTransport,
   executeHttpRequest,
+  preferWireResponseHeaders,
   type FetchFn,
 } from 'postman-lite/core'
 
@@ -12,6 +13,11 @@ import {
 } from '@/core/permissions/originPermissions'
 
 import { ensureApiClientDnrBypass } from './api-client-dnr'
+import {
+  initApiClientResponseHeaderCapture,
+  registerApiClientHeaderCapture,
+  takeApiClientCapturedHeaders,
+} from './api-client-response-headers'
 
 const logger = createLogger('api-client-send')
 
@@ -82,7 +88,17 @@ async function runRequest(
   const prepared = prepareSendPayload(payload)
   const fetchFn = createPermissionAwareFetch()
   try {
-    return await executeHttpRequest(fetchFn, prepared, { signal: controller.signal })
+    if (requestId) {
+      await registerApiClientHeaderCapture(requestId, prepared.url, prepared.method)
+    }
+    const response = await executeHttpRequest(fetchFn, prepared, { signal: controller.signal })
+    if (!requestId || !response.headers) return response
+    const wireHeaders = takeApiClientCapturedHeaders(requestId)
+    if (!wireHeaders) return response
+    return {
+      ...response,
+      headers: preferWireResponseHeaders(response.headers, wireHeaders),
+    }
   } catch (error) {
     logger.warn('API_CLIENT_SEND failed', error)
     return { ok: false, error: error instanceof Error ? error.message : String(error) }
@@ -93,6 +109,7 @@ async function runRequest(
 
 export function registerApiClientSendHandler(): void {
   void ensureApiClientDnrBypass()
+  initApiClientResponseHeaderCapture()
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     const type = messageType(message)
 
