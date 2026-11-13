@@ -117,6 +117,12 @@ export default function QrToolkitTool() {
     setMode('generate')
   }
 
+  const editDecodedBarcode = (format: BarcodeFormat, value: string) => {
+    setBarcodeFormat(format)
+    setBarcodeValue(value)
+    setMode('barcode')
+  }
+
   return (
     <ToolPage tool={tool} contentClassName="@container flex min-h-0 flex-col gap-3">
       <MotionConfig reducedMotion="user">
@@ -177,7 +183,7 @@ export default function QrToolkitTool() {
 
           <TabsContent value="decode" className="mt-0">
             <SlideUp>
-              <DecodePanel onEdit={editDecoded} />
+              <DecodePanel onEditQr={editDecoded} onEditBarcode={editDecodedBarcode} />
             </SlideUp>
           </TabsContent>
 

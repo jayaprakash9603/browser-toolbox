@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import {
+  BarcodeIcon,
   ClipboardPasteIcon,
   ExternalLinkIcon,
   ImageUpIcon,
@@ -12,11 +13,12 @@ import {
   SearchXIcon,
 } from 'lucide-react'
 
+import { parseBarcodeContent } from '@/core/engines/barcode/parse'
+import type { BarcodeFormat } from '@/core/engines/barcode'
+import { decodeCodesFromImage, type DecodedCode } from '@/core/engines/codes/decode'
 import {
-  decodeQrWithLocation,
   parseQrContent,
   type ParsedQrContent,
-  type QrDecodeResult,
 } from '@/core/engines/qrcode'
 import { ensureClipboardReadPermission } from '@/core/clipboard/clipboardService'
 import { captureVisibleTab } from '@/core/engines/capture'
@@ -37,7 +39,7 @@ interface Scan {
   src: string
   width: number
   height: number
-  result: QrDecodeResult | null
+  codes: DecodedCode[]
   error: string | null
 }
 
@@ -48,14 +50,18 @@ async function scanDataUrl(src: string): Promise<Scan> {
   canvas.width = Math.max(1, Math.round(img.naturalWidth * scale))
   canvas.height = Math.max(1, Math.round(img.naturalHeight * scale))
   const ctx = canvas.getContext('2d', { willReadFrequently: true })
-  const base = { src, width: img.naturalWidth, height: img.naturalHeight }
-  if (!ctx) return { ...base, result: null, error: 'Canvas unavailable.' }
+  const base = { src, width: img.naturalWidth, height: img.naturalHeight, codes: [] as DecodedCode[] }
+  if (!ctx) return { ...base, error: 'Canvas unavailable.' }
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
   const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height)
-  const decoded = await decodeQrWithLocation({ data: pixels.data, width: canvas.width, height: canvas.height })
-  if (!decoded.ok) return { ...base, result: null, error: decoded.error }
-  const corners = decoded.value.corners.map((p) => ({ x: p.x / scale, y: p.y / scale })) as QrDecodeResult['corners']
-  return { ...base, result: { data: decoded.value.data, corners }, error: null }
+  const codes = await decodeCodesFromImage({
+    data: pixels.data,
+    width: canvas.width,
+    height: canvas.height,
+    canvas,
+    scale,
+  })
+  return { ...base, codes, error: null }
 }
 
 function openLink(url: string) {
@@ -63,7 +69,13 @@ function openLink(url: string) {
   else window.open(url, '_blank', 'noopener,noreferrer')
 }
 
-export function DecodePanel({ onEdit }: { onEdit: (parsed: ParsedQrContent) => void }) {
+export function DecodePanel({
+  onEditQr,
+  onEditBarcode,
+}: {
+  onEditQr: (parsed: ParsedQrContent) => void
+  onEditBarcode: (format: BarcodeFormat, value: string) => void
+}) {
   const { t } = useTranslation()
   const reduce = useReducedMotion()
   const [phase, setPhase] = useState<Phase>('idle')
@@ -81,16 +93,16 @@ export function DecodePanel({ onEdit }: { onEdit: (parsed: ParsedQrContent) => v
       return
     }
     if (!src) return
-    setScan({ src, width: 1, height: 1, result: null, error: null })
+    setScan({ src, width: 1, height: 1, codes: [], error: null })
     setPhase('scanning')
     const started = performance.now()
     const outcome = await scanDataUrl(src).catch(
-      (cause: unknown): Scan => ({ src, width: 1, height: 1, result: null, error: String(cause) }),
+      (cause: unknown): Scan => ({ src, width: 1, height: 1, codes: [], error: String(cause) }),
     )
     const wait = MIN_SCAN_MS - (performance.now() - started)
     if (wait > 0 && !reduce) await new Promise((resolve) => setTimeout(resolve, wait))
     setScan(outcome)
-    setPhase(outcome.result ? 'found' : 'missing')
+    setPhase(outcome.codes.length > 0 ? 'found' : 'missing')
   }, [reduce])
 
   const fromFile = useCallback(
@@ -137,7 +149,14 @@ export function DecodePanel({ onEdit }: { onEdit: (parsed: ParsedQrContent) => v
     setSourceError(null)
   }
 
-  const parsed = scan?.result ? parseQrContent(scan.result.data) : null
+  const foundLabel = (() => {
+    if (!scan || scan.codes.length === 0) return ''
+    if (scan.codes.length === 1) {
+      const code = scan.codes[0]
+      return code.family === 'qr' ? t('qrk.foundQr') : t('qrk.foundBarcode', { format: parseBarcodeContent(code.format, code.data).label })
+    }
+    return t('qrk.foundMany', { count: scan.codes.length })
+  })()
 
   return (
     <div className="flex flex-col gap-3">
@@ -211,7 +230,7 @@ export function DecodePanel({ onEdit }: { onEdit: (parsed: ParsedQrContent) => v
             >
               <ScanImage scan={scan} phase={phase} />
               <p role="status" className="text-xs text-muted-foreground">
-                {phase === 'scanning' ? t('qrk.scanning') : phase === 'found' ? t('qrk.found') : t('qrk.notFound')}
+                {phase === 'scanning' ? t('qrk.scanning') : phase === 'found' ? foundLabel : t('qrk.notFound')}
               </p>
               <Button size="xs" variant="ghost" onClick={reset} disabled={phase === 'scanning'}>
                 <RotateCcwIcon aria-hidden />
@@ -242,53 +261,82 @@ export function DecodePanel({ onEdit }: { onEdit: (parsed: ParsedQrContent) => v
             </div>
           </motion.div>
         )}
-        {phase === 'found' && parsed && scan?.result && (
+        {phase === 'found' && scan?.codes.map((code, index) => (
           <motion.div
-            key={`result-${scan.src}`}
+            key={`${scan.src}-${code.format}-${index}`}
             initial={reduce ? { opacity: 0 } : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 26, delay: 0.25 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 26, delay: 0.2 + index * 0.08 }}
           >
-            <ResultCard parsed={parsed} raw={scan.result.data} onEdit={() => onEdit(parsed)} />
+            <ResultCard
+              code={code}
+              onEditQr={onEditQr}
+              onEditBarcode={onEditBarcode}
+            />
           </motion.div>
-        )}
+        ))}
       </AnimatePresence>
     </div>
   )
 }
 
-function ResultCard({ parsed, raw, onEdit }: { parsed: ParsedQrContent; raw: string; onEdit: () => void }) {
+function ResultCard({
+  code,
+  onEditQr,
+  onEditBarcode,
+}: {
+  code: DecodedCode
+  onEditQr: (parsed: ParsedQrContent) => void
+  onEditBarcode: (format: BarcodeFormat, value: string) => void
+}) {
   const { t } = useTranslation()
-  const Icon = PRESET_ICONS[parsed.kind]
-  const link = parsed.kind === 'url' ? raw.trim() : null
+  const qrParsed = parseQrContent(code.data)
+  const barcodeParsed = code.family === 'barcode' ? parseBarcodeContent(code.format, code.data) : null
+  const Icon = code.family === 'qr' ? PRESET_ICONS[qrParsed.kind] : BarcodeIcon
+  const title =
+    code.family === 'qr'
+      ? t('qrk.detectedQr', { kind: t(`qr.preset.${qrParsed.kind}`) })
+      : t('qrk.detectedBarcode', { format: barcodeParsed?.label ?? t('qrk.family.barcode') })
   const display = (key: string, value: string) => {
     if (key === 'hidden') return t('qrk.yes')
     if (key === 'encryption') return value === 'nopass' ? t('qrk.openNetwork') : value
+    if (key === 'checkOk') return value === 'valid' ? t('qrk.checkValid') : t('qrk.checkInvalid')
     return value
   }
+  const fields =
+    code.family === 'qr'
+      ? qrParsed.kind === 'text' || qrParsed.kind === 'url'
+        ? []
+        : qrParsed.fields
+      : [
+          ...(barcodeParsed?.fields.filter((field) => field.key !== 'value') ?? []),
+          ...(qrParsed.kind !== 'text' ? qrParsed.fields : []),
+        ]
+  const link = qrParsed.kind === 'url' ? code.data.trim() : null
+  const barcodeFormat = barcodeParsed?.generatorFormat
   return (
     <SectionCard
       icon={Icon}
-      title={t('qrk.detected', { kind: t(`qr.preset.${parsed.kind}`) })}
-      description={t('qrk.chars', { count: raw.length })}
-      actions={<CopyButton text={raw} size="xs" label={t('qrk.copyAll')} />}
+      title={title}
+      description={t('qrk.chars', { count: code.data.length })}
+      actions={<CopyButton text={code.data} size="xs" label={t('qrk.copyAll')} />}
       bodyClassName="flex flex-col gap-3"
     >
-      {parsed.kind !== 'text' && parsed.kind !== 'url' && (
+      {fields.length > 0 && (
         <ValueGrid>
-          {parsed.fields.map((field) => (
+          {fields.map((field) => (
             <ValueCard
               key={field.key}
               label={t(`qrk.field.${field.key}`)}
               value={display(field.key, field.value)}
-              copyText={field.key === 'hidden' ? '' : field.value}
+              copyText={field.key === 'hidden' || field.key === 'checkOk' ? '' : field.value}
             />
           ))}
         </ValueGrid>
       )}
       <div className="max-h-40 overflow-auto rounded-lg bg-muted/50 px-3 py-2">
-        <code className="font-mono text-[12px] break-all whitespace-pre-wrap">{raw}</code>
+        <code className="font-mono text-[12px] break-all whitespace-pre-wrap">{code.data}</code>
       </div>
       <div className="flex flex-wrap gap-2">
         {link && /^https?:\/\//i.test(link) && (
@@ -297,10 +345,18 @@ function ResultCard({ parsed, raw, onEdit }: { parsed: ParsedQrContent; raw: str
             {t('qrk.openLink')}
           </Button>
         )}
-        <Button size="sm" variant="outline" onClick={onEdit}>
-          <PencilLineIcon aria-hidden />
-          {t('qrk.editInGenerator')}
-        </Button>
+        {code.family === 'qr' && (
+          <Button size="sm" variant="outline" onClick={() => onEditQr(qrParsed)}>
+            <PencilLineIcon aria-hidden />
+            {t('qrk.editInGenerator')}
+          </Button>
+        )}
+        {barcodeFormat && (
+          <Button size="sm" variant="outline" onClick={() => onEditBarcode(barcodeFormat, code.data)}>
+            <BarcodeIcon aria-hidden />
+            {t('qrk.editInBarcode')}
+          </Button>
+        )}
       </div>
     </SectionCard>
   )
@@ -308,8 +364,6 @@ function ResultCard({ parsed, raw, onEdit }: { parsed: ParsedQrContent; raw: str
 
 function ScanImage({ scan, phase }: { scan: Scan; phase: Phase }) {
   const reduce = useReducedMotion()
-  const corners = scan.result?.corners
-  const points = corners?.map((p) => `${p.x},${p.y}`).join(' ')
   const stroke = Math.max(scan.width, scan.height) / 160
   return (
     <div className="relative w-full max-w-[18rem] overflow-hidden rounded-xl border bg-muted/40">
@@ -335,35 +389,44 @@ function ScanImage({ scan, phase }: { scan: Scan; phase: Phase }) {
           transition={{ duration: 0.5 }}
         />
       )}
-      {phase === 'found' && points && (
+      {phase === 'found' && scan.codes.some((code) => code.corners.length >= 3) && (
         <svg
           aria-hidden
           viewBox={`0 0 ${scan.width} ${scan.height}`}
           preserveAspectRatio="xMidYMid meet"
           className="pointer-events-none absolute inset-0 size-full"
         >
-          <motion.polygon
-            points={points}
-            fill="color-mix(in oklab, var(--primary) 18%, transparent)"
-            stroke="var(--primary)"
-            strokeWidth={stroke}
-            strokeLinejoin="round"
-            initial={reduce ? false : { pathLength: 0, fillOpacity: 0 }}
-            animate={{ pathLength: 1, fillOpacity: 1 }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          />
-          {corners?.map((p, index) => (
-            <motion.circle
-              key={index}
-              cx={p.x}
-              cy={p.y}
-              r={stroke * 2.2}
-              fill="var(--primary)"
-              initial={reduce ? false : { scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 500, damping: 18, delay: 0.3 + index * 0.07 }}
-            />
-          ))}
+          {scan.codes.map((code, codeIndex) => {
+            if (code.corners.length < 3) return null
+            const points = code.corners.map((p) => `${p.x},${p.y}`).join(' ')
+            const color = code.family === 'qr' ? 'var(--primary)' : 'oklch(0.75 0.15 75)'
+            return (
+              <g key={`${code.format}-${codeIndex}`}>
+                <motion.polygon
+                  points={points}
+                  fill={`color-mix(in oklab, ${color} 18%, transparent)`}
+                  stroke={color}
+                  strokeWidth={stroke}
+                  strokeLinejoin="round"
+                  initial={reduce ? false : { pathLength: 0, fillOpacity: 0 }}
+                  animate={{ pathLength: 1, fillOpacity: 1 }}
+                  transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: codeIndex * 0.08 }}
+                />
+                {code.corners.map((p, index) => (
+                  <motion.circle
+                    key={index}
+                    cx={p.x}
+                    cy={p.y}
+                    r={stroke * 2.2}
+                    fill={color}
+                    initial={reduce ? false : { scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 18, delay: 0.3 + index * 0.07 }}
+                  />
+                ))}
+              </g>
+            )
+          })}
         </svg>
       )}
     </div>
