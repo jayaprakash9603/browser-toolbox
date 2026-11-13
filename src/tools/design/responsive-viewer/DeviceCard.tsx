@@ -8,6 +8,7 @@ import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/utils/cn'
 import { breakpointFor, isHandheld, orientedSize, viewportScale, type Device, type ZoomMode } from './devices'
 import { DeviceFrame, frameInsets } from './frames'
+import { mockupFor, mockupOuterSize, orientedMockupInsets } from './mockups'
 import { EASE_OUT, KIND_ICON, KIND_TONE, hostnameOf, openSizedWindow, useContentWidth } from './helpers'
 import { IconAction } from './parts'
 
@@ -53,19 +54,25 @@ export function DeviceCard({
   const [localReload, setLocalReload] = useState(0)
   const { width, height } = orientedSize(device, rotated)
   const insets = frameInsets(device, frame)
+  const mockup = frame ? mockupFor(device.id) : null
+  const mockupInsets = mockup ? orientedMockupInsets(mockup, rotated) : null
+  const outer = mockupInsets ? mockupOuterSize({ width, height }, mockupInsets) : null
   const handheld = isHandheld(device)
   const boxWidth = fitWidth ? bodyWidth : stageWidth == null ? null : stageWidth - BODY_PAD * 2 - 2
   const measuring = boxWidth == null
   const scale = viewportScale(
     zoom,
-    { width, height },
-    {
-      width: boxWidth == null ? null : boxWidth - insets.x * 2,
-      maxHeight: maxHeight - insets.top - insets.bottom,
-    },
+    outer ?? { width, height },
+    outer
+      ? { width: boxWidth, maxHeight }
+      : {
+          width: boxWidth == null ? null : boxWidth - insets.x * 2,
+          maxHeight: maxHeight - insets.top - insets.bottom,
+        },
   )
   const screenW = Math.round(width * scale)
   const screenH = Math.round(height * scale)
+  const frameExtraX = outer ? Math.round(outer.width * scale) - screenW : insets.x * 2
   const Icon = KIND_ICON[device.kind]
   const breakpoint = breakpointFor(width)
   const orientation = t(rotated ? 'rv.card.portrait' : 'rv.card.landscape')
@@ -81,7 +88,7 @@ export function DeviceCard({
         'flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-card/80 shadow-xs transition-shadow duration-200 hover:shadow-md',
         !fitWidth && 'shrink-0 snap-start',
       )}
-      style={fitWidth ? undefined : { width: Math.max(272, screenW + insets.x * 2 + BODY_PAD * 2 + 2) }}
+      style={fitWidth ? undefined : { width: Math.max(272, screenW + frameExtraX + BODY_PAD * 2 + 2) }}
       aria-label={device.label}
       id={`rv-card-${device.id}`}
     >

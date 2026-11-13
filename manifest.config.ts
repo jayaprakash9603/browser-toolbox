@@ -161,6 +161,7 @@ export default defineManifest({
         'script-studio/*',
         'recorder.html',
         'react-devtools/build/*',
+        'simulator/frames/*',
       ],
     },
   ],

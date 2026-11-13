@@ -25,6 +25,7 @@ import { cn } from '@/shared/utils/cn'
 import { Viewport } from './DeviceCard'
 import { breakpointFor, isHandheld, orientedSize, viewportScale, type Device } from './devices'
 import { DeviceFrame, frameInsets } from './frames'
+import { mockupFor, mockupOuterSize, orientedMockupInsets } from './mockups'
 import { EASE_OUT, KIND_ICON, hostnameOf, openSizedWindow } from './helpers'
 import { IconAction } from './parts'
 
@@ -475,13 +476,14 @@ function DevicePage({
 
   const { width, height } = orientedSize(device, rotated)
   const insets = frameInsets(device, frame)
-  // The shell adds padding around the screen on top of the bezel insets.
-  const chromeX = insets.x * 2
-  const chromeY = insets.top + insets.bottom
+  const mockup = frame ? mockupFor(device.id) : null
+  const outer = mockup ? mockupOuterSize({ width, height }, orientedMockupInsets(mockup, rotated)) : null
+  const chromeX = outer ? 0 : insets.x * 2
+  const chromeY = outer ? 0 : insets.top + insets.bottom
   const scale = stage
     ? viewportScale(
         'fit',
-        { width, height },
+        outer ?? { width, height },
         { width: stage.width - STAGE_PAD * 2 - chromeX, maxHeight: stage.height - STAGE_PAD * 2 - chromeY },
       )
     : 1

@@ -11,6 +11,13 @@ export interface SimulatorOverlayFinish {
   button: string
 }
 
+export interface SimulatorOverlayInsets {
+  left: number
+  top: number
+  right: number
+  bottom: number
+}
+
 export interface SimulatorOverlayConfig {
   url: string
   label: string
@@ -26,6 +33,8 @@ export interface SimulatorOverlayConfig {
   showSafari: boolean
   hostname: string
   studioUrl: string
+  mockupUrl?: string
+  mockupInsets?: SimulatorOverlayInsets
 }
 
 export function canOverlaySimulatorOnTab(tabUrl: string | undefined, targetUrl: string): boolean {
@@ -118,12 +127,42 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       padding: 16px 72px 16px 16px;
     }
     .phone-wrap { position: relative; }
+    .mockup-img {
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 6;
+      filter: drop-shadow(0 28px 64px rgba(15,23,42,0.18));
+    }
+    .has-mockup.landscape .mockup-img {
+      inset: auto;
+      left: 50%;
+      top: 50%;
+      width: var(--tbx-mockup-h);
+      height: var(--tbx-mockup-w);
+      transform: translate(-50%, -50%) rotate(90deg);
+    }
     .chassis {
       position: relative;
       padding: 10px;
-      border-radius: 50px;
+      border-radius: 55px;
       background: var(--tbx-fill);
       box-shadow: 0 1px 0 var(--tbx-ring), 0 28px 64px rgba(15,23,42,0.18), 0 2px 10px rgba(15,23,42,0.1);
+    }
+    .has-mockup .chassis {
+      position: absolute;
+      inset: 0;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .has-mockup .side { display: none; }
+    .has-mockup .screen {
+      position: absolute;
+      border-radius: 11%;
     }
     .side {
       position: absolute;
@@ -163,8 +202,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     .status-icons { display: flex; align-items: center; gap: 6px; }
     .island, .notch, .punch, .pill, .home, .android-nav { pointer-events: none; position: absolute; z-index: 4; background: #0a0a0a; }
     .island {
-      top: 11px; left: 50%; transform: translateX(-50%);
-      width: 36%; height: 14px; border-radius: 999px;
+      top: 12px; left: 50%; transform: translateX(-50%);
+      width: 32%; max-width: 126px; height: 4.35%; min-height: 12px; border-radius: 999px;
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
     }
     .notch {
@@ -181,7 +220,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .home {
       bottom: 7px; left: 50%; transform: translateX(-50%);
-      width: 33%; height: 5px; border-radius: 999px; background: rgba(255,255,255,0.92);
+      width: 34%; max-width: 134px; height: 5px; border-radius: 999px; background: rgba(255,255,255,0.92);
     }
     .safari:not([hidden]) ~ .home {
       background: #3a3a3c;
@@ -234,7 +273,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       background: #f4f4f5; color: #52525b; font-size: 12px;
     }
     .blocked a { color: #4f46e5; }
-    .landscape .island { top: 50%; left: 8px; transform: translateY(-50%); width: 14px; height: 36%; }
+    .landscape .island { top: 50%; left: 12px; transform: translateY(-50%); width: 14px; height: 32%; }
     .landscape .notch { top: 50%; left: 0; transform: translateY(-50%); width: 16px; height: 22%; border-radius: 0 16px 16px 0; }
     .landscape .punch { top: 50%; left: 10px; transform: translateY(-50%); }
     .landscape .home { bottom: auto; left: auto; right: 8px; top: 50%; transform: translateY(-50%); width: 5px; height: 22%; }
@@ -256,6 +295,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     <button type="button" class="close-x" aria-label="Close simulator">${iconClose}</button>
     <div class="stage">
       <div class="phone-wrap">
+        <img class="mockup-img" alt="" hidden />
         <span class="side" style="top:16%;left:-3px;height:7%;border-radius:1px 0 0 1px;"></span>
         <span class="side" style="top:26%;left:-3px;height:11%;border-radius:1px 0 0 1px;"></span>
         <span class="side" style="top:39%;left:-3px;height:11%;border-radius:1px 0 0 1px;"></span>
@@ -308,6 +348,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const hostLabel = shadow.querySelector('.host') as HTMLElement
   const chassis = shadow.querySelector('.chassis') as HTMLElement
   const status = shadow.querySelector('.status') as HTMLElement
+  const wrap = shadow.querySelector('.phone-wrap') as HTMLElement
+  const mockupImg = shadow.querySelector('.mockup-img') as HTMLImageElement
 
   hostLabel.textContent = config.hostname
   iframe.src = config.url
@@ -324,16 +366,47 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const layout = () => {
     const width = state.rotated ? config.height : config.width
     const height = state.rotated ? config.width : config.height
-    const pad = 20
     const maxW = Math.max(160, window.innerWidth - 120)
     const maxH = Math.max(160, window.innerHeight - 32)
-    const scale = Math.min(1, maxW / (width + pad), maxH / (height + pad))
-    screen.style.width = `${Math.round(width * scale)}px`
-    screen.style.height = `${Math.round(height * scale)}px`
+    const mockup = config.mockupUrl && config.mockupInsets ? config.mockupInsets : null
+    root.classList.toggle('has-mockup', Boolean(mockup))
     chassis.classList.toggle('landscape', state.rotated)
     root.classList.toggle('landscape', state.rotated)
+    if (mockup) {
+      const insets = state.rotated
+        ? { left: mockup.bottom, top: mockup.left, right: mockup.top, bottom: mockup.right }
+        : mockup
+      const holeW = 1 - insets.left - insets.right
+      const holeH = 1 - insets.top - insets.bottom
+      const outerW = width / holeW
+      const outerH = height / holeH
+      const scale = Math.min(1, maxW / outerW, maxH / outerH)
+      const wrapW = Math.round(outerW * scale)
+      const wrapH = Math.round(outerH * scale)
+      wrap.style.width = `${wrapW}px`
+      wrap.style.height = `${wrapH}px`
+      screen.style.width = `${holeW * 100}%`
+      screen.style.height = `${holeH * 100}%`
+      screen.style.left = `${insets.left * 100}%`
+      screen.style.top = `${insets.top * 100}%`
+      mockupImg.hidden = false
+      mockupImg.src = config.mockupUrl ?? ''
+      root.style.setProperty('--tbx-mockup-w', `${wrapW}px`)
+      root.style.setProperty('--tbx-mockup-h', `${wrapH}px`)
+    } else {
+      const pad = 20
+      const scale = Math.min(1, maxW / (width + pad), maxH / (height + pad))
+      wrap.style.width = ''
+      wrap.style.height = ''
+      screen.style.left = ''
+      screen.style.top = ''
+      screen.style.width = `${Math.round(width * scale)}px`
+      screen.style.height = `${Math.round(height * scale)}px`
+      mockupImg.hidden = true
+      mockupImg.removeAttribute('src')
+    }
     const notchClass = config.notch === 'punch-hole' ? 'punch' : config.notch
-    cutout.className = config.notch === 'none' ? 'cutout' : `cutout ${notchClass}`
+    cutout.className = !mockup && config.notch !== 'none' ? `cutout ${notchClass}` : 'cutout'
     safari.hidden = !config.showSafari || state.rotated
     home.hidden = config.navBar !== 'home-indicator'
     androidNav.hidden = config.navBar !== 'android' || state.rotated
@@ -392,12 +465,16 @@ export async function openSimulatorOverlay(
   opts: { url: string; deviceId?: string },
 ): Promise<boolean> {
   if (tab.id == null) return false
-  const { findDevice, DEFAULT_DEVICE_ID, orientedSize } = await import('@/tools/design/responsive-viewer/devices')
+  const [{ findDevice, DEFAULT_DEVICE_ID, orientedSize }, { mockupFor, mockupSrc }] = await Promise.all([
+    import('@/tools/design/responsive-viewer/devices'),
+    import('@/tools/design/responsive-viewer/mockups'),
+  ])
   const device = findDevice(opts.deviceId ?? DEFAULT_DEVICE_ID) ?? findDevice(DEFAULT_DEVICE_ID)
   if (!device) return false
   const size = orientedSize(device, false)
   const color = device.frameColor ?? 'black'
   const finish = CHASSIS[color]
+  const mockup = mockupFor(device.id)
   let hostname = opts.url
   try {
     hostname = new URL(opts.url).host
@@ -419,6 +496,10 @@ export async function openSimulatorOverlay(
     showSafari: device.frameStyle === 'iphone' || device.frameStyle === 'iphone-home',
     hostname,
     studioUrl: simulatorStudioUrl({ url: opts.url, device: device.id }),
+    mockupUrl: mockup ? mockupSrc(mockup.file) : undefined,
+    mockupInsets: mockup
+      ? { left: mockup.left, top: mockup.top, right: mockup.right, bottom: mockup.bottom }
+      : undefined,
   }
   try {
     const [injection] = await chrome.scripting.executeScript({

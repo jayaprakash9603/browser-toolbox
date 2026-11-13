@@ -38,6 +38,7 @@ import {
   studioParamsFromSearch,
 } from '@/tools/design/responsive-viewer/studioUrl'
 import { isSyncMessage } from '@/tools/design/responsive-viewer/sync'
+import { mockupFor, mockupOuterSize, mockupSrc, orientedMockupInsets } from '@/tools/design/responsive-viewer/mockups'
 
 describe('responsive viewer model', () => {
   it('strips frame-blocking response headers in preview session rules', () => {
@@ -194,8 +195,27 @@ describe('mobile simulator studio helpers', () => {
     expect(root.style.getPropertyValue('--tbx-fill')).toBe(config.finish.fill)
     expect(host?.shadowRoot?.querySelector('iframe')?.src).toContain('https://example.com/tools')
     expect(getComputedStyle(root).backgroundColor === 'rgb(255, 255, 255)' || root.className).toBeTruthy()
+    const mockup = host?.shadowRoot?.querySelector('.mockup-img') as HTMLImageElement
+    expect(mockup?.hidden).toBe(false)
+    expect(mockup?.getAttribute('src')).toContain('iphone-16-pro.webp')
+    expect(root.classList.contains('has-mockup')).toBe(true)
     mountSimulatorOverlay(config)
     expect(document.getElementById(SIMULATOR_OVERLAY_ID)).toBeNull()
+  })
+
+  it('maps catalog phones onto MIT mockup frames and leaves Galaxy on the CSS chassis', () => {
+    const pro = mockupFor('iphone-16-pro')
+    expect(pro?.file).toBe('iphone-16-pro.webp')
+    expect(mockupFor('iphone-17-pro')?.file).toBe('iphone-16-pro.webp')
+    expect(mockupFor('pixel')?.file).toBe('pixel-8.webp')
+    expect(mockupFor('galaxy')).toBeNull()
+    expect(mockupFor('iphone-se')).toBeNull()
+    const rotated = orientedMockupInsets(pro!, true)
+    expect(rotated.left).toBe(pro!.bottom)
+    expect(rotated.top).toBe(pro!.left)
+    const outer = mockupOuterSize({ width: 402, height: 874 }, pro!)
+    expect(outer.width).toBeGreaterThan(402)
+    expect(outer.height).toBeGreaterThan(874)
   })
 
   it('injects the overlay from the context menu instead of opening a studio tab', async () => {
@@ -213,6 +233,11 @@ describe('mobile simulator studio helpers', () => {
     expect(chrome.scripting.executeScript).toHaveBeenCalled()
     expect(chrome.tabs.create).not.toHaveBeenCalled()
     expect(document.getElementById(SIMULATOR_OVERLAY_ID)).toBeTruthy()
+    const injection = vi.mocked(chrome.scripting.executeScript).mock.calls[0]?.[0] as {
+      args?: [{ mockupUrl?: string; deviceId?: string }]
+    }
+    expect(injection.args?.[0].deviceId).toBe('iphone-16-pro')
+    expect(injection.args?.[0].mockupUrl).toContain('iphone-16-pro.webp')
   })
 
   it('falls back to a studio tab on restricted pages', async () => {
@@ -242,5 +267,7 @@ function overlayFixture(): SimulatorOverlayConfig {
     showSafari: true,
     hostname: 'example.com',
     studioUrl: 'index.html#/tools/design/responsive-viewer?studio=1',
+    mockupUrl: mockupSrc('iphone-16-pro.webp'),
+    mockupInsets: mockupFor('iphone-16-pro') ?? undefined,
   }
 }

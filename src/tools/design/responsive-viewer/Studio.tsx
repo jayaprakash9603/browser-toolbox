@@ -63,6 +63,7 @@ import {
 } from './devices'
 import { CHASSIS } from './chassis'
 import { DeviceFrame, DeviceThumb } from './frames'
+import { mockupFor, mockupOuterSize, orientedMockupInsets } from './mockups'
 import { hostnameOf, KIND_ICON, KIND_TONE, useContentWidth } from './helpers'
 import {
   captureElements,
@@ -731,7 +732,9 @@ function StudioStage({
           const folded = settings.folded.includes(device.id)
           const size = orientedSize(device, rotated, folded)
           const src = compareUrl && index % 2 === 1 ? compareUrl : url
-          const fit = Math.min(1, 720 / Math.max(size.height, 1), ((stageWidth ?? 900) - 80) / Math.max(size.width * devices.length, 1))
+          const mockup = settings.frame ? mockupFor(device.id) : null
+          const fitSize = mockup ? mockupOuterSize(size, orientedMockupInsets(mockup, rotated)) : size
+          const fit = Math.min(1, 720 / Math.max(fitSize.height, 1), ((stageWidth ?? 900) - 80) / Math.max(fitSize.width * devices.length, 1))
           const scale = settings.studioZoom === 'fit' ? Math.max(0.2, fit) : Math.min(2, Number(settings.studioZoom) || 1)
           const pos = settings.positions[device.id]
           return (

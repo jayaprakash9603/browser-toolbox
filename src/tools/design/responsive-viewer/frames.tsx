@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 
 import { cn } from '@/shared/utils/cn'
 import { CHASSIS } from './chassis'
@@ -11,6 +11,7 @@ import {
   type FrameStyle,
   type NotchStyle,
 } from './devices'
+import { mockupFor, mockupSrc, orientedMockupInsets, type MockupInsets } from './mockups'
 
 export function frameInsets(device: Pick<Device, 'kind' | 'frameStyle'>, frame: boolean) {
   if (!frame) return { x: 0, top: 0, bottom: 0 }
@@ -149,7 +150,9 @@ function Cutout({ kind, landscape }: { kind: NotchStyle; landscape: boolean }) {
         aria-hidden
         className={cn(
           'pointer-events-none absolute z-20 rounded-full bg-neutral-950 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]',
-          landscape ? 'top-1/2 left-1.5 h-[36%] w-[14px] -translate-y-1/2' : 'top-[11px] left-1/2 h-[14px] w-[36%] -translate-x-1/2',
+          landscape
+            ? 'top-1/2 left-[12px] h-[32%] w-[14px] -translate-y-1/2'
+            : 'top-[12px] left-1/2 h-[4.35%] min-h-[12px] w-[32%] max-w-[126px] -translate-x-1/2',
         )}
       />
     )
@@ -195,7 +198,7 @@ function HomeIndicator({ landscape }: { landscape: boolean }) {
       aria-hidden
       className={cn(
         'pointer-events-none absolute z-20 rounded-full bg-white/90',
-        landscape ? 'top-1/2 right-2 h-[22%] w-[5px] -translate-y-1/2' : 'bottom-2 left-1/2 h-[5px] w-[33%] -translate-x-1/2',
+        landscape ? 'top-1/2 right-2 h-[22%] w-[5px] -translate-y-1/2' : 'bottom-2 left-1/2 h-[5px] w-[34%] max-w-[134px] -translate-x-1/2',
       )}
     />
   )
@@ -379,9 +382,59 @@ export function DeviceFrame({
     )
   }
 
-  const radius = style === 'iphone' || style === 'iphone-home' ? 50 : style === 'tablet-ios' ? 28 : 34
+  const radius = style === 'iphone' || style === 'iphone-home' ? 55 : style === 'tablet-ios' ? 28 : 34
   const pad = style.startsWith('tablet') ? 14 : style === 'iphone' || style === 'iphone-home' ? 10 : 12
   const fold = style === 'fold' && !folded
+  const mockup = mockupFor(device.id)
+  const screenChrome = (
+    <>
+      {fold && <span aria-hidden className="pointer-events-none absolute inset-y-0 left-1/2 z-10 w-px bg-black/40" />}
+      {showStatusBar && device.statusBar && device.statusBar !== 'none' && (
+        <StatusBar style={device.statusBar} landscape={landscape} />
+      )}
+      {!mockup && <Cutout kind={device.notch ?? 'none'} landscape={landscape} />}
+      {showNavBar && device.navBar === 'home-indicator' && <HomeIndicator landscape={landscape} />}
+      {showNavBar && device.navBar === 'android' && <AndroidNav landscape={landscape} />}
+      {showSafeArea && device.safeArea && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-10 border border-dashed border-sky-400/70"
+          style={{
+            borderTopWidth: device.safeArea.top ? 2 : 0,
+            borderBottomWidth: device.safeArea.bottom ? 2 : 0,
+            marginTop: device.safeArea.top,
+            marginBottom: device.safeArea.bottom,
+            marginLeft: device.safeArea.left,
+            marginRight: device.safeArea.right,
+          }}
+        />
+      )}
+      {keyboard && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex h-[38%] flex-col justify-end bg-neutral-800/95 p-1.5"
+        >
+          <div className="grid grid-cols-10 gap-0.5">
+            {Array.from({ length: 30 }, (_, index) => (
+              <span key={index} className="h-3.5 rounded-sm bg-neutral-600/90" />
+            ))}
+          </div>
+        </div>
+      )}
+      <Brightness brightness={brightness} />
+    </>
+  )
+
+  if (mockup) {
+    return (
+      <MockupBezel src={mockupSrc(mockup.file)} insets={mockup} rotated={landscape} shadow={!performance}>
+        <div className="relative overflow-hidden bg-black" style={{ borderRadius: '11%' }}>
+          {children}
+          {screenChrome}
+        </div>
+      </MockupBezel>
+    )
+  }
 
   return (
     <div className="relative shrink-0">
@@ -389,44 +442,77 @@ export function DeviceFrame({
       <Chassis color={finish} radius={radius} shadow={!performance} extraStyle={{ padding: pad }}>
         <div className="relative overflow-hidden bg-black" style={{ borderRadius: screenRadius }}>
           {children}
-          {fold && (
-            <span aria-hidden className="pointer-events-none absolute inset-y-0 left-1/2 z-10 w-px bg-black/40" />
-          )}
-          {showStatusBar && device.statusBar && device.statusBar !== 'none' && (
-            <StatusBar style={device.statusBar} landscape={landscape} />
-          )}
-          <Cutout kind={device.notch ?? 'none'} landscape={landscape} />
-          {showNavBar && device.navBar === 'home-indicator' && <HomeIndicator landscape={landscape} />}
-          {showNavBar && device.navBar === 'android' && <AndroidNav landscape={landscape} />}
-          {showSafeArea && device.safeArea && (
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-0 z-10 border border-dashed border-sky-400/70"
-              style={{
-                borderTopWidth: device.safeArea.top ? 2 : 0,
-                borderBottomWidth: device.safeArea.bottom ? 2 : 0,
-                marginTop: device.safeArea.top,
-                marginBottom: device.safeArea.bottom,
-                marginLeft: device.safeArea.left,
-                marginRight: device.safeArea.right,
-              }}
-            />
-          )}
-          {keyboard && (
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex h-[38%] flex-col justify-end bg-neutral-800/95 p-1.5"
-            >
-              <div className="grid grid-cols-10 gap-0.5">
-                {Array.from({ length: 30 }, (_, index) => (
-                  <span key={index} className="h-3.5 rounded-sm bg-neutral-600/90" />
-                ))}
-              </div>
-            </div>
-          )}
-          <Brightness brightness={brightness} />
+          {screenChrome}
         </div>
       </Chassis>
+    </div>
+  )
+}
+
+function MockupBezel({
+  src,
+  insets,
+  rotated,
+  shadow,
+  children,
+}: {
+  src: string
+  insets: MockupInsets
+  rotated: boolean
+  shadow: boolean
+  children: ReactNode
+}) {
+  const innerRef = useRef<HTMLDivElement>(null)
+  const [inner, setInner] = useState({ w: 0, h: 0 })
+  useLayoutEffect(() => {
+    const element = innerRef.current
+    if (!element || typeof ResizeObserver === 'undefined') return
+    const measure = () => {
+      const box = element.getBoundingClientRect()
+      setInner({ w: box.width, h: box.height })
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+  const oriented = orientedMockupInsets(insets, rotated)
+  const holeW = 1 - oriented.left - oriented.right
+  const holeH = 1 - oriented.top - oriented.bottom
+  const padL = inner.w ? inner.w * (oriented.left / holeW) : 0
+  const padR = inner.w ? inner.w * (oriented.right / holeW) : 0
+  const padT = inner.h ? inner.h * (oriented.top / holeH) : 0
+  const padB = inner.h ? inner.h * (oriented.bottom / holeH) : 0
+  const outerW = padL + inner.w + padR
+  const outerH = padT + inner.h + padB
+  return (
+    <div
+      className="relative shrink-0"
+      style={{
+        padding: `${padT}px ${padR}px ${padB}px ${padL}px`,
+        filter: shadow ? 'drop-shadow(0 18px 50px rgba(0,0,0,0.28))' : undefined,
+      }}
+    >
+      <div ref={innerRef} className="relative">
+        {children}
+      </div>
+      <img
+        src={src}
+        alt=""
+        draggable={false}
+        className="pointer-events-none absolute z-20 max-w-none select-none"
+        style={
+          rotated
+            ? {
+                left: '50%',
+                top: '50%',
+                width: outerH,
+                height: outerW,
+                transform: 'translate(-50%, -50%) rotate(90deg)',
+              }
+            : { inset: 0, width: '100%', height: '100%' }
+        }
+      />
     </div>
   )
 }
