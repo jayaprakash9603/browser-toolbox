@@ -13,6 +13,7 @@ import {
 import { mockupFor, mockupSrc } from '@/tools/design/responsive-viewer/mockups'
 import { simulatorStudioUrl } from '@/tools/design/responsive-viewer/studioUrl'
 
+import { setOverlayTabFraming } from '../responsiveViewerFraming'
 import { downloadWithName } from '../downloadNames'
 import { startRecorder } from '../recorder'
 
@@ -99,12 +100,19 @@ export async function openSimulatorOverlay(
 ): Promise<boolean> {
   if (tab.id == null) return false
   let config: SimulatorOverlayConfig
+  let mobileUa: string | undefined
   try {
     config = (await overlayConfigFor(opts.url, opts.deviceId, opts.replace)) ?? fallbackOverlayConfig(opts.url, opts.replace)
+    const settings = await readViewerSettings()
+    const device =
+      findDevice(opts.deviceId ?? settings.lastDevice ?? DEFAULT_DEVICE_ID, settings.custom) ??
+      findDevice(DEFAULT_DEVICE_ID)
+    mobileUa = settings.mobileUa && device?.userAgent ? device.userAgent : undefined
   } catch (error) {
     console.warn('[simulator] overlay config failed', error)
     config = fallbackOverlayConfig(opts.url, opts.replace)
   }
+  await setOverlayTabFraming(tab.id, true, mobileUa)
   try {
     await chrome.scripting.executeScript({
       target: { tabId: tab.id },
@@ -123,6 +131,7 @@ export async function openSimulatorOverlay(
     return Boolean(injection?.result)
   } catch (error) {
     console.warn('[simulator] overlay inject failed', error)
+    await setOverlayTabFraming(tab.id, false)
     return false
   }
 }
@@ -186,6 +195,10 @@ export async function handleOverlayAction(
       return captureOverlayScreenshot(tab)
     case 'record':
       return startOverlayRecording(tab)
+    case 'closed': {
+      if (tab?.id != null) await setOverlayTabFraming(tab.id, false)
+      return { ok: true }
+    }
     case 'compare':
     case 'expand': {
       await chrome.tabs.create({

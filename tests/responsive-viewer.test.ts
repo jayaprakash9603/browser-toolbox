@@ -191,6 +191,29 @@ describe('mobile simulator studio helpers', () => {
     expect(isSyncMessage({ source: 'other', type: 'scroll' })).toBe(false)
   })
 
+  it('can strip frame headers for subframes in an overlay tab', async () => {
+    const { setOverlayTabFraming, RV_OVERLAY_TAB_FRAMING_RULE_ID } = await import(
+      '@/chrome/background/responsiveViewerFraming'
+    )
+    await setOverlayTabFraming(42, true)
+    expect(chrome.declarativeNetRequest.updateSessionRules).toHaveBeenCalledWith(
+      expect.objectContaining({
+        addRules: expect.arrayContaining([
+          expect.objectContaining({
+            id: RV_OVERLAY_TAB_FRAMING_RULE_ID,
+            condition: expect.objectContaining({ tabIds: [42], resourceTypes: ['sub_frame'] }),
+          }),
+        ]),
+      }),
+    )
+    vi.mocked(chrome.declarativeNetRequest.updateSessionRules).mockClear()
+    await setOverlayTabFraming(42, false)
+    expect(chrome.declarativeNetRequest.updateSessionRules).toHaveBeenCalledWith({
+      removeRuleIds: [RV_OVERLAY_TAB_FRAMING_RULE_ID],
+      addRules: [],
+    })
+  })
+
   it('covers same-origin pages in an overlay and skips restricted or cross-origin targets', () => {
     expect(canOverlaySimulatorOnTab('https://example.com/a', 'https://example.com/b')).toBe(true)
     expect(canOverlaySimulatorOnTab('https://example.com/', 'https://other.example/')).toBe(false)
@@ -205,7 +228,8 @@ describe('mobile simulator studio helpers', () => {
     const root = host?.shadowRoot?.querySelector('.root') as HTMLElement
     expect(root.style.getPropertyValue('--tbx-fill')).toBe(config.finish.fill)
     expect(host?.shadowRoot?.querySelector('iframe')?.src).toContain('https://example.com/tools')
-    expect(root.classList.contains('drawer-open')).toBe(true)
+    expect(root.classList.contains('drawer-open')).toBe(false)
+    expect(host?.shadowRoot?.querySelector('[data-panel="devices"]')?.classList.contains('open')).toBe(false)
     const mockup = host?.shadowRoot?.querySelector('.mockup-img') as HTMLImageElement
     expect(mockup?.hidden).toBe(false)
     expect(mockup?.getAttribute('src')).toContain('iphone-16-pro.webp')

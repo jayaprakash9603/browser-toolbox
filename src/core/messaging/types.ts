@@ -347,7 +347,7 @@ export type ExtensionMessage =
   | { type: 'SIMULATOR_OPEN_OVERLAY'; url?: string; deviceId?: string; tabId?: number }
   | {
       type: 'SIMULATOR_OVERLAY_ACTION'
-      action: 'listDevices' | 'setDevice' | 'screenshot' | 'record' | 'compare' | 'expand'
+      action: 'listDevices' | 'setDevice' | 'screenshot' | 'record' | 'compare' | 'expand' | 'closed'
       deviceId?: string
       url?: string
     }

@@ -85,19 +85,15 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       --tbx-accent-hover: #0f766e;
       --tbx-accent-pressed: #115e59;
     }
-    .root.drawer-open .stage {
-      margin-left: min(340px, 42vw);
-      transition: margin-left 0.2s ease;
-    }
     .stage {
       display: flex;
+      flex-direction: row;
       align-items: center;
       justify-content: center;
-      gap: 16px;
+      gap: 20px;
       max-width: 100%;
       max-height: 100%;
-      padding: 12px 80px 12px 12px;
-      transition: margin-left 0.2s ease;
+      padding: 12px 92px 12px 20px;
     }
     .phone-wrap { position: relative; }
     .mockup-img {
@@ -257,13 +253,15 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .panel.open { display: flex; }
     .panel[data-panel="devices"] {
-      left: 0; top: 0; bottom: 0; right: auto;
-      width: min(340px, 42vw);
-      max-height: none;
-      padding: 16px 14px;
-      border-radius: 0;
-      border-right: 1px solid #dde3ea;
-      box-shadow: 4px 0 24px rgba(15,23,42,0.06);
+      position: relative;
+      flex-shrink: 0;
+      order: -1;
+      width: min(300px, 34vw);
+      max-height: min(78vh, 620px);
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid #dde3ea;
+      box-shadow: 0 16px 40px rgba(15,23,42,0.12);
     }
     .panel[data-panel="settings"] {
       right: 76px; top: 50%; transform: translateY(-50%);
@@ -321,6 +319,12 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
 
   root.innerHTML = `
     <div class="stage">
+      <div class="panel" data-panel="devices">
+        <h2>Devices</h2>
+        <input type="search" class="device-search" placeholder="Search devices" />
+        <div class="chips" data-kind-chips></div>
+        <div class="panel-list" data-device-list></div>
+      </div>
       <div class="phone-wrap">
         <img class="mockup-img" alt="" hidden />
         <span class="side" style="top:16%;left:-3px;height:7%;border-radius:1px 0 0 1px;"></span>
@@ -355,12 +359,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
           </div>
         </div>
       </div>
-    </div>
-    <div class="panel" data-panel="devices">
-      <h2>Devices</h2>
-      <input type="search" class="device-search" placeholder="Search devices" />
-      <div class="chips" data-kind-chips></div>
-      <div class="panel-list" data-device-list></div>
     </div>
     <div class="panel" data-panel="settings">
       <h2>Settings</h2>
@@ -446,8 +444,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     const live = state.live
     const width = state.rotated ? live.height : live.width
     const height = state.rotated ? live.width : live.height
-    const drawer = state.panel === 'devices' ? Math.min(340, window.innerWidth * 0.42) : 0
-    const maxW = Math.max(160, window.innerWidth - 100 - drawer)
+    const sidePanel = state.panel === 'devices' ? Math.min(300, window.innerWidth * 0.34) + 28 : 0
+    const maxW = Math.max(160, window.innerWidth - 108 - sidePanel)
     const maxH = Math.max(160, window.innerHeight - 24)
     const mockup = live.mockupUrl && live.mockupInsets ? live.mockupInsets : null
     root.classList.toggle('has-mockup', Boolean(mockup))
@@ -551,7 +549,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     for (const panel of shadow.querySelectorAll('[data-panel]')) {
       panel.classList.toggle('open', panel.getAttribute('data-panel') === state.panel)
     }
-    root.classList.toggle('drawer-open', state.panel === 'devices')
     deviceBtn.setAttribute('aria-pressed', String(state.panel === 'devices'))
     settingsBtn.setAttribute('aria-pressed', String(state.panel === 'settings'))
     layout()
@@ -602,6 +599,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   }
 
   const dispose = () => {
+    void ask({ type: 'SIMULATOR_OVERLAY_ACTION', action: 'closed' })
     window.clearInterval(clockId)
     window.removeEventListener('resize', onResize)
     document.removeEventListener('keydown', onKey, true)
@@ -675,13 +673,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   })
 
   document.documentElement.append(host)
-  state.panel = 'devices'
-  for (const panel of shadow.querySelectorAll('[data-panel]')) {
-    panel.classList.toggle('open', panel.getAttribute('data-panel') === 'devices')
-  }
-  root.classList.add('drawer-open')
-  deviceBtn.setAttribute('aria-pressed', 'true')
-  void loadDevices()
   layout()
   ;(shadow.querySelector('[data-act="devices"]') as HTMLButtonElement | null)?.focus({ preventScroll: true })
   return true

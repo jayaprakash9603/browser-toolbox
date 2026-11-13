@@ -1,6 +1,8 @@
 import { registerMessageHandler } from '@/core/messaging'
 
 export const RV_FRAMING_RULE_IDS = [91_101, 91_102] as const
+/** Strips frame-blocking headers for subframes in the tab that hosts the on-page simulator overlay. */
+export const RV_OVERLAY_TAB_FRAMING_RULE_ID = 91_103
 /** Above the ad-block allowlist so allowlisted sites still load in previews. */
 const RULE_PRIORITY = 1_000
 
@@ -70,6 +72,34 @@ function setFramingAllowedQueued(allowed: boolean, userAgent?: string): Promise<
   const run = queue.then(() => applyFraming(allowed, userAgent))
   queue = run
   return run
+}
+
+export async function setOverlayTabFraming(
+  tabId: number,
+  allowed: boolean,
+  userAgent?: string,
+): Promise<boolean> {
+  const dnr = globalThis.chrome?.declarativeNetRequest
+  if (!dnr?.updateSessionRules) return false
+  const ua = userAgent === 'mobile' ? IOS_PREVIEW_UA : userAgent
+  try {
+    await dnr.updateSessionRules({
+      removeRuleIds: [RV_OVERLAY_TAB_FRAMING_RULE_ID],
+      addRules: allowed
+        ? [
+            {
+              id: RV_OVERLAY_TAB_FRAMING_RULE_ID,
+              priority: RULE_PRIORITY,
+              action: framingAction(ua),
+              condition: { resourceTypes: SUB_FRAME, tabIds: [tabId] },
+            },
+          ]
+        : [],
+    })
+    return true
+  } catch {
+    return false
+  }
 }
 
 export function registerResponsiveViewerFraming(): void {
