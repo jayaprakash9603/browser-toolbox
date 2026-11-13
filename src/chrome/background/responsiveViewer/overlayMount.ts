@@ -59,6 +59,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 22h8M12 18v4"/></svg>'
   const iconRecordTab =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>'
+  const iconRecordStop =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="7" width="10" height="10" rx="1" fill="currentColor" stroke="none"/></svg>'
   const iconCompareGrid = iconTabs.replace('width="16" height="16"', '')
 
   type Host = HTMLElement & {
@@ -94,6 +96,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     lastCaptureUrl: '',
     lastCaptureName: '',
     previewReload: 0,
+    recordSyncId: 0,
   }
 
   const style = document.createElement('style')
@@ -351,17 +354,11 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .panel.open { display: flex; z-index: 11; }
     .panel.rail-popover {
-      --tbx-panel-bg: #1a222d;
-      --tbx-panel-border: #3a4659;
-      --tbx-panel-muted: #94a3b8;
-      --tbx-row-hover: #243041;
-      --tbx-input-bg: #0f141c;
-      --tbx-input-border: #3d4f63;
-      --tbx-hint: #9aa8bb;
-      --tbx-menu-bg: #232d3b;
-      --tbx-menu-border: #3d4f63;
       background: var(--tbx-panel-bg);
-      color: #e8edf4;
+      color: inherit;
+      box-shadow: 0 16px 40px rgba(15,23,42,0.14);
+    }
+    .root.theme-dark .panel.rail-popover {
       box-shadow: 0 18px 46px rgba(0,0,0,0.45);
     }
     .panel.rail-popover::after {
@@ -380,17 +377,17 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       margin-bottom: 2px;
     }
     .popover-head h2 { margin: 0; font-size: 15px; font-weight: 700; flex: 1; }
-    .popover-head svg { flex-shrink: 0; opacity: 0.95; color: #cbd5e1; }
+    .popover-head svg { flex-shrink: 0; opacity: 0.95; color: var(--tbx-panel-muted); }
     .panel.rail-popover .setting-card {
       border: 1px solid var(--tbx-panel-border);
       border-radius: 12px;
       padding: 10px 10px 8px;
-      background: rgba(15,20,28,0.55);
+      background: var(--tbx-input-bg);
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
-    .panel.rail-popover .setting-card .setting-section { margin-top: 0; color: #cbd5e1; }
+    .panel.rail-popover .setting-card .setting-section { margin-top: 0; color: var(--tbx-panel-muted); }
     .panel.rail-popover {
       overflow-x: hidden;
       overflow-y: hidden;
@@ -407,21 +404,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       padding-right: 2px;
     }
     .panel.rail-popover .setting-switch span:first-child {
-      color: #e8edf4;
       min-width: 0;
     }
-    .panel.rail-popover .theme-opt {
-      background: #232d3b;
-      border-color: #3d4f63;
-      color: #e8edf4;
-    }
-    .panel.rail-popover .theme-opt:hover { border-color: #5eead4; color: #99f6e4; }
-    .panel.rail-popover .theme-opt[aria-pressed="true"] {
-      background: var(--tbx-accent);
-      border-color: var(--tbx-accent);
-      color: #fff;
-    }
-    .panel.rail-popover .switch-track { background: #3d4f63; }
     .menu-option {
       display: flex; align-items: flex-start; gap: 12px;
       width: 100%; min-height: 52px; padding: 10px 12px;
@@ -667,11 +651,20 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .panel[data-panel="shot-menu"],
     .panel[data-panel="record-menu"],
-    .panel[data-panel="capture-result"],
     .panel[data-panel="compare-menu"] {
       right: 76px;
       width: min(318px, calc(100vw - 120px));
       max-width: 318px;
+      max-height: min(72vh, 520px);
+      padding: 14px;
+      border-radius: 14px;
+      gap: 10px;
+      overflow: hidden;
+    }
+    .panel[data-panel="capture-result"] {
+      right: 76px;
+      width: min(340px, calc(100vw - 120px));
+      max-width: 340px;
       max-height: min(72vh, 520px);
       padding: 14px;
       border-radius: 14px;
@@ -696,8 +689,21 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       border-right: 1px solid var(--tbx-panel-border);
       border-top: 1px solid var(--tbx-panel-border);
     }
-    .panel[data-panel="capture-result"] {
-      width: min(340px, 44vw);
+    .record-status {
+      margin: 0;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--tbx-panel-border);
+      background: var(--tbx-input-bg);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--tbx-accent);
+      text-align: center;
+    }
+    .record-status[data-phase="countdown"] { animation: tbx-pulse 1s ease-in-out infinite; }
+    @keyframes tbx-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.65; }
     }
     .panel[data-panel="capture-result"] img {
       width: 100%; max-height: 46vh; object-fit: contain;
@@ -961,15 +967,29 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
         ${iconVideo}
         <h2>Record a screen video</h2>
       </div>
-      <p class="capture-hint">Record the simulator and page together in this tab.</p>
-      <div class="menu-options">
-        <button type="button" class="menu-option" data-record="tab">
-          <span class="menu-option-icon">${iconRecordTab}</span>
-          <span class="menu-option-copy">
-            <span class="menu-option-title">Record this browser tab</span>
-            <span class="menu-option-desc">Starts tab capture with the device visible</span>
-          </span>
-        </button>
+      <div data-record-idle>
+        <p class="capture-hint">Record the simulator and page together in this tab.</p>
+        <div class="menu-options">
+          <button type="button" class="menu-option" data-record="tab">
+            <span class="menu-option-icon">${iconRecordTab}</span>
+            <span class="menu-option-copy">
+              <span class="menu-option-title">Record this browser tab</span>
+              <span class="menu-option-desc">Uses your recorder countdown before capture starts</span>
+            </span>
+          </button>
+        </div>
+      </div>
+      <div data-record-active hidden>
+        <p class="record-status" data-record-status data-phase="idle">Preparing…</p>
+        <div class="menu-options">
+          <button type="button" class="menu-option" data-record="stop">
+            <span class="menu-option-icon">${iconRecordStop}</span>
+            <span class="menu-option-copy">
+              <span class="menu-option-title">Stop recording</span>
+              <span class="menu-option-desc">End capture and open the saved video</span>
+            </span>
+          </button>
+        </div>
       </div>
     </div>
     <div class="panel rail-popover" data-panel="compare-menu">
@@ -1095,6 +1115,60 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const capturePanel = shadow.querySelector('[data-panel="capture-result"]') as HTMLElement
   const settingsPanel = shadow.querySelector('[data-panel="settings"]') as HTMLElement
   const comparePanel = shadow.querySelector('[data-panel="compare-menu"]') as HTMLElement
+  const recordIdle = recordPanel.querySelector('[data-record-idle]') as HTMLElement
+  const recordActive = recordPanel.querySelector('[data-record-active]') as HTMLElement
+  const recordStatus = recordPanel.querySelector('[data-record-status]') as HTMLElement
+
+  type RecorderSessionLite = {
+    phase: string
+    countdownUntil?: number
+  }
+
+  const syncRecordUi = async () => {
+    const res = await ask<{ session: RecorderSessionLite | null }>({ type: 'RECORDER_STATUS' })
+    const session = res?.session ?? null
+    const active =
+      Boolean(session) &&
+      (session!.phase === 'pending' ||
+        session!.phase === 'recording' ||
+        session!.phase === 'paused' ||
+        session!.phase === 'stopping')
+    recordIdle.hidden = active
+    recordActive.hidden = !active
+    recordBtn.setAttribute('aria-pressed', String(active))
+    if (!active) {
+      recordStatus.textContent = ''
+      recordStatus.dataset.phase = 'idle'
+      return
+    }
+    const countdownLeft =
+      session?.countdownUntil && session.countdownUntil > Date.now()
+        ? Math.ceil((session.countdownUntil - Date.now()) / 1000)
+        : 0
+    if (countdownLeft > 0) {
+      recordStatus.textContent = `Recording starts in ${countdownLeft}s…`
+      recordStatus.dataset.phase = 'countdown'
+      return
+    }
+    if (session?.phase === 'stopping') {
+      recordStatus.textContent = 'Saving recording…'
+      recordStatus.dataset.phase = 'recording'
+      return
+    }
+    recordStatus.textContent = session?.phase === 'paused' ? 'Recording paused' : 'Recording in progress…'
+    recordStatus.dataset.phase = 'recording'
+  }
+
+  const startRecordSync = () => {
+    window.clearInterval(state.recordSyncId)
+    void syncRecordUi()
+    state.recordSyncId = window.setInterval(() => void syncRecordUi(), 400)
+  }
+
+  const stopRecordSync = () => {
+    window.clearInterval(state.recordSyncId)
+    state.recordSyncId = 0
+  }
   const currentDeviceName = shadow.querySelector('[data-current-device-name]') as HTMLElement
   const currentDeviceThumb = shadow.querySelector('[data-current-device-thumb]') as HTMLElement
 
@@ -1474,15 +1548,21 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
         positionSettingsPanel()
         requestAnimationFrame(() => positionSettingsPanel())
       })
+    } else if (state.panel === 'record-menu') {
+      startRecordSync()
+      requestAnimationFrame(() => positionCapturePanels())
     } else if (
       state.panel === 'shot-menu' ||
-      state.panel === 'record-menu' ||
       state.panel === 'capture-result' ||
       state.panel === 'compare-menu'
     ) {
+      stopRecordSync()
       requestAnimationFrame(() => positionCapturePanels())
+    } else {
+      stopRecordSync()
     }
     screenshotBtn.setAttribute('aria-pressed', String(state.panel === 'shot-menu' || state.panel === 'capture-result'))
+    if (state.panel !== 'record-menu') void syncRecordUi()
   }
 
   const showCaptureResult = (dataUrl: string, filename: string, kind: 'simulator' | 'viewport') => {
@@ -1598,6 +1678,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     void ask({ type: 'SIMULATOR_OVERLAY_ACTION', action: 'closed' })
     window.clearInterval(clockId)
     window.removeEventListener('resize', onResize)
+    stopRecordSync()
     document.removeEventListener('keydown', onKey, true)
     document.documentElement.style.overflow = previousOverflow
     host.remove()
@@ -1680,18 +1761,29 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   recordBtn.addEventListener('click', () => {
     const pressed = recordBtn.getAttribute('aria-pressed') === 'true'
     if (pressed) {
-      void ask({ type: 'RECORDER_STOP' })
-      recordBtn.setAttribute('aria-pressed', 'false')
+      setPanel('record-menu', true)
       return
     }
     setPanel('record-menu', true)
   })
   shadow.querySelector('[data-panel="record-menu"]')?.addEventListener('click', (event) => {
     const kind = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-record]')?.dataset.record
-    if (kind !== 'tab') return
-    setPanel('')
-    void ask({ type: 'SIMULATOR_OVERLAY_ACTION', action: 'record', url: state.live.url })
-    recordBtn.setAttribute('aria-pressed', 'true')
+    if (kind === 'tab') {
+      void ask({ type: 'SIMULATOR_OVERLAY_ACTION', action: 'record', url: state.live.url }).then(() => syncRecordUi())
+      return
+    }
+    if (kind === 'stop') {
+      void ask({ type: 'SIMULATOR_OVERLAY_ACTION', action: 'recordStop', url: state.live.url }).then(() => {
+        void syncRecordUi()
+        setPanel('')
+      })
+    }
+  })
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message?.type === 'RECORDER_FINISHED' || message?.type === 'RECORDER_STARTED' || message?.type === 'RECORDER_COUNTDOWN_BEGIN') {
+      void syncRecordUi()
+    }
+    return false
   })
   shadow.querySelector('[data-capture-download]')?.addEventListener('click', () => {
     if (!state.lastCaptureUrl) return

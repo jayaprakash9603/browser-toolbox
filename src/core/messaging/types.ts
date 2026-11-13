@@ -352,6 +352,7 @@ export type ExtensionMessage =
         | 'setDevice'
         | 'screenshot'
         | 'record'
+        | 'recordStop'
         | 'compare'
         | 'expand'
         | 'closed'
