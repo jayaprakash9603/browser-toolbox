@@ -49,6 +49,8 @@ import { registerHtmlBundleJobHandlers } from './htmlBundleJob'
 import { registerImageDownloadJobHandlers } from './imageDownloadJob'
 import { registerDownloadManager } from './download-manager'
 import { handleDownloadManagerMenuClick, isDownloadManagerMenuItem } from './download-manager/menus'
+import { registerHistoryManager } from './history-manager'
+import { handleHistoryManagerMenuClick, isHistoryManagerMenuItem } from './history-manager/menus'
 import { registerNetMonitor } from './netmon'
 import { registerToolbarIcon } from './toolbarIcon'
 import { registerInterceptor } from './interceptor'
@@ -123,6 +125,10 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     void handleDownloadManagerMenuClick(menuItemId, info, tab)
     return
   }
+  if (isHistoryManagerMenuItem(menuItemId)) {
+    void handleHistoryManagerMenuClick(menuItemId, info, tab)
+    return
+  }
   if (isImageConvertMenuItem(menuItemId)) {
     void handleImageConvertMenuClick(info, tab)
     return
@@ -188,6 +194,7 @@ safeRegister('recorder', registerRecorder)
 safeRegister('htmlBundleJob', registerHtmlBundleJobHandlers)
 safeRegister('imageDownloadJob', registerImageDownloadJobHandlers)
 safeRegister('downloadManager', registerDownloadManager)
+safeRegister('historyManager', registerHistoryManager)
 safeRegister('adblock', registerAdblock)
 safeRegister('protection', registerProtection)
 safeRegister('sitesYoutube', registerSitesYoutube)

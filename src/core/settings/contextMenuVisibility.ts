@@ -11,6 +11,7 @@ export type ContextMenuVisibilityKey =
   | 'siteQuickActions'
   | 'chatPulse'
   | 'downloadManager'
+  | 'historyManager'
 
 export type ContextMenuVisibility = Record<ContextMenuVisibilityKey, boolean>
 
@@ -27,6 +28,7 @@ export const DEFAULT_CONTEXT_MENU_VISIBILITY: ContextMenuVisibility = {
   siteQuickActions: true,
   chatPulse: true,
   downloadManager: true,
+  historyManager: true,
 }
 
 export function resolveContextMenuVisibility(

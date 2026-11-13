@@ -82,6 +82,7 @@ export const SECTIONS: SectionDefinition[] = [
     toolIds: [
       'browser.toolkit',
       'browser.download-manager',
+      'browser.history-manager',
       'browser.internet-monitor',
       'browser.picture-in-picture',
       'datetime.toolkit',

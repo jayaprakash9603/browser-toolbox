@@ -61,6 +61,8 @@ const optionalPermissions = [
   'cookies',
   'bookmarks',
   'downloads.open',
+  'history',
+  'sessions',
 ]
 
 const firefoxOptionalPermissions = [
@@ -70,6 +72,8 @@ const firefoxOptionalPermissions = [
   'cookies',
   'bookmarks',
   'downloads.open',
+  'history',
+  'sessions',
 ]
 
 export default defineManifest({

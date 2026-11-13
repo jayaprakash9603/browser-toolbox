@@ -46,6 +46,7 @@ export const STORAGE_KEYS = {
   bugReporterHistory: 'bugReporterHistory',
   bugReporterPrefs: 'bugReporterPrefs',
   downloadManager: 'downloadManager',
+  historyManager: 'historyManager',
 } as const
 
 import { getExtensionName } from '@/core/i18n/chromeMessages'

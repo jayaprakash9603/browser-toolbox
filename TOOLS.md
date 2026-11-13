@@ -1,6 +1,6 @@
 # Tools catalog & capability matrix
 
-One Panel ships **92 registry tools** (including one disabled legacy entry), shown to users as **49 primary tools in five sections**. Related tools are grouped into workspaces; every tool keeps its id, route and search entry. Search, favorites, the command palette (`Ctrl/Cmd+Shift+Space`), context menus, and clipboard insights surface the same capabilities.
+One Panel ships **94 registry tools** (including one disabled legacy entry), shown to users as **49 primary tools in five sections**. Related tools are grouped into workspaces; every tool keeps its id, route and search entry. Search, favorites, the command palette (`Ctrl/Cmd+Shift+Space`), context menus, and clipboard insights surface the same capabilities.
 
 See [ROADMAP.md](./ROADMAP.md) for what is planned next.
 
@@ -56,7 +56,7 @@ A workspace is one primary tool that hosts several existing tools as tabs. The r
 | CSS & Color Studio (`design.css-color-studio`) | CSS Generator, Contrast Checker, Color Converter |
 | Security Toolkit (`security.toolkit`) | Encoder/Decoder, Hash, JWT, Password, Random |
 | Date & Time Toolkit (`datetime.toolkit`) | Timer |
-| Browser Toolkit (`browser.toolkit`) | Tab Manager, Tab Sessions, Bookmark Search, Storage Inspector, Accessibility Quick Check, Page Information |
+| Browser Toolkit (`browser.toolkit`) | Tab Manager, Tab Sessions, Bookmark Search, **History Manager**, Storage Inspector, Accessibility Quick Check, Page Information |
 | Image Toolkit (`image.image-toolkit`) | Image Links, SVG Grabber, Image Downloader |
 | Internet Monitor (`browser.internet-monitor`) | Speed Test |
 

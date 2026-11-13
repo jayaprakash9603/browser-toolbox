@@ -15,6 +15,7 @@ import { buildSiteQuickActionMenus } from './siteQuickActions'
 import { buildTaskMenus } from './tasks'
 import { buildReadingListMenus } from './readingList'
 import { buildDownloadManagerMenus } from './download-manager/menus'
+import { buildHistoryManagerMenus } from './history-manager/menus'
 
 const logger = createLogger('context-menus')
 
@@ -91,6 +92,13 @@ async function rebuildContextMenusOnce(): Promise<void> {
       buildDownloadManagerMenus(createContextMenu)
     } catch (error) {
       logger.warn('download manager menu build failed', error)
+    }
+  }
+  if (menu.historyManager) {
+    try {
+      buildHistoryManagerMenus(createContextMenu)
+    } catch (error) {
+      logger.warn('history manager menu build failed', error)
     }
   }
   for (const { name, run, enabled } of builders) {

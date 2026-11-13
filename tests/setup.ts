@@ -177,7 +177,21 @@ const chromeMock = {
   windows: {
     getLastFocused: vi.fn(async () => ({ tabs: [] })),
     getAll: vi.fn(async () => []),
+    create: vi.fn(async () => undefined),
     onFocusChanged: makeEvent(),
+  },
+  history: {
+    search: vi.fn(async () => []),
+    getVisits: vi.fn(async () => []),
+    deleteUrl: vi.fn(async () => undefined),
+    deleteRange: vi.fn(async () => undefined),
+    deleteAll: vi.fn(async () => undefined),
+    onVisited: makeEvent(),
+    onVisitRemoved: makeEvent(),
+  },
+  sessions: {
+    getRecentlyClosed: vi.fn(async () => []),
+    restore: vi.fn(async () => undefined),
   },
   i18n: {
     getMessage: (name: string) =>

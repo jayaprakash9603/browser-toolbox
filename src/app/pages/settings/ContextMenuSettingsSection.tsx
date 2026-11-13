@@ -82,6 +82,12 @@ const ROWS: { key: ContextMenuVisibilityKey; labelKey: string; descKey: string; 
     descKey: 'settings.contextMenu.downloadManagerDescription',
     searchId: 'contextMenuDownloadManager',
   },
+  {
+    key: 'historyManager',
+    labelKey: 'settings.contextMenu.historyManager',
+    descKey: 'settings.contextMenu.historyManagerDescription',
+    searchId: 'contextMenuHistoryManager',
+  },
 ]
 
 export function ContextMenuSettingsSection() {

@@ -98,6 +98,21 @@
   "colorResultClose": {
     "message": "Close"
   },
+  "contextMenuHistoryParent": {
+    "message": "History"
+  },
+  "contextMenuHistoryOpen": {
+    "message": "Open History Manager"
+  },
+  "contextMenuHistorySearchSelection": {
+    "message": "Search \"%s\" in history"
+  },
+  "contextMenuHistoryFindPage": {
+    "message": "Find this page in history"
+  },
+  "contextMenuHistoryDomain": {
+    "message": "View history for this site"
+  },
   "contextMenuDownloadParent": {
     "message": "Downloads"
   },

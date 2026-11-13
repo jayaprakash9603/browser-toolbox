@@ -1,6 +1,7 @@
 import { fileToolkitStrings } from './fileToolkitEn'
 import { imageDownloaderStrings } from './imageDownloaderEn'
 import { downloadManagerStrings } from './downloadManagerEn'
+import { historyManagerStrings } from './historyManagerEn'
 import { imageLinksStrings } from './imageLinksEn'
 import { pdfToolkitStrings } from './pdfToolkitEn'
 import { cssGeneratorStrings } from './cssGeneratorEn'
@@ -1683,6 +1684,7 @@ const en = {
   ...cssGeneratorStrings,
   ...imageDownloaderStrings,
   ...downloadManagerStrings,
+  ...historyManagerStrings,
   ...imageLinksStrings,
   ...sitesYoutubeStrings,
   ...scriptStudioStrings,

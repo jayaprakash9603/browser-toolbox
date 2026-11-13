@@ -1,4 +1,4 @@
-import { DownloadIcon, GaugeIcon, PanelsTopLeftIcon, PictureInPicture2Icon, WifiIcon } from 'lucide-react'
+import { DownloadIcon, GaugeIcon, HistoryIcon, PanelsTopLeftIcon, PictureInPicture2Icon, WifiIcon } from 'lucide-react'
 
 import { defineTool } from '@/core/registry'
 
@@ -119,6 +119,69 @@ export const browserTools = [
       },
     ],
     loader: () => import('@/tools/browser/download-manager/Tool'),
+  }),
+  defineTool({
+    id: 'browser.history-manager',
+    name: 'History Manager',
+    description:
+      'Search and analyze browsing history, clean up visits, export records, and restore recently closed tabs.',
+    category: 'browser',
+    icon: HistoryIcon,
+    keywords: [
+      'history',
+      'browsing',
+      'timeline',
+      'visits',
+      'analytics',
+      'export',
+      'cleanup',
+      'recent',
+      'domain',
+      'search',
+    ],
+    aliases: ['browser history', 'history search', 'visit log', 'history manager'],
+    route: '/tools/browser/history-manager',
+    capabilities: ['SIDE_PANEL', 'CONTEXT_MENU'],
+    status: 'active',
+    permissions: ['history'],
+    searchEntries: [
+      {
+        id: 'hm-overview',
+        labelKey: 'historyManager.tab.overview',
+        fallbackLabel: 'Overview',
+        keywords: ['stats', 'dashboard'],
+        params: { tab: 'overview' },
+      },
+      {
+        id: 'hm-timeline',
+        labelKey: 'historyManager.tab.timeline',
+        fallbackLabel: 'Timeline',
+        keywords: ['chronological', 'today'],
+        params: { tab: 'timeline' },
+      },
+      {
+        id: 'hm-sites',
+        labelKey: 'historyManager.tab.sites',
+        fallbackLabel: 'Sites',
+        keywords: ['domains', 'group'],
+        params: { tab: 'sites' },
+      },
+      {
+        id: 'hm-insights',
+        labelKey: 'historyManager.tab.insights',
+        fallbackLabel: 'Insights',
+        keywords: ['charts', 'analytics', 'heatmap'],
+        params: { tab: 'insights' },
+      },
+      {
+        id: 'hm-closed',
+        labelKey: 'historyManager.tab.closed',
+        fallbackLabel: 'Closed',
+        keywords: ['restore', 'session', 'recently closed'],
+        params: { tab: 'closed' },
+      },
+    ],
+    loader: () => import('@/tools/browser/history-manager/Tool'),
   }),
   defineTool({
     id: 'browser.toolkit',
