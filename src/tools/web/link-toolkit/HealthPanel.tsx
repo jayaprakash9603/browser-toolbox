@@ -8,6 +8,7 @@ import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/utils/cn'
 
 import { healthTone } from './graphStyle'
+import { LT_FILTER_CHIP, LT_FILTER_CHIP_IDLE, LT_FILTER_CHIP_ON } from './layout'
 
 interface HealthPanelProps {
   graph: LinkGraph
@@ -31,7 +32,7 @@ export function HealthPanel({ graph, onRecheck }: HealthPanelProps) {
 
   return (
     <div className="space-y-2">
-      <p className="text-[11px] text-muted-foreground">{t('web.links.health.hint')}</p>
+      <p className="text-[11px] leading-relaxed text-muted-foreground">{t('web.links.health.hint')}</p>
       <div className="flex flex-wrap gap-1">
         <Chip label={t('web.links.type.all')} active={filter === 'all'} onClick={() => setFilter('all')} />
         {ORDER.map((health) => (
@@ -83,9 +84,14 @@ export function HealthPanel({ graph, onRecheck }: HealthPanelProps) {
 
 function Chip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <Button size="xs" variant={active ? 'secondary' : 'outline'} onClick={onClick}>
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={cn(LT_FILTER_CHIP, active ? LT_FILTER_CHIP_ON : LT_FILTER_CHIP_IDLE)}
+    >
       {label}
-    </Button>
+    </button>
   )
 }
 

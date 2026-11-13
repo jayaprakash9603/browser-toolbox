@@ -18,7 +18,7 @@ export function AnchorPanel({ graph }: AnchorPanelProps) {
   const rows = report.insights.filter((item) => !query || item.text.toLowerCase().includes(query) || (!item.text && query === ''))
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <p className="text-[11px] text-muted-foreground">{t('web.links.anchors.noPenalty')}</p>
       <div className="grid grid-cols-2 gap-1.5">
         <Stat label={t('web.links.anchors.emptyPct')} value={`${pct(report.empty, report.total)}%`} />
@@ -56,7 +56,7 @@ export function AnchorPanel({ graph }: AnchorPanelProps) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border px-2.5 py-2">
+    <div className="rounded-lg border px-2.5 py-1.5">
       <p className="text-[10px] text-muted-foreground">{label}</p>
       <p className="text-base font-semibold">{value}</p>
     </div>

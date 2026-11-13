@@ -14,7 +14,7 @@ interface SettingsPanelProps {
 export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
   const { t } = useTranslation()
   return (
-    <div className="space-y-3 text-xs">
+    <div className="space-y-2.5 text-xs">
       <Field label={t('web.links.settings.depth')}>
         <NumberField
           value={String(settings.maxDepth)}

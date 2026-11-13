@@ -25,6 +25,7 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/utils/cn'
 
+import { LT_FILTER_CHIP, LT_FILTER_CHIP_IDLE, LT_FILTER_CHIP_ON } from './layout'
 import { SiteAvatar } from './LinkVisuals'
 import type { CheckProgress } from './useLinkChecks'
 
@@ -92,9 +93,9 @@ export function LinkOverview({
   const percent = progress && progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0
 
   return (
-    <section className="space-y-3 rounded-xl border bg-card p-3 shadow-xs" aria-label={t('web.links.overview')}>
-      <div className="flex items-center gap-2.5">
-        <SiteAvatar host={snapshot.host} kind="internal" size="lg" />
+    <section className="space-y-2 rounded-xl border bg-card p-2.5 shadow-xs" aria-label={t('web.links.overview')}>
+      <div className="flex items-center gap-2">
+        <SiteAvatar host={snapshot.host} kind="internal" size="md" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[13px] leading-5 font-semibold">{snapshot.title || snapshot.host || snapshot.url}</p>
           <p className="truncate text-[11px] text-muted-foreground">{snapshot.host || snapshot.url}</p>
@@ -158,7 +159,7 @@ export function LinkOverview({
         </button>
       )}
 
-      <dl className="grid grid-cols-3 divide-x rounded-lg bg-muted/40 py-2 text-center">
+      <dl className="grid grid-cols-3 divide-x rounded-lg bg-muted/40 py-1.5 text-center">
         <Stat label={t('web.links.statTotal')} value={total} />
         <Stat label={t('web.links.statUnique')} value={stats.unique} />
         <Stat label={t('web.links.statSites')} value={stats.externalSites} />
@@ -179,7 +180,7 @@ export function LinkOverview({
               />
             ))}
           </div>
-          <div role="group" aria-label={t('web.links.typesLabel')} className="flex flex-wrap gap-1.5">
+          <div role="group" aria-label={t('web.links.typesLabel')} className="flex flex-wrap gap-1">
             {chips.map((item) => (
               <Chip key={item} pressed={type === item} onClick={() => onTypeChange(item)}>
                 {item !== 'all' && <span className={cn('size-2 shrink-0 rounded-full', TYPE_COLOR[item])} aria-hidden />}
@@ -192,9 +193,9 @@ export function LinkOverview({
       )}
 
       {visibleFlags.length > 0 && (
-        <div className="space-y-1.5 border-t pt-2.5">
-          <p className="text-[11px] font-medium text-muted-foreground">{t('web.links.quickFilters')}</p>
-          <div role="group" aria-label={t('web.links.quickFilters')} className="flex flex-wrap gap-1.5">
+        <div className="space-y-1 border-t pt-2">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{t('web.links.quickFilters')}</p>
+          <div role="group" aria-label={t('web.links.quickFilters')} className="flex flex-wrap gap-1">
             {visibleFlags.map((flag) => {
               const { icon: Icon, tone } = FLAG_META[flag]
               return (
@@ -216,7 +217,7 @@ function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex flex-col-reverse px-1">
       <dt className="truncate text-[10px] text-muted-foreground">{label}</dt>
-      <dd className="text-base leading-6 font-semibold tabular-nums">{value.toLocaleString()}</dd>
+      <dd className="text-sm leading-5 font-semibold tabular-nums">{value.toLocaleString()}</dd>
     </div>
   )
 }
@@ -242,11 +243,11 @@ function Chip({
       aria-pressed={pressed}
       onClick={onClick}
       className={cn(
-        'inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium whitespace-nowrap outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none',
-        !pressed && 'border-border bg-background text-foreground/80 hover:bg-accent hover:text-foreground',
+        LT_FILTER_CHIP,
+        !pressed && LT_FILTER_CHIP_IDLE,
+        pressed && tone === 'neutral' && LT_FILTER_CHIP_ON,
         !pressed && tone === 'warning' && 'text-amber-700 dark:text-amber-400',
         !pressed && tone === 'danger' && 'text-destructive',
-        pressed && tone === 'neutral' && 'border-primary/50 bg-primary/10 text-primary',
         pressed && tone === 'warning' && 'border-amber-500/60 bg-amber-500/15 text-amber-800 dark:text-amber-300',
         pressed && tone === 'danger' && 'border-destructive/60 bg-destructive/12 text-destructive',
       )}

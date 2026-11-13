@@ -131,8 +131,8 @@ export function InternalLinksPanel({
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-1.5">
         <SearchInput
           value={search}
           onChange={setSearch}
@@ -192,7 +192,7 @@ export function InternalLinksPanel({
         />
       ) : (
         <div>
-          <div className="mb-2 flex items-center justify-between gap-2 px-1 text-[11px] text-muted-foreground">
+          <div className="mb-1.5 flex items-center justify-between gap-2 px-0.5 text-[11px] text-muted-foreground">
             <span aria-live="polite">
               {t('web.links.resultCount', { count: model.visible.length })}
               {snapshot.truncated && ` · ${t('web.links.truncated')}`}

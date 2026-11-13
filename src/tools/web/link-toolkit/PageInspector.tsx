@@ -19,7 +19,7 @@ export function PageInspector({ graph, node, onFocus, onAnchors }: PageInspector
   const incoming = graph.edges.filter((edge) => edge.destinationPageId === node.id)
   const outgoing = graph.edges.filter((edge) => edge.sourcePageId === node.id)
   return (
-    <section className="rounded-xl border bg-card p-3 text-xs">
+    <section className="rounded-xl border bg-card p-2.5 text-xs">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate font-medium">{node.title || node.url}</p>

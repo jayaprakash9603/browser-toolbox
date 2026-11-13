@@ -17,9 +17,10 @@ import { SearchInput } from '@/shared/components/SearchInput'
 import { Button } from '@/shared/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/shared/components/ui/dialog'
 import { Segmented } from '@/shared/components/ui/segmented'
-import { Switch } from '@/shared/components/ui/switch'
+import { cn } from '@/shared/utils/cn'
 
 import { DEFAULT_GRAPH_FILTERS, type GraphFilters } from './graphStyle'
+import { LT_FILTER_CHIP, LT_FILTER_CHIP_IDLE, LT_FILTER_CHIP_ON } from './layout'
 import { PageInspector } from './PageInspector'
 import { SphereGraph } from './SphereGraph'
 
@@ -83,9 +84,9 @@ export function GraphWorkspace({
   }
 
   return (
-    <div className="flex flex-col gap-3 @[720px]:grid @[720px]:grid-cols-[minmax(0,1fr)_17rem] @[720px]:items-start @[720px]:gap-4">
-      <div className="min-w-0 space-y-2.5">
-        <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-col gap-2 @[720px]:grid @[720px]:grid-cols-[minmax(0,1fr)_16rem] @[720px]:items-start @[720px]:gap-3">
+      <div className="min-w-0 space-y-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           <Segmented
             size="sm"
             value={layout}
@@ -124,7 +125,7 @@ export function GraphWorkspace({
           placeholder={t('web.links.graph.search')}
           ariaLabel={t('web.links.graph.search')}
         />
-        <div className="flex flex-wrap gap-x-2.5 gap-y-2 text-[11px]">
+        <div className="flex flex-wrap gap-1">
           <Toggle label={t('web.links.graph.labels')} checked={filters.labels} onChange={(labels) => setFilters((prev) => ({ ...prev, labels }))} />
           <Toggle label={t('web.links.graph.internal')} checked={filters.internal} onChange={(internal) => setFilters((prev) => ({ ...prev, internal }))} />
           <Toggle label={t('web.links.graph.external')} checked={filters.external} onChange={(external) => setFilters((prev) => ({ ...prev, external }))} />
@@ -167,10 +168,14 @@ function IconBtn({ label, onClick, children }: { label: string; onClick: () => v
 
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
   return (
-    <label className="flex cursor-pointer items-center gap-1">
-      <Switch checked={checked} onCheckedChange={onChange} aria-label={label} />
+    <button
+      type="button"
+      aria-pressed={checked}
+      onClick={() => onChange(!checked)}
+      className={cn(LT_FILTER_CHIP, checked ? LT_FILTER_CHIP_ON : LT_FILTER_CHIP_IDLE)}
+    >
       {label}
-    </label>
+    </button>
   )
 }
 

@@ -4,9 +4,9 @@ import { PauseIcon, PlayIcon, RefreshCwIcon, ShieldAlertIcon, SquareIcon } from 
 import { useTranslation } from 'react-i18next'
 
 import { toEntries, type PageLink } from '@/core/engines/links/pageLinks'
-import { ChoiceChips } from '@/shared/components/ChoiceChips'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
+import { Segmented } from '@/shared/components/ui/segmented'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 
@@ -87,13 +87,14 @@ export default function LinkToolkitTool() {
       <div className="flex h-full min-h-0 flex-col">
         <div className={LT_TOOLBAR}>
           {snapshot && (
-            <p className="truncate text-[12px] font-semibold">{snapshot.title || snapshot.host}</p>
+            <p className="truncate text-[11px] font-semibold leading-4">{snapshot.title || snapshot.host}</p>
           )}
-          <ChoiceChips
+          <Segmented
+            size="sm"
+            fullWidth
             ariaLabel={t('web.links.scopeLabel')}
             value={intel.settings.scope}
             onValueChange={(scope) => intel.patchSettings({ scope: scope as IntelligenceScope })}
-            columns={4}
             options={[
               { value: 'page', label: t('web.links.scope.page') },
               { value: 'site', label: t('web.links.scope.site') },
@@ -101,7 +102,7 @@ export default function LinkToolkitTool() {
               { value: 'sitemap', label: t('web.links.scope.sitemap') },
             ]}
           />
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
             {intel.settings.scope !== 'page' && (
               <Button size="xs" onClick={() => void intel.startCrawl()} disabled={Boolean(intel.crawl)}>
                 {t('web.links.crawl')}
@@ -138,7 +139,7 @@ export default function LinkToolkitTool() {
         </div>
 
         {load.status === 'loading' && (
-          <p className="px-[var(--density-page-pad)] py-4 text-xs text-muted-foreground">{t('web.links.loading')}</p>
+          <p className="px-[var(--density-page-pad)] py-3 text-xs text-muted-foreground">{t('web.links.loading')}</p>
         )}
         {load.status === 'error' && (
           <div className="px-[var(--density-page-pad)] py-3">
@@ -151,11 +152,11 @@ export default function LinkToolkitTool() {
         )}
 
         {snapshot && graph && (
-          <Tabs value={tab} onValueChange={(value) => setTab(value as TabId)} className="flex min-h-0 flex-1 flex-col">
+          <Tabs value={tab} onValueChange={(value) => setTab(value as TabId)} className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
             <div className={LT_TABS_RAIL}>
-              <TabsList variant="chips" fullWidth className="justify-start gap-1">
+              <TabsList variant="attached" className="w-full shrink-0 bg-muted/30">
                 {TABS.map((id) => (
-                  <TabsTrigger key={id} value={id} className="px-2 text-[11px]">
+                  <TabsTrigger key={id} value={id} className="px-2 text-xs">
                     {t(`web.links.tab.${id}`)}
                   </TabsTrigger>
                 ))}
@@ -163,7 +164,7 @@ export default function LinkToolkitTool() {
             </div>
             <div className={LT_SCROLL}>
               {intel.stale && (
-                <div className="mb-3 flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2.5 text-xs">
+                <div className="mb-2 flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-2.5 py-2 text-xs">
                   <span className="flex-1">{t('web.links.pageChanged')}</span>
                   <Button size="xs" variant="outline" onClick={intel.rescan}>
                     {t('web.links.rescan')}

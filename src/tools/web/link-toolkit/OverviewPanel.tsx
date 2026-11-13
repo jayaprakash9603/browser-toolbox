@@ -38,9 +38,9 @@ export function OverviewPanel({ graph }: OverviewPanelProps) {
   const health = healthMix(graph, (health) => t(`web.links.health.${health}`))
 
   return (
-    <div className="flex flex-col gap-4 pb-2">
+    <div className="flex flex-col gap-3 pb-1">
       {stats.incomplete && (
-        <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-[11px] text-amber-800 dark:text-amber-200">
+        <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-2.5 py-2 text-[11px] text-amber-800 dark:text-amber-200">
           {t('web.links.incompleteCrawl')}
         </p>
       )}
@@ -99,7 +99,7 @@ function RankList({
   return (
     <div className={LT_CHART_SHELL}>
       <p className={LT_SECTION_TITLE}>{title}</p>
-      <ul className="space-y-2">
+      <ul className="space-y-1.5">
         {rows.map(([label, count]) => (
           <li key={label} className="min-w-0">
             <div className="flex items-center justify-between gap-2 text-[11px]">
