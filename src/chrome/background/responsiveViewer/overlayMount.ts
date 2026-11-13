@@ -258,6 +258,11 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       box-shadow: 0 8px 28px rgba(15,23,42,0.1);
       z-index: 9;
     }
+    .root.theme-dark .actions {
+      background: rgba(21,27,36,0.94);
+      border-color: #2a3544;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+    }
     .round {
       display: flex; align-items: center; justify-content: center;
       width: 44px; height: 44px; border-radius: 999px;
@@ -279,16 +284,64 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .panel.open { display: flex; }
     .panel[data-panel="devices"] {
-      position: relative;
-      flex-shrink: 0;
-      order: -1;
-      width: min(300px, 34vw);
-      max-height: min(78vh, 620px);
-      padding: 14px;
+      right: 76px;
+      width: min(320px, 44vw);
+      max-height: min(78vh, 640px);
+      padding: 0;
       border-radius: 14px;
       border: 1px solid var(--tbx-panel-border);
       box-shadow: 0 16px 40px rgba(15,23,42,0.12);
+      min-height: 0;
+      overflow: hidden;
     }
+    .panel[data-panel="devices"]::after {
+      content: '';
+      position: absolute;
+      right: -6px;
+      top: var(--tbx-device-arrow-y, 50%);
+      width: 10px;
+      height: 10px;
+      transform: translateY(-50%) rotate(45deg);
+      background: var(--tbx-panel-bg);
+      border-right: 1px solid var(--tbx-panel-border);
+      border-top: 1px solid var(--tbx-panel-border);
+    }
+    .device-panel-head {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 14px 14px 10px;
+      border-bottom: 1px solid var(--tbx-panel-border);
+    }
+    .device-chips-scroll {
+      flex-shrink: 0;
+      padding: 0 14px 10px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      overscroll-behavior-x: contain;
+      scrollbar-width: thin;
+      border-bottom: 1px solid var(--tbx-panel-border);
+    }
+    .device-chips-scroll .chips { flex-wrap: nowrap; width: max-content; padding-bottom: 2px; }
+    .panel[data-panel="devices"] .panel-list {
+      flex: 1;
+      min-height: 120px;
+      max-height: min(52vh, 480px);
+      padding: 8px 10px 12px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+    }
+    .device-section {
+      margin: 10px 4px 6px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--tbx-panel-muted);
+    }
+    .device-section:first-child { margin-top: 2px; }
     .panel[data-panel="settings"],
     .panel[data-panel="shot-menu"],
     .panel[data-panel="record-menu"],
@@ -367,15 +420,17 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     .device-row, .setting-row {
       display: flex; align-items: center; justify-content: space-between; gap: 8px;
       width: 100%; padding: 10px; border: 0; border-radius: 10px;
-      background: transparent; text-align: left; cursor: pointer; font-size: 13px; color: #0f172a;
+      background: transparent; text-align: left; cursor: pointer; font-size: 13px; color: inherit;
     }
     .device-row:hover, .setting-row:hover { background: var(--tbx-row-hover); }
     .device-row[aria-current="true"] { background: #ccfbf1; color: #0f766e; font-weight: 600; }
-    .device-row small { color: #64748b; font-weight: 400; }
+    .root.theme-dark .device-row[aria-current="true"] { background: #134e4a; color: #99f6e4; }
+    .device-row small { color: var(--tbx-panel-muted); font-weight: 400; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .chip {
-      border: 1px solid #cbd5e1; background: #fff; border-radius: 999px;
-      padding: 4px 10px; font-size: 11px; cursor: pointer; color: #475569;
+      border: 1px solid var(--tbx-input-border); background: var(--tbx-input-bg); border-radius: 999px;
+      padding: 4px 10px; font-size: 11px; cursor: pointer; color: inherit;
+      white-space: nowrap;
     }
     .chip:hover { border-color: var(--tbx-accent); color: #0f766e; }
     .chip[aria-pressed="true"] { background: var(--tbx-accent); color: #fff; border-color: var(--tbx-accent); }
@@ -408,12 +463,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
 
   root.innerHTML = `
     <div class="stage">
-      <div class="panel" data-panel="devices">
-        <h2>Devices</h2>
-        <input type="search" class="device-search" placeholder="Search devices" />
-        <div class="chips" data-kind-chips></div>
-        <div class="panel-list" data-device-list></div>
-      </div>
       <div class="phone-wrap">
         <img class="mockup-img" alt="" hidden />
         <span class="side" style="top:16%;left:-3px;height:7%;border-radius:1px 0 0 1px;"></span>
@@ -448,6 +497,16 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
           </div>
         </div>
       </div>
+    </div>
+    <div class="panel" data-panel="devices">
+      <div class="device-panel-head">
+        <h2>Devices</h2>
+        <input type="search" class="device-search" placeholder="Search devices" aria-label="Search devices" />
+      </div>
+      <div class="device-chips-scroll">
+        <div class="chips" data-kind-chips></div>
+      </div>
+      <div class="panel-list" data-device-list></div>
     </div>
     <div class="panel" data-panel="settings">
       <h2>Settings</h2>
@@ -638,12 +697,29 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
   }
 
+  const devicesPanel = shadow.querySelector('[data-panel="devices"]') as HTMLElement
+
+  const positionDevicesPanel = () => {
+    if (!devicesPanel.classList.contains('open')) return
+    const rootRect = root.getBoundingClientRect()
+    const btnRect = deviceBtn.getBoundingClientRect()
+    const maxH = Math.min(window.innerHeight * 0.78, 640)
+    devicesPanel.style.maxHeight = `${maxH}px`
+    const arrowY = btnRect.top - rootRect.top + btnRect.height / 2
+    devicesPanel.style.setProperty('--tbx-device-arrow-y', `${arrowY}px`)
+    const measured = Math.min(devicesPanel.getBoundingClientRect().height || maxH, maxH)
+    let top = arrowY - measured / 2
+    top = Math.max(12, Math.min(top, rootRect.height - measured - 12))
+    devicesPanel.style.top = `${top}px`
+    devicesPanel.style.right = '76px'
+    devicesPanel.style.transform = 'none'
+  }
+
   const layout = () => {
     const live = state.live
     const width = state.rotated ? live.height : live.width
     const height = state.rotated ? live.width : live.height
-    const sidePanel = state.panel === 'devices' ? Math.min(300, window.innerWidth * 0.34) + 28 : 0
-    const maxW = Math.max(160, window.innerWidth - 108 - sidePanel)
+    const maxW = Math.max(160, window.innerWidth - 108)
     const maxH = Math.max(160, window.innerHeight - 24)
     const mockup = live.mockupUrl && live.mockupInsets ? live.mockupInsets : null
     root.classList.toggle('has-mockup', Boolean(mockup))
@@ -690,32 +766,88 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     status.style.display =
       !state.ui.showStatusBar || live.statusBar === 'none' ? 'none' : ''
     syncSettingsUi()
+    requestAnimationFrame(() => positionDevicesPanel())
+  }
+
+  const kindLabels: Record<string, string> = {
+    phone: 'Phones',
+    tablet: 'Tablets',
+    laptop: 'Laptops',
+    desktop: 'Desktops',
+    watch: 'Watch',
+    special: 'Special',
+  }
+  const kindOrder = ['phone', 'tablet', 'laptop', 'desktop', 'watch', 'special'] as const
+
+  const deviceMatchesFilter = (
+    device: DeviceRow,
+    query: string,
+    fav: Set<string>,
+    recent: Set<string>,
+  ) => {
+    if (kindFilter === 'favorites' && !fav.has(device.id)) return false
+    if (kindFilter === 'recents' && !recent.has(device.id)) return false
+    if (kindFilter !== 'all' && kindFilter !== 'favorites' && kindFilter !== 'recents' && device.kind !== kindFilter) {
+      return false
+    }
+    if (!query) return true
+    return `${device.label} ${device.id} ${device.kind}`.toLowerCase().includes(query)
+  }
+
+  const makeDeviceRow = (device: DeviceRow) => {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = 'device-row'
+    button.dataset.device = device.id
+    if (device.id === state.live.deviceId) button.setAttribute('aria-current', 'true')
+    button.innerHTML = `<span>${escapeHtml(device.label)}</span><small>${device.width}×${device.height}</small>`
+    return button
   }
 
   const renderDevices = () => {
     const query = searchInput.value.trim().toLowerCase()
     const fav = new Set(catalog.favorites)
     const recent = new Set(catalog.recents)
-    const rows = catalog.devices.filter((device) => {
-      if (kindFilter === 'favorites' && !fav.has(device.id)) return false
-      if (kindFilter === 'recents' && !recent.has(device.id)) return false
-      if (kindFilter !== 'all' && kindFilter !== 'favorites' && kindFilter !== 'recents' && device.kind !== kindFilter) {
-        return false
+    const matches = catalog.devices.filter((device) => deviceMatchesFilter(device, query, fav, recent))
+
+    const fragments: HTMLElement[] = []
+
+    const pushSection = (title: string, devices: DeviceRow[]) => {
+      if (!devices.length) return
+      const heading = document.createElement('p')
+      heading.className = 'device-section'
+      heading.textContent = title
+      fragments.push(heading)
+      for (const device of devices) fragments.push(makeDeviceRow(device))
+    }
+
+    if (kindFilter === 'all' && !query) {
+      pushSection(
+        'Favorites',
+        catalog.devices.filter((d) => fav.has(d.id)),
+      )
+      const recentDevices = catalog.recents
+        .map((id) => catalog.devices.find((d) => d.id === id))
+        .filter((d): d is DeviceRow => Boolean(d))
+      pushSection('Recent', recentDevices)
+      for (const kind of kindOrder) {
+        const group = catalog.devices.filter((d) => d.kind === kind)
+        if (group.length) pushSection(kindLabels[kind] ?? kind, group)
       }
-      if (!query) return true
-      return `${device.label} ${device.id}`.toLowerCase().includes(query)
-    })
-    deviceList.replaceChildren(
-      ...rows.map((device) => {
-        const button = document.createElement('button')
-        button.type = 'button'
-        button.className = 'device-row'
-        button.dataset.device = device.id
-        if (device.id === state.live.deviceId) button.setAttribute('aria-current', 'true')
-        button.innerHTML = `<span>${escapeHtml(device.label)}</span><small>${device.width}×${device.height}</small>`
-        return button
-      }),
-    )
+    } else {
+      for (const device of matches) fragments.push(makeDeviceRow(device))
+    }
+
+    if (!fragments.length) {
+      const empty = document.createElement('p')
+      empty.className = 'capture-hint'
+      empty.style.padding = '8px 6px'
+      empty.textContent = query ? 'No devices match your search.' : 'No devices in this category.'
+      fragments.push(empty)
+    }
+
+    deviceList.replaceChildren(...fragments)
+    requestAnimationFrame(() => positionDevicesPanel())
     const chips: { id: string; label: string }[] = [
       { id: 'all', label: 'All' },
       { id: 'favorites', label: 'Favorites' },
@@ -751,8 +883,12 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     deviceBtn.setAttribute('aria-pressed', String(state.panel === 'devices'))
     settingsBtn.setAttribute('aria-pressed', String(state.panel === 'settings'))
     layout()
-    if (state.panel === 'devices') void loadDevices()
-    if (state.panel === 'settings') void loadOverlaySettings()
+    if (state.panel === 'devices') {
+      void loadDevices()
+      requestAnimationFrame(() => positionDevicesPanel())
+    } else if (state.panel === 'settings') {
+      void loadOverlaySettings()
+    }
   }
 
   const showCaptureResult = (dataUrl: string, filename: string, kind: 'simulator' | 'viewport') => {

@@ -251,7 +251,10 @@ describe('mobile simulator studio helpers', () => {
     expect(acts).toEqual(
       expect.arrayContaining(['devices', 'rotate', 'reload', 'screenshot', 'record', 'compare', 'settings', 'expand']),
     )
-    expect(host?.shadowRoot?.querySelector('[data-panel="devices"]')).toBeTruthy()
+    const devicesPanel = host?.shadowRoot?.querySelector('[data-panel="devices"]')
+    expect(devicesPanel).toBeTruthy()
+    expect(host?.shadowRoot?.querySelector('.stage')?.contains(devicesPanel ?? null)).toBe(false)
+    expect(devicesPanel?.querySelector('.device-chips-scroll')).toBeTruthy()
     expect(host?.shadowRoot?.querySelector('[data-panel="settings"]')).toBeTruthy()
     expect(host?.shadowRoot?.querySelector('[data-set="mobile-ua"]')).toBeTruthy()
     expect(root.classList.contains('theme-classic')).toBe(true)
