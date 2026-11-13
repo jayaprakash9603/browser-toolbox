@@ -22,6 +22,11 @@ export const DEMOS: Record<string, DemoEntry> = {
     demo: () => import('./tools/api/request-builder/Demo'),
     steps: () => import('./tools/api/request-builder/script').then((module) => module.STEPS),
   },
+  'browser.download-manager': {
+    demo: () => import('./tools/browser/download-manager/Demo'),
+    steps: () =>
+      import('./tools/browser/download-manager/script').then((module) => module.STEPS),
+  },
   'browser.internet-monitor': {
     demo: () => import('./tools/browser/internet-monitor/Demo'),
     steps: () => import('./tools/browser/internet-monitor/script').then((module) => module.STEPS),
