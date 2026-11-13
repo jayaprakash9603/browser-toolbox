@@ -61,14 +61,10 @@ import { handleReadingListMenuClick, isReadingListMenuItem } from './readingList
 import { registerElementInspector } from './elementInspector'
 import { registerFontInspector } from './fontInspector'
 import { registerInspectorFrameFocus } from './inspectorFrameFocus'
-import { pickColorFromScreen, pickColorOnPage, registerColorPicker } from './colorPicker'
+import { pickColorOnPage, registerColorPicker } from './colorPicker'
 import { openClipboardPanelOnTab, registerClipboardPanel } from './clipboardPanel'
 import { isClipboardPanelMenuItem } from './clipboardPanel/menus'
-import {
-  COLOR_PICK_PAGE_MENU_ID,
-  COLOR_PICK_SCREEN_MENU_ID,
-  isColorPickerMenuItem,
-} from './colorPicker/menus'
+import { isColorPickerMenuItem } from './colorPicker/menus'
 import { screenshotModeFromMenuAction } from './screenshot/contextMenus'
 import { startScreenshot } from './screenshot/start'
 import type { ScreenshotMode } from '@/core/screenshot/types'
@@ -146,8 +142,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     return
   }
   if (isColorPickerMenuItem(menuItemId)) {
-    if (menuItemId === COLOR_PICK_SCREEN_MENU_ID) void pickColorFromScreen(tab)
-    else if (menuItemId === COLOR_PICK_PAGE_MENU_ID) void pickColorOnPage(tab)
+    void pickColorOnPage(tab)
     return
   }
   if (isClipboardPanelMenuItem(menuItemId)) {

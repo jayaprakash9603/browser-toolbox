@@ -4,7 +4,7 @@ export const colorPickerStrings = {
   'colorPicker.pickScreen': 'Pick from screen',
   'colorPicker.pickScreenHint': 'Pick any pixel on your display, including other windows.',
   'colorPicker.chooseCustom': 'Choose a color',
-  'colorPicker.empty': 'Pick a color to see its formats, shades and contrast.',
+  'colorPicker.empty': 'Right-click the page and choose Color picker, or use the shortcut. Picked colors show formats, shades and contrast here.',
   'colorPicker.current': 'Selected color',
   'colorPicker.formats': 'Formats',
   'colorPicker.copyAs': 'Copy {{format}}',

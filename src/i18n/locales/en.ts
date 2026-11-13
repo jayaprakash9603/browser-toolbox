@@ -338,7 +338,7 @@ const en = {
   'settings.contextMenu.clipboardHistoryDescription':
     'Opens the on-page clipboard overlay with your recent copies.',
   'settings.contextMenu.colorPicker': 'Color picker',
-  'settings.contextMenu.colorPickerDescription': 'Pick colors from the page or your screen.',
+  'settings.contextMenu.colorPickerDescription': 'Start picking a color from the page via the right-click menu.',
   'settings.contextMenu.screenshot': 'Capture',
   'settings.contextMenu.screenshotDescription': 'Screenshots of the page, selection, or tabs.',
   'settings.contextMenu.screenRecorder': 'Record screen',
