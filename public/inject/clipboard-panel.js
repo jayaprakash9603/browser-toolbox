@@ -18,6 +18,10 @@
   var filtersEl
   var countEl
   var toastTimer
+  var resizeObs
+  var railEl
+  var thumbEl
+  var drag = null
   var reduceMotion = false
   try {
     reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -238,19 +242,37 @@
     syncOverflow()
   }
 
+  function railMetrics() {
+    if (!cardEl || !railEl || !thumbEl) return null
+    var overflow = Math.max(0, cardEl.scrollHeight - cardEl.clientHeight)
+    var track = railEl.clientHeight
+    var thumbH = Math.max(36, Math.round(track * (cardEl.clientHeight / Math.max(1, cardEl.scrollHeight))))
+    var maxThumb = Math.max(0, track - thumbH)
+    var top = overflow <= 0 || maxThumb <= 0 ? 0 : Math.round(maxThumb * (cardEl.scrollTop / overflow))
+    return { overflow: overflow, track: track, thumbH: thumbH, maxThumb: maxThumb, top: top }
+  }
+
+  function applyThumb() {
+    var metrics = railMetrics()
+    if (!metrics || !thumbEl) return
+    thumbEl.style.height = metrics.thumbH + 'px'
+    thumbEl.style.transform = 'translateY(' + metrics.top + 'px)'
+    if (!railEl) return
+    var pct = metrics.overflow <= 0 ? 0 : Math.round((cardEl.scrollTop / metrics.overflow) * 100)
+    railEl.setAttribute('aria-valuenow', String(pct))
+  }
+
   function syncOverflow() {
-    if (!listEl || !cardEl) return
-    var overflow = listEl.scrollHeight > listEl.clientHeight + 2
-    listEl.classList.toggle('can-scroll', overflow)
+    if (!cardEl) return
+    var chrome = cardEl.querySelector('.chrome')
+    if (chrome) cardEl.style.scrollPaddingTop = chrome.offsetHeight + 8 + 'px'
+    var overflow = cardEl.scrollHeight > cardEl.clientHeight + 2
     cardEl.classList.toggle('can-scroll', overflow)
-    var atEnd = !overflow || listEl.scrollTop + listEl.clientHeight >= listEl.scrollHeight - 2
+    var atEnd = !overflow || cardEl.scrollTop + cardEl.clientHeight >= cardEl.scrollHeight - 2
     cardEl.classList.toggle('at-end', atEnd)
-    window.requestAnimationFrame(function () {
-      if (!listEl || !cardEl) return
-      var overflow = listEl.scrollHeight > listEl.clientHeight + 2
-      listEl.classList.toggle('can-scroll', overflow)
-      cardEl.classList.toggle('can-scroll', overflow)
-    })
+    if (railEl) railEl.hidden = !overflow
+    applyThumb()
+    if (overflow && railEl && railEl.clientHeight === 0) window.requestAnimationFrame(applyThumb)
   }
 
   function sectionRow(label, count) {
@@ -353,6 +375,7 @@
         more.textContent = open ? text.showLess : text.showAll
         more.setAttribute('aria-expanded', open ? 'true' : 'false')
         wrap.scrollIntoView({ block: 'nearest' })
+        syncOverflow()
       })
       foot.appendChild(more)
     }
@@ -390,10 +413,15 @@
     if (host) host.remove()
     host = null
     window.clearTimeout(toastTimer)
+    if (resizeObs) {
+      resizeObs.disconnect()
+      resizeObs = null
+    }
     if (chrome.storage && chrome.storage.onChanged) {
       chrome.storage.onChanged.removeListener(onStorage)
     }
     window.removeEventListener('keydown', onKey, true)
+    window.removeEventListener('resize', syncOverflow)
   }
 
   function copyCards() {
@@ -470,10 +498,20 @@
     ':host{all:initial}' +
     '*{box-sizing:border-box}' +
     '.catcher{pointer-events:auto;position:absolute;inset:0;background:rgba(15,23,42,.16)}' +
-    '.shell{pointer-events:auto;position:relative;width:min(360px,calc(100vw - 24px));height:fit-content;max-height:calc(100vh - 24px);display:flex;flex-direction:column;min-height:0}' +
-    '.card{position:relative;display:grid;grid-template-rows:auto auto minmax(0,1fr);flex:1 1 auto;min-height:0;height:100%;max-height:inherit;border-radius:12px;' +
+    '.shell{pointer-events:auto;position:relative;width:min(360px,calc(100vw - 24px))}' +
+    '.card{position:relative;display:flex;flex-direction:column;max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);border-radius:12px;' +
     'border:1px solid rgba(24,24,27,.1);background:#fff;color:#18181b;' +
-    'box-shadow:0 10px 32px rgba(15,23,42,.18);font:500 12px/1.4 system-ui,-apple-system,Segoe UI,sans-serif;overflow:hidden}' +
+    'box-shadow:0 10px 32px rgba(15,23,42,.18);font:500 12px/1.4 system-ui,-apple-system,Segoe UI,sans-serif;' +
+    'overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}' +
+    '.card::-webkit-scrollbar{width:0;height:0}' +
+    '.card.can-scroll .head{padding-right:18px}' +
+    '.card.can-scroll .toolbar,.card.can-scroll .list{padding-right:18px}' +
+    '.scroll-rail{position:absolute;top:10px;right:5px;bottom:10px;width:10px;border-radius:99px;background:#e4e4e7;z-index:4;pointer-events:auto;cursor:pointer;user-select:none;touch-action:none}' +
+    '.scroll-rail[hidden]{display:none}' +
+    '.scroll-thumb{position:absolute;left:1px;right:1px;top:0;width:8px;border-radius:99px;background:#52525b;min-height:36px;pointer-events:auto;cursor:grab}' +
+    '.scroll-thumb:hover,.scroll-thumb.dragging{background:#3f3f46}' +
+    '.scroll-thumb.dragging{cursor:grabbing}' +
+    '.chrome{position:sticky;top:0;z-index:2;background:#fff}' +
     '.head{display:flex;align-items:center;gap:8px;padding:8px 6px 0 12px}' +
     '.title-wrap{flex:1;min-width:0;display:flex;align-items:baseline;gap:6px}' +
     '.title{font-size:11px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:#3f3f46}' +
@@ -499,18 +537,13 @@
     '.chip-count{min-width:14px;padding:0 4px;border-radius:999px;font-size:10px;line-height:16px;text-align:center;' +
     'background:rgba(24,24,27,.06);font-variant-numeric:tabular-nums}' +
     '.chip[aria-pressed="true"] .chip-count{background:rgba(99,102,241,.12);color:#4f46e5}' +
-    '.list{min-height:0;overflow-x:hidden;overflow-y:auto;padding:8px 2px 20px 8px;scrollbar-gutter:stable;scrollbar-width:auto;scrollbar-color:#71717a #ececee;overscroll-behavior:contain;display:flex;flex-direction:column;gap:6px;-webkit-overflow-scrolling:touch}' +
-    '.list.can-scroll{overflow-y:scroll}' +
-    '.list::-webkit-scrollbar{width:12px}' +
-    '.list::-webkit-scrollbar-track{background:#ececee;border-radius:0 10px 10px 0}' +
-    '.list::-webkit-scrollbar-thumb{background:#71717a;border-radius:8px;border:2px solid #ececee;min-height:40px}' +
-    '.list::-webkit-scrollbar-thumb:hover{background:#52525b}' +
-    '.fade{position:absolute;left:0;right:12px;bottom:0;height:40px;pointer-events:none;opacity:0;background:linear-gradient(transparent,#fff);transition:opacity .15s ease}' +
-    '.card.can-scroll:not(.at-end) .fade{opacity:1}' +
+    '.list{padding:8px 10px 16px;display:flex;flex-direction:column;gap:6px}' +
+    '.fade{position:absolute;left:1px;right:16px;bottom:1px;height:36px;pointer-events:none;opacity:0;background:linear-gradient(transparent,#fff);border-radius:0 0 12px 12px;transition:opacity .15s ease}' +
+    '.card.can-scroll:not(.at-end)~.fade{opacity:1}' +
     '.section{display:flex;align-items:center;gap:6px;padding:2px 2px 0;font-size:10px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:#71717a}' +
     '.section-count{font-variant-numeric:tabular-nums;opacity:.75}' +
     '.section-line{height:1px;flex:1;background:rgba(24,24,27,.1)}' +
-    '.item{width:100%;min-width:0;border-radius:10px;border:1px solid rgba(24,24,27,.1);background:#fff;overflow:hidden}' +
+    '.item{width:100%;min-width:0;border-radius:10px;border:1px solid rgba(24,24,27,.1);background:#fff;overflow:hidden;scroll-margin-top:8px}' +
     '.item:hover{border-color:rgba(99,102,241,.28)}' +
     '.item.pinned{border-color:rgba(217,119,6,.35);background:#fffbeb}' +
     '.body{display:flex;align-items:flex-start;gap:8px;width:100%;min-width:0;margin:0;padding:8px 10px 2px;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer}' +
@@ -547,10 +580,10 @@
     '.chip[aria-pressed="true"]{background:#3f3f46;color:#fafafa;box-shadow:none}' +
     '.chip-count{background:rgba(255,255,255,.08)}' +
     '.chip[aria-pressed="true"] .chip-count{background:rgba(165,180,252,.18);color:#c7d2fe}' +
-    '.list{scrollbar-color:#a1a1aa #27272a}' +
-    '.list::-webkit-scrollbar-track{background:#27272a}' +
-    '.list::-webkit-scrollbar-thumb{background:#a1a1aa;border-color:#27272a}' +
-    '.list::-webkit-scrollbar-thumb:hover{background:#d4d4d8}' +
+    '.scroll-rail{background:#27272a}' +
+    '.scroll-thumb{background:#a1a1aa}' +
+    '.scroll-thumb:hover,.scroll-thumb.dragging{background:#e4e4e7}' +
+    '.chrome{background:#18181b}' +
     '.fade{background:linear-gradient(transparent,#18181b)}' +
     '.more{color:#c7d2fe}' +
     '.section-line{background:rgba(255,255,255,.1)}' +
@@ -563,8 +596,8 @@
     '}' +
     '</style>' +
     '<div class="catcher" data-action="catcher"></div>' +
-    '<div class="shell"><div class="card" role="dialog" aria-modal="true" aria-labelledby="tbx-clip-title">' +
-    '<div class="head"><div class="title-wrap"><h1 class="title" id="tbx-clip-title"></h1><span class="count" aria-live="polite"></span></div>' +
+    '<div class="shell"><div class="card" id="tbx-clip-card" role="dialog" aria-modal="true" aria-labelledby="tbx-clip-title">' +
+    '<div class="chrome"><div class="head"><div class="title-wrap"><h1 class="title" id="tbx-clip-title"></h1><span class="count" aria-live="polite"></span></div>' +
     '<button type="button" class="close" data-action="close">' +
     '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>' +
     '</button></div>' +
@@ -572,11 +605,12 @@
     '<span class="search-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg></span>' +
     '<input class="search" type="search" autocomplete="off" spellcheck="false" />' +
     '<kbd class="kbd" aria-hidden="true">/</kbd></div>' +
-    '<div class="filters" role="group"></div></div>' +
-    '<div class="list" tabindex="0"></div>' +
+    '<div class="filters" role="group"></div></div></div>' +
+    '<div class="list"></div>' +
+    '</div><div class="scroll-rail" hidden role="scrollbar" aria-controls="tbx-clip-card" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">' +
+    '<div class="scroll-thumb"></div></div>' +
     '<div class="fade" aria-hidden="true"></div>' +
-    '<div class="toast" role="status" aria-live="polite"></div>' +
-    '</div></div>'
+    '<div class="toast" role="status" aria-live="polite"></div></div>'
 
   sh.querySelector('.title').textContent = text.title
   countEl = sh.querySelector('.count')
@@ -589,11 +623,14 @@
   cardEl = sh.querySelector('.card')
   listEl = sh.querySelector('.list')
   toastEl = sh.querySelector('.toast')
+  railEl = sh.querySelector('.scroll-rail')
+  thumbEl = sh.querySelector('.scroll-thumb')
+  if (railEl) railEl.setAttribute('aria-label', text.title)
   sh.querySelector('[data-action="close"]').setAttribute('aria-label', text.close)
   sh.querySelector('[data-action="close"]').addEventListener('click', close)
   sh.querySelector('[data-action="catcher"]').addEventListener('click', close)
   sh.querySelector('[data-action="catcher"]').addEventListener('wheel', trapWheel, { passive: false })
-  listEl.addEventListener(
+  cardEl.addEventListener(
     'wheel',
     function (event) {
       event.stopPropagation()
@@ -603,23 +640,62 @@
         var innerBottom = inner.scrollTop + inner.clientHeight >= inner.scrollHeight - 1
         if (!((event.deltaY < 0 && innerTop) || (event.deltaY > 0 && innerBottom))) return
       }
-      var canScroll = listEl.scrollHeight > listEl.clientHeight + 1
-      var atTop = listEl.scrollTop <= 0
-      var atBottom = listEl.scrollTop + listEl.clientHeight >= listEl.scrollHeight - 1
+      var canScroll = cardEl.scrollHeight > cardEl.clientHeight + 1
+      var atTop = cardEl.scrollTop <= 0
+      var atBottom = cardEl.scrollTop + cardEl.clientHeight >= cardEl.scrollHeight - 1
       if (!canScroll || (event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom)) {
         event.preventDefault()
       }
     },
     { passive: false },
   )
-  listEl.addEventListener('scroll', syncOverflow, { passive: true })
-  listEl.addEventListener(
+  cardEl.addEventListener('scroll', syncOverflow, { passive: true })
+  cardEl.addEventListener(
     'touchmove',
     function (event) {
       event.stopPropagation()
     },
     { passive: true },
   )
+  if (railEl && thumbEl) {
+    railEl.addEventListener('pointerdown', function (event) {
+      if (event.target === thumbEl) return
+      var metrics = railMetrics()
+      if (!metrics || metrics.maxThumb <= 0) return
+      var rect = railEl.getBoundingClientRect()
+      var y = event.clientY - rect.top - metrics.thumbH / 2
+      var top = Math.min(metrics.maxThumb, Math.max(0, y))
+      cardEl.scrollTop = (top / metrics.maxThumb) * metrics.overflow
+    })
+    thumbEl.addEventListener('pointerdown', function (event) {
+      event.preventDefault()
+      event.stopPropagation()
+      var metrics = railMetrics()
+      if (!metrics) return
+      drag = {
+        pointerId: event.pointerId,
+        startY: event.clientY,
+        startTop: metrics.top,
+        maxThumb: metrics.maxThumb,
+        overflow: metrics.overflow,
+      }
+      thumbEl.classList.add('dragging')
+      if (thumbEl.setPointerCapture) thumbEl.setPointerCapture(event.pointerId)
+    })
+    thumbEl.addEventListener('pointermove', function (event) {
+      if (!drag || event.pointerId !== drag.pointerId) return
+      if (drag.maxThumb <= 0) return
+      var top = Math.min(drag.maxThumb, Math.max(0, drag.startTop + (event.clientY - drag.startY)))
+      cardEl.scrollTop = (top / drag.maxThumb) * drag.overflow
+    })
+    function endDrag(event) {
+      if (!drag || (event && event.pointerId !== drag.pointerId)) return
+      drag = null
+      thumbEl.classList.remove('dragging')
+    }
+    thumbEl.addEventListener('pointerup', endDrag)
+    thumbEl.addEventListener('pointercancel', endDrag)
+  }
 
   searchEl.addEventListener('input', function () {
     query = searchEl.value
@@ -629,12 +705,18 @@
 
   document.documentElement.appendChild(host)
   window.addEventListener('keydown', onKey, true)
+  window.addEventListener('resize', syncOverflow)
+  if (typeof ResizeObserver === 'function') {
+    resizeObs = new ResizeObserver(syncOverflow)
+    resizeObs.observe(cardEl)
+    resizeObs.observe(listEl)
+  }
   if (chrome.storage && chrome.storage.onChanged) {
     chrome.storage.onChanged.addListener(onStorage)
   }
   render()
   window.requestAnimationFrame(syncOverflow)
-  if (!reduceMotion) {
+  if (!reduceMotion && host.animate) {
     host.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 140, easing: 'ease-out' })
   }
   window.setTimeout(function () {
