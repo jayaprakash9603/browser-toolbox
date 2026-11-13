@@ -83,9 +83,9 @@ export function GraphWorkspace({
   }
 
   return (
-    <div className="flex flex-col gap-2 @[720px]:grid @[720px]:grid-cols-[minmax(0,1fr)_16rem] @[720px]:items-start">
-      <div className="min-w-0 space-y-2">
-        <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-col gap-3 @[720px]:grid @[720px]:grid-cols-[minmax(0,1fr)_17rem] @[720px]:items-start @[720px]:gap-4">
+      <div className="min-w-0 space-y-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           <Segmented
             size="sm"
             value={layout}
@@ -124,7 +124,7 @@ export function GraphWorkspace({
           placeholder={t('web.links.graph.search')}
           ariaLabel={t('web.links.graph.search')}
         />
-        <div className="flex flex-wrap gap-2 text-[11px]">
+        <div className="flex flex-wrap gap-x-2.5 gap-y-2 text-[11px]">
           <Toggle label={t('web.links.graph.labels')} checked={filters.labels} onChange={(labels) => setFilters((prev) => ({ ...prev, labels }))} />
           <Toggle label={t('web.links.graph.internal')} checked={filters.internal} onChange={(internal) => setFilters((prev) => ({ ...prev, internal }))} />
           <Toggle label={t('web.links.graph.external')} checked={filters.external} onChange={(external) => setFilters((prev) => ({ ...prev, external }))} />
@@ -184,7 +184,7 @@ function GraphLegend() {
     ['bg-red-500', t('web.links.legend.broken')],
   ] as const
   return (
-    <ul className="flex flex-wrap gap-2 text-[10px] text-muted-foreground" aria-label={t('web.links.legend.title')}>
+    <ul className="flex flex-wrap gap-x-3 gap-y-1.5 pt-1 text-[10px] text-muted-foreground" aria-label={t('web.links.legend.title')}>
       {items.map(([swatch, label]) => (
         <li key={label} className="flex items-center gap-1">
           <span className={`size-2.5 rounded-full ${swatch}`} />

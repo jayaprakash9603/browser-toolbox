@@ -19,7 +19,7 @@ function StatCell({
   return (
     <article
       className={cn(
-        'min-h-[4rem] rounded-xl border bg-card/95 p-2.5 shadow-xs',
+        'min-h-[4rem] rounded-xl border bg-card/95 p-3 shadow-xs',
         accent === 'active' && 'border-sky-500/25 bg-sky-500/5',
         accent === 'insight' && 'border-violet-500/20 bg-violet-500/5',
         className,

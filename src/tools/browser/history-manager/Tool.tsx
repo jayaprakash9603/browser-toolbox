@@ -166,10 +166,10 @@ export default function HistoryManagerTool() {
 
   return (
     <ToolPage tool={tool} actions={headerActions} contentClassName="flex h-full min-h-0 flex-col overflow-hidden p-0 @container">
-      <div className="mx-[var(--density-page-pad)] mt-2">
+      <div className="mx-[var(--density-page-pad)] mt-2.5">
         <PermissionNotice active permissions={['history']} origins={[]} message={t('historyManager.permission')} />
       </div>
-      <div className="flex min-h-0 flex-1 flex-col px-[var(--density-page-pad)]">
+      <div className="flex min-h-0 flex-1 flex-col gap-1 px-[var(--density-page-pad)] pb-1">
         <div className={HM_TOOLBAR}>
         <div className="flex items-center gap-2">
           <SearchInput

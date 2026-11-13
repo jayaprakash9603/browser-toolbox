@@ -1,9 +1,12 @@
 import { useTranslation } from 'react-i18next'
-import { Bar, BarChart, Cell, XAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, Cell, XAxis } from 'recharts'
 
 import type { LinkGraph } from '@/core/engines/links/graph'
+import { chartColor, chartColorAt, type ChartToken } from '@/shared/chart/series'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/shared/components/ui/chart'
 import { cn } from '@/shared/utils/cn'
+
+import { LT_CHART_SHELL, LT_SECTION_TITLE, LT_STAT_CARD } from './layout'
 
 interface OverviewPanelProps {
   graph: LinkGraph
@@ -23,8 +26,8 @@ export function OverviewPanel({ graph }: OverviewPanelProps) {
     [t('web.links.card.empty'), stats.emptyAnchors],
   ] as const
   const mix = [
-    { key: 'internal', count: stats.internalLinks },
-    { key: 'external', count: stats.externalLinks },
+    { key: t('web.links.tab.internal'), count: stats.internalLinks, fill: chartColor(1) },
+    { key: t('web.links.tab.external'), count: stats.externalLinks, fill: chartColor(4) },
   ]
   const depth = depthRows(graph)
   const topPages = [...graph.nodes]
@@ -32,43 +35,48 @@ export function OverviewPanel({ graph }: OverviewPanelProps) {
     .sort((a, b) => b.incomingCount - a.incomingCount)
     .slice(0, 5)
   const domains = topDomains(graph)
+  const health = healthMix(graph, (health) => t(`web.links.health.${health}`))
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-4 pb-2">
       {stats.incomplete && (
-        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-800 dark:text-amber-200">
+        <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-[11px] text-amber-800 dark:text-amber-200">
           {t('web.links.incompleteCrawl')}
         </p>
       )}
-      <div className="grid grid-cols-2 gap-1.5 @[520px]:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 @xs:grid-cols-2 @[520px]:grid-cols-4">
         {cards.map(([label, value]) => (
-          <div key={label} className="rounded-lg border bg-card px-2.5 py-2">
-            <p className="text-[10px] text-muted-foreground">{label}</p>
-            <p className="text-lg font-semibold tabular-nums">{value}</p>
+          <div key={label} className={LT_STAT_CARD}>
+            <p className="text-[10px] font-medium text-muted-foreground">{label}</p>
+            <p className="mt-1 text-lg font-semibold tabular-nums leading-none">{value}</p>
           </div>
         ))}
       </div>
       <MiniChart title={t('web.links.chart.internalExternal')} data={mix} />
-      <MiniChart title={t('web.links.chart.health')} data={healthMix(graph, (health) => t(`web.links.health.${health}`))} />
-      <MiniChart title={t('web.links.chart.depth')} data={depth} />
+      <MiniChart title={t('web.links.chart.health')} data={health} varied />
+      <MiniChart title={t('web.links.chart.depth')} data={depth} varied />
       <RankList title={t('web.links.chart.topPages')} rows={topPages.map((node) => [node.title || node.url, node.incomingCount])} />
-      <RankList title={t('web.links.chart.topDomains')} rows={domains} />
-      <p className="text-[11px] text-muted-foreground">{t('web.links.importanceHint')}</p>
+      <RankList title={t('web.links.chart.topDomains')} rows={domains} barToken={2} />
+      <p className="text-[11px] leading-relaxed text-muted-foreground">{t('web.links.importanceHint')}</p>
     </div>
   )
 }
 
-function MiniChart({ title, data }: { title: string; data: { key: string; count: number }[] }) {
+type ChartRow = { key: string; count: number; fill?: string }
+
+function MiniChart({ title, data, varied }: { title: string; data: ChartRow[]; varied?: boolean }) {
+  const accent = chartColor(1)
   return (
-    <div className="rounded-xl border p-2.5">
-      <p className="mb-1 text-[11px] font-medium">{title}</p>
-      <ChartContainer config={{ count: { label: title, color: 'hsl(var(--chart-1))' } }} className="aspect-auto h-[88px] w-full min-w-[1px]">
-        <BarChart data={data} margin={{ left: 0, right: 0, top: 4, bottom: 0 }}>
-          <XAxis dataKey="key" tickLine={false} axisLine={false} fontSize={10} />
+    <div className={LT_CHART_SHELL}>
+      <p className={LT_SECTION_TITLE}>{title}</p>
+      <ChartContainer config={{ count: { label: title, color: accent } }} className="aspect-auto h-[96px] w-full min-w-[1px]">
+        <BarChart data={data} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+          <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.55} />
+          <XAxis dataKey="key" tickLine={false} axisLine={false} fontSize={10} interval={0} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
           <ChartTooltip content={<ChartTooltipContent />} />
           <Bar dataKey="count" radius={4}>
-            {data.map((row) => (
-              <Cell key={row.key} fill="hsl(var(--chart-1))" />
+            {data.map((row, index) => (
+              <Cell key={row.key} fill={row.fill ?? (varied ? chartColorAt(index) : accent)} />
             ))}
           </Bar>
         </BarChart>
@@ -77,20 +85,29 @@ function MiniChart({ title, data }: { title: string; data: { key: string; count:
   )
 }
 
-function RankList({ title, rows }: { title: string; rows: [string, number][] }) {
+function RankList({
+  title,
+  rows,
+  barToken = 1,
+}: {
+  title: string
+  rows: [string, number][]
+  barToken?: ChartToken
+}) {
   const max = Math.max(1, ...rows.map((row) => row[1]))
+  const barColor = chartColor(barToken)
   return (
-    <div className="rounded-xl border p-2.5">
-      <p className="mb-2 text-[11px] font-medium">{title}</p>
-      <ul className="space-y-1.5">
+    <div className={LT_CHART_SHELL}>
+      <p className={LT_SECTION_TITLE}>{title}</p>
+      <ul className="space-y-2">
         {rows.map(([label, count]) => (
           <li key={label} className="min-w-0">
             <div className="flex items-center justify-between gap-2 text-[11px]">
               <span className="truncate">{label}</span>
-              <span className="tabular-nums text-muted-foreground">{count}</span>
+              <span className="shrink-0 tabular-nums text-muted-foreground">{count}</span>
             </div>
-            <div className="mt-0.5 h-1 rounded-full bg-muted">
-              <div className={cn('h-1 rounded-full bg-primary')} style={{ width: `${(count / max) * 100}%` }} />
+            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+              <div className={cn('h-full rounded-full')} style={{ width: `${(count / max) * 100}%`, backgroundColor: barColor }} />
             </div>
           </li>
         ))}
@@ -109,12 +126,23 @@ function depthRows(graph: LinkGraph): { key: string; count: number }[] {
   return [...counts.entries()].map(([key, count]) => ({ key, count }))
 }
 
-function healthMix(graph: LinkGraph, label: (health: string) => string): { key: string; count: number }[] {
+function healthMix(graph: LinkGraph, label: (health: string) => string): ChartRow[] {
   const counts = new Map<string, number>()
   for (const edge of graph.edges) {
     counts.set(edge.destinationHealth, (counts.get(edge.destinationHealth) ?? 0) + 1)
   }
-  return [...counts.entries()].map(([key, count]) => ({ key: label(key), count }))
+  return [...counts.entries()].map(([key, count], index) => ({
+    key: label(key),
+    count,
+    fill: healthChartColor(key, index),
+  }))
+}
+
+function healthChartColor(health: string, index: number): string {
+  if (health === 'ok') return chartColor(3)
+  if (health === 'broken') return 'var(--destructive)'
+  if (health === 'redirect' || health === 'blocked' || health === 'server') return chartColor(5)
+  return chartColorAt(index)
 }
 
 function topDomains(graph: LinkGraph): [string, number][] {

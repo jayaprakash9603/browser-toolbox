@@ -23,6 +23,7 @@ import { InternalLinksPanel } from './InternalLinksPanel'
 import { OverviewPanel } from './OverviewPanel'
 import { SettingsPanel } from './SettingsPanel'
 import { useLinkIntelligence } from './useLinkIntelligence'
+import { LT_SCROLL, LT_TAB_PANEL, LT_TABS_RAIL, LT_TOOLBAR } from './layout'
 
 const TABS = ['overview', 'graph', 'internal', 'external', 'anchors', 'health', 'settings'] as const
 type TabId = (typeof TABS)[number]
@@ -82,9 +83,9 @@ export default function LinkToolkitTool() {
   )
 
   return (
-    <ToolPage tool={tool} actions={actions} contentClassName="overflow-hidden p-0">
+    <ToolPage tool={tool} actions={actions} contentClassName="@container flex h-full min-h-0 flex-col overflow-hidden p-0">
       <div className="flex h-full min-h-0 flex-col">
-        <div className="space-y-2 border-b px-3 py-2">
+        <div className={LT_TOOLBAR}>
           {snapshot && (
             <p className="truncate text-[12px] font-semibold">{snapshot.title || snapshot.host}</p>
           )}
@@ -100,7 +101,7 @@ export default function LinkToolkitTool() {
               { value: 'sitemap', label: t('web.links.scope.sitemap') },
             ]}
           />
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
             {intel.settings.scope !== 'page' && (
               <Button size="xs" onClick={() => void intel.startCrawl()} disabled={Boolean(intel.crawl)}>
                 {t('web.links.crawl')}
@@ -136,9 +137,11 @@ export default function LinkToolkitTool() {
           </div>
         </div>
 
-        {load.status === 'loading' && <p className="p-3 text-xs text-muted-foreground">{t('web.links.loading')}</p>}
+        {load.status === 'loading' && (
+          <p className="px-[var(--density-page-pad)] py-4 text-xs text-muted-foreground">{t('web.links.loading')}</p>
+        )}
         {load.status === 'error' && (
-          <div className="p-3">
+          <div className="px-[var(--density-page-pad)] py-3">
             <Empty icon={ShieldAlertIcon} title={t('web.links.loadError')} hint={t('web.links.loadErrorHint')}>
               <Button size="sm" onClick={intel.rescan}>
                 {t('web.links.retry')}
@@ -149,8 +152,8 @@ export default function LinkToolkitTool() {
 
         {snapshot && graph && (
           <Tabs value={tab} onValueChange={(value) => setTab(value as TabId)} className="flex min-h-0 flex-1 flex-col">
-            <div className="px-2 pt-2">
-              <TabsList variant="chips" fullWidth className="justify-start">
+            <div className={LT_TABS_RAIL}>
+              <TabsList variant="chips" fullWidth className="justify-start gap-1">
                 {TABS.map((id) => (
                   <TabsTrigger key={id} value={id} className="px-2 text-[11px]">
                     {t(`web.links.tab.${id}`)}
@@ -158,19 +161,19 @@ export default function LinkToolkitTool() {
                 ))}
               </TabsList>
             </div>
-            <div className="min-h-0 flex-1 overflow-auto px-3 py-3">
+            <div className={LT_SCROLL}>
               {intel.stale && (
-                <div className="mb-3 flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs">
+                <div className="mb-3 flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2.5 text-xs">
                   <span className="flex-1">{t('web.links.pageChanged')}</span>
                   <Button size="xs" variant="outline" onClick={intel.rescan}>
                     {t('web.links.rescan')}
                   </Button>
                 </div>
               )}
-              <TabsContent value="overview" className="mt-0">
+              <TabsContent value="overview" className={LT_TAB_PANEL}>
                 <OverviewPanel graph={graph} />
               </TabsContent>
-              <TabsContent value="graph" className="mt-0">
+              <TabsContent value="graph" className={LT_TAB_PANEL}>
                 <GraphWorkspace
                   graph={graph}
                   selectedId={intel.selectedId}
@@ -181,7 +184,7 @@ export default function LinkToolkitTool() {
                   onInspectAnchors={() => setTab('anchors')}
                 />
               </TabsContent>
-              <TabsContent value="internal" className="mt-0">
+              <TabsContent value="internal" className={LT_TAB_PANEL}>
                 <InternalLinksPanel
                   snapshot={snapshot}
                   statusOf={statusOf}
@@ -193,16 +196,16 @@ export default function LinkToolkitTool() {
                   onLocate={locate}
                 />
               </TabsContent>
-              <TabsContent value="external" className="mt-0">
+              <TabsContent value="external" className={LT_TAB_PANEL}>
                 <EdgeTable graph={graph} kind="external" />
               </TabsContent>
-              <TabsContent value="anchors" className="mt-0">
+              <TabsContent value="anchors" className={LT_TAB_PANEL}>
                 <AnchorPanel graph={graph} />
               </TabsContent>
-              <TabsContent value="health" className="mt-0">
+              <TabsContent value="health" className={LT_TAB_PANEL}>
                 <HealthPanel graph={graph} onRecheck={(hrefs) => intel.startCheck(hrefs)} />
               </TabsContent>
-              <TabsContent value="settings" className="mt-0">
+              <TabsContent value="settings" className={LT_TAB_PANEL}>
                 <SettingsPanel settings={intel.settings} onChange={intel.patchSettings} />
               </TabsContent>
             </div>

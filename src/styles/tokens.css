@@ -69,6 +69,12 @@
   --netmon-latency: #4f46e5;
   --speed-down: #0ea5e9;
   --speed-up: #a855f7;
+  /* Recharts / shadcn chart tokens (HSL components for hsl(var(--chart-N))) */
+  --chart-1: 239 84% 67%;
+  --chart-2: 199 89% 48%;
+  --chart-3: 152 69% 40%;
+  --chart-4: 271 81% 56%;
+  --chart-5: 32 95% 44%;
 }
 
 html[data-density='compact'] {
@@ -139,6 +145,11 @@ html[data-density='comfortable'] {
   --netmon-latency: #818cf8;
   --speed-down: #38bdf8;
   --speed-up: #c084fc;
+  --chart-1: 234 89% 74%;
+  --chart-2: 199 95% 55%;
+  --chart-3: 152 60% 52%;
+  --chart-4: 271 75% 68%;
+  --chart-5: 38 95% 56%;
 }
 
 .dark,
