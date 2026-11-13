@@ -12,6 +12,7 @@ import {
 import { buildApiClientTheme } from '@/features/api-client/build-api-client-theme'
 import { usePostmanLiteStylesheet } from '@/features/api-client/usePostmanLiteStylesheet'
 import type { ThemeMode } from '@/features/settings/settingsService'
+import { useToast } from '@/shared/components/toast/useToast'
 import { useSettings } from '@/shared/hooks/useSettings'
 import { DEFAULT_PALETTE } from '@/shared/lib/theme/palettes'
 
@@ -23,16 +24,25 @@ const HOST_APPEARANCE_NOTE = (
 
 export function ToolboxApiClient() {
   usePostmanLiteStylesheet()
+  const toast = useToast()
   const settings = useSettings()
   const themeMode: ThemeMode = settings?.theme ?? 'system'
   const palette = settings?.palette ?? DEFAULT_PALETTE
 
   const adapters = useMemo(
-    () =>
-      createExtensionAdapters(createDefaultI18n(), {
+    () => ({
+      ...createExtensionAdapters(createDefaultI18n(), {
         folderStorage: 'none',
       }),
-    [],
+      userNotify: {
+        show: (message: string, options?: { variant?: 'error' | 'info' | 'success' }) => {
+          toast.show(message, {
+            variant: options?.variant === 'error' ? 'error' : options?.variant ?? 'info',
+          })
+        },
+      },
+    }),
+    [toast],
   )
 
   const theme = useMemo(() => buildApiClientTheme(themeMode, palette), [themeMode, palette])
