@@ -14,17 +14,28 @@ import { mockupFor, mockupSrc } from '@/tools/design/responsive-viewer/mockups'
 import { simulatorStudioUrl } from '@/tools/design/responsive-viewer/studioUrl'
 
 import { setOverlayTabFraming } from '../responsiveViewerFraming'
-import { clearOverlaySession, markOverlaySession } from './overlaySession'
+import { clearOverlaySession, getOverlaySession, markOverlaySession } from './overlaySession'
 import { downloadWithName } from '../downloadNames'
 import { startRecorder } from '../recorder'
 
 import type { ExtensionMessage } from '@/core/messaging/types'
-import type { SimulatorOverlayConfig } from './overlayTypes'
+import type { SimulatorOverlayConfig, SimulatorOverlayUiSettings } from './overlayTypes'
+import type { ViewerSettings } from '@/tools/design/responsive-viewer/devices'
 export { canOverlaySimulatorOnTab } from './overlayTypes'
 
 /** Served from public/inject; must match scripts/build-simulator-overlay.mjs output. */
 export const SIMULATOR_OVERLAY_JS = 'inject/simulator-overlay.js'
 const SIMULATOR_OVERLAY_MOUNT_KEY = '__TBX_MOUNT_SIMULATOR__'
+
+function overlayUiFromSettings(settings: ViewerSettings): SimulatorOverlayUiSettings {
+  return {
+    theme: settings.studioTheme === 'dark' ? 'dark' : 'classic',
+    showStatusBar: settings.showStatusBar,
+    showNavBar: settings.showNavBar,
+    mobileUa: settings.mobileUa,
+    unblock: settings.unblock,
+  }
+}
 
 async function overlayConfigFor(
   url: string,
@@ -58,6 +69,7 @@ async function overlayConfigFor(
     statusBar: device.statusBar ?? 'none',
     frameStyle: device.frameStyle ?? 'iphone',
     showSafari: device.frameStyle === 'iphone' || device.frameStyle === 'iphone-home',
+    ui: overlayUiFromSettings(settings),
     hostname,
     studioUrl: simulatorStudioUrl({ url, device: device.id }),
     mockupUrl: mockup ? mockupSrc(mockup.file) : undefined,
@@ -89,6 +101,13 @@ function fallbackOverlayConfig(url: string, replace = false): SimulatorOverlayCo
     statusBar: 'ios',
     frameStyle: 'iphone',
     showSafari: true,
+    ui: {
+      theme: 'classic',
+      showStatusBar: true,
+      showNavBar: true,
+      mobileUa: false,
+      unblock: true,
+    },
     hostname,
     studioUrl: simulatorStudioUrl({ url, device: 'iphone-16-pro' }),
     replace,
@@ -153,6 +172,27 @@ async function readViewerSettings() {
   const stored = await chrome.storage.local.get(STORAGE_KEY)
   const raw = stored[STORAGE_KEY]
   return parseSettings(typeof raw === 'string' ? raw : raw ? JSON.stringify(raw) : null)
+}
+
+async function persistViewerSettings(patch: Partial<ViewerSettings>): Promise<ViewerSettings> {
+  const current = await readViewerSettings()
+  let presentation = current.presentation
+  if (patch.studioTheme === 'dark') {
+    presentation = { ...presentation, background: 'dark' }
+  } else if (patch.studioTheme === 'light') {
+    presentation = { ...presentation, background: 'white' }
+  } else if (patch.presentation) {
+    presentation = { ...presentation, ...patch.presentation }
+  }
+  const next: ViewerSettings = { ...current, ...patch, presentation }
+  await chrome.storage.local.set({ [STORAGE_KEY]: JSON.stringify(next) })
+  return next
+}
+
+async function mobileUaForTab(deviceId: string | undefined, settings: ViewerSettings): Promise<string | undefined> {
+  const device =
+    findDevice(deviceId ?? settings.lastDevice ?? DEFAULT_DEVICE_ID, settings.custom) ?? findDevice(DEFAULT_DEVICE_ID)
+  return settings.mobileUa && device?.userAgent ? device.userAgent : undefined
 }
 
 async function persistLastDevice(id: string): Promise<void> {
@@ -283,6 +323,35 @@ export async function handleOverlayAction(
   switch (message.action) {
     case 'listDevices':
       return listOverlayDevices()
+    case 'getSettings': {
+      const settings = await readViewerSettings()
+      return { ok: true, ...overlayUiFromSettings(settings) }
+    }
+    case 'patchSettings': {
+      const patch = message.patch
+      if (!patch) return { ok: false, error: 'no-patch' }
+      const viewerPatch: Partial<ViewerSettings> = {}
+      if (patch.theme === 'classic' || patch.theme === 'dark') {
+        viewerPatch.studioTheme = patch.theme === 'dark' ? 'dark' : 'light'
+      }
+      if (typeof patch.showStatusBar === 'boolean') viewerPatch.showStatusBar = patch.showStatusBar
+      if (typeof patch.showNavBar === 'boolean') viewerPatch.showNavBar = patch.showNavBar
+      if (typeof patch.mobileUa === 'boolean') viewerPatch.mobileUa = patch.mobileUa
+      if (typeof patch.unblock === 'boolean') viewerPatch.unblock = patch.unblock
+      const settings = await persistViewerSettings(viewerPatch)
+      const ui = overlayUiFromSettings(settings)
+      if (tab?.id != null && (patch.mobileUa !== undefined || patch.unblock !== undefined)) {
+        const mobileUa = await mobileUaForTab(message.deviceId ?? settings.lastDevice, settings)
+        await setOverlayTabFraming(tab.id, true, mobileUa)
+        const prev = await getOverlaySession(tab.id)
+        await markOverlaySession(tab.id, {
+          previewUrl: prev?.previewUrl ?? url ?? tab.url ?? '',
+          deviceId: message.deviceId ?? prev?.deviceId ?? settings.lastDevice,
+          mobileUa,
+        })
+      }
+      return { ok: true, ...ui }
+    }
     case 'setDevice': {
       if (!tab || !message.deviceId || !url) return { ok: false, error: 'no-tab' }
       await persistLastDevice(message.deviceId)

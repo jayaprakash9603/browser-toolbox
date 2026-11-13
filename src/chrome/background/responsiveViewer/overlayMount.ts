@@ -1,4 +1,4 @@
-import type { SimulatorOverlayConfig } from './overlayTypes'
+import type { SimulatorOverlayConfig, SimulatorOverlayUiSettings, SimulatorOverlayUiTheme } from './overlayTypes'
 
 /** Injected in the page only — bundled to public/inject/simulator-overlay.js. */
 export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
@@ -71,6 +71,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const state = {
     rotated: false,
     live: config,
+    ui: config.ui,
     panel: '' as '' | 'devices' | 'settings' | 'shot-menu' | 'record-menu' | 'capture-result',
     lastCaptureUrl: '',
     lastCaptureName: '',
@@ -93,6 +94,22 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       --tbx-accent: #0d9488;
       --tbx-accent-hover: #0f766e;
       --tbx-accent-pressed: #115e59;
+      --tbx-panel-bg: #fff;
+      --tbx-panel-border: #dde3ea;
+      --tbx-panel-muted: #64748b;
+      --tbx-row-hover: #f1f5f9;
+      --tbx-input-bg: #f8fafc;
+      --tbx-input-border: #cbd5e1;
+    }
+    .root.theme-dark {
+      background: #0b0f14;
+      color: #e2e8f0;
+      --tbx-panel-bg: #151b24;
+      --tbx-panel-border: #2a3544;
+      --tbx-panel-muted: #94a3b8;
+      --tbx-row-hover: #1e2733;
+      --tbx-input-bg: #0f141c;
+      --tbx-input-border: #334155;
     }
     .stage {
       display: flex;
@@ -257,8 +274,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     .panel {
       display: none; flex-direction: column; gap: 10px;
       position: absolute; z-index: 8;
-      background: #fff;
-      color: #1e293b;
+      background: var(--tbx-panel-bg);
+      color: inherit;
     }
     .panel.open { display: flex; }
     .panel[data-panel="devices"] {
@@ -269,7 +286,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       max-height: min(78vh, 620px);
       padding: 14px;
       border-radius: 14px;
-      border: 1px solid #dde3ea;
+      border: 1px solid var(--tbx-panel-border);
       box-shadow: 0 16px 40px rgba(15,23,42,0.12);
     }
     .panel[data-panel="settings"],
@@ -279,8 +296,24 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       right: 76px; top: 50%; transform: translateY(-50%);
       width: 260px; max-height: min(70vh, 480px);
       padding: 14px; border-radius: 14px;
-      border: 1px solid #dde3ea;
+      border: 1px solid var(--tbx-panel-border);
       box-shadow: 0 16px 40px rgba(15,23,42,0.12);
+    }
+    .panel[data-panel="settings"] {
+      width: min(292px, 42vw);
+      gap: 12px;
+    }
+    .panel[data-panel="settings"]::after {
+      content: '';
+      position: absolute;
+      right: -6px;
+      top: 50%;
+      width: 10px;
+      height: 10px;
+      transform: translateY(-50%) rotate(45deg);
+      background: var(--tbx-panel-bg);
+      border-right: 1px solid var(--tbx-panel-border);
+      border-top: 1px solid var(--tbx-panel-border);
     }
     .panel[data-panel="capture-result"] {
       width: min(340px, 42vw);
@@ -291,11 +324,43 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .capture-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
     .capture-actions .setting-row { flex: 1 1 auto; justify-content: center; font-weight: 600; }
-    .capture-hint { margin: 0; font-size: 11px; color: #64748b; line-height: 1.4; }
-    .panel h2 { margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; }
+    .capture-hint { margin: 0; font-size: 11px; color: var(--tbx-panel-muted); line-height: 1.4; }
+    .panel h2 { margin: 0; font-size: 13px; font-weight: 700; }
+    .setting-list { display: flex; flex-direction: column; gap: 6px; }
+    .setting-section { margin: 4px 0 0; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--tbx-panel-muted); }
+    .theme-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+    .theme-opt {
+      height: 34px; border-radius: 10px; border: 1px solid var(--tbx-input-border);
+      background: var(--tbx-input-bg); color: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .theme-opt:hover { border-color: var(--tbx-accent); color: var(--tbx-accent); }
+    .theme-opt[aria-pressed="true"] { background: var(--tbx-accent); border-color: var(--tbx-accent); color: #fff; }
+    .setting-switch {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 8px 6px; border-radius: 10px; cursor: pointer; user-select: none;
+    }
+    .setting-switch:hover { background: var(--tbx-row-hover); }
+    .setting-switch span:first-child { font-size: 13px; flex: 1; }
+    .setting-switch input {
+      position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0;
+    }
+    .switch-track {
+      flex-shrink: 0;
+      width: 40px; height: 22px; border-radius: 999px;
+      background: #cbd5e1; position: relative; transition: background 0.15s;
+    }
+    .root.theme-dark .switch-track { background: #334155; }
+    .switch-track::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px; border-radius: 50%; background: #fff;
+      box-shadow: 0 1px 3px rgba(15,23,42,0.2); transition: transform 0.15s;
+    }
+    .setting-switch input:checked + .switch-track { background: var(--tbx-accent); }
+    .setting-switch input:checked + .switch-track::after { transform: translateX(18px); }
+    .setting-switch input:focus-visible + .switch-track { outline: 2px solid #5eead4; outline-offset: 2px; }
     .panel input {
       width: 100%; height: 36px; padding: 0 12px; border-radius: 10px;
-      border: 1px solid #cbd5e1; font-size: 13px; background: #f8fafc;
+      border: 1px solid var(--tbx-input-border); font-size: 13px; background: var(--tbx-input-bg); color: inherit;
     }
     .panel input:focus { outline: 2px solid #99f6e4; border-color: var(--tbx-accent); }
     .panel-list { overflow: auto; flex: 1; display: flex; flex-direction: column; gap: 2px; min-height: 0; }
@@ -304,7 +369,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       width: 100%; padding: 10px; border: 0; border-radius: 10px;
       background: transparent; text-align: left; cursor: pointer; font-size: 13px; color: #0f172a;
     }
-    .device-row:hover, .setting-row:hover { background: #f1f5f9; }
+    .device-row:hover, .setting-row:hover { background: var(--tbx-row-hover); }
     .device-row[aria-current="true"] { background: #ccfbf1; color: #0f766e; font-weight: 600; }
     .device-row small { color: #64748b; font-weight: 400; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -338,6 +403,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   root.style.setProperty('--tbx-fill', config.finish.fill)
   root.style.setProperty('--tbx-ring', config.finish.ring)
   root.style.setProperty('--tbx-button', config.finish.button)
+  root.classList.toggle('theme-dark', config.ui.theme === 'dark')
+  root.classList.toggle('theme-classic', config.ui.theme !== 'dark')
 
   root.innerHTML = `
     <div class="stage">
@@ -384,9 +451,41 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     </div>
     <div class="panel" data-panel="settings">
       <h2>Settings</h2>
-      <button type="button" class="setting-row" data-set="safari">Safari chrome</button>
-      <button type="button" class="setting-row" data-set="status">Status bar</button>
-      <p class="capture-hint">This overlay previews the page in a device frame. It is not an iOS or Android emulator.</p>
+      <div class="setting-list">
+        <p class="setting-section">Appearance</p>
+        <div class="theme-pick" role="group" aria-label="Canvas theme">
+          <button type="button" class="theme-opt" data-theme-opt="classic">Classic</button>
+          <button type="button" class="theme-opt" data-theme-opt="dark">Dark</button>
+        </div>
+        <p class="setting-section">Device chrome</p>
+        <label class="setting-switch">
+          <span>Safari chrome</span>
+          <input type="checkbox" data-set="safari" />
+          <span class="switch-track" aria-hidden="true"></span>
+        </label>
+        <label class="setting-switch">
+          <span>Status bar</span>
+          <input type="checkbox" data-set="status" />
+          <span class="switch-track" aria-hidden="true"></span>
+        </label>
+        <label class="setting-switch">
+          <span>Navigation bar</span>
+          <input type="checkbox" data-set="nav" />
+          <span class="switch-track" aria-hidden="true"></span>
+        </label>
+        <p class="setting-section">Preview</p>
+        <label class="setting-switch">
+          <span>Mobile User-Agent</span>
+          <input type="checkbox" data-set="mobile-ua" />
+          <span class="switch-track" aria-hidden="true"></span>
+        </label>
+        <label class="setting-switch">
+          <span>Load sites that block embedding</span>
+          <input type="checkbox" data-set="unblock" />
+          <span class="switch-track" aria-hidden="true"></span>
+        </label>
+        <p class="capture-hint">Simulator also applies these options in the full studio.</p>
+      </div>
     </div>
     <div class="panel" data-panel="shot-menu">
       <h2>Screenshot</h2>
@@ -469,6 +568,11 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       }
     })
 
+  const applyTheme = (theme: SimulatorOverlayUiTheme) => {
+    root.classList.toggle('theme-dark', theme === 'dark')
+    root.classList.toggle('theme-classic', theme !== 'dark')
+  }
+
   const paintFinish = (next: SimulatorOverlayConfig) => {
     root.style.setProperty('--tbx-fill', next.finish.fill)
     root.style.setProperty('--tbx-ring', next.finish.ring)
@@ -478,6 +582,59 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     hostLabel.textContent = next.hostname
     for (const link of shadow.querySelectorAll<HTMLAnchorElement>('.studio-link')) {
       link.href = next.studioUrl
+    }
+  }
+
+  type OverlaySettings = SimulatorOverlayUiSettings
+
+  const syncSettingsUi = () => {
+    const ui = state.ui
+    for (const button of shadow.querySelectorAll<HTMLButtonElement>('[data-theme-opt]')) {
+      button.setAttribute('aria-pressed', String(button.dataset.themeOpt === ui.theme))
+    }
+    const safariInput = shadow.querySelector('[data-set="safari"]') as HTMLInputElement | null
+    const statusInput = shadow.querySelector('[data-set="status"]') as HTMLInputElement | null
+    const navInput = shadow.querySelector('[data-set="nav"]') as HTMLInputElement | null
+    const uaInput = shadow.querySelector('[data-set="mobile-ua"]') as HTMLInputElement | null
+    const unblockInput = shadow.querySelector('[data-set="unblock"]') as HTMLInputElement | null
+    if (safariInput) safariInput.checked = state.live.showSafari
+    if (statusInput) statusInput.checked = ui.showStatusBar
+    if (navInput) navInput.checked = ui.showNavBar
+    if (uaInput) uaInput.checked = ui.mobileUa
+    if (unblockInput) unblockInput.checked = ui.unblock
+  }
+
+  const applyOverlaySettings = (ui: OverlaySettings) => {
+    state.ui = ui
+    applyTheme(ui.theme)
+    syncSettingsUi()
+    layout()
+  }
+
+  const loadOverlaySettings = async () => {
+    const next = await ask<OverlaySettings>({
+      type: 'SIMULATOR_OVERLAY_ACTION',
+      action: 'getSettings',
+      url: state.live.url,
+    })
+    if (!next?.theme) return
+    applyOverlaySettings(next)
+  }
+
+  const patchOverlaySettings = async (patch: Record<string, boolean | string>) => {
+    const next = await ask<OverlaySettings>({
+      type: 'SIMULATOR_OVERLAY_ACTION',
+      action: 'patchSettings',
+      patch,
+      deviceId: state.live.deviceId,
+      url: state.live.url,
+    })
+    if (!next?.theme) return
+    const reloadNeeded = patch.mobileUa !== undefined
+    applyOverlaySettings(next)
+    if (reloadNeeded) {
+      blocked.style.display = 'none'
+      iframe.src = state.live.url
     }
   }
 
@@ -528,13 +685,11 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     const notchClass = live.notch === 'punch-hole' ? 'punch' : live.notch
     cutout.className = !mockup && live.notch !== 'none' ? `cutout ${notchClass}` : 'cutout'
     safari.hidden = !live.showSafari || state.rotated
-    home.hidden = live.navBar !== 'home-indicator'
-    androidNav.hidden = live.navBar !== 'android' || state.rotated
-    status.style.display = live.statusBar === 'none' ? 'none' : ''
-    const safariRow = shadow.querySelector('[data-set="safari"]') as HTMLButtonElement | null
-    const statusRow = shadow.querySelector('[data-set="status"]') as HTMLButtonElement | null
-    safariRow?.setAttribute('aria-pressed', String(live.showSafari))
-    statusRow?.setAttribute('aria-pressed', String(live.statusBar !== 'none'))
+    home.hidden = !state.ui.showNavBar || live.navBar !== 'home-indicator'
+    androidNav.hidden = !state.ui.showNavBar || live.navBar !== 'android' || state.rotated
+    status.style.display =
+      !state.ui.showStatusBar || live.statusBar === 'none' ? 'none' : ''
+    syncSettingsUi()
   }
 
   const renderDevices = () => {
@@ -597,6 +752,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     settingsBtn.setAttribute('aria-pressed', String(state.panel === 'settings'))
     layout()
     if (state.panel === 'devices') void loadDevices()
+    if (state.panel === 'settings') void loadOverlaySettings()
   }
 
   const showCaptureResult = (dataUrl: string, filename: string, kind: 'simulator' | 'viewport') => {
@@ -631,7 +787,9 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
 
   const apply = (next: SimulatorOverlayConfig) => {
     state.live = next
+    state.ui = next.ui
     state.rotated = false
+    applyTheme(next.ui.theme)
     paintFinish(next)
     if (iframe.getAttribute('src') !== next.url) iframe.src = next.url
     layout()
@@ -639,6 +797,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   }
   host.__tbxSimApply = apply
   paintFinish(config)
+  syncSettingsUi()
   layout()
 
   iframe.addEventListener('load', () => {
@@ -705,17 +864,36 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     })
     setPanel('')
   })
-  shadow.querySelector('[data-set="safari"]')?.addEventListener('click', () => {
-    state.live = { ...state.live, showSafari: !state.live.showSafari }
-    layout()
-  })
-  shadow.querySelector('[data-set="status"]')?.addEventListener('click', () => {
-    const off = state.live.statusBar === 'none'
-    state.live = {
-      ...state.live,
-      statusBar: off ? (state.live.frameStyle.startsWith('iphone') ? 'ios' : 'android') : 'none',
+  shadow.querySelector('[data-panel="settings"]')?.addEventListener('click', (event) => {
+    const themeBtn = (event.target as HTMLElement | null)?.closest<HTMLButtonElement>('[data-theme-opt]')
+    if (themeBtn?.dataset.themeOpt === 'classic' || themeBtn?.dataset.themeOpt === 'dark') {
+      void patchOverlaySettings({ theme: themeBtn.dataset.themeOpt })
     }
-    layout()
+  })
+  shadow.querySelector('[data-panel="settings"]')?.addEventListener('change', (event) => {
+    const input = event.target as HTMLInputElement
+    if (input.tagName !== 'INPUT' || !input.dataset.set) return
+    const key = input.dataset.set
+    if (key === 'safari') {
+      state.live = { ...state.live, showSafari: input.checked }
+      layout()
+      return
+    }
+    if (key === 'status') {
+      void patchOverlaySettings({ showStatusBar: input.checked })
+      return
+    }
+    if (key === 'nav') {
+      void patchOverlaySettings({ showNavBar: input.checked })
+      return
+    }
+    if (key === 'mobile-ua') {
+      void patchOverlaySettings({ mobileUa: input.checked })
+      return
+    }
+    if (key === 'unblock') {
+      void patchOverlaySettings({ unblock: input.checked })
+    }
   })
   shadow.querySelector('[data-act="screenshot"]')?.addEventListener('click', () => setPanel('shot-menu', true))
   shadow.querySelector('[data-panel="shot-menu"]')?.addEventListener('click', (event) => {

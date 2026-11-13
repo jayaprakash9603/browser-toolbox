@@ -347,10 +347,26 @@ export type ExtensionMessage =
   | { type: 'SIMULATOR_OPEN_OVERLAY'; url?: string; deviceId?: string; tabId?: number }
   | {
       type: 'SIMULATOR_OVERLAY_ACTION'
-      action: 'listDevices' | 'setDevice' | 'screenshot' | 'record' | 'compare' | 'expand' | 'closed'
+      action:
+        | 'listDevices'
+        | 'setDevice'
+        | 'screenshot'
+        | 'record'
+        | 'compare'
+        | 'expand'
+        | 'closed'
+        | 'getSettings'
+        | 'patchSettings'
       deviceId?: string
       url?: string
       captureMode?: 'simulator' | 'viewport'
+      patch?: {
+        theme?: 'classic' | 'dark'
+        showStatusBar?: boolean
+        showNavBar?: boolean
+        mobileUa?: boolean
+        unblock?: boolean
+      }
     }
   | { type: 'SCAN_DOWNLOADABLE_RESOURCES'; includeImages?: boolean; includeMedia?: boolean }
   | { type: 'DOWNLOAD_MANAGER_GET_SNAPSHOT' }

@@ -253,6 +253,8 @@ describe('mobile simulator studio helpers', () => {
     )
     expect(host?.shadowRoot?.querySelector('[data-panel="devices"]')).toBeTruthy()
     expect(host?.shadowRoot?.querySelector('[data-panel="settings"]')).toBeTruthy()
+    expect(host?.shadowRoot?.querySelector('[data-set="mobile-ua"]')).toBeTruthy()
+    expect(root.classList.contains('theme-classic')).toBe(true)
     mountSimulatorOverlay(config)
     expect(document.getElementById(SIMULATOR_OVERLAY_ID)).toBeNull()
   })
@@ -397,6 +399,25 @@ describe('mobile simulator studio helpers', () => {
     expect(list.devices.some((device) => device.id === 'iphone-16-pro')).toBe(true)
     expect(list.current).toBe('iphone-16-pro')
 
+    const settings = (await handleOverlayAction(
+      { type: 'SIMULATOR_OVERLAY_ACTION', action: 'getSettings' },
+      {},
+    )) as { ok: boolean; theme: string; showStatusBar: boolean }
+    expect(settings.ok).toBe(true)
+    expect(settings.theme).toBe('classic')
+    expect(settings.showStatusBar).toBe(true)
+
+  const patched = (await handleOverlayAction(
+      {
+        type: 'SIMULATOR_OVERLAY_ACTION',
+        action: 'patchSettings',
+        patch: { theme: 'dark', showNavBar: false },
+      },
+      { tab: { id: 3, url: 'https://example.com/' } as chrome.tabs.Tab },
+    )) as { ok: boolean; theme: string; showNavBar: boolean }
+    expect(patched.theme).toBe('dark')
+    expect(patched.showNavBar).toBe(false)
+
     await handleOverlayAction(
       {
         type: 'SIMULATOR_OVERLAY_ACTION',
@@ -442,6 +463,13 @@ function overlayFixture(): SimulatorOverlayConfig {
     statusBar: 'ios',
     frameStyle: 'iphone',
     showSafari: true,
+    ui: {
+      theme: 'classic',
+      showStatusBar: true,
+      showNavBar: true,
+      mobileUa: false,
+      unblock: true,
+    },
     hostname: 'example.com',
     studioUrl: 'index.html#/tools/design/responsive-viewer?studio=1',
     mockupUrl: mockupSrc('iphone-16-pro.webp'),

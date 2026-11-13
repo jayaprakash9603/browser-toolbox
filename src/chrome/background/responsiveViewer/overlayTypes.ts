@@ -16,6 +16,16 @@ export interface SimulatorOverlayInsets {
   bottom: number
 }
 
+export type SimulatorOverlayUiTheme = 'classic' | 'dark'
+
+export interface SimulatorOverlayUiSettings {
+  theme: SimulatorOverlayUiTheme
+  showStatusBar: boolean
+  showNavBar: boolean
+  mobileUa: boolean
+  unblock: boolean
+}
+
 export interface SimulatorOverlayConfig {
   url: string
   label: string
@@ -29,6 +39,7 @@ export interface SimulatorOverlayConfig {
   statusBar: StatusBarStyle
   frameStyle: FrameStyle
   showSafari: boolean
+  ui: SimulatorOverlayUiSettings
   hostname: string
   studioUrl: string
   mockupUrl?: string
