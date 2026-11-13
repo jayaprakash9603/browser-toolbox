@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next'
 import {
   defaultFilters,
   filterDownloads,
+  type DownloadManagerSettings,
   type DownloadManagerTab,
   type DownloadableResource,
   type FileCategory,
@@ -36,7 +37,6 @@ import { sendMessage } from '@/core/messaging'
 
 import { useBrowserTool } from '../_shared'
 import { DownloadRow } from './DownloadRow'
-import { DownloadStatsHero } from './DownloadStatsHero'
 import { ResourcePicker } from './ResourcePicker'
 import { DM_LIST_SCROLL, DM_TAB_PANEL, DM_TOOLBAR_ROW } from './layout'
 import { DOWNLOAD_MANAGER_TABS } from './routes'
@@ -183,7 +183,22 @@ export default function DownloadManagerTool() {
     [images],
   )
 
-  const showDownloadSearch = tab === 'downloads' || tab === 'history'
+  useEffect(() => {
+    setQuery('')
+  }, [tab])
+
+  const searchPlaceholder =
+    tab === 'queue'
+      ? t('downloadManager.searchQueue')
+      : tab === 'history'
+        ? t('downloadManager.searchHistory')
+        : tab === 'settings'
+          ? t('downloadManager.searchSettings')
+          : tab === 'downloads'
+            ? t('downloadManager.searchDownloads')
+            : t('downloadManager.searchResources')
+
+  const showQuickAdd = tab === 'downloads'
 
   const toggleSelect = (id: number, on: boolean) => {
     setSelectedIds((prev) => {
@@ -201,25 +216,28 @@ export default function DownloadManagerTool() {
   return (
     <ToolPage tool={tool} contentClassName="flex h-full min-h-0 flex-col overflow-hidden p-0 @container">
       <div className="flex min-h-0 flex-1 flex-col gap-3 p-[var(--density-page-pad)]">
-        <DownloadStatsHero snapshot={snapshot} />
-        {showDownloadSearch ? (
-          <div className="flex flex-col gap-2.5 @md:flex-row @md:items-center">
-            <SearchInput
-              value={query}
-              onChange={setQuery}
-              className="flex-1"
-              placeholder={t('downloadManager.searchDownloads')}
-            />
-            <div className="flex gap-2">
+        <div className="flex flex-col gap-2.5 @md:flex-row @md:items-center">
+          <SearchInput
+            value={query}
+            onChange={setQuery}
+            className="min-w-0 flex-1"
+            placeholder={searchPlaceholder}
+            ariaLabel={searchPlaceholder}
+            shortcut="/"
+          />
+          {showQuickAdd ? (
+            <div className="flex min-w-0 gap-2 @md:max-w-[18rem] @md:flex-1">
               <Input
                 value={quickUrl}
                 onChange={(e) => setQuickUrl(e.target.value)}
                 placeholder={t('downloadManager.quickAddUrl')}
                 className="h-10 min-w-0 flex-1"
+                aria-label={t('downloadManager.quickAddUrl')}
               />
               <Button
                 size="sm"
                 className="h-10 shrink-0 px-3"
+                aria-label={t('downloadManager.quickAddUrl')}
                 onClick={() => {
                   const url = quickUrl.trim()
                   if (!url) return
@@ -232,8 +250,8 @@ export default function DownloadManagerTool() {
                 <DownloadIcon className="size-3.5" />
               </Button>
             </div>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
         <Tabs value={tab} onValueChange={(v) => setTab(v as DownloadManagerTab)} className="flex min-h-0 flex-1 flex-col gap-3">
           <TabsList variant="attached" className="w-full shrink-0">
             {DOWNLOAD_MANAGER_TABS.map((key) => {
@@ -294,7 +312,7 @@ export default function DownloadManagerTool() {
           </TabsContent>
 
           <TabsContent value="queue" className={DM_TAB_PANEL}>
-            <QueuePanel queue={state?.queue ?? []} onRefresh={refresh} />
+            <QueuePanel queue={state?.queue ?? []} query={query} onRefresh={refresh} />
           </TabsContent>
 
           <TabsContent value="bulk" className={DM_TAB_PANEL}>
@@ -303,6 +321,7 @@ export default function DownloadManagerTool() {
                 resources={scanResources.filter((r) => r.downloadable)}
                 loading={scanBusy}
                 error={scanError}
+                query={query}
                 onRescan={() => {
                   pageScanOnce.current = true
                   void rescanPage()
@@ -317,6 +336,7 @@ export default function DownloadManagerTool() {
                 resources={scanResources}
                 loading={scanBusy}
                 error={scanError}
+                query={query}
                 onRescan={() => {
                   pageScanOnce.current = true
                   void rescanPage()
@@ -331,6 +351,7 @@ export default function DownloadManagerTool() {
               resources={imageResources}
               loading={imagesBusy}
               error={imageError}
+              query={query}
               onRescan={() => {
                 imageScanOnce.current = true
                 void rescanImages()
@@ -345,6 +366,7 @@ export default function DownloadManagerTool() {
                 resources={scanResources}
                 loading={scanBusy}
                 error={scanError}
+                query={query}
                 onRescan={() => {
                   pageScanOnce.current = true
                   void rescanPage()
@@ -390,43 +412,7 @@ export default function DownloadManagerTool() {
 
           <TabsContent value="settings" className={DM_TAB_PANEL}>
               {settings ? (
-                <div className="space-y-4 rounded-xl border bg-card p-4 shadow-xs">
-                  <SettingsRow
-                    label={t('downloadManager.settings.enabled')}
-                    control={<Switch checked={settings.enabled} onCheckedChange={(on) => void patchSettings({ enabled: on })} />}
-                  />
-                  <SettingsRow
-                    label={t('downloadManager.settings.autoOrganize')}
-                    control={
-                      <Switch checked={settings.autoOrganize} onCheckedChange={(on) => void patchSettings({ autoOrganize: on })} />
-                    }
-                  />
-                  <SettingsRow
-                    label={t('downloadManager.settings.notifyCompleted')}
-                    control={
-                      <Switch
-                        checked={settings.notifyCompleted}
-                        onCheckedChange={(on) => void patchSettings({ notifyCompleted: on })}
-                      />
-                    }
-                  />
-                  <SettingsRow
-                    label={t('downloadManager.settings.maxConcurrent')}
-                    control={
-                      <Input
-                        type="number"
-                        min={1}
-                        max={6}
-                        className="w-20"
-                        value={settings.maxConcurrent}
-                        onChange={(e) => void patchSettings({ maxConcurrent: Number(e.target.value) || 1 })}
-                      />
-                    }
-                  />
-                  <p className="text-[11px] leading-relaxed text-muted-foreground">
-                    {t('downloadManager.settings.schedulerNote')}
-                  </p>
-                </div>
+                <SettingsPanel settings={settings} query={query} onPatch={patchSettings} />
               ) : null}
           </TabsContent>
         </Tabs>
@@ -462,8 +448,84 @@ function SettingsRow({ label, control }: { label: string; control: ReactNode }) 
   )
 }
 
-function QueuePanel({ queue, onRefresh }: { queue: import('@/core/download-manager').QueueItem[]; onRefresh: () => void }) {
+function SettingsPanel({
+  settings,
+  query,
+  onPatch,
+}: {
+  settings: DownloadManagerSettings
+  query: string
+  onPatch: (patch: Partial<DownloadManagerSettings>) => Promise<unknown>
+}) {
   const { t } = useTranslation()
+  const q = query.trim().toLowerCase()
+  const rows = [
+    {
+      id: 'enabled',
+      label: t('downloadManager.settings.enabled'),
+      control: <Switch checked={settings.enabled} onCheckedChange={(on) => void onPatch({ enabled: on })} />,
+    },
+    {
+      id: 'autoOrganize',
+      label: t('downloadManager.settings.autoOrganize'),
+      control: <Switch checked={settings.autoOrganize} onCheckedChange={(on) => void onPatch({ autoOrganize: on })} />,
+    },
+    {
+      id: 'notifyCompleted',
+      label: t('downloadManager.settings.notifyCompleted'),
+      control: (
+        <Switch checked={settings.notifyCompleted} onCheckedChange={(on) => void onPatch({ notifyCompleted: on })} />
+      ),
+    },
+    {
+      id: 'maxConcurrent',
+      label: t('downloadManager.settings.maxConcurrent'),
+      control: (
+        <Input
+          type="number"
+          min={1}
+          max={6}
+          className="w-20"
+          value={settings.maxConcurrent}
+          onChange={(e) => void onPatch({ maxConcurrent: Number(e.target.value) || 1 })}
+        />
+      ),
+    },
+  ].filter((row) => !q || row.label.toLowerCase().includes(q) || row.id.toLowerCase().includes(q))
+
+  return (
+    <div className="space-y-4 rounded-xl border bg-card p-4 shadow-xs">
+      {rows.length === 0 ? (
+        <p className="py-6 text-center text-sm text-muted-foreground">{t('downloadManager.emptySettings')}</p>
+      ) : (
+        rows.map((row) => <SettingsRow key={row.id} label={row.label} control={row.control} />)
+      )}
+      {!q ? (
+        <p className="text-[11px] leading-relaxed text-muted-foreground">{t('downloadManager.settings.schedulerNote')}</p>
+      ) : null}
+    </div>
+  )
+}
+
+function QueuePanel({
+  queue,
+  query,
+  onRefresh,
+}: {
+  queue: import('@/core/download-manager').QueueItem[]
+  query: string
+  onRefresh: () => void
+}) {
+  const { t } = useTranslation()
+  const q = query.trim().toLowerCase()
+  const visible = q
+    ? queue.filter((item) => {
+        const haystack = [item.url, item.filename ?? '', item.status, item.pageTitle ?? '', item.pageUrl ?? '']
+          .join(' ')
+          .toLowerCase()
+        return haystack.includes(q)
+      })
+    : queue
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
       <div className="flex items-center gap-2.5">
@@ -478,14 +540,19 @@ function QueuePanel({ queue, onRefresh }: { queue: import('@/core/download-manag
           {t('downloadManager.clearDone')}
         </Button>
       </div>
-      <ul className={DM_LIST_SCROLL}>
-        {queue.map((item) => (
-          <li key={item.id} className="list-none rounded-xl border bg-card px-3 py-2.5 text-sm shadow-xs">
-            <p className="truncate font-medium">{item.url}</p>
-            <p className="text-[11px] text-muted-foreground">{item.status}</p>
-          </li>
-        ))}
-      </ul>
+      {visible.length === 0 ? (
+        <p className="py-8 text-center text-sm text-muted-foreground">{t('downloadManager.emptyQueue')}</p>
+      ) : (
+        <ul className={DM_LIST_SCROLL}>
+          {visible.map((item) => (
+            <li key={item.id} className="list-none rounded-xl border bg-card px-3 py-2.5 text-sm shadow-xs">
+              <p className="truncate font-medium">{item.filename || item.url}</p>
+              <p className="truncate text-[11px] text-muted-foreground">{item.url}</p>
+              <p className="text-[11px] text-muted-foreground">{item.status}</p>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }

@@ -3,11 +3,6 @@ import type { Fact, WalkStep } from '@/app/demos/stage/types'
 export const PAGE = 'https://northwind.design/assets/catalog'
 
 export const STATS = {
-  total: 24,
-  active: 1,
-  completed: 21,
-  failed: 2,
-  data: '1.8 GB',
   speed: '4.2 MB/s',
 }
 

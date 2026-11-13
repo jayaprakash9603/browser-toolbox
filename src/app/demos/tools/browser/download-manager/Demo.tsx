@@ -6,11 +6,10 @@ import {
   ListOrderedIcon,
   PauseIcon,
   ScanSearchIcon,
+  SearchIcon,
   SettingsIcon,
   VideoIcon,
 } from 'lucide-react'
-import type { ReactNode } from 'react'
-
 import { DemoStage, PanelChrome, type Build } from '@/app/demos/stage'
 import { cn } from '@/shared/utils/cn'
 
@@ -158,31 +157,11 @@ const build: Build = ({ tl, q, qa, step, final, move, click, wait, cursorOut }) 
   tl.set([q('prog-0'), ...qa('res-check')], { clearProps: 'all' }, 0)
 }
 
-function StatHalf({ label, value, d, align = 'start' }: { label: string; value: string | number; d?: string; align?: 'start' | 'end' }) {
+function SearchBar() {
   return (
-    <div className={cn('flex min-w-0 flex-1 flex-col gap-0.5', align === 'end' && 'items-end text-right')}>
-      <span className="truncate text-[7px] font-medium uppercase tracking-wide text-muted">{label}</span>
-      <span data-d={d} className="truncate text-[11px] font-semibold tabular-nums text-ink">
-        {value}
-      </span>
-    </div>
-  )
-}
-
-function StatCard({ left, right, tint }: { left: ReactNode; right: ReactNode; tint?: 'sky' | 'rose' }) {
-  return (
-    <div
-      className={cn(
-        'min-h-[2.35rem] rounded-lg border bg-elevated/90 p-1.5 shadow-xs',
-        tint === 'sky' && 'border-sky-500/25 bg-sky-500/8',
-        tint === 'rose' && 'border-rose-500/20 bg-rose-500/8',
-      )}
-    >
-      <div className="flex items-stretch gap-1.5">
-        {left}
-        <div className="w-px shrink-0 bg-line" />
-        {right}
-      </div>
+    <div className="flex h-6 items-center gap-1.5 rounded-lg border border-line bg-canvas px-2 text-[8px] text-muted">
+      <SearchIcon className="size-2.5 shrink-0" />
+      Search downloads
     </div>
   )
 }
@@ -208,7 +187,6 @@ function TabBar() {
 function DownloadsPane() {
   return (
     <div data-d="pane-downloads" className="absolute inset-0 flex flex-col gap-1.5 opacity-100">
-      <p className="text-[8px] text-muted">Search downloads · quick-add URL</p>
       {DOWNLOADS.map((row, index) => (
         <div
           key={row.id}
@@ -418,26 +396,11 @@ export default function Demo() {
       steps={CAPTIONS}
       build={build}
       width={540}
-      height={448}
+      height={408}
     >
       <PanelChrome title="Download Manager" compact>
         <div className="flex h-full flex-col gap-2">
-          <div className="grid grid-cols-3 gap-1.5">
-            <StatCard
-              tint="sky"
-              left={<StatHalf label="Total" value={STATS.total} d="stat-total" />}
-              right={<StatHalf label="Active" value={STATS.active} d="stat-active" align="end" />}
-            />
-            <StatCard
-              tint="rose"
-              left={<StatHalf label="Done" value={STATS.completed} />}
-              right={<StatHalf label="Failed" value={STATS.failed} align="end" />}
-            />
-            <StatCard
-              left={<StatHalf label="Downloaded" value={STATS.data} />}
-              right={<StatHalf label="Speed" value={STATS.speed} d="stat-speed" align="end" />}
-            />
-          </div>
+          <SearchBar />
           <TabBar />
           <div className="relative min-h-0 flex-1">
             <DownloadsPane />

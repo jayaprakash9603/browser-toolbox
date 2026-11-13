@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DownloadIcon, RefreshCwIcon, SearchIcon } from 'lucide-react'
+import { DownloadIcon, RefreshCwIcon } from 'lucide-react'
 
 import type { DownloadableResource } from '@/core/download-manager'
 import { duplicateKey, filterDuplicates } from '@/core/download-manager'
 import { Button } from '@/shared/components/ui/button'
 import { Checkbox } from '@/shared/components/ui/checkbox'
-import { Input } from '@/shared/components/ui/input'
 import { Badge } from '@/shared/components/ui/badge'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/utils/cn'
@@ -22,11 +21,11 @@ interface ResourcePickerProps {
   onRescan?: () => void
   pageUrl?: string
   filter?: (r: DownloadableResource) => boolean
+  query?: string
 }
 
-export function ResourcePicker({ title, resources, loading, error, onRescan, pageUrl, filter }: ResourcePickerProps) {
+export function ResourcePicker({ title, resources, loading, error, onRescan, pageUrl, filter, query = '' }: ResourcePickerProps) {
   const { t } = useTranslation()
-  const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [busy, setBusy] = useState(false)
   const [skipInfo, setSkipInfo] = useState<number | null>(null)
@@ -90,15 +89,6 @@ export function ResourcePicker({ title, resources, loading, error, onRescan, pag
           </Button>
         ) : null}
         <span className="ml-auto text-xs tabular-nums text-muted-foreground">{visible.length}</span>
-      </div>
-      <div className="relative">
-        <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="h-10 pl-9"
-          placeholder={t('downloadManager.searchResources')}
-        />
       </div>
       {error ? <p className="text-xs text-destructive" role="alert">{error}</p> : null}
       {skipInfo ? (
