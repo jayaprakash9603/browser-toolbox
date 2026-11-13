@@ -6,6 +6,7 @@ import {
   LayoutDashboardIcon,
   RefreshCwIcon,
   RotateCcwIcon,
+  SlidersHorizontalIcon,
 } from 'lucide-react'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -15,7 +16,6 @@ import {
   defaultHistoryFilters,
   distinctDomains,
   HISTORY_OPEN_BATCH_LIMIT,
-  RANGE_PRESETS,
   historyExportFilename,
   historyToCsv,
   historyToHtml,
@@ -31,6 +31,7 @@ import { parseSearchParam, useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { SearchInput } from '@/shared/components/SearchInput'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { useToast } from '@/shared/components/toast/useToast'
+import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
 import {
   DropdownMenu,
@@ -40,7 +41,6 @@ import {
 } from '@/shared/components/ui/dropdown-menu'
 import { ErrorState } from '@/shared/components/ErrorState'
 import { EmptyState } from '@/shared/components/EmptyState'
-import { Segmented } from '@/shared/components/ui/segmented'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { useRouter } from '@/app/router'
 
@@ -149,6 +149,16 @@ export default function HistoryManagerTool() {
 
   const clearFilters = () => manager.patchFilters(defaultHistoryFilters(manager.filters.query))
 
+  const activeFilterCount = useMemo(() => {
+    const defaults = defaultHistoryFilters()
+    let count = 0
+    if (manager.filters.range !== defaults.range) count += 1
+    if (manager.filters.visitActivity !== defaults.visitActivity) count += 1
+    if (manager.filters.contentType !== defaults.contentType) count += 1
+    if (manager.filters.domains.length > 0) count += 1
+    return count
+  }, [manager.filters])
+
   const onDayPick = (start: number) => {
     manager.patchFilters({
       customStart: start,
@@ -179,15 +189,32 @@ export default function HistoryManagerTool() {
             className="min-w-0 flex-1"
             shortcut="/"
           />
-          <Button type="button" size="sm" variant={filtersOpen ? 'secondary' : 'outline'} onClick={() => setFiltersOpen((v) => !v)}>
+          <Button
+            type="button"
+            size="sm"
+            variant={filtersOpen || activeFilterCount > 0 ? 'secondary' : 'outline'}
+            className="shrink-0 gap-1.5"
+            aria-expanded={filtersOpen}
+            aria-haspopup="dialog"
+            title={`${t('historyManager.filters')} · ${t(`historyManager.range.${manager.filters.range}`)}`}
+            onClick={() => setFiltersOpen(true)}
+          >
+            <SlidersHorizontalIcon className="size-3.5" />
             {t('historyManager.filters')}
+            {activeFilterCount > 0 ? (
+              <Badge variant="default" className="h-5 min-w-5 px-1.5">
+                {activeFilterCount}
+              </Badge>
+            ) : null}
           </Button>
         </div>
         <HistoryFiltersPanel
           open={filtersOpen}
+          onOpenChange={setFiltersOpen}
           filters={manager.filters}
           domainOptions={domainOptions}
           onPatch={manager.patchFilters}
+          onRangeChange={manager.setRange}
           onClear={clearFilters}
         />
         {manager.recentSearches.length > 0 && !manager.filters.query && (
@@ -209,16 +236,6 @@ export default function HistoryManagerTool() {
             ))}
           </div>
         )}
-        <Segmented
-          fullWidth
-          ariaLabel="Range"
-          value={manager.filters.range}
-          onValueChange={(v) => manager.setRange(v as HistoryRangePreset)}
-          options={RANGE_PRESETS.map((value: HistoryRangePreset) => ({
-            value,
-            label: t(`historyManager.range.${value}`),
-          }))}
-        />
         {manager.truncated && (
           <p className="rounded-lg border border-amber-500/25 bg-amber-500/5 px-2 py-1 text-xs text-amber-900 dark:text-amber-200">
             {t('historyManager.truncated')}

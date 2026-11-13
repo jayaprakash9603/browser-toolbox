@@ -1,9 +1,14 @@
 import { useTranslation } from 'react-i18next'
-import { motion, useReducedMotion } from 'motion/react'
 
-import type { HistoryContentType, HistoryFilters, HistoryVisitActivity } from '@/core/history-manager'
+import {
+  RANGE_PRESETS,
+  type HistoryContentType,
+  type HistoryFilters,
+  type HistoryRangePreset,
+  type HistoryVisitActivity,
+} from '@/core/history-manager'
+import { FilterOptionList, FilterSection, FilterSheet } from '@/shared/components/FilterSheet'
 import { ChoiceChips } from '@/shared/components/ChoiceChips'
-import { Button } from '@/shared/components/ui/button'
 import { Label } from '@/shared/components/ui/label'
 import {
   Select,
@@ -17,65 +22,92 @@ interface HistoryFiltersPanelProps {
   open: boolean
   filters: HistoryFilters
   domainOptions: string[]
+  onOpenChange: (open: boolean) => void
   onPatch: (patch: Partial<HistoryFilters>) => void
+  onRangeChange: (range: HistoryRangePreset) => void
   onClear: () => void
 }
 
 const ACTIVITY: HistoryVisitActivity[] = ['all', 'most', 'recent', 'frequent', 'single']
 const CONTENT: HistoryContentType[] = ['all', 'webpage', 'image', 'pdf', 'video', 'audio', 'download']
 
-export function HistoryFiltersPanel({ open, filters, domainOptions, onPatch, onClear }: HistoryFiltersPanelProps) {
+export function HistoryFiltersPanel({
+  open,
+  filters,
+  domainOptions,
+  onOpenChange,
+  onPatch,
+  onRangeChange,
+  onClear,
+}: HistoryFiltersPanelProps) {
   const { t } = useTranslation()
-  const reduce = useReducedMotion()
-  if (!open) return null
+
   return (
-    <motion.div
-      initial={reduce ? false : { opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      className="flex flex-col gap-2.5 overflow-hidden rounded-xl border border-border/70 bg-muted/25 p-3 shadow-xs"
+    <FilterSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('historyManager.filter.sheetTitle')}
+      description={t('historyManager.filter.sheetDescription')}
+      onClear={onClear}
+      clearLabel={t('historyManager.clearFilters')}
     >
-      <Label className="text-xs">{t('historyManager.filter.activity')}</Label>
-      <ChoiceChips
-        ariaLabel={t('historyManager.filter.activity')}
-        columns={3}
-        value={filters.visitActivity}
-        onValueChange={(v) => onPatch({ visitActivity: v })}
-        options={ACTIVITY.map((value) => ({
-          value,
-          label: t(`historyManager.activity.${value}`),
-        }))}
-      />
-      <Label className="text-xs">{t('historyManager.filter.content')}</Label>
-      <ChoiceChips
-        ariaLabel={t('historyManager.filter.content')}
-        columns={3}
-        value={filters.contentType}
-        onValueChange={(v) => onPatch({ contentType: v })}
-        options={CONTENT.map((value) => ({
-          value,
-          label: t(`historyManager.content.${value}`),
-        }))}
-      />
-      <Label className="text-xs">{t('historyManager.filter.domains')}</Label>
-      <Select
-        value={filters.domains[0] ?? 'all'}
-        onValueChange={(v) => onPatch({ domains: v === 'all' ? [] : [v] })}
-      >
-        <SelectTrigger size="sm">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{t('bookmarks.allSites')}</SelectItem>
-          {domainOptions.slice(0, 200).map((d) => (
-            <SelectItem key={d} value={d}>
-              {d}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Button type="button" size="xs" variant="ghost" onClick={onClear}>
-        {t('historyManager.clearFilters')}
-      </Button>
-    </motion.div>
+      <FilterSection label={t('historyManager.filter.range')} hint={t('historyManager.filter.rangeHint')}>
+        <FilterOptionList
+          ariaLabel={t('historyManager.filter.range')}
+          value={filters.range}
+          onValueChange={onRangeChange}
+          options={RANGE_PRESETS.map((value) => ({
+            value,
+            label: t(`historyManager.range.${value}`),
+          }))}
+        />
+      </FilterSection>
+
+      <FilterSection label={t('historyManager.filter.activity')}>
+        <ChoiceChips
+          ariaLabel={t('historyManager.filter.activity')}
+          columns={2}
+          value={filters.visitActivity}
+          onValueChange={(v) => onPatch({ visitActivity: v })}
+          options={ACTIVITY.map((value) => ({
+            value,
+            label: t(`historyManager.activity.${value}`),
+          }))}
+        />
+      </FilterSection>
+
+      <FilterSection label={t('historyManager.filter.content')}>
+        <ChoiceChips
+          ariaLabel={t('historyManager.filter.content')}
+          columns={2}
+          value={filters.contentType}
+          onValueChange={(v) => onPatch({ contentType: v })}
+          options={CONTENT.map((value) => ({
+            value,
+            label: t(`historyManager.content.${value}`),
+          }))}
+        />
+      </FilterSection>
+
+      <FilterSection label={t('historyManager.filter.domains')}>
+        <Label className="sr-only">{t('historyManager.filter.domains')}</Label>
+        <Select
+          value={filters.domains[0] ?? 'all'}
+          onValueChange={(v) => onPatch({ domains: v === 'all' ? [] : [v] })}
+        >
+          <SelectTrigger className="h-11 min-h-11 w-full rounded-xl">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="z-[60]">
+            <SelectItem value="all">{t('bookmarks.allSites')}</SelectItem>
+            {domainOptions.slice(0, 200).map((d) => (
+              <SelectItem key={d} value={d}>
+                {d}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FilterSection>
+    </FilterSheet>
   )
 }

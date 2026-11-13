@@ -25,6 +25,7 @@ const en = {
   'common.back': 'Back',
   'common.cancel': 'Cancel',
   'common.confirm': 'Confirm',
+  'common.done': 'Done',
   'common.clear': 'Clear',
   'common.clearAll': 'Clear all',
   'common.copy': 'Copy',

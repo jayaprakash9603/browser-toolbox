@@ -10,6 +10,10 @@ export const historyManagerStrings = {
   'historyManager.refresh': 'Refresh',
   'historyManager.search': 'Search title, URL or domain…',
   'historyManager.filters': 'Filters',
+  'historyManager.filter.sheetTitle': 'Filters',
+  'historyManager.filter.sheetDescription': 'Narrow results by time, activity, content, and site.',
+  'historyManager.filter.range': 'Date range',
+  'historyManager.filter.rangeHint': 'How far back to load from your browsing history.',
   'historyManager.clearFilters': 'Clear all filters',
   'historyManager.truncated': 'Showing the first available records. Narrow the date range for finer results.',
 
