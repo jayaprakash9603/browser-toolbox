@@ -1,7 +1,7 @@
 export const toolRegistryStrings = {
   'tools.api.http-interceptor.name': 'HTTP Interceptor',
   'tools.api.http-interceptor.description':
-    'Intercept and modify HTTP(S) traffic: redirects, headers, API mocks, GraphQL overrides, script injection, and a live network log.',
+    'Intercept and modify HTTP(S) traffic, discover API endpoints from live capture, and replay requests in a compact explorer.',
   'tools.browser.picture-in-picture.name': 'Picture-in-Picture',
   'tools.browser.picture-in-picture.description':
     'Float the page video in a always-on-top window with Alt+P or the context menu.',
@@ -22,7 +22,7 @@ export const toolRegistryStrings = {
     'Outline the page, hover to see any element’s CSS, and select elements to edit, move or resize them live.',
   'tools.design.responsive-viewer.name': 'Responsive Viewer',
   'tools.design.responsive-viewer.description':
-    'Preview any page on phones, tablets, laptops and desktops at true viewport sizes, with rotation, zoom, device frames, breakpoints and custom sizes.',
+    'Preview any page in a local Mobile Simulator: realistic device frames, rotation, multi-device comparison, screenshots and recording.',
   'tools.design.svg-grabber.name': 'SVG Grabber',
   'tools.design.svg-grabber.description':
     'Extract inline SVGs from the page and copy as SVG or JSX.',

@@ -9,4 +9,9 @@ describe('interceptor graphql', () => {
     expect(matchGraphqlRule(body, 'GetUser')).toBe(true)
     expect(matchGraphqlRule(body, 'Other')).toBe(false)
   })
+
+  it('rejects arbitrary JSON objects', () => {
+    expect(parseGraphqlBody(JSON.stringify({ name: 'Ada' }))).toBeNull()
+    expect(parseGraphqlBody(JSON.stringify({ ping: true }))).toBeNull()
+  })
 })

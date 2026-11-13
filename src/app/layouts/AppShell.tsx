@@ -6,6 +6,7 @@ import { SearchIcon, SettingsIcon } from 'lucide-react'
 import { LEGACY_TOOL_ROUTES } from '@/app/legacyToolRoutes'
 import { Link, useRouter } from '@/app/router'
 import { isCaptureViewerSearch } from '@/core/screenshot/viewerUrl'
+import { isSimulatorStudioSearch } from '@/tools/design/responsive-viewer/studioUrl'
 import { getToolComponent } from '@/app/toolComponents'
 import { toolRegistry } from '@/core/registry'
 import { getWorkspaceForTool } from '@/core/registry/workspaces'
@@ -140,10 +141,12 @@ export function AppShell({ children }: { children?: ReactNode }) {
   const content = renderRoute(path)
   // Dedicated DevTools panels (Interceptor) and Elements sidebar panes are chromeless.
   const captureFullPage = path === '/tools/screenshots/capture' && isCaptureViewerSearch(search)
+  const simulatorStudio = path === '/tools/design/responsive-viewer' && isSimulatorStudioSearch(search)
   const chromeless =
     path === '/devtools/interceptor' ||
     path === '/devtools/selector-studio-sidebar' ||
-    captureFullPage
+    captureFullPage ||
+    simulatorStudio
 
   return (
     // `relative` + `overflow-clip`: absolutely positioned descendants (e.g. `sr-only` status text) would otherwise

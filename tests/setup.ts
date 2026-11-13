@@ -56,6 +56,8 @@ vi.mock('postman-lite', () => ({
   createDefaultI18n: () => ({}),
   createExtensionAdapters: () => ({}),
   registerExtensionHistoryListener: vi.fn(),
+  consumePendingOpenRequest: vi.fn(async () => undefined),
+  PENDING_OPEN_REQUEST_KEY: 'postman-lite:pending-open',
   shadcnKit: {},
 }))
 

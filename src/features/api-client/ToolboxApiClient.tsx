@@ -1,7 +1,9 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import ApiClient, {
+  consumePendingOpenRequest,
   createDefaultI18n,
   createExtensionAdapters,
+  PENDING_OPEN_REQUEST_KEY,
   shadcnKit,
 } from 'postman-lite'
 
@@ -24,6 +26,14 @@ const HOST_APPEARANCE_NOTE = (
 
 export function ToolboxApiClient() {
   usePostmanLiteStylesheet()
+  useEffect(() => {
+    void consumePendingOpenRequest()
+    const onChanged = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
+      if (area === 'session' && changes[PENDING_OPEN_REQUEST_KEY]) void consumePendingOpenRequest()
+    }
+    chrome.storage.onChanged.addListener(onChanged)
+    return () => chrome.storage.onChanged.removeListener(onChanged)
+  }, [])
   const toast = useToast()
   const settings = useSettings()
   const themeMode: ThemeMode = settings?.theme ?? 'system'

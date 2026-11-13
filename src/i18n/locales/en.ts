@@ -316,6 +316,9 @@ const en = {
   'settings.contextMenu.downloadManager': 'Download Manager',
   'settings.contextMenu.downloadManagerDescription':
     'Download links, scan pages, and open the Download Manager from the context menu.',
+  'settings.contextMenu.mobileSimulator': 'Mobile Simulator',
+  'settings.contextMenu.mobileSimulatorDescription':
+    'Open the current page or a selected link in the One Panel Mobile Simulator.',
   'settings.contextMenu.historyManager': 'History Manager',
   'settings.contextMenu.historyManagerDescription':
     'Search this page or selection in History Manager from the right-click menu.',
@@ -1319,6 +1322,8 @@ const en = {
   'shortcuts.conflict': 'That shortcut is already used by another action.',
   'shortcuts.hint':
     '{{count}} actions. Click a shortcut to change it; use Reset to restore the default. Changes apply while you browse and in the side panel.',
+  'shortcuts.studioHint':
+    'In the Mobile Simulator tab: R rotates, +/− zoom, 0 fits, Esc exits presentation. These keys work only while that tab is focused and do not use a Chrome suggested key.',
   'shortcuts.commands.panelSearch': 'Focus search / command palette',
   'shortcuts.commands.commandPalette': 'Open command palette (from page)',
   'shortcuts.commands.pickElement': 'Pick element on page',
@@ -1332,6 +1337,7 @@ const en = {
   'shortcuts.commands.toggleRecording': 'Start or stop screen recording',
   'shortcuts.commands.addPageTask': 'Add current page to To Do',
   'shortcuts.commands.pickColor': 'Pick a color from the page',
+  'shortcuts.commands.openMobileSimulator': 'Open Mobile Simulator',
   'pip.toggleButton': 'Toggle Picture-in-Picture on this tab',
   'pip.gestureHint': 'Chrome blocked PiP from the panel. Press {{shortcut}} on the page instead.',
   'pip.entered': 'Picture-in-Picture started.',

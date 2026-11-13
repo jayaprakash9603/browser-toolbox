@@ -11,11 +11,65 @@ export {
   INTERCEPTOR_SESSION_LOG_KEY,
   MAX_LIBRARY_ITEM_BYTES,
   MAX_LOG_SIZE,
+  MAX_CAPTURE_BODY_BYTES,
+  DEFAULT_API_HISTORY_LIMIT,
+  MAX_API_HISTORY_LIMIT,
+  MAX_ENDPOINT_OCCURRENCES,
   PAGE_COMMAND_KEY,
   PAGE_MESSAGE_KEY,
   USER_AGENT_PRESETS,
 } from './constants'
-export { matchGraphqlRule, parseGraphqlBody } from './graphql'
+export {
+  graphqlOperationNameFromQuery,
+  graphqlOperationType,
+  isGraphqlQueryString,
+  looksLikeGraphqlPath,
+  matchGraphqlRule,
+  parseGraphqlBody,
+} from './graphql'
+export {
+  aggregateEndpoints,
+  classifyCapture,
+  endpointId,
+  finderStats,
+  ingestCapture,
+  looksLikeApiCaptureTarget,
+  matchesFinderFilter,
+  matchesFinderQuery,
+  normalizeRoutePath,
+  pathParamsFromTemplate,
+  queryShapeFromUrl,
+  statusClassKind,
+} from './apiFinder'
+export {
+  applyEnabledParams,
+  applyExplorerAuth,
+  buildExplorerWireRequest,
+  draftFromCapture,
+  headersFromKv,
+  isMutatingMethod,
+  newKv,
+  sanitizeDraftForSave,
+  validateExplorerDraft,
+} from './apiExplorer'
+export { resolveCaptureStatus } from './captureStatus'
+export { serializeWebRequestBody, truncateBody } from './requestBody'
+export {
+  createCollection,
+  deleteCollection,
+  deleteSavedRequest,
+  duplicateRequest,
+  exportWorkspace,
+  getApiWorkspace,
+  importWorkspace,
+  moveRequest,
+  parseCollectionImport,
+  renameCollection,
+  reorderCollectionRequests,
+  saveRequestToCollection,
+  updateSavedRequest,
+} from './apiCollections'
+export { appendApiHistory, clearApiHistory, deleteApiHistoryEntry, getApiHistory } from './apiHistory'
 export {
   deleteLibraryItem,
   addRulesFromTemplate,
@@ -90,4 +144,25 @@ export type {
   TestRuleResult,
   UserAgentRule,
 } from './types'
+export type {
+  ApiCollection,
+  ApiEndpoint,
+  ApiExecutionHistory,
+  ApiFinderFilter,
+  ApiFinderStats,
+  ApiKind,
+  ApiTiming,
+  ApiWorkspaceState,
+  CaptureRecord,
+  CaptureStatus,
+  ClassifiedApi,
+  EndpointOccurrence,
+  ExplorerAuth,
+  ExplorerBodyMode,
+  ExplorerDraft,
+  ExplorerKv,
+  GraphQLMetadata,
+  SavedApiRequest,
+} from './apiFinderTypes'
+export { API_FINDER_FILTERS } from './apiFinderTypes'
 export { DNR_RULE_TYPES, PAGE_RULE_TYPES, USER_SCRIPT_RULE_TYPES } from './types'

@@ -12,6 +12,10 @@ export const INTERCEPTOR_PAGE_CONFIG_KEY = 'interceptorPageConfig'
 export const DEFAULT_LOG_SIZE = 1000
 export const MAX_LOG_SIZE = 5000
 export const MAX_LIBRARY_ITEM_BYTES = 512_000
+export const MAX_CAPTURE_BODY_BYTES = 256_000
+export const DEFAULT_API_HISTORY_LIMIT = 100
+export const MAX_API_HISTORY_LIMIT = 500
+export const MAX_ENDPOINT_OCCURRENCES = 40
 
 export const DEFAULT_INTERCEPTOR_SETTINGS: InterceptorSettings = {
   paused: false,
@@ -19,6 +23,10 @@ export const DEFAULT_INTERCEPTOR_SETTINGS: InterceptorSettings = {
   deepIntercept: false,
   showPageToast: true,
   userScriptsEnabled: false,
+  capturePaused: false,
+  apiCaptureBodies: false,
+  apiHistoryLimit: DEFAULT_API_HISTORY_LIMIT,
+  includeSecretsInCopy: false,
 }
 
 export const CONTENT_SCRIPT_IDS = {

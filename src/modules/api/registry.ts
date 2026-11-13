@@ -7,7 +7,7 @@ export const apiTools = [
     id: 'api.http-interceptor',
     name: 'HTTP Interceptor',
     description:
-      'Intercept and modify HTTP(S) traffic: redirects, headers, API mocks, GraphQL overrides, script injection, and a live network log.',
+      'Intercept and modify HTTP(S) traffic, discover API endpoints from live capture, and replay requests in a compact explorer.',
     category: 'api',
     icon: RadarIcon,
     keywords: [
@@ -40,6 +40,27 @@ export const apiTools = [
         fallbackLabel: 'Network',
         keywords: ['log', 'har', 'requests'],
         params: { tab: 'network' },
+      },
+      {
+        id: 'interceptor-finder',
+        labelKey: 'interceptor.tab.finder',
+        fallbackLabel: 'API Finder',
+        keywords: ['endpoint', 'discover', 'graphql'],
+        params: { tab: 'finder' },
+      },
+      {
+        id: 'interceptor-explorer',
+        labelKey: 'interceptor.tab.explorer',
+        fallbackLabel: 'API Explorer',
+        keywords: ['replay', 'send', 'postman'],
+        params: { tab: 'explorer' },
+      },
+      {
+        id: 'interceptor-collections',
+        labelKey: 'interceptor.tab.collections',
+        fallbackLabel: 'Collections',
+        keywords: ['saved', 'history'],
+        params: { tab: 'collections' },
       },
       {
         id: 'interceptor-library',

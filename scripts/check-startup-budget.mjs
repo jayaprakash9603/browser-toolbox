@@ -29,7 +29,8 @@ const MAX_HOME_BOOT_JS = 1_310_000
 /** ~503 KB once the injected form script learned label heuristics, files and date pickers. */
 /** ~512 KB with div-built dropdowns, ARIA widgets and contenteditable fields in that script. */
 /** ~538 KB after the Reading List menu, request cancel/FormData transport and selection-capture gap fill joined the SW graph. */
-const MAX_SERVICE_WORKER_JS = 526 * 1024
+/** ~553 KB after HTTP Interceptor API Finder capture (requestBody + observe relay) joined the SW graph. */
+const MAX_SERVICE_WORKER_JS = 541 * 1024
 
 /** `_gsap` is the cache property GSAP stamps on every target: the tool demos must stay lazy. */
 const BANNED_IN_HOME = [/postman-lite/i, /\bcmdk\b/, /\b_gsap\b/]

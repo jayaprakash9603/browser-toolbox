@@ -4,6 +4,7 @@ import {
   getInterceptorState,
   isRuleActive,
   matchRules,
+  serializeWebRequestBody,
   type InterceptorRuleHit,
   type InterceptorState,
   type NetLogEntry,
@@ -41,7 +42,7 @@ function shouldAttachListeners(): boolean {
 }
 
 function shouldRecordEntries(): boolean {
-  return ports.size > 0
+  return ports.size > 0 && !cachedState?.settings.capturePaused
 }
 
 function broadcast(entry: NetLogEntry): void {
@@ -150,6 +151,7 @@ async function loadBuffers(): Promise<void> {
 const onBeforeRequest = (details: chrome.webRequest.OnBeforeRequestDetails): undefined => {
   if (!shouldRecordEntries() || details.tabId < 0) return undefined
   const key = entryKey(details.tabId, details.requestId)
+  const serialized = serializeWebRequestBody(details.requestBody as Parameters<typeof serializeWebRequestBody>[0])
   pending.set(key, {
     id: key,
     requestId: details.requestId,
@@ -158,6 +160,7 @@ const onBeforeRequest = (details: chrome.webRequest.OnBeforeRequestDetails): und
     method: details.method,
     url: details.url,
     resourceType: details.type,
+    requestBody: serialized?.text,
     appliedRuleIds: [],
     modified: false,
   })
@@ -283,7 +286,11 @@ function detachRedirectListener(): void {
 function attachRecordListeners(): void {
   if (recordListenersAttached || !hasWebRequest()) return
   recordListenersAttached = true
-  chrome.webRequest.onBeforeRequest.addListener(onBeforeRequest, { urls: ['<all_urls>'] })
+  try {
+    chrome.webRequest.onBeforeRequest.addListener(onBeforeRequest, { urls: ['<all_urls>'] }, ['requestBody'])
+  } catch {
+    chrome.webRequest.onBeforeRequest.addListener(onBeforeRequest, { urls: ['<all_urls>'] })
+  }
   chrome.webRequest.onSendHeaders.addListener(onSendHeaders, { urls: ['<all_urls>'] }, ['requestHeaders'])
   chrome.webRequest.onHeadersReceived.addListener(
     onHeadersReceived,
@@ -337,11 +344,12 @@ export function mergePageEvent(
   const mergePatch = (base: Pending | NetLogEntry): Partial<NetLogEntry> => {
     const hits = mergeRuleHits(base.ruleHits, patch.ruleHits)
     const ids = [...new Set([...(base.appliedRuleIds ?? []), ...(patch.appliedRuleIds ?? []), ...hits.map((h) => h.ruleId)])]
+    const keepUnmodified = patch.modified === false
     return {
       ...patch,
-      appliedRuleIds: ids,
+      appliedRuleIds: ids.filter(Boolean),
       ruleHits: hits,
-      modified: true,
+      modified: keepUnmodified ? Boolean(base.modified) : true,
       fromPageScript: true,
     }
   }
@@ -357,12 +365,38 @@ export function mergePageEvent(
     return
   }
   const buf = buffers.get(tabId) ?? []
-  const idx = buf.findIndex((e) => e.url === patch.url)
+  const idx = buf.findLastIndex(
+    (e) => e.url === patch.url && (!patch.method || e.method === patch.method),
+  )
   if (idx >= 0) {
     buf[idx] = { ...buf[idx], ...mergePatch(buf[idx]) }
     buffers.set(tabId, buf)
     broadcast(buf[idx])
+    return
   }
+  if (!shouldRecordEntries() || !patch.url) return
+  const now = Date.now()
+  const entry: NetLogEntry = {
+    id: `${tabId}:page:${now}:${patch.url}`,
+    tabId,
+    requestId: String(requestId),
+    startedAt: now,
+    completedAt: now,
+    method: patch.method ?? 'GET',
+    url: patch.url,
+    status: patch.status,
+    resourceType: patch.resourceType ?? 'xmlhttprequest',
+    requestHeaders: patch.requestHeaders,
+    responseHeaders: patch.responseHeaders,
+    requestBody: patch.requestBody,
+    responseBody: patch.responseBody,
+    responseBodyTruncated: patch.responseBodyTruncated,
+    appliedRuleIds: (patch.appliedRuleIds ?? []).filter(Boolean),
+    ruleHits: patch.ruleHits,
+    modified: patch.modified === true,
+    fromPageScript: true,
+  }
+  pushEntry(tabId, entry)
 }
 
 export async function refreshLogSize(state?: InterceptorState): Promise<void> {

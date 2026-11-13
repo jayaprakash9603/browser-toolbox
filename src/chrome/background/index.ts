@@ -82,6 +82,7 @@ import { registerReactDevtools, syncReactDevtoolsState } from './reactDevtools'
 import { registerScriptStudio } from './script-studio'
 import { registerSidePanelNavigation } from './panelNavigation'
 import { registerResponsiveViewerFraming } from './responsiveViewerFraming'
+import { isSimulatorMenuItem } from './responsiveViewer/ids'
 import { configurePanelAction, openExtensionPanel } from '@/platform/panel'
 
 const logger = createLogger('background')
@@ -181,6 +182,12 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     void handleRecorderMenuClick(menuItemId, tab)
     return
   }
+  if (isSimulatorMenuItem(menuItemId)) {
+    void import('./responsiveViewer/menus').then(({ handleSimulatorMenuClick }) =>
+      handleSimulatorMenuClick(menuItemId, info, tab),
+    )
+    return
+  }
   if (menuItemId === 'toolbox.open' || menuItemId.startsWith('toolbox.open.')) {
     if (tab?.windowId != null) {
       void openExtensionPanel({ windowId: tab.windowId, tabId: tab.id })
@@ -240,4 +247,7 @@ safeRegister('reactDevtools', registerReactDevtools)
 safeRegister('scriptStudio', registerScriptStudio)
 safeRegister('panelNavigation', registerSidePanelNavigation)
 safeRegister('responsiveViewerFraming', registerResponsiveViewerFraming)
+safeRegister('responsiveViewerEmulation', () =>
+  import('./responsiveViewer/emulation').then((module) => module.registerResponsiveViewerEmulation()),
+)
 startMessageRouter()

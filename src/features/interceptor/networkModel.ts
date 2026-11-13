@@ -1,4 +1,5 @@
-import type { NetLogEntry } from '@/core/interceptor'
+import type { ApiTiming, CaptureRecord, NetLogEntry } from '@/core/interceptor'
+import { mimeFromHeaders } from '@/core/interceptor/apiSensitive'
 
 export interface NetworkRow {
   id: string
@@ -17,6 +18,9 @@ export interface NetworkRow {
   effectiveUrl?: string
   ruleHits?: { ruleId: string; ruleName?: string; ruleType?: string; action?: string }[]
   error?: string
+  startedAt?: number
+  mimeType?: string
+  timing?: ApiTiming
   /** Lazily loads the response body (DevTools HAR or captured). */
   getBody?: () => Promise<string>
   raw: unknown
@@ -110,6 +114,8 @@ export function formatSize(bytes?: number): string {
 }
 
 export function fromNetLog(entry: NetLogEntry): NetworkRow {
+  const requestHeaders = (entry.requestHeaders ?? []).map((h) => ({ name: h.name, value: h.value ?? '' }))
+  const responseHeaders = (entry.responseHeaders ?? []).map((h) => ({ name: h.name, value: h.value ?? '' }))
   return {
     id: entry.id,
     method: entry.method,
@@ -118,8 +124,8 @@ export function fromNetLog(entry: NetLogEntry): NetworkRow {
     type: normalizeType(entry.resourceType),
     size: entry.size,
     time: entry.durationMs != null ? Math.round(entry.durationMs) : undefined,
-    requestHeaders: (entry.requestHeaders ?? []).map((h) => ({ name: h.name, value: h.value ?? '' })),
-    responseHeaders: (entry.responseHeaders ?? []).map((h) => ({ name: h.name, value: h.value ?? '' })),
+    requestHeaders,
+    responseHeaders,
     queryParams: parseQuery(entry.url),
     postData: entry.requestBody,
     modified: entry.modified,
@@ -127,6 +133,9 @@ export function fromNetLog(entry: NetLogEntry): NetworkRow {
     effectiveUrl: entry.effectiveUrl,
     ruleHits: entry.ruleHits,
     error: entry.error,
+    startedAt: entry.startedAt,
+    mimeType: mimeFromHeaders(responseHeaders) ?? mimeFromHeaders(requestHeaders),
+    timing: entry.durationMs != null ? { totalMs: Math.round(entry.durationMs) } : undefined,
     getBody: entry.responseBody != null ? async () => entry.responseBody ?? '' : undefined,
     raw: entry,
   }
@@ -146,8 +155,33 @@ interface HarLike {
     _transferSize?: number
   }
   time: number
+  startedDateTime?: string
+  timings?: {
+    blocked?: number
+    dns?: number
+    connect?: number
+    ssl?: number
+    send?: number
+    wait?: number
+    receive?: number
+  }
   _resourceType?: string
   getContent?: (cb: (content: string, encoding: string) => void) => void
+}
+
+function timingFromHar(entry: HarLike): ApiTiming | undefined {
+  const pick = (value?: number) => (value != null && value >= 0 ? Math.round(value) : undefined)
+  const timing: ApiTiming = {
+    blockedMs: pick(entry.timings?.blocked),
+    dnsMs: pick(entry.timings?.dns),
+    connectMs: pick(entry.timings?.connect),
+    tlsMs: pick(entry.timings?.ssl),
+    sendMs: pick(entry.timings?.send),
+    waitMs: pick(entry.timings?.wait),
+    receiveMs: pick(entry.timings?.receive),
+    totalMs: pick(entry.time),
+  }
+  return Object.values(timing).some((value) => value != null) ? timing : undefined
 }
 
 export function fromHar(entry: HarLike, index: number): NetworkRow {
@@ -167,6 +201,9 @@ export function fromHar(entry: HarLike, index: number): NetworkRow {
     responseHeaders: entry.response.headers,
     queryParams: parseQuery(entry.request.url),
     postData: entry.request.postData?.text,
+    startedAt: entry.startedDateTime ? Date.parse(entry.startedDateTime) : undefined,
+    mimeType: mime || undefined,
+    timing: timingFromHar(entry),
     getBody: entry.getContent
       ? () =>
           new Promise<string>((resolve) =>
@@ -176,5 +213,24 @@ export function fromHar(entry: HarLike, index: number): NetworkRow {
           )
       : undefined,
     raw: entry,
+  }
+}
+
+export function rowToCapture(row: NetworkRow): CaptureRecord {
+  return {
+    id: row.id,
+    method: row.method,
+    url: row.url,
+    status: row.status,
+    resourceType: row.type === 'fetch/xhr' ? 'xmlhttprequest' : row.type,
+    requestHeaders: row.requestHeaders,
+    responseHeaders: row.responseHeaders,
+    requestBody: row.postData,
+    durationMs: row.time,
+    size: row.size,
+    startedAt: row.startedAt,
+    error: row.error,
+    mimeType: row.mimeType,
+    timing: row.timing,
   }
 }

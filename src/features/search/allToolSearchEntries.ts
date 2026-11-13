@@ -738,6 +738,13 @@ export const TOOL_SEARCH_ENTRIES: Record<string, ToolSearchEntry[]> = {
       fallbackLabel: 'Responsive preview',
       params: {},
     },
+    {
+      id: 'studio',
+      labelKey: 'rv.studio.open',
+      fallbackLabel: 'Open Mobile Simulator',
+      aliases: ['mobile simulator', 'device simulator'],
+      params: { studio: '1' },
+    },
   ],
   'design.svg-grabber': [
     { id: 'grab', labelKey: 'design.svg.copySvg', fallbackLabel: 'SVG grabber', params: {} },

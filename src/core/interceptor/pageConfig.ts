@@ -93,7 +93,9 @@ export function needsPageInterceptor(
   rules: InterceptorRule[],
   paused: boolean,
   groups: RuleGroup[] = [],
+  apiCaptureBodies = false,
 ): boolean {
+  if (apiCaptureBodies) return true
   if (paused) return false
   return rules.some((r) => isRuleActive(r, groups) && PAGE_RULE_TYPES.includes(r.type))
 }

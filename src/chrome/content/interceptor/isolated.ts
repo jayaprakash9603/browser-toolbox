@@ -7,6 +7,34 @@ function loadConfig(): PageInterceptorRule[] {
 
 let config: PageInterceptorRule[] = loadConfig()
 let showToast = false
+let apiCapture = false
+let capturePaused = false
+let maxBodyBytes = 256_000
+
+function applyConfig(next: {
+  config?: PageInterceptorRule[]
+  showToast?: boolean
+  apiCapture?: boolean
+  capturePaused?: boolean
+  maxBodyBytes?: number
+}): void {
+  if (next.config) config = next.config
+  if (next.showToast != null) showToast = next.showToast
+  if (next.apiCapture != null) apiCapture = next.apiCapture
+  if (next.capturePaused != null) capturePaused = next.capturePaused
+  if (next.maxBodyBytes != null) maxBodyBytes = next.maxBodyBytes
+  window.postMessage(
+    {
+      [PAGE_COMMAND_KEY]: 'config',
+      config,
+      showToast,
+      apiCapture,
+      capturePaused,
+      maxBodyBytes,
+    },
+    window.location.origin || '*',
+  )
+}
 
 const TOAST_STACK = 'tbx-interceptor-toasts'
 
@@ -56,12 +84,13 @@ function showRuleToast(payload: {
 
 chrome.runtime.onMessage.addListener((message) => {
   if (message?.type === 'INTERCEPTOR_CONFIG') {
-    config = message.config as PageInterceptorRule[]
-    showToast = Boolean(message.showToast)
-    window.postMessage(
-      { [PAGE_COMMAND_KEY]: 'config', config, showToast },
-      window.location.origin || '*',
-    )
+    applyConfig({
+      config: message.config as PageInterceptorRule[],
+      showToast: Boolean(message.showToast),
+      apiCapture: Boolean(message.apiCapture),
+      capturePaused: Boolean(message.capturePaused),
+      maxBodyBytes: Number(message.maxBodyBytes) || 256_000,
+    })
   }
   if (message?.type === 'INTERCEPTOR_RULE_TOAST' && message.url) {
     showRuleToast({
@@ -74,14 +103,28 @@ chrome.runtime.onMessage.addListener((message) => {
 })
 
 void chrome.storage.session.get(INTERCEPTOR_PAGE_CONFIG_KEY).then((session) => {
-  const stored = session[INTERCEPTOR_PAGE_CONFIG_KEY] as PageInterceptorRule[] | undefined
-  if (stored?.length) {
-    config = stored
-    window.postMessage(
-      { [PAGE_COMMAND_KEY]: 'config', config, showToast },
-      window.location.origin || '*',
-    )
+  const stored = session[INTERCEPTOR_PAGE_CONFIG_KEY] as
+    | PageInterceptorRule[]
+    | {
+        rules?: PageInterceptorRule[]
+        showToast?: boolean
+        apiCapture?: boolean
+        capturePaused?: boolean
+        maxBodyBytes?: number
+      }
+    | undefined
+  if (!stored) return
+  if (Array.isArray(stored)) {
+    if (stored.length) applyConfig({ config: stored })
+    return
   }
+  applyConfig({
+    config: stored.rules ?? [],
+    showToast: stored.showToast,
+    apiCapture: stored.apiCapture,
+    capturePaused: stored.capturePaused,
+    maxBodyBytes: stored.maxBodyBytes,
+  })
 })
 
 window.addEventListener('message', (event) => {

@@ -1,3 +1,4 @@
+import { looksLikeApiCaptureTarget } from '@/core/interceptor/apiFinder'
 import { PAGE_COMMAND_KEY, PAGE_MESSAGE_KEY, USER_AGENT_PRESETS } from '@/core/interceptor/constants'
 import type { PageInterceptorRule, SourceCondition } from '@/core/interceptor/types'
 
@@ -66,6 +67,9 @@ function matchRule(rule: PageInterceptorRule, url: string, method: string, body?
 
 let rules: PageInterceptorRule[] = []
 let showToast = false
+let apiCapture = false
+let capturePaused = false
+let maxBodyBytes = 256_000
 const queue: Array<() => void> = []
 const TOAST_STACK = 'tbx-interceptor-toasts'
 
@@ -135,6 +139,33 @@ function relay(kind: string, rule: PageInterceptorRule, url: string, method: str
   )
 }
 
+function relayCapture(url: string, method: string, extra: Record<string, unknown>): void {
+  window.postMessage(
+    {
+      [PAGE_MESSAGE_KEY]: {
+        kind: 'capture',
+        ruleId: '',
+        url,
+        method,
+        ...extra,
+      },
+    },
+    window.location.origin || '*',
+  )
+}
+
+async function readCappedBody(response: Response): Promise<{ text: string; truncated: boolean } | null> {
+  const contentType = response.headers.get('content-type') ?? ''
+  if (/image|font|audio|video|octet-stream|wasm/i.test(contentType)) return null
+  const length = Number(response.headers.get('content-length'))
+  if (Number.isFinite(length) && length > maxBodyBytes) return { text: '', truncated: true }
+  const buffer = await response.arrayBuffer()
+  const view = new Uint8Array(buffer)
+  const truncated = view.byteLength > maxBodyBytes
+  const slice = truncated ? view.subarray(0, maxBodyBytes) : view
+  return { text: new TextDecoder('utf-8', { fatal: false }).decode(slice), truncated }
+}
+
 function applyUserAgent(rule: PageInterceptorRule): void {
   const preset = rule.payload.preset as string | undefined
   const custom = rule.payload.customValue as string | undefined
@@ -189,6 +220,21 @@ function installFetch(): void {
     }
 
     const response = await native(input, init)
+    if (apiCapture && !capturePaused) {
+      const contentType = response.headers.get('content-type') ?? ''
+      if (looksLikeApiCaptureTarget(url, contentType, method)) {
+        void readCappedBody(response.clone()).then((captured) => {
+          if (!captured) return
+          relayCapture(url, method, {
+            requestBody: body,
+            responseBody: captured.text,
+            responseBodyTruncated: captured.truncated,
+            status: response.status,
+            contentType,
+          })
+        })
+      }
+    }
     for (const rule of matched) {
       if (rule.type === 'statusCode') {
         const status = Number(rule.payload.status) || response.status
@@ -231,6 +277,31 @@ function installXhr(): void {
       .filter((r) => matchRule(r, url, method, bodyStr))
       .sort((a, b) => b.priority - a.priority)
 
+    if (apiCapture && !capturePaused) {
+      this.addEventListener(
+        'load',
+        function onApiCapture() {
+          const xhr = this as XMLHttpRequest
+          const responseType = xhr.responseType as string
+          if (responseType && responseType !== 'text' && responseType !== 'json') {
+            return
+          }
+          const contentType = xhr.getResponseHeader('content-type') ?? ''
+          if (!looksLikeApiCaptureTarget(url, contentType, method)) return
+          const text = xhr.responseText ?? ''
+          const truncated = text.length > maxBodyBytes
+          relayCapture(url, method, {
+            requestBody: bodyStr,
+            responseBody: truncated ? text.slice(0, maxBodyBytes) : text,
+            responseBodyTruncated: truncated,
+            status: xhr.status,
+            contentType,
+          })
+        },
+        { once: true },
+      )
+    }
+
     const mock = matched.find((r) => r.type === 'mockApi' || r.type === 'mockGraphql')
     if (mock) {
       const status = Number(mock.payload.status) || 200
@@ -263,6 +334,9 @@ window.addEventListener('message', (event) => {
   if (data[PAGE_COMMAND_KEY] !== 'config') return
   rules = (data.config as PageInterceptorRule[]) ?? []
   showToast = Boolean(data.showToast)
+  apiCapture = Boolean(data.apiCapture)
+  capturePaused = Boolean(data.capturePaused)
+  maxBodyBytes = Number(data.maxBodyBytes) || 256_000
   flushQueue()
   if (showToast && rules.length) {
     const boot = document.createElement('div')

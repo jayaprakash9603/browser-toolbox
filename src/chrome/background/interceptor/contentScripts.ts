@@ -2,6 +2,7 @@ import {
   CONTENT_SCRIPT_IDS,
   INTERCEPTOR_FILES,
   INTERCEPTOR_PAGE_CONFIG_KEY,
+  MAX_CAPTURE_BODY_BYTES,
   compilePageRules,
   getInterceptorState,
   isRuleActive,
@@ -24,16 +25,26 @@ export async function pushPageConfigToTab(
 ): Promise<void> {
   const resolved = state ?? await getInterceptorState()
   const config = compilePageRules(resolved.rules, resolved.library, resolved.settings.paused, resolved.groups)
-  const configJson = JSON.stringify(config)
+  const payload = {
+    rules: config,
+    showToast: resolved.settings.showPageToast,
+    apiCapture: Boolean(resolved.settings.apiCaptureBodies),
+    capturePaused: Boolean(resolved.settings.capturePaused),
+    maxBodyBytes: MAX_CAPTURE_BODY_BYTES,
+  }
+  const configJson = JSON.stringify(payload)
   if (configJson !== lastPushedConfigJson) {
     lastPushedConfigJson = configJson
-    await chrome.storage.session.set({ [INTERCEPTOR_PAGE_CONFIG_KEY]: config })
+    await chrome.storage.session.set({ [INTERCEPTOR_PAGE_CONFIG_KEY]: payload })
   }
   try {
     await chrome.tabs.sendMessage(tabId, {
       type: 'INTERCEPTOR_CONFIG',
       config,
-      showToast: resolved.settings.showPageToast,
+      showToast: payload.showToast,
+      apiCapture: payload.apiCapture,
+      capturePaused: payload.capturePaused,
+      maxBodyBytes: payload.maxBodyBytes,
     })
   } catch {
     /* tab may not have script yet */
@@ -68,11 +79,12 @@ export async function syncInterceptorContentScripts(
   state?: Awaited<ReturnType<typeof getInterceptorState>>,
 ): Promise<void> {
   const resolved = state ?? await getInterceptorState()
-  const pageRules = needsPageInterceptor(resolved.rules, resolved.settings.paused, resolved.groups)
+  const capture = Boolean(resolved.settings.apiCaptureBodies)
+  const pageRules = needsPageInterceptor(resolved.rules, resolved.settings.paused, resolved.groups, capture)
   const toastBridge = resolved.settings.showPageToast && hasActiveRules(resolved)
   const base = { matches: ALL_URLS, runAt: 'document_start' as const }
   const scripts: chrome.scripting.RegisteredContentScript[] = []
-  if (pageRules || toastBridge) {
+  if (pageRules || toastBridge || capture) {
     scripts.push({
       ...base,
       id: CONTENT_SCRIPT_IDS.isolated,
@@ -80,7 +92,7 @@ export async function syncInterceptorContentScripts(
       allFrames: true,
     })
   }
-  if (pageRules) {
+  if (pageRules || capture) {
     scripts.push({
       ...base,
       id: CONTENT_SCRIPT_IDS.main,
@@ -94,7 +106,7 @@ export async function syncInterceptorContentScripts(
   } catch (error) {
     logger.warn('registerContentScripts failed', error)
   }
-  if (!pageRules && !toastBridge) return
+  if (!pageRules && !toastBridge && !capture) return
   const tabs = await chrome.tabs.query({})
   for (const tab of tabs) {
     if (tab.id != null) await pushPageConfigToTab(tab.id, resolved)

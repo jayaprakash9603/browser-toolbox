@@ -210,6 +210,12 @@ export interface InterceptorSettings {
   deepIntercept: boolean
   showPageToast: boolean
   userScriptsEnabled: boolean
+  /** Stop recording live traffic (rules still run). */
+  capturePaused: boolean
+  /** Opt-in fetch/XHR response-body observer. Off by default. */
+  apiCaptureBodies: boolean
+  apiHistoryLimit: number
+  includeSecretsInCopy: boolean
 }
 
 export interface InterceptorState {
@@ -252,6 +258,7 @@ export interface NetLogEntry {
   responseHeaders?: NetLogHeader[]
   requestBody?: string
   responseBody?: string
+  responseBodyTruncated?: boolean
   size?: number
   durationMs?: number
   error?: string
@@ -281,7 +288,7 @@ export interface PageInterceptorRule {
 }
 
 export interface InterceptorPageEvent {
-  kind: 'request' | 'response' | 'mock' | 'delay' | 'userAgent'
+  kind: 'request' | 'response' | 'mock' | 'delay' | 'userAgent' | 'capture'
   ruleId: string
   ruleName?: string
   ruleType?: string
@@ -289,5 +296,7 @@ export interface InterceptorPageEvent {
   method: string
   requestBody?: string
   responseBody?: string
+  responseBodyTruncated?: boolean
   status?: number
+  contentType?: string
 }

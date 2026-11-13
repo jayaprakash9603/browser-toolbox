@@ -1,43 +1,40 @@
-import { useEffect, useMemo, useState } from 'react'
-
-import { fromNetLog } from '@/features/interceptor/networkModel'
-import { useInterceptorLog } from '@/features/interceptor/hooks'
+import { useApiWorkspace } from '@/features/interceptor/ApiWorkspaceContext'
+import { classifyCapture, endpointId } from '@/core/interceptor/apiFinder'
+import { rowToCapture, type NetworkRow } from '@/features/interceptor/networkModel'
 
 import { NetworkInspector } from './NetworkInspector'
 
 interface Props {
-  tabId?: number
+  rows: NetworkRow[]
+  onClear: () => void
+  capturePaused: boolean
+  onCapturePausedChange: (paused: boolean) => void
+  includeSecrets: boolean
 }
 
-/** Side-panel network log for the active tab (webRequest feed from the background). */
-export function NetworkTab({ tabId }: Props) {
-  const [activeTabId, setActiveTabId] = useState<number | undefined>(tabId)
-  const [preserve, setPreserve] = useState(true)
-
-  useEffect(() => {
-    if (tabId != null) {
-      setActiveTabId(tabId)
-      return
-    }
-    const refresh = () =>
-      void chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
-        if (tab?.id != null) setActiveTabId(tab.id)
-      })
-    refresh()
-    chrome.tabs.onActivated.addListener(refresh)
-    return () => chrome.tabs.onActivated.removeListener(refresh)
-  }, [tabId])
-
-  const { entries, clear } = useInterceptorLog(activeTabId)
-  const rows = useMemo(() => entries.map(fromNetLog), [entries])
+export function NetworkTab({ rows, onClear, capturePaused, onCapturePausedChange, includeSecrets }: Props) {
+  const { openFinder, openExplorerFromRow } = useApiWorkspace()
 
   return (
-    <div className="relative h-[560px] overflow-hidden rounded-lg border">
+    <div className="relative min-h-[420px] overflow-hidden rounded-lg border">
       <NetworkInspector
         rows={rows}
-        onClear={clear}
-        preserveLog={preserve}
-        onPreserveLogChange={setPreserve}
+        onClear={onClear}
+        preserveLog
+        onPreserveLogChange={() => undefined}
+        showPreserveLog={false}
+        capturePaused={capturePaused}
+        onCapturePausedChange={onCapturePausedChange}
+        includeSecrets={includeSecrets}
+        onFindApi={(row) => {
+          const classified = classifyCapture(rowToCapture(row))
+          if (classified) {
+            openFinder(endpointId(row.method, classified.origin, classified.routeTemplate, classified.graphql?.operationName))
+          } else {
+            openFinder('')
+          }
+        }}
+        onTestApi={openExplorerFromRow}
       />
     </div>
   )

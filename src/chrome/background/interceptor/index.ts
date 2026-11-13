@@ -94,22 +94,28 @@ export function registerInterceptor(): void {
     const tabId = m.tabId ?? sender.tab?.id
     if (tabId == null) return
     const ev = m.event as InterceptorPageEvent
-    incrementTabRuleCount(tabId)
+    const isCapture = ev.kind === 'capture'
+    if (!isCapture) incrementTabRuleCount(tabId)
     mergePageEvent(tabId, ev.url, {
       url: ev.url,
       method: ev.method,
       requestBody: ev.requestBody,
       responseBody: ev.responseBody,
+      responseBodyTruncated: ev.responseBodyTruncated,
       status: ev.status,
-      appliedRuleIds: [ev.ruleId],
-      ruleHits: [
-        {
-          ruleId: ev.ruleId,
-          ruleName: ev.ruleName,
-          ruleType: ev.ruleType,
-          action: ev.kind,
-        },
-      ],
+      resourceType: 'xmlhttprequest',
+      appliedRuleIds: isCapture || !ev.ruleId ? [] : [ev.ruleId],
+      modified: !isCapture,
+      ruleHits: isCapture
+        ? []
+        : [
+            {
+              ruleId: ev.ruleId,
+              ruleName: ev.ruleName,
+              ruleType: ev.ruleType,
+              action: ev.kind,
+            },
+          ],
     })
     return { ok: true }
   })

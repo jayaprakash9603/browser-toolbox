@@ -91,6 +91,13 @@ const CHROME_UI_FALLBACKS: Record<string, string> = {
   formNothingSaved: 'Nothing saved for this page yet. Fill it once and it will be remembered.',
   formAlreadyFilled: 'Saved values are already in place',
   formNothingToClear: 'Nothing to clear',
+  contextMenuSimulator: 'Open in Mobile Simulator',
+  contextMenuSimulatorPage: 'Open current page',
+  contextMenuSimulatorLink: 'Open selected link',
+  contextMenuSimulatorDevice: 'Open in last-used device',
+  contextMenuSimulatorCapture: 'Capture current page screenshot',
+  contextMenuSimulatorPanel: 'Open Responsive Viewer',
+  commandOpenMobileSimulator: 'Open the current page in One Panel Mobile Simulator',
 }
 
 export function getChromeMessage(messageName: string): string {

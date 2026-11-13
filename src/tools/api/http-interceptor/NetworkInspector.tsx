@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 
 import { entryToCurl } from '@/features/interceptor/curl'
+import { CopyMenu } from './CopyMenu'
 import { ruleActionLabel } from '@/features/interceptor/ruleLabels'
 import {
   TYPE_FILTERS,
@@ -44,11 +45,29 @@ interface Props {
   onClear: () => void
   preserveLog: boolean
   onPreserveLogChange: (value: boolean) => void
+  showPreserveLog?: boolean
+  capturePaused?: boolean
+  onCapturePausedChange?: (paused: boolean) => void
+  includeSecrets?: boolean
+  onFindApi?: (row: NetworkRow) => void
+  onTestApi?: (row: NetworkRow) => void
   /** Toggle shown when deep intercept can be attached to the inspected tab. */
   deep?: { active: boolean; onToggle: () => void; error?: string | null }
 }
 
-export function NetworkInspector({ rows, onClear, preserveLog, onPreserveLogChange, deep }: Props) {
+export function NetworkInspector({
+  rows,
+  onClear,
+  preserveLog,
+  onPreserveLogChange,
+  showPreserveLog = true,
+  capturePaused,
+  onCapturePausedChange,
+  includeSecrets = false,
+  onFindApi,
+  onTestApi,
+  deep,
+}: Props) {
   const { t } = useTranslation()
   const [filter, setFilter] = useState('')
   const [modifiedOnly, setModifiedOnly] = useState(false)
@@ -93,12 +112,24 @@ export function NetworkInspector({ rows, onClear, preserveLog, onPreserveLogChan
     <div className="flex h-full min-h-0 flex-col text-xs">
       <div className="flex flex-wrap items-center gap-2 border-b px-2 py-1.5">
         <Button type="button" variant="ghost" size="xs" onClick={onClear}>
-          <BanIcon /> Clear logs
+          <BanIcon /> {t('interceptor.network.clear')}
         </Button>
-        <label className="flex cursor-pointer items-center gap-1">
-          <input type="checkbox" checked={preserveLog} onChange={(e) => onPreserveLogChange(e.target.checked)} />
-          Preserve log
-        </label>
+        {showPreserveLog && (
+          <label className="flex cursor-pointer items-center gap-1">
+            <input type="checkbox" checked={preserveLog} onChange={(e) => onPreserveLogChange(e.target.checked)} />
+            Preserve log
+          </label>
+        )}
+        {onCapturePausedChange && (
+          <label className="flex cursor-pointer items-center gap-1">
+            <input
+              type="checkbox"
+              checked={!capturePaused}
+              onChange={(e) => onCapturePausedChange(!e.target.checked)}
+            />
+            {t('interceptor.capture.live')}
+          </label>
+        )}
         <label className="flex cursor-pointer items-center gap-1">
           <input type="checkbox" checked={modifiedOnly} onChange={(e) => setModifiedOnly(e.target.checked)} />
           {t('interceptor.network.onlyModified')}
@@ -306,14 +337,38 @@ export function NetworkInspector({ rows, onClear, preserveLog, onPreserveLogChan
                       <b>Rules matched:</b> {selected.appliedRuleIds.length}
                     </p>
                   )}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="xs"
-                    onClick={() => void navigator.clipboard.writeText(entryToCurl(selected.raw as NetLogEntry))}
-                  >
-                    Copy as cURL
-                  </Button>
+                  <div className="flex flex-wrap gap-1.5">
+                    <CopyMenu
+                      includeSecrets={includeSecrets}
+                      request={{
+                        method: selected.method,
+                        url: selected.url,
+                        requestHeaders: selected.requestHeaders,
+                        requestBody: selected.postData,
+                        responseHeaders: selected.responseHeaders,
+                        status: selected.status,
+                      }}
+                      responseBody={body ?? undefined}
+                    />
+                    {onFindApi && (
+                      <Button type="button" variant="outline" size="xs" onClick={() => onFindApi(selected)}>
+                        {t('interceptor.network.findApi')}
+                      </Button>
+                    )}
+                    {onTestApi && (
+                      <Button type="button" variant="outline" size="xs" onClick={() => onTestApi(selected)}>
+                        {t('interceptor.network.testApi')}
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="xs"
+                      onClick={() => void navigator.clipboard.writeText(entryToCurl(selected.raw as NetLogEntry, { includeSecrets }))}
+                    >
+                      {t('interceptor.copy.curl')}
+                    </Button>
+                  </div>
                 </div>
               )}
 
