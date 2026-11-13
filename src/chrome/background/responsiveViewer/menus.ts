@@ -7,9 +7,7 @@ import { openExtensionPanel } from '@/platform/panel'
 import { startScreenshot } from '../screenshot/start'
 import {
   SIMULATOR_CAPTURE,
-  SIMULATOR_OPEN_DEVICE,
   SIMULATOR_OPEN_LINK,
-  SIMULATOR_OPEN_PAGE,
   SIMULATOR_PANEL,
   SIMULATOR_PARENT_ID,
 } from './ids'
@@ -25,40 +23,12 @@ export {
 } from './ids'
 
 export function buildSimulatorMenus(create: (properties: chrome.contextMenus.CreateProperties) => void): void {
+  // Leaf item: Chrome will not fire clicks on a parent that has children, so this
+  // must stay a single entry. Under One Panel's grouped menu it opens the overlay.
   create({
     id: SIMULATOR_PARENT_ID,
-    title: getChromeMessage('contextMenuSimulator') ?? 'Open in Mobile Simulator',
+    title: getChromeMessage('contextMenuSimulator') ?? 'Mobile Simulator',
     contexts: ['page', 'frame', 'link', 'image', 'selection'],
-  })
-  create({
-    id: SIMULATOR_OPEN_PAGE,
-    parentId: SIMULATOR_PARENT_ID,
-    title: getChromeMessage('contextMenuSimulatorPage') ?? 'Preview on this page',
-    contexts: ['page', 'frame', 'image', 'selection'],
-  })
-  create({
-    id: SIMULATOR_OPEN_LINK,
-    parentId: SIMULATOR_PARENT_ID,
-    title: getChromeMessage('contextMenuSimulatorLink') ?? 'Open selected link',
-    contexts: ['link'],
-  })
-  create({
-    id: SIMULATOR_OPEN_DEVICE,
-    parentId: SIMULATOR_PARENT_ID,
-    title: getChromeMessage('contextMenuSimulatorDevice') ?? 'Open in last-used device',
-    contexts: ['page', 'frame', 'link', 'image'],
-  })
-  create({
-    id: SIMULATOR_CAPTURE,
-    parentId: SIMULATOR_PARENT_ID,
-    title: getChromeMessage('contextMenuSimulatorCapture') ?? 'Capture current page screenshot',
-    contexts: ['page', 'frame'],
-  })
-  create({
-    id: SIMULATOR_PANEL,
-    parentId: SIMULATOR_PARENT_ID,
-    title: getChromeMessage('contextMenuSimulatorPanel') ?? 'Open Responsive Viewer',
-    contexts: ['page', 'frame', 'link', 'image'],
   })
 }
 

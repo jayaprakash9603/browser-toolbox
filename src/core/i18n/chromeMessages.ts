@@ -91,7 +91,7 @@ const CHROME_UI_FALLBACKS: Record<string, string> = {
   formNothingSaved: 'Nothing saved for this page yet. Fill it once and it will be remembered.',
   formAlreadyFilled: 'Saved values are already in place',
   formNothingToClear: 'Nothing to clear',
-  contextMenuSimulator: 'Open in Mobile Simulator',
+  contextMenuSimulator: 'Mobile Simulator',
   contextMenuSimulatorPage: 'Preview on this page',
   contextMenuSimulatorLink: 'Open selected link',
   contextMenuSimulatorDevice: 'Open in last-used device',

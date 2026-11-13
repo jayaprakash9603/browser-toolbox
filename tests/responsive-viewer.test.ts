@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { buildResponsiveViewerFramingRules } from '@/chrome/background/responsiveViewerFraming'
 import {
-  SIMULATOR_OPEN_LINK,
   SIMULATOR_OPEN_PAGE,
   SIMULATOR_PARENT_ID,
   buildSimulatorMenus,
@@ -162,15 +161,16 @@ describe('mobile simulator studio helpers', () => {
     expect(rules[0].action.requestHeaders?.some((header) => header.header === 'user-agent')).toBe(true)
   })
 
-  it('registers stable simulator context-menu ids', () => {
+  it('registers a single clickable Mobile Simulator menu item', () => {
     const created: chrome.contextMenus.CreateProperties[] = []
     buildSimulatorMenus((properties) => {
       created.push(properties)
     })
+    expect(created).toHaveLength(1)
     expect(created[0]?.id).toBe(SIMULATOR_PARENT_ID)
-    expect(created.map((item) => item.id)).toEqual(
-      expect.arrayContaining([SIMULATOR_OPEN_PAGE, SIMULATOR_OPEN_LINK, SIMULATOR_PARENT_ID]),
-    )
+    expect(created[0]?.parentId).toBeUndefined()
+    expect(created[0]?.contexts).toEqual(expect.arrayContaining(['page', 'link']))
+    expect(isSimulatorMenuItem(SIMULATOR_PARENT_ID)).toBe(true)
     expect(isSimulatorMenuItem(SIMULATOR_OPEN_PAGE)).toBe(true)
     expect(isSimulatorMenuItem('toolbox.screenshot')).toBe(false)
   })
@@ -226,8 +226,8 @@ describe('mobile simulator studio helpers', () => {
       return [{ result }] as unknown as chrome.scripting.InjectionResult[]
     })
     await handleSimulatorMenuClick(
-      SIMULATOR_OPEN_PAGE,
-      { menuItemId: SIMULATOR_OPEN_PAGE } as chrome.contextMenus.OnClickData,
+      SIMULATOR_PARENT_ID,
+      { menuItemId: SIMULATOR_PARENT_ID } as chrome.contextMenus.OnClickData,
       { id: 7, url: 'https://example.com/tools' } as chrome.tabs.Tab,
     )
     expect(chrome.scripting.executeScript).toHaveBeenCalled()
@@ -243,8 +243,8 @@ describe('mobile simulator studio helpers', () => {
   it('falls back to a studio tab on restricted pages', async () => {
     vi.mocked(chrome.tabs.create).mockClear()
     await handleSimulatorMenuClick(
-      SIMULATOR_OPEN_PAGE,
-      { menuItemId: SIMULATOR_OPEN_PAGE } as chrome.contextMenus.OnClickData,
+      SIMULATOR_PARENT_ID,
+      { menuItemId: SIMULATOR_PARENT_ID } as chrome.contextMenus.OnClickData,
       { id: 8, url: 'chrome://extensions' } as chrome.tabs.Tab,
     )
     expect(chrome.tabs.create).toHaveBeenCalled()
