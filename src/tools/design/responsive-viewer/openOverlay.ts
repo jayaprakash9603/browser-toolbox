@@ -12,5 +12,13 @@ export async function openSimulatorOverlayFromUi(opts: { url?: string; deviceId?
     deviceId: opts.deviceId,
     tabId: tab?.id,
   })
-  return result?.opened ?? 'studio'
+  const opened = result?.opened ?? 'studio'
+  if (opened === 'overlay') {
+    try {
+      window.close()
+    } catch {
+      /* not running in a closable One Panel surface */
+    }
+  }
+  return opened
 }

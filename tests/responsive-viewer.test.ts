@@ -247,10 +247,14 @@ describe('mobile simulator studio helpers', () => {
     expect(mockup?.hidden).toBe(false)
     expect(mockup?.getAttribute('src')).toContain('iphone-16-pro.webp')
     expect(root.classList.contains('has-mockup')).toBe(true)
-    const acts = [...(host?.shadowRoot?.querySelectorAll('[data-act]') ?? [])].map((el) => el.getAttribute('data-act'))
+    const acts = [...(host?.shadowRoot?.querySelectorAll('.actions [data-act]') ?? [])].map((el) =>
+      el.getAttribute('data-act'),
+    )
     expect(acts).toEqual(
       expect.arrayContaining(['devices', 'rotate', 'reload', 'screenshot', 'record', 'compare', 'settings', 'expand']),
     )
+    expect(acts.indexOf('settings')).toBeGreaterThan(acts.indexOf('devices'))
+    expect(acts.indexOf('settings')).toBeLessThan(acts.indexOf('rotate'))
     const devicesPanel = host?.shadowRoot?.querySelector('[data-panel="devices"]')
     expect(devicesPanel).toBeTruthy()
     expect(host?.shadowRoot?.querySelector('.stage')?.contains(devicesPanel ?? null)).toBe(false)

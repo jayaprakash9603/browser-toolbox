@@ -80,13 +80,24 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
 
   const style = document.createElement('style')
   style.textContent = `
-    :host { all: initial; }
+    :host {
+      all: initial;
+      display: block;
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      outline: none;
+    }
     * { box-sizing: border-box; }
     button { font: inherit; }
     .root {
       pointer-events: auto;
       position: fixed;
       inset: 0;
+      border: 0;
+      outline: none;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -261,15 +272,20 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       display: flex; flex-direction: column; align-items: center; gap: 8px;
       padding: 10px 8px;
       border-radius: 999px;
-      background: rgba(255,255,255,0.92);
-      border: 1px solid rgba(15,23,42,0.08);
-      box-shadow: 0 8px 28px rgba(15,23,42,0.1);
+      background: rgba(255,255,255,0.9);
+      border: 0;
+      box-shadow: 0 10px 32px rgba(15,23,42,0.14);
+      backdrop-filter: blur(14px);
       z-index: 9;
+      max-height: min(92vh, 620px);
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
     }
     .root.theme-dark .actions {
-      background: rgba(21,27,36,0.94);
-      border-color: #2a3544;
-      box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+      background: rgba(21,27,36,0.92);
+      box-shadow: 0 10px 36px rgba(0,0,0,0.45);
     }
     .round {
       display: flex; align-items: center; justify-content: center;
@@ -351,19 +367,22 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .device-section:first-child { margin-top: 2px; }
     .panel[data-panel="settings"] {
-      right: 76px; top: 50%; transform: translateY(-50%);
+      right: 76px;
       width: min(292px, 42vw);
-      max-height: min(70vh, 480px);
-      padding: 14px; border-radius: 14px;
+      max-height: min(72vh, 520px);
+      padding: 14px;
+      border-radius: 14px;
       border: 1px solid var(--tbx-panel-border);
       box-shadow: 0 16px 40px rgba(15,23,42,0.12);
       gap: 12px;
+      transform: none;
+      overflow-y: auto;
     }
     .panel[data-panel="settings"]::after {
       content: '';
       position: absolute;
       right: -6px;
-      top: 50%;
+      top: var(--tbx-settings-arrow-y, 50%);
       width: 10px;
       height: 10px;
       transform: translateY(-50%) rotate(45deg);
@@ -633,12 +652,12 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     <div class="actions">
       <button type="button" class="round" data-act="close" aria-label="Close simulator">${iconClose}</button>
       <button type="button" class="round" data-act="devices" aria-label="Change device">${iconPhone}</button>
+      <button type="button" class="round" data-act="settings" aria-label="Settings">${iconSettings}</button>
       <button type="button" class="round" data-act="rotate" aria-label="Rotate">${iconRotate}</button>
       <button type="button" class="round" data-act="reload" aria-label="Reload">${iconRefresh}</button>
       <button type="button" class="round" data-act="screenshot" aria-label="Screenshot">${iconCamera}</button>
       <button type="button" class="round" data-act="record" aria-label="Start recording">${iconVideo}</button>
       <button type="button" class="round" data-act="compare" aria-label="Compare devices">${iconTabs}</button>
-      <button type="button" class="round" data-act="settings" aria-label="Settings">${iconSettings}</button>
       <button type="button" class="round" data-act="expand" aria-label="Open full simulator">${iconExpand}</button>
     </div>
   `
@@ -684,6 +703,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const shotPanel = shadow.querySelector('[data-panel="shot-menu"]') as HTMLElement
   const recordPanel = shadow.querySelector('[data-panel="record-menu"]') as HTMLElement
   const capturePanel = shadow.querySelector('[data-panel="capture-result"]') as HTMLElement
+  const settingsPanel = shadow.querySelector('[data-panel="settings"]') as HTMLElement
 
   const ask = <T,>(payload: Record<string, unknown>) =>
     new Promise<T | null>((resolve) => {
@@ -799,6 +819,15 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     if (state.panel === 'capture-result') positionRailPanel(capturePanel, screenshotBtn, '--tbx-rail-arrow-y', capMax)
   }
 
+  const positionSettingsPanel = () => {
+    positionRailPanel(
+      settingsPanel,
+      settingsBtn,
+      '--tbx-settings-arrow-y',
+      Math.min(window.innerHeight * 0.72, 520),
+    )
+  }
+
   const layout = () => {
     const live = state.live
     const width = state.rotated ? live.height : live.width
@@ -853,6 +882,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     requestAnimationFrame(() => {
       positionDevicesPanel()
       positionCapturePanels()
+      positionSettingsPanel()
     })
   }
 
@@ -975,6 +1005,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       requestAnimationFrame(() => positionDevicesPanel())
     } else if (state.panel === 'settings') {
       void loadOverlaySettings()
+      requestAnimationFrame(() => positionSettingsPanel())
     } else if (state.panel === 'shot-menu' || state.panel === 'record-menu' || state.panel === 'capture-result') {
       requestAnimationFrame(() => positionCapturePanels())
     }
