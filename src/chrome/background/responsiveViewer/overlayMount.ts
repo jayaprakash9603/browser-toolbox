@@ -75,6 +75,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     panel: '' as '' | 'devices' | 'settings' | 'shot-menu' | 'record-menu' | 'capture-result',
     lastCaptureUrl: '',
     lastCaptureName: '',
+    previewReload: 0,
   }
 
   const style = document.createElement('style')
@@ -1039,7 +1040,43 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const onResize = () => layout()
   window.addEventListener('resize', onResize)
 
+  const currentPreviewUrl = () => {
+    try {
+      const href = iframe.contentWindow?.location.href
+      if (href && !href.startsWith('about:')) return href
+    } catch {
+      /* cross-origin preview */
+    }
+    return iframe.src || state.live.url
+  }
+
+  const reloadPreview = () => {
+    blocked.style.display = 'none'
+    try {
+      iframe.contentWindow?.location.reload()
+      return
+    } catch {
+      /* fall back below */
+    }
+    try {
+      const url = new URL(currentPreviewUrl())
+      url.hash = `tbx-sim-reload=${++state.previewReload}`
+      iframe.src = url.href
+    } catch {
+      state.previewReload += 1
+      const base = state.live.url.split('#')[0]
+      iframe.src = `${base}#tbx-sim-reload=${state.previewReload}`
+    }
+  }
+
   const onKey = (event: KeyboardEvent) => {
+    const mod = event.metaKey || event.ctrlKey
+    if (event.key === 'F5' || (mod && !event.shiftKey && event.key.toLowerCase() === 'r')) {
+      event.preventDefault()
+      event.stopPropagation()
+      reloadPreview()
+      return
+    }
     if (event.key !== 'Escape') return
     event.preventDefault()
     if (state.panel) {
@@ -1065,9 +1102,10 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     state.rotated = !state.rotated
     layout()
   })
-  shadow.querySelector('[data-act="reload"]')?.addEventListener('click', () => {
-    blocked.style.display = 'none'
-    iframe.src = state.live.url
+  shadow.querySelector('[data-act="reload"]')?.addEventListener('click', (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+    reloadPreview()
   })
   deviceBtn.addEventListener('click', () => setPanel('devices'))
   settingsBtn.addEventListener('click', () => setPanel('settings'))

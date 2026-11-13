@@ -263,6 +263,24 @@ describe('mobile simulator studio helpers', () => {
     expect(document.getElementById(SIMULATOR_OVERLAY_ID)).toBeNull()
   })
 
+  it('reloads only the device iframe from the rail control', () => {
+    const config = overlayFixture()
+    expect(mountSimulatorOverlay(config)).toBe(true)
+    const host = document.getElementById(SIMULATOR_OVERLAY_ID)
+    const iframe = host?.shadowRoot?.querySelector('iframe') as HTMLIFrameElement
+    const reload = vi.fn()
+    Object.defineProperty(iframe, 'contentWindow', {
+      configurable: true,
+      value: { location: { reload, href: config.url } },
+    })
+    const topReload = vi.spyOn(window.location, 'reload').mockImplementation(() => undefined)
+    host?.shadowRoot?.querySelector('[data-act="reload"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(reload).toHaveBeenCalledTimes(1)
+    expect(topReload).not.toHaveBeenCalled()
+    topReload.mockRestore()
+    mountSimulatorOverlay(config)
+  })
+
   it('styles screenshot menu options for dark canvas theme', () => {
     const config = overlayFixture()
     expect(
