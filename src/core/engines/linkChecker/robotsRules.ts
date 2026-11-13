@@ -5,7 +5,7 @@ interface RobotsRule {
 
 export function isRobotsPathDisallowed(url: string, robotsText: string | null | undefined): boolean {
   if (!robotsText) return false
-  let path = '/'
+  let path: string
   try {
     path = new URL(url).pathname || '/'
   } catch {

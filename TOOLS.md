@@ -156,7 +156,7 @@ Engines: `src/core/engines/` (`json`, `xml`, `yaml`, `sql`, `regex`, `id`, `date
 | Tool | Route | Highlights |
 | ---- | ----- | ---------- |
 | URL Toolkit | `/tools/web/url-toolkit` | Parse, encode/decode, query editor, UTM-style cleaner |
-| Link Toolkit | `/tools/web/link-toolkit` | Internal/external links |
+| Link Toolkit | `/tools/web/link-toolkit` | Page/site link graph, health, and anchors |
 | Image Links | `/tools/web/image-links` | Image URLs, alt text |
 | Page Information | `/tools/web/page-info` | Meta, canonical, OG, Twitter |
 | HTML Bundle Downloader | `/tools/web/html-bundle` | Scan `.html` anchor links, select pages, ZIP with assets (file:// folder fallback) |

@@ -462,12 +462,12 @@ export async function discoverSiteLinks(
   report()
 
   let host = ''
-  let title = ''
+  let title = start
   try {
     host = bareHost(new URL(start).hostname)
     title = host
   } catch {
-    title = start
+    /* keep the start URL as the snapshot title */
   }
 
   const links = [...checks.values()]

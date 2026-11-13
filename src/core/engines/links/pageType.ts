@@ -17,7 +17,7 @@ const CATEGORY_SEGMENTS = new Set([
 ])
 
 export function classifyPageType(url: string): PageType {
-  let pathname = '/'
+  let pathname: string
   try {
     pathname = new URL(url).pathname
   } catch {
