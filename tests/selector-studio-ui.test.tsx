@@ -188,11 +188,23 @@ describe('Selector Studio UI', () => {
     renderStudio(
       <SelectorStudioView model={model({ candidates: [recommended, xpath, playwrightRow] })} />,
     )
-    const modeButtons = screen.getAllByRole('button', { name: /^Playwright$/i })
-    await user.click(modeButtons[0]!)
+    await user.click(screen.getByRole('button', { name: /^Playwright$/i }))
     expect(screen.getByText('Playwright Locator')).toBeInTheDocument()
     expect(screen.getByText(/page\.locator/)).toBeInTheDocument()
     expect(screen.queryByText('Rel XPath')).not.toBeInTheDocument()
+  })
+
+  it('lists Selenium and Cypress when the Playwright framework menu opens', async () => {
+    const user = userEvent.setup()
+    const patchSettings = vi.fn()
+    renderStudio(<SelectorStudioView model={model({ patchSettings })} />)
+    await user.click(screen.getByRole('button', { name: /automation framework/i }))
+    expect(await screen.findByRole('menuitem', { name: 'Selenium' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Cypress' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Puppeteer' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'WebdriverIO' })).toBeInTheDocument()
+    await user.click(screen.getByRole('menuitem', { name: 'Selenium' }))
+    expect(patchSettings).toHaveBeenCalledWith({ defaultFramework: 'selenium' })
   })
 
   it('re-runs batch verification from the toolbar play control', async () => {

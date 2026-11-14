@@ -18,6 +18,12 @@ import {
   type FrameworkId,
   type LocatorGroup,
 } from '@/core/engines/selector-studio'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/shared/components/ui/dropdown-menu'
 import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { cn } from '@/shared/utils/cn'
 
@@ -106,7 +112,6 @@ export function SelectorStudioHubShell({
   const [playgroundPinned, setPlaygroundPinned] = useState<SelectorCandidate | null>(null)
   const [name, setName] = useHistoryNameState()
   const [outputMode, setOutputMode] = useState<OutputMode>('standard')
-  const [langOpen, setLangOpen] = useState(false)
   const [typeOpen, setTypeOpen] = useState(false)
   const [selectorKind, setSelectorKind] = useState<'mixed' | 'css' | 'xpath'>('mixed')
   const [customInput, setCustomInput] = useState('')
@@ -316,13 +321,16 @@ export function SelectorStudioHubShell({
         }
         .selector-studio-hub .code-font { font-family: ui-monospace, 'JetBrains Mono', Consolas, monospace; }
         .selector-studio-hub--pane .hub-strip { padding-top: 0.25rem; padding-bottom: 0.25rem; }
-        .selector-studio-hub--pane .hub-mode-scroll { scrollbar-width: thin; }
       `}</style>
 
       <h1 className="sr-only">{t('studio.hub.title')}</h1>
 
-      <div className="flex h-8 shrink-0 items-center gap-1.5 overflow-x-auto border-b border-[#dadce0] bg-[#f1f3f4] px-2 text-[11px]">
-        <div className="flex h-full shrink-0 items-stretch gap-0.5" role="tablist" aria-label={t('studio.panel.navLabel')}>
+      <div className="flex h-8 shrink-0 items-center gap-1.5 overflow-visible border-b border-[#dadce0] bg-[#f1f3f4] px-2 text-[11px]">
+        <div
+          className="flex h-full min-w-0 flex-1 items-stretch gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          role="tablist"
+          aria-label={t('studio.panel.navLabel')}
+        >
           {devtoolsTabs.map((item) => (
             <button
               key={item.id}
@@ -330,7 +338,7 @@ export function SelectorStudioHubShell({
               role="tab"
               aria-selected={tab === item.id}
               className={cn(
-                'flex h-full items-center px-2.5 transition-colors',
+                'flex h-full shrink-0 items-center px-2.5 transition-colors',
                 tab === item.id
                   ? 'relative border border-[#dadce0] border-t-2 border-t-[#1a73e8] bg-white font-medium text-[#1a73e8]'
                   : 'text-[#5f6368] hover:text-[#202124]',
@@ -344,8 +352,8 @@ export function SelectorStudioHubShell({
 
         {tab === 'selectors' && (
           <>
-            <span className="hidden h-4 w-px shrink-0 bg-[#dadce0] sm:block" aria-hidden />
-            <div className="flex min-w-0 items-center gap-1 overflow-x-auto">
+            <span className="h-4 w-px shrink-0 bg-[#dadce0]" aria-hidden />
+            <div className="flex shrink-0 items-center gap-1">
               <button
                 type="button"
                 className={cn(
@@ -375,33 +383,32 @@ export function SelectorStudioHubShell({
                 <TheaterIcon className="size-2.5 shrink-0 text-[var(--sh-orange)]" aria-hidden />
                 {t('studio.hub.modePlaywright')}
               </button>
-              <div className="relative shrink-0">
-                <button
-                  type="button"
-                  className="flex items-center gap-1 rounded border border-[#dadce0] bg-white px-2 py-0.5 text-[11px] hover:bg-[#f8f9fa]"
-                  onClick={() => setLangOpen((v) => !v)}
-                >
-                  {frameworkLabel}
-                  <ChevronDownIcon className="size-2 text-[#5f6368]" />
-                </button>
-                {langOpen && (
-                  <div className="absolute left-0 z-30 mt-1 w-28 rounded border border-[#dadce0] bg-white py-1 shadow-lg">
-                    {FRAMEWORK_OPTIONS.map((fw) => (
-                      <button
-                        key={fw}
-                        type="button"
-                        className="block w-full px-2.5 py-1 text-left text-[11px] first:font-medium hover:bg-[var(--sh-orange)] hover:text-white"
-                        onClick={() => {
-                          model.patchSettings({ defaultFramework: fw })
-                          setLangOpen(false)
-                        }}
-                      >
-                        {FRAMEWORK_LABELS[fw]}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={t('studio.hub.frameworkMenu')}
+                    className="flex items-center gap-1 rounded border border-[#dadce0] bg-white px-2 py-0.5 text-[11px] hover:bg-[#f8f9fa]"
+                  >
+                    {frameworkLabel}
+                    <ChevronDownIcon className="size-2 text-[#5f6368]" aria-hidden />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" side="bottom" className="min-w-[10.5rem] text-[11px]">
+                  {FRAMEWORK_OPTIONS.map((fw) => (
+                    <DropdownMenuItem
+                      key={fw}
+                      className={cn('text-[11px]', fw === settings.defaultFramework && 'font-medium')}
+                      onSelect={() => {
+                        model.patchSettings({ defaultFramework: fw })
+                        setOutputMode(fw === 'playwright' ? 'playwright' : 'standard')
+                      }}
+                    >
+                      {FRAMEWORK_LABELS[fw]}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </>
         )}

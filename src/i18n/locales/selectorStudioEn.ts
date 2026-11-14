@@ -28,6 +28,7 @@ export const selectorStudioStrings = {
   'studio.hub.tabSelectors': 'Selectors',
   'studio.hub.modeStandard': 'Standard',
   'studio.hub.modePlaywright': 'Playwright',
+  'studio.hub.frameworkMenu': 'Automation framework',
   'studio.hub.syntaxGuide': 'Selector info and syntax guide',
   'studio.hub.typeMixed': 'XPath/cssSelector',
   'studio.hub.inputPlaceholder': 'Write & verify XPath, Playwright & CSS Selectors… Click +',
