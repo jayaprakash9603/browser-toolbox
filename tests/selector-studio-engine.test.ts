@@ -8,6 +8,8 @@ import { bestCandidate, generateCandidates } from '@/core/engines/selector-studi
 import { applyScores, rankCandidates, uniquenessOf } from '@/core/engines/selector-studio/score'
 import { isGeneratedClass, looksStableId } from '@/core/engines/selector-studio/stability'
 import type { SelectorCandidate, SelectorSnapshot } from '@/core/engines/selector-studio/types'
+import { filterLocatorGroup } from '@/core/engines/selector-studio/locatorGroups'
+import { matchBadgeState } from '@/core/engines/selector-studio/matchStatus'
 import { applyEvaluation } from '@/core/engines/selector-studio/validate'
 import { generateXPathCandidates } from '@/core/engines/selector-studio/xpath'
 import { generateCssCandidates } from '@/core/engines/selector-studio/css'
@@ -209,6 +211,88 @@ describe('selector-studio generation', () => {
     const all = generateCandidates(plain)
     expect(all.some((item) => item.strategy === 'structural')).toBe(true)
     expect(all.every((item) => item.expression.length > 0)).toBe(true)
+  })
+})
+
+describe('selector-studio match status', () => {
+  it('distinguishes unique, multiple, none, wrong, and invalid badges', () => {
+    expect(
+      matchBadgeState(
+        candidate({
+          expression: '#ok',
+          uniqueness: 'unique',
+          matchCount: 1,
+          intendedMatched: true,
+          syntaxValid: true,
+        }),
+      ).tone,
+    ).toBe('unique')
+
+    expect(
+      matchBadgeState(
+        candidate({
+          expression: 'button',
+          uniqueness: 'multiple',
+          matchCount: 5,
+          intendedMatched: true,
+          syntaxValid: true,
+        }),
+      ).tone,
+    ).toBe('multiple')
+
+    expect(
+      matchBadgeState(
+        candidate({ expression: '#missing', uniqueness: 'none', matchCount: 0, intendedMatched: false, syntaxValid: true }),
+      ).tone,
+    ).toBe('none')
+
+    expect(
+      matchBadgeState(
+        candidate({
+          expression: '#other',
+          uniqueness: 'unique',
+          matchCount: 1,
+          intendedMatched: false,
+          syntaxValid: true,
+        }),
+      ).tone,
+    ).toBe('wrong')
+
+    expect(
+      matchBadgeState(candidate({ expression: '//[', syntaxValid: false, matchCount: 0, intendedMatched: false })).tone,
+    ).toBe('invalid')
+  })
+})
+
+describe('selector-studio locator groups', () => {
+  it('filters recommended unique locators and axis strategies', () => {
+    const picks = [
+      candidate({ expression: '[data-testid="a"]', strategy: 'test-attribute', uniqueness: 'unique', matchCount: 1, intendedMatched: true, syntaxValid: true }),
+      candidate({ expression: 'button', strategy: 'attribute', uniqueness: 'multiple', matchCount: 2, intendedMatched: true, syntaxValid: true }),
+      candidate({ expression: '//form//button', strategy: 'parent-child', kind: 'xpath' }),
+    ]
+    expect(filterLocatorGroup(picks, 'recommended')).toHaveLength(1)
+    expect(filterLocatorGroup(picks, 'axes').some((item) => item.strategy === 'parent-child')).toBe(true)
+  })
+
+  it('omits axis strategies when includeAxes is false', () => {
+    const node = snapshot({
+      tag: 'button',
+      parentChain: [
+        {
+          tag: 'form',
+          id: 'login',
+          classes: [],
+          attributes: {},
+          indexAmongSameTag: 1,
+          indexAmongSiblings: 1,
+        },
+      ],
+    })
+    const withAxes = generateCandidates(node, 'stable', { includeAxes: true })
+    const withoutAxes = generateCandidates(node, 'stable', { includeAxes: false })
+    expect(withoutAxes.length).toBeLessThan(withAxes.length)
+    expect(withoutAxes.every((item) => !['parent-child', 'sibling', 'ancestor'].includes(item.strategy))).toBe(true)
   })
 })
 

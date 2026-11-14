@@ -13,7 +13,12 @@ import {
 import { useMemo, useState, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { FRAMEWORK_LABELS, type FrameworkId } from '@/core/engines/selector-studio'
+import {
+  filterLocatorGroup,
+  FRAMEWORK_LABELS,
+  type FrameworkId,
+  type LocatorGroup,
+} from '@/core/engines/selector-studio'
 import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { cn } from '@/shared/utils/cn'
 
@@ -23,8 +28,8 @@ import { HubSettingsPanel } from './HubSettingsPanel'
 import { HubSideRail } from './HubSideRail'
 import { InspectPanel, type InspectSection } from './InspectPanel'
 import { Playground } from './Playground'
+import { RelationshipExplorer } from './RelationshipExplorer'
 import { SelectorsHubTable } from './SelectorsHubTable'
-import { isRelativeCandidate } from './candidateRowLabel'
 import {
   CodePanel,
   elementChip,
@@ -95,8 +100,8 @@ export function SelectorStudioHubShell({
   const [typeOpen, setTypeOpen] = useState(false)
   const [selectorKind, setSelectorKind] = useState<'mixed' | 'css' | 'xpath'>('mixed')
   const [customInput, setCustomInput] = useState('')
-  const [axesOn, setAxesOn] = useState(true)
-  const [autoSuggestOn, setAutoSuggestOn] = useState(true)
+  const [locatorGroup, setLocatorGroup] = useState<LocatorGroup>('recommended')
+  const [selectorSearch, setSelectorSearch] = useState('')
   const [fontScale, setFontScale] = useState<10 | 11 | 12>(11)
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
@@ -106,15 +111,26 @@ export function SelectorStudioHubShell({
   const frameworkLabel = FRAMEWORK_LABELS[settings.defaultFramework]
 
   const tableItems = useMemo(() => {
-    let list = model.candidates
-    if (!axesOn) list = list.filter((item) => !isRelativeCandidate(item))
+    let list = filterLocatorGroup(model.candidates, locatorGroup)
+    if (locatorGroup === 'recommended' && list.length === 0) {
+      list = model.candidates
+    }
     if (selectorKind === 'css') list = list.filter((item) => item.kind === 'css')
     if (selectorKind === 'xpath') list = list.filter((item) => item.kind === 'xpath')
-    if (outputMode === 'playwright') {
-      return list.filter((item) => item.strategy === 'test-attribute' || item.kind === 'xpath').slice(0, 12)
+    const q = selectorSearch.trim().toLowerCase()
+    if (q) {
+      list = list.filter(
+        (item) =>
+          item.expression.toLowerCase().includes(q) ||
+          item.strategy.toLowerCase().includes(q) ||
+          item.kind.includes(q),
+      )
     }
-    return list.slice(0, 24)
-  }, [axesOn, model.candidates, outputMode, selectorKind])
+    if (outputMode === 'playwright') {
+      list = list.filter((item) => item.strategy === 'test-attribute' || item.kind === 'xpath')
+    }
+    return list
+  }, [locatorGroup, model.candidates, outputMode, selectorKind, selectorSearch])
 
   const showToast = (message: string) => {
     setToast(message)
@@ -157,8 +173,28 @@ export function SelectorStudioHubShell({
   }
 
   const runAll = () => {
-    tableItems.forEach((item) => void model.testCandidate(item))
+    void model.verifyAllCandidates()
     showToast(t('studio.hub.rerunAll'))
+  }
+
+  const exportResults = () => {
+    const payload = tableItems.map((item) => ({
+      kind: item.kind,
+      strategy: item.strategy,
+      expression: item.expression,
+      matchCount: item.matchCount,
+      uniqueness: item.uniqueness,
+      intendedMatched: item.intendedMatched,
+      score: item.score,
+    }))
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = 'selector-studio-locators.json'
+    anchor.click()
+    window.setTimeout(() => URL.revokeObjectURL(url), 500)
+    showToast(t('studio.hub.exported'))
   }
 
   const cycleFont = () => {
@@ -421,11 +457,55 @@ export function SelectorStudioHubShell({
             </button>
           </div>
 
+          <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-[#e1e4e8] bg-[#f6f8fa] px-2.5 py-1 text-[11px] text-[#57606a]">
+            <select
+              className="h-6 max-w-[9rem] rounded border border-[#d0d7de] bg-white px-1.5 text-[10px] text-[#24292f]"
+              value={locatorGroup}
+              aria-label={t('studio.hub.strategyGroup')}
+              onChange={(e) => setLocatorGroup(e.target.value as LocatorGroup)}
+            >
+              {(
+                [
+                  'recommended',
+                  'css',
+                  'xpath',
+                  'text',
+                  'parent',
+                  'sibling',
+                  'axes',
+                  'indexed',
+                  'absolute',
+                  'all',
+                ] as const
+              ).map((id) => (
+                <option key={id} value={id}>
+                  {t(`studio.hub.group.${id}`)}
+                </option>
+              ))}
+            </select>
+            <input
+              type="search"
+              value={selectorSearch}
+              placeholder={t('studio.hub.filterPlaceholder')}
+              className="h-6 min-w-0 flex-1 rounded border border-[#d0d7de] bg-white px-1.5 text-[10px]"
+              onChange={(e) => setSelectorSearch(e.target.value)}
+            />
+          </div>
+
           <div className="flex shrink-0 items-center justify-between border-b border-[#e1e4e8] bg-[#f6f8fa] px-2.5 py-1 text-[11px] text-[#57606a]">
             <div className="flex items-center gap-2.5">
               <label className="flex cursor-pointer items-center gap-1.5">
                 <span className="font-medium text-[#24292f]">{t('studio.hub.axes')}</span>
-                <HubToggle id="axes-switch" checked={axesOn} onToggle={() => setAxesOn((v) => !v)} />
+                <HubToggle
+                  id="axes-switch"
+                  checked={settings.includeAxes}
+                  onToggle={() => {
+                    const next = !settings.includeAxes
+                    void model.patchSettings({ includeAxes: next }).then(() => {
+                      if (snapshot) void model.reanalyze()
+                    })
+                  }}
+                />
               </label>
               <button
                 type="button"
@@ -441,16 +521,17 @@ export function SelectorStudioHubShell({
               <button type="button" className="transition hover:text-[var(--sh-orange)]" title={t('studio.hub.fontSize')} onClick={cycleFont}>
                 <TypeIcon className="size-2.5" />
               </button>
+              <button type="button" className="transition hover:text-[var(--sh-orange)]" title={t('studio.hub.export')} onClick={exportResults}>
+                <FileTextIcon className="size-2.5" />
+              </button>
             </div>
             <label className="flex cursor-pointer items-center gap-1.5">
               <span className="text-[10px]">{t('studio.hub.autoSuggest')}</span>
               <HubToggle
                 id="autosuggest-switch"
-                checked={autoSuggestOn}
+                checked={settings.livePageSync}
                 onToggle={() => {
-                  const next = !autoSuggestOn
-                  setAutoSuggestOn(next)
-                  model.patchSettings({ livePageSync: next })
+                  void model.patchSettings({ livePageSync: !settings.livePageSync })
                 }}
               />
             </label>
@@ -476,6 +557,7 @@ export function SelectorStudioHubShell({
 
           <div className={cn('flex min-h-[200px] flex-1', disabled && 'pointer-events-none opacity-45')}>
             <div className="min-h-0 flex-1 overflow-y-auto border-r border-[#e1e4e8]">
+              {snapshot && <RelationshipExplorer snapshot={snapshot} />}
               <SelectorsHubTable
                 model={model}
                 items={tableItems}

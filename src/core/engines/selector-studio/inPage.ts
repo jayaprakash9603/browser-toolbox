@@ -93,9 +93,10 @@ export function highlightSelectorMatches(
     pointerEvents: 'none',
   })
   const intended = findByIdentity(identityPath)
-  for (const node of nodes) {
+  const total = nodes.length
+  nodes.forEach((node, index) => {
     const rect = node.getBoundingClientRect()
-    if (rect.width < 1 || rect.height < 1) continue
+    if (rect.width < 1 || rect.height < 1) return
     const box = document.createElement('div')
     const selected = intended === node
     Object.assign(box.style, {
@@ -104,13 +105,29 @@ export function highlightSelectorMatches(
       left: `${rect.left}px`,
       width: `${rect.width}px`,
       height: `${rect.height}px`,
-      border: selected ? '2px solid #4f46e5' : '1px solid rgba(14, 165, 233, 0.9)',
-      background: selected ? 'rgba(79, 70, 229, 0.16)' : 'rgba(14, 165, 233, 0.1)',
+      border: selected ? '2px solid #ff7700' : '1px solid rgba(14, 165, 233, 0.9)',
+      background: selected ? 'rgba(255, 119, 0, 0.14)' : 'rgba(14, 165, 233, 0.1)',
       boxSizing: 'border-box',
       borderRadius: '2px',
     })
+    const label = document.createElement('span')
+    const matchIndex = index + 1
+    label.textContent = selected && total === 1 ? '1' : `${matchIndex}${total > 1 ? `/${total}` : ''}`
+    Object.assign(label.style, {
+      position: 'absolute',
+      top: '-1px',
+      left: '-1px',
+      font: 'bold 9px/14px system-ui,sans-serif',
+      color: '#fff',
+      background: selected ? '#ff7700' : '#0ea5e9',
+      borderRadius: '8px',
+      padding: '0 4px',
+      minWidth: '14px',
+      textAlign: 'center',
+    })
+    box.appendChild(label)
     layer.appendChild(box)
-  }
+  })
   document.documentElement.appendChild(layer)
   return { count: nodes.length }
 }

@@ -35,4 +35,6 @@ export type {
 } from './types'
 export { RANK_MODES, STABLE_ATTRIBUTES, STRATEGY_PRIORITY, TEST_ATTRIBUTES } from './types'
 export { applyEvaluation, interpretQuery, statusLabel } from './validate'
+export { filterLocatorGroup, type LocatorGroup } from './locatorGroups'
+export { matchBadgeState, type MatchBadgeState, type MatchBadgeTone } from './matchStatus'
 export { generateXPathCandidates, xpathStructural } from './xpath'

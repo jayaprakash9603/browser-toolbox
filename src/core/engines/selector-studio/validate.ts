@@ -32,14 +32,17 @@ export function applyEvaluation(
 }
 
 export function statusLabel(candidate: SelectorCandidate): string {
-  if (candidate.syntaxValid === false) return 'Invalid syntax'
+  if (candidate.syntaxValid === false) return 'INVALID — syntax error'
   if (candidate.context === 'requires-shadow') return 'Requires a shadow-root context'
   if (candidate.context === 'requires-frame') return 'Requires a frame context'
   if (candidate.context === 'cannot-verify') return 'Cannot be verified in the current context'
-  if (candidate.uniqueness === 'unique' && candidate.intendedMatched !== false) return 'Valid and unique'
-  if (candidate.uniqueness === 'multiple') return 'Valid but matches multiple elements'
-  if (candidate.uniqueness === 'none') return 'Valid but matches no elements'
-  if (candidate.intendedMatched === false) return 'Intended element not matched'
+  if (candidate.intendedMatched === false && (candidate.matchCount ?? 0) > 0) {
+    return 'WRONG ELEMENT — matches do not include the selected node'
+  }
+  if (candidate.uniqueness === 'unique' && candidate.intendedMatched !== false) return 'UNIQUE — 1 match on selected element'
+  if (candidate.uniqueness === 'multiple') return `MULTIPLE — ${candidate.matchCount ?? '?'} matches`
+  if (candidate.uniqueness === 'none') return 'NOT FOUND — 0 matches'
+  if (candidate.intendedMatched === false) return 'WRONG ELEMENT'
   if (candidate.syntaxValid) return 'Valid'
   return 'Not yet tested'
 }

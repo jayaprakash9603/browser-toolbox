@@ -2,15 +2,20 @@ import { CopyIcon, Loader2Icon, PlayIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import type { SelectorCandidate } from '@/core/engines/selector-studio'
+import { matchBadgeState, statusLabel, type SelectorCandidate } from '@/core/engines/selector-studio'
 import { cn } from '@/shared/utils/cn'
 
 import type { SelectorStudioModel } from '../useSelectorStudio'
 import { candidateRowLabel } from './candidateRowLabel'
 
-function matchBadge(candidate: SelectorCandidate): string | null {
-  if (candidate.matchCount == null) return null
-  return String(candidate.matchCount)
+const BADGE_TONE: Record<ReturnType<typeof matchBadgeState>['tone'], string> = {
+  unique: 'bg-[#16a34a]',
+  multiple: 'bg-[#d97706]',
+  none: 'bg-[#dc2626]',
+  wrong: 'bg-[#b91c1c]',
+  invalid: 'bg-[#dc2626]',
+  untested: 'bg-[#94a3b8]',
+  blocked: 'bg-[#64748b]',
 }
 
 export function SelectorsHubTable({
@@ -42,6 +47,7 @@ export function SelectorsHubTable({
     setRunningId(candidate.id)
     try {
       await model.testCandidate(candidate)
+      await model.highlight(candidate)
     } finally {
       setRunningId(null)
     }
@@ -63,7 +69,7 @@ export function SelectorsHubTable({
         {items.map((candidate, index) => {
           const selected = selectedId === candidate.id || model.active?.id === candidate.id
           const isXPath = candidate.kind === 'xpath'
-          const badge = matchBadge(candidate)
+          const badge = matchBadgeState(candidate)
           const zebra = index % 2 === 0
 
           return (
@@ -115,21 +121,16 @@ export function SelectorsHubTable({
                   </button>
                 </div>
               </td>
-              <td className="w-6 px-1 py-2 align-middle">
-                {badge != null ? (
-                  <span
-                    className="flex size-[17px] items-center justify-center rounded-full bg-[#00adb5] text-[9.5px] font-bold text-white"
-                    title={
-                      candidate.uniqueness === 'unique'
-                        ? t('studio.hub.uniqueCount', { count: candidate.matchCount })
-                        : t('studio.hub.matchCount', { count: candidate.matchCount })
-                    }
-                  >
-                    {badge}
-                  </span>
-                ) : (
-                  <span className="inline-block size-[17px]" aria-hidden />
-                )}
+              <td className="w-8 px-1 py-2 align-middle">
+                <span
+                  className={cn(
+                    'flex min-h-[17px] min-w-[17px] items-center justify-center rounded-full px-0.5 text-[8px] font-bold text-white',
+                    BADGE_TONE[badge.tone],
+                  )}
+                  title={statusLabel(candidate)}
+                >
+                  {badge.shortLabel}
+                </span>
               </td>
               <td className="w-[110px] whitespace-nowrap px-1.5 py-2 align-middle font-medium text-[#24292f]">
                 {candidateRowLabel(candidate)}
@@ -137,9 +138,10 @@ export function SelectorsHubTable({
               <td className="min-w-0 py-2 pl-1 pr-2 align-middle">
                 <code
                   className={cn(
-                    'code-font break-all font-mono leading-snug',
+                    'code-font block max-w-full truncate font-mono leading-snug',
                     isXPath ? 'font-semibold text-[var(--sh-orange,#ff7700)]' : 'text-[#57606a]',
                   )}
+                  title={candidate.expression}
                 >
                   {candidate.expression}
                 </code>

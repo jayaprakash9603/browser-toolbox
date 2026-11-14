@@ -56,6 +56,26 @@ export function HubSettingsPanel({
         />
         {t('studio.autoHighlight')}
       </label>
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={model.settings.autoVerify}
+          onChange={(event) => void model.patchSettings({ autoVerify: event.target.checked })}
+        />
+        {t('studio.hub.autoVerify')}
+      </label>
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={model.settings.includeAxes}
+          onChange={(event) =>
+            void model.patchSettings({ includeAxes: event.target.checked }).then(() => {
+              if (model.snapshot) void model.reanalyze()
+            })
+          }
+        />
+        {t('studio.hub.axes')}
+      </label>
       <div className="space-y-1 border-t border-border/60 pt-2 text-muted-foreground">
         <p className="font-medium text-foreground">{t('studio.shortcuts')}</p>
         <p>{t('studio.shortcut.pick')}</p>

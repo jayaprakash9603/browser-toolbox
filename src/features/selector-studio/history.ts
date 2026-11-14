@@ -26,6 +26,10 @@ export interface StudioSettings {
   enabled: boolean
   /** Apply element picks from the page automatically */
   livePageSync: boolean
+  /** Test generated locators against the live DOM after each pick */
+  autoVerify: boolean
+  /** Include axis / relative / sibling locator strategies when generating */
+  includeAxes: boolean
 }
 
 export interface StudioStore {
@@ -39,6 +43,8 @@ export const DEFAULT_SETTINGS: StudioSettings = {
   autoHighlight: false,
   enabled: true,
   livePageSync: true,
+  autoVerify: true,
+  includeAxes: true,
 }
 
 function normalize(store?: Partial<StudioStore>): StudioStore {

@@ -95,8 +95,26 @@ export function useSelectorStudio(client: StudioPageClient) {
       const id = ++request.current
       setAnalyzing(true)
       setError(null)
-      const drafts = generateCandidates(next, mode)
-      const scored = rankCandidates(applyScores(drafts, next), mode)
+      const drafts = generateCandidates(next, mode, { includeAxes: settingsRef.current.includeAxes })
+      let scored = rankCandidates(applyScores(drafts, next), mode)
+      const canVerify =
+        settingsRef.current.autoVerify &&
+        next.connected &&
+        next.frame.isTop &&
+        !next.shadowHosts.length
+      if (canVerify) {
+        try {
+          const queries = scored.map((item) => ({ kind: item.kind, expression: item.expression }))
+          const results = await client.evaluate(queries, next.identityPath || null)
+          const verified = scored.map((item, index) =>
+            results[index] ? applyEvaluation(item, results[index]) : item,
+          )
+          scored = rankCandidates(applyScores(verified, next), mode)
+        } catch {
+          /* keep untested scores if the tab is unavailable */
+        }
+      }
+      if (id !== request.current) return
       setCandidates(scored)
       setActive(scored[0] ?? null)
       setMatchNotice('')
@@ -283,6 +301,24 @@ export function useSelectorStudio(client: StudioPageClient) {
     setHighlighting(false)
   }, [client])
 
+  const verifyAllCandidates = useCallback(async () => {
+    if (!snapshot || !candidates.length) return
+    if (!snapshot.connected || !snapshot.frame.isTop || snapshot.shadowHosts.length) return
+    setAnalyzing(true)
+    try {
+      const queries = candidates.map((item) => ({ kind: item.kind, expression: item.expression }))
+      const results = await client.evaluate(queries, snapshot.identityPath || null)
+      const verified = candidates.map((item, index) =>
+        results[index] ? applyEvaluation(item, results[index]) : item,
+      )
+      const ranked = rankCandidates(applyScores(verified, snapshot), settings.rankMode)
+      setCandidates(ranked)
+      setActive((current) => ranked.find((item) => item.id === current?.id) ?? ranked[0] ?? null)
+    } finally {
+      setAnalyzing(false)
+    }
+  }, [candidates, client, settings.rankMode, snapshot])
+
   const saveActive = useCallback(
     async (name?: string, favorite = false) => {
       if (!active) return
@@ -357,6 +393,7 @@ export function useSelectorStudio(client: StudioPageClient) {
     pick,
     reanalyze,
     testCandidate,
+    verifyAllCandidates,
     highlight,
     clearHighlight,
     saveActive,

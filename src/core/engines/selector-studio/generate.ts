@@ -3,11 +3,23 @@ import { applyScores, rankCandidates } from './score'
 import type { RankMode, SelectorCandidate, SelectorSnapshot } from './types'
 import { generateXPathCandidates } from './xpath'
 
+const AXIS_STRATEGIES = new Set<SelectorCandidate['strategy']>([
+  'relative',
+  'ancestor',
+  'parent-child',
+  'sibling',
+  'structural',
+])
+
 export function generateCandidates(
   snapshot: SelectorSnapshot,
   mode: RankMode = 'stable',
+  options?: { includeAxes?: boolean },
 ): SelectorCandidate[] {
-  const raw = [...generateCssCandidates(snapshot), ...generateXPathCandidates(snapshot)]
+  let raw = [...generateCssCandidates(snapshot), ...generateXPathCandidates(snapshot)]
+  if (options?.includeAxes === false) {
+    raw = raw.filter((item) => !AXIS_STRATEGIES.has(item.strategy))
+  }
   return rankCandidates(applyScores(raw, snapshot), mode)
 }
 
