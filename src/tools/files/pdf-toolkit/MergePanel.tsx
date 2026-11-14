@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type DragEvent } from 'react'
+import { useEffect, useId, useRef, useState, type DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { ArrowDownIcon, ArrowUpIcon, CircleAlertIcon, CombineIcon, FilePlus2Icon, GripVerticalIcon, LoaderCircleIcon, Trash2Icon, XIcon } from 'lucide-react'
@@ -14,8 +14,8 @@ import {
   type PdfDocumentHandle,
   type PdfPageInfo,
 } from '@/core/engines/pdf/pdfjs'
-import { FileDropZone } from '@/shared/components/files'
-import { ActionBar, OptionField, PanelError, PanelSection } from '@/shared/components/toolkit'
+import { FileDropZone, sanitizePdfStem } from '@/shared/components/files'
+import { ActionBar, PanelError, PanelSection } from '@/shared/components/toolkit'
 import { PdfPageImage, releasePageImages } from '@/shared/components/pdf'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -100,7 +100,8 @@ export function MergePanel() {
   const reduce = useReducedMotion()
   const { state, showResults } = usePdfSession()
   const [items, setItems] = useState<MergeItem[]>([])
-  const [name, setName] = useState('merged')
+  const [name, setName] = useState('')
+  const outputNameId = useId()
   const [dragId, setDragId] = useState<string | null>(null)
   const [overId, setOverId] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
@@ -224,7 +225,7 @@ export function MergePanel() {
       })
       const firstPdf = items.findIndex((item) => item.kind === 'pdf')
       const bytes = await assemblePdf(sources, specs, { metadataFrom: firstPdf >= 0 ? 0 : undefined })
-      const clean = (name.trim() || 'merged').replace(/[\\/:*?"<>|]+/g, '').replace(/\.pdf$/i, '')
+      const clean = sanitizePdfStem(name)
       showResults({
         artifacts: [
           pdfArtifact(`${clean}.pdf`, bytes, {
@@ -409,12 +410,26 @@ export function MergePanel() {
       </PanelSection>
 
       <PanelSection title={t('pdf.merge.output')} icon={<FilePlus2Icon />}>
-        <OptionField label={t('pdf.merge.fileName')} className="max-w-sm">
+        <div className="flex max-w-sm flex-col gap-1">
+          <label htmlFor={outputNameId} className="text-[11px] font-medium text-muted-foreground">
+            {t('pdf.merge.outputName')}
+          </label>
+          <p className="text-[10px] leading-snug text-muted-foreground">{t('pdf.merge.outputNameHint')}</p>
           <div className="flex items-center gap-1">
-            <Input value={name} onChange={(event) => setName(event.target.value)} className="h-8" />
-            <span className="text-xs text-muted-foreground">.pdf</span>
+            <Input
+              id={outputNameId}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder={t('pdf.merge.outputNamePlaceholder')}
+              autoComplete="off"
+              spellCheck={false}
+              className="h-8"
+            />
+            <span className="shrink-0 text-xs text-muted-foreground" aria-hidden>
+              {t('pdf.merge.outputNameSuffix')}
+            </span>
           </div>
-        </OptionField>
+        </div>
       </PanelSection>
 
       {error && <PanelError message={error} />}

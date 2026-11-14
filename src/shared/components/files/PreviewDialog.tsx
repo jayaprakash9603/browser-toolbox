@@ -24,6 +24,7 @@ import {
   artifactsToZip,
   downloadArtifact,
   openArtifact,
+  resolveArtifactName,
   splitFileName,
   type FileArtifact,
 } from './artifact'
@@ -63,7 +64,7 @@ function SizeDelta({ before, after }: { before: number; after: number }) {
 export function PreviewDialog({ artifacts, index, onIndexChange, zipName = 'files.zip', actions }: PreviewDialogProps) {
   const { t } = useTranslation()
   const reduce = useReducedMotion()
-  const [names, setNames] = useState<Record<string, string>>({})
+  const [stemOverrides, setStemOverrides] = useState<Record<string, string>>({})
   const [saved, setSaved] = useState<string | null>(null)
   const [zipping, setZipping] = useState(false)
   const [direction, setDirection] = useState(1)
@@ -74,8 +75,9 @@ export function PreviewDialog({ artifacts, index, onIndexChange, zipName = 'file
   const open = index !== null && index < artifacts.length
   const artifact = open ? artifacts[index] : null
   const count = artifacts.length
-  const name = artifact ? names[artifact.id] ?? artifact.name : ''
-  const { stem, ext } = splitFileName(name)
+  const name = artifact ? resolveArtifactName(artifact, stemOverrides) : ''
+  const { ext } = splitFileName(artifact?.name ?? name)
+  const stem = artifact ? (artifact.id in stemOverrides ? stemOverrides[artifact.id] : splitFileName(artifact.name).stem) : ''
   const text = artifact ? artifactText(artifact) : null
 
   const go = (step: number) => {
@@ -86,8 +88,7 @@ export function PreviewDialog({ artifacts, index, onIndexChange, zipName = 'file
 
   const rename = (value: string) => {
     if (!artifact) return
-    const clean = value.replace(/[\\/:*?"<>|]+/g, '')
-    setNames((current) => ({ ...current, [artifact.id]: ext ? `${clean || 'file'}.${ext}` : clean || 'file' }))
+    setStemOverrides((current) => ({ ...current, [artifact.id]: value.replace(/[\\/:*?"<>|]+/g, '') }))
   }
 
   const flashSaved = (id: string) => {
@@ -105,7 +106,13 @@ export function PreviewDialog({ artifacts, index, onIndexChange, zipName = 'file
   const downloadAll = async () => {
     setZipping(true)
     try {
-      downloadBlob(await artifactsToZip(artifacts, names), zipName)
+      downloadBlob(
+        await artifactsToZip(
+          artifacts,
+          Object.fromEntries(artifacts.map((entry) => [entry.id, resolveArtifactName(entry, stemOverrides)])),
+        ),
+        zipName,
+      )
       flashSaved('all')
     } finally {
       setZipping(false)

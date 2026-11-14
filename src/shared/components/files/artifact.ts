@@ -44,6 +44,21 @@ export function splitFileName(name: string): { stem: string; ext: string } {
   return dot > 0 ? { stem: name.slice(0, dot), ext: name.slice(dot + 1) } : { stem: name, ext: '' }
 }
 
+/** Base name for a new PDF (no path, no .pdf). Empty or invalid input uses `fallback`. */
+export function sanitizePdfStem(raw: string, fallback = 'merged'): string {
+  const stripped = raw.trim().replace(/[\\/:*?"<>|]+/g, '').replace(/\.pdf$/i, '').trim()
+  return stripped || fallback
+}
+
+/** Download name after inline rename; blank stem falls back to the artifact’s original name. */
+export function resolveArtifactName(artifact: FileArtifact, stemOverrides: Record<string, string>): string {
+  const { stem: defaultStem, ext } = splitFileName(artifact.name)
+  const raw = artifact.id in stemOverrides ? stemOverrides[artifact.id] : defaultStem
+  const clean = raw.replace(/[\\/:*?"<>|]+/g, '').trim()
+  const finalStem = clean || defaultStem || 'download'
+  return ext ? `${finalStem}.${ext}` : finalStem
+}
+
 export function downloadArtifact(artifact: FileArtifact, name = artifact.name): void {
   downloadBlob(artifact.blob, name)
 }

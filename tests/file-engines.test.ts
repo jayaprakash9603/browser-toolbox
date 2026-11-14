@@ -2,6 +2,8 @@ import { strFromU8, strToU8, unzipSync } from 'fflate'
 import md5 from 'md5'
 import { describe, expect, it } from 'vitest'
 
+import { resolveArtifactName, sanitizePdfStem, type FileArtifact } from '@/shared/components/files'
+
 import {
   gunzipFile,
   gzipFile,
@@ -316,5 +318,26 @@ describe('PDF layout', () => {
     for (const page of layout.pages) {
       expect(page.items.some((item) => item.kind === 'text' && item.text === 'name')).toBe(true)
     }
+  })
+})
+
+describe('artifact names', () => {
+  it('falls back when the merge name is blank or only invalid characters', () => {
+    expect(sanitizePdfStem('')).toBe('merged')
+    expect(sanitizePdfStem('  .pdf  ')).toBe('merged')
+    expect(sanitizePdfStem('???')).toBe('merged')
+    expect(sanitizePdfStem(' Quarterly ')).toBe('Quarterly')
+  })
+
+  it('keeps the original stem when the download rename box is cleared', () => {
+    const artifact = {
+      id: 'a',
+      name: 'merged.pdf',
+      blob: new Blob(),
+      format: 'PDF',
+      preview: { kind: 'pdfFile' as const },
+    } satisfies FileArtifact
+    expect(resolveArtifactName(artifact, { a: '' })).toBe('merged.pdf')
+    expect(resolveArtifactName(artifact, { a: 'final' })).toBe('final.pdf')
   })
 })
