@@ -121,9 +121,9 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       justify-content: center;
       background: #eceff3;
       color: #1e293b;
-      --tbx-accent: #0d9488;
-      --tbx-accent-hover: #0f766e;
-      --tbx-accent-pressed: #115e59;
+      --tbx-accent: #539fff;
+      --tbx-accent-hover: #3a8ef0;
+      --tbx-accent-pressed: #2f7ed6;
       --tbx-panel-bg: #fff;
       --tbx-panel-border: #dde3ea;
       --tbx-panel-muted: #64748b;
@@ -233,6 +233,32 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       mix-blend-mode: difference;
     }
     .status-icons { display: flex; align-items: center; gap: 6px; }
+    .has-mockup .status {
+      mix-blend-mode: normal;
+      z-index: 7;
+      color: #fff;
+      background: var(--tbx-accent);
+      align-items: flex-end;
+      padding-bottom: 4px;
+      box-shadow: none;
+    }
+    .has-mockup .status[data-bar="ios"] {
+      height: 11.5%;
+      min-height: 38px;
+      padding-top: 0;
+    }
+    .has-mockup .status[data-bar="android"] {
+      height: 9.5%;
+      min-height: 32px;
+    }
+    .has-mockup .status .status-icons svg {
+      color: #fff;
+      opacity: 0.92;
+    }
+    .has-mockup .status .clock {
+      color: #fff;
+      font-weight: 600;
+    }
     .island, .notch, .punch, .pill, .home, .android-nav { pointer-events: none; position: absolute; z-index: 4; background: #0a0a0a; }
     .island {
       top: 12px; left: 50%; transform: translateX(-50%);
@@ -1320,6 +1346,11 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     androidNav.hidden = !state.ui.showNavBar || live.navBar !== 'android' || state.rotated
     status.style.display =
       !state.ui.showStatusBar || live.statusBar === 'none' ? 'none' : ''
+    if (live.statusBar === 'ios' || live.statusBar === 'android') {
+      status.dataset.bar = live.statusBar
+    } else {
+      delete status.dataset.bar
+    }
     syncSettingsUi()
     requestAnimationFrame(() => {
       positionDevicesPanel()

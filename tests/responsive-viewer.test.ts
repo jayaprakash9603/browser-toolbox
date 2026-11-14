@@ -256,6 +256,9 @@ describe('mobile simulator studio helpers', () => {
     expect(mockup?.hidden).toBe(false)
     expect(mockup?.getAttribute('src')).toContain('iphone-16-pro.webp')
     expect(root.classList.contains('has-mockup')).toBe(true)
+    const status = host?.shadowRoot?.querySelector('.status') as HTMLElement
+    expect(status?.dataset.bar).toBe('ios')
+    expect(getComputedStyle(status).mixBlendMode).toBe('normal')
     const acts = [...(host?.shadowRoot?.querySelectorAll('.actions [data-act]') ?? [])].map((el) =>
       el.getAttribute('data-act'),
     )
