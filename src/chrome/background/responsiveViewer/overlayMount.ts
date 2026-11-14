@@ -157,7 +157,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #ffffff;
+      background: transparent;
       color: #484848;
       --tbx-rail-icon: #b6b6b6;
       --tbx-rail-icon-hover: #539fff;
@@ -175,10 +175,10 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       --tbx-menu-border: #e0e0e0;
     }
     .root.theme-classic {
-      background: #ffffff;
+      background: transparent;
     }
     .root.theme-dark {
-      background: #0b0f14;
+      background: transparent;
       color: #e2e8f0;
       --tbx-panel-bg: #151b24;
       --tbx-panel-border: #2a3544;
@@ -203,12 +203,13 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       min-width: 0;
       min-height: 0;
       padding: ${SIM_STAGE_PAD_Y}px 92px ${SIM_STAGE_PAD_Y}px 24px;
+      background: transparent;
     }
     .phone-wrap {
       position: relative;
       flex-shrink: 0;
-      overflow: hidden;
-      filter: drop-shadow(0 28px 64px rgba(15,23,42,0.18));
+      overflow: visible;
+      filter: drop-shadow(0 18px 40px rgba(0,0,0,0.22));
     }
     .phone-inner {
       position: absolute;
@@ -337,8 +338,18 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       color: #111827;
     }
     .has-mockup .status {
-      display: none !important;
+      mix-blend-mode: normal;
+      color: #fff;
+      background: var(--tbx-accent);
+      align-items: flex-end;
+      padding-bottom: 4px;
+      box-shadow: none;
+      z-index: 7;
     }
+    .has-mockup .status[data-bar="ios"] { height: 11.5%; min-height: 38px; padding-top: 0; }
+    .has-mockup .status[data-bar="android"] { height: 9.5%; min-height: 32px; }
+    .has-mockup .status .status-icons svg { color: #fff; opacity: 0.92; }
+    .has-mockup .status .clock { color: #fff; font-weight: 600; }
     .url-pill {
       display: flex; align-items: center; gap: 8px;
       height: 36px; padding: 0 10px; border-radius: 12px; background: #fff;
@@ -1613,6 +1624,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     home.hidden = !overlayHomeIndicatorVisible(state.ui.showNavBar, live.navBar, state.rotated)
     androidNav.hidden = !state.ui.showNavBar || live.navBar !== 'android' || state.rotated
     status.style.display = chrome.decorStatus ? '' : 'none'
+    status.dataset.bar = live.statusBar === 'android' ? 'android' : 'ios'
     iframe.setAttribute('width', String(layoutSize.width))
     iframe.setAttribute('height', String(layoutSize.height))
     syncSettingsUi()

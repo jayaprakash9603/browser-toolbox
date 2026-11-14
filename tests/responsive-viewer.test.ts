@@ -91,7 +91,7 @@ describe('responsive viewer model', () => {
     expect(overlayStageBox({ width: 1920, height: 1080 }).maxW).toBe(desktop.maxW)
   })
 
-  it('keeps full device viewport under notch chrome and hides duplicate mockup status', () => {
+  it('keeps full device viewport and paints the status strip on mockups when enabled', () => {
     const mockupChrome = overlayPreviewChrome({
       hasMockup: true,
       rotated: false,
@@ -99,7 +99,7 @@ describe('responsive viewer model', () => {
       statusBar: 'ios',
       showSafari: true,
     })
-    expect(mockupChrome.decorStatus).toBe(false)
+    expect(mockupChrome.decorStatus).toBe(true)
     expect(mockupChrome.showSafari).toBe(true)
     expect(overlayIframeLayoutSize({ width: 402, height: 874 })).toEqual({ width: 402, height: 874 })
     const cssChrome = overlayPreviewChrome({
@@ -336,7 +336,8 @@ describe('mobile simulator studio helpers', () => {
     expect(screen.style.height).toMatch(/%/)
     expect(host?.shadowRoot?.querySelector('.viewport')).toBeTruthy()
     const status = host?.shadowRoot?.querySelector('.status') as HTMLElement
-    expect(getComputedStyle(status).display).toBe('none')
+    expect(getComputedStyle(status).display).not.toBe('none')
+    expect(root.classList.contains('has-mockup')).toBe(true)
     const iframe = host?.shadowRoot?.querySelector('iframe') as HTMLIFrameElement
     expect(Number(iframe.getAttribute('height'))).toBe(874)
     mountSimulatorOverlay(config)

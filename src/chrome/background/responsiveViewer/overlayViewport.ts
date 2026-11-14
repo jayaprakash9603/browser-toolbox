@@ -14,8 +14,7 @@ export function overlayPreviewChrome(opts: {
   statusBar: StatusBarStyle
   showSafari: boolean
 }): OverlayPreviewChrome {
-  const decorStatus =
-    !opts.hasMockup && !opts.rotated && opts.showStatusBar && opts.statusBar !== 'none'
+  const decorStatus = !opts.rotated && opts.showStatusBar && opts.statusBar !== 'none'
   const showSafari = !opts.rotated && opts.showSafari
   return { decorStatus, showSafari }
 }
