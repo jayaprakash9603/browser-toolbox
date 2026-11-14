@@ -23,7 +23,7 @@ export function RulesWorkspace({ state, onStateChange, embedded }: Props) {
   const showSideNav = nav.view !== 'editor'
 
   return (
-    <div className="flex min-h-[480px] gap-3">
+    <div className="@container flex min-h-0 flex-1 gap-3">
       {showSideNav && (
         <nav className="hidden w-28 shrink-0 flex-col gap-1 text-xs @[400px]:flex">
           <button

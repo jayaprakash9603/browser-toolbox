@@ -16,7 +16,7 @@ export function NetworkTab({ rows, onClear, capturePaused, onCapturePausedChange
   const { openFinder, openExplorerFromRow } = useApiWorkspace()
 
   return (
-    <div className="relative min-h-[420px] overflow-hidden rounded-lg border">
+    <div className="relative min-h-[420px] overflow-hidden">
       <NetworkInspector
         rows={rows}
         onClear={onClear}

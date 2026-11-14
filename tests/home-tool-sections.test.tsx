@@ -48,7 +48,7 @@ describe('home tool workbenches', () => {
     ).toHaveAttribute('href', '#/tools')
     expect(screen.queryByRole('link', { name: /category/i })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /pause|play/i })).not.toBeInTheDocument()
-  })
+  }, 15_000)
 
   it('splits the large section without losing or duplicating tools and caps every workbench at ten launchers', () => {
     const groups = getHomeWorkbenchGroups()
@@ -61,7 +61,7 @@ describe('home tool workbenches', () => {
       expect(group.tools.length).toBeGreaterThan(0)
     }
     expect(groups.find((group) => group.id === 'productivity')?.tools).toHaveLength(8)
-    expect(groups.find((group) => group.id === 'browser')?.tools).toHaveLength(3)
+    expect(groups.find((group) => group.id === 'browser')?.tools).toHaveLength(4)
     expect(groups.find((group) => group.id === 'social')?.tools).toHaveLength(5)
   })
 

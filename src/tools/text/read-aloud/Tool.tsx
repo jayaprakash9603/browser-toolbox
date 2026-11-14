@@ -488,7 +488,7 @@ export default function ReadAloudTool() {
             </Alert>
           )}
 
-          <TabsContent value="page" className="min-h-0 flex-1">
+          <TabsContent value="page" className="min-h-0 flex-1 p-0">
             {page.status === 'loading' && !page.page ? (
               <ReaderSkeleton />
             ) : page.status === 'error' ? (
@@ -510,7 +510,7 @@ export default function ReadAloudTool() {
             )}
           </TabsContent>
 
-          <TabsContent value="selection" className="min-h-0 flex-1">
+          <TabsContent value="selection" className="min-h-0 flex-1 p-0">
             {selection.status === 'loading' && !selection.page ? (
               <ReaderSkeleton />
             ) : selection.status === 'error' ? (
@@ -522,7 +522,7 @@ export default function ReadAloudTool() {
             )}
           </TabsContent>
 
-          <TabsContent value="text" className="min-h-0 flex-1">
+          <TabsContent value="text" className="min-h-0 flex-1 p-0">
             {showEditor ? (
               <div className="flex min-h-0 flex-1 flex-col px-[var(--density-page-pad)] py-3">
                 <Label htmlFor="read-aloud-text" className="sr-only">

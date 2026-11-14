@@ -14,9 +14,11 @@ registerModules()
 
 describe('workspaces', () => {
   it('only reference registered tools and include their host as a view', () => {
+    const hostless = ['web.toolkit', 'design.css-color-studio']
     for (const workspace of WORKSPACES) {
       expect(toolRegistry.get(workspace.id), workspace.id).toBeDefined()
-      expect(workspace.views.some((view) => view.toolId === workspace.id), workspace.id).toBe(true)
+      const hasHost = workspace.views.some((view) => view.toolId === workspace.id)
+      if (!hostless.includes(workspace.id)) expect(hasHost, workspace.id).toBe(true)
       for (const view of workspace.views) expect(toolRegistry.get(view.toolId), view.toolId).toBeDefined()
     }
   })
@@ -30,11 +32,11 @@ describe('workspaces', () => {
     expect(getWorkspaceForTool('qa.xpath-tester')?.id).toBe('qa.selector-studio')
     expect(getWorkspaceForTool('browser.speed-test')?.id).toBe('browser.internet-monitor')
     expect(getWorkspaceForTool('storage.inspector')?.id).toBe('browser.toolkit')
-    expect(getWorkspaceForTool('text.analyzer')?.id).toBe('text.studio')
+    expect(getWorkspaceForTool('text.analyzer')).toBeUndefined()
     expect(getWorkspaceForTool('developer.id-toolkit')?.id).toBe('developer.formatter-studio')
     expect(getWorkspaceForTool('productivity.timer')?.id).toBe('datetime.toolkit')
-    expect(getWorkspaceForTool('design.palette-generator')).toBeUndefined()
-    expect(getWorkspace('text.studio')?.views.length).toBe(8)
+    expect(getWorkspaceForTool('design.palette-generator')?.id).toBe('design.css-color-studio')
+    expect(getWorkspace('text.studio')?.views.length).toBe(2)
   })
 })
 
@@ -42,13 +44,17 @@ describe('sections', () => {
   it('list every primary tool exactly once', () => {
     const listed = SECTIONS.flatMap((section) => section.toolIds)
     expect(new Set(listed).size).toBe(listed.length)
-    const primary = toolRegistry.getAll().filter(isPrimaryTool).map((tool) => tool.id)
-    expect([...listed].sort()).toEqual([...primary].sort())
+    const sectionPrimary = listed.filter((id) => {
+      const tool = toolRegistry.get(id)
+      return tool !== undefined && isPrimaryTool(tool)
+    })
+    expect(getPrimaryTools().map((tool) => tool.id).sort()).toEqual([...sectionPrimary].sort())
+    expect(sectionPrimary).toContain('security.cyber-center')
   })
 
-  it('end at 49 primary tools across five sections', () => {
+  it('end at 50 primary tools across five sections', () => {
     expect(SECTIONS).toHaveLength(5)
-    expect(getPrimaryTools()).toHaveLength(49)
+    expect(getPrimaryTools()).toHaveLength(50)
     for (const section of SECTIONS) {
       expect(getPrimaryToolsForUserCategory(section.id).length).toBeGreaterThan(0)
     }

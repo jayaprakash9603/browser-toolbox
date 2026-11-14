@@ -413,6 +413,7 @@ function TabsTrigger({
   )
 }
 
+/** Attached panels pad with `--density-card-pad`. Pass `p-0` for full-bleed inspectors. */
 function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Content>) {
   const variant = React.useContext(TabsVariantContext)
   return (
@@ -420,7 +421,7 @@ function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPr
       className={cn(
         'min-h-0 flex-1 outline-none data-[state=active]:flex data-[state=active]:flex-col',
         variant === 'attached' &&
-          'mt-0 rounded-2xl border border-primary/15 bg-card shadow-xs dark:border-primary/25',
+          'mt-0 rounded-2xl border border-primary/15 bg-card p-[var(--density-card-pad)] shadow-xs dark:border-primary/25',
         variant !== 'attached' && 'rounded-md',
         className,
       )}

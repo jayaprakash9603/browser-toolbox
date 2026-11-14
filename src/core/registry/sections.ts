@@ -72,6 +72,7 @@ export const SECTIONS: SectionDefinition[] = [
       'web.copy-markdown',
       'privacy.ad-blocker',
       'privacy.web-protection',
+      'security.cyber-center',
     ],
   },
   {

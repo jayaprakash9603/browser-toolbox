@@ -76,8 +76,8 @@ export function CollectionsTab() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <div className="flex gap-1.5">
+      <div className="flex flex-col gap-2.5">
+        <div className="flex gap-2">
           <Input
             value={newName}
             onChange={(event) => setNewName(event.target.value)}
@@ -103,7 +103,7 @@ export function CollectionsTab() {
           placeholder={t('interceptor.collections.search')}
           className="h-8 text-xs"
         />
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           <Button
             type="button"
             variant="outline"
@@ -169,8 +169,8 @@ export function CollectionsTab() {
         </p>
       ) : (
         filtered.collections.map((collection) => (
-          <section key={collection.id} className="rounded-lg border p-3">
-            <div className="mb-2 flex items-center gap-2">
+          <section key={collection.id} className="rounded-lg border p-[var(--density-card-pad)] shadow-xs">
+            <div className="mb-3 flex items-center gap-2">
               <Input
                 defaultValue={collection.name}
                 className="h-7 text-xs font-medium"
@@ -189,9 +189,9 @@ export function CollectionsTab() {
                 <Trash2Icon />
               </Button>
             </div>
-            <ul className="space-y-1">
+            <ul className="space-y-1.5">
               {requestsByCollection(collection).map((request) => (
-                <li key={request.id} className="flex items-center gap-2 rounded-md px-1 py-1 hover:bg-muted/50">
+                <li key={request.id} className="flex items-center gap-2 rounded-md px-2.5 py-2 hover:bg-muted/50">
                   <MethodBadge method={request.draft.method} />
                   <button
                     type="button"
@@ -223,7 +223,7 @@ export function CollectionsTab() {
         ))
       )}
 
-      <section className="space-y-2">
+      <section className="space-y-2.5">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-semibold">{t('interceptor.history.title')}</h3>
           <Button type="button" variant="ghost" size="xs" onClick={() => void clearApiHistory().then(() => setHistory([]))}>
@@ -233,9 +233,9 @@ export function CollectionsTab() {
         {history.length === 0 ? (
           <p className="text-xs text-muted-foreground">{t('interceptor.history.empty')}</p>
         ) : (
-          <ul className="space-y-1">
+          <ul className="space-y-1.5">
             {history.map((entry) => (
-              <li key={entry.id} className="flex items-center gap-2 rounded-md border px-2 py-1.5">
+              <li key={entry.id} className="flex items-center gap-2 rounded-md border px-3 py-2">
                 <MethodBadge method={entry.method} />
                 <button
                   type="button"

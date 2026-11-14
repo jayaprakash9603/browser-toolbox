@@ -151,7 +151,7 @@ export function RulesList({ state, onStateChange, nav }: Props) {
             <PinIcon className={cn('size-3.5', rule.pinned ? 'text-primary' : 'text-muted-foreground/40')} />
           </button>
         </td>
-        <td className="max-w-0 truncate px-2 py-1.5">
+        <td className="max-w-0 truncate px-3 py-2">
           <button type="button" className="font-medium hover:underline" onClick={() => nav.goEditor(rule.id)}>
             {rule.name}
           </button>
@@ -207,15 +207,15 @@ export function RulesList({ state, onStateChange, nav }: Props) {
   const empty = state.rules.length === 0
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-2.5">
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t('interceptor.searchRules')}
           className="h-8 max-w-xs text-sm"
         />
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1.5">
           {(['all', 'pinned', 'active'] as FilterChip[]).map((id) => (
             <button
               key={id}
@@ -279,7 +279,7 @@ export function RulesList({ state, onStateChange, nav }: Props) {
       {empty ? (
         <div className="rounded-lg border p-6 text-center">
           <p className="mb-4 text-sm font-medium">{t('interceptor.rules.emptyTitle')}</p>
-          <div className="grid gap-2 @[480px]:grid-cols-2">
+          <div className="grid gap-3 @[480px]:grid-cols-2">
             {ALL_RULE_TYPES.slice(0, 6).map((type) => (
               <Button key={type} type="button" variant="outline" size="sm" onClick={() => nav.goNewRule(type)}>
                 {RULE_TYPE_LABELS[type]}
@@ -331,12 +331,12 @@ export function RulesList({ state, onStateChange, nav }: Props) {
           <table className="w-full min-w-[520px] text-left text-sm">
             <thead className="border-b bg-muted/30 text-xs text-muted-foreground">
               <tr>
-                <th className="px-2 py-1.5" />
+                <th className="px-2 py-2" />
                 <th className="px-1" />
-                <th className="px-2 py-1.5">{t('interceptor.rules.colRules')}</th>
-                <th className="hidden px-2 @[520px]:table-cell">{t('interceptor.rules.colType')}</th>
-                <th className="px-2">{t('interceptor.rules.colStatus')}</th>
-                <th className="hidden px-2 @[520px]:table-cell">{t('interceptor.rules.colUpdated')}</th>
+                <th className="px-3 py-2">{t('interceptor.rules.colRules')}</th>
+                <th className="hidden px-3 @[520px]:table-cell">{t('interceptor.rules.colType')}</th>
+                <th className="px-3">{t('interceptor.rules.colStatus')}</th>
+                <th className="hidden px-3 @[520px]:table-cell">{t('interceptor.rules.colUpdated')}</th>
                 <th />
               </tr>
             </thead>
@@ -349,7 +349,7 @@ export function RulesList({ state, onStateChange, nav }: Props) {
                 return (
                   <Fragment key={group.id}>
                     <tr className="bg-muted/20">
-                      <td colSpan={7} className="px-2 py-1.5">
+                      <td colSpan={7} className="px-3 py-2">
                         <div className="flex items-center gap-2">
                           <button
                             type="button"

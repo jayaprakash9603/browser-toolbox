@@ -22,6 +22,8 @@ const WITHOUT_DEMO = [
   'web.toolkit',
   'design.css-color-studio',
   'security.toolkit',
+  'security.cyber-center',
+  'browser.history-manager',
 ]
 
 const originalMatchMedia = window.matchMedia

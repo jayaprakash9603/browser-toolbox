@@ -22,7 +22,7 @@ export function SettingsTab({ state, patchSettings }: Props) {
 
   return (
     <div className="flex flex-col gap-4 text-sm">
-      <label className="flex items-center justify-between gap-4 rounded-lg border bg-muted/30 px-3 py-2">
+      <label className="flex items-center justify-between gap-4 rounded-lg border bg-muted/30 px-3 py-2.5">
         <div>
           <span className="font-medium">{t('interceptor.settings.enabled')}</span>
           <p className="text-xs text-muted-foreground">{t('interceptor.settings.enabledHint')}</p>
@@ -63,7 +63,7 @@ export function SettingsTab({ state, patchSettings }: Props) {
           }}
         />
       </label>
-      <label className="flex items-center justify-between gap-4 rounded-lg border bg-muted/30 px-3 py-2">
+      <label className="flex items-center justify-between gap-4 rounded-lg border bg-muted/30 px-3 py-2.5">
         <div>
           <span className="font-medium">{t('interceptor.settings.capturePaused')}</span>
           <p className="text-xs text-muted-foreground">{t('interceptor.settings.capturePausedHint')}</p>
@@ -73,7 +73,7 @@ export function SettingsTab({ state, patchSettings }: Props) {
           onCheckedChange={(on) => void patchSettings({ capturePaused: !on })}
         />
       </label>
-      <label className="flex items-center justify-between gap-4 rounded-lg border bg-muted/30 px-3 py-2">
+      <label className="flex items-center justify-between gap-4 rounded-lg border bg-muted/30 px-3 py-2.5">
         <div>
           <span className="font-medium">{t('interceptor.settings.apiCaptureBodies')}</span>
           <p className="text-xs text-muted-foreground">{t('interceptor.settings.apiCaptureBodiesHint')}</p>

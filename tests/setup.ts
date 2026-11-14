@@ -115,6 +115,13 @@ const chromeMock = {
     id: 'test-extension-id',
     onMessage: makeEvent(),
     sendMessage: vi.fn(async () => undefined),
+    connect: vi.fn(() => ({
+      name: '',
+      onMessage: makeEvent(),
+      onDisconnect: makeEvent(),
+      postMessage: vi.fn(),
+      disconnect: vi.fn(),
+    })),
     lastError: undefined,
     getURL: (path: string) => path,
   },

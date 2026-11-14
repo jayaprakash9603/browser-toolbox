@@ -194,7 +194,7 @@ export default function DevToolsInterceptorPage() {
             </div>
           )}
           {view === 'rules' && state && (
-            <div className="h-full overflow-y-auto p-3">
+            <div className="@container h-full overflow-y-auto p-3">
               <RulesTab state={state} onStateChange={setState} embedded />
             </div>
           )}

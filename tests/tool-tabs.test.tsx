@@ -36,4 +36,31 @@ describe('tool tab navigation', () => {
     await waitFor(() => expect(screen.getByRole('tab', { name: 'Data Formats' })).toHaveFocus())
     expect(screen.getByRole('tab', { name: 'Unavailable' })).toBeDisabled()
   })
+
+  it('pads attached tab panels with the density card token', () => {
+    render(
+      <Tabs defaultValue="data">
+        <TabsList>
+          <TabsTrigger value="data">Data</TabsTrigger>
+        </TabsList>
+        <TabsContent value="data">Convert data</TabsContent>
+      </Tabs>,
+    )
+    expect(screen.getByRole('tabpanel').className).toContain('p-[var(--density-card-pad)]')
+  })
+
+  it('lets full-bleed panels opt out of attached padding', () => {
+    render(
+      <Tabs defaultValue="data">
+        <TabsList>
+          <TabsTrigger value="data">Data</TabsTrigger>
+        </TabsList>
+        <TabsContent value="data" className="p-0">
+          Flush
+        </TabsContent>
+      </Tabs>,
+    )
+    expect(screen.getByRole('tabpanel').className).toMatch(/\bp-0\b/)
+    expect(screen.getByRole('tabpanel').className).not.toContain('density-card-pad')
+  })
 })

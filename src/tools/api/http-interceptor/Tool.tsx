@@ -123,10 +123,10 @@ export default function HttpInterceptorTool() {
               )
             })}
           </TabsList>
-          <TabsContent value="rules">
+          <TabsContent value="rules" className="@container min-h-0 overflow-y-auto">
             <RulesTab state={state} onStateChange={setState} />
           </TabsContent>
-          <TabsContent value="network">
+          <TabsContent value="network" className="p-0 overflow-hidden">
             <Suspense fallback={<Skeleton className="h-48 w-full rounded-xl" />}>
               <NetworkTab
                 rows={rows}
@@ -137,27 +137,27 @@ export default function HttpInterceptorTool() {
               />
             </Suspense>
           </TabsContent>
-          <TabsContent value="finder" className="@container">
+          <TabsContent value="finder" className="@container overflow-y-auto">
             <Suspense fallback={<Skeleton className="h-48 w-full rounded-xl" />}>
               <FinderTab />
             </Suspense>
           </TabsContent>
-          <TabsContent value="explorer" className="min-h-[36rem] overflow-y-auto p-3">
+          <TabsContent value="explorer" className="min-h-[36rem] overflow-y-auto">
             <Suspense fallback={<Skeleton className="h-48 w-full rounded-xl" />}>
               <ExplorerTab />
             </Suspense>
           </TabsContent>
-          <TabsContent value="collections">
+          <TabsContent value="collections" className="overflow-y-auto">
             <Suspense fallback={<Skeleton className="h-48 w-full rounded-xl" />}>
               <CollectionsTab />
             </Suspense>
           </TabsContent>
-          <TabsContent value="library">
+          <TabsContent value="library" className="overflow-y-auto">
             <Suspense fallback={<Skeleton className="h-48 w-full rounded-xl" />}>
               <LibraryTab state={state} onStateChange={setState} />
             </Suspense>
           </TabsContent>
-          <TabsContent value="settings">
+          <TabsContent value="settings" className="overflow-y-auto">
             <SettingsTab state={state} patchSettings={patchSettings} />
           </TabsContent>
         </Tabs>

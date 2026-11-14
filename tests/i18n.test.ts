@@ -9,6 +9,28 @@ import { toolRegistry } from '@/core/registry'
 import i18n from '@/i18n'
 import { registerModules } from '@/modules'
 
+const localeModules = import.meta.glob('../src/i18n/locales/*En.ts', { eager: true })
+
+function isStringMap(value: unknown): value is Record<string, string> {
+  return Boolean(
+    value &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      Object.values(value).every((item) => typeof item === 'string'),
+  )
+}
+
+/** Boot catalog plus lazy `registerToolLocale` dictionaries. */
+function englishCatalog(): Record<string, unknown> {
+  const translations = { ...(i18n.getResourceBundle('en', 'translation') as Record<string, unknown>) }
+  for (const mod of Object.values(localeModules)) {
+    for (const value of Object.values(mod as Record<string, unknown>)) {
+      if (isStringMap(value)) Object.assign(translations, value)
+    }
+  }
+  return translations
+}
+
 function listTypeScriptFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const file = join(directory, entry.name)
@@ -96,19 +118,20 @@ describe('English localization', () => {
 
   it('provides English names and descriptions for every registered item', () => {
     registerModules()
+    const translations = englishCatalog()
     const missingKeys: string[] = []
 
     for (const tool of toolRegistry.getAll()) {
       for (const field of ['name', 'description']) {
         const key = `tools.${tool.id}.${field}`
-        if (!i18n.exists(key)) missingKeys.push(key)
+        if (!hasEnglishKey(translations, key, false)) missingKeys.push(key)
       }
     }
 
     for (const category of CATEGORIES) {
       for (const field of ['name', 'description']) {
         const key = `categories.${category.id}.${field}`
-        if (!i18n.exists(key)) missingKeys.push(key)
+        if (!hasEnglishKey(translations, key, false)) missingKeys.push(key)
       }
     }
 
@@ -118,7 +141,7 @@ describe('English localization', () => {
   it('resolves every statically referenced translation key', () => {
     const sourceRoot = resolve(process.cwd(), 'src')
     const missingKeys = new Set<string>()
-    const translations = i18n.getResourceBundle('en', 'translation') as Record<string, unknown>
+    const translations = englishCatalog()
 
     for (const file of listTypeScriptFiles(sourceRoot)) {
       const text = readFileSync(file, 'utf8')

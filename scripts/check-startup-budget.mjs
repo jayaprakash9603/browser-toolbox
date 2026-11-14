@@ -31,7 +31,8 @@ const MAX_HOME_BOOT_JS = 1_310_000
 /** ~538 KB after the Reading List menu, request cancel/FormData transport and selection-capture gap fill joined the SW graph. */
 /** ~553 KB after HTTP Interceptor API Finder capture (requestBody + observe relay) joined the SW graph. */
 /** ~582 KB after Mobile Simulator overlay routing joined the SW graph (dynamic import() is disallowed there). */
-const MAX_SERVICE_WORKER_JS = 584 * 1024
+/** ~604 KB after Cyber Security Center pause, HTTPS-upgrade DNR and network observer joined the SW graph. */
+const MAX_SERVICE_WORKER_JS = 605 * 1024
 
 /** `_gsap` is the cache property GSAP stamps on every target: the tool demos must stay lazy. */
 const BANNED_IN_HOME = [/postman-lite/i, /\bcmdk\b/, /\b_gsap\b/]

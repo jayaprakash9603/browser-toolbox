@@ -116,7 +116,7 @@ export default function ChatBoostTool() {
                 )
               })}
             </TabsList>
-            <TabsContent value="enhancements" className="mt-3 flex flex-col gap-3">
+            <TabsContent value="enhancements" className="flex flex-col gap-3">
               <ChatPulsePanel disabled={!state.enabled} />
               <PresetBar onApply={(values) => void patch({ values: { ...state.values, ...values } })} />
               {WHATSAPP_SECTIONS.map((section) => (
@@ -140,13 +140,13 @@ export default function ChatBoostTool() {
                 />
               ))}
             </TabsContent>
-            <TabsContent value="business" className="mt-3">
+            <TabsContent value="business">
               <BusinessTab state={state} onPatch={(data) => void patch({ data })} />
             </TabsContent>
-            <TabsContent value="export" className="mt-3">
+            <TabsContent value="export">
               <ExportTab disabled={!state.enabled} />
             </TabsContent>
-            <TabsContent value="utilities" className="mt-3">
+            <TabsContent value="utilities">
               <UtilitiesTab disabled={!state.enabled} />
             </TabsContent>
           </Tabs>

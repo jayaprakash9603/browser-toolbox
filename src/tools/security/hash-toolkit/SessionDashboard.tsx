@@ -34,7 +34,7 @@ function StatCard({
           : 'bg-primary'
 
   return (
-    <article className="flex min-w-0 flex-col gap-1.5 rounded-xl border bg-muted/20 px-2.5 py-2">
+    <article className="flex min-w-0 flex-col gap-1.5 rounded-xl border bg-muted/20 px-3 py-2.5">
       <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="text-lg font-semibold leading-none tabular-nums tracking-tight">{value}</p>
       <div className="h-1 overflow-hidden rounded-full bg-muted">
@@ -71,7 +71,7 @@ export function SessionDashboard({ analytics }: { analytics: SessionAnalytics })
         <p className="text-[11px] text-muted-foreground">{t('hashToolkit.stats.subtitle')}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 @md:grid-cols-4 @lg:gap-2.5">
+      <div className="grid grid-cols-2 gap-3 @md:grid-cols-4">
         <StatCard
           label={t('hashToolkit.stats.baseline')}
           value={baselineTotal === 0 ? '—' : `${matchPct}%`}

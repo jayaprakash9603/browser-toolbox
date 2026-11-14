@@ -415,6 +415,13 @@ export type ExtensionMessage =
       jobId?: string
     }
   | { type: 'DOWNLOAD_MANAGER_EXPORT_HISTORY'; format: 'csv' | 'json' }
+  | { type: 'SECURITY_GET_NETWORK_LOG'; tabId?: number }
+  | { type: 'SECURITY_CLEAR_NETWORK_LOG'; tabId?: number }
+  | { type: 'SECURITY_SET_CAPTURE'; paused: boolean }
+  | { type: 'SECURITY_PAUSE_PROTECTION' }
+  | { type: 'SECURITY_RESUME_PROTECTION' }
+  | { type: 'SECURITY_GET_PAUSE' }
+  | { type: 'SECURITY_SYNC_RULES' }
 
 export type ExtensionMessageType = ExtensionMessage['type']
 
@@ -617,6 +624,13 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'DOWNLOAD_MANAGER_QUEUE_UPDATE',
   'DOWNLOAD_MANAGER_SCHEDULE',
   'DOWNLOAD_MANAGER_EXPORT_HISTORY',
+  'SECURITY_GET_NETWORK_LOG',
+  'SECURITY_CLEAR_NETWORK_LOG',
+  'SECURITY_SET_CAPTURE',
+  'SECURITY_PAUSE_PROTECTION',
+  'SECURITY_RESUME_PROTECTION',
+  'SECURITY_GET_PAUSE',
+  'SECURITY_SYNC_RULES',
 ])
 
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {

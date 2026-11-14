@@ -37,9 +37,15 @@ function buildCharset(options: PasswordOptions): string {
 }
 
 function randomBelow(max: number): number {
+  if (max <= 0) return 0
+  const limit = Math.floor(0x100000000 / max) * max
   const buffer = new Uint32Array(1)
-  crypto.getRandomValues(buffer)
-  return buffer[0] % max
+  let value = 0
+  do {
+    crypto.getRandomValues(buffer)
+    value = buffer[0]
+  } while (value >= limit)
+  return value % max
 }
 
 export type PasswordResult = { ok: true; value: string } | { ok: false; error: string }
@@ -72,6 +78,9 @@ export function randomString(length: number, alphabet?: string): string {
   for (let index = 0; index < size; index += 1) output += chars[randomBelow(chars.length)]
   return output
 }
+
+export { assessPasswordStrength } from './strength'
+export type { PasswordStrength, PasswordStrengthLabel } from './strength'
 
 export function randomHex(byteCount: number): string {
   const size = Math.min(Math.max(1, Math.trunc(byteCount)), 512)

@@ -1,8 +1,61 @@
-import { BinaryIcon, HashIcon, KeyRoundIcon, DicesIcon, ShieldCheckIcon, TicketIcon } from 'lucide-react'
+import { BinaryIcon, HashIcon, KeyRoundIcon, DicesIcon, ShieldCheckIcon, ShieldIcon, TicketIcon } from 'lucide-react'
 
 import { defineTool } from '@/core/registry'
+import { SECURITY_CENTER_TABS } from '@/core/security-center'
+
+const CYBER_CENTER_TAB_LABELS: Record<(typeof SECURITY_CENTER_TABS)[number], string> = {
+  overview: 'Overview',
+  protection: 'Protection',
+  privacy: 'Privacy',
+  trackers: 'Trackers',
+  cookies: 'Cookies',
+  'website-audit': 'Website Audit',
+  network: 'Network',
+  'dns-and-ip': 'DNS & IP',
+  fingerprint: 'Fingerprint',
+  passwords: 'Passwords',
+  'data-breaches': 'Data Breaches',
+  'file-scanner': 'File Scanner',
+  'url-scanner': 'URL Scanner',
+  permissions: 'Permissions',
+  'security-logs': 'Security Logs',
+  settings: 'Settings',
+}
 
 export const securityTools = [
+  defineTool({
+    id: 'security.cyber-center',
+    name: 'Cyber Security Center',
+    description:
+      'Unified browser security, privacy protection, website inspection, and threat intelligence.',
+    category: 'security',
+    icon: ShieldIcon,
+    keywords: [
+      'security',
+      'privacy',
+      'tracker',
+      'cookie',
+      'phishing',
+      'malware',
+      'https',
+      'audit',
+      'dns',
+      'fingerprint',
+      'breach',
+    ],
+    aliases: ['cyber security', 'security center', 'privacy center', 'website audit'],
+    route: '/tools/security/cyber-center',
+    capabilities: ['SIDE_PANEL', 'COMMAND'],
+    toolkitGroup: 'security',
+    status: 'active',
+    searchEntries: SECURITY_CENTER_TABS.map((tab) => ({
+      id: `cyber-center-${tab}`,
+      labelKey: `securityCenter.tab.${tab}`,
+      fallbackLabel: CYBER_CENTER_TAB_LABELS[tab],
+      params: { tab },
+    })),
+    loader: () => import('@/tools/security/cyber-center/Tool'),
+  }),
   defineTool({
     id: 'security.toolkit',
     name: 'Security Toolkit',

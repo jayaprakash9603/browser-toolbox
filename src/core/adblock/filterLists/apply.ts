@@ -1,13 +1,15 @@
-import { SUPPLEMENTAL_RULE_ID_BASE } from '../constants'
+import { SUPPLEMENTAL_RULE_ID_BASE, SUPPLEMENTAL_RULE_ID_MAX } from '../constants'
 import { compileDomainBlockRules } from './runtimeCompiler'
 
 const PRIORITY = 1
 
+export function isSupplementalRuleId(id: number): boolean {
+  return id >= SUPPLEMENTAL_RULE_ID_BASE && id <= SUPPLEMENTAL_RULE_ID_MAX
+}
+
 export async function clearSupplementalRules(): Promise<void> {
   const existing = await chrome.declarativeNetRequest.getDynamicRules()
-  const removeIds = existing
-    .filter((rule) => rule.id >= SUPPLEMENTAL_RULE_ID_BASE)
-    .map((rule) => rule.id)
+  const removeIds = existing.filter((rule) => isSupplementalRuleId(rule.id)).map((rule) => rule.id)
   if (!removeIds.length) return
   await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: removeIds })
 }

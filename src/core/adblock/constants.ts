@@ -3,8 +3,9 @@ import type { AdblockCounts, AdblockState, AdblockTotals, RulesetId } from './ty
 /** Dynamic DNR rule IDs for the per-site allowlist (one rule per hostname). */
 export const ALLOWLIST_RULE_ID_BASE = 1_000_000
 
-/** Runtime-refreshed supplemental network rules (below allowlist range). */
-export const SUPPLEMENTAL_RULE_ID_BASE = 2_000_000
+/** Runtime-refreshed supplemental network rules (between allowlist and protection ranges). */
+export const SUPPLEMENTAL_RULE_ID_BASE = 1_100_000
+export const SUPPLEMENTAL_RULE_ID_MAX = 1_999_999
 
 export const FILTER_LIST_REFRESH_ALARM = 'adblock-filter-refresh'
 

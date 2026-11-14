@@ -1,3 +1,4 @@
+import { securityCenterStrings } from './securityCenterEn'
 import { toolRegistryStrings } from './toolRegistryEn'
 import { workspaceStrings } from './workspaceEn'
 
@@ -1667,6 +1668,7 @@ const en = {
   'files.emptyCsv': 'This file has a header row but no data rows.',
   ...toolRegistryStrings,
   ...workspaceStrings,
+  ...securityCenterStrings,
 } as const
 
 export default en

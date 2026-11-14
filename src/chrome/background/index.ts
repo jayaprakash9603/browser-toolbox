@@ -88,6 +88,7 @@ import { registerSimulatorOverlayMessages } from './responsiveViewer/messages'
 import { registerSimulatorOverlayPersistence } from './responsiveViewer/overlayPersist'
 import { registerResponsiveViewerEmulation } from './responsiveViewer/emulation'
 import { registerScanCameraHandlers } from './scanCamera'
+import { registerSecurityCenter } from './security-center'
 import { configurePanelAction, openExtensionPanel } from '@/platform/panel'
 
 const logger = createLogger('background')
@@ -256,4 +257,5 @@ safeRegister('simulatorOverlay', registerSimulatorOverlayMessages)
 safeRegister('simulatorOverlayPersist', registerSimulatorOverlayPersistence)
 safeRegister('responsiveViewerEmulation', registerResponsiveViewerEmulation)
 safeRegister('scanCamera', registerScanCameraHandlers)
+safeRegister('securityCenter', registerSecurityCenter)
 startMessageRouter()

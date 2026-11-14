@@ -89,8 +89,8 @@ export function RuleEditorPage({ state, onStateChange, nav }: Props) {
   const testResult = testRulesAgainstUrl([draft], testUrl, undefined, state.groups)
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2 border-b pb-2">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-2 border-b pb-3">
         <Button type="button" variant="ghost" size="icon-sm" onClick={back}>
           <ArrowLeftIcon />
         </Button>
@@ -142,8 +142,8 @@ export function RuleEditorPage({ state, onStateChange, nav }: Props) {
         className="text-sm text-muted-foreground"
       />
 
-      <div className="rounded-lg border p-3">
-        <p className="mb-2 text-sm font-medium">{t('interceptor.editor.ifRequest')}</p>
+      <div className="rounded-lg border p-4 shadow-xs">
+        <p className="mb-3 text-sm font-medium">{t('interceptor.editor.ifRequest')}</p>
         <SourceConditionField value={draft.source} onChange={(source) => patch({ source })} />
         {extra.map((cond, i) => (
           <div key={i} className="mt-2 flex items-start gap-2">
@@ -170,7 +170,7 @@ export function RuleEditorPage({ state, onStateChange, nav }: Props) {
         </Button>
       </div>
 
-      <div className="rounded-lg border p-3">
+      <div className="rounded-lg border p-4 shadow-xs">
         <Select
           value={draft.type}
           onValueChange={(v) => {

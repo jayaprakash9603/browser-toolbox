@@ -84,7 +84,7 @@ function HeaderList({
   onChange: (items: HeaderChange[]) => void
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium">{label}</span>
         <Button
@@ -97,7 +97,7 @@ function HeaderList({
         </Button>
       </div>
       {items.map((h, i) => (
-        <div key={i} className="grid grid-cols-[5.5rem_1fr_1fr_auto] gap-1.5">
+        <div key={i} className="grid grid-cols-[5.5rem_1fr_1fr_auto] gap-2">
           <Select
             value={h.operation}
             onValueChange={(op) =>
@@ -138,7 +138,7 @@ export function RuleEditor({ rule, onChange, actionsOnly, readOnly }: Props) {
   const disabled = readOnly
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       {!actionsOnly && (
         <>
           <Input
@@ -175,10 +175,10 @@ export function RuleEditor({ rule, onChange, actionsOnly, readOnly }: Props) {
       )}
 
       {rule.type === 'queryParam' && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <span className="text-xs font-medium">Add or replace</span>
           {(rule.addOrReplace ?? []).map((p, i) => (
-            <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-1.5">
+            <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-2">
               <Input
                 value={p.key}
                 placeholder="Key"
@@ -257,7 +257,7 @@ export function RuleEditor({ rule, onChange, actionsOnly, readOnly }: Props) {
       {(rule.type === 'mockApi' || rule.type === 'mockGraphql') && (
         <>
           {rule.type === 'mockGraphql' && (
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-2 gap-2">
               <Input value={rule.operationName ?? ''} onChange={(e) => patch({ operationName: e.target.value })} placeholder="Operation name" />
               <Input value={rule.queryContains ?? ''} onChange={(e) => patch({ queryContains: e.target.value })} placeholder="Query contains" />
             </div>
@@ -313,7 +313,7 @@ export function RuleEditor({ rule, onChange, actionsOnly, readOnly }: Props) {
 
       {rule.type === 'insertScript' && (
         <>
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-3 gap-2">
             <Select value={rule.kind} onValueChange={(kind) => patch({ kind: kind as 'js' | 'css' })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -361,7 +361,7 @@ export function RuleEditor({ rule, onChange, actionsOnly, readOnly }: Props) {
 
       <details className="rounded border p-2 text-xs">
         <summary className="cursor-pointer font-medium">Filters (page domain, method)</summary>
-        <div className="mt-2 flex flex-col gap-1.5">
+        <div className="mt-2 flex flex-col gap-2">
           <Input
             value={(rule.filters?.pageDomains ?? []).join(',')}
             onChange={(e) =>
@@ -388,7 +388,7 @@ export function RuleEditor({ rule, onChange, actionsOnly, readOnly }: Props) {
             })}
           </div>
           {(rule.type === 'mockGraphql' || rule.type === 'mockApi') && (
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-2 gap-2">
               <Input
                 value={rule.filters?.payloadKey ?? ''}
                 onChange={(e) => patch({ filters: { ...rule.filters, payloadKey: e.target.value } })}

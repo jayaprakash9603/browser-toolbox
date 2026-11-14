@@ -50,6 +50,10 @@ export const STORAGE_KEYS = {
   downloadManager: 'downloadManager',
   historyManager: 'historyManager',
   bookmarkWorkspace: 'toolbox.bookmarks.workspace.v1',
+  securityCenterSettings: 'securityCenterSettings',
+  securityCenterEvents: 'securityCenterEvents',
+  securityCenterProviders: 'securityCenterProviders',
+  securityCenterDnsHistory: 'securityCenterDnsHistory',
 } as const
 
 import { getExtensionName } from '@/core/i18n/chromeMessages'

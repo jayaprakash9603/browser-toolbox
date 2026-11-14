@@ -64,10 +64,10 @@ export function FinderTab() {
   }
 
   return (
-    <div className="flex min-h-0 flex-col gap-3">
-      <div className="grid grid-cols-2 gap-2 @[420px]:grid-cols-3">
+    <div className="flex min-h-0 flex-col gap-4">
+      <div className="grid grid-cols-2 gap-3 @[420px]:grid-cols-3">
         {STAT_CARDS.map(({ key, icon: Icon, tone }) => (
-          <div key={key} className="rounded-lg border bg-card px-2.5 py-2">
+          <div key={key} className="rounded-lg border bg-card px-3 py-2.5 shadow-xs">
             <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <Icon className={cn('size-3.5', tone)} aria-hidden />
               {t(`interceptor.finder.stat.${key}`)}
@@ -77,14 +77,14 @@ export function FinderTab() {
         ))}
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2.5">
         <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={t('interceptor.finder.search')}
           className="h-8 text-xs"
         />
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1.5">
           {API_FINDER_FILTERS.map((id) => (
             <button
               key={id}
@@ -158,7 +158,8 @@ function EndpointList({
   const virtualizer = useVirtualizer({
     count: endpoints.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 64,
+    estimateSize: () => 76,
+    gap: 8,
     overscan: 8,
   })
   const useVirtual = endpoints.length >= 80
@@ -168,7 +169,7 @@ function EndpointList({
       type="button"
       onClick={() => onSelect(endpoint.id)}
       className={cn(
-        'flex w-full flex-col gap-1 rounded-lg border px-2.5 py-2 text-left hover:bg-muted/60',
+        'flex w-full flex-col gap-1.5 rounded-lg border px-3 py-2.5 text-left hover:bg-muted/60',
         selectedId === endpoint.id && 'border-primary/40 bg-primary/5',
       )}
     >
@@ -208,7 +209,7 @@ function EndpointList({
   )
 
   if (!useVirtual) {
-    return <div className="flex flex-col gap-1.5">{endpoints.map((endpoint) => <div key={endpoint.id}>{renderRow(endpoint)}</div>)}</div>
+    return <div className="flex flex-col gap-2">{endpoints.map((endpoint) => <div key={endpoint.id}>{renderRow(endpoint)}</div>)}</div>
   }
 
   return (
@@ -217,6 +218,8 @@ function EndpointList({
         {virtualizer.getVirtualItems().map((item) => (
           <div
             key={endpoints[item.index].id}
+            data-index={item.index}
+            ref={virtualizer.measureElement}
             style={{
               position: 'absolute',
               top: 0,
@@ -224,7 +227,6 @@ function EndpointList({
               width: '100%',
               transform: `translateY(${item.start}px)`,
             }}
-            className="pb-1.5"
           >
             {renderRow(endpoints[item.index])}
           </div>

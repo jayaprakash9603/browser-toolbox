@@ -95,7 +95,7 @@ export function LibraryTab({ state, onStateChange }: Props) {
           {importWarnings.map((w) => <li key={w}>{w}</li>)}
         </ul>
       )}
-      <div className="rounded-lg border p-3">
+      <div className="rounded-lg border p-[var(--density-card-pad)] shadow-xs">
         <p className="mb-2 text-sm font-medium">{t('interceptor.library.add')}</p>
         <Input value={name} onChange={(e) => setName(e.target.value)} className="mb-2" />
         <Textarea value={content} onChange={(e) => setContent(e.target.value)} rows={6} className="font-mono text-xs" />
@@ -103,7 +103,7 @@ export function LibraryTab({ state, onStateChange }: Props) {
       </div>
       <ul className="space-y-2 text-sm">
         {state.library.map((item) => (
-          <li key={item.id} className="flex items-center justify-between rounded-md border px-2 py-1">
+          <li key={item.id} className="flex items-center justify-between rounded-md border px-3 py-2">
             <span>{item.name}</span>
             <Button
               type="button"

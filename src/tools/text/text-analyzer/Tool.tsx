@@ -33,7 +33,7 @@ export default function TextAnalyzerTool() {
             <TabsTrigger value="lines">{t('text.tabLines')}</TabsTrigger>
           </TabsList>
           <TabsContent value="metrics">
-            <div className="grid grid-cols-3 gap-2 @[400px]:grid-cols-4">
+            <div className="grid grid-cols-3 gap-3 @[400px]:grid-cols-4">
               <StatCard label={t('text.words')} value={stats.words} />
               <StatCard label={t('text.characters')} value={stats.characters} />
               <StatCard label={t('text.noSpaces')} value={stats.charactersNoSpaces} />
@@ -48,7 +48,7 @@ export default function TextAnalyzerTool() {
             </div>
           </TabsContent>
           <TabsContent value="lines">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-3">
               <StatCard label={t('text.totalLines')} value={stats.lines} />
               <StatCard label={t('text.nonBlank')} value={stats.lines - stats.blankLines} />
               <StatCard label={t('text.blank')} value={stats.blankLines} />
@@ -63,7 +63,7 @@ export default function TextAnalyzerTool() {
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-md border p-2.5 text-center">
+    <div className="rounded-md border p-3 text-center">
       <p className="text-base font-semibold tabular-nums">{value}</p>
       <p className="text-[11px] text-muted-foreground">{label}</p>
     </div>
