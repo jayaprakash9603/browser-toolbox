@@ -1,16 +1,19 @@
 import {
   ChevronDownIcon,
   CopyIcon,
+  CrosshairIcon,
+  EllipsisVerticalIcon,
   FileTextIcon,
-  GripVerticalIcon,
-  InfoIcon,
+  HighlighterIcon,
   PlayIcon,
   PlusIcon,
+  RefreshCwIcon,
+  SettingsIcon,
   TheaterIcon,
   TypeIcon,
   XIcon,
 } from 'lucide-react'
-import { useMemo, useState, type KeyboardEvent } from 'react'
+import { useEffect, useMemo, useState, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -25,16 +28,12 @@ import { cn } from '@/shared/utils/cn'
 import type { SelectorStudioModel } from '../useSelectorStudio'
 import { HubAttributesTable } from './HubAttributesTable'
 import { HubSettingsPanel } from './HubSettingsPanel'
-import { HubSideRail } from './HubSideRail'
 import { InspectPanel, type InspectSection } from './InspectPanel'
 import { Playground } from './Playground'
-import { RelationshipExplorer } from './RelationshipExplorer'
 import { SelectorsHubTable } from './SelectorsHubTable'
 import {
   CodePanel,
-  elementChip,
   HistoryPanel,
-  hostOf,
   HUB_FULL_TABS,
   HUB_TABS,
   type HubTab,
@@ -46,8 +45,18 @@ const INSPECT_SECTIONS: InspectSection[] = ['styles', 'computed', 'listeners']
 export type SelectorStudioHubVariant = 'panel' | 'devtools' | 'pane'
 
 type OutputMode = 'standard' | 'playwright'
+type FilterPreset = 'recommended' | 'xpath' | 'css' | 'framework'
 
 const FRAMEWORK_OPTIONS: FrameworkId[] = ['playwright', 'selenium', 'cypress', 'puppeteer', 'webdriverio']
+
+const PRESETS: FilterPreset[] = ['recommended', 'xpath', 'css', 'framework']
+
+function presetToGroup(preset: FilterPreset): LocatorGroup {
+  if (preset === 'xpath') return 'xpath'
+  if (preset === 'css') return 'css'
+  if (preset === 'framework') return 'jquery'
+  return 'recommended'
+}
 
 function HubToggle({
   checked,
@@ -100,37 +109,35 @@ export function SelectorStudioHubShell({
   const [typeOpen, setTypeOpen] = useState(false)
   const [selectorKind, setSelectorKind] = useState<'mixed' | 'css' | 'xpath'>('mixed')
   const [customInput, setCustomInput] = useState('')
-  const [locatorGroup, setLocatorGroup] = useState<LocatorGroup>('recommended')
-  const [selectorSearch, setSelectorSearch] = useState('')
+  const [preset, setPreset] = useState<FilterPreset>('recommended')
+  const [presetOpen, setPresetOpen] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
   const [fontScale, setFontScale] = useState<10 | 11 | 12>(11)
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const [hideStaleBanner, setHideStaleBanner] = useState(false)
   const { snapshot, settings } = model
+
+  useEffect(() => {
+    if (model.stale) setHideStaleBanner(false)
+  }, [model.stale])
   const disabled = panel && !settings.enabled
 
   const frameworkLabel = FRAMEWORK_LABELS[settings.defaultFramework]
 
   const tableItems = useMemo(() => {
-    let list = filterLocatorGroup(model.candidates, locatorGroup)
-    if (locatorGroup === 'recommended' && list.length === 0) {
+    const group = presetToGroup(preset)
+    let list = filterLocatorGroup(model.candidates, group)
+    if (group === 'recommended' && list.length === 0) {
       list = model.candidates
     }
     if (selectorKind === 'css') list = list.filter((item) => item.kind === 'css')
     if (selectorKind === 'xpath') list = list.filter((item) => item.kind === 'xpath')
-    const q = selectorSearch.trim().toLowerCase()
-    if (q) {
-      list = list.filter(
-        (item) =>
-          item.expression.toLowerCase().includes(q) ||
-          item.strategy.toLowerCase().includes(q) ||
-          item.kind.includes(q),
-      )
-    }
     if (outputMode === 'playwright') {
       list = list.filter((item) => item.strategy === 'test-attribute' || item.kind === 'xpath')
     }
     return list
-  }, [locatorGroup, model.candidates, outputMode, selectorKind, selectorSearch])
+  }, [model.candidates, outputMode, preset, selectorKind])
 
   const showToast = (message: string) => {
     setToast(message)
@@ -276,7 +283,7 @@ export function SelectorStudioHubShell({
       onKeyDown={onKeyDown}
     >
       <style>{`
-        .selector-studio-hub { --sh-orange: #ff7700; --sh-muted: #57606a; }
+        .selector-studio-hub { --sh-orange: #ff6a00; --sh-muted: #5f6368; }
         @keyframes copyFlash {
           0% { background-color: #d1fae5; }
           100% { background-color: transparent; }
@@ -288,8 +295,8 @@ export function SelectorStudioHubShell({
 
       <h1 className="sr-only">{t('studio.hub.title')}</h1>
 
-      <div className="flex h-7 shrink-0 items-center justify-between overflow-x-auto border-b border-[#dadce0] bg-[#f1f3f4] px-1.5">
-        <div className="flex h-full items-center gap-0.5" role="tablist" aria-label={t('studio.panel.navLabel')}>
+      <div className="flex h-9 shrink-0 items-center gap-1.5 overflow-x-auto border-b border-[#dadce0] bg-[#f1f3f4] px-2 text-[11px]">
+        <div className="flex h-full shrink-0 items-stretch gap-0.5" role="tablist" aria-label={t('studio.panel.navLabel')}>
           {devtoolsTabs.map((item) => (
             <button
               key={item.id}
@@ -297,10 +304,10 @@ export function SelectorStudioHubShell({
               role="tab"
               aria-selected={tab === item.id}
               className={cn(
-                'flex h-full items-center border-b-2 px-2 transition-colors',
+                'flex h-full items-center px-2.5 transition-colors',
                 tab === item.id
-                  ? 'border-[#1a73e8] bg-[#f8fafd] font-semibold text-[#1a73e8]'
-                  : 'border-transparent text-[#5f6368] hover:text-[#202124]',
+                  ? 'relative border border-[#dadce0] border-t-2 border-t-[#1a73e8] bg-white font-medium text-[#1a73e8]'
+                  : 'text-[#5f6368] hover:text-[#202124]',
               )}
               onClick={() => setTab(item.id)}
             >
@@ -308,6 +315,213 @@ export function SelectorStudioHubShell({
             </button>
           ))}
         </div>
+
+        {tab === 'selectors' && (
+          <>
+            <span className="hidden h-4 w-px shrink-0 bg-[#dadce0] sm:block" aria-hidden />
+            <button
+              type="button"
+              className={cn(
+                'flex shrink-0 items-center gap-1 rounded px-2 py-0.5 text-[11px] font-medium transition active:scale-95',
+                outputMode === 'standard'
+                  ? 'bg-[var(--sh-orange)] text-white shadow-xs hover:bg-[#e65e00]'
+                  : 'border border-[#dadce0] bg-white text-[#202124] hover:bg-[#f8f9fa]',
+              )}
+              onClick={() => setOutputMode('standard')}
+            >
+              <FileTextIcon className="size-2.5 shrink-0" aria-hidden />
+              {t('studio.hub.modeStandard')}
+            </button>
+            <button
+              type="button"
+              className={cn(
+                'flex shrink-0 items-center gap-1 rounded px-2 py-0.5 text-[11px] font-medium transition active:scale-95',
+                outputMode === 'playwright'
+                  ? 'bg-[var(--sh-orange)] text-white shadow-xs hover:bg-[#e65e00]'
+                  : 'border border-[#dadce0] bg-white text-[#202124] hover:bg-[#f8f9fa]',
+              )}
+              onClick={() => {
+                setOutputMode('playwright')
+                model.patchSettings({ defaultFramework: 'playwright' })
+              }}
+            >
+              <TheaterIcon className="size-2.5 shrink-0 text-[var(--sh-orange)]" aria-hidden />
+              {t('studio.hub.modePlaywright')}
+            </button>
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                className="flex items-center gap-1 rounded border border-[#dadce0] bg-white px-2 py-0.5 text-[11px] hover:bg-[#f8f9fa]"
+                onClick={() => setLangOpen((v) => !v)}
+              >
+                {frameworkLabel}
+                <ChevronDownIcon className="size-2 text-[#5f6368]" />
+              </button>
+              {langOpen && (
+                <div className="absolute left-0 z-30 mt-1 w-28 rounded border border-[#dadce0] bg-white py-1 shadow-lg">
+                  {FRAMEWORK_OPTIONS.map((fw) => (
+                    <button
+                      key={fw}
+                      type="button"
+                      className="block w-full px-2.5 py-1 text-left text-[11px] first:font-medium hover:bg-[var(--sh-orange)] hover:text-white"
+                      onClick={() => {
+                        model.patchSettings({ defaultFramework: fw })
+                        setLangOpen(false)
+                      }}
+                    >
+                      {FRAMEWORK_LABELS[fw]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="ml-auto flex shrink-0 items-center gap-1.5 text-[#5f6368]">
+              <label className="flex cursor-pointer items-center gap-1">
+                <span className="text-[11px] font-medium text-[#202124]">{t('studio.hub.axes')}</span>
+                <HubToggle
+                  id="axes-switch"
+                  checked={settings.includeAxes}
+                  onToggle={() => {
+                    const next = !settings.includeAxes
+                    void model.patchSettings({ includeAxes: next }).then(() => {
+                      if (snapshot) void model.reanalyze()
+                    })
+                  }}
+                />
+              </label>
+              <button
+                type="button"
+                className="flex size-[18px] items-center justify-center rounded-full bg-[var(--sh-orange)] text-white hover:bg-[#e65e00]"
+                title={t('studio.hub.runAll')}
+                aria-label={t('studio.hub.runAll')}
+                onClick={runAll}
+              >
+                <PlayIcon className="size-2 fill-current" />
+              </button>
+              <button
+                type="button"
+                className="p-0.5 transition hover:text-[var(--sh-orange)]"
+                title={t('studio.hub.copyAll')}
+                aria-label={t('studio.hub.copyAll')}
+                onClick={copyAll}
+              >
+                <CopyIcon className="size-3" />
+              </button>
+              <button
+                type="button"
+                className="p-0.5 transition hover:text-[var(--sh-orange)]"
+                title={t('studio.hub.fontSize')}
+                aria-label={t('studio.hub.fontSize')}
+                onClick={cycleFont}
+              >
+                <TypeIcon className="size-3" />
+              </button>
+              <label className="flex cursor-pointer items-center gap-1 pl-0.5">
+                <span className="text-[10.5px]">{t('studio.hub.autoSuggest')}</span>
+                <HubToggle
+                  id="autosuggest-switch"
+                  checked={settings.livePageSync}
+                  onToggle={() => {
+                    void model.patchSettings({ livePageSync: !settings.livePageSync })
+                  }}
+                />
+              </label>
+              <button
+                type="button"
+                className="p-0.5 text-[#5f6368] hover:text-[#202124]"
+                title={t('studio.pick')}
+                aria-label={t('studio.pick')}
+                disabled={disabled}
+                onClick={() => void model.pick()}
+              >
+                <CrosshairIcon className={cn('size-3', model.picking && 'text-[var(--sh-orange)]')} />
+              </button>
+              <button
+                type="button"
+                className="p-0.5 text-[#5f6368] hover:text-[var(--sh-orange)]"
+                title={t('studio.highlight')}
+                aria-label={t('studio.highlight')}
+                disabled={disabled || !model.active}
+                onClick={() => model.active && void model.highlight(model.active)}
+              >
+                <HighlighterIcon className="size-3" />
+              </button>
+              {!hideSettingsGear && !panel && (
+                <button
+                  type="button"
+                  className={cn('p-0.5 hover:text-[#202124]', settingsOpen && 'text-[var(--sh-orange)]')}
+                  title={t('studio.settings')}
+                  aria-label={t('studio.settings')}
+                  onClick={toggleSettings}
+                >
+                  <SettingsIcon className="size-3" />
+                </button>
+              )}
+              <div className="relative">
+                <button
+                  type="button"
+                  className="p-0.5 text-[#5f6368] hover:text-[#202124]"
+                  title={t('studio.more')}
+                  aria-label={t('studio.more')}
+                  aria-expanded={moreOpen}
+                  onClick={() => setMoreOpen((v) => !v)}
+                >
+                  <EllipsisVerticalIcon className="size-3" />
+                </button>
+                {moreOpen && (
+                  <div className="absolute right-0 z-30 mt-1 w-40 rounded border border-[#dadce0] bg-white py-1 text-[11px] shadow-lg">
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left hover:bg-[#f1f3f4]"
+                      disabled={disabled}
+                      onClick={() => {
+                        void model.reanalyze()
+                        setMoreOpen(false)
+                      }}
+                    >
+                      <RefreshCwIcon className={cn('size-3', model.analyzing && 'animate-spin')} />
+                      {t('studio.refresh')}
+                    </button>
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left hover:bg-[#f1f3f4] disabled:opacity-40"
+                      disabled={disabled || !model.active}
+                      onClick={() => {
+                        setPlayground(true)
+                        setMoreOpen(false)
+                      }}
+                    >
+                      {t('studio.edit')}
+                    </button>
+                    {!pane && (
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left hover:bg-[#f1f3f4]"
+                        onClick={() => {
+                          setTab('history')
+                          setMoreOpen(false)
+                        }}
+                      >
+                        {t('studio.tab.history')}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left hover:bg-[#f1f3f4]"
+                      onClick={() => {
+                        exportResults()
+                        setMoreOpen(false)
+                      }}
+                    >
+                      {t('studio.hub.export')}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {disabled && (
@@ -321,95 +535,18 @@ export function SelectorStudioHubShell({
 
       {tab === 'selectors' ? (
         <>
-          <div className="hub-strip flex shrink-0 items-center justify-between gap-1 border-b border-[#e1e4e8] bg-[#fdfdfd] px-1.5 py-1">
-            <div className="hub-mode-scroll flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+          <div className="flex shrink-0 items-center gap-2 border-b border-[#f1f3f4] bg-white px-2.5 py-1.5">
+            <div className="relative shrink-0">
               <button
                 type="button"
-                className={cn(
-                  'flex shrink-0 items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium shadow-xs transition active:scale-95',
-                  outputMode === 'standard'
-                    ? 'bg-[var(--sh-orange)] text-white hover:bg-[#e66a00]'
-                    : 'border border-[#d0d7de] bg-white hover:bg-[#f6f8fa]',
-                )}
-                onClick={() => setOutputMode('standard')}
-              >
-                <FileTextIcon className="size-3 shrink-0" aria-hidden />
-                <span className="whitespace-nowrap">{t('studio.hub.modeStandard')}</span>
-              </button>
-              <button
-                type="button"
-                className={cn(
-                  'flex shrink-0 items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium transition active:scale-95',
-                  outputMode === 'playwright'
-                    ? 'bg-[var(--sh-orange)] text-white hover:bg-[#e66a00]'
-                    : 'border border-[#d0d7de] bg-white hover:bg-[#f6f8fa]',
-                )}
-                onClick={() => {
-                  setOutputMode('playwright')
-                  model.patchSettings({ defaultFramework: 'playwright' })
-                }}
-              >
-                <TheaterIcon className="size-3 shrink-0 text-[var(--sh-orange)]" aria-hidden />
-                <span className="whitespace-nowrap">{t('studio.hub.modePlaywright')}</span>
-              </button>
-
-              <div className="relative shrink-0">
-                <button
-                  type="button"
-                  className="flex h-[23px] items-center gap-1 rounded border border-[#d0d7de] bg-white px-1.5 text-[10px] hover:bg-[#f6f8fa]"
-                  onClick={() => setLangOpen((v) => !v)}
-                >
-                  {frameworkLabel}
-                  <ChevronDownIcon className="size-2.5 text-[#57606a]" />
-                </button>
-                {langOpen && (
-                  <div className="absolute left-0 z-30 mt-1 w-36 rounded border border-[#d0d7de] bg-white py-1 shadow-lg">
-                    {FRAMEWORK_OPTIONS.map((fw) => (
-                      <button
-                        key={fw}
-                        type="button"
-                        className="block w-full px-2.5 py-1 text-left text-[11px] hover:bg-[var(--sh-orange)] hover:text-white"
-                        onClick={() => {
-                          model.patchSettings({ defaultFramework: fw })
-                          setLangOpen(false)
-                        }}
-                      >
-                        {FRAMEWORK_LABELS[fw]}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <button
-                type="button"
-                className="flex size-5 shrink-0 items-center justify-center rounded text-[#57606a] hover:bg-gray-100 hover:text-[var(--sh-orange)]"
-                title={t('studio.hub.syntaxGuide')}
-              >
-                <InfoIcon className="size-3" />
-              </button>
-            </div>
-            <button
-              type="button"
-              className="flex size-5 shrink-0 items-center justify-center text-[#57606a] hover:text-black"
-              title={t('studio.more')}
-            >
-              <GripVerticalIcon className="size-3" />
-            </button>
-          </div>
-
-          <div className="hub-strip flex shrink-0 items-center gap-1 border-b border-[#e1e4e8] bg-[#fbfbfb] px-1.5 py-1">
-            <div className="relative">
-              <button
-                type="button"
-                className="flex h-[25px] shrink-0 items-center gap-1 whitespace-nowrap rounded bg-[var(--sh-orange)] px-1.5 text-[10px] font-medium text-white shadow-xs hover:bg-[#e66a00]"
+                className="flex h-7 items-center gap-1.5 whitespace-nowrap rounded bg-[var(--sh-orange)] px-2.5 text-[11px] font-medium text-white shadow-xs hover:bg-[#e65e00]"
                 onClick={() => setTypeOpen((v) => !v)}
               >
                 {selectorTypeLabel}
                 <ChevronDownIcon className="size-2" />
               </button>
               {typeOpen && (
-                <div className="absolute left-0 z-30 mt-1 w-44 rounded border border-[#d0d7de] bg-white py-1 shadow-lg">
+                <div className="absolute left-0 z-30 mt-1 w-44 rounded border border-[#dadce0] bg-white py-1 shadow-lg">
                   {(
                     [
                       ['mixed', t('studio.hub.typeMixed')],
@@ -420,7 +557,10 @@ export function SelectorStudioHubShell({
                     <button
                       key={value}
                       type="button"
-                      className="flex w-full items-center justify-between px-2.5 py-1.5 text-left text-[11px] hover:bg-[#fff2e6] hover:text-[var(--sh-orange)]"
+                      className={cn(
+                        'flex w-full px-2.5 py-1.5 text-left text-[11px] hover:bg-[#fff4eb] hover:text-[var(--sh-orange)]',
+                        value === 'mixed' && 'font-medium',
+                      )}
                       onClick={() => {
                         setSelectorKind(value)
                         setTypeOpen(false)
@@ -437,117 +577,74 @@ export function SelectorStudioHubShell({
                 type="text"
                 value={customInput}
                 placeholder={t('studio.hub.inputPlaceholder')}
-                className="h-[25px] w-full rounded border border-[#cfd4da] bg-white pl-1.5 pr-6 font-mono text-[10px] focus:border-[var(--sh-orange)] focus:outline-none focus:ring-1 focus:ring-[var(--sh-orange)]"
+                className="h-7 w-full rounded border border-[#dadce0] bg-white px-2.5 font-mono text-[11px] text-[#202124] focus:border-[var(--sh-orange)] focus:outline-none focus:ring-1 focus:ring-[var(--sh-orange)]"
                 onChange={(e) => setCustomInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') verifyCustom()
                 }}
               />
-              {customInput && (
-                <button
-                  type="button"
-                  className="absolute right-2 top-1.5 text-gray-400 hover:text-gray-600"
-                  onClick={() => setCustomInput('')}
-                >
-                  <XIcon className="size-2.5" />
-                </button>
+            </div>
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                className="flex h-7 items-center gap-1.5 rounded border border-[#dadce0] bg-white px-2 text-[11px] hover:bg-[#f8f9fa]"
+                aria-label={t('studio.hub.presetLabel')}
+                onClick={() => setPresetOpen((v) => !v)}
+              >
+                {t(`studio.hub.preset.${preset}`)}
+                <ChevronDownIcon className="size-2 text-[#5f6368]" />
+              </button>
+              {presetOpen && (
+                <div className="absolute right-0 z-30 mt-1 w-36 rounded border border-[#dadce0] bg-white py-1 shadow-lg">
+                  {PRESETS.map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className={cn(
+                        'block w-full px-2.5 py-1.5 text-left text-[11px] hover:bg-[#f1f3f4]',
+                        id === 'recommended' && 'font-medium',
+                      )}
+                      onClick={() => {
+                        setPreset(id)
+                        setPresetOpen(false)
+                      }}
+                    >
+                      {t(`studio.hub.preset.${id}`)}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
             <button
               type="button"
-              className="flex size-[25px] shrink-0 items-center justify-center rounded-full border border-[#cfd4da] bg-white text-[var(--sh-orange)] shadow-sm transition hover:border-[var(--sh-orange)] hover:bg-[var(--sh-orange)] hover:text-white active:scale-95"
+              className="flex size-7 shrink-0 items-center justify-center rounded-full border border-[#dadce0] text-[var(--sh-orange)] transition hover:border-[var(--sh-orange)] hover:bg-[var(--sh-orange)] hover:text-white active:scale-95"
               title={t('studio.hub.addVerify')}
+              aria-label={t('studio.hub.addVerify')}
               onClick={verifyCustom}
             >
-              <PlusIcon className="size-3" />
+              <PlusIcon className="size-3.5" />
             </button>
           </div>
 
-          <div className="hub-strip flex shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b border-[#e1e4e8] bg-[#f6f8fa] px-1.5 py-1 text-[10px] text-[#57606a]">
-            <div className="flex min-w-0 flex-1 items-center gap-1">
-              <select
-                className="h-[22px] max-w-[7.5rem] shrink-0 rounded border border-[#d0d7de] bg-white px-1 text-[10px] text-[#24292f]"
-                value={locatorGroup}
-                aria-label={t('studio.hub.strategyGroup')}
-                onChange={(e) => setLocatorGroup(e.target.value as LocatorGroup)}
-              >
-                {(
-                  [
-                    'recommended',
-                    'css',
-                    'xpath',
-                    'text',
-                    'parent',
-                    'sibling',
-                    'axes',
-                    'indexed',
-                    'absolute',
-                    'jquery',
-                    'all',
-                  ] as const
-                ).map((id) => (
-                  <option key={id} value={id}>
-                    {t(`studio.hub.group.${id}`)}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="search"
-                value={selectorSearch}
-                placeholder={t('studio.hub.filterPlaceholder')}
-                className="h-[22px] min-w-[4.5rem] flex-1 rounded border border-[#d0d7de] bg-white px-1.5 text-[10px]"
-                onChange={(e) => setSelectorSearch(e.target.value)}
-              />
+          {((model.stale && !hideStaleBanner) || model.error) && (
+            <div className="flex shrink-0 items-center justify-between border-b border-[#dadce0] bg-[#f8f9fa] px-3 py-1.5 text-[11px] text-[#5f6368]">
+              {model.stale && !hideStaleBanner && <span>{t('studio.stale')}</span>}
+              {model.error && <span className="text-red-600">{model.error}</span>}
+              {model.stale && !hideStaleBanner && (
+                <button
+                  type="button"
+                  className="text-[#80868b] hover:text-[#202124]"
+                  aria-label={t('studio.hub.dismissNotification')}
+                  onClick={() => setHideStaleBanner(true)}
+                >
+                  <XIcon className="size-3" />
+                </button>
+              )}
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <label className="flex cursor-pointer items-center gap-1.5">
-                <span className="font-medium text-[#24292f]">{t('studio.hub.axes')}</span>
-                <HubToggle
-                  id="axes-switch"
-                  checked={settings.includeAxes}
-                  onToggle={() => {
-                    const next = !settings.includeAxes
-                    void model.patchSettings({ includeAxes: next }).then(() => {
-                      if (snapshot) void model.reanalyze()
-                    })
-                  }}
-                />
-              </label>
-              <button
-                type="button"
-                className="flex size-4 items-center justify-center rounded-full bg-[var(--sh-orange)] text-white hover:bg-[#e66a00]"
-                title={t('studio.hub.runAll')}
-                onClick={runAll}
-              >
-                <PlayIcon className="size-2 fill-current" />
-              </button>
-              <button type="button" className="text-[#57606a] transition hover:text-[var(--sh-orange)]" title={t('studio.hub.copyAll')} onClick={copyAll}>
-                <CopyIcon className="size-3" />
-              </button>
-              <button type="button" className="transition hover:text-[var(--sh-orange)]" title={t('studio.hub.fontSize')} onClick={cycleFont}>
-                <TypeIcon className="size-2.5" />
-              </button>
-              <button type="button" className="transition hover:text-[var(--sh-orange)]" title={t('studio.hub.export')} onClick={exportResults}>
-                <FileTextIcon className="size-2.5" />
-              </button>
-              <label className="flex cursor-pointer items-center gap-1">
-                <span className="text-[10px]">{t('studio.hub.autoSuggest')}</span>
-                <HubToggle
-                  id="autosuggest-switch"
-                  checked={settings.livePageSync}
-                  onToggle={() => {
-                    void model.patchSettings({ livePageSync: !settings.livePageSync })
-                  }}
-                />
-              </label>
-            </div>
-          </div>
-
-          {(model.picking || model.error || model.stale) && (
-            <div className="shrink-0 border-b border-[#e1e4e8] px-1.5 py-0.5 text-[10px]">
-              {model.picking && <p className="text-[#1a73e8]">{t('studio.pickProgress')}</p>}
-              {model.stale && !model.picking && <p className="text-[#57606a]">{t('studio.stale')}</p>}
-              {model.error && <p className="text-red-600">{model.error}</p>}
+          )}
+          {model.picking && (
+            <div className="shrink-0 border-b border-[#e1e4e8] bg-[#e8f0fe] px-3 py-1 text-[11px] text-[#1a73e8]">
+              {t('studio.pickProgress')}
             </div>
           )}
 
@@ -561,43 +658,14 @@ export function SelectorStudioHubShell({
             </div>
           )}
 
-          <div className={cn('flex min-h-0 flex-1', disabled && 'pointer-events-none opacity-45')}>
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-r border-[#e1e4e8]">
-              <div className="min-h-0 flex-1 overflow-y-auto">
-                <SelectorsHubTable
-                  model={model}
-                  items={tableItems}
-                  fontScale={fontScale}
-                  selectedId={selectedRowId}
-                  onSelectId={setSelectedRowId}
-                />
-              </div>
-              {snapshot && <RelationshipExplorer snapshot={snapshot} />}
-            </div>
-            <HubSideRail
+          <div className={cn('min-h-0 flex-1 overflow-y-auto', disabled && 'pointer-events-none opacity-45')}>
+            <SelectorsHubTable
               model={model}
-              settingsOpen={settingsOpen}
-              onToggleSettings={toggleSettings}
-              onEdit={() => setPlayground(true)}
-              onOpenHistory={() => setTab('history')}
-              onOpenCode={() => setTab('code')}
-              showHistory={!pane}
-              disabled={disabled}
-              hideSettings={hideSettingsGear || panel}
-              align="right"
+              items={tableItems}
+              fontScale={fontScale}
+              selectedId={selectedRowId}
+              onSelectId={setSelectedRowId}
             />
-          </div>
-
-          <div className="flex shrink-0 items-center justify-between gap-1 overflow-x-auto border-t border-[#dadce0] bg-[#f1f3f4] px-1.5 py-0.5 text-[10px] text-[#5f6368]">
-            <div className="flex min-w-0 items-center gap-1.5">
-              <span className="truncate font-mono text-[#3c4043]">
-                {snapshot ? elementChip(snapshot) : t('studio.noElement')}
-              </span>
-              <span className="hidden truncate sm:inline">· {hostOf(snapshot?.pageUrl || model.pageUrl)}</span>
-            </div>
-            <span className="shrink-0 rounded bg-[var(--sh-orange)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
-              {t('studio.hub.brandMark')}
-            </span>
           </div>
         </>
       ) : (
@@ -624,7 +692,7 @@ export function SelectorStudioHubShell({
             onClick={() => setSettingsOpen(false)}
           />
           <aside
-            className="absolute top-0 right-8 z-40 flex h-full max-h-full w-[min(calc(100%-2.25rem),16.5rem)] flex-col border border-[#e1e4e8] bg-white shadow-xl"
+            className="absolute top-0 right-0 z-40 flex h-full max-h-full w-[min(calc(100%-1rem),16.5rem)] flex-col border border-[#e1e4e8] bg-white shadow-xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="studio-settings-title"
