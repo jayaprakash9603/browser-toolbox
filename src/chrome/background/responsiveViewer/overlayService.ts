@@ -1,4 +1,4 @@
-import { loadRecorderSettings } from '@/core/recorder/settings'
+import { DEFAULT_RECORDER_SETTINGS } from '@/core/recorder/settings'
 import { isRestrictedCaptureUrl } from '@/core/screenshot/restricted'
 import { CHASSIS } from '@/tools/design/responsive-viewer/chassis'
 import {
@@ -16,7 +16,7 @@ import { simulatorStudioUrl } from '@/tools/design/responsive-viewer/studioUrl'
 import { setOverlayTabFraming } from '../responsiveViewerFraming'
 import { clearOverlaySession, getOverlaySession, markOverlaySession } from './overlaySession'
 import { downloadWithName } from '../downloadNames'
-import { startRecorder, stopRecorder } from '../recorder'
+import { startRecorder } from '../recorder'
 
 import type { ExtensionMessage } from '@/core/messaging/types'
 import type { SimulatorOverlayConfig, SimulatorOverlayUiSettings } from './overlayTypes'
@@ -316,8 +316,7 @@ async function captureSimulatorScreenshot(tab?: chrome.tabs.Tab) {
 }
 
 async function startOverlayRecording(tab?: chrome.tabs.Tab) {
-  const settings = await loadRecorderSettings()
-  await startRecorder('tab', { ...settings, mic: false, countdown: settings.countdown !== false }, tab)
+  await startRecorder('tab', { ...DEFAULT_RECORDER_SETTINGS, countdown: false, mic: false }, tab)
   return { ok: true as const }
 }
 
@@ -369,9 +368,6 @@ export async function handleOverlayAction(
       return message.captureMode === 'viewport' ? captureViewportScreenshot(tab) : captureSimulatorScreenshot(tab)
     case 'record':
       return startOverlayRecording(tab)
-    case 'recordStop':
-      await stopRecorder()
-      return { ok: true as const }
     case 'closed': {
       if (tab?.id != null) {
         await setOverlayTabFraming(tab.id, false)

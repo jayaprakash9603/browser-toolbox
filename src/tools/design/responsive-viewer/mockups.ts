@@ -1,6 +1,4 @@
-/** Photoreal phone bezels (760px WebPs). Insets are fractions of the image. */
-
-import { MOCKUP_FRAMES } from './mockup-frames.generated'
+/** Photoreal bezels from open-device-frame (MIT). Insets are fractions of the image. */
 
 export interface MockupInsets {
   left: number
@@ -13,52 +11,48 @@ export interface DeviceMockup extends MockupInsets {
   file: string
 }
 
-const FRAMES = MOCKUP_FRAMES
+const FRAMES: Record<string, MockupInsets> = {
+  'iphone-14.webp': { left: 0.07362, top: 0.030534, right: 0.079755, bottom: 0.041221 },
+  'iphone-15.webp': { left: 0.072727, top: 0.029895, right: 0.078788, bottom: 0.037369 },
+  'iphone-15-plus.webp': { left: 0.066116, top: 0.027027, right: 0.085399, bottom: 0.048649 },
+  'iphone-15-pro.webp': { left: 0.072289, top: 0.029412, right: 0.072289, bottom: 0.041176 },
+  'iphone-15-pro-max.webp': { left: 0.064, top: 0.02642, right: 0.072, bottom: 0.038309 },
+  'iphone-16.webp': { left: 0.072508, top: 0.029542, right: 0.081571, bottom: 0.031019 },
+  'iphone-16-plus.webp': { left: 0.054348, top: 0.026991, right: 0.065217, bottom: 0.033738 },
+  'iphone-16-pro.webp': { left: 0.071217, top: 0.029542, right: 0.074184, bottom: 0.031019 },
+  'iphone-16-pro-max.webp': { left: 0.054054, top: 0.02656, right: 0.07027, bottom: 0.033201 },
+  'pixel-8.webp': { left: 0.060377, top: 0.034722, right: 0.079245, bottom: 0.055556 },
+  'pixel-8-pro.webp': { left: 0.078689, top: 0.03125, right: 0.081967, bottom: 0.05 },
+  'pixel-9.webp': { left: 0.069444, top: 0.039409, right: 0.083333, bottom: 0.041051 },
+  'pixel-9-pro.webp': { left: 0.066667, top: 0.0384, right: 0.08, bottom: 0.04 },
+  'pixel-9-pro-xl.webp': { left: 0.050157, top: 0.029895, right: 0.0721, bottom: 0.037369 },
+  'xiaomi-15-ultra.webp': { left: 0.059172, top: 0.023022, right: 0.065089, bottom: 0.038849 },
+}
 
-/** Catalog id → frame file in public/simulator/frames. */
+/** Catalog id → closest published MIT frame. Galaxy S / SE / tablets keep the CSS chassis. */
 const DEVICE_FILE: Record<string, keyof typeof FRAMES> = {
-  'iphone-17-pro-max': 'iphone-17-pro-max.webp',
-  'iphone-17-pro': 'iphone-17-pro.webp',
-  'iphone-17': 'iphone-17.webp',
-  'iphone-air': 'iphone-air.webp',
-  'iphone-16-pro-max': 'iphone-16-pro-max.webp',
   'iphone-16-pro': 'iphone-16-pro.webp',
+  'iphone-16-pro-max': 'iphone-16-pro-max.webp',
   'iphone-16': 'iphone-16.webp',
-  'iphone-pro-max': 'iphone-pro-max.webp',
-  iphone: 'iphone.webp',
+  'iphone-17-pro': 'iphone-16-pro.webp',
+  'iphone-17-pro-max': 'iphone-16-pro-max.webp',
+  'iphone-17': 'iphone-16.webp',
+  'iphone-air': 'iphone-16-plus.webp',
+  'iphone-pro-max': 'iphone-15-pro-max.webp',
+  iphone: 'iphone-15.webp',
   'iphone-15-pro': 'iphone-15-pro.webp',
-  'iphone-14-pro': 'iphone-14-pro.webp',
+  'iphone-14-pro': 'iphone-15-pro.webp',
   'iphone-14': 'iphone-14.webp',
-  'iphone-13': 'iphone-13.webp',
-  'iphone-12': 'iphone-12.webp',
-  'iphone-11': 'iphone-11.webp',
-  'iphone-se': 'iphone-se.webp',
-
-  'galaxy-s26-ultra': 'galaxy-s26-ultra.webp',
-  'galaxy-s26-plus': 'galaxy-s26-ultra.webp',
-  'galaxy-s26': 'galaxy-s24.webp',
-  'galaxy-s25-ultra': 'galaxy-s24-ultra.webp',
-  'galaxy-s25-plus': 'galaxy-s24-ultra.webp',
-  'galaxy-s25': 'galaxy-s24.webp',
-  'galaxy-s24-ultra': 'galaxy-s24-ultra.webp',
-  galaxy: 'galaxy-s24.webp',
-  'galaxy-s23': 'galaxy-s23.webp',
-  'galaxy-z-fold': 'galaxy-z-fold.webp',
-  'galaxy-z-flip': 'galaxy-z-flip.webp',
-
-  'pixel-10-pro': 'pixel-10-pro.webp',
-  'pixel-10': 'pixel-10.webp',
+  'iphone-13': 'iphone-14.webp',
+  'iphone-12': 'iphone-14.webp',
+  'iphone-11': 'iphone-14.webp',
+  'pixel-10-pro': 'pixel-9-pro-xl.webp',
+  'pixel-10': 'pixel-9.webp',
   'pixel-9-pro': 'pixel-9-pro.webp',
   'pixel-9': 'pixel-9.webp',
   'pixel-8-pro': 'pixel-8-pro.webp',
   pixel: 'pixel-8.webp',
-
-  'oneplus-13': 'oneplus-13.webp',
-  'xiaomi-14': 'xiaomi-14.webp',
-  'oppo-find-x8': 'oppo-find-x8.webp',
-  'vivo-x200': 'vivo-x200.webp',
-  'motorola-edge': 'motorola-edge.webp',
-  'nothing-phone': 'nothing-phone.webp',
+  'xiaomi-14': 'xiaomi-15-ultra.webp',
 }
 
 export const MOCKUP_PUBLIC_DIR = 'simulator/frames'

@@ -162,7 +162,6 @@ export default defineManifest({
         'recorder.html',
         'react-devtools/build/*',
         'simulator/frames/*',
-        'simulator/fonts/*',
       ],
     },
   ],
