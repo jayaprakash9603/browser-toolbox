@@ -83,6 +83,7 @@ async function runRequest(
   requestId: string | undefined,
   payload: ApiClientSendPayload,
 ): Promise<ApiClientResponse> {
+  await ensureApiClientDnrBypass()
   const controller = new AbortController()
   if (requestId) inFlight.set(requestId, controller)
   const prepared = prepareSendPayload(payload)

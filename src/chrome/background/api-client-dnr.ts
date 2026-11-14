@@ -2,7 +2,8 @@ import { createLogger } from '@/core/logging'
 
 const logger = createLogger('api-client-dnr')
 
-export const API_CLIENT_DNR_RULE_ID = 91_103 as const
+/** Must not share an ID with responsive-viewer session rules (e.g. overlay framing uses 91_103). */
+export const API_CLIENT_DNR_RULE_ID = 91_104 as const
 
 const RULE_PRIORITY = 2_000
 
