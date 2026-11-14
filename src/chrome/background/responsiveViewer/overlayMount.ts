@@ -7,6 +7,11 @@ import {
   SIM_STAGE_PAD_Y,
   type OverlayInsets,
 } from './overlayFit'
+import {
+  overlayHomeIndicatorVisible,
+  overlayIframeLayoutSize,
+  overlayPreviewChrome,
+} from './overlayViewport'
 import type { SimulatorOverlayConfig, SimulatorOverlayUiSettings, SimulatorOverlayUiTheme } from './overlayTypes'
 
 /** Injected in the page only — bundled to public/inject/simulator-overlay.js. */
@@ -227,12 +232,22 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .screen {
       position: relative;
+      display: flex;
+      flex-direction: column;
       overflow: hidden;
       background: #fff;
       border-radius: 40px;
       box-shadow: inset 0 0 0 1px rgba(15,23,42,0.06);
     }
-    iframe {
+    .viewport {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 0;
+      width: 100%;
+      overflow: hidden;
+      background: #fff;
+    }
+    .viewport iframe {
       position: absolute;
       inset: 0;
       width: 100%;
@@ -278,7 +293,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       bottom: 7px; left: 50%; transform: translateX(-50%);
       width: 34%; max-width: 134px; height: 5px; border-radius: 999px; background: rgba(255,255,255,0.92);
     }
-    .safari:not([hidden]) ~ .home {
+    .screen.safari-chrome .home {
       background: #3a3a3c;
     }
     .android-nav {
@@ -288,12 +303,16 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .safari {
       pointer-events: none;
-      position: absolute;
-      left: 0; right: 0; bottom: 0;
+      position: relative;
+      flex-shrink: 0;
       z-index: 3;
+      width: 100%;
       padding: 6px 12px 18px;
       background: linear-gradient(180deg, rgba(247,247,248,0.92) 0%, #f4f4f5 40%, #f4f4f5 100%);
       color: #111827;
+    }
+    .has-mockup .status {
+      display: none !important;
     }
     .url-pill {
       display: flex; align-items: center; gap: 8px;
@@ -893,16 +912,25 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
         <span class="side" style="top:22%;right:-3px;height:14%;border-radius:0 1px 1px 0;"></span>
         <div class="chassis">
           <div class="screen">
-            <iframe title="${escapeHtml(config.label)}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals" referrerpolicy="no-referrer-when-downgrade"></iframe>
-            <div class="preview-loading" data-preview-loading aria-hidden="true">
-              <span class="preview-loading-spin" aria-hidden="true"></span>
-              <span>Loading…</span>
+            <div class="viewport">
+              <iframe title="${escapeHtml(config.label)}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals" referrerpolicy="no-referrer-when-downgrade"></iframe>
+              <div class="preview-loading" data-preview-loading aria-hidden="true">
+                <span class="preview-loading-spin" aria-hidden="true"></span>
+                <span>Loading…</span>
+              </div>
+              <div class="status" aria-hidden="true">
+                <span class="clock"></span>
+                <span class="status-icons">${iconSignal}${iconWifi}${iconBattery}</span>
+              </div>
+              <div class="cutout"></div>
+              <div class="home" hidden></div>
+              <div class="android-nav" hidden>
+                <span style="width:10px;height:10px;border:1px solid currentColor;border-radius:2px;"></span>
+                <span style="width:10px;height:10px;border:1px solid currentColor;border-radius:999px;"></span>
+                <span style="width:10px;height:2px;background:currentColor;border-radius:999px;"></span>
+              </div>
+              <div class="blocked">This site blocked the in-page preview.<br/><a class="studio-link" target="_blank" rel="noopener noreferrer">Open full simulator</a></div>
             </div>
-            <div class="status" aria-hidden="true">
-              <span class="clock"></span>
-              <span class="status-icons">${iconSignal}${iconWifi}${iconBattery}</span>
-            </div>
-            <div class="cutout"></div>
             <div class="safari" hidden>
               <div class="url-pill">
                 <span aria-hidden="true">AA</span>
@@ -913,13 +941,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
                 ${iconBack}${iconForward}${iconShare}${iconBook}${iconTabs}
               </div>
             </div>
-            <div class="home" hidden></div>
-            <div class="android-nav" hidden>
-              <span style="width:10px;height:10px;border:1px solid currentColor;border-radius:2px;"></span>
-              <span style="width:10px;height:10px;border:1px solid currentColor;border-radius:999px;"></span>
-              <span style="width:10px;height:2px;background:currentColor;border-radius:999px;"></span>
-            </div>
-            <div class="blocked">This site blocked the in-page preview.<br/><a class="studio-link" target="_blank" rel="noopener noreferrer">Open full simulator</a></div>
           </div>
         </div>
         </div>
@@ -1439,13 +1460,23 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       mockupImg.hidden = true
       mockupImg.removeAttribute('src')
     }
+    const chrome = overlayPreviewChrome({
+      hasMockup: Boolean(mockup),
+      rotated: state.rotated,
+      showStatusBar: state.ui.showStatusBar,
+      statusBar: live.statusBar,
+      showSafari: live.showSafari,
+    })
+    const layoutSize = overlayIframeLayoutSize({ width, height }, chrome)
     const notchClass = live.notch === 'punch-hole' ? 'punch' : live.notch
     cutout.className = !mockup && live.notch !== 'none' ? `cutout ${notchClass}` : 'cutout'
-    safari.hidden = !live.showSafari || state.rotated
-    home.hidden = !state.ui.showNavBar || live.navBar !== 'home-indicator'
+    safari.hidden = !chrome.safariChrome
+    screen.classList.toggle('safari-chrome', chrome.safariChrome)
+    home.hidden = !overlayHomeIndicatorVisible(state.ui.showNavBar, live.navBar, state.rotated)
     androidNav.hidden = !state.ui.showNavBar || live.navBar !== 'android' || state.rotated
-    status.style.display =
-      !state.ui.showStatusBar || live.statusBar === 'none' ? 'none' : ''
+    status.style.display = chrome.decorStatus ? '' : 'none'
+    iframe.setAttribute('width', String(layoutSize.width))
+    iframe.setAttribute('height', String(layoutSize.height))
     syncSettingsUi()
     positionDevicesPanel()
     requestAnimationFrame(() => {

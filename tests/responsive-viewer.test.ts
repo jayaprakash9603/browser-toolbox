@@ -18,6 +18,11 @@ import {
   overlayStageBox,
 } from '@/chrome/background/responsiveViewer/overlayFit'
 import {
+  OVERLAY_SAFARI_CHROME_PX,
+  overlayIframeLayoutSize,
+  overlayPreviewChrome,
+} from '@/chrome/background/responsiveViewer/overlayViewport'
+import {
   canOverlaySimulatorOnTab,
   handleOverlayAction,
   mountSimulatorOverlay,
@@ -94,6 +99,31 @@ describe('responsive viewer model', () => {
     const narrow = overlayStageBox({ width: 680, height: 700 }, true)
     expect(narrow.dockPicker).toBe(false)
     expect(narrow.maxW).toBe(overlayStageBox({ width: 680, height: 700 }, false).maxW)
+  })
+
+  it('docks Safari below the page and hides duplicate status on photoreal mockups', () => {
+    const mockupChrome = overlayPreviewChrome({
+      hasMockup: true,
+      rotated: false,
+      showStatusBar: true,
+      statusBar: 'ios',
+      showSafari: true,
+    })
+    expect(mockupChrome.decorStatus).toBe(false)
+    expect(mockupChrome.safariChrome).toBe(true)
+    expect(overlayIframeLayoutSize({ width: 402, height: 874 }, mockupChrome)).toEqual({
+      width: 402,
+      height: 874 - OVERLAY_SAFARI_CHROME_PX,
+    })
+    const cssChrome = overlayPreviewChrome({
+      hasMockup: false,
+      rotated: false,
+      showStatusBar: true,
+      statusBar: 'ios',
+      showSafari: false,
+    })
+    expect(cssChrome.decorStatus).toBe(true)
+    expect(overlayIframeLayoutSize({ width: 402, height: 874 }, cssChrome).height).toBe(874)
   })
 
   it('swaps dimensions when rotated and reports breakpoints', () => {
@@ -309,6 +339,11 @@ describe('mobile simulator studio helpers', () => {
     expect(Number.parseInt(wrap.style.height, 10)).toBeGreaterThan(500)
     const screen = host?.shadowRoot?.querySelector('.screen') as HTMLElement
     expect(screen.style.height).toMatch(/%/)
+    expect(host?.shadowRoot?.querySelector('.viewport')).toBeTruthy()
+    const status = host?.shadowRoot?.querySelector('.status') as HTMLElement
+    expect(getComputedStyle(status).display).toBe('none')
+    const iframe = host?.shadowRoot?.querySelector('iframe') as HTMLIFrameElement
+    expect(Number(iframe.getAttribute('height'))).toBe(874 - OVERLAY_SAFARI_CHROME_PX)
     mountSimulatorOverlay(config)
     expect(document.getElementById(SIMULATOR_OVERLAY_ID)).toBeNull()
   })
