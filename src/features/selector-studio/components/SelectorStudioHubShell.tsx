@@ -25,11 +25,14 @@ import {
 import { useDeepLinkTab } from '@/shared/hooks/useDeepLinkTab'
 import { cn } from '@/shared/utils/cn'
 
+import type { SelectorCandidate } from '@/core/engines/selector-studio'
+
 import type { SelectorStudioModel } from '../useSelectorStudio'
 import { HubAttributesTable } from './HubAttributesTable'
 import { HubSettingsPanel } from './HubSettingsPanel'
 import { InspectPanel, type InspectSection } from './InspectPanel'
 import { Playground } from './Playground'
+import { RelationshipExplorer } from './RelationshipExplorer'
 import { SelectorsHubTable } from './SelectorsHubTable'
 import {
   CodePanel,
@@ -102,7 +105,8 @@ export function SelectorStudioHubShell({
   const [tab, setTab] = useDeepLinkTab('tab', tabs, defaultTab)
   const [inspectSection, setInspectSection] = useDeepLinkTab('inspect', INSPECT_SECTIONS, 'styles')
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [playground, setPlayground] = useState(false)
+  const [playgroundOpen, setPlaygroundOpen] = useState(false)
+  const [playgroundPinned, setPlaygroundPinned] = useState<SelectorCandidate | null>(null)
   const [name, setName] = useHistoryNameState()
   const [outputMode, setOutputMode] = useState<OutputMode>('standard')
   const [langOpen, setLangOpen] = useState(false)
@@ -134,10 +138,26 @@ export function SelectorStudioHubShell({
     if (selectorKind === 'css') list = list.filter((item) => item.kind === 'css')
     if (selectorKind === 'xpath') list = list.filter((item) => item.kind === 'xpath')
     if (outputMode === 'playwright') {
-      list = list.filter((item) => item.strategy === 'test-attribute' || item.kind === 'xpath')
+      const playwrightRows = list.filter((item) => item.reasons.includes('Playwright'))
+      if (playwrightRows.length) list = playwrightRows
     }
     return list
   }, [model.candidates, outputMode, preset, selectorKind])
+
+  const playgroundCandidate = model.active ?? playgroundPinned
+
+  const openPlayground = (seed?: SelectorCandidate | null) => {
+    const next = seed ?? model.active
+    if (!next) return
+    setPlaygroundPinned(next)
+    setPlaygroundOpen(true)
+    setMoreOpen(false)
+    setSettingsOpen(false)
+  }
+
+  const closePlayground = () => {
+    setPlaygroundOpen(false)
+  }
 
   const showToast = (message: string) => {
     setToast(message)
@@ -145,6 +165,18 @@ export function SelectorStudioHubShell({
   }
 
   const onKeyDown = (event: KeyboardEvent) => {
+    if (event.code === 'Escape') {
+      if (playgroundOpen) {
+        event.preventDefault()
+        closePlayground()
+        return
+      }
+      if (settingsOpen) {
+        event.preventDefault()
+        setSettingsOpen(false)
+        return
+      }
+    }
     if (disabled || !(event.altKey && event.shiftKey)) return
     if (event.code === 'KeyP') {
       event.preventDefault()
@@ -154,13 +186,10 @@ export function SelectorStudioHubShell({
       if (model.active) void navigator.clipboard.writeText(model.active.expression)
     } else if (event.code === 'Slash') {
       event.preventDefault()
-      setPlayground(true)
+      openPlayground()
     } else if (event.code === 'Backspace') {
       event.preventDefault()
       void model.clearSelection()
-    } else if (event.code === 'Escape' && settingsOpen) {
-      event.preventDefault()
-      setSettingsOpen(false)
     }
   }
 
@@ -487,10 +516,7 @@ export function SelectorStudioHubShell({
                       type="button"
                       className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left hover:bg-[#f1f3f4] disabled:opacity-40"
                       disabled={disabled || !model.active}
-                      onClick={() => {
-                        setPlayground(true)
-                        setMoreOpen(false)
-                      }}
+                      onClick={() => openPlayground()}
                     >
                       {t('studio.edit')}
                     </button>
@@ -648,24 +674,22 @@ export function SelectorStudioHubShell({
             </div>
           )}
 
-          {playground && model.active && (
-            <div className="shrink-0 border-b border-[#e1e4e8] p-2">
-              <Playground
-                candidate={model.active}
-                onValidate={model.validateExpression}
-                onReset={() => snapshot && void model.reanalyze()}
+          <div
+            className={cn(
+              'flex min-h-0 flex-1 flex-col overflow-hidden',
+              disabled && 'pointer-events-none opacity-45',
+            )}
+          >
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <SelectorsHubTable
+                model={model}
+                items={tableItems}
+                fontScale={fontScale}
+                selectedId={selectedRowId}
+                onSelectId={setSelectedRowId}
               />
             </div>
-          )}
-
-          <div className={cn('min-h-0 flex-1 overflow-y-auto', disabled && 'pointer-events-none opacity-45')}>
-            <SelectorsHubTable
-              model={model}
-              items={tableItems}
-              fontScale={fontScale}
-              selectedId={selectedRowId}
-              onSelectId={setSelectedRowId}
-            />
+            {snapshot && <RelationshipExplorer snapshot={snapshot} />}
           </div>
         </>
       ) : (
@@ -683,7 +707,25 @@ export function SelectorStudioHubShell({
         </div>
       )}
 
-      {settingsOpen && !hideSettingsGear && !panel && (
+      {playgroundOpen && playgroundCandidate && tab === 'selectors' && (
+        <div
+          className="absolute inset-x-0 bottom-0 z-[60] flex max-h-[min(52%,22rem)] flex-col border-t border-[#dadce0] bg-white shadow-[0_-8px_24px_rgba(32,33,36,0.18)]"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('studio.playground')}
+        >
+          <div className="min-h-0 overflow-y-auto p-2.5">
+            <Playground
+              candidate={playgroundCandidate}
+              onValidate={model.validateExpression}
+              onReset={() => snapshot && void model.reanalyze()}
+              onClose={closePlayground}
+            />
+          </div>
+        </div>
+      )}
+
+      {settingsOpen && !hideSettingsGear && !panel && !playgroundOpen && (
         <>
           <button
             type="button"

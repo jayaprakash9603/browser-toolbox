@@ -34,7 +34,12 @@ export function filterLocatorGroup(candidates: SelectorCandidate[], group: Locat
     return candidates.filter((item) => item.expression.startsWith('/html'))
   }
   if (group === 'jquery') {
-    return candidates.filter((item) => item.reasons.includes('jQuery') || item.reasons.includes('querySelector'))
+    return candidates.filter(
+      (item) =>
+        item.reasons.includes('jQuery') ||
+        item.reasons.includes('querySelector') ||
+        item.reasons.includes('Playwright'),
+    )
   }
   if (group === 'recommended') {
     return candidates.filter(

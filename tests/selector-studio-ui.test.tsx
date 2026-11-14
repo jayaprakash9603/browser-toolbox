@@ -240,7 +240,9 @@ describe('Selector Studio UI', () => {
     renderStudio(<SelectorStudioView model={model()} />)
     await user.click(screen.getByRole('button', { name: /more actions/i }))
     await user.click(screen.getByRole('button', { name: /edit selector/i }))
-    expect(screen.getByText(/playground/i)).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: /selector playground/i })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /^close$/i }))
+    expect(screen.queryByRole('dialog', { name: /selector playground/i })).not.toBeInTheDocument()
   })
 
   it('works in dark theme and skips motion when reduced-motion is set', () => {

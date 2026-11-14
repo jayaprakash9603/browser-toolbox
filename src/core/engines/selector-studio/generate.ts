@@ -22,7 +22,7 @@ export function generateCandidates(
     raw = raw.filter((item) => !AXIS_STRATEGIES.has(item.strategy))
   }
   const ranked = rankCandidates(applyScores(raw, snapshot), mode)
-  return [...ranked, ...utilityCandidatesFrom(ranked)]
+  return [...ranked, ...utilityCandidatesFrom(ranked, snapshot)]
 }
 
 export function bestCandidate(candidates: SelectorCandidate[]): SelectorCandidate | null {

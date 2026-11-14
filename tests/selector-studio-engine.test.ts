@@ -148,6 +148,24 @@ describe('selector-studio generation', () => {
     expect(jq?.evaluateAs).toEqual({ kind: 'css', expression: '#submit' })
   })
 
+  it('appends Playwright locator utility rows with evaluateAs queries', () => {
+    const node = snapshot({
+      tag: 'button',
+      id: 'submit',
+      idUnique: true,
+      attributes: { 'data-testid': 'submit-btn' },
+    })
+    const all = generateCandidates(node)
+    const pwCss = all.find(
+      (item) => item.reasons.includes('Playwright') && item.expression === 'page.locator("#submit")',
+    )
+    expect(pwCss).toBeDefined()
+    expect(pwCss?.reasons).toContain('Playwright')
+    const pwTest = all.find((item) => item.id === 'utility:playwright:getByTestId')
+    expect(pwTest?.expression).toBe('page.getByTestId("submit-btn")')
+    expect(pwTest?.evaluateAs?.kind).toBe('css')
+  })
+
   it('generates CSS id, class, attribute, compound, descendant, child, and nth strategies', () => {
     const css = generateCssCandidates(button)
     expect(css.some((item) => item.expression === '#login-button')).toBe(true)
@@ -289,6 +307,15 @@ describe('selector-studio utility queries', () => {
 })
 
 describe('selector-studio locator groups', () => {
+  it('includes Playwright rows in the framework utility group', () => {
+    const picks = [
+      candidate({ expression: 'page.locator("#x")', reasons: ['Playwright'], evaluateAs: { kind: 'css', expression: '#x' } }),
+      candidate({ expression: '#x', strategy: 'id' }),
+    ]
+    expect(filterLocatorGroup(picks, 'jquery')).toHaveLength(1)
+    expect(filterLocatorGroup(picks, 'jquery')[0]?.reasons).toContain('Playwright')
+  })
+
   it('filters recommended unique locators and axis strategies', () => {
     const picks = [
       candidate({ expression: '[data-testid="a"]', strategy: 'test-attribute', uniqueness: 'unique', matchCount: 1, intendedMatched: true, syntaxValid: true }),

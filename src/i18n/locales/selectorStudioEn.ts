@@ -165,6 +165,7 @@ export const selectorStudioStrings = {
   'studio.intendedUnknown': 'Intended element could not be verified',
   'studio.playground': 'Selector playground',
   'studio.playgroundHint': 'Edit and test a selector. Validation is debounced.',
+  'studio.hub.closePlayground': 'Close',
   'studio.kind.xpath': 'XPath',
   'studio.kind.css': 'CSS',
   'studio.history.empty': 'No saved selectors yet.',
