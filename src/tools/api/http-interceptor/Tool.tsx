@@ -142,7 +142,7 @@ export default function HttpInterceptorTool() {
               <FinderTab />
             </Suspense>
           </TabsContent>
-          <TabsContent value="explorer">
+          <TabsContent value="explorer" className="min-h-[36rem] overflow-hidden p-3">
             <Suspense fallback={<Skeleton className="h-48 w-full rounded-xl" />}>
               <ExplorerTab />
             </Suspense>

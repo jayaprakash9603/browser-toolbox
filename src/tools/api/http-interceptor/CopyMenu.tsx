@@ -23,10 +23,14 @@ export function CopyMenu({
   request,
   includeSecrets,
   responseBody,
+  size = 'xs',
+  className,
 }: {
   request: CopyableRequest
   includeSecrets: boolean
   responseBody?: string
+  size?: 'xs' | 'sm'
+  className?: string
 }) {
   const { t } = useTranslation()
   const { show } = useToast()
@@ -43,7 +47,7 @@ export function CopyMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button type="button" variant="outline" size="xs">
+        <Button type="button" variant="outline" size={size} className={className}>
           {copied ? <CheckIcon /> : <CopyIcon />}
           {t('interceptor.copy.menu')}
         </Button>

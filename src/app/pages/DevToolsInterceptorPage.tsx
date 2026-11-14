@@ -154,7 +154,7 @@ export default function DevToolsInterceptorPage() {
             </button>
           ))}
         </nav>
-        <div className="relative min-w-0 flex-1 overflow-hidden">
+        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           {view === 'network' && (
             <DevToolsNetwork
               rows={networkRows}
@@ -182,8 +182,8 @@ export default function DevToolsInterceptorPage() {
             </div>
           )}
           {view === 'explorer' && (
-            <div className="@container h-full overflow-y-auto p-3">
-              <div className="mx-auto grid min-h-0 max-w-6xl gap-3 @[900px]:grid-cols-[minmax(0,1fr)]">
+            <div className="flex h-full min-h-0 flex-col p-3">
+              <div className="mx-auto flex h-full min-h-0 w-full max-w-[1240px] flex-col">
                 <ExplorerTab />
               </div>
             </div>

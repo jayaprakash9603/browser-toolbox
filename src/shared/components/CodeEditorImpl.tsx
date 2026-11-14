@@ -18,6 +18,7 @@ import {
   editorSyntaxForTheme,
   editorTheme,
   editorThemeClassAttribute,
+  isEditorDarkMode,
 } from '@/shared/lib/code-editor/editor-theme'
 import { loadLanguage } from '@/shared/lib/code-editor/languages'
 import { cn } from '@/shared/utils/cn'
@@ -41,6 +42,7 @@ export function CodeEditorImpl({
   onSubmit,
   onCursorChange,
   enableSearch = true,
+  appearance = 'auto',
   className,
   style,
 }: CodeEditorProps) {
@@ -59,7 +61,7 @@ export function CodeEditorImpl({
   useLayoutEffect(() => {
     callbacks.current = { onChange, onSubmit, onCursorChange }
   })
-  const initial = useRef({ value, readOnly, wrap, placeholder, ariaLabel })
+  const initial = useRef({ value, readOnly, wrap, placeholder, ariaLabel, appearance })
 
   useEffect(() => {
     const host = hostRef.current
@@ -80,8 +82,8 @@ export function CodeEditorImpl({
       enableSearch ? search({ top: true }) : [],
       editorTheme,
       editorDarkTheme,
-      c.syntax.of(editorSyntaxForTheme()),
-      c.themeClass.of(editorThemeClassAttribute()),
+      c.syntax.of(editorSyntaxForTheme(start.appearance === 'dark' || isEditorDarkMode())),
+      c.themeClass.of(editorThemeClassAttribute(start.appearance === 'dark' || isEditorDarkMode())),
       keymap.of([
         {
           key: 'Mod-Enter',
@@ -170,19 +172,21 @@ export function CodeEditorImpl({
     const view = viewRef.current
     if (!view) return
     const syncTheme = () => {
+      const dark = appearance === 'dark' || isEditorDarkMode()
       const c = compartments.current
       view.dispatch({
         effects: [
-          c.themeClass.reconfigure(editorThemeClassAttribute()),
-          c.syntax.reconfigure(editorSyntaxForTheme()),
+          c.themeClass.reconfigure(editorThemeClassAttribute(dark)),
+          c.syntax.reconfigure(editorSyntaxForTheme(dark)),
         ],
       })
     }
     syncTheme()
+    if (appearance === 'dark') return
     const observer = new MutationObserver(syncTheme)
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
     return () => observer.disconnect()
-  }, [])
+  }, [appearance])
 
   return (
     <div

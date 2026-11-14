@@ -18,6 +18,7 @@ export interface CodeEditorProps {
   onSubmit?: () => void
   onCursorChange?: (position: CursorPosition) => void
   enableSearch?: boolean
+  appearance?: 'auto' | 'dark'
   className?: string
   style?: CSSProperties
 }

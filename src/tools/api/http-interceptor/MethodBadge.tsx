@@ -10,6 +10,16 @@ const METHOD_CLASS: Record<string, string> = {
   OPTIONS: 'bg-slate-500/10 text-slate-700 dark:text-slate-300',
 }
 
+export const METHOD_TEXT_CLASS: Record<string, string> = {
+  GET: 'text-emerald-600 dark:text-emerald-400',
+  POST: 'text-amber-600 dark:text-amber-400',
+  PUT: 'text-blue-600 dark:text-blue-400',
+  PATCH: 'text-violet-600 dark:text-violet-400',
+  DELETE: 'text-red-600 dark:text-red-400',
+  HEAD: 'text-slate-600 dark:text-slate-400',
+  OPTIONS: 'text-slate-600 dark:text-slate-400',
+}
+
 export function MethodBadge({ method, className }: { method: string; className?: string }) {
   const key = method.toUpperCase()
   return (

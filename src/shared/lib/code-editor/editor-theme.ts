@@ -9,9 +9,9 @@ export function isEditorDarkMode() {
   return document.documentElement.classList.contains('dark')
 }
 
-export function editorThemeClassAttribute() {
+export function editorThemeClassAttribute(dark = isEditorDarkMode()) {
   return EditorView.editorAttributes.of({
-    class: isEditorDarkMode() ? 'cm-theme-dark' : '',
+    class: dark ? 'cm-theme-dark' : '',
   })
 }
 
