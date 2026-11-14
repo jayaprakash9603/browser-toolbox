@@ -169,6 +169,37 @@ describe('Selector Studio UI', () => {
     expect(screen.queryByText(/0 matching elements/i)).not.toBeInTheDocument()
   })
 
+  it('shows unique match count in the results badge', () => {
+    renderStudio(<SelectorStudioView model={model()} />)
+    const badges = screen.getAllByTitle(/UNIQUE/i)
+    expect(badges.length).toBeGreaterThan(0)
+    expect(badges[0]).toHaveTextContent('1')
+  })
+
+  it('shows Playwright locators when Playwright output mode is selected', async () => {
+    const user = userEvent.setup()
+    const playwrightRow: SelectorCandidate = {
+      ...recommended,
+      id: 'utility:playwright:css:test',
+      expression: 'page.locator("button[data-testid=\\"submit\\"]")',
+      reasons: ['Playwright'],
+      evaluateAs: { kind: 'css', expression: recommended.expression },
+    }
+    renderStudio(
+      <SelectorStudioView model={model({ candidates: [recommended, xpath, playwrightRow] })} />,
+    )
+    const modeButtons = screen.getAllByRole('button', { name: /^Playwright$/i })
+    await user.click(modeButtons[0]!)
+    expect(screen.getByText('Playwright Locator')).toBeInTheDocument()
+    expect(screen.getByText(/page\.locator/)).toBeInTheDocument()
+    expect(screen.queryByText('Rel XPath')).not.toBeInTheDocument()
+  })
+
+  it('exposes DOM relationships when an element is selected', () => {
+    renderStudio(<SelectorStudioView model={model()} />)
+    expect(screen.getByText(/DOM relationships/i)).toBeInTheDocument()
+  })
+
   it('starts the picker from the hub toolbar', async () => {
     const user = userEvent.setup()
     const pick = vi.fn()

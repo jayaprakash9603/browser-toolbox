@@ -192,6 +192,29 @@ describe('selector-studio generation', () => {
     expect(xpath?.expression).toContain('Café')
   })
 
+  it('generates parent-scoped CSS and XPath from the parent chain', () => {
+    const node = snapshot({
+      tag: 'button',
+      id: 'submit',
+      idUnique: true,
+      parentChain: [
+        {
+          tag: 'form',
+          id: 'checkout',
+          classes: [],
+          attributes: { action: '/pay' },
+          indexAmongSameTag: 1,
+          indexAmongSiblings: 1,
+        },
+      ],
+    })
+    const all = generateCandidates(node, 'stable', { includeAxes: true })
+    expect(all.some((item) => item.strategy === 'parent-child' && item.kind === 'xpath')).toBe(true)
+    expect(all.some((item) => item.expression.includes('checkout') || item.expression.includes('#checkout'))).toBe(
+      true,
+    )
+  })
+
   it('generates sibling XPath only when a label relationship exists', () => {
     const input = snapshot({
       tag: 'input',
@@ -296,6 +319,15 @@ describe('selector-studio match status', () => {
 })
 
 describe('selector-studio utility queries', () => {
+  it('resolves evaluateAs for Playwright locator strings', () => {
+    const pw: SelectorCandidate = {
+      ...candidate({ expression: 'page.locator("#submit")' }),
+      reasons: ['Playwright'],
+      evaluateAs: { kind: 'css', expression: '#submit' },
+    }
+    expect(resolveLocatorQuery(pw)).toEqual({ kind: 'css', expression: '#submit' })
+  })
+
   it('resolves evaluateAs for jQuery display strings', () => {
     const jq = candidate({
       expression: '$("[data-testid=\\"go\\"]")',
