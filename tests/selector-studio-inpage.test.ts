@@ -42,6 +42,14 @@ describe('selector-studio in-page evaluation', () => {
     expect(bad.syntaxValid).toBe(false)
   })
 
+  it('marks intendedMatched when matches include the picked node', () => {
+    document.body.innerHTML = '<main><button id="go">Go</button><button id="other">No</button></main>'
+    const yes = evaluateSelectorsInPage([{ kind: 'css', expression: '#go' }], '/html/body/main[1]/button[1]')[0]
+    const no = evaluateSelectorsInPage([{ kind: 'css', expression: '#other' }], '/html/body/main[1]/button[1]')[0]
+    expect(yes?.intendedMatched).toBe(true)
+    expect(no?.intendedMatched).toBe(false)
+  })
+
   it('draws and clears an isolated highlight overlay', () => {
     document.body.innerHTML = '<button id="go">Go</button>'
     const result = highlightSelectorMatches('css', '#go', null)

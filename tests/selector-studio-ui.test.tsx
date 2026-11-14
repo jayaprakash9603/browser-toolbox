@@ -195,6 +195,11 @@ describe('Selector Studio UI', () => {
     expect(screen.queryByText('Rel XPath')).not.toBeInTheDocument()
   })
 
+  it('shows One Panel branding on the selectors footer', () => {
+    renderStudio(<SelectorStudioView model={model()} />)
+    expect(screen.getByText('One Panel · Selector Studio')).toBeInTheDocument()
+  })
+
   it('exposes DOM relationships when an element is selected', () => {
     renderStudio(<SelectorStudioView model={model()} />)
     expect(screen.getByText(/DOM relationships/i)).toBeInTheDocument()

@@ -38,7 +38,8 @@ export function filterLocatorGroup(candidates: SelectorCandidate[], group: Locat
       (item) =>
         item.reasons.includes('jQuery') ||
         item.reasons.includes('querySelector') ||
-        item.reasons.includes('Playwright'),
+        item.reasons.includes('Playwright') ||
+        item.reasons.includes('index XPath'),
     )
   }
   if (group === 'recommended') {

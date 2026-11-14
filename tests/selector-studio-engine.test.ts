@@ -166,6 +166,14 @@ describe('selector-studio generation', () => {
     expect(pwTest?.evaluateAs?.kind).toBe('css')
   })
 
+  it('adds indexed XPath utility rows that evaluate the base expression', () => {
+    const node = snapshot({ tag: 'button', id: 'go', idUnique: true })
+    const all = generateCandidates(node)
+    const indexed = all.find((item) => item.reasons.includes('index XPath'))
+    expect(indexed?.expression).toMatch(/^\(.*\)\[1\]$/)
+    expect(indexed?.evaluateAs?.kind).toBe('xpath')
+  })
+
   it('generates CSS id, class, attribute, compound, descendant, child, and nth strategies', () => {
     const css = generateCssCandidates(button)
     expect(css.some((item) => item.expression === '#login-button')).toBe(true)

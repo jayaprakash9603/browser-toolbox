@@ -62,6 +62,17 @@ export function utilityCandidatesFrom(
 
   const xpath = ranked.filter((item) => item.kind === 'xpath' && item.evaluateAs == null).slice(0, 6)
   for (const item of xpath) {
+    if (!item.expression.startsWith('(') && item.expression.length > 2) {
+      pushUtility({
+        ...item,
+        id: `utility:index:xpath:${item.id}`,
+        expression: `(${item.expression})[1]`,
+        evaluateAs: { kind: 'xpath', expression: item.expression },
+        reasons: ['index XPath'],
+        warnings: [],
+        score: Math.max(0, item.score - 6),
+      })
+    }
     const pwXpath = `page.locator(${JSON.stringify(`xpath=${item.expression}`)})`
     pushUtility({
       ...item,

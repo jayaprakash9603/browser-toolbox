@@ -642,6 +642,13 @@ export function SelectorStudioHubShell({
               align="right"
             />
           </div>
+
+          <div className="flex shrink-0 items-center justify-between border-t border-[#dadce0] bg-[#f1f3f4] px-2 py-0.5 text-[9px] tracking-wide text-[#5f6368]">
+            <span className="truncate font-mono text-[#3c4043]">
+              {snapshot ? `${snapshot.tag}${snapshot.id ? `#${snapshot.id}` : ''}` : t('studio.noElement')}
+            </span>
+            <span className="shrink-0 font-medium uppercase">{t('studio.hub.brandLine')}</span>
+          </div>
         </>
       ) : (
         <div className={cn('min-h-0 flex-1 overflow-y-auto', disabled && 'pointer-events-none opacity-45')}>
