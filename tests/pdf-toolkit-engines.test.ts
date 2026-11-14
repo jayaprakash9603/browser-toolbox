@@ -5,6 +5,7 @@ import { DEFAULT_DOCUMENT_SETTINGS, type DocBlock } from '@/core/engines/files/d
 import { docToDocx } from '@/core/engines/files/docx'
 import { htmlToBlocks } from '@/core/engines/files/htmlBlocks'
 import { readDocx, readPptx, readXlsx } from '@/core/engines/files/office'
+import { detectOfficeKind, officeBytesToPdf } from '@/core/engines/files/officeToPdf'
 import { imagesToPptx } from '@/core/engines/files/pptx'
 import { sheetsToXlsx } from '@/core/engines/files/xlsx'
 import { addFormFields, cropPdf, rebuildPdf, removePages, rotatePages } from '@/core/engines/pdf/edit'
@@ -147,6 +148,21 @@ describe('office files', () => {
     expect(text).toContain('Minutes')
     expect(text).toContain('Agreed to ship on Friday.')
     expect(doc.blocks.find((block) => block.type === 'heading')).toMatchObject({ level: 1 })
+  })
+
+  it('detects Office kinds by extension and mime', () => {
+    expect(detectOfficeKind('report.docx')).toBe('word')
+    expect(detectOfficeKind('slides.pptx')).toBe('powerpoint')
+    expect(detectOfficeKind('data.xlsx')).toBe('excel')
+    expect(detectOfficeKind('notes.txt')).toBeNull()
+  })
+
+  it('turns a Word document into a valid PDF for merging', async () => {
+    const docx = docToDocx([{ type: 'paragraph', runs: [{ text: 'Merge me' }] }], DEFAULT_DOCUMENT_SETTINGS)
+    const pdf = await officeBytesToPdf('letter.docx', docx, 'word')
+    const text = new TextDecoder('latin1').decode(pdf)
+    expect(text).toContain('%PDF')
+    expect(pdf.byteLength).toBeGreaterThan(500)
   })
 
   it('reads the article of a web page without its navigation', () => {

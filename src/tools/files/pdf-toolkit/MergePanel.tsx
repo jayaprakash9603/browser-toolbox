@@ -20,6 +20,8 @@ import { PdfPageImage, releasePageImages } from '@/shared/components/pdf'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/utils/cn'
+import { detectOfficeKind, officeFileToPdf } from '@/core/engines/files/officeToPdf'
+
 import { rangeIssueMessage } from './rangeText'
 import { toEmbeddableImage, type EmbeddableImage } from './raster'
 import { looksLikePdf, pdfArtifact, usePdfSession } from './session'
@@ -47,7 +49,8 @@ function pagesFor(item: Extract<MergeItem, { kind: 'pdf' }>) {
   return result.ok ? { ok: true as const, pages: result.groups.flat() } : { ok: false as const, issue: result.issue }
 }
 
-const ACCEPT = 'application/pdf,.pdf,image/png,image/jpeg,image/webp,image/gif,image/bmp,image/avif,image/svg+xml'
+const ACCEPT =
+  'application/pdf,.pdf,image/png,image/jpeg,image/webp,image/gif,image/bmp,image/avif,image/svg+xml,.docx,.pptx,.xlsx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 type SkipReason = 'locked' | 'unsupported' | 'unreadable'
 
@@ -124,8 +127,15 @@ export function MergePanel() {
     const added: MergeItem[] = []
     for (const file of files) {
       try {
+        const officeKind = detectOfficeKind(file.name, file.type)
         if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
           const bytes = new Uint8Array(await file.arrayBuffer())
+          if (!looksLikePdf(bytes)) throw new Error('not a pdf')
+          const handle = await openPdfDocument(bytes)
+          const pages = await readPageInfo(handle)
+          added.push({ id: crypto.randomUUID(), kind: 'pdf', name: file.name, size: file.size, range: '', bytes, handle, pages, owned: true })
+        } else if (officeKind) {
+          const bytes = await officeFileToPdf(file)
           if (!looksLikePdf(bytes)) throw new Error('not a pdf')
           const handle = await openPdfDocument(bytes)
           const pages = await readPageInfo(handle)
@@ -137,7 +147,12 @@ export function MergePanel() {
           failed.push({ name: file.name, reason: 'unsupported' })
         }
       } catch (cause) {
-        failed.push({ name: file.name, reason: cause instanceof PdfPasswordError ? 'locked' : 'unreadable' })
+        const message = cause instanceof Error ? cause.message : ''
+        if (message === 'empty workbook') {
+          failed.push({ name: file.name, reason: 'unreadable' })
+        } else {
+          failed.push({ name: file.name, reason: cause instanceof PdfPasswordError ? 'locked' : 'unreadable' })
+        }
       }
     }
     setSkipped(failed)
@@ -245,7 +260,7 @@ export function MergePanel() {
         <FileDropZone
           title={t('pdf.merge.dropTitle')}
           hint={t('pdf.merge.dropHint')}
-          formats={['PDF', 'PNG', 'JPG', 'WEBP', 'GIF', 'SVG']}
+          formats={['PDF', 'PNG', 'JPG', 'DOCX', 'PPTX', 'XLSX']}
           glyphs={['PDF', 'PDF', 'JPG']}
           accept={ACCEPT}
           multiple

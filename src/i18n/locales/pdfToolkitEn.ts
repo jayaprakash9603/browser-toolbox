@@ -100,15 +100,16 @@ export const pdfToolkitStrings = {
   'pdf.organize.note_one': '{{count}} page. Form fields and bookmarks are not carried over.',
   'pdf.organize.note_other': '{{count}} pages. Form fields and bookmarks are not carried over.',
 
-  'pdf.merge.dropTitle': 'Add PDFs and images to merge',
-  'pdf.merge.dropHint': 'Drop several files, or click to choose them. You can reorder them next.',
+  'pdf.merge.dropTitle': 'Add PDFs, images and Office files to merge',
+  'pdf.merge.dropHint':
+    'Drop several files, or click to choose them. Word, Excel and PowerPoint files are converted to PDF as they are added. You can reorder them next.',
   'pdf.merge.addOpen': 'Start with {{name}}',
   'pdf.merge.addOpenShort': 'Add the open PDF',
   'pdf.merge.reading': 'Reading files…',
   'pdf.merge.skippedTitle_one': '1 file was skipped',
   'pdf.merge.skippedTitle_other': '{{count}} files were skipped',
   'pdf.merge.reasonLocked': 'Password protected',
-  'pdf.merge.reasonUnsupported': 'Not a PDF or image',
+  'pdf.merge.reasonUnsupported': 'Not a PDF, image or Office file',
   'pdf.merge.reasonUnreadable': 'Could not be read',
   'pdf.merge.skippedLockedHint': 'Unlock it with Unlock PDF, then add it here.',
   'pdf.merge.dismissSkipped': 'Dismiss skipped files',
@@ -124,7 +125,7 @@ export const pdfToolkitStrings = {
   'pdf.merge.moveUp': 'Move {{name}} up',
   'pdf.merge.moveDown': 'Move {{name}} down',
   'pdf.merge.remove': 'Remove {{name}}',
-  'pdf.merge.addMore': 'Add more PDFs or images',
+  'pdf.merge.addMore': 'Add more PDFs, images or documents',
   'pdf.merge.output': 'Output',
   'pdf.merge.fileName': 'File name',
   'pdf.merge.build_one': 'Merge {{count}} file',
@@ -390,7 +391,8 @@ export const pdfToolkitStrings = {
   'pdf.catShort.intelligence': 'AI tools',
 
   'pdf.tools.merge.name': 'Merge PDF',
-  'pdf.tools.merge.desc': 'Combine PDFs and images in the order you want, choosing pages from each.',
+  'pdf.tools.merge.desc':
+    'Combine PDFs, images and Office documents in the order you want, choosing pages from each PDF.',
   'pdf.tools.split.name': 'Split PDF',
   'pdf.tools.split.desc': 'Cut one PDF into several by ranges, every few pages or page by page.',
   'pdf.tools.remove-pages.name': 'Remove pages',

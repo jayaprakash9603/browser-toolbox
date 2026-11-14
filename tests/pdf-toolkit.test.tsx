@@ -121,7 +121,7 @@ describe('PDF Toolkit', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    const input = await screen.findByLabelText('Add PDFs and images to merge', {}, LOAD)
+    const input = await screen.findByLabelText('Add PDFs, images and Office files to merge', {}, LOAD)
     await user.upload(input, [await pdfFile(2, 'first.pdf'), await pdfFile(3, 'second.pdf')])
     expect(await screen.findByText('5 pages in total', {}, LOAD)).toBeInTheDocument()
 
