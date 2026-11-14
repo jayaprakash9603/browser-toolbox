@@ -1,5 +1,11 @@
 /* Browser Toolbox YouTube enhancements — toggled via html[data-tbx-yt-*] from yt-isolated.js */
 
+#tbx-yt-loop-btn.ytp-button {
+  width: 48px;
+  height: 48px;
+  opacity: 0.9;
+}
+
 #tbx-yt-loop-btn.tbx-ytp-loop-active svg {
   color: #f03;
   fill: #f03;

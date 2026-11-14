@@ -83,8 +83,18 @@ describe('YouTube page player', () => {
     expect(loopBtn).toBeTruthy()
     loopBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     expect(video.loop).toBe(true)
+  })
+
+  it('restarts playback on ended when loop is active', () => {
+    const controls = document.createElement('div')
+    controls.className = 'ytp-right-controls'
+    player.append(controls)
+    send('applyPlayer', { loopButton: true })
+    const loopBtn = document.getElementById('tbx-yt-loop-btn')
     loopBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-    expect(video.loop).toBe(false)
+    video.currentTime = 10
+    video.dispatchEvent(new Event('ended'))
+    expect(video.currentTime).toBe(0)
     send('applyPlayer', null)
     expect(document.getElementById('tbx-yt-loop-btn')).toBeNull()
   })

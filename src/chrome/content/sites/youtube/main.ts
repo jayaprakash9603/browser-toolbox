@@ -62,6 +62,8 @@ const LOOP_ACTIVE_KEY = 'tbx-yt-loop-active'
 const LOOP_BTN_ID = 'tbx-yt-loop-btn'
 let autoplayChanged = false
 let loopDomObserver: MutationObserver | null = null
+let loopEndedHandler: (() => void) | null = null
+let loopBoundVideo: HTMLVideoElement | null = null
 
 function sessionFlag(key: string): string | null {
   try {
@@ -155,18 +157,56 @@ function updateLoopButtonUi(active: boolean): void {
   btn.title = active ? 'Loop video (on)' : 'Loop video'
 }
 
+function ytApiPlayer(): { seekTo?(s: number, allow: boolean): void; playVideo?(): void } | null {
+  return document.querySelector('#movie_player') as {
+    seekTo?(s: number, allow: boolean): void
+    playVideo?(): void
+  } | null
+}
+
+function detachLoopHandler(): void {
+  if (loopBoundVideo && loopEndedHandler) loopBoundVideo.removeEventListener('ended', loopEndedHandler)
+  loopEndedHandler = null
+  loopBoundVideo = null
+}
+
+/** YouTube often clears `video.loop`; restart via API + `ended` as well. */
+function restartFromStart(): void {
+  if (sessionFlag(LOOP_ACTIVE_KEY) !== '1') return
+  const video = getVideo()
+  if (!video) return
+  const api = ytApiPlayer()
+  if (api?.seekTo && api.playVideo) {
+    api.seekTo(0, true)
+    api.playVideo()
+    return
+  }
+  video.currentTime = 0
+  void video.play().catch(() => {})
+}
+
 function applyVideoLoop(on: boolean): void {
   const video = getVideo()
   if (!video) return
+  detachLoopHandler()
   video.loop = on
-  if (on) bindVideoLoopSync(video)
+  if (on) {
+    loopEndedHandler = () => restartFromStart()
+    loopBoundVideo = video
+    video.addEventListener('ended', loopEndedHandler)
+    bindVideoLoopSync(video)
+  }
 }
 
 function bindVideoLoopSync(video: HTMLVideoElement): void {
   if (video.dataset.tbxYtLoopBound === '1') return
   video.dataset.tbxYtLoopBound = '1'
   const sync = () => {
-    if (sessionFlag(LOOP_ACTIVE_KEY) === '1') video.loop = true
+    if (sessionFlag(LOOP_ACTIVE_KEY) !== '1') return
+    const current = getVideo()
+    if (!current) return
+    if (current !== loopBoundVideo) applyVideoLoop(true)
+    else current.loop = true
   }
   video.addEventListener('loadeddata', sync)
   video.addEventListener('emptied', sync)
@@ -208,7 +248,9 @@ function ensureLoopButton(show: boolean): void {
     event.stopPropagation()
     toggleLoopPlayback()
   })
-  controls.insertBefore(btn, controls.firstChild)
+  const anchor = controls.querySelector('.ytp-settings-button') ?? controls.lastElementChild
+  if (anchor) controls.insertBefore(btn, anchor)
+  else controls.append(btn)
   if (sessionFlag(LOOP_ACTIVE_KEY) === '1') applyVideoLoop(true)
   updateLoopButtonUi(sessionFlag(LOOP_ACTIVE_KEY) === '1')
 }

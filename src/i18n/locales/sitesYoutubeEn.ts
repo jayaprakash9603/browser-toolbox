@@ -103,7 +103,7 @@ for (const f of YOUTUBE_FEATURES) {
 Object.assign(base, {
   'sites.youtube.features.loopButton.label': 'Loop button',
   'sites.youtube.features.loopButton.description':
-    'Adds a loop control to the player. When loop is on, the current video repeats until you turn it off.',
+    'On youtube.com/watch pages, adds a loop icon in the player bar (left of the Settings gear). Click it once to repeat the current video; click again to stop.',
   'sites.youtube.features.blockAds.label': 'Block ads on YouTube',
   'sites.youtube.features.blockAds.description':
     'Uses the extension Ad blocker (YouTube filter list and player scripts). Off = allow ads on YouTube only; other sites unchanged.',
