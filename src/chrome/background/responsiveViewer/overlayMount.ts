@@ -157,8 +157,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       display: flex;
       align-items: center;
       justify-content: center;
-      background: transparent;
-      color: #484848;
+      background: #eceff3;
+      color: #1e293b;
       --tbx-rail-icon: #b6b6b6;
       --tbx-rail-icon-hover: #539fff;
       --tbx-accent: #539fff;
@@ -175,10 +175,10 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       --tbx-menu-border: #e0e0e0;
     }
     .root.theme-classic {
-      background: transparent;
+      background: #eceff3;
     }
     .root.theme-dark {
-      background: transparent;
+      background: #0b0f14;
       color: #e2e8f0;
       --tbx-panel-bg: #151b24;
       --tbx-panel-border: #2a3544;
@@ -203,13 +203,13 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       min-width: 0;
       min-height: 0;
       padding: ${SIM_STAGE_PAD_Y}px 92px ${SIM_STAGE_PAD_Y}px 24px;
-      background: transparent;
+      background: inherit;
     }
     .phone-wrap {
       position: relative;
       flex-shrink: 0;
       overflow: visible;
-      filter: drop-shadow(0 18px 40px rgba(0,0,0,0.22));
+      filter: none;
     }
     .phone-inner {
       position: absolute;
@@ -1100,13 +1100,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       </div>
       <div class="setting-list">
         <div class="setting-card">
-          <p class="setting-section">Display</p>
-          <div class="theme-pick" role="group" aria-label="Simulator canvas theme">
-            <button type="button" class="theme-opt" data-theme-opt="classic" aria-label="Classic light canvas">Classic</button>
-            <button type="button" class="theme-opt" data-theme-opt="dark" aria-label="Dark canvas">Dark</button>
-          </div>
-        </div>
-        <div class="setting-card">
           <p class="setting-section">Device chrome</p>
           <label class="setting-switch">
             <span>Safari chrome</span>
@@ -1436,9 +1429,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
 
   const syncSettingsUi = () => {
     const ui = state.ui
-    for (const button of shadow.querySelectorAll<HTMLButtonElement>('[data-theme-opt]')) {
-      button.setAttribute('aria-pressed', String(button.dataset.themeOpt === ui.theme))
-    }
     const safariInput = shadow.querySelector('[data-set="safari"]') as HTMLInputElement | null
     const statusInput = shadow.querySelector('[data-set="status"]') as HTMLInputElement | null
     const navInput = shadow.querySelector('[data-set="nav"]') as HTMLInputElement | null
@@ -1968,12 +1958,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       url: state.live.url,
     })
     setPanel('')
-  })
-  shadow.querySelector('[data-panel="settings"]')?.addEventListener('click', (event) => {
-    const themeBtn = (event.target as HTMLElement | null)?.closest<HTMLButtonElement>('[data-theme-opt]')
-    if (themeBtn?.dataset.themeOpt === 'classic' || themeBtn?.dataset.themeOpt === 'dark') {
-      void patchOverlaySettings({ theme: themeBtn.dataset.themeOpt })
-    }
   })
   shadow.querySelector('[data-panel="settings"]')?.addEventListener('change', (event) => {
     const input = event.target as HTMLInputElement
