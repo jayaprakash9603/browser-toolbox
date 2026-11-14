@@ -12,7 +12,9 @@ export function showRecorderCountdown(seconds: number): void {
   const number = document.createElement('div')
   number.style.cssText = 'font-size:96px;font-weight:700;font-variant-numeric:tabular-nums'
   const caption = document.createElement('p')
-  caption.textContent = 'Recording starts…'
+  caption.textContent = typeof chrome !== 'undefined' && chrome.i18n?.getMessage
+    ? chrome.i18n.getMessage('recorderCountdownCaption') || 'Recording starts…'
+    : 'Recording starts…'
   caption.style.cssText = 'margin:0;font-size:15px;font-weight:600'
   host.append(number, caption)
   document.body.appendChild(host)
@@ -31,3 +33,4 @@ export function showRecorderCountdown(seconds: number): void {
 
 export const RECORDER_COUNTDOWN_JS = 'inject/recorder-countdown.js'
 export const COUNTDOWN_SEC_KEY = 'tbxCountdownSeconds'
+export const COUNTDOWN_CAPTION_KEY = 'tbxCountdownCaption'

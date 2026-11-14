@@ -193,6 +193,7 @@ export default function ScreenRecorderTool() {
                 checked={settings.countdown}
                 onChange={(countdown) => patch({ countdown })}
               />
+              {settings.countdown && <p className="text-[11px] text-muted-foreground">{t('recorder.countdownOnPage')}</p>}
               <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
                 <span className="shrink-0">{t('recorder.options.quality')}</span>
                 <Segmented<RecorderQuality>

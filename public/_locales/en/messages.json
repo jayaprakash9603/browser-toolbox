@@ -379,5 +379,8 @@
   },
   "contextMenuSimulatorPanel": {
     "message": "Open Responsive Viewer"
+  },
+  "recorderCountdownCaption": {
+    "message": "Recording starts…"
   }
 }

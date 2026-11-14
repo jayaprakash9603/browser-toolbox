@@ -24,13 +24,15 @@ import {
   RECORDER_STOP_MENU_ID,
   syncRecorderContextMenu,
 } from './contextMenus'
-import { COUNTDOWN_SEC_KEY, RECORDER_COUNTDOWN_JS } from './countdownInject'
+import { COUNTDOWN_CAPTION_KEY, COUNTDOWN_SEC_KEY, RECORDER_COUNTDOWN_JS } from './countdownInject'
 import {
   mountMicPermissionFrame,
+  mountRecorderPill,
   removeMicPermissionFrame,
   unmountRecorderCountdown,
   unmountRecorderPill,
 } from './controls'
+import { resolveRecorderTargetTab } from './resolveTargetTab'
 import {
   clearRecorderPillForSession,
   syncRecorderPill,
@@ -132,11 +134,6 @@ function broadcastControl(id: string, action: 'pause' | 'resume' | 'stop'): void
   void chrome.runtime.sendMessage({ type: 'RECORDER_CONTROL', id, action }).catch(() => undefined)
 }
 
-async function activeTab(): Promise<chrome.tabs.Tab | undefined> {
-  const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true })
-  return tab
-}
-
 /** tabCapture only works after the user invoked the extension on that tab (action click or manifest command). */
 function isNotInvokedError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error)
@@ -144,17 +141,25 @@ function isNotInvokedError(error: unknown): boolean {
 }
 
 async function beginCountdown(session: RecorderSession, tabId?: number): Promise<void> {
+  const caption = chrome.i18n.getMessage('recorderCountdownCaption') || 'Recording starts…'
   const until = Date.now() + COUNTDOWN_SECONDS * 1000
-  await setSession(markCountdown(session, until))
-  const targetTabId = tabId ?? session.tabId ?? session.returnTabId
+  const next = markCountdown(session, until)
+  await setSession(next)
+  const targetTabId = tabId ?? next.tabId ?? next.returnTabId
   if (targetTabId == null) return
   try {
     await chrome.tabs.update(targetTabId, { active: true }).catch(() => undefined)
-    await chrome.storage.session.set({ [COUNTDOWN_SEC_KEY]: COUNTDOWN_SECONDS })
+    await chrome.storage.session.set({
+      [COUNTDOWN_SEC_KEY]: COUNTDOWN_SECONDS,
+      [COUNTDOWN_CAPTION_KEY]: caption,
+    })
     await chrome.scripting.executeScript({
       target: { tabId: targetTabId },
       files: [RECORDER_COUNTDOWN_JS],
     })
+    await chrome.scripting
+      .executeScript({ target: { tabId: targetTabId }, func: mountRecorderPill, args: [next] })
+      .catch(() => undefined)
   } catch (error) {
     logger.debug('countdown overlay inject failed', error)
   }
@@ -190,7 +195,8 @@ async function startTabCapture(id: string, settings: RecorderSettings, tab: chro
  * focus back to the tab the user came from.
  */
 async function startPageCapture(id: string, source: RecordingSource, tab?: chrome.tabs.Tab) {
-  const returnTabId = tab?.id
+  const resolved = await resolveRecorderTargetTab(tab)
+  const returnTabId = resolved?.id
   const url = chrome.runtime.getURL(
     `recorder.html?mode=record&id=${encodeURIComponent(id)}&source=${source}` +
       (returnTabId != null ? `&returnTab=${returnTabId}` : ''),
@@ -214,7 +220,7 @@ export async function startRecorder(
   }
   if (await getSession()) throw new Error('A recording is already running.')
   const id = crypto.randomUUID()
-  const target = tab?.id != null ? tab : await activeTab()
+  const target = await resolveRecorderTargetTab(tab)
 
   if (source === 'tab' && target?.id != null && hasCapability('tabCapture')) {
     if (isRestrictedCaptureUrl(target.url)) {
@@ -256,7 +262,7 @@ const MIC_PROMPT_TIMEOUT_MS = 60_000
  * recorder can use it.
  */
 async function requestMicrophone(): Promise<{ granted: boolean; fallback?: boolean }> {
-  const tab = await activeTab()
+  const tab = await resolveRecorderTargetTab()
   const url = chrome.runtime.getURL('recorder.html?mode=permission&embed=1')
   if (tab?.id == null || isRestrictedCaptureUrl(tab.url)) {
     await chrome.windows.create({

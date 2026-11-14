@@ -1226,6 +1226,7 @@ const en = {
   'recorder.stop': 'Stop',
   'recorder.cancel': 'Cancel',
   'recorder.saving': 'Saving recording…',
+  'recorder.countdownOnPage': 'A 3-2-1 countdown appears on the page before recording begins.',
   'recorder.hint':
     'Chrome asks what to share and, the first time, for microphone access. Recordings stay on this device.',
   'recorder.micNeeded':
