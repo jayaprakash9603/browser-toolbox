@@ -3,6 +3,7 @@ import {
   overlayOuterSize,
   overlayPickerWidth,
   overlayStageBox,
+  SIM_RAIL_GAP,
   SIM_RAIL_PX,
   SIM_STAGE_PAD_LEFT,
   SIM_STAGE_PAD_Y,
@@ -218,7 +219,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     .root.theme-dark .panel.device-picker .kind-tab { color: #e2e8f0; }
     .stage {
       position: relative;
-      z-index: auto;
+      z-index: 1;
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -228,7 +229,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       height: 100%;
       min-width: 0;
       min-height: 0;
-      padding: ${SIM_STAGE_PAD_Y}px ${SIM_STAGE_PAD_LEFT}px;
+      padding: ${SIM_STAGE_PAD_Y}px ${SIM_RAIL_PX + SIM_RAIL_GAP}px ${SIM_STAGE_PAD_Y}px ${SIM_STAGE_PAD_LEFT}px;
       background: inherit;
     }
     .sim-pane {
@@ -254,14 +255,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       flex: 1 1 0;
       height: 100%;
       max-width: calc(50% - 10px);
-    }
-    .pane-body {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      min-width: 0;
     }
     .root.is-split .sim-pane.is-focus .phone-wrap {
       outline: 2px solid color-mix(in srgb, var(--tbx-accent) 55%, transparent);
@@ -432,18 +425,20 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .safari-tools svg { width: 22px; height: 22px; }
     .actions {
-      position: relative;
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
       display: flex; flex-direction: column; align-items: center;
       padding: 6px 4px;
       border-radius: 4px;
       background: #ffffff;
       border: 0;
       box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-      z-index: 40;
+      z-index: 9;
       max-height: min(92vh, 620px);
       overflow: visible;
       width: 42px;
-      flex-shrink: 0;
       pointer-events: auto;
     }
     .actions-primary {
@@ -1242,7 +1237,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const deviceStageHtml = (pane: '0' | '1', caption: string, hidden: boolean) => `
       <section class="sim-pane${pane === '0' ? ' is-focus' : ''}" data-pane="${pane}" ${hidden ? 'hidden' : ''}>
         <p class="pane-caption">${caption}</p>
-        <div class="pane-body">
         <div class="phone-wrap">
           <div class="phone-inner">
           <img class="mockup-img" alt="" hidden />
@@ -1279,8 +1273,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
             </div>
           </div>
           </div>
-        </div>
-        ${paneRailHtml()}
         </div>
       </section>`
 
@@ -1477,6 +1469,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
         <li><a class="studio-link help-link" href="#">Open full responsive studio</a></li>
       </ul>
     </div>
+    ${paneRailHtml()}
   `
   shadow.append(root)
 
@@ -1578,7 +1571,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const searchInput = shadow.querySelector('.device-search') as HTMLInputElement
   const kindTabs = shadow.querySelector('[data-kind-tabs]') as HTMLElement
   const deviceList = shadow.querySelector('[data-device-list]') as HTMLElement
-  let activeRail = left.pane.querySelector('.actions') as HTMLElement
+  let activeRail = shadow.querySelector('.actions') as HTMLElement
   const railControl = (act: string) =>
     (activeRail.querySelector(`[data-act="${act}"]`) as HTMLButtonElement) ??
     (shadow.querySelector(`.actions [data-act="${act}"]`) as HTMLButtonElement)
@@ -1587,8 +1580,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       btn.setAttribute('aria-pressed', String(pressed))
     }
   }
-  const paneIndexFromEl = (el: Element | null): 0 | 1 =>
-    el?.closest<HTMLElement>('[data-pane]')?.dataset.pane === '1' ? 1 : 0
   const shotPanel = shadow.querySelector('[data-panel="shot-menu"]') as HTMLElement
   const recordPanel = shadow.querySelector('[data-panel="record-menu"]') as HTMLElement
   const capturePanel = shadow.querySelector('[data-panel="capture-result"]') as HTMLElement
@@ -2289,10 +2280,9 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     if (!act) return
     event.preventDefault()
     event.stopPropagation()
-    const paneIndex = paneIndexFromEl(btn)
+    const paneIndex = state.split ? state.focusPane : 0
     const rail = btn.closest('.actions')
     if (rail) activeRail = rail as HTMLElement
-    if (state.split) setFocusPane(paneIndex)
     const els = paneIndex === 1 ? right : left
     const liveUrl = paneIndex === 1 ? (state.compare?.url ?? state.live.url) : state.live.url
     if (act === 'close') {

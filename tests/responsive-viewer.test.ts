@@ -16,6 +16,8 @@ import {
   overlayOuterSize,
   overlayPickerWidth,
   overlayStageBox,
+  SIM_RAIL_GAP,
+  SIM_RAIL_PX,
 } from '@/chrome/background/responsiveViewer/overlayFit'
 import { overlayIframeLayoutSize, overlayPreviewChrome } from '@/chrome/background/responsiveViewer/overlayViewport'
 import {
@@ -88,6 +90,7 @@ describe('responsive viewer model', () => {
     expect(fitted * outer.height).toBeGreaterThan(laptop.maxH - 1)
     expect(fitted * outer.height).toBeLessThanOrEqual(laptop.maxH)
     expect(overlayPickerWidth(1920)).toBeGreaterThanOrEqual(400)
+    expect(desktop.paddingRight).toBe(SIM_RAIL_PX + SIM_RAIL_GAP)
     expect(overlayStageBox({ width: 1920, height: 1080 }).maxW).toBe(desktop.maxW)
     const split = overlayStageBox({ width: 1920, height: 1080 }, { panes: 2 })
     expect(split.maxW).toBeLessThan(desktop.maxW)
@@ -299,6 +302,10 @@ describe('mobile simulator studio helpers', () => {
     expect(mockup?.hidden).toBe(false)
     expect(mockup?.getAttribute('src')).toContain('iphone-16-pro.webp')
     expect(root.classList.contains('has-mockup')).toBe(true)
+    const actions = host?.shadowRoot?.querySelector('.actions') as HTMLElement
+    expect(actions.parentElement).toBe(root)
+    expect(host?.shadowRoot?.querySelector('.sim-pane .actions')).toBeNull()
+    expect(host?.shadowRoot?.querySelectorAll('.actions')).toHaveLength(1)
     const acts = [...(host?.shadowRoot?.querySelectorAll('.actions [data-act]') ?? [])].map((el) =>
       el.getAttribute('data-act'),
     )
@@ -532,7 +539,7 @@ describe('mobile simulator studio helpers', () => {
     expect(mountSimulatorOverlay(config)).toBe(true)
     const shadow = document.getElementById(SIMULATOR_OVERLAY_ID)?.shadowRoot
     expect(shadow?.querySelectorAll('.sim-pane')).toHaveLength(2)
-    expect(shadow?.querySelectorAll('.sim-pane .actions')).toHaveLength(2)
+    expect(shadow?.querySelectorAll('.actions')).toHaveLength(1)
     expect((shadow?.querySelector('[data-pane="1"]') as HTMLElement).hidden).toBe(true)
     expect(shadow?.querySelector('.root')?.classList.contains('is-split')).toBe(false)
     ;(shadow?.querySelector('[data-act="compare"]') as HTMLButtonElement).click()
@@ -552,8 +559,8 @@ describe('mobile simulator studio helpers', () => {
     expect(root.classList.contains('is-split')).toBe(true)
     expect((shadow?.querySelector('[data-pane="1"]') as HTMLElement).hidden).toBe(false)
     expect(shadow?.querySelectorAll('iframe')).toHaveLength(2)
-    expect(shadow?.querySelector('[data-pane="0"] .actions')).toBeTruthy()
-    expect(shadow?.querySelector('[data-pane="1"] .actions')).toBeTruthy()
+    expect(shadow?.querySelector('.root > .actions')).toBeTruthy()
+    expect(shadow?.querySelector('.sim-pane .actions')).toBeNull()
     expect(shadow?.querySelector('[data-current-device-side]')?.textContent).toBe('Right device')
     expect(shadow?.querySelector('[data-act="compare"]')?.getAttribute('aria-pressed')).toBe('true')
     expect(shadow?.querySelector('[data-panel="devices"]')?.classList.contains('open')).toBe(true)
