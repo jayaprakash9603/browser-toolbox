@@ -10,6 +10,7 @@ import { isGeneratedClass, looksStableId } from '@/core/engines/selector-studio/
 import type { SelectorCandidate, SelectorSnapshot } from '@/core/engines/selector-studio/types'
 import { filterLocatorGroup } from '@/core/engines/selector-studio/locatorGroups'
 import { matchBadgeState } from '@/core/engines/selector-studio/matchStatus'
+import { resolveLocatorQuery } from '@/core/engines/selector-studio/utility'
 import { applyEvaluation } from '@/core/engines/selector-studio/validate'
 import { generateXPathCandidates } from '@/core/engines/selector-studio/xpath'
 import { generateCssCandidates } from '@/core/engines/selector-studio/css'
@@ -133,6 +134,18 @@ describe('selector-studio generation', () => {
     expect(xpath.some((item) => item.strategy === 'relative')).toBe(true)
     expect(xpath.some((item) => item.strategy === 'parent-child')).toBe(true)
     expect(xpath.some((item) => item.strategy === 'structural')).toBe(true)
+  })
+
+  it('appends jQuery and querySelector utility rows that evaluate as CSS', () => {
+    const node = snapshot({
+      tag: 'button',
+      id: 'submit',
+      idUnique: true,
+    })
+    const all = generateCandidates(node)
+    const jq = all.find((item) => item.reasons.includes('jQuery'))
+    expect(jq?.expression).toBe('$("#submit")')
+    expect(jq?.evaluateAs).toEqual({ kind: 'css', expression: '#submit' })
   })
 
   it('generates CSS id, class, attribute, compound, descendant, child, and nth strategies', () => {
@@ -261,6 +274,17 @@ describe('selector-studio match status', () => {
     expect(
       matchBadgeState(candidate({ expression: '//[', syntaxValid: false, matchCount: 0, intendedMatched: false })).tone,
     ).toBe('invalid')
+  })
+})
+
+describe('selector-studio utility queries', () => {
+  it('resolves evaluateAs for jQuery display strings', () => {
+    const jq = candidate({
+      expression: '$("[data-testid=\\"go\\"]")',
+      reasons: ['jQuery'],
+      evaluateAs: { kind: 'css', expression: '[data-testid="go"]' },
+    })
+    expect(resolveLocatorQuery(jq)).toEqual({ kind: 'css', expression: '[data-testid="go"]' })
   })
 })
 

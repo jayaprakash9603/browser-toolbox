@@ -30,6 +30,8 @@ const STRATEGY_LABEL: Partial<Record<SelectorCandidate['strategy'], string>> = {
 }
 
 export function candidateRowLabel(candidate: SelectorCandidate): string {
+  if (candidate.reasons.includes('jQuery')) return 'jQuery'
+  if (candidate.reasons.includes('querySelector')) return 'querySelector'
   const custom = STRATEGY_LABEL[candidate.strategy]
   if (custom) {
     if (candidate.kind === 'css' && candidate.strategy === 'relative') return 'Rel CSS'

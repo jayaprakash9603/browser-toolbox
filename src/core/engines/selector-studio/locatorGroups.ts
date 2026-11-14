@@ -10,6 +10,7 @@ export type LocatorGroup =
   | 'axes'
   | 'indexed'
   | 'absolute'
+  | 'jquery'
   | 'all'
 
 const AXIS_STRATEGIES = new Set<SelectorCandidate['strategy']>([
@@ -31,6 +32,9 @@ export function filterLocatorGroup(candidates: SelectorCandidate[], group: Locat
   if (group === 'indexed') return candidates.filter((item) => item.strategy === 'nth' || /\)\[\d+\]/.test(item.expression))
   if (group === 'absolute') {
     return candidates.filter((item) => item.expression.startsWith('/html'))
+  }
+  if (group === 'jquery') {
+    return candidates.filter((item) => item.reasons.includes('jQuery') || item.reasons.includes('querySelector'))
   }
   if (group === 'recommended') {
     return candidates.filter(

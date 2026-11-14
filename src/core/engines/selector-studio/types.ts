@@ -103,6 +103,13 @@ export interface SelectorCandidate {
   warnings: string[]
   /** Nested CSS/XPath steps when a single expression cannot cross a shadow root. */
   piercePath?: string[]
+  /** When display text is not a valid DOM query (e.g. jQuery), evaluate with this instead. */
+  evaluateAs?: ValidationQuery
+}
+
+export interface ValidationQuery {
+  kind: 'css' | 'xpath'
+  expression: string
 }
 
 export interface EvaluationResult {

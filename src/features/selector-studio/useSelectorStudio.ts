@@ -6,6 +6,7 @@ import {
   applyScores,
   generateCandidates,
   rankCandidates,
+  resolveLocatorQuery,
   snapshotFromCaptured,
   type ElementInspect,
   type RankMode,
@@ -104,7 +105,7 @@ export function useSelectorStudio(client: StudioPageClient) {
         !next.shadowHosts.length
       if (canVerify) {
         try {
-          const queries = scored.map((item) => ({ kind: item.kind, expression: item.expression }))
+          const queries = scored.map((item) => resolveLocatorQuery(item))
           const results = await client.evaluate(queries, next.identityPath || null)
           const verified = scored.map((item, index) =>
             results[index] ? applyEvaluation(item, results[index]) : item,
@@ -267,10 +268,8 @@ export function useSelectorStudio(client: StudioPageClient) {
   const testCandidate = useCallback(
     async (candidate: SelectorCandidate) => {
       if (!snapshot) return candidate
-      const [result] = await client.evaluate(
-        [{ kind: candidate.kind, expression: candidate.expression }],
-        snapshot.identityPath || null,
-      )
+      const query = resolveLocatorQuery(candidate)
+      const [result] = await client.evaluate([query], snapshot.identityPath || null)
       const next = result ? applyEvaluation(candidate, result) : candidate
       const scored = applyScores([next], snapshot)[0]
       setCandidates((current) =>
@@ -289,8 +288,9 @@ export function useSelectorStudio(client: StudioPageClient) {
   const highlight = useCallback(
     async (candidate = active) => {
       if (!candidate || !snapshot) return
+      const query = resolveLocatorQuery(candidate)
       setHighlighting(true)
-      await client.highlight(candidate.kind, candidate.expression, snapshot.identityPath || null)
+      await client.highlight(query.kind, query.expression, snapshot.identityPath || null)
       setHighlighting(false)
     },
     [active, client, snapshot],
@@ -306,7 +306,7 @@ export function useSelectorStudio(client: StudioPageClient) {
     if (!snapshot.connected || !snapshot.frame.isTop || snapshot.shadowHosts.length) return
     setAnalyzing(true)
     try {
-      const queries = candidates.map((item) => ({ kind: item.kind, expression: item.expression }))
+      const queries = candidates.map((item) => resolveLocatorQuery(item))
       const results = await client.evaluate(queries, snapshot.identityPath || null)
       const verified = candidates.map((item, index) =>
         results[index] ? applyEvaluation(item, results[index]) : item,
@@ -354,10 +354,26 @@ export function useSelectorStudio(client: StudioPageClient) {
           reasons: ['Manually edited'],
           warnings: [],
         }
-        void testCandidate(draft)
+        void testCandidate(draft).then((scored) => {
+          setCandidates((current) => {
+            const exists = current.some(
+              (item) => item.expression === scored.expression || item.id === scored.id,
+            )
+            if (exists) {
+              return rankCandidates(
+                current.map((item) =>
+                  item.expression === scored.expression || item.id === scored.id ? scored : item,
+                ),
+                settingsRef.current.rankMode,
+              )
+            }
+            return rankCandidates([scored, ...current], settingsRef.current.rankMode)
+          })
+          setActive(scored)
+        })
       }, VALIDATE_DEBOUNCE_MS)
     },
-    [snapshot, testCandidate],
+    [testCandidate],
   )
 
   const groups = useMemo(() => {

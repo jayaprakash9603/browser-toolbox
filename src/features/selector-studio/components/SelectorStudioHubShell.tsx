@@ -482,6 +482,7 @@ export function SelectorStudioHubShell({
                     'axes',
                     'indexed',
                     'absolute',
+                    'jquery',
                     'all',
                   ] as const
                 ).map((id) => (

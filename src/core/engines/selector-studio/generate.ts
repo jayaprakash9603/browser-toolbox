@@ -1,6 +1,7 @@
 import { generateCssCandidates } from './css'
 import { applyScores, rankCandidates } from './score'
 import type { RankMode, SelectorCandidate, SelectorSnapshot } from './types'
+import { utilityCandidatesFrom } from './utility'
 import { generateXPathCandidates } from './xpath'
 
 const AXIS_STRATEGIES = new Set<SelectorCandidate['strategy']>([
@@ -20,7 +21,8 @@ export function generateCandidates(
   if (options?.includeAxes === false) {
     raw = raw.filter((item) => !AXIS_STRATEGIES.has(item.strategy))
   }
-  return rankCandidates(applyScores(raw, snapshot), mode)
+  const ranked = rankCandidates(applyScores(raw, snapshot), mode)
+  return [...ranked, ...utilityCandidatesFrom(ranked)]
 }
 
 export function bestCandidate(candidates: SelectorCandidate[]): SelectorCandidate | null {

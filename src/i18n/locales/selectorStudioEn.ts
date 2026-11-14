@@ -64,6 +64,7 @@ export const selectorStudioStrings = {
   'studio.hub.group.axes': 'XPath axes',
   'studio.hub.group.indexed': 'Indexed',
   'studio.hub.group.absolute': 'Absolute',
+  'studio.hub.group.jquery': 'jQuery',
   'studio.hub.group.all': 'All',
   'studio.subtitle': 'Inspect. Generate. Validate. Automate.',
   'studio.pick': 'Pick element',

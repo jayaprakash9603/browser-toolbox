@@ -68,7 +68,7 @@ export function SelectorsHubTable({
       <tbody>
         {items.map((candidate, index) => {
           const selected = selectedId === candidate.id || model.active?.id === candidate.id
-          const isXPath = candidate.kind === 'xpath'
+          const isXPath = candidate.kind === 'xpath' && !candidate.evaluateAs
           const badge = matchBadgeState(candidate)
           const zebra = index % 2 === 0
 

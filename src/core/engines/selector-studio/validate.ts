@@ -1,10 +1,7 @@
-import type { EvaluationResult, SelectorCandidate } from './types'
+import type { EvaluationResult, SelectorCandidate, ValidationQuery } from './types'
 import { uniquenessOf } from './score'
 
-export interface ValidationQuery {
-  kind: 'css' | 'xpath'
-  expression: string
-}
+export type { ValidationQuery } from './types'
 
 export function applyEvaluation(
   candidate: SelectorCandidate,
