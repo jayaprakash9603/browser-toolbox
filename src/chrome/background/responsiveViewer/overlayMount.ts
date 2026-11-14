@@ -4,6 +4,7 @@ import {
   overlayPickerWidth,
   overlayStageBox,
   SIM_RAIL_PX,
+  SIM_STAGE_PAD_LEFT,
   SIM_STAGE_PAD_Y,
   type OverlayInsets,
 } from './overlayFit'
@@ -44,28 +45,32 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const iconRefresh =
     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3.2-6.9"/><path d="M21 3v6h-6"/></svg>'
   const iconBack =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>'
+    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>'
   const iconForward =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>'
+    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>'
   const iconShare =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="m16 6-4-4-4 4"/><path d="M12 2v13"/></svg>'
+    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="m16 6-4-4-4 4"/><path d="M12 2v13"/></svg>'
   const iconBook =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>'
+    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>'
   const iconTabs =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="7" width="14" height="14" rx="2"/><path d="M3 17V5a2 2 0 0 1 2-2h12"/></svg>'
+    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="7" width="14" height="14" rx="2"/><path d="M3 17V5a2 2 0 0 1 2-2h12"/></svg>'
   const iconCamera = railScreenshot
   const iconVideo = railVideo
   const iconSettings = railSettings
   const kindGlyph = (id: string) => overlayKindIcon(id)
   const iconShotDevice =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>'
+    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>'
   const iconShotTab =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 22h8M12 18v4"/></svg>'
+    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 22h8M12 18v4"/></svg>'
   const iconRecordTab =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>'
+    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>'
   const iconRecordStop =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="7" width="10" height="10" rx="1" fill="currentColor" stroke="none"/></svg>'
-  const iconCompareGrid = iconTabs.replace('width="16" height="16"', '')
+    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="7" width="10" height="10" rx="1" fill="currentColor" stroke="none"/></svg>'
+  const iconCompareGrid = railCompare
+  const iconSun =
+    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>'
+  const iconMoon =
+    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>'
 
   type Host = HTMLElement & {
     __tbxSimDispose?: () => void
@@ -121,7 +126,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     * { box-sizing: border-box; }
     button { font: inherit; }
-    .rail-btn svg, .kind-tab svg, .popover-head svg { display: block; flex-shrink: 0; }
+    .rail-btn svg, .kind-tab svg, .popover-head svg { display: block; flex-shrink: 0; pointer-events: none; }
     .root {
       pointer-events: auto;
       position: fixed;
@@ -150,6 +155,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       --tbx-hint: #64748b;
       --tbx-menu-bg: #ffffff;
       --tbx-menu-border: #e2e8f0;
+      --tbx-scroll-thumb: #94a3b8;
+      --tbx-scroll-track: #e2e8f0;
     }
     .root.theme-classic {
       background: #ffffff;
@@ -182,6 +189,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       --tbx-hint: #cbd5e1;
       --tbx-menu-bg: #1e2733;
       --tbx-menu-border: #3d4f63;
+      --tbx-scroll-thumb: #94a3b8;
+      --tbx-scroll-track: #0f141c;
     }
     .root.theme-dark .panel { box-shadow: 0 16px 48px rgba(0,0,0,0.5); }
     .root.theme-dark .panel.device-picker,
@@ -190,17 +199,26 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       color: #e2e8f0;
     }
     .root.theme-dark .panel.device-picker .device-panel-head h2,
-    .root.theme-dark .panel.device-picker .device-current-name,
-    .root.theme-dark .panel.device-picker .device-name {
-      color: #f1f5f9;
+    .root.theme-dark .panel.device-picker .device-current-name {
+      color: #f8fafc;
+    }
+    .root.theme-dark .panel.device-picker .device-current-label {
+      color: #cbd5e1;
+    }
+    .root.theme-dark .device-current {
+      background: #1e2733;
+      border-color: #3d4f63;
     }
     .root.theme-dark .panel.device-picker .device-search-wrap input {
-      color: #f1f5f9;
+      color: #f8fafc;
     }
-    .root.theme-dark .panel.device-picker .kind-tab { color: #cbd5e1; }
+    .root.theme-dark .panel.device-picker .device-search-wrap input::placeholder {
+      color: #94a3b8;
+    }
+    .root.theme-dark .panel.device-picker .kind-tab { color: #e2e8f0; }
     .stage {
       position: relative;
-      z-index: 1;
+      z-index: auto;
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -210,7 +228,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       height: 100%;
       min-width: 0;
       min-height: 0;
-      padding: ${SIM_STAGE_PAD_Y}px 92px ${SIM_STAGE_PAD_Y}px 24px;
+      padding: ${SIM_STAGE_PAD_Y}px ${SIM_STAGE_PAD_LEFT}px;
       background: inherit;
     }
     .sim-pane {
@@ -222,16 +240,28 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       gap: 10px;
       min-width: 0;
       min-height: 0;
-      height: 100%;
-      flex: 1 1 0;
+      height: auto;
+      max-height: 100%;
+      flex: 0 1 auto;
       border-radius: 16px;
       outline: none;
       --tbx-fill: inherit;
       --tbx-ring: inherit;
       --tbx-button: inherit;
     }
+    .sim-pane[hidden] { display: none !important; }
     .root.is-split .sim-pane {
+      flex: 1 1 0;
+      height: 100%;
       max-width: calc(50% - 10px);
+    }
+    .pane-body {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      min-width: 0;
     }
     .root.is-split .sim-pane.is-focus .phone-wrap {
       outline: 2px solid color-mix(in srgb, var(--tbx-accent) 55%, transparent);
@@ -340,7 +370,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       mix-blend-mode: difference;
     }
     .status-icons { display: flex; align-items: center; gap: 6px; }
-    .island, .notch, .punch, .pill, .home, .android-nav { pointer-events: none; position: absolute; z-index: 4; background: #0a0a0a; }
+    .island, .notch, .punch, .pill, .home { pointer-events: none; position: absolute; z-index: 4; background: #0a0a0a; }
     .island {
       top: 12px; left: 50%; transform: translateX(-50%);
       width: 32%; max-width: 126px; height: 4.35%; min-height: 12px; border-radius: 999px;
@@ -364,11 +394,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .screen.safari-visible .home {
       background: #3a3a3c;
-    }
-    .android-nav {
-      inset: auto 0 0 0; height: 28px; background: transparent;
-      display: flex; align-items: center; justify-content: space-evenly;
-      color: rgba(255,255,255,0.8); mix-blend-mode: difference;
     }
     .safari {
       pointer-events: none;
@@ -407,18 +432,19 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .safari-tools svg { width: 22px; height: 22px; }
     .actions {
-      position: absolute;
-      right: 12px; top: 50%; transform: translateY(-50%);
+      position: relative;
       display: flex; flex-direction: column; align-items: center;
       padding: 6px 4px;
       border-radius: 4px;
       background: #ffffff;
       border: 0;
       box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-      z-index: 9;
+      z-index: 40;
       max-height: min(92vh, 620px);
       overflow: visible;
       width: 42px;
+      flex-shrink: 0;
+      pointer-events: auto;
     }
     .actions-primary {
       flex-shrink: 0;
@@ -466,16 +492,24 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       cursor: pointer;
       text-decoration: none;
       flex-shrink: 0;
+      pointer-events: auto;
     }
     .rail-btn:hover, .round:hover,
     .rail-btn:focus-visible, .round:focus-visible {
       color: var(--tbx-rail-icon-hover);
-      background: rgba(83,159,255,0.08);
+      background: rgba(124, 58, 237, 0.08);
     }
-    .rail-btn:focus-visible, .round:focus-visible { outline: 2px solid rgba(83,159,255,0.45); outline-offset: 1px; }
+    .rail-btn:focus-visible, .round:focus-visible { outline: 2px solid rgba(124, 58, 237, 0.45); outline-offset: 1px; }
     .rail-btn[aria-pressed="true"], .round[aria-pressed="true"] {
       color: var(--tbx-rail-icon-hover);
-      background: rgba(83,159,255,0.12);
+      background: rgba(124, 58, 237, 0.12);
+    }
+    .root.theme-dark .rail-btn:hover, .root.theme-dark .round:hover,
+    .root.theme-dark .rail-btn:focus-visible, .root.theme-dark .round:focus-visible {
+      background: rgba(167, 139, 250, 0.14);
+    }
+    .root.theme-dark .rail-btn[aria-pressed="true"], .root.theme-dark .round[aria-pressed="true"] {
+      background: rgba(167, 139, 250, 0.18);
     }
   .rail-tip {
       position: absolute;
@@ -546,7 +580,9 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       background: var(--tbx-panel-bg);
       color: inherit;
     }
-    .panel.open { display: flex; z-index: 11; }
+    .panel.open { display: flex; z-index: 11; pointer-events: none; }
+    .panel.open > * { pointer-events: auto; }
+    .panel::after { pointer-events: none; }
     .panel[data-panel="devices"].open { z-index: 12; }
     .panel.rail-popover {
       background: var(--tbx-panel-bg);
@@ -557,6 +593,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       box-shadow: 0 18px 46px rgba(0,0,0,0.45);
     }
     .panel.rail-popover::after {
+      pointer-events: none;
       background: var(--tbx-panel-bg);
       border-right-color: var(--tbx-panel-border);
       border-top-color: var(--tbx-panel-border);
@@ -571,8 +608,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       border-bottom: 1px solid var(--tbx-panel-border);
       margin-bottom: 2px;
     }
-    .popover-head h2 { margin: 0; font-size: 15px; font-weight: 700; flex: 1; }
-    .popover-head svg { flex-shrink: 0; opacity: 0.95; color: var(--tbx-rail-icon); }
+    .popover-head h2 { margin: 0; font-size: 15px; font-weight: 700; flex: 1; min-width: 0; }
+    .popover-head svg { width: 20px; height: 20px; flex-shrink: 0; opacity: 0.95; color: var(--tbx-rail-icon); }
     .panel.rail-popover .setting-card {
       border: 1px solid var(--tbx-panel-border);
       border-radius: 12px;
@@ -613,10 +650,10 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
       width: 36px; height: 36px; border-radius: 10px;
-      background: rgba(13,148,136,0.14);
-      color: #5eead4;
+      background: rgba(124, 58, 237, 0.12);
+      color: var(--tbx-accent);
     }
-    .panel.device-picker .menu-option-icon { background: rgba(13,148,136,0.12); color: var(--tbx-accent); }
+    .panel.device-picker .menu-option-icon { background: rgba(124, 58, 237, 0.12); color: var(--tbx-accent); }
     .menu-option-icon svg { width: 20px; height: 20px; }
     .menu-option-copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; padding-top: 2px; }
     .menu-option-title { font-size: 13px; font-weight: 700; line-height: 1.25; }
@@ -731,6 +768,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       overflow-x: hidden;
       overscroll-behavior: contain;
       scrollbar-width: thin;
+      scrollbar-color: var(--tbx-scroll-thumb) var(--tbx-scroll-track);
       -webkit-overflow-scrolling: touch;
       touch-action: pan-y;
       display: flex;
@@ -804,12 +842,41 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       overflow-y: auto;
       overscroll-behavior: contain;
       scrollbar-width: thin;
+      scrollbar-color: var(--tbx-scroll-thumb) var(--tbx-scroll-track);
       -webkit-overflow-scrolling: touch;
       touch-action: pan-y;
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
       align-content: start;
       gap: 6px;
+    }
+    .device-sidebar,
+    .panel[data-panel="devices"] .panel-list,
+    .actions-scroll,
+    .setting-list {
+      scrollbar-width: thin;
+      scrollbar-color: var(--tbx-scroll-thumb) var(--tbx-scroll-track);
+    }
+    .device-sidebar::-webkit-scrollbar,
+    .panel[data-panel="devices"] .panel-list::-webkit-scrollbar,
+    .actions-scroll::-webkit-scrollbar,
+    .setting-list::-webkit-scrollbar {
+      width: 8px;
+    }
+    .device-sidebar::-webkit-scrollbar-track,
+    .panel[data-panel="devices"] .panel-list::-webkit-scrollbar-track,
+    .actions-scroll::-webkit-scrollbar-track,
+    .setting-list::-webkit-scrollbar-track {
+      background: var(--tbx-scroll-track);
+      border-radius: 999px;
+    }
+    .device-sidebar::-webkit-scrollbar-thumb,
+    .panel[data-panel="devices"] .panel-list::-webkit-scrollbar-thumb,
+    .actions-scroll::-webkit-scrollbar-thumb,
+    .setting-list::-webkit-scrollbar-thumb {
+      background: var(--tbx-scroll-thumb);
+      border-radius: 999px;
+      border: 2px solid var(--tbx-scroll-track);
     }
     .panel[data-panel="devices"] .panel-list > .capture-hint {
       grid-column: 1 / -1;
@@ -825,6 +892,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       color: var(--tbx-panel-muted);
       border-bottom: 1px solid var(--tbx-panel-border);
     }
+    .root.theme-dark .device-section { color: #cbd5e1; }
     .device-section:first-child { margin-top: 2px; }
     .device-thumb {
       position: relative;
@@ -869,15 +937,15 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       font-weight: 600;
       line-height: 1.25;
       text-align: center;
-      color: #94a3b8;
+      color: #475569;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
-    .root.theme-dark .device-name { color: #94a3b8; }
-    .device-meta { font-size: 9px; color: #cbd5e1; text-align: center; }
-    .root.theme-dark .device-meta { color: #64748b; }
+    .root.theme-dark .device-name { color: #e2e8f0; }
+    .device-meta { font-size: 9px; color: #64748b; text-align: center; }
+    .root.theme-dark .device-meta { color: #94a3b8; }
     .device-row {
       display: flex;
       flex-direction: column;
@@ -908,15 +976,28 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       font-weight: 700;
     }
     .device-row[aria-current="true"] .device-meta { color: #94a3b8; }
-    .root.theme-dark .device-row:hover { background: #1e293b; }
-    .root.theme-dark .device-row[aria-current="true"] {
-      background: #2e1065;
-      border-color: #c4b5fd;
-      color: #f8fafc;
-      box-shadow: none;
+    .root.theme-dark .device-row {
+      background: #1a222d;
+      border-color: #2a3544;
     }
-    .root.theme-dark .device-row[aria-current="true"]:hover { background: #3b0764; }
-    .root.theme-dark .device-row[aria-current="true"] .device-name { color: #c4b5fd; }
+    .root.theme-dark .device-row:hover {
+      background: #243042;
+      border-color: #475569;
+    }
+    .root.theme-dark .device-row[aria-current="true"] {
+      background: #3b0764;
+      border-color: #a78bfa;
+      color: #f8fafc;
+      box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.35);
+    }
+    .root.theme-dark .device-row[aria-current="true"]:hover { background: #4c1d95; }
+    .root.theme-dark .device-row[aria-current="true"] .device-name { color: #f8fafc; }
+    .root.theme-dark .device-row[aria-current="true"] .device-meta { color: #e9d5ff; }
+    .root.theme-dark .device-row[aria-current="true"] .device-thumb {
+      border-color: #f8fafc;
+      background: #2e1065;
+    }
+    .root.theme-dark .device-row[aria-current="true"] .device-thumb::after { background: #f8fafc; }
     .panel[data-panel="settings"],
     .panel[data-panel="help"] {
       right: ${SIM_RAIL_PX}px;
@@ -964,7 +1045,10 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       padding: 14px;
       border-radius: 14px;
       gap: 10px;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      height: auto;
     }
     .panel[data-panel="capture-result"] {
       right: 76px;
@@ -1014,7 +1098,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       width: 100%; max-height: 46vh; object-fit: contain;
       border-radius: 10px; background: #0b0f14; border: 1px solid var(--tbx-panel-border);
     }
-    .menu-options { display: flex; flex-direction: column; gap: 8px; }
+    .menu-options { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
     .capture-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
     .capture-actions .menu-option { flex: 1 1 auto; justify-content: center; align-items: center; min-height: 44px; }
     .capture-hint { margin: 0; font-size: 12px; color: var(--tbx-hint); line-height: 1.45; }
@@ -1033,12 +1117,15 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     .panel-head svg { flex-shrink: 0; opacity: 0.9; }
     .setting-list { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
     .setting-section { margin: 4px 0 0; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--tbx-panel-muted); }
-    .theme-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+    .theme-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 6px 0 2px; }
     .theme-opt {
-      height: 34px; border-radius: 10px; border: 1px solid var(--tbx-input-border);
-      background: var(--tbx-input-bg); color: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      min-height: 40px; border-radius: 10px; border: 1px solid var(--tbx-input-border);
+      background: var(--tbx-input-bg); color: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
     }
+    .theme-opt svg { width: 16px; height: 16px; flex-shrink: 0; }
     .theme-opt:hover { border-color: var(--tbx-accent); color: var(--tbx-accent); }
+    .theme-opt:focus-visible { outline: 2px solid var(--tbx-accent); outline-offset: 2px; }
     .theme-opt[aria-pressed="true"] { background: var(--tbx-accent); border-color: var(--tbx-accent); color: #fff; }
     .setting-switch {
       display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -1062,12 +1149,12 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .setting-switch input:checked + .switch-track { background: var(--tbx-accent); }
     .setting-switch input:checked + .switch-track::after { transform: translateX(18px); }
-    .setting-switch input:focus-visible + .switch-track { outline: 2px solid #5eead4; outline-offset: 2px; }
+    .setting-switch input:focus-visible + .switch-track { outline: 2px solid var(--tbx-accent); outline-offset: 2px; }
     .panel input {
       width: 100%; height: 36px; padding: 0 12px; border-radius: 10px;
       border: 1px solid var(--tbx-input-border); font-size: 13px; background: var(--tbx-input-bg); color: inherit;
     }
-    .panel input:focus { outline: 2px solid #99f6e4; border-color: var(--tbx-accent); }
+    .panel input:focus { outline: 2px solid var(--tbx-accent); border-color: var(--tbx-accent); }
     .panel-list { overflow: auto; flex: 1; display: flex; flex-direction: column; gap: 2px; min-height: 0; }
     .setting-row {
       display: flex; align-items: center;
@@ -1081,7 +1168,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       padding: 4px 10px; font-size: 11px; cursor: pointer; color: inherit;
       white-space: nowrap;
     }
-    .chip:hover { border-color: var(--tbx-accent); color: #0f766e; }
+    .chip:hover { border-color: var(--tbx-accent); color: var(--tbx-accent); }
     .chip[aria-pressed="true"] { background: var(--tbx-accent); color: #fff; border-color: var(--tbx-accent); }
     .preview-loading {
       position: absolute;
@@ -1134,9 +1221,28 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   root.classList.toggle('theme-dark', config.ui.theme === 'dark')
   root.classList.toggle('theme-classic', config.ui.theme !== 'dark')
 
+  const paneRailHtml = () => `
+        <div class="actions">
+          <div class="actions-primary">
+            <button type="button" class="rail-btn" data-act="close" aria-label="Close simulator"><span class="rail-tip">Close simulator</span>${railClose}</button>
+            <button type="button" class="rail-btn" data-act="devices" aria-label="Change device"><span class="rail-tip">Change device</span>${railDevices}</button>
+            <button type="button" class="rail-btn" data-act="settings" aria-label="Settings"><span class="rail-tip">Configuration</span>${railSettings}</button>
+          </div>
+          <div class="actions-scroll">
+            <button type="button" class="rail-btn" data-act="rotate" aria-label="Rotate"><span class="rail-tip">Change orientation</span>${railRotate}</button>
+            <button type="button" class="rail-btn" data-act="reload" aria-label="Reload"><span class="rail-tip">Reload page</span>${railReload}</button>
+            <button type="button" class="rail-btn" data-act="screenshot" aria-label="Screenshot"><span class="rail-tip">Take a screenshot</span>${railScreenshot}</button>
+            <button type="button" class="rail-btn" data-act="record" aria-label="Start recording"><span class="rail-tip">Record video</span>${railVideo}</button>
+            <button type="button" class="rail-btn" data-act="compare" aria-label="Compare devices"><span class="rail-tip">Compare devices</span>${railCompare}</button>
+            <button type="button" class="rail-btn" data-act="help" aria-label="Help center"><span class="rail-tip">Help center</span>${railHelp}</button>
+            <button type="button" class="rail-btn" data-act="expand" aria-label="Open full simulator"><span class="rail-tip">Open full simulator</span>${railLaunch}</button>
+          </div>
+        </div>`
+
   const deviceStageHtml = (pane: '0' | '1', caption: string, hidden: boolean) => `
       <section class="sim-pane${pane === '0' ? ' is-focus' : ''}" data-pane="${pane}" ${hidden ? 'hidden' : ''}>
         <p class="pane-caption">${caption}</p>
+        <div class="pane-body">
         <div class="phone-wrap">
           <div class="phone-inner">
           <img class="mockup-img" alt="" hidden />
@@ -1158,11 +1264,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
                 </div>
                 <div class="cutout"></div>
                 <div class="home" hidden></div>
-                <div class="android-nav" hidden>
-                  <span style="width:10px;height:10px;border:1px solid currentColor;border-radius:2px;"></span>
-                  <span style="width:10px;height:10px;border:1px solid currentColor;border-radius:999px;"></span>
-                  <span style="width:10px;height:2px;background:currentColor;border-radius:999px;"></span>
-                </div>
                 <div class="blocked">This site blocked the in-page preview.<br/><a class="studio-link" target="_blank" rel="noopener noreferrer">Open full simulator</a></div>
               </div>
               <div class="safari" hidden>
@@ -1178,6 +1279,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
             </div>
           </div>
           </div>
+        </div>
+        ${paneRailHtml()}
         </div>
       </section>`
 
@@ -1212,6 +1315,19 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
         <h2>Configuration</h2>
       </div>
       <div class="setting-list">
+        <div class="setting-card">
+          <p class="setting-section">Appearance</p>
+          <div class="theme-pick" role="group" aria-label="Simulator theme">
+            <button type="button" class="theme-opt" data-theme="classic" aria-pressed="${config.ui.theme !== 'dark'}">
+              ${iconSun}
+              Light
+            </button>
+            <button type="button" class="theme-opt" data-theme="dark" aria-pressed="${config.ui.theme === 'dark'}">
+              ${iconMoon}
+              Dark
+            </button>
+          </div>
+        </div>
         <div class="setting-card">
           <p class="setting-section">Device chrome</p>
           <label class="setting-switch">
@@ -1301,7 +1417,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     </div>
     <div class="panel rail-popover" data-panel="compare-menu">
       <div class="popover-head">
-        ${iconTabs}
+        ${railCompare}
         <h2>Compare devices</h2>
       </div>
       <p class="capture-hint">Split this tab into two matching simulators, or open the full studio grid.</p>
@@ -1314,7 +1430,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
           </span>
         </button>
         <button type="button" class="menu-option" data-compare="studio">
-          <span class="menu-option-icon">${iconCompareGrid}</span>
+          <span class="menu-option-icon">${railLaunch}</span>
           <span class="menu-option-copy">
             <span class="menu-option-title">Open studio comparison</span>
             <span class="menu-option-desc">Multi-device grid in the full simulator</span>
@@ -1351,6 +1467,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
         <li>Scroll inside the device preview with your mouse wheel or trackpad.</li>
         <li>Use <strong>Rotate</strong> to check landscape layouts and safe areas.</li>
         <li>Use <strong>Compare devices</strong> to split this tab — same simulator left and right, then pick a second phone.</li>
+        <li>Switch <strong>Light</strong> or <strong>Dark</strong> in Configuration for the simulator canvas. The site inside the phone stays as the page designed it.</li>
         <li>Sites that block embedding show a blank screen — use <strong>Open full simulator</strong> or live tab emulation in Studio.</li>
         <li>Screenshots capture the device frame; tab capture includes the whole page behind the overlay.</li>
       </ul>
@@ -1359,22 +1476,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
         <li><button type="button" class="help-link" data-act="report-bug">Report a bug</button></li>
         <li><a class="studio-link help-link" href="#">Open full responsive studio</a></li>
       </ul>
-    </div>
-    <div class="actions">
-      <div class="actions-primary">
-        <button type="button" class="rail-btn" data-act="close" aria-label="Close simulator"><span class="rail-tip">Close simulator</span>${railClose}</button>
-        <button type="button" class="rail-btn" data-act="devices" aria-label="Change device"><span class="rail-tip">Change device</span>${railDevices}</button>
-        <button type="button" class="rail-btn" data-act="settings" aria-label="Settings"><span class="rail-tip">Configuration</span>${railSettings}</button>
-      </div>
-      <div class="actions-scroll">
-        <button type="button" class="rail-btn" data-act="rotate" aria-label="Rotate"><span class="rail-tip">Change orientation</span>${railRotate}</button>
-        <button type="button" class="rail-btn" data-act="reload" aria-label="Reload"><span class="rail-tip">Reload page</span>${railReload}</button>
-        <button type="button" class="rail-btn" data-act="screenshot" aria-label="Screenshot"><span class="rail-tip">Take a screenshot</span>${railScreenshot}</button>
-        <button type="button" class="rail-btn" data-act="record" aria-label="Start recording"><span class="rail-tip">Record video</span>${railVideo}</button>
-        <button type="button" class="rail-btn" data-act="compare" aria-label="Compare devices"><span class="rail-tip">Compare devices</span>${railCompare}</button>
-        <button type="button" class="rail-btn" data-act="help" aria-label="Help center"><span class="rail-tip">Help center</span>${railHelp}</button>
-        <button type="button" class="rail-btn" data-act="expand" aria-label="Open full simulator"><span class="rail-tip">Open full simulator</span>${railLaunch}</button>
-      </div>
     </div>
   `
   shadow.append(root)
@@ -1390,7 +1491,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     cutout: HTMLElement
     safari: HTMLElement
     home: HTMLElement
-    androidNav: HTMLElement
     status: HTMLElement
     hostLabel: HTMLElement
     blocked: HTMLElement
@@ -1410,7 +1510,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       cutout: pane.querySelector('.cutout') as HTMLElement,
       safari: pane.querySelector('.safari') as HTMLElement,
       home: pane.querySelector('.home') as HTMLElement,
-      androidNav: pane.querySelector('.android-nav') as HTMLElement,
       status: pane.querySelector('.status') as HTMLElement,
       hostLabel: pane.querySelector('.host') as HTMLElement,
       blocked: pane.querySelector('.blocked') as HTMLElement,
@@ -1479,12 +1578,17 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const searchInput = shadow.querySelector('.device-search') as HTMLInputElement
   const kindTabs = shadow.querySelector('[data-kind-tabs]') as HTMLElement
   const deviceList = shadow.querySelector('[data-device-list]') as HTMLElement
-  const deviceBtn = shadow.querySelector('[data-act="devices"]') as HTMLButtonElement
-  const screenshotBtn = shadow.querySelector('[data-act="screenshot"]') as HTMLButtonElement
-  const settingsBtn = shadow.querySelector('[data-act="settings"]') as HTMLButtonElement
-  const compareBtn = shadow.querySelector('[data-act="compare"]') as HTMLButtonElement
-  const helpBtn = shadow.querySelector('[data-act="help"]') as HTMLButtonElement
-  const recordBtn = shadow.querySelector('[data-act="record"]') as HTMLButtonElement
+  let activeRail = left.pane.querySelector('.actions') as HTMLElement
+  const railControl = (act: string) =>
+    (activeRail.querySelector(`[data-act="${act}"]`) as HTMLButtonElement) ??
+    (shadow.querySelector(`.actions [data-act="${act}"]`) as HTMLButtonElement)
+  const setRailPressed = (act: string, pressed: boolean) => {
+    for (const btn of shadow.querySelectorAll(`.actions [data-act="${act}"]`)) {
+      btn.setAttribute('aria-pressed', String(pressed))
+    }
+  }
+  const paneIndexFromEl = (el: Element | null): 0 | 1 =>
+    el?.closest<HTMLElement>('[data-pane]')?.dataset.pane === '1' ? 1 : 0
   const shotPanel = shadow.querySelector('[data-panel="shot-menu"]') as HTMLElement
   const recordPanel = shadow.querySelector('[data-panel="record-menu"]') as HTMLElement
   const capturePanel = shadow.querySelector('[data-panel="capture-result"]') as HTMLElement
@@ -1511,7 +1615,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
         session!.phase === 'stopping')
     recordIdle.hidden = active
     recordActive.hidden = !active
-    recordBtn.setAttribute('aria-pressed', String(active))
+    setRailPressed('record', active || state.panel === 'record-menu')
     if (!active) {
       recordStatus.textContent = ''
       recordStatus.dataset.phase = 'idle'
@@ -1630,6 +1734,9 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     if (navInput) navInput.checked = ui.showNavBar
     if (uaInput) uaInput.checked = ui.mobileUa
     if (unblockInput) unblockInput.checked = ui.unblock
+    for (const btn of shadow.querySelectorAll<HTMLButtonElement>('[data-theme]')) {
+      btn.setAttribute('aria-pressed', String(btn.dataset.theme === ui.theme))
+    }
   }
 
   const applyOverlaySettings = (ui: OverlaySettings) => {
@@ -1666,9 +1773,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   }
 
   const devicesPanel = shadow.querySelector('[data-panel="devices"]') as HTMLElement
-  const actionsScroll = shadow.querySelector('.actions-scroll') as HTMLElement
 
-  /** Vertically centered beside the rail; arrow still points at the triggering control. */
+  /** Vertically centered beside the rail that opened it. */
   const positionCenteredRailPopover = (
     panel: HTMLElement,
     btn: HTMLElement,
@@ -1679,8 +1785,10 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     const rootRect = root.getBoundingClientRect()
     const btnRect = btn.getBoundingClientRect()
     const arrowY = btnRect.top - rootRect.top + btnRect.height / 2
+    const fromRight = Math.max(12, rootRect.right - btnRect.left + 10)
     panel.style.setProperty(arrowVar, `${arrowY}px`)
-    panel.style.right = `${SIM_RAIL_PX}px`
+    panel.style.right = `${fromRight}px`
+    panel.style.left = 'auto'
     panel.style.top = '50%'
     panel.style.transform = 'translateY(-50%)'
     panel.style.maxHeight = `${maxHeight}px`
@@ -1720,10 +1828,12 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     const pickerWidth = overlayPickerWidth(window.innerWidth)
     const maxH = Math.min(Math.round(window.innerHeight * 0.88), 820)
     const rootRect = root.getBoundingClientRect()
-    const btnRect = deviceBtn.getBoundingClientRect()
+    const btnRect = railControl('devices').getBoundingClientRect()
     const arrowY = btnRect.top - rootRect.top + btnRect.height / 2
+    const fromRight = Math.max(12, rootRect.right - btnRect.left + 10)
     devicesPanel.style.setProperty('--tbx-device-arrow-y', `${arrowY}px`)
-    devicesPanel.style.right = `${SIM_RAIL_PX}px`
+    devicesPanel.style.right = `${fromRight}px`
+    devicesPanel.style.left = 'auto'
     devicesPanel.style.top = '50%'
     devicesPanel.style.transform = 'translateY(-50%)'
     devicesPanel.style.width = `${pickerWidth}px`
@@ -1733,17 +1843,17 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
 
   const positionCapturePanels = () => {
     const capMax = Math.min(window.innerHeight * 0.72, 520)
-    if (state.panel === 'shot-menu') positionCenteredRailPopover(shotPanel, screenshotBtn, '--tbx-rail-arrow-y', capMax)
-    if (state.panel === 'record-menu') positionCenteredRailPopover(recordPanel, recordBtn, '--tbx-rail-arrow-y', capMax)
-    if (state.panel === 'capture-result') positionCenteredRailPopover(capturePanel, screenshotBtn, '--tbx-rail-arrow-y', capMax)
-    if (state.panel === 'compare-menu') positionCenteredRailPopover(comparePanel, compareBtn, '--tbx-rail-arrow-y', capMax)
-    if (state.panel === 'help') positionCenteredRailPopover(helpPanel, helpBtn, '--tbx-help-arrow-y', capMax)
+    if (state.panel === 'shot-menu') positionCenteredRailPopover(shotPanel, railControl('screenshot'), '--tbx-rail-arrow-y', capMax)
+    if (state.panel === 'record-menu') positionCenteredRailPopover(recordPanel, railControl('record'), '--tbx-rail-arrow-y', capMax)
+    if (state.panel === 'capture-result') positionCenteredRailPopover(capturePanel, railControl('screenshot'), '--tbx-rail-arrow-y', capMax)
+    if (state.panel === 'compare-menu') positionCenteredRailPopover(comparePanel, railControl('compare'), '--tbx-rail-arrow-y', capMax)
+    if (state.panel === 'help') positionCenteredRailPopover(helpPanel, railControl('help'), '--tbx-help-arrow-y', capMax)
   }
 
   const positionSettingsPanel = () => {
     positionCenteredRailPopover(
       settingsPanel,
-      settingsBtn,
+      railControl('settings'),
       '--tbx-settings-arrow-y',
       Math.min(window.innerHeight * 0.72, 520),
     )
@@ -1808,7 +1918,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     els.safari.hidden = !chrome.showSafari
     els.screen.classList.toggle('safari-visible', chrome.showSafari)
     els.home.hidden = !overlayHomeIndicatorVisible(state.ui.showNavBar, live.navBar, rotated)
-    els.androidNav.hidden = !state.ui.showNavBar || live.navBar !== 'android' || rotated
     els.status.style.display = chrome.decorStatus ? '' : 'none'
     els.status.dataset.bar = live.statusBar === 'android' ? 'android' : 'ios'
     els.iframe.setAttribute('width', String(layoutSize.width))
@@ -1972,10 +2081,10 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     for (const panel of shadow.querySelectorAll('[data-panel]')) {
       panel.classList.toggle('open', panel.getAttribute('data-panel') === state.panel)
     }
-    deviceBtn.setAttribute('aria-pressed', String(state.panel === 'devices'))
-    settingsBtn.setAttribute('aria-pressed', String(state.panel === 'settings'))
-    compareBtn.setAttribute('aria-pressed', String(state.split || state.panel === 'compare-menu'))
-    helpBtn.setAttribute('aria-pressed', String(state.panel === 'help'))
+    setRailPressed('devices', state.panel === 'devices')
+    setRailPressed('settings', state.panel === 'settings')
+    setRailPressed('compare', state.split || state.panel === 'compare-menu')
+    setRailPressed('help', state.panel === 'help')
     layout()
     if (state.panel === 'devices') {
       void loadDevices()
@@ -2003,7 +2112,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     } else {
       stopRecordSync()
     }
-    screenshotBtn.setAttribute('aria-pressed', String(state.panel === 'shot-menu' || state.panel === 'capture-result'))
+    setRailPressed('screenshot', state.panel === 'shot-menu' || state.panel === 'capture-result')
+    setRailPressed('record', state.panel === 'record-menu')
     if (state.panel !== 'record-menu') void syncRecordUi()
   }
 
@@ -2081,17 +2191,17 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const onResize = () => layout()
   window.addEventListener('resize', onResize)
 
-  const currentPreviewUrl = () => {
+  const panePreviewUrl = (els: PaneEls, fallback: string) => {
     try {
-      const href = iframe.contentWindow?.location.href
+      const href = els.iframe.contentWindow?.location.href
       if (href && !href.startsWith('about:')) return href
     } catch {
       /* cross-origin preview */
     }
-    return iframe.src || state.live.url
+    return els.iframe.src || fallback
   }
 
-  const reloadPane = (els: PaneEls) => {
+  const reloadPane = (els: PaneEls, fallbackUrl: string) => {
     els.blocked.style.display = 'none'
     beginPreviewLoad(els)
     try {
@@ -2101,19 +2211,19 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       /* fall back below */
     }
     try {
-      const url = new URL(currentPreviewUrl())
+      const url = new URL(panePreviewUrl(els, fallbackUrl))
       url.hash = `tbx-sim-reload=${++state.previewReload}`
       els.iframe.src = url.href
     } catch {
       state.previewReload += 1
-      const base = state.live.url.split('#')[0]
+      const base = fallbackUrl.split('#')[0]
       els.iframe.src = `${base}#tbx-sim-reload=${state.previewReload}`
     }
   }
 
   const reloadPreview = () => {
-    reloadPane(left)
-    if (state.split) reloadPane(right)
+    reloadPane(left, state.live.url)
+    if (state.split) reloadPane(right, state.compare?.url ?? state.live.url)
   }
 
   const enterSplit = () => {
@@ -2123,7 +2233,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     right.pane.hidden = false
     setPanePreviewUrl(right, state.live.url)
     setFocusPane(1)
-    compareBtn.setAttribute('aria-pressed', 'true')
+    setRailPressed('compare', true)
     layout()
     setPanel('devices', true)
   }
@@ -2136,7 +2246,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     right.pane.hidden = true
     left.pane.classList.add('is-focus')
     right.pane.classList.remove('is-focus')
-    compareBtn.setAttribute('aria-pressed', 'false')
+    setRailPressed('compare', false)
     layout()
     syncCurrentDevice()
   }
@@ -2170,20 +2280,83 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   host.__tbxSimDispose = dispose
   document.addEventListener('keydown', onKey, true)
 
-  shadow.querySelector('[data-act="close"]')?.addEventListener('click', () => dispose())
-  shadow.querySelector('[data-act="rotate"]')?.addEventListener('click', () => {
-    if (state.split && state.focusPane === 1) state.rotatedCompare = !state.rotatedCompare
-    else state.rotated = !state.rotated
-    layout()
-  })
-  shadow.querySelector('[data-act="reload"]')?.addEventListener('click', (event) => {
+  root.addEventListener(
+    'click',
+    (event) => {
+    const btn = (event.target as HTMLElement | null)?.closest<HTMLElement>('.actions [data-act]')
+    if (!btn || !root.contains(btn)) return
+    const act = btn.dataset.act
+    if (!act) return
     event.preventDefault()
     event.stopPropagation()
-    reloadPreview()
-  })
-  deviceBtn.addEventListener('click', () => setPanel('devices'))
-  settingsBtn.addEventListener('click', () => setPanel('settings'))
-  helpBtn.addEventListener('click', () => setPanel('help'))
+    const paneIndex = paneIndexFromEl(btn)
+    const rail = btn.closest('.actions')
+    if (rail) activeRail = rail as HTMLElement
+    if (state.split) setFocusPane(paneIndex)
+    const els = paneIndex === 1 ? right : left
+    const liveUrl = paneIndex === 1 ? (state.compare?.url ?? state.live.url) : state.live.url
+    if (act === 'close') {
+      dispose()
+      return
+    }
+    if (act === 'devices') {
+      if (!(state.split && state.panel === 'devices')) setPanel('devices')
+      return
+    }
+    if (act === 'settings') {
+      setPanel('settings')
+      return
+    }
+    if (act === 'help') {
+      setPanel('help')
+      return
+    }
+    if (act === 'rotate') {
+      if (paneIndex === 1) state.rotatedCompare = !state.rotatedCompare
+      else state.rotated = !state.rotated
+      layout()
+      return
+    }
+    if (act === 'reload') {
+      event.preventDefault()
+      event.stopPropagation()
+      reloadPane(els, liveUrl)
+      return
+    }
+    if (act === 'screenshot') {
+      event.preventDefault()
+      event.stopPropagation()
+      if (state.panel === 'shot-menu' || state.panel === 'capture-result') setPanel('')
+      else setPanel('shot-menu', true)
+      return
+    }
+    if (act === 'record') {
+      event.preventDefault()
+      event.stopPropagation()
+      if (state.panel === 'record-menu') setPanel('')
+      else setPanel('record-menu', true)
+      return
+    }
+    if (act === 'compare') {
+      if (state.split) {
+        exitSplit()
+        setPanel('')
+        return
+      }
+      setPanel('compare-menu')
+      return
+    }
+    if (act === 'expand') {
+      void ask({
+        type: 'SIMULATOR_OVERLAY_ACTION',
+        action: 'expand',
+        url: liveUrl,
+        deviceId: (paneIndex === 1 ? state.compare : state.live)?.deviceId ?? state.live.deviceId,
+      })
+    }
+    },
+    true,
+  )
   shadow.querySelector('[data-act="report-bug"]')?.addEventListener('click', () => {
     try {
       const supportUrl = chrome.runtime.getURL('options.html#/support')
@@ -2196,7 +2369,9 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const settingsScroll = settingsPanel.querySelector('.setting-list') as HTMLElement
   bindOverlayWheelScroll(deviceList)
   bindOverlayWheelScroll(kindTabs)
-  bindOverlayWheelScroll(actionsScroll)
+  for (const railScroll of shadow.querySelectorAll<HTMLElement>('.actions-scroll')) {
+    bindOverlayWheelScroll(railScroll)
+  }
   bindOverlayWheelScroll(settingsScroll)
 
   searchInput.addEventListener('input', () => renderDevices())
@@ -2216,6 +2391,15 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       url: state.live.url,
     })
     if (!state.split) setPanel('')
+  })
+  shadow.querySelector('[data-panel="settings"]')?.addEventListener('click', (event) => {
+    const theme = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-theme]')?.dataset.theme
+    if (theme !== 'classic' && theme !== 'dark') return
+    if (state.ui.theme === theme) return
+    state.ui = { ...state.ui, theme }
+    applyTheme(theme)
+    syncSettingsUi()
+    void patchOverlaySettings({ theme })
   })
   shadow.querySelector('[data-panel="settings"]')?.addEventListener('change', (event) => {
     const input = event.target as HTMLInputElement
@@ -2243,18 +2427,9 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       void patchOverlaySettings({ unblock: input.checked })
     }
   })
-  shadow.querySelector('[data-act="screenshot"]')?.addEventListener('click', () => setPanel('shot-menu', true))
   shadow.querySelector('[data-panel="shot-menu"]')?.addEventListener('click', (event) => {
     const mode = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-shot]')?.dataset.shot
     if (mode === 'simulator' || mode === 'viewport') void runScreenshot(mode)
-  })
-  recordBtn.addEventListener('click', () => {
-    const pressed = recordBtn.getAttribute('aria-pressed') === 'true'
-    if (pressed) {
-      setPanel('record-menu', true)
-      return
-    }
-    setPanel('record-menu', true)
   })
   shadow.querySelector('[data-panel="record-menu"]')?.addEventListener('click', (event) => {
     const kind = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-record]')?.dataset.record
@@ -2283,27 +2458,11 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     link.click()
   })
   shadow.querySelector('[data-capture-close]')?.addEventListener('click', () => setPanel(''))
-  shadow.querySelector('[data-act="expand"]')?.addEventListener('click', () => {
-    void ask({
-      type: 'SIMULATOR_OVERLAY_ACTION',
-      action: 'expand',
-      url: state.live.url,
-      deviceId: state.live.deviceId,
-    })
-  })
   left.pane.addEventListener('click', () => {
     if (state.split) setFocusPane(0)
   })
   right.pane.addEventListener('click', () => {
     if (state.split) setFocusPane(1)
-  })
-  shadow.querySelector('[data-act="compare"]')?.addEventListener('click', () => {
-    if (state.split) {
-      exitSplit()
-      setPanel('')
-      return
-    }
-    setPanel('compare-menu', true)
   })
   shadow.querySelector('[data-panel="compare-menu"]')?.addEventListener('click', (event) => {
     const picked = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-compare]')

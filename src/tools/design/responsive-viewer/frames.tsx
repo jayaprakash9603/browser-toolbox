@@ -204,22 +204,6 @@ function HomeIndicator({ landscape }: { landscape: boolean }) {
   )
 }
 
-function AndroidNav({ landscape }: { landscape: boolean }) {
-  return (
-    <div
-      aria-hidden
-      className={cn(
-        'pointer-events-none absolute z-20 flex items-center justify-evenly text-white/80 mix-blend-difference',
-        landscape ? 'inset-y-0 right-0 w-8 flex-col' : 'inset-x-0 bottom-0 h-7',
-      )}
-    >
-      <span className="size-2.5 rounded-sm border border-current" />
-      <span className="size-2.5 rounded-full border border-current" />
-      <span className="h-0.5 w-2.5 rounded-full bg-current" />
-    </div>
-  )
-}
-
 function SideButtons({ color, style }: { color: FrameColor; style: FrameStyle }) {
   const fill = BUTTON[color]
   const ios = style === 'iphone' || style === 'iphone-home' || style === 'tablet-ios'
@@ -394,7 +378,6 @@ export function DeviceFrame({
       )}
       {!mockup && <Cutout kind={device.notch ?? 'none'} landscape={landscape} />}
       {showNavBar && device.navBar === 'home-indicator' && <HomeIndicator landscape={landscape} />}
-      {showNavBar && device.navBar === 'android' && <AndroidNav landscape={landscape} />}
       {showSafeArea && device.safeArea && (
         <span
           aria-hidden

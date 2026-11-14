@@ -395,6 +395,53 @@ describe('mobile simulator studio helpers', () => {
     mountSimulatorOverlay(config)
   })
 
+  it('toggles screenshot, record, and settings popovers on a second rail click', () => {
+    const config = overlayFixture()
+    expect(mountSimulatorOverlay(config)).toBe(true)
+    const shadow = document.getElementById(SIMULATOR_OVERLAY_ID)?.shadowRoot
+    const shotBtn = shadow?.querySelector('[data-act="screenshot"]') as HTMLButtonElement
+    const recordBtn = shadow?.querySelector('[data-act="record"]') as HTMLButtonElement
+    const compareBtn = shadow?.querySelector('[data-act="compare"]') as HTMLButtonElement
+    const settingsBtn = shadow?.querySelector('[data-act="settings"]') as HTMLButtonElement
+    const shotPanel = shadow?.querySelector('[data-panel="shot-menu"]') as HTMLElement
+    const recordPanel = shadow?.querySelector('[data-panel="record-menu"]') as HTMLElement
+    const comparePanel = shadow?.querySelector('[data-panel="compare-menu"]') as HTMLElement
+    const settingsPanel = shadow?.querySelector('[data-panel="settings"]') as HTMLElement
+
+    shotBtn.click()
+    expect(shotPanel.classList.contains('open')).toBe(true)
+    expect(shotBtn.getAttribute('aria-pressed')).toBe('true')
+    shotBtn.click()
+    expect(shotPanel.classList.contains('open')).toBe(false)
+    expect(shotBtn.getAttribute('aria-pressed')).toBe('false')
+    shotBtn.click()
+    expect(shotPanel.classList.contains('open')).toBe(true)
+    shotBtn.click()
+    expect(shotPanel.classList.contains('open')).toBe(false)
+
+    recordBtn.click()
+    expect(recordPanel.classList.contains('open')).toBe(true)
+    expect(recordBtn.getAttribute('aria-pressed')).toBe('true')
+    recordBtn.click()
+    expect(recordPanel.classList.contains('open')).toBe(false)
+    expect(recordBtn.getAttribute('aria-pressed')).toBe('false')
+    recordBtn.click()
+    expect(recordPanel.classList.contains('open')).toBe(true)
+    recordBtn.click()
+    expect(recordPanel.classList.contains('open')).toBe(false)
+
+    compareBtn.click()
+    expect(comparePanel.classList.contains('open')).toBe(true)
+    compareBtn.click()
+    expect(comparePanel.classList.contains('open')).toBe(false)
+
+    settingsBtn.click()
+    expect(settingsPanel.classList.contains('open')).toBe(true)
+    settingsBtn.click()
+    expect(settingsPanel.classList.contains('open')).toBe(false)
+    mountSimulatorOverlay(config)
+  })
+
   it('opens the settings sheet from the pinned gear control', () => {
     const config = overlayFixture()
     expect(mountSimulatorOverlay(config)).toBe(true)
@@ -406,6 +453,29 @@ describe('mobile simulator studio helpers', () => {
     expect(panel?.classList.contains('open')).toBe(true)
     expect(panel?.querySelector('.setting-list')).toBeTruthy()
     expect(settingsBtn.getAttribute('aria-pressed')).toBe('true')
+    mountSimulatorOverlay(config)
+  })
+
+  it('switches the overlay canvas between light and dark from configuration', () => {
+    const config = overlayFixture()
+    expect(mountSimulatorOverlay(config)).toBe(true)
+    const shadow = document.getElementById(SIMULATOR_OVERLAY_ID)?.shadowRoot
+    const root = shadow?.querySelector('.root') as HTMLElement
+    ;(shadow?.querySelector('[data-act="settings"]') as HTMLButtonElement).click()
+    const light = shadow?.querySelector('[data-theme="classic"]') as HTMLButtonElement
+    const dark = shadow?.querySelector('[data-theme="dark"]') as HTMLButtonElement
+    expect(light).toBeTruthy()
+    expect(dark).toBeTruthy()
+    expect(light.getAttribute('aria-pressed')).toBe('true')
+    expect(root.classList.contains('theme-classic')).toBe(true)
+    dark.click()
+    expect(root.classList.contains('theme-dark')).toBe(true)
+    expect(root.classList.contains('theme-classic')).toBe(false)
+    expect(dark.getAttribute('aria-pressed')).toBe('true')
+    expect(light.getAttribute('aria-pressed')).toBe('false')
+    light.click()
+    expect(root.classList.contains('theme-classic')).toBe(true)
+    expect(root.classList.contains('theme-dark')).toBe(false)
     mountSimulatorOverlay(config)
   })
 
@@ -423,6 +493,10 @@ describe('mobile simulator studio helpers', () => {
     const optionTitle = shadow?.querySelector('[data-panel="shot-menu"] .menu-option-title') as HTMLElement
     expect(optionTitle?.textContent).toContain('Capture with the device')
     expect(getComputedStyle(optionTitle).fontWeight).toBe('700')
+    const css = shadow?.querySelector('style')?.textContent ?? ''
+    expect(css).toContain('.root.theme-dark .device-current')
+    expect(css).toContain('scrollbar-color: var(--tbx-scroll-thumb)')
+    expect(css).toContain('.root.theme-dark .device-name { color: #e2e8f0; }')
     mountSimulatorOverlay(config)
     expect(document.getElementById(SIMULATOR_OVERLAY_ID)).toBeNull()
   })
@@ -458,14 +532,28 @@ describe('mobile simulator studio helpers', () => {
     expect(mountSimulatorOverlay(config)).toBe(true)
     const shadow = document.getElementById(SIMULATOR_OVERLAY_ID)?.shadowRoot
     expect(shadow?.querySelectorAll('.sim-pane')).toHaveLength(2)
+    expect(shadow?.querySelectorAll('.sim-pane .actions')).toHaveLength(2)
     expect((shadow?.querySelector('[data-pane="1"]') as HTMLElement).hidden).toBe(true)
+    expect(shadow?.querySelector('.root')?.classList.contains('is-split')).toBe(false)
     ;(shadow?.querySelector('[data-act="compare"]') as HTMLButtonElement).click()
-    expect(shadow?.querySelector('[data-panel="compare-menu"]')?.classList.contains('open')).toBe(true)
+    const comparePanel = shadow?.querySelector('[data-panel="compare-menu"]') as HTMLElement
+    expect(comparePanel.classList.contains('open')).toBe(true)
+    expect(comparePanel.querySelector('.popover-head h2')?.textContent).toBe('Compare devices')
+    const compareHeadIcon = comparePanel.querySelector('.popover-head svg')
+    expect(compareHeadIcon?.getAttribute('width')).toBe('20')
+    expect(compareHeadIcon?.getAttribute('height')).toBe('20')
+    expect(comparePanel.querySelectorAll('[data-compare]')).toHaveLength(2)
+    expect(comparePanel.querySelector('[data-compare="split"] .menu-option-title')?.textContent).toBe('Split this tab')
+    expect(comparePanel.querySelector('[data-compare="studio"] .menu-option-title')?.textContent).toBe(
+      'Open studio comparison',
+    )
     ;(shadow?.querySelector('[data-compare="split"]') as HTMLButtonElement).click()
     const root = shadow?.querySelector('.root') as HTMLElement
     expect(root.classList.contains('is-split')).toBe(true)
     expect((shadow?.querySelector('[data-pane="1"]') as HTMLElement).hidden).toBe(false)
     expect(shadow?.querySelectorAll('iframe')).toHaveLength(2)
+    expect(shadow?.querySelector('[data-pane="0"] .actions')).toBeTruthy()
+    expect(shadow?.querySelector('[data-pane="1"] .actions')).toBeTruthy()
     expect(shadow?.querySelector('[data-current-device-side]')?.textContent).toBe('Right device')
     expect(shadow?.querySelector('[data-act="compare"]')?.getAttribute('aria-pressed')).toBe('true')
     expect(shadow?.querySelector('[data-panel="devices"]')?.classList.contains('open')).toBe(true)
