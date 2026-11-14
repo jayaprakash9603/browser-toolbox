@@ -20,8 +20,8 @@ import { clearHistory, exportHistory, importHistory } from '../history'
 import type { SelectorStudioModel } from '../useSelectorStudio'
 import { HubSelectorLine } from './HubSelectorLine'
 
-export const HUB_TABS = ['attributes', 'relCss', 'relXpath', 'css', 'xpath', 'code'] as const
-export const HUB_FULL_TABS = [...HUB_TABS, 'history', 'inspect'] as const
+export const HUB_TABS = ['selectors', 'attributes', 'code', 'inspect'] as const
+export const HUB_FULL_TABS = [...HUB_TABS, 'history'] as const
 
 const REL_STRATEGIES = new Set<SelectorCandidate['strategy']>([
   'relative',
@@ -76,7 +76,7 @@ export function HubSelectorList({
   if (!model.snapshot) return <HubEmpty />
   if (!items.length) return <HubEmpty />
   return (
-    <div className="rounded border border-border/60">
+    <div className="overflow-hidden rounded-md border border-border/60">
       {items.map((item) => (
         <HubSelectorLine
           key={item.id}
@@ -108,7 +108,7 @@ export function CodePanel({ model }: { model: SelectorStudioModel }) {
       {snippets.map((snippet) => (
         <article
           key={`${snippet.framework}-${snippet.api}-${snippet.locator}`}
-          className="border-b border-border/60 pb-2 last:border-0"
+          className="border-b border-border/60 pb-3 last:border-0"
         >
           <p className="text-[11px] font-medium">{snippet.label}</p>
           <pre className="mt-1 overflow-x-auto font-mono text-[10px] leading-5 text-muted-foreground">
@@ -203,7 +203,7 @@ export function HistoryPanel({
         <p className="py-8 text-center text-xs text-muted-foreground">{t('studio.history.empty')}</p>
       ) : (
         model.history.map((item) => (
-          <article key={item.id} className="border-b border-border/60 pb-2">
+          <article key={item.id} className="border-b border-border/60 pb-3">
             {item.name && <p className="text-[11px] font-medium">{item.name}</p>}
             <code className="block break-all font-mono text-[11px]">{item.expression}</code>
             <div className="mt-1 flex gap-1">

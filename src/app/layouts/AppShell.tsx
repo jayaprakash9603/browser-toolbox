@@ -153,7 +153,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
     // resolve against <body> and grow the document, adding a second scrollbar and blank space under the panel.
     <div className="relative flex h-full flex-col overflow-clip bg-background">
       {!chromeless && (
-        <header className="sticky top-0 z-30 flex h-11 shrink-0 items-center gap-1.5 border-b bg-background/85 px-2.5 backdrop-blur-md @[360px]:gap-2 @[360px]:px-3">
+        <header className="sticky top-0 z-30 flex h-12 shrink-0 items-center gap-2 border-b bg-background/85 px-3 backdrop-blur-md @[360px]:px-4">
           <Link
             to="/"
             className="flex min-w-0 items-center gap-2 rounded-md pr-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"

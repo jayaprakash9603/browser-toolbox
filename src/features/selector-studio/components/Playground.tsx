@@ -30,7 +30,7 @@ export function Playground({
   }, [candidate])
 
   return (
-    <section className="flex flex-col gap-2 rounded-md border p-2">
+    <section className="flex flex-col gap-2.5 rounded-md border p-3">
       <div className="flex items-center gap-2">
         <h3 className="text-[11px] font-medium text-muted-foreground">{t('studio.playground')}</h3>
         <div className="ml-auto flex gap-1">

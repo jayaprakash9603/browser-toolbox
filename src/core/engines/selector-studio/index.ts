@@ -2,6 +2,7 @@ export { captureSelectorSnapshot } from './capture'
 export {
   captureElementInspect,
   captureInspectByIdentity,
+  type BoxEdges,
   type ElementInspect,
   type InspectListener,
   type MatchedStyleRule,

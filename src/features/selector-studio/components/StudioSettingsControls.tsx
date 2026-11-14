@@ -24,7 +24,7 @@ function InspectorRow({
   return (
     <div
       className={cn(
-        'flex items-start justify-between gap-3 border-b border-border/60 px-2.5 py-2 last:border-b-0',
+        'flex items-start justify-between gap-3 border-b border-border/60 px-3 py-2.5 last:border-b-0',
         className,
       )}
     >

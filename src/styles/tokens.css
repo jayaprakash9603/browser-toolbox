@@ -56,10 +56,10 @@
   --duration-slow: 450ms;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --radius: 0.625rem;
-  --density-grid-gap: 0.625rem;
-  --density-section-gap: 1.25rem;
-  --density-page-pad: 0.75rem;
-  --density-card-pad: 0.75rem;
+  --density-grid-gap: 0.75rem;
+  --density-section-gap: 1.5rem;
+  --density-page-pad: 1rem;
+  --density-card-pad: 1rem;
   --density-card-min-h: 5.25rem;
   --density-control-h: 2.25rem;
   --netmon-online: #16a34a;
@@ -78,20 +78,20 @@
 }
 
 html[data-density='compact'] {
-  --density-grid-gap: 0.375rem;
-  --density-section-gap: 1rem;
-  --density-page-pad: 0.5rem;
-  --density-card-pad: 0.5rem;
+  --density-grid-gap: 0.5rem;
+  --density-section-gap: 1.125rem;
+  --density-page-pad: 0.75rem;
+  --density-card-pad: 0.75rem;
   --density-card-min-h: 4.5rem;
   --density-control-h: 2rem;
   font-size: 13px;
 }
 
 html[data-density='comfortable'] {
-  --density-grid-gap: 0.625rem;
-  --density-section-gap: 1.25rem;
-  --density-page-pad: 0.75rem;
-  --density-card-pad: 0.75rem;
+  --density-grid-gap: 0.75rem;
+  --density-section-gap: 1.5rem;
+  --density-page-pad: 1.125rem;
+  --density-card-pad: 1.125rem;
   --density-card-min-h: 5.25rem;
   --density-control-h: 2.25rem;
   font-size: 14px;

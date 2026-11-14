@@ -21,13 +21,13 @@ function FieldRow({
   if (!candidate) return null
 
   return (
-    <div className="flex min-w-0 items-start gap-1.5">
-      <span className="w-[3.25rem] shrink-0 pt-1.5 text-[10px] font-medium text-muted-foreground">{label}</span>
+    <div className="flex min-w-0 items-start gap-2">
+      <span className="w-[3.25rem] shrink-0 pt-2 text-[10px] font-medium text-muted-foreground">{label}</span>
       <button
         type="button"
         onClick={onSelect}
         className={cn(
-          'min-w-0 flex-1 rounded border px-2 py-1 text-left font-mono text-[11px] leading-5 outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          'min-w-0 flex-1 rounded border px-2.5 py-1.5 text-left font-mono text-[11px] leading-5 outline-none focus-visible:ring-2 focus-visible:ring-ring',
           selected ? 'border-primary/50 bg-primary/5' : 'border-border/80 bg-background',
         )}
       >
@@ -62,8 +62,8 @@ export function HubSelectorFields({
   return (
     <section
       className={cn(
-        'mb-2 space-y-1.5 border-b border-border/60 pb-2',
-        variant === 'panel' && 'rounded-md border border-border/70 bg-card/80 px-2 py-2',
+        'mb-3 space-y-2 border-b border-border/60 pb-3',
+        variant === 'panel' && 'rounded-md border border-border/70 bg-card/80 px-2.5 py-2.5',
       )}
       aria-label={t('studio.hub.selectorFields')}
     >

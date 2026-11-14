@@ -5,6 +5,8 @@ import { CopyButton } from '@/shared/components/CopyButton'
 import { Badge } from '@/shared/components/ui/badge'
 import { cn } from '@/shared/utils/cn'
 
+import { BoxModel } from './BoxModel'
+
 export type InspectSection = 'styles' | 'computed' | 'listeners'
 
 export function InspectPanel({
@@ -40,10 +42,8 @@ export function InspectPanel({
 function StylesSection({ inspect }: { inspect: ElementInspect }) {
   const { t } = useTranslation()
   return (
-    <div className="flex flex-col gap-2">
-      <p className="text-[11px] text-muted-foreground">
-        {t('studio.box')}: {Math.round(inspect.box.width)}×{Math.round(inspect.box.height)}
-      </p>
+    <div className="flex flex-col gap-3">
+      <BoxModel inspect={inspect} />
       {inspect.classes.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {inspect.classes.map((cls) => (
@@ -58,11 +58,15 @@ function StylesSection({ inspect }: { inspect: ElementInspect }) {
         <p className="text-[11px] text-muted-foreground">{t('studio.noMatchedRules')}</p>
       ) : (
         inspect.rules.map((rule, index) => (
-          <article key={`${rule.selector}-${index}`} className="rounded-md border p-2">
+          <article key={`${rule.selector}-${index}`} className="rounded-md border p-3">
             <code className="block wrap-anywhere font-mono text-[11px]">{rule.selector}</code>
-            <p className="mt-1 truncate text-[10px] text-muted-foreground">{rule.href}</p>
-            <pre className="mt-1 wrap-anywhere whitespace-pre-wrap font-mono text-[11px]">{rule.cssText || '—'}</pre>
-            {rule.cssText ? <CopyButton text={`${rule.selector} { ${rule.cssText} }`} size="xs" /> : null}
+            <p className="mt-1.5 truncate text-[10px] text-muted-foreground">{rule.href}</p>
+            <pre className="mt-1.5 wrap-anywhere whitespace-pre-wrap font-mono text-[11px] leading-5">{rule.cssText || '—'}</pre>
+            {rule.cssText ? (
+              <div className="mt-2">
+                <CopyButton text={`${rule.selector} { ${rule.cssText} }`} size="xs" />
+              </div>
+            ) : null}
           </article>
         ))
       )}
@@ -76,13 +80,15 @@ function ComputedSection({ inspect }: { inspect: ElementInspect }) {
     return <p className="text-[11px] text-muted-foreground">{t('studio.noComputed')}</p>
   }
   return (
-    <dl className="grid grid-cols-[minmax(0,7.5rem)_1fr] gap-x-2 gap-y-1 text-[11px]">
+    <dl className="grid grid-cols-[minmax(0,7.5rem)_1fr] gap-x-3 gap-y-2 text-[11px]">
       {inspect.computed.map((item) => (
         <div key={item.name} className="contents">
-          <dt className="min-w-0 truncate text-muted-foreground">{item.name}</dt>
+          <dt className="min-w-0 truncate pt-1 text-muted-foreground">{item.name}</dt>
           <dd className="min-w-0">
-            <span className="wrap-anywhere font-mono">{item.value}</span>
-            <CopyButton text={item.value} />
+            <span className="inline-flex max-w-full items-start gap-2">
+              <span className="wrap-anywhere pt-1 font-mono">{item.value}</span>
+              <CopyButton text={item.value} size="icon-xs" />
+            </span>
           </dd>
         </div>
       ))}
@@ -101,7 +107,7 @@ function ListenersSection({ inspect }: { inspect: ElementInspect }) {
         <p className="text-[11px] text-muted-foreground">{t('studio.noListeners')}</p>
       ) : (
         inspect.listeners.map((item, index) => (
-          <div key={`${item.source}-${item.type}-${index}`} className="flex flex-wrap items-center gap-1.5 rounded-md border px-2 py-1.5 text-[11px]">
+          <div key={`${item.source}-${item.type}-${index}`} className="flex flex-wrap items-center gap-2 rounded-md border px-2.5 py-2 text-[11px]">
             <code className="font-mono">{item.type}</code>
             <Badge variant="outline">{item.source}</Badge>
             <span className="text-muted-foreground">×{item.count}</span>
@@ -115,10 +121,14 @@ function ListenersSection({ inspect }: { inspect: ElementInspect }) {
 
 function Row({ label, value, copy }: { label: string; value: string; copy?: string }) {
   return (
-    <div className={cn('rounded-md border p-2')}>
+    <div className={cn('rounded-md border p-3')}>
       <p className="text-[10px] text-muted-foreground">{label}</p>
-      <code className="mt-0.5 block wrap-anywhere font-mono text-[11px]">{value}</code>
-      {copy ? <CopyButton text={copy} size="xs" /> : null}
+      <code className="mt-1 block wrap-anywhere font-mono text-[11px] leading-5">{value}</code>
+      {copy ? (
+        <div className="mt-2">
+          <CopyButton text={copy} size="xs" />
+        </div>
+      ) : null}
     </div>
   )
 }

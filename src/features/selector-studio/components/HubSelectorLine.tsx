@@ -24,7 +24,7 @@ export function HubSelectorLine({
   return (
     <div
       className={cn(
-        'group flex min-w-0 items-start gap-1 border-b border-border/60 py-1.5 pl-1 pr-0.5 last:border-b-0',
+        'group flex min-w-0 items-start gap-2 border-b border-border/60 py-2 pl-2 pr-1 last:border-b-0',
         selected && 'bg-primary/5',
       )}
     >
@@ -42,7 +42,7 @@ export function HubSelectorLine({
           </span>
         )}
       </button>
-      <span className="flex shrink-0 items-center gap-0 opacity-100 @[420px]:opacity-90 group-hover:opacity-100 group-focus-within:opacity-100">
+      <span className="flex shrink-0 items-center gap-0.5 opacity-100 @[420px]:opacity-90 group-hover:opacity-100 group-focus-within:opacity-100">
         <CopyButton text={candidate.expression} size="icon-xs" />
         <Button
           size="icon-xs"

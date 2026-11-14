@@ -143,11 +143,11 @@ function model(partial: Partial<SelectorStudioModel> = {}): SelectorStudioModel 
 afterEach(cleanup)
 
 describe('Selector Studio UI', () => {
-  it('renders hub layout with primary selector and CSS tab', () => {
+  it('renders hub layout with primary selector and selectors tab', () => {
     renderStudio(<SelectorStudioView model={model()} />)
     expect(screen.getByRole('heading', { name: 'Selector Studio' })).toBeInTheDocument()
     expect(screen.getAllByText('button[data-testid="submit"]').length).toBeGreaterThan(0)
-    expect(screen.getByRole('tab', { name: 'CSS' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Selectors' })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Attributes' })).toBeInTheDocument()
   })
 
@@ -174,10 +174,9 @@ describe('Selector Studio UI', () => {
     expect(pick).toHaveBeenCalled()
   })
 
-  it('switches to XPath and Code tabs', async () => {
+  it('shows XPath in the selectors table and opens Code tab', async () => {
     const user = userEvent.setup()
     renderStudio(<SelectorStudioView model={model()} />)
-    await user.click(screen.getByRole('tab', { name: 'XPath' }))
     expect(screen.getAllByText('//*[@id="login-button"]').length).toBeGreaterThan(0)
     await user.click(screen.getByRole('tab', { name: 'Code' }))
     expect(screen.getByText('Playwright · getByTestId')).toBeInTheDocument()
@@ -268,8 +267,36 @@ describe('Selector Studio UI', () => {
   it('renders DevTools Elements sidebar with selector hub', () => {
     renderStudio(<SelectorStudioView model={model()} pane />)
     expect(screen.queryByLabelText(/studio enabled/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Selectors' })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Attributes' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Inspect' })).toBeInTheDocument()
     expect(screen.getAllByText('button[data-testid="submit"]').length).toBeGreaterThan(0)
+  })
+
+  it('shows the selected element box model with padding and margin', async () => {
+    const user = userEvent.setup()
+    renderStudio(
+      <SelectorStudioView
+        pane
+        model={model({
+          elementInspect: {
+            inlineStyle: '',
+            classes: ['primary'],
+            computed: [],
+            rules: [],
+            listeners: [],
+            box: { width: 80, height: 32, x: 0, y: 0 },
+            margin: { top: 24, right: 0, bottom: 0, left: 0 },
+            padding: { top: 8, right: 16, bottom: 8, left: 16 },
+            listenerSource: 'attributes',
+          },
+        })}
+      />,
+    )
+    await user.click(screen.getByRole('tab', { name: 'Inspect' }))
+    expect(screen.getByTestId('studio-box-model')).toBeInTheDocument()
+    expect(screen.getByText('Margin')).toBeInTheDocument()
+    expect(screen.getByText('Padding')).toBeInTheDocument()
   })
 
   it('shows computed styles and listeners under Inspect', async () => {
@@ -284,6 +311,8 @@ describe('Selector Studio UI', () => {
             rules: [{ selector: 'button.primary', cssText: 'color: red', href: 'inline' }],
             listeners: [{ type: 'click', source: 'attribute', count: 1 }],
             box: { width: 80, height: 32, x: 0, y: 0 },
+            margin: { top: 8, right: 0, bottom: 8, left: 0 },
+            padding: { top: 6, right: 12, bottom: 6, left: 12 },
             listenerSource: 'attributes',
           },
         })}

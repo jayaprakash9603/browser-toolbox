@@ -375,12 +375,16 @@ describe('selector-studio capture', () => {
 
   it('captures computed styles, matched rules, and attribute listeners', () => {
     document.head.insertAdjacentHTML('beforeend', '<style>.hook{display:flex;color:rgb(0, 0, 0)}</style>')
-    document.body.innerHTML = '<button class="hook" style="opacity:0.9" onclick="return false">Go</button>'
+    document.body.innerHTML =
+      '<button class="hook" style="opacity:0.9;margin-top:8px;padding:4px 12px" onclick="return false">Go</button>'
     const inspect = captureElementInspect(document.querySelector('button')!)
     expect(inspect.computed.some((item) => item.name === 'display')).toBe(true)
     expect(inspect.inlineStyle).toContain('opacity')
     expect(inspect.classes).toContain('hook')
     expect(inspect.listeners.some((item) => item.type === 'click')).toBe(true)
     expect(inspect.rules.some((rule) => rule.selector.includes('hook'))).toBe(true)
+    expect(inspect.margin.top).toBe(8)
+    expect(inspect.padding.left).toBe(12)
+    expect(inspect.padding.top).toBe(4)
   })
 })

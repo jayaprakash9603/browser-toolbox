@@ -11,6 +11,13 @@ export interface MatchedStyleRule {
   href: string
 }
 
+export interface BoxEdges {
+  top: number
+  right: number
+  bottom: number
+  left: number
+}
+
 export interface ElementInspect {
   inlineStyle: string
   classes: string[]
@@ -18,6 +25,8 @@ export interface ElementInspect {
   rules: MatchedStyleRule[]
   listeners: InspectListener[]
   box: { width: number; height: number; x: number; y: number }
+  margin: BoxEdges
+  padding: BoxEdges
   listenerSource: 'devtools' | 'attributes'
 }
 
@@ -118,6 +127,13 @@ export function captureElementInspect(element: Element): ElementInspect {
   }
 
   const rect = element.getBoundingClientRect()
+  const edge = (prefix: 'margin' | 'padding'): BoxEdges => {
+    const read = (side: string) => {
+      const n = parseFloat(style?.getPropertyValue(`${prefix}-${side}`) ?? '')
+      return Number.isFinite(n) ? n : 0
+    }
+    return { top: read('top'), right: read('right'), bottom: read('bottom'), left: read('left') }
+  }
   return {
     inlineStyle: (element as HTMLElement).style?.cssText ?? '',
     classes: [...element.classList],
@@ -125,6 +141,8 @@ export function captureElementInspect(element: Element): ElementInspect {
     rules,
     listeners,
     box: { width: rect.width, height: rect.height, x: rect.x, y: rect.y },
+    margin: edge('margin'),
+    padding: edge('padding'),
     listenerSource,
   }
 }

@@ -203,7 +203,7 @@ export function ToolPage({
 
   return (
     <div className="flex h-full flex-col">
-      <header className="sticky top-0 z-10 flex shrink-0 items-center gap-2.5 bg-background/85 px-3 py-2 backdrop-blur-md @[360px]:px-4">
+      <header className="sticky top-0 z-10 flex shrink-0 items-center gap-2.5 bg-background/85 px-4 py-2.5 backdrop-blur-md">
         {!inWorkspace && <BackButton to={backTo} className="shrink-0" />}
         {!inWorkspace && (
           <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 shadow-sm">
