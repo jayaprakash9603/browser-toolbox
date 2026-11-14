@@ -81,20 +81,14 @@ describe('responsive viewer model', () => {
 
   it('upsizes the on-page phone to fill the stage instead of capping at 1x', () => {
     const outer = overlayOuterSize({ width: 402, height: 874 }, null)
-    const desktop = overlayStageBox({ width: 1920, height: 1080 }, false)
+    const desktop = overlayStageBox({ width: 1920, height: 1080 })
     expect(overlayFitScale(outer, desktop)).toBeGreaterThan(1)
-    const laptop = overlayStageBox({ width: 1366, height: 768 }, false)
+    const laptop = overlayStageBox({ width: 1366, height: 768 })
     const fitted = overlayFitScale(outer, laptop)
     expect(fitted * outer.height).toBeGreaterThan(laptop.maxH - 1)
     expect(fitted * outer.height).toBeLessThanOrEqual(laptop.maxH)
     expect(overlayPickerWidth(1920)).toBeGreaterThanOrEqual(400)
-    const withPicker = overlayStageBox({ width: 1920, height: 1080 }, true)
-    expect(withPicker.dockPicker).toBe(true)
-    expect(withPicker.maxW).toBeLessThan(desktop.maxW)
-    expect(withPicker.pickerWidth).toBeGreaterThan(300)
-    const narrow = overlayStageBox({ width: 680, height: 700 }, true)
-    expect(narrow.dockPicker).toBe(false)
-    expect(narrow.maxW).toBe(overlayStageBox({ width: 680, height: 700 }, false).maxW)
+    expect(overlayStageBox({ width: 1920, height: 1080 }).maxW).toBe(desktop.maxW)
   })
 
   it('keeps full device viewport under notch chrome and hides duplicate mockup status', () => {
@@ -353,13 +347,16 @@ describe('mobile simulator studio helpers', () => {
       const scale = Number(/scale\(([^)]+)\)/.exec(inner.style.transform)?.[1])
       expect(scale).toBeGreaterThan(1)
       const wrap = shadow?.querySelector('.phone-wrap') as HTMLElement
-      expect(Number.parseInt(wrap.style.height, 10)).toBeGreaterThan(900)
+      const wrapH = wrap.style.height
+      const innerTransform = inner.style.transform
+      expect(Number.parseInt(wrapH, 10)).toBeGreaterThan(900)
       const devicesBtn = shadow?.querySelector('[data-act="devices"]') as HTMLButtonElement
       devicesBtn.click()
-      const root = shadow?.querySelector('.root') as HTMLElement
-      expect(root.classList.contains('picker-open')).toBe(true)
       const panel = shadow?.querySelector('[data-panel="devices"]') as HTMLElement
       expect(panel.classList.contains('open')).toBe(true)
+      expect(wrap.style.height).toBe(wrapH)
+      expect(inner.style.transform).toBe(innerTransform)
+      expect(getComputedStyle(panel).zIndex).toBe('12')
       expect(Number.parseInt(panel.style.height, 10)).toBeGreaterThan(700)
       expect(Number.parseInt(panel.style.width, 10)).toBeGreaterThan(300)
     } finally {

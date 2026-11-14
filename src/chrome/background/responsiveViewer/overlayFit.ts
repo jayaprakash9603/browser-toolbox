@@ -6,7 +6,6 @@ export const SIM_STAGE_PAD_Y = 24
 export const SIM_STAGE_PAD_LEFT = 24
 export const SIM_PICKER_MAX = 440
 export const SIM_PICKER_MIN = 300
-export const SIM_PICKER_GAP = 20
 export const SIM_CHASSIS_PAD = 20
 export const SIM_MIN_SCALE = 0.15
 
@@ -17,26 +16,17 @@ export interface OverlayInsets {
   bottom: number
 }
 
-/** Docked device catalog width — large enough for a visible tile grid, not a cramped popover. */
+/** Device picker width when positioned beside the action rail (does not affect phone layout). */
 export function overlayPickerWidth(viewportWidth: number): number {
   return Math.min(SIM_PICKER_MAX, Math.max(SIM_PICKER_MIN, Math.round(viewportWidth * 0.34)))
 }
 
-export function overlayStageBox(viewport: { width: number; height: number }, pickerOpen: boolean) {
-  const pickerWidth = pickerOpen ? overlayPickerWidth(viewport.width) : 0
+/** Available stage for the phone — stable whether the device picker is open (picker floats above). */
+export function overlayStageBox(viewport: { width: number; height: number }) {
   const rail = SIM_RAIL_PX + SIM_RAIL_GAP
-  const dockedRight = rail + (pickerWidth ? pickerWidth + SIM_PICKER_GAP : 0)
   const maxH = Math.max(180, viewport.height - SIM_STAGE_PAD_Y * 2)
-  const maxWRail = Math.max(180, viewport.width - SIM_STAGE_PAD_LEFT - rail)
-  const maxWDocked = Math.max(180, viewport.width - SIM_STAGE_PAD_LEFT - dockedRight)
-  const dockPicker = pickerOpen && maxWDocked >= 280
-  return {
-    maxW: dockPicker ? maxWDocked : maxWRail,
-    maxH,
-    pickerWidth,
-    paddingRight: dockPicker ? dockedRight : rail,
-    dockPicker,
-  }
+  const maxW = Math.max(180, viewport.width - SIM_STAGE_PAD_LEFT - rail)
+  return { maxW, maxH, paddingRight: rail }
 }
 
 export function overlayOuterSize(
@@ -57,5 +47,5 @@ export function overlayFitScale(
   box: { maxW: number; maxH: number },
 ): number {
   if (outer.width <= 0 || outer.height <= 0) return 1
-  return Math.max(SIM_MIN_SCALE, Math.min(box.maxW / outer.width, box.maxH / outer.height))
+  return Math.max(0.15, Math.min(box.maxW / outer.width, box.maxH / outer.height))
 }

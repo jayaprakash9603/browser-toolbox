@@ -166,6 +166,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .root.theme-dark .panel { box-shadow: 0 16px 48px rgba(0,0,0,0.5); }
     .stage {
+      position: relative;
+      z-index: 1;
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -389,6 +391,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       color: inherit;
     }
     .panel.open { display: flex; z-index: 11; }
+    .panel[data-panel="devices"].open { z-index: 12; }
     .panel.rail-popover {
       background: var(--tbx-panel-bg);
       color: inherit;
@@ -1418,8 +1421,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     const live = state.live
     const width = state.rotated ? live.height : live.width
     const height = state.rotated ? live.width : live.height
-    const pickerOpen = state.panel === 'devices'
-    const box = overlayStageBox({ width: window.innerWidth, height: window.innerHeight }, pickerOpen)
+    const box = overlayStageBox({ width: window.innerWidth, height: window.innerHeight })
     const mockup = live.mockupUrl && live.mockupInsets ? live.mockupInsets : null
     const insets: OverlayInsets | null = mockup
       ? state.rotated
@@ -1429,7 +1431,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     const outer = overlayOuterSize({ width, height }, insets)
     const scale = overlayFitScale(outer, box)
     root.classList.toggle('has-mockup', Boolean(mockup))
-    root.classList.toggle('picker-open', pickerOpen)
     chassis.classList.toggle('landscape', state.rotated)
     root.classList.toggle('landscape', state.rotated)
     stage.style.paddingRight = `${box.paddingRight}px`
