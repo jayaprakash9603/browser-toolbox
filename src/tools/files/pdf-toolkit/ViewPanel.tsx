@@ -457,7 +457,7 @@ export function ViewPanel() {
                 index === current && 'bg-primary/[0.08] ring-[1.5px] ring-primary/60',
               )}
             >
-              <PdfPageImage doc={doc.handle} pageNumber={index + 1} width={info.width} height={info.height} alt="" />
+              <PdfPageImage doc={doc.handle} pageNumber={index + 1} width={info.width} height={info.height} eager={index === current} alt="" />
               <span className={cn('text-[10px] tabular-nums', index === current ? 'font-semibold text-primary' : 'text-muted-foreground')}>{index + 1}</span>
               {matchedPages.has(index) && <span className="absolute top-1 right-1 size-2 rounded-full bg-amber-400 ring-2 ring-card" aria-hidden />}
             </button>

@@ -1,5 +1,5 @@
 import './i18n'
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 
@@ -15,6 +15,7 @@ import { ResultsView } from './ResultsView'
 import { PdfSessionContext, usePdfSessionController } from './session'
 import { WorkspaceBar } from './ToolBar'
 import { LEGACY_TABS, TOOL_BY_ID, TOOL_IDS, type ToolId } from './toolList'
+import { PdfToolkitWorkspaceContext } from './workspaceContext'
 import {
   loadPdfWorkspace,
   persistLockedDocument,
@@ -125,16 +126,28 @@ export default function PdfToolkitTool() {
   const [resetKey, setResetKey] = useState(0)
   const top = useRef<HTMLDivElement>(null)
   const restored = useRef(false)
+  const scanFlushRef = useRef<(() => Promise<void>) | null>(null)
 
   const tabKey = active === 'all' ? 'all' : active
 
   const flushWorkspace = useCallback(async () => {
+    await scanFlushRef.current?.()
     const tab = tabKey
     if (session.state.status === 'ready') await persistOpenDocument(session.state.doc, tab)
     else if (session.state.status === 'locked') {
       await persistLockedDocument(session.state.name, session.state.bytes, tab, session.state.incorrect)
     } else await persistWorkspaceTab(tab)
   }, [session.state, tabKey])
+
+  const workspaceBridge = useMemo(
+    () => ({
+      flushAll: flushWorkspace,
+      registerScanFlush: (flush: (() => Promise<void>) | null) => {
+        scanFlushRef.current = flush
+      },
+    }),
+    [flushWorkspace],
+  )
 
   useEffect(() => {
     if (restored.current) return
@@ -151,8 +164,11 @@ export default function PdfToolkitTool() {
       if (meta.doc && bytes) {
         await session.restore(meta.doc.name, bytes, { password: meta.doc.password, edited: meta.doc.edited })
       }
+      if (meta.tab && meta.tab !== 'all' && meta.tab in TOOL_BY_ID && active === 'all') {
+        setTab(meta.tab as ToolId)
+      }
     })()
-  }, [session])
+  }, [session, active, setTab])
 
   useEffect(() => {
     void (async () => {
@@ -204,6 +220,7 @@ export default function PdfToolkitTool() {
 
   return (
     <PdfSessionContext.Provider value={session}>
+      <PdfToolkitWorkspaceContext.Provider value={workspaceBridge}>
       <ToolPage tool={tool} onBeforeOpenNewTab={flushWorkspace}>
         <div ref={top} className="flex scroll-mt-16 flex-col gap-3 @container">
           {info ? (
@@ -257,6 +274,7 @@ export default function PdfToolkitTool() {
           </AnimatePresence>
         </div>
       </ToolPage>
+      </PdfToolkitWorkspaceContext.Provider>
     </PdfSessionContext.Provider>
   )
 }

@@ -45,6 +45,18 @@ export const PdfPageImage = memo(function PdfPageImage({
   useEffect(() => {
     const node = ref.current
     if (!node || visible) return
+
+    const revealIfNearViewport = () => {
+      const rect = node.getBoundingClientRect()
+      if (rect.width > 0 && rect.bottom >= -320 && rect.top <= window.innerHeight + 320) {
+        setVisible(true)
+        return true
+      }
+      return false
+    }
+
+    if (revealIfNearViewport()) return
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) {
@@ -52,10 +64,14 @@ export const PdfPageImage = memo(function PdfPageImage({
           observer.disconnect()
         }
       },
-      { rootMargin: '300px 0px' },
+      { rootMargin: '320px 0px' },
     )
     observer.observe(node)
-    return () => observer.disconnect()
+    const raf = requestAnimationFrame(revealIfNearViewport)
+    return () => {
+      cancelAnimationFrame(raf)
+      observer.disconnect()
+    }
   }, [visible])
 
   useEffect(() => {

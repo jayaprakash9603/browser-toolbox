@@ -333,7 +333,7 @@ export function MergePanel() {
                   <span className="flex w-6 shrink-0 justify-center text-xs font-bold text-muted-foreground tabular-nums">{position + 1}</span>
                   <div className="w-11 shrink-0 @[480px]:w-14">
                     {item.kind === 'pdf' ? (
-                      <PdfPageImage doc={item.handle} pageNumber={1} width={item.pages[0].width} height={item.pages[0].height} alt="" />
+                      <PdfPageImage doc={item.handle} pageNumber={1} width={item.pages[0].width} height={item.pages[0].height} eager alt="" />
                     ) : (
                       <img
                         src={item.url}

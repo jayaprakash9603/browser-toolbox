@@ -1,3 +1,5 @@
+import type { ImagePageSize } from '@/core/engines/files/pdfImages'
+
 import type { OpenPdf } from './session'
 
 const META_KEY = 'pdf-toolkit.workspace'
@@ -5,12 +7,28 @@ const DB_NAME = 'pdf-toolkit-workspace'
 const STORE = 'documents'
 const DOC_ID = 'current'
 const MAX_BYTES = 80 * 1024 * 1024
+const SCAN_BLOB_PREFIX = 'scan:'
+
+export type ScanFilter = 'color' | 'enhance' | 'gray' | 'bw'
+
+export type ScanDraftMeta = {
+  pages: { id: string; blobId: string; turn: number }[]
+  filter: ScanFilter
+  pageSize: ImagePageSize
+}
 
 export type PdfWorkspaceMeta = {
   version: 1
   tab: string
   doc?: { name: string; blobId: string; password?: string; edited: boolean }
   locked?: { name: string; blobId: string; incorrect?: boolean }
+  scan?: ScanDraftMeta
+}
+
+export type RestoredScanPage = {
+  id: string
+  blob: Blob
+  turn: number
 }
 
 function openDb(): Promise<IDBDatabase> {
@@ -137,4 +155,57 @@ export async function clearPdfWorkspaceDocument(): Promise<void> {
   if (!meta) return
   const next: PdfWorkspaceMeta = { version: 1, tab: meta.tab }
   await writeMeta(next)
+}
+
+function scanBlobId(pageId: string): string {
+  return `${SCAN_BLOB_PREFIX}${pageId}`
+}
+
+async function deleteScanBlobs(ids: string[]): Promise<void> {
+  await Promise.all(ids.map((id) => deleteBytes(scanBlobId(id))))
+}
+
+export async function persistScanDraft(
+  pages: { id: string; blob: Blob; turn: number }[],
+  filter: ScanFilter,
+  pageSize: ImagePageSize,
+): Promise<void> {
+  const meta = (await readPdfWorkspaceMeta()) ?? { version: 1 as const, tab: 'scan' }
+  const previous = new Set(meta.scan?.pages.map((page) => page.id) ?? [])
+  const nextIds = new Set(pages.map((page) => page.id))
+  const removed = [...previous].filter((id) => !nextIds.has(id))
+  if (removed.length) await deleteScanBlobs(removed)
+
+  let total = 0
+  const stored: ScanDraftMeta['pages'] = []
+  for (const page of pages) {
+    const blobId = scanBlobId(page.id)
+    const bytes = new Uint8Array(await page.blob.arrayBuffer())
+    total += bytes.byteLength
+    if (total > MAX_BYTES) break
+    await putBytes(blobId, bytes)
+    stored.push({ id: page.id, blobId, turn: page.turn })
+  }
+
+  await writeMeta({
+    ...meta,
+    scan: stored.length ? { pages: stored, filter, pageSize } : undefined,
+  })
+}
+
+export async function loadScanDraft(): Promise<{ filter: ScanFilter; pageSize: ImagePageSize; pages: RestoredScanPage[] } | null> {
+  const meta = await readPdfWorkspaceMeta()
+  if (!meta?.scan?.pages.length) return null
+  const pages: RestoredScanPage[] = []
+  for (const entry of meta.scan.pages) {
+    const bytes = await getBytes(entry.blobId)
+    if (!bytes) continue
+    pages.push({
+      id: entry.id,
+      blob: new Blob([new Uint8Array(bytes)], { type: 'image/jpeg' }),
+      turn: entry.turn,
+    })
+  }
+  if (!pages.length) return null
+  return { filter: meta.scan.filter, pageSize: meta.scan.pageSize, pages }
 }

@@ -87,6 +87,7 @@ import { handleSimulatorMenuClick } from './responsiveViewer/menus'
 import { registerSimulatorOverlayMessages } from './responsiveViewer/messages'
 import { registerSimulatorOverlayPersistence } from './responsiveViewer/overlayPersist'
 import { registerResponsiveViewerEmulation } from './responsiveViewer/emulation'
+import { registerScanCameraHandlers } from './scanCamera'
 import { configurePanelAction, openExtensionPanel } from '@/platform/panel'
 
 const logger = createLogger('background')
@@ -254,4 +255,5 @@ safeRegister('responsiveViewerFraming', registerResponsiveViewerFraming)
 safeRegister('simulatorOverlay', registerSimulatorOverlayMessages)
 safeRegister('simulatorOverlayPersist', registerSimulatorOverlayPersistence)
 safeRegister('responsiveViewerEmulation', registerResponsiveViewerEmulation)
+safeRegister('scanCamera', registerScanCameraHandlers)
 startMessageRouter()

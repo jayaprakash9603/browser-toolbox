@@ -1,17 +1,41 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { CameraIcon, CameraOffIcon, ImagePlusIcon, LoaderCircleIcon, RotateCwIcon, ScanLineIcon, SlidersHorizontalIcon, XIcon } from 'lucide-react'
+import {
+  CameraIcon,
+  CameraOffIcon,
+  ExternalLinkIcon,
+  EyeIcon,
+  ImagePlusIcon,
+  LoaderCircleIcon,
+  RotateCwIcon,
+  ScanLineIcon,
+  SlidersHorizontalIcon,
+  XIcon,
+} from 'lucide-react'
 
 import { layoutImagesPdf, type ImagePageSize, type PdfImageSource } from '@/core/engines/files/pdfImages'
 import { renderPdf } from '@/core/engines/files/pdfLayout'
+import { useRouter } from '@/app/router'
 import { ActionBar, OptionField, PanelError, PanelSection } from '@/shared/components/toolkit'
 import { Button } from '@/shared/components/ui/button'
 import { Segmented } from '@/shared/components/ui/segmented'
+import { PdfPagesPreview } from '@/shared/components/files'
+import { attachCameraPreview, classifyCameraError, requestCameraStream } from '@/shared/media/requestCameraStream'
 import { cn } from '@/shared/utils/cn'
 import { decodeImage } from './raster'
+import {
+  pollOffscreenCameraFrame,
+  prepareOffscreenCamera,
+  snapOffscreenCamera,
+  startOffscreenCamera,
+  stopOffscreenCamera,
+} from './offscreenCamera'
+import { openPdfToolkitTab } from './openInTab'
 import { pdfArtifact, usePdfSession } from './session'
 import { useTask } from './useTask'
+import { loadScanDraft, persistScanDraft } from './workspace'
+import { usePdfToolkitWorkspace } from './workspaceContext'
 
 type Filter = 'color' | 'enhance' | 'gray' | 'bw'
 
@@ -55,10 +79,14 @@ async function renderScan(page: ScanPage, filter: Filter): Promise<PdfImageSourc
 export function ScanPanel() {
   const { t } = useTranslation()
   const reduce = useReducedMotion()
+  const { path, search } = useRouter()
+  const workspace = usePdfToolkitWorkspace()
   const { showResults } = usePdfSession()
   const video = useRef<HTMLVideoElement>(null)
   const upload = useRef<HTMLInputElement>(null)
   const [stream, setStream] = useState<MediaStream | null>(null)
+  const [offscreenPreview, setOffscreenPreview] = useState<string | null>(null)
+  const [offscreenActive, setOffscreenActive] = useState(false)
   const [starting, setStarting] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
   const [pages, setPages] = useState<ScanPage[]>([])
@@ -67,16 +95,113 @@ export function ScanPanel() {
   const [flash, setFlash] = useState(0)
   const { busy, error, run } = useTask()
   const urls = useRef(new Set<string>())
+  const [scanDraftReady, setScanDraftReady] = useState(false)
+  const [pdfPreview, setPdfPreview] = useState<ReturnType<typeof layoutImagesPdf> | null>(null)
+  const [previewBusy, setPreviewBusy] = useState(false)
+  const restoredScan = useRef(false)
 
   useEffect(() => {
-    if (video.current && stream) video.current.srcObject = stream
+    const element = video.current
+    if (!element || !stream) return
+    void attachCameraPreview(element, stream)
+  }, [stream])
+
+  useEffect(() => {
     return () => stream?.getTracks().forEach((track) => track.stop())
   }, [stream])
 
   useEffect(() => {
+    if (!offscreenActive) {
+      setOffscreenPreview(null)
+      return
+    }
+    let active = true
+    const tick = () => {
+      void pollOffscreenCameraFrame().then((frame) => {
+        if (active && frame) setOffscreenPreview(frame)
+      })
+    }
+    tick()
+    const timer = window.setInterval(tick, 150)
+    return () => {
+      active = false
+      window.clearInterval(timer)
+    }
+  }, [offscreenActive])
+
+  useEffect(() => {
     const owned = urls.current
-    return () => owned.forEach((url) => URL.revokeObjectURL(url))
+    return () => {
+      owned.forEach((url) => URL.revokeObjectURL(url))
+      if (offscreenActive) void stopOffscreenCamera()
+    }
+  }, [offscreenActive])
+
+  useEffect(() => {
+    if (restoredScan.current) return
+    restoredScan.current = true
+    let cancelled = false
+    void loadScanDraft().then((draft) => {
+      if (cancelled) return
+      if (draft) {
+        setFilter(draft.filter)
+        setPageSize(draft.pageSize)
+        const next = draft.pages.map((page) => {
+          const url = URL.createObjectURL(page.blob)
+          urls.current.add(url)
+          return { id: page.id, blob: page.blob, url, turn: page.turn }
+        })
+        setPages(next)
+      }
+      setScanDraftReady(true)
+    })
+    return () => {
+      cancelled = true
+    }
   }, [])
+
+  const flushScanDraft = useCallback(async () => {
+    await persistScanDraft(
+      pages.map((page) => ({ id: page.id, blob: page.blob, turn: page.turn })),
+      filter,
+      pageSize,
+    )
+  }, [pages, filter, pageSize])
+
+  useEffect(() => {
+    workspace?.registerScanFlush(() => flushScanDraft())
+    return () => workspace?.registerScanFlush(null)
+  }, [workspace, flushScanDraft])
+
+  useEffect(() => {
+    if (!scanDraftReady) return
+    const timer = window.setTimeout(() => {
+      void flushScanDraft()
+    }, 350)
+    return () => window.clearTimeout(timer)
+  }, [scanDraftReady, flushScanDraft])
+
+  useEffect(() => {
+    let cancelled = false
+    if (!pages.length) {
+      setPdfPreview(null)
+      return
+    }
+    setPreviewBusy(true)
+    void (async () => {
+      try {
+        const sources: PdfImageSource[] = []
+        for (const page of pages.slice(0, 8)) sources.push(await renderScan(page, filter))
+        const layout = layoutImagesPdf(sources, { pageSize, orientation: 'auto', margin: 'none', fit: 'contain' }, 'Scan')
+        if (!cancelled) setPdfPreview(layout)
+      } finally {
+        if (!cancelled) setPreviewBusy(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [pages, filter, pageSize])
 
   const addBlobs = (blobs: Blob[]) => {
     const next = blobs.map((blob) => {
@@ -87,22 +212,54 @@ export function ScanPanel() {
     setPages((current) => [...current, ...next])
   }
 
+  const openScanInTab = () => {
+    void (async () => {
+      await workspace?.flushAll()
+      const hashRoute = `${path}${search || '?tab=scan'}`
+      openPdfToolkitTab(hashRoute)
+    })()
+  }
+
+  const stopCamera = () => {
+    if (offscreenActive) void stopOffscreenCamera()
+    setOffscreenActive(false)
+    setStream(null)
+  }
+
   const startCamera = async () => {
     setStarting(true)
     setCameraError(null)
+    setOffscreenActive(false)
+    stream?.getTracks().forEach((track) => track.stop())
+    setStream(null)
     try {
-      setStream(await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 2560 }, height: { ideal: 1920 } }, audio: false }))
+      setStream(await requestCameraStream())
     } catch (cause) {
-      const denied = cause instanceof DOMException && (cause.name === 'NotAllowedError' || cause.name === 'SecurityError')
-      setCameraError(denied ? t('pdf.scan.denied') : t('pdf.scan.noCamera'))
+      const kind = classifyCameraError(cause)
+      if (kind === 'denied') {
+        setCameraError(t('pdf.scan.denied'))
+        return
+      }
+      try {
+        await prepareOffscreenCamera()
+        await startOffscreenCamera()
+        setOffscreenActive(true)
+      } catch {
+        setCameraError(kind === 'unsupported' ? t('pdf.scan.denied') : t('pdf.scan.noCamera'))
+      }
     } finally {
       setStarting(false)
     }
   }
 
-  const stopCamera = () => setStream(null)
-
   const capture = () => {
+    if (offscreenActive) {
+      void snapOffscreenCamera().then((blob) => {
+        if (blob) addBlobs([blob])
+        setFlash((value) => value + 1)
+      })
+      return
+    }
     const element = video.current
     if (!element || !element.videoWidth) return
     const canvas = document.createElement('canvas')
@@ -112,6 +269,8 @@ export function ScanPanel() {
     canvas.toBlob((blob) => blob && addBlobs([blob]), 'image/jpeg', 0.92)
     setFlash((value) => value + 1)
   }
+
+  const cameraLive = Boolean(stream || offscreenActive)
 
   const removePage = (id: string) =>
     setPages((current) => {
@@ -140,7 +299,7 @@ export function ScanPanel() {
           title={t('pdf.scan.camera')}
           icon={<CameraIcon />}
           actions={
-            stream ? (
+            cameraLive ? (
               <Button variant="ghost" size="xs" onClick={stopCamera}>
                 <CameraOffIcon aria-hidden />
                 {t('pdf.scan.stop')}
@@ -149,9 +308,15 @@ export function ScanPanel() {
           }
         >
           <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-xl bg-neutral-900">
-            {stream ? (
+            {cameraLive ? (
               <>
-                <video ref={video} autoPlay playsInline muted className="size-full object-contain" style={{ filter: FILTERS[filter] }} />
+                {stream ? (
+                  <video ref={video} autoPlay playsInline muted className="size-full object-contain" style={{ filter: FILTERS[filter] }} />
+                ) : (
+                  offscreenPreview && (
+                    <img src={offscreenPreview} alt="" className="size-full object-contain" style={{ filter: FILTERS[filter] }} />
+                  )
+                )}
                 <span className="pointer-events-none absolute inset-[8%] rounded-lg border-2 border-dashed border-white/50" aria-hidden />
                 <AnimatePresence>
                   {flash > 0 && (
@@ -180,6 +345,12 @@ export function ScanPanel() {
                     <ImagePlusIcon aria-hidden />
                     {t('pdf.scan.upload')}
                   </Button>
+                  {cameraError && (
+                    <Button variant="secondary" size="sm" onClick={openScanInTab}>
+                      <ExternalLinkIcon aria-hidden />
+                      {t('pdf.scan.openTab')}
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
@@ -227,6 +398,27 @@ export function ScanPanel() {
               className="self-start"
             />
           </OptionField>
+          {pages.length > 0 && (
+            <div className="flex flex-col gap-2 rounded-xl border bg-muted/35 p-3">
+              <div className="flex items-center gap-2">
+                <EyeIcon className="size-3.5 text-primary" aria-hidden />
+                <p className="flex-1 text-xs font-semibold">{t('pdf.images.preview')}</p>
+                {previewBusy && <LoaderCircleIcon className="size-3.5 animate-spin text-muted-foreground" aria-hidden />}
+              </div>
+              {pdfPreview ? (
+                <>
+                  <PdfPagesPreview layout={pdfPreview} initialPages={8} compact />
+                  {pages.length > 8 && (
+                    <p className="text-center text-[11px] text-muted-foreground">{t('pdf.images.more', { count: pages.length - 8 })}</p>
+                  )}
+                </>
+              ) : (
+                <div className="flex min-h-24 items-center justify-center rounded-lg border border-dashed text-[11px] text-muted-foreground">
+                  {previewBusy ? t('pdf.scan.previewLoading') : t('pdf.scan.previewEmpty')}
+                </div>
+              )}
+            </div>
+          )}
           {pages.length ? (
             <ol className="grid grid-cols-[repeat(auto-fill,minmax(92px,1fr))] gap-2">
               <AnimatePresence initial={false}>

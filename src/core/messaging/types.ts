@@ -323,6 +323,12 @@ export type ExtensionMessage =
       /** Capture immediately (the stream ID expires quickly) but start recording after this delay. */
       delayMs?: number
     }
+  | { type: 'SCAN_CAMERA_PREPARE' }
+  | { type: 'SCAN_CAMERA_RELEASE' }
+  | { type: 'OFFSCREEN_CAMERA_START' }
+  | { type: 'OFFSCREEN_CAMERA_STOP' }
+  | { type: 'OFFSCREEN_CAMERA_FRAME' }
+  | { type: 'OFFSCREEN_CAMERA_SNAP' }
   | { type: 'RECORDER_STATE'; session: import('@/core/recorder/types').RecorderSession | null }
   | { type: 'TIMER_RECONCILE' }
   | { type: 'SCRIPT_STUDIO_SYNC' }
@@ -577,6 +583,12 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'RECORDER_FINISHED',
   'RECORDER_CONTROL',
   'OFFSCREEN_RECORDER_START',
+  'SCAN_CAMERA_PREPARE',
+  'SCAN_CAMERA_RELEASE',
+  'OFFSCREEN_CAMERA_START',
+  'OFFSCREEN_CAMERA_STOP',
+  'OFFSCREEN_CAMERA_FRAME',
+  'OFFSCREEN_CAMERA_SNAP',
   'RECORDER_STATE',
   'TIMER_RECONCILE',
   'SCRIPT_STUDIO_SYNC',

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CameraIcon, DownloadIcon, Share2Icon, Trash2Icon, VideoIcon } from 'lucide-react'
+import { CameraIcon, DownloadIcon, Share2Icon, Trash2Icon } from 'lucide-react'
 
 import { formatBytes, formatDuration, safeFileName } from '@/core/recorder/format'
 import { baseMime, extensionForMime } from '@/core/recorder/mime'
@@ -10,6 +10,7 @@ import { ConfirmDialog } from '@/shared/components/ConfirmDialog'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 
+import { RecordingLibraryAside } from './RecordingLibraryAside'
 import { useRecordings } from './useRecorder'
 
 function fileFor(meta: RecordingMeta, blob: Blob): File {
@@ -41,6 +42,12 @@ export function RecordingViewer() {
   const videoRef = useRef<HTMLVideoElement>(null)
 
   const selected = recordings.find((r) => r.id === selectedId) ?? recordings[0] ?? null
+
+  useEffect(() => {
+    if (selectedId && !recordings.some((r) => r.id === selectedId)) {
+      setSelectedId(recordings[0]?.id ?? null)
+    }
+  }, [recordings, selectedId])
 
   useEffect(() => {
     if (!selected) return
@@ -104,51 +111,32 @@ export function RecordingViewer() {
     notifyRecordingsChanged()
   }
 
-  const remove = async () => {
+  const removeCurrent = async () => {
     if (!selected) return
     await deleteRecording(selected.id)
     notifyRecordingsChanged()
     setSelectedId(recordings.find((r) => r.id !== selected.id)?.id ?? null)
     setBlob(null)
     setUrl('')
+    setConfirmDelete(false)
+  }
+
+  const handleAfterDelete = (removedIds: string[]) => {
+    if (selected && removedIds.includes(selected.id)) {
+      setSelectedId(recordings.find((r) => !removedIds.includes(r.id))?.id ?? null)
+      setBlob(null)
+      setUrl('')
+    }
   }
 
   return (
     <div className="flex h-full min-h-screen flex-col bg-background text-foreground md:flex-row">
-      <aside className="w-full shrink-0 border-b p-4 md:w-72 md:border-r md:border-b-0">
-        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold">
-          <VideoIcon className="size-4" />
-          {t('recorder.viewer.library')}
-        </h2>
-        {recordings.length === 0 && <p className="text-sm text-muted-foreground">{t('recorder.empty')}</p>}
-        <ul className="flex flex-col gap-2">
-          {recordings.map((r) => (
-            <li key={r.id}>
-              <button
-                type="button"
-                onClick={() => setSelectedId(r.id)}
-                className={`flex w-full gap-2 rounded-md border p-2 text-left text-xs hover:bg-muted ${
-                  r.id === selected?.id ? 'border-primary bg-muted' : ''
-                }`}
-              >
-                {r.thumbnail ? (
-                  <img src={r.thumbnail} alt="" className="h-10 w-16 shrink-0 rounded object-cover" />
-                ) : (
-                  <span className="flex h-10 w-16 shrink-0 items-center justify-center rounded bg-muted">
-                    <VideoIcon className="size-4" />
-                  </span>
-                )}
-                <span className="min-w-0">
-                  <span className="block truncate font-medium">{r.name}</span>
-                  <span className="text-muted-foreground">
-                    {formatDuration(r.durationMs)} · {formatBytes(r.size)}
-                  </span>
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </aside>
+      <RecordingLibraryAside
+        recordings={recordings}
+        selectedId={selected?.id ?? null}
+        onSelect={setSelectedId}
+        onAfterDelete={handleAfterDelete}
+      />
 
       <main className="flex min-w-0 flex-1 flex-col gap-4 p-4">
         {selected ? (
@@ -208,7 +196,7 @@ export function RecordingViewer() {
         description={t('recorder.viewer.deleteBody')}
         confirmLabel={t('recorder.viewer.delete')}
         destructive
-        onConfirm={() => void remove()}
+        onConfirm={() => void removeCurrent()}
       />
     </div>
   )

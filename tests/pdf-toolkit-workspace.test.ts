@@ -13,4 +13,5 @@ describe('pdf toolkit workspace', () => {
     await persistWorkspaceTab('merge')
     expect(await readPdfWorkspaceMeta()).toMatchObject({ version: 1, tab: 'merge' })
   })
+
 })

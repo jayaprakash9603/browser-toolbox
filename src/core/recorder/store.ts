@@ -109,6 +109,19 @@ export async function deleteRecording(id: string): Promise<void> {
   await done(tx)
 }
 
+export async function deleteRecordings(ids: readonly string[]): Promise<void> {
+  if (!ids.length) return
+  const db = await openDb()
+  const tx = db.transaction([META, CHUNKS], 'readwrite')
+  const meta = tx.objectStore(META)
+  const chunks = tx.objectStore(CHUNKS)
+  for (const id of ids) {
+    meta.delete(id)
+    chunks.delete(IDBKeyRange.bound([id, 0], [id, Number.MAX_SAFE_INTEGER]))
+  }
+  await done(tx)
+}
+
 export function subscribeRecordings(onChange: () => void): () => void {
   if (typeof BroadcastChannel === 'undefined') return () => undefined
   const channel = new BroadcastChannel(DB_NAME)

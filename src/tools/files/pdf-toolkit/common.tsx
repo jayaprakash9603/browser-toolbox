@@ -18,10 +18,12 @@ interface PageThumbProps {
   badge?: ReactNode
   className?: string
   children?: ReactNode
+  /** Tool thumbnails are small grids; render immediately so the side panel shows pages. */
+  eager?: boolean
 }
 
 /** A page thumbnail on a soft tray with a number badge; extra controls go in `children`. */
-export function PageThumb({ handle, index, info, label, turn = 0, badge, className, children }: PageThumbProps) {
+export function PageThumb({ handle, index, info, label, turn = 0, badge, className, children, eager = true }: PageThumbProps) {
   const ratio = turn % 2 ? info.height / info.width : info.width / info.height
   return (
     <div className={cn(THUMB_TRAY, className)}>
@@ -31,6 +33,7 @@ export function PageThumb({ handle, index, info, label, turn = 0, badge, classNa
         width={info.width}
         height={info.height}
         turn={turn}
+        eager={eager}
         alt={label}
         className={trayFit(ratio)}
       />

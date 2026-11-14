@@ -655,7 +655,7 @@ export function SignPanel({ variant }: { variant: Variant }) {
                         index === page && 'bg-primary/[0.08] ring-[1.5px] ring-primary/60',
                       )}
                     >
-                      <PdfPageImage doc={doc.handle} pageNumber={index + 1} width={pageInfo.width} height={pageInfo.height} alt="" />
+                      <PdfPageImage doc={doc.handle} pageNumber={index + 1} width={pageInfo.width} height={pageInfo.height} eager alt="" />
                       {pagesWithItems.has(index) && (
                         <span className="absolute -top-0.5 -right-0.5 flex size-3.5 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-primary-foreground ring-2 ring-card">
                           {items.filter((item) => item.page === index).length}

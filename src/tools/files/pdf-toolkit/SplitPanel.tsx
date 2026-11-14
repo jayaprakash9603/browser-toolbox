@@ -134,6 +134,42 @@ export function SplitPanel() {
       </PanelSection>
 
       <PanelSection title={t('pdf.split.previewTitle', { count: groups.length })} icon={<ScissorsIcon />}>
+        {groups.length > 0 && groups.length <= 8 && (
+          <ul className="flex flex-col gap-3" aria-label={t('pdf.split.outputPreview')}>
+            {groups.map((group, groupIndex) => {
+              const label = describePages(group).replace(/\s/g, '').replace(/,/g, '_')
+              const fileName = mode === 'each' ? `${stemOf(doc)}-page-${group[0] + 1}.pdf` : `${stemOf(doc)}-p${label}.pdf`
+              return (
+                <li key={groupIndex} className="rounded-xl border bg-muted/35 p-3">
+                  <div className="mb-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                    <span className="text-xs font-semibold">{t('pdf.split.fileChip', { index: groupIndex + 1 })}</span>
+                    <span className="truncate font-mono text-[11px] text-muted-foreground" title={fileName}>
+                      {fileName}
+                    </span>
+                    <span className="text-[11px] tabular-nums text-muted-foreground">{describePages(group)}</span>
+                  </div>
+                  <ol className="flex gap-2 overflow-x-auto pb-0.5">
+                    {group.map((pageIndex) => {
+                      const info = doc.pages[pageIndex]
+                      if (!info) return null
+                      return (
+                        <li key={pageIndex} className="w-[92px] shrink-0">
+                          <PageThumb
+                            handle={doc.handle}
+                            index={pageIndex}
+                            info={info}
+                            label={t('fileui.page', { index: pageIndex + 1, total })}
+                            className={cn('ring-2', GROUP_TONES[groupIndex % GROUP_TONES.length].ring)}
+                          />
+                        </li>
+                      )
+                    })}
+                  </ol>
+                </li>
+              )
+            })}
+          </ul>
+        )}
         {groups.length > 0 && groups.length <= 24 && (
           <ul className="flex flex-wrap gap-1.5" aria-label={t('pdf.split.files')}>
             {groups.map((group, index) => (
