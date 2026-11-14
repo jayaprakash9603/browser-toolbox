@@ -1,3 +1,12 @@
+import {
+  overlayFitScale,
+  overlayOuterSize,
+  overlayPickerWidth,
+  overlayStageBox,
+  SIM_RAIL_PX,
+  SIM_STAGE_PAD_Y,
+  type OverlayInsets,
+} from './overlayFit'
 import type { SimulatorOverlayConfig, SimulatorOverlayUiSettings, SimulatorOverlayUiTheme } from './overlayTypes'
 
 /** Injected in the page only — bundled to public/inject/simulator-overlay.js. */
@@ -156,12 +165,24 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       flex-direction: row;
       align-items: center;
       justify-content: center;
-      gap: 20px;
-      max-width: 100%;
-      max-height: 100%;
-      padding: 12px 92px 12px 20px;
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      padding: ${SIM_STAGE_PAD_Y}px 92px ${SIM_STAGE_PAD_Y}px 24px;
     }
-    .phone-wrap { position: relative; }
+    .phone-wrap {
+      position: relative;
+      flex-shrink: 0;
+      overflow: hidden;
+      filter: drop-shadow(0 28px 64px rgba(15,23,42,0.18));
+    }
+    .phone-inner {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform-origin: top left;
+    }
     .mockup-img {
       pointer-events: none;
       position: absolute;
@@ -169,7 +190,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       width: 100%;
       height: 100%;
       z-index: 6;
-      filter: drop-shadow(0 28px 64px rgba(15,23,42,0.18));
     }
     .has-mockup.landscape .mockup-img {
       inset: auto;
@@ -184,7 +204,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       padding: 10px;
       border-radius: 55px;
       background: var(--tbx-fill);
-      box-shadow: 0 1px 0 var(--tbx-ring), 0 28px 64px rgba(15,23,42,0.18), 0 2px 10px rgba(15,23,42,0.1);
+      box-shadow: 0 1px 0 var(--tbx-ring);
     }
     .has-mockup .chassis {
       position: absolute;
@@ -438,11 +458,12 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       background: rgba(15,20,28,0.55);
     }
     .panel[data-panel="devices"] {
-      right: 76px;
-      width: min(380px, 50vw);
-      max-height: min(78vh, 640px);
+      right: ${SIM_RAIL_PX}px;
+      width: min(440px, 36vw);
+      height: min(88vh, 820px);
+      max-height: min(88vh, 820px);
       padding: 0;
-      border-radius: 14px;
+      border-radius: 16px;
       border: 1px solid var(--tbx-panel-border);
       box-shadow: 0 16px 40px rgba(15,23,42,0.12);
       min-height: 0;
@@ -579,16 +600,24 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     .panel[data-panel="devices"] .panel-list {
       flex: 1 1 auto;
       min-height: 0;
-      padding: 6px 10px 12px;
+      padding: 8px 10px 14px;
       overflow-x: hidden;
       overflow-y: auto;
       overscroll-behavior: contain;
       scrollbar-width: thin;
       -webkit-overflow-scrolling: touch;
       touch-action: pan-y;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+      align-content: start;
+      gap: 6px;
+    }
+    .panel[data-panel="devices"] .panel-list > .capture-hint {
+      grid-column: 1 / -1;
     }
     .device-section {
-      margin: 12px 4px 6px;
+      grid-column: 1 / -1;
+      margin: 10px 2px 2px;
       padding-bottom: 4px;
       font-size: 10px;
       font-weight: 700;
@@ -597,7 +626,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       color: var(--tbx-panel-muted);
       border-bottom: 1px solid var(--tbx-panel-border);
     }
-    .device-section:first-child { margin-top: 4px; }
+    .device-section:first-child { margin-top: 2px; }
     .device-thumb {
       flex-shrink: 0;
       border: 2px solid #94a3b8;
@@ -609,22 +638,44 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       border-color: #475569;
       background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
     }
-    .device-thumb[data-kind="phone"] { width: 22px; height: 36px; border-radius: 7px; }
-    .device-thumb[data-kind="tablet"] { width: 30px; height: 36px; border-radius: 6px; }
-    .device-thumb[data-kind="laptop"] { width: 34px; height: 24px; border-radius: 4px 4px 2px 2px; }
-    .device-thumb[data-kind="desktop"] { width: 34px; height: 26px; border-radius: 4px; }
-    .device-thumb[data-kind="watch"] { width: 22px; height: 26px; border-radius: 8px; }
-    .device-thumb[data-kind="special"] { width: 28px; height: 28px; border-radius: 6px; }
-    .device-copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
-    .device-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .device-meta { font-size: 10px; color: var(--tbx-panel-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .device-row { gap: 10px; padding: 8px 10px; }
-    .device-row[aria-current="true"]::after {
-      content: '✓';
-      flex-shrink: 0;
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--tbx-accent);
+    .device-thumb[data-kind="phone"] { width: 28px; height: 50px; border-radius: 9px; }
+    .device-thumb[data-kind="tablet"] { width: 36px; height: 48px; border-radius: 7px; }
+    .device-thumb[data-kind="laptop"] { width: 42px; height: 28px; border-radius: 4px 4px 2px 2px; }
+    .device-thumb[data-kind="desktop"] { width: 42px; height: 30px; border-radius: 4px; }
+    .device-thumb[data-kind="watch"] { width: 26px; height: 32px; border-radius: 9px; }
+    .device-thumb[data-kind="special"] { width: 32px; height: 32px; border-radius: 7px; }
+    .device-copy { min-width: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .device-name {
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.25;
+      text-align: center;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .device-meta { font-size: 9px; color: var(--tbx-panel-muted); text-align: center; }
+    .device-row {
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 8px;
+      min-height: 96px;
+      padding: 10px 6px 8px;
+      border: 1px solid transparent;
+    }
+    .device-row[aria-current="true"] {
+      background: #eff6ff;
+      border-color: #2563eb;
+      color: #1e3a8a;
+      box-shadow: 0 0 0 1px #2563eb;
+    }
+    .root.theme-dark .device-row[aria-current="true"] {
+      background: #163056;
+      border-color: #60a5fa;
+      color: #dbeafe;
+      box-shadow: 0 0 0 1px #60a5fa;
     }
     .panel[data-panel="settings"] {
       right: 76px;
@@ -770,8 +821,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       background: transparent; text-align: left; cursor: pointer; color: inherit;
     }
     .device-row:hover, .setting-row:hover { background: var(--tbx-row-hover); }
-    .device-row[aria-current="true"] { background: #ccfbf1; color: #0f766e; }
-    .root.theme-dark .device-row[aria-current="true"] { background: #134e4a; color: #99f6e4; }
+    .device-row[aria-current="true"]:hover { background: #dbeafe; }
+    .root.theme-dark .device-row[aria-current="true"]:hover { background: #1e3a5f; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .chip {
       border: 1px solid var(--tbx-input-border); background: var(--tbx-input-bg); border-radius: 999px;
@@ -834,6 +885,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   root.innerHTML = `
     <div class="stage">
       <div class="phone-wrap">
+        <div class="phone-inner">
         <img class="mockup-img" alt="" hidden />
         <span class="side" style="top:16%;left:-3px;height:7%;border-radius:1px 0 0 1px;"></span>
         <span class="side" style="top:26%;left:-3px;height:11%;border-radius:1px 0 0 1px;"></span>
@@ -869,6 +921,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
             </div>
             <div class="blocked">This site blocked the in-page preview.<br/><a class="studio-link" target="_blank" rel="noopener noreferrer">Open full simulator</a></div>
           </div>
+        </div>
         </div>
       </div>
     </div>
@@ -1064,6 +1117,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const chassis = shadow.querySelector('.chassis') as HTMLElement
   const status = shadow.querySelector('.status') as HTMLElement
   const wrap = shadow.querySelector('.phone-wrap') as HTMLElement
+  const inner = shadow.querySelector('.phone-inner') as HTMLElement
+  const stage = shadow.querySelector('.stage') as HTMLElement
   const mockupImg = shadow.querySelector('.mockup-img') as HTMLImageElement
 
   hostLabel.textContent = config.hostname
@@ -1267,27 +1322,17 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     btn: HTMLElement,
     arrowVar: string,
     maxHeight: number,
-    opts: { lockHeight?: boolean } = {},
   ) => {
     if (!panel.classList.contains('open')) return
     const rootRect = root.getBoundingClientRect()
     const btnRect = btn.getBoundingClientRect()
     const arrowY = btnRect.top - rootRect.top + btnRect.height / 2
     panel.style.setProperty(arrowVar, `${arrowY}px`)
-    panel.style.right = '76px'
+    panel.style.right = `${SIM_RAIL_PX}px`
     panel.style.top = '50%'
     panel.style.transform = 'translateY(-50%)'
     panel.style.maxHeight = `${maxHeight}px`
-    if (opts.lockHeight) {
-      const measured = Math.min(panel.getBoundingClientRect().height || maxHeight, maxHeight)
-      panel.style.height = `${measured}px`
-    } else {
-      panel.style.height = ''
-    }
-  }
-
-  const positionRailPanel = (panel: HTMLElement, btn: HTMLElement, arrowVar: string, maxHeight: number) => {
-    positionCenteredRailPopover(panel, btn, arrowVar, maxHeight, { lockHeight: true })
+    panel.style.height = ''
   }
 
   /** Wheel on page is suppressed while the overlay is open; keep scroll inside popover rails. */
@@ -1319,12 +1364,19 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   }
 
   const positionDevicesPanel = () => {
-    positionRailPanel(
-      devicesPanel,
-      deviceBtn,
-      '--tbx-device-arrow-y',
-      Math.min(window.innerHeight * 0.78, 640),
-    )
+    if (!devicesPanel.classList.contains('open')) return
+    const pickerWidth = overlayPickerWidth(window.innerWidth)
+    const maxH = Math.min(Math.round(window.innerHeight * 0.88), 820)
+    const rootRect = root.getBoundingClientRect()
+    const btnRect = deviceBtn.getBoundingClientRect()
+    const arrowY = btnRect.top - rootRect.top + btnRect.height / 2
+    devicesPanel.style.setProperty('--tbx-device-arrow-y', `${arrowY}px`)
+    devicesPanel.style.right = `${SIM_RAIL_PX}px`
+    devicesPanel.style.top = '50%'
+    devicesPanel.style.transform = 'translateY(-50%)'
+    devicesPanel.style.width = `${pickerWidth}px`
+    devicesPanel.style.height = `${maxH}px`
+    devicesPanel.style.maxHeight = `${maxH}px`
   }
 
   const positionCapturePanels = () => {
@@ -1348,42 +1400,42 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     const live = state.live
     const width = state.rotated ? live.height : live.width
     const height = state.rotated ? live.width : live.height
-    const maxW = Math.max(160, window.innerWidth - 108)
-    const maxH = Math.max(160, window.innerHeight - 24)
+    const pickerOpen = state.panel === 'devices'
+    const box = overlayStageBox({ width: window.innerWidth, height: window.innerHeight }, pickerOpen)
     const mockup = live.mockupUrl && live.mockupInsets ? live.mockupInsets : null
-    root.classList.toggle('has-mockup', Boolean(mockup))
-    chassis.classList.toggle('landscape', state.rotated)
-    root.classList.toggle('landscape', state.rotated)
-    if (mockup) {
-      const insets = state.rotated
+    const insets: OverlayInsets | null = mockup
+      ? state.rotated
         ? { left: mockup.bottom, top: mockup.left, right: mockup.top, bottom: mockup.right }
         : mockup
+      : null
+    const outer = overlayOuterSize({ width, height }, insets)
+    const scale = overlayFitScale(outer, box)
+    root.classList.toggle('has-mockup', Boolean(mockup))
+    root.classList.toggle('picker-open', pickerOpen)
+    chassis.classList.toggle('landscape', state.rotated)
+    root.classList.toggle('landscape', state.rotated)
+    stage.style.paddingRight = `${box.paddingRight}px`
+    inner.style.width = `${outer.width}px`
+    inner.style.height = `${outer.height}px`
+    inner.style.transform = `scale(${scale})`
+    wrap.style.width = `${Math.round(outer.width * scale)}px`
+    wrap.style.height = `${Math.round(outer.height * scale)}px`
+    if (insets) {
       const holeW = 1 - insets.left - insets.right
       const holeH = 1 - insets.top - insets.bottom
-      const outerW = width / holeW
-      const outerH = height / holeH
-      const scale = Math.min(1, maxW / outerW, maxH / outerH)
-      const wrapW = Math.round(outerW * scale)
-      const wrapH = Math.round(outerH * scale)
-      wrap.style.width = `${wrapW}px`
-      wrap.style.height = `${wrapH}px`
       screen.style.width = `${holeW * 100}%`
       screen.style.height = `${holeH * 100}%`
       screen.style.left = `${insets.left * 100}%`
       screen.style.top = `${insets.top * 100}%`
       mockupImg.hidden = false
       mockupImg.src = live.mockupUrl ?? ''
-      root.style.setProperty('--tbx-mockup-w', `${wrapW}px`)
-      root.style.setProperty('--tbx-mockup-h', `${wrapH}px`)
+      root.style.setProperty('--tbx-mockup-w', `${outer.width}px`)
+      root.style.setProperty('--tbx-mockup-h', `${outer.height}px`)
     } else {
-      const pad = 20
-      const scale = Math.min(1, maxW / (width + pad), maxH / (height + pad))
-      wrap.style.width = ''
-      wrap.style.height = ''
       screen.style.left = ''
       screen.style.top = ''
-      screen.style.width = `${Math.round(width * scale)}px`
-      screen.style.height = `${Math.round(height * scale)}px`
+      screen.style.width = `${width}px`
+      screen.style.height = `${height}px`
       mockupImg.hidden = true
       mockupImg.removeAttribute('src')
     }
@@ -1395,6 +1447,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     status.style.display =
       !state.ui.showStatusBar || live.statusBar === 'none' ? 'none' : ''
     syncSettingsUi()
+    positionDevicesPanel()
     requestAnimationFrame(() => {
       positionDevicesPanel()
       positionCapturePanels()
@@ -1427,7 +1480,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       <span class="device-thumb" data-kind="${escapeHtml(device.kind)}" aria-hidden="true"></span>
       <span class="device-copy">
         <span class="device-name">${escapeHtml(device.label)}</span>
-        <span class="device-meta">${escapeHtml(device.manufacturer)} · ${device.width}×${device.height}</span>
+        <span class="device-meta">${device.width}×${device.height}</span>
       </span>`
     return button
   }

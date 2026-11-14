@@ -12,6 +12,12 @@ import {
   openSimulatorForTab,
 } from '@/chrome/background/responsiveViewer/menus'
 import {
+  overlayFitScale,
+  overlayOuterSize,
+  overlayPickerWidth,
+  overlayStageBox,
+} from '@/chrome/background/responsiveViewer/overlayFit'
+import {
   canOverlaySimulatorOnTab,
   handleOverlayAction,
   mountSimulatorOverlay,
@@ -70,6 +76,24 @@ describe('responsive viewer model', () => {
     expect(viewportScale('fit', { width: 300, height: 300 }, { width: 900, maxHeight: 900 })).toBe(1)
     expect(viewportScale('fit', { width: 1000, height: 500 }, { width: null, maxHeight: 250 })).toBe(0.5)
     expect(viewportScale('0.75', { width: 1920, height: 1080 }, { width: 100, maxHeight: 100 })).toBe(0.75)
+  })
+
+  it('upsizes the on-page phone to fill the stage instead of capping at 1x', () => {
+    const outer = overlayOuterSize({ width: 402, height: 874 }, null)
+    const desktop = overlayStageBox({ width: 1920, height: 1080 }, false)
+    expect(overlayFitScale(outer, desktop)).toBeGreaterThan(1)
+    const laptop = overlayStageBox({ width: 1366, height: 768 }, false)
+    const fitted = overlayFitScale(outer, laptop)
+    expect(fitted * outer.height).toBeGreaterThan(laptop.maxH - 1)
+    expect(fitted * outer.height).toBeLessThanOrEqual(laptop.maxH)
+    expect(overlayPickerWidth(1920)).toBeGreaterThanOrEqual(400)
+    const withPicker = overlayStageBox({ width: 1920, height: 1080 }, true)
+    expect(withPicker.dockPicker).toBe(true)
+    expect(withPicker.maxW).toBeLessThan(desktop.maxW)
+    expect(withPicker.pickerWidth).toBeGreaterThan(300)
+    const narrow = overlayStageBox({ width: 680, height: 700 }, true)
+    expect(narrow.dockPicker).toBe(false)
+    expect(narrow.maxW).toBe(overlayStageBox({ width: 680, height: 700 }, false).maxW)
   })
 
   it('swaps dimensions when rotated and reports breakpoints', () => {
@@ -279,8 +303,43 @@ describe('mobile simulator studio helpers', () => {
     expect(settingsIcon).toContain('12.22 2')
     expect(settingsIcon).not.toContain('M12 1v2')
     expect(root.classList.contains('theme-classic')).toBe(true)
+    const inner = host?.shadowRoot?.querySelector('.phone-inner') as HTMLElement
+    expect(inner.style.transform).toMatch(/scale\(/)
+    const wrap = host?.shadowRoot?.querySelector('.phone-wrap') as HTMLElement
+    expect(Number.parseInt(wrap.style.height, 10)).toBeGreaterThan(500)
+    const screen = host?.shadowRoot?.querySelector('.screen') as HTMLElement
+    expect(screen.style.height).toMatch(/%/)
     mountSimulatorOverlay(config)
     expect(document.getElementById(SIMULATOR_OVERLAY_ID)).toBeNull()
+  })
+
+  it('keeps the live iframe at the device viewport and scales the frame to the stage', () => {
+    const widthDesc = Object.getOwnPropertyDescriptor(window, 'innerWidth')
+    const heightDesc = Object.getOwnPropertyDescriptor(window, 'innerHeight')
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1920 })
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 1080 })
+    const config = overlayFixture()
+    try {
+      expect(mountSimulatorOverlay(config)).toBe(true)
+      const shadow = document.getElementById(SIMULATOR_OVERLAY_ID)?.shadowRoot
+      const inner = shadow?.querySelector('.phone-inner') as HTMLElement
+      const scale = Number(/scale\(([^)]+)\)/.exec(inner.style.transform)?.[1])
+      expect(scale).toBeGreaterThan(1)
+      const wrap = shadow?.querySelector('.phone-wrap') as HTMLElement
+      expect(Number.parseInt(wrap.style.height, 10)).toBeGreaterThan(900)
+      const devicesBtn = shadow?.querySelector('[data-act="devices"]') as HTMLButtonElement
+      devicesBtn.click()
+      const root = shadow?.querySelector('.root') as HTMLElement
+      expect(root.classList.contains('picker-open')).toBe(true)
+      const panel = shadow?.querySelector('[data-panel="devices"]') as HTMLElement
+      expect(panel.classList.contains('open')).toBe(true)
+      expect(Number.parseInt(panel.style.height, 10)).toBeGreaterThan(700)
+      expect(Number.parseInt(panel.style.width, 10)).toBeGreaterThan(300)
+    } finally {
+      if (widthDesc) Object.defineProperty(window, 'innerWidth', widthDesc)
+      if (heightDesc) Object.defineProperty(window, 'innerHeight', heightDesc)
+      mountSimulatorOverlay(config)
+    }
   })
 
   it('reloads only the device iframe from the rail control', () => {
