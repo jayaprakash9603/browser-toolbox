@@ -12,6 +12,8 @@ import {
 import { bytesBlob, createArtifact, splitFileName, type FileArtifact } from '@/shared/components/files'
 import { releasePageImages } from '@/shared/components/pdf'
 
+import { clearPdfWorkspaceDocument } from './workspace'
+
 /** The PDF every panel works on. */
 export interface OpenPdf {
   /** New for every load, so panels can reset when the document changes. */
@@ -44,6 +46,9 @@ export interface PdfSession {
   close: () => void
   /** Makes a finished PDF the document every panel works on. */
   adopt: (artifact: FileArtifact) => Promise<void>
+  /** Reloads a workspace snapshot saved for another tab. */
+  restore: (name: string, bytes: Uint8Array, options?: { password?: string; edited?: boolean }) => Promise<void>
+  restoreLocked: (name: string, bytes: Uint8Array, incorrect?: boolean) => void
   results: Results | null
   showResults: (results: Results | null) => void
 }
@@ -157,7 +162,29 @@ export function usePdfSessionController(): PdfSession {
     request.current += 1
     dispose()
     setState({ status: 'empty' })
+    void clearPdfWorkspaceDocument()
   }, [dispose])
+
+  const restore = useCallback(
+    async (name: string, bytes: Uint8Array, options: { password?: string; edited?: boolean } = {}) => {
+      if (!looksLikePdf(bytes)) {
+        setState({ status: 'error', name })
+        return
+      }
+      setState({ status: 'opening', name })
+      await load(name, bytes, options)
+    },
+    [load],
+  )
+
+  const restoreLocked = useCallback(
+    (name: string, bytes: Uint8Array, incorrect = false) => {
+      request.current += 1
+      dispose()
+      setState({ status: 'locked', name, bytes, incorrect, unlocking: false })
+    },
+    [dispose],
+  )
 
   const adopt = useCallback(
     async (artifact: FileArtifact) => {
@@ -169,5 +196,5 @@ export function usePdfSessionController(): PdfSession {
     [load],
   )
 
-  return { state, open, unlock, close, adopt, results, showResults: setResults }
+  return { state, open, unlock, close, adopt, restore, restoreLocked, results, showResults: setResults }
 }

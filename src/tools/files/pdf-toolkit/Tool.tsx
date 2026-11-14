@@ -1,5 +1,5 @@
 import './i18n'
-import { lazy, Suspense, useRef, useState, type ReactElement } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 
@@ -15,6 +15,12 @@ import { ResultsView } from './ResultsView'
 import { PdfSessionContext, usePdfSessionController } from './session'
 import { WorkspaceBar } from './ToolBar'
 import { LEGACY_TABS, TOOL_BY_ID, TOOL_IDS, type ToolId } from './toolList'
+import {
+  loadPdfWorkspace,
+  persistLockedDocument,
+  persistOpenDocument,
+  persistWorkspaceTab,
+} from './workspace'
 
 const ViewPanel = lazy(() => import('./ViewPanel').then((module) => ({ default: module.ViewPanel })))
 const OrganizePanel = lazy(() => import('./OrganizePanel').then((module) => ({ default: module.OrganizePanel })))
@@ -118,6 +124,48 @@ export default function PdfToolkitTool() {
   const [recent, setRecent] = useState<ToolId[]>(readRecent)
   const [resetKey, setResetKey] = useState(0)
   const top = useRef<HTMLDivElement>(null)
+  const restored = useRef(false)
+
+  const tabKey = active === 'all' ? 'all' : active
+
+  const flushWorkspace = useCallback(async () => {
+    const tab = tabKey
+    if (session.state.status === 'ready') await persistOpenDocument(session.state.doc, tab)
+    else if (session.state.status === 'locked') {
+      await persistLockedDocument(session.state.name, session.state.bytes, tab, session.state.incorrect)
+    } else await persistWorkspaceTab(tab)
+  }, [session.state, tabKey])
+
+  useEffect(() => {
+    if (restored.current) return
+    restored.current = true
+    void (async () => {
+      const snapshot = await loadPdfWorkspace()
+      if (!snapshot) return
+      if (session.state.status !== 'empty') return
+      const { meta, bytes } = snapshot
+      if (meta.locked && bytes) {
+        session.restoreLocked(meta.locked.name, bytes, meta.locked.incorrect)
+        return
+      }
+      if (meta.doc && bytes) {
+        await session.restore(meta.doc.name, bytes, { password: meta.doc.password, edited: meta.doc.edited })
+      }
+    })()
+  }, [session])
+
+  useEffect(() => {
+    void (async () => {
+      if (session.state.status === 'ready') await persistOpenDocument(session.state.doc, tabKey)
+      else if (session.state.status === 'locked') {
+        await persistLockedDocument(session.state.name, session.state.bytes, tabKey, session.state.incorrect)
+      }
+    })()
+  }, [session.state, tabKey])
+
+  useEffect(() => {
+    void persistWorkspaceTab(tabKey)
+  }, [tabKey])
 
   const doc = session.state.status === 'ready' ? session.state.doc : null
   const info = active === 'all' ? null : TOOL_BY_ID[active]
@@ -156,7 +204,7 @@ export default function PdfToolkitTool() {
 
   return (
     <PdfSessionContext.Provider value={session}>
-      <ToolPage tool={tool}>
+      <ToolPage tool={tool} onBeforeOpenNewTab={flushWorkspace}>
         <div ref={top} className="flex scroll-mt-16 flex-col gap-3 @container">
           {info ? (
             <WorkspaceBar tool={info.id} onBack={backToCatalog} onSelect={open} />

@@ -41,6 +41,8 @@ interface ToolPageProps {
   actions?: ReactNode
   backTo?: string
   contentClassName?: string
+  /** Persist tool state before opening the same deep link in a new browser tab. */
+  onBeforeOpenNewTab?: () => void | Promise<void>
 }
 
 export function ToolPage({
@@ -49,6 +51,7 @@ export function ToolPage({
   actions,
   backTo = `/categories/${getUserCategoryIdForTool(tool)}`,
   contentClassName,
+  onBeforeOpenNewTab,
 }: ToolPageProps) {
   const Icon = tool.icon
   const { t } = useTranslation()
@@ -71,8 +74,11 @@ export function ToolPage({
   }
 
   const openNewTab = () => {
-    const url = `${window.location.origin}${window.location.pathname}#${deepLink}`
-    window.open(url, '_blank', 'noopener,noreferrer')
+    void (async () => {
+      await onBeforeOpenNewTab?.()
+      const url = `${window.location.origin}${window.location.pathname}#${deepLink}`
+      window.open(url, '_blank', 'noopener,noreferrer')
+    })()
   }
 
   const info = (
