@@ -185,7 +185,7 @@ describe('Selector Studio UI', () => {
     expect(screen.getByText('Playwright · getByTestId')).toBeInTheDocument()
   })
 
-  it('highlights from the hub toolbar', async () => {
+  it('highlights from the side rail', async () => {
     const user = userEvent.setup()
     const highlight = vi.fn()
     renderStudio(<SelectorStudioView model={model({ highlight })} />)
@@ -235,10 +235,9 @@ describe('Selector Studio UI', () => {
     expect(restoreHistory).toHaveBeenCalled()
   })
 
-  it('opens the playground from the more menu', async () => {
+  it('opens the playground from the side rail', async () => {
     const user = userEvent.setup()
     renderStudio(<SelectorStudioView model={model()} />)
-    await user.click(screen.getByRole('button', { name: /more actions/i }))
     await user.click(screen.getByRole('button', { name: /edit selector/i }))
     expect(screen.getByRole('dialog', { name: /selector playground/i })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /^close$/i }))

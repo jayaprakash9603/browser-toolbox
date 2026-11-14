@@ -1,14 +1,10 @@
 import {
   ChevronDownIcon,
   CopyIcon,
-  CrosshairIcon,
   EllipsisVerticalIcon,
   FileTextIcon,
-  HighlighterIcon,
   PlayIcon,
   PlusIcon,
-  RefreshCwIcon,
-  SettingsIcon,
   TheaterIcon,
   TypeIcon,
   XIcon,
@@ -32,6 +28,7 @@ import { HubAttributesTable } from './HubAttributesTable'
 import { HubSettingsPanel } from './HubSettingsPanel'
 import { InspectPanel, type InspectSection } from './InspectPanel'
 import { Playground } from './Playground'
+import { HubSideRail } from './HubSideRail'
 import { RelationshipExplorer } from './RelationshipExplorer'
 import { SelectorsHubTable } from './SelectorsHubTable'
 import {
@@ -324,7 +321,7 @@ export function SelectorStudioHubShell({
 
       <h1 className="sr-only">{t('studio.hub.title')}</h1>
 
-      <div className="flex h-9 shrink-0 items-center gap-1.5 overflow-x-auto border-b border-[#dadce0] bg-[#f1f3f4] px-2 text-[11px]">
+      <div className="flex h-8 shrink-0 items-center gap-1.5 overflow-x-auto border-b border-[#dadce0] bg-[#f1f3f4] px-2 text-[11px]">
         <div className="flex h-full shrink-0 items-stretch gap-0.5" role="tablist" aria-label={t('studio.panel.navLabel')}>
           {devtoolsTabs.map((item) => (
             <button
@@ -348,200 +345,60 @@ export function SelectorStudioHubShell({
         {tab === 'selectors' && (
           <>
             <span className="hidden h-4 w-px shrink-0 bg-[#dadce0] sm:block" aria-hidden />
-            <button
-              type="button"
-              className={cn(
-                'flex shrink-0 items-center gap-1 rounded px-2 py-0.5 text-[11px] font-medium transition active:scale-95',
-                outputMode === 'standard'
-                  ? 'bg-[var(--sh-orange)] text-white shadow-xs hover:bg-[#e65e00]'
-                  : 'border border-[#dadce0] bg-white text-[#202124] hover:bg-[#f8f9fa]',
-              )}
-              onClick={() => setOutputMode('standard')}
-            >
-              <FileTextIcon className="size-2.5 shrink-0" aria-hidden />
-              {t('studio.hub.modeStandard')}
-            </button>
-            <button
-              type="button"
-              className={cn(
-                'flex shrink-0 items-center gap-1 rounded px-2 py-0.5 text-[11px] font-medium transition active:scale-95',
-                outputMode === 'playwright'
-                  ? 'bg-[var(--sh-orange)] text-white shadow-xs hover:bg-[#e65e00]'
-                  : 'border border-[#dadce0] bg-white text-[#202124] hover:bg-[#f8f9fa]',
-              )}
-              onClick={() => {
-                setOutputMode('playwright')
-                model.patchSettings({ defaultFramework: 'playwright' })
-              }}
-            >
-              <TheaterIcon className="size-2.5 shrink-0 text-[var(--sh-orange)]" aria-hidden />
-              {t('studio.hub.modePlaywright')}
-            </button>
-            <div className="relative shrink-0">
+            <div className="flex min-w-0 items-center gap-1 overflow-x-auto">
               <button
                 type="button"
-                className="flex items-center gap-1 rounded border border-[#dadce0] bg-white px-2 py-0.5 text-[11px] hover:bg-[#f8f9fa]"
-                onClick={() => setLangOpen((v) => !v)}
+                className={cn(
+                  'flex shrink-0 items-center gap-1 rounded px-2 py-0.5 text-[11px] font-medium transition active:scale-95',
+                  outputMode === 'standard'
+                    ? 'bg-[var(--sh-orange)] text-white shadow-xs hover:bg-[#e65e00]'
+                    : 'border border-[#dadce0] bg-white text-[#202124] hover:bg-[#f8f9fa]',
+                )}
+                onClick={() => setOutputMode('standard')}
               >
-                {frameworkLabel}
-                <ChevronDownIcon className="size-2 text-[#5f6368]" />
-              </button>
-              {langOpen && (
-                <div className="absolute left-0 z-30 mt-1 w-28 rounded border border-[#dadce0] bg-white py-1 shadow-lg">
-                  {FRAMEWORK_OPTIONS.map((fw) => (
-                    <button
-                      key={fw}
-                      type="button"
-                      className="block w-full px-2.5 py-1 text-left text-[11px] first:font-medium hover:bg-[var(--sh-orange)] hover:text-white"
-                      onClick={() => {
-                        model.patchSettings({ defaultFramework: fw })
-                        setLangOpen(false)
-                      }}
-                    >
-                      {FRAMEWORK_LABELS[fw]}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="ml-auto flex shrink-0 items-center gap-1.5 text-[#5f6368]">
-              <label className="flex cursor-pointer items-center gap-1">
-                <span className="text-[11px] font-medium text-[#202124]">{t('studio.hub.axes')}</span>
-                <HubToggle
-                  id="axes-switch"
-                  checked={settings.includeAxes}
-                  onToggle={() => {
-                    const next = !settings.includeAxes
-                    void model.patchSettings({ includeAxes: next }).then(() => {
-                      if (snapshot) void model.reanalyze()
-                    })
-                  }}
-                />
-              </label>
-              <button
-                type="button"
-                className="flex size-[18px] items-center justify-center rounded-full bg-[var(--sh-orange)] text-white hover:bg-[#e65e00]"
-                title={t('studio.hub.runAll')}
-                aria-label={t('studio.hub.runAll')}
-                onClick={runAll}
-              >
-                <PlayIcon className="size-2 fill-current" />
+                <FileTextIcon className="size-2.5 shrink-0" aria-hidden />
+                {t('studio.hub.modeStandard')}
               </button>
               <button
                 type="button"
-                className="p-0.5 transition hover:text-[var(--sh-orange)]"
-                title={t('studio.hub.copyAll')}
-                aria-label={t('studio.hub.copyAll')}
-                onClick={copyAll}
+                className={cn(
+                  'flex shrink-0 items-center gap-1 rounded px-2 py-0.5 text-[11px] font-medium transition active:scale-95',
+                  outputMode === 'playwright'
+                    ? 'bg-[var(--sh-orange)] text-white shadow-xs hover:bg-[#e65e00]'
+                    : 'border border-[#dadce0] bg-white text-[#202124] hover:bg-[#f8f9fa]',
+                )}
+                onClick={() => {
+                  setOutputMode('playwright')
+                  model.patchSettings({ defaultFramework: 'playwright' })
+                }}
               >
-                <CopyIcon className="size-3" />
+                <TheaterIcon className="size-2.5 shrink-0 text-[var(--sh-orange)]" aria-hidden />
+                {t('studio.hub.modePlaywright')}
               </button>
-              <button
-                type="button"
-                className="p-0.5 transition hover:text-[var(--sh-orange)]"
-                title={t('studio.hub.fontSize')}
-                aria-label={t('studio.hub.fontSize')}
-                onClick={cycleFont}
-              >
-                <TypeIcon className="size-3" />
-              </button>
-              <label className="flex cursor-pointer items-center gap-1 pl-0.5">
-                <span className="text-[10.5px]">{t('studio.hub.autoSuggest')}</span>
-                <HubToggle
-                  id="autosuggest-switch"
-                  checked={settings.livePageSync}
-                  onToggle={() => {
-                    void model.patchSettings({ livePageSync: !settings.livePageSync })
-                  }}
-                />
-              </label>
-              <button
-                type="button"
-                className="p-0.5 text-[#5f6368] hover:text-[#202124]"
-                title={t('studio.pick')}
-                aria-label={t('studio.pick')}
-                disabled={disabled}
-                onClick={() => void model.pick()}
-              >
-                <CrosshairIcon className={cn('size-3', model.picking && 'text-[var(--sh-orange)]')} />
-              </button>
-              <button
-                type="button"
-                className="p-0.5 text-[#5f6368] hover:text-[var(--sh-orange)]"
-                title={t('studio.highlight')}
-                aria-label={t('studio.highlight')}
-                disabled={disabled || !model.active}
-                onClick={() => model.active && void model.highlight(model.active)}
-              >
-                <HighlighterIcon className="size-3" />
-              </button>
-              {!hideSettingsGear && !panel && (
+              <div className="relative shrink-0">
                 <button
                   type="button"
-                  className={cn('p-0.5 hover:text-[#202124]', settingsOpen && 'text-[var(--sh-orange)]')}
-                  title={t('studio.settings')}
-                  aria-label={t('studio.settings')}
-                  onClick={toggleSettings}
+                  className="flex items-center gap-1 rounded border border-[#dadce0] bg-white px-2 py-0.5 text-[11px] hover:bg-[#f8f9fa]"
+                  onClick={() => setLangOpen((v) => !v)}
                 >
-                  <SettingsIcon className="size-3" />
+                  {frameworkLabel}
+                  <ChevronDownIcon className="size-2 text-[#5f6368]" />
                 </button>
-              )}
-              <div className="relative">
-                <button
-                  type="button"
-                  className="p-0.5 text-[#5f6368] hover:text-[#202124]"
-                  title={t('studio.more')}
-                  aria-label={t('studio.more')}
-                  aria-expanded={moreOpen}
-                  onClick={() => setMoreOpen((v) => !v)}
-                >
-                  <EllipsisVerticalIcon className="size-3" />
-                </button>
-                {moreOpen && (
-                  <div className="absolute right-0 z-30 mt-1 w-40 rounded border border-[#dadce0] bg-white py-1 text-[11px] shadow-lg">
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left hover:bg-[#f1f3f4]"
-                      disabled={disabled}
-                      onClick={() => {
-                        void model.reanalyze()
-                        setMoreOpen(false)
-                      }}
-                    >
-                      <RefreshCwIcon className={cn('size-3', model.analyzing && 'animate-spin')} />
-                      {t('studio.refresh')}
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left hover:bg-[#f1f3f4] disabled:opacity-40"
-                      disabled={disabled || !model.active}
-                      onClick={() => openPlayground()}
-                    >
-                      {t('studio.edit')}
-                    </button>
-                    {!pane && (
+                {langOpen && (
+                  <div className="absolute left-0 z-30 mt-1 w-28 rounded border border-[#dadce0] bg-white py-1 shadow-lg">
+                    {FRAMEWORK_OPTIONS.map((fw) => (
                       <button
+                        key={fw}
                         type="button"
-                        className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left hover:bg-[#f1f3f4]"
+                        className="block w-full px-2.5 py-1 text-left text-[11px] first:font-medium hover:bg-[var(--sh-orange)] hover:text-white"
                         onClick={() => {
-                          setTab('history')
-                          setMoreOpen(false)
+                          model.patchSettings({ defaultFramework: fw })
+                          setLangOpen(false)
                         }}
                       >
-                        {t('studio.tab.history')}
+                        {FRAMEWORK_LABELS[fw]}
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left hover:bg-[#f1f3f4]"
-                      onClick={() => {
-                        exportResults()
-                        setMoreOpen(false)
-                      }}
-                    >
-                      {t('studio.hub.export')}
-                    </button>
+                    ))}
                   </div>
                 )}
               </div>
@@ -549,6 +406,89 @@ export function SelectorStudioHubShell({
           </>
         )}
       </div>
+
+      {tab === 'selectors' && (
+        <div className="flex h-7 shrink-0 items-center justify-between gap-2 border-b border-[#e1e4e8] bg-[#f6f8fa] px-2 text-[10px] text-[#5f6368]">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <label className="flex cursor-pointer items-center gap-1">
+              <span className="text-[11px] font-medium text-[#202124]">{t('studio.hub.axes')}</span>
+              <HubToggle
+                id="axes-switch"
+                checked={settings.includeAxes}
+                onToggle={() => {
+                  const next = !settings.includeAxes
+                  void model.patchSettings({ includeAxes: next }).then(() => {
+                    if (snapshot) void model.reanalyze()
+                  })
+                }}
+              />
+            </label>
+            <button
+              type="button"
+              className="flex size-[18px] items-center justify-center rounded-full bg-[var(--sh-orange)] text-white hover:bg-[#e65e00]"
+              title={t('studio.hub.runAll')}
+              aria-label={t('studio.hub.runAll')}
+              onClick={runAll}
+            >
+              <PlayIcon className="size-2 fill-current" />
+            </button>
+            <button
+              type="button"
+              className="p-0.5 transition hover:text-[var(--sh-orange)]"
+              title={t('studio.hub.copyAll')}
+              aria-label={t('studio.hub.copyAll')}
+              onClick={copyAll}
+            >
+              <CopyIcon className="size-3" />
+            </button>
+            <button
+              type="button"
+              className="p-0.5 transition hover:text-[var(--sh-orange)]"
+              title={t('studio.hub.fontSize')}
+              aria-label={t('studio.hub.fontSize')}
+              onClick={cycleFont}
+            >
+              <TypeIcon className="size-3" />
+            </button>
+            <label className="flex cursor-pointer items-center gap-1">
+              <span className="text-[10.5px]">{t('studio.hub.autoSuggest')}</span>
+              <HubToggle
+                id="autosuggest-switch"
+                checked={settings.livePageSync}
+                onToggle={() => {
+                  void model.patchSettings({ livePageSync: !settings.livePageSync })
+                }}
+              />
+            </label>
+          </div>
+          <div className="relative ml-auto shrink-0">
+            <button
+              type="button"
+              className="flex size-6 items-center justify-center rounded text-[#5f6368] hover:bg-[#e8eaed] hover:text-[#202124]"
+              title={t('studio.more')}
+              aria-label={t('studio.more')}
+              aria-expanded={moreOpen}
+              onClick={() => setMoreOpen((v) => !v)}
+            >
+              <EllipsisVerticalIcon className="size-3.5" />
+            </button>
+            {moreOpen && (
+              <div className="absolute right-0 z-30 mt-1 w-40 rounded border border-[#dadce0] bg-white py-1 text-[11px] shadow-lg">
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left hover:bg-[#f1f3f4]"
+                  onClick={() => {
+                    exportResults()
+                    setMoreOpen(false)
+                  }}
+                >
+                  {t('studio.hub.export')}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {disabled && (
         <div
@@ -675,21 +615,32 @@ export function SelectorStudioHubShell({
           )}
 
           <div
-            className={cn(
-              'flex min-h-0 flex-1 flex-col overflow-hidden',
-              disabled && 'pointer-events-none opacity-45',
-            )}
+            className={cn('flex min-h-0 flex-1 overflow-hidden', disabled && 'pointer-events-none opacity-45')}
           >
-            <div className="min-h-0 flex-1 overflow-y-auto">
-              <SelectorsHubTable
-                model={model}
-                items={tableItems}
-                fontScale={fontScale}
-                selectedId={selectedRowId}
-                onSelectId={setSelectedRowId}
-              />
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-r border-[#e1e4e8]">
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                <SelectorsHubTable
+                  model={model}
+                  items={tableItems}
+                  fontScale={fontScale}
+                  selectedId={selectedRowId}
+                  onSelectId={setSelectedRowId}
+                />
+              </div>
+              {snapshot && <RelationshipExplorer snapshot={snapshot} />}
             </div>
-            {snapshot && <RelationshipExplorer snapshot={snapshot} />}
+            <HubSideRail
+              model={model}
+              settingsOpen={settingsOpen}
+              onToggleSettings={toggleSettings}
+              onEdit={() => openPlayground()}
+              onOpenHistory={() => setTab('history')}
+              onOpenCode={() => setTab('code')}
+              showHistory={!pane}
+              disabled={disabled}
+              hideSettings={hideSettingsGear || panel}
+              align="right"
+            />
           </div>
         </>
       ) : (
@@ -734,7 +685,7 @@ export function SelectorStudioHubShell({
             onClick={() => setSettingsOpen(false)}
           />
           <aside
-            className="absolute top-0 right-0 z-40 flex h-full max-h-full w-[min(calc(100%-1rem),16.5rem)] flex-col border border-[#e1e4e8] bg-white shadow-xl"
+            className="absolute top-0 right-8 z-40 flex h-full max-h-full w-[min(calc(100%-2.25rem),16.5rem)] flex-col border border-[#e1e4e8] bg-white shadow-xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="studio-settings-title"
