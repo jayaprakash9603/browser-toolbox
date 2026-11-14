@@ -112,7 +112,7 @@ export function HubSideRail({
       aria-label={t('studio.hub.sideActions')}
       className={cn(
         'flex shrink-0 flex-col items-center py-2',
-        hub ? 'w-[34px] gap-3.5 border-l border-[#e5e7eb] bg-[#f9fafb]' : 'w-10 gap-1 border-r border-border/80',
+        hub ? 'w-8 gap-2 border-l border-[#e5e7eb] bg-[#f9fafb] py-1.5' : 'w-10 gap-1 border-r border-border/80',
       )}
     >
       {items.map((item) => (

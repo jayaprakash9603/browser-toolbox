@@ -37,8 +37,8 @@ export function SelectorsHubTable({
 
   if (!items.length) {
     return (
-      <div className="flex flex-col items-center justify-center gap-2 p-8 text-center text-[11px] text-[var(--sh-muted,#57606a)]">
-        <p>{t('studio.noElement')}</p>
+      <div className="flex flex-col items-center justify-center gap-1 px-3 py-5 text-center text-[10px] leading-snug text-[var(--sh-muted,#57606a)]">
+        <p className="max-w-[14rem]">{t('studio.noElement')}</p>
       </div>
     )
   }
@@ -87,7 +87,7 @@ export function SelectorsHubTable({
                 model.setActive(candidate)
               }}
             >
-              <td className="w-[46px] py-2 pl-2 pr-1 align-middle">
+              <td className="w-10 py-1 pl-1.5 pr-0.5 align-middle">
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
@@ -121,7 +121,7 @@ export function SelectorsHubTable({
                   </button>
                 </div>
               </td>
-              <td className="w-8 px-1 py-2 align-middle">
+              <td className="w-7 px-0.5 py-1 align-middle">
                 <span
                   className={cn(
                     'flex min-h-[17px] min-w-[17px] items-center justify-center rounded-full px-0.5 text-[8px] font-bold text-white',
@@ -132,10 +132,12 @@ export function SelectorsHubTable({
                   {badge.shortLabel}
                 </span>
               </td>
-              <td className="w-[110px] whitespace-nowrap px-1.5 py-2 align-middle font-medium text-[#24292f]">
-                {candidateRowLabel(candidate)}
+              <td className="max-w-[5rem] px-1 py-1 align-middle text-[10px] font-medium text-[#24292f]">
+                <span className="block truncate" title={candidateRowLabel(candidate)}>
+                  {candidateRowLabel(candidate)}
+                </span>
               </td>
-              <td className="min-w-0 py-2 pl-1 pr-2 align-middle">
+              <td className="min-w-0 py-1 pl-0.5 pr-1.5 align-middle">
                 <code
                   className={cn(
                     'code-font block max-w-full truncate font-mono leading-snug',

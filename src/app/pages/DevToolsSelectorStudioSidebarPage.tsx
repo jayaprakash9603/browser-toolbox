@@ -7,5 +7,9 @@ import { useMemo } from 'react'
 export default function DevToolsSelectorStudioSidebarPage() {
   const client = useMemo(() => createDevToolsClient(), [])
   const model = useSelectorStudio(client)
-  return <SelectorStudioHubShell model={model} variant="pane" />
+  return (
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
+      <SelectorStudioHubShell model={model} variant="pane" />
+    </div>
+  )
 }

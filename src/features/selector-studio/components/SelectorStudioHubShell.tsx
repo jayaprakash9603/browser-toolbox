@@ -270,7 +270,7 @@ export function SelectorStudioHubShell({
       className={cn(
         'selector-studio-hub relative flex h-full min-h-0 flex-col bg-white text-[11px] text-[#24292f] outline-none',
         !pane && !panel && 'rounded-md border border-[#c7ccd1] shadow-sm',
-        pane && 'text-[11.5px]',
+        pane && 'selector-studio-hub--pane text-[11px]',
       )}
       tabIndex={0}
       onKeyDown={onKeyDown}
@@ -282,11 +282,13 @@ export function SelectorStudioHubShell({
           100% { background-color: transparent; }
         }
         .selector-studio-hub .code-font { font-family: ui-monospace, 'JetBrains Mono', Consolas, monospace; }
+        .selector-studio-hub--pane .hub-strip { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+        .selector-studio-hub--pane .hub-mode-scroll { scrollbar-width: thin; }
       `}</style>
 
       <h1 className="sr-only">{t('studio.hub.title')}</h1>
 
-      <div className="flex h-[30px] shrink-0 items-center justify-between overflow-x-auto border-b border-[#dadce0] bg-[#f1f3f4] px-2">
+      <div className="flex h-7 shrink-0 items-center justify-between overflow-x-auto border-b border-[#dadce0] bg-[#f1f3f4] px-1.5">
         <div className="flex h-full items-center gap-0.5" role="tablist" aria-label={t('studio.panel.navLabel')}>
           {devtoolsTabs.map((item) => (
             <button
@@ -295,7 +297,7 @@ export function SelectorStudioHubShell({
               role="tab"
               aria-selected={tab === item.id}
               className={cn(
-                'flex h-full items-center border-b-2 px-2.5 transition-colors',
+                'flex h-full items-center border-b-2 px-2 transition-colors',
                 tab === item.id
                   ? 'border-[#1a73e8] bg-[#f8fafd] font-semibold text-[#1a73e8]'
                   : 'border-transparent text-[#5f6368] hover:text-[#202124]',
@@ -319,25 +321,25 @@ export function SelectorStudioHubShell({
 
       {tab === 'selectors' ? (
         <>
-          <div className="flex shrink-0 flex-wrap items-center justify-between gap-1.5 border-b border-[#e1e4e8] bg-[#fdfdfd] px-2 py-1.5">
-            <div className="flex flex-wrap items-center gap-1.5">
+          <div className="hub-strip flex shrink-0 items-center justify-between gap-1 border-b border-[#e1e4e8] bg-[#fdfdfd] px-1.5 py-1">
+            <div className="hub-mode-scroll flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
               <button
                 type="button"
                 className={cn(
-                  'flex items-center gap-1.5 rounded px-2.5 py-1 text-[11px] font-medium shadow-xs transition active:scale-95',
+                  'flex shrink-0 items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium shadow-xs transition active:scale-95',
                   outputMode === 'standard'
                     ? 'bg-[var(--sh-orange)] text-white hover:bg-[#e66a00]'
                     : 'border border-[#d0d7de] bg-white hover:bg-[#f6f8fa]',
                 )}
                 onClick={() => setOutputMode('standard')}
               >
-                <FileTextIcon className="size-3" aria-hidden />
-                {t('studio.hub.modeStandard')}
+                <FileTextIcon className="size-3 shrink-0" aria-hidden />
+                <span className="whitespace-nowrap">{t('studio.hub.modeStandard')}</span>
               </button>
               <button
                 type="button"
                 className={cn(
-                  'flex items-center gap-1.5 rounded px-2.5 py-1 text-[11px] font-medium transition active:scale-95',
+                  'flex shrink-0 items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium transition active:scale-95',
                   outputMode === 'playwright'
                     ? 'bg-[var(--sh-orange)] text-white hover:bg-[#e66a00]'
                     : 'border border-[#d0d7de] bg-white hover:bg-[#f6f8fa]',
@@ -347,14 +349,14 @@ export function SelectorStudioHubShell({
                   model.patchSettings({ defaultFramework: 'playwright' })
                 }}
               >
-                <TheaterIcon className="size-3 text-[var(--sh-orange)]" aria-hidden />
-                {t('studio.hub.modePlaywright')}
+                <TheaterIcon className="size-3 shrink-0 text-[var(--sh-orange)]" aria-hidden />
+                <span className="whitespace-nowrap">{t('studio.hub.modePlaywright')}</span>
               </button>
 
-              <div className="relative">
+              <div className="relative shrink-0">
                 <button
                   type="button"
-                  className="flex h-[25px] items-center gap-1 rounded border border-[#d0d7de] bg-white px-2 text-[11px] hover:bg-[#f6f8fa]"
+                  className="flex h-[23px] items-center gap-1 rounded border border-[#d0d7de] bg-white px-1.5 text-[10px] hover:bg-[#f6f8fa]"
                   onClick={() => setLangOpen((v) => !v)}
                 >
                   {frameworkLabel}
@@ -381,22 +383,26 @@ export function SelectorStudioHubShell({
 
               <button
                 type="button"
-                className="flex size-6 items-center justify-center rounded text-[#57606a] hover:bg-gray-100 hover:text-[var(--sh-orange)]"
+                className="flex size-5 shrink-0 items-center justify-center rounded text-[#57606a] hover:bg-gray-100 hover:text-[var(--sh-orange)]"
                 title={t('studio.hub.syntaxGuide')}
               >
                 <InfoIcon className="size-3" />
               </button>
             </div>
-            <button type="button" className="flex size-6 items-center justify-center text-[#57606a] hover:text-black" title={t('studio.more')}>
+            <button
+              type="button"
+              className="flex size-5 shrink-0 items-center justify-center text-[#57606a] hover:text-black"
+              title={t('studio.more')}
+            >
               <GripVerticalIcon className="size-3" />
             </button>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1.5 border-b border-[#e1e4e8] bg-[#fbfbfb] px-2 py-1.5">
+          <div className="hub-strip flex shrink-0 items-center gap-1 border-b border-[#e1e4e8] bg-[#fbfbfb] px-1.5 py-1">
             <div className="relative">
               <button
                 type="button"
-                className="flex h-[27px] items-center gap-1.5 whitespace-nowrap rounded bg-[var(--sh-orange)] px-2 text-[11px] font-medium text-white shadow-xs hover:bg-[#e66a00]"
+                className="flex h-[25px] shrink-0 items-center gap-1 whitespace-nowrap rounded bg-[var(--sh-orange)] px-1.5 text-[10px] font-medium text-white shadow-xs hover:bg-[#e66a00]"
                 onClick={() => setTypeOpen((v) => !v)}
               >
                 {selectorTypeLabel}
@@ -431,7 +437,7 @@ export function SelectorStudioHubShell({
                 type="text"
                 value={customInput}
                 placeholder={t('studio.hub.inputPlaceholder')}
-                className="h-[27px] w-full rounded border border-[#cfd4da] bg-white pl-2 pr-7 font-mono text-[11px] focus:border-[var(--sh-orange)] focus:outline-none focus:ring-1 focus:ring-[var(--sh-orange)]"
+                className="h-[25px] w-full rounded border border-[#cfd4da] bg-white pl-1.5 pr-6 font-mono text-[10px] focus:border-[var(--sh-orange)] focus:outline-none focus:ring-1 focus:ring-[var(--sh-orange)]"
                 onChange={(e) => setCustomInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') verifyCustom()
@@ -449,7 +455,7 @@ export function SelectorStudioHubShell({
             </div>
             <button
               type="button"
-              className="flex size-[27px] shrink-0 items-center justify-center rounded-full border border-[#cfd4da] bg-white text-[var(--sh-orange)] shadow-sm transition hover:border-[var(--sh-orange)] hover:bg-[var(--sh-orange)] hover:text-white active:scale-95"
+              className="flex size-[25px] shrink-0 items-center justify-center rounded-full border border-[#cfd4da] bg-white text-[var(--sh-orange)] shadow-sm transition hover:border-[var(--sh-orange)] hover:bg-[var(--sh-orange)] hover:text-white active:scale-95"
               title={t('studio.hub.addVerify')}
               onClick={verifyCustom}
             >
@@ -457,43 +463,42 @@ export function SelectorStudioHubShell({
             </button>
           </div>
 
-          <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-[#e1e4e8] bg-[#f6f8fa] px-2.5 py-1 text-[11px] text-[#57606a]">
-            <select
-              className="h-6 max-w-[9rem] rounded border border-[#d0d7de] bg-white px-1.5 text-[10px] text-[#24292f]"
-              value={locatorGroup}
-              aria-label={t('studio.hub.strategyGroup')}
-              onChange={(e) => setLocatorGroup(e.target.value as LocatorGroup)}
-            >
-              {(
-                [
-                  'recommended',
-                  'css',
-                  'xpath',
-                  'text',
-                  'parent',
-                  'sibling',
-                  'axes',
-                  'indexed',
-                  'absolute',
-                  'all',
-                ] as const
-              ).map((id) => (
-                <option key={id} value={id}>
-                  {t(`studio.hub.group.${id}`)}
-                </option>
-              ))}
-            </select>
-            <input
-              type="search"
-              value={selectorSearch}
-              placeholder={t('studio.hub.filterPlaceholder')}
-              className="h-6 min-w-0 flex-1 rounded border border-[#d0d7de] bg-white px-1.5 text-[10px]"
-              onChange={(e) => setSelectorSearch(e.target.value)}
-            />
-          </div>
-
-          <div className="flex shrink-0 items-center justify-between border-b border-[#e1e4e8] bg-[#f6f8fa] px-2.5 py-1 text-[11px] text-[#57606a]">
-            <div className="flex items-center gap-2.5">
+          <div className="hub-strip flex shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b border-[#e1e4e8] bg-[#f6f8fa] px-1.5 py-1 text-[10px] text-[#57606a]">
+            <div className="flex min-w-0 flex-1 items-center gap-1">
+              <select
+                className="h-[22px] max-w-[7.5rem] shrink-0 rounded border border-[#d0d7de] bg-white px-1 text-[10px] text-[#24292f]"
+                value={locatorGroup}
+                aria-label={t('studio.hub.strategyGroup')}
+                onChange={(e) => setLocatorGroup(e.target.value as LocatorGroup)}
+              >
+                {(
+                  [
+                    'recommended',
+                    'css',
+                    'xpath',
+                    'text',
+                    'parent',
+                    'sibling',
+                    'axes',
+                    'indexed',
+                    'absolute',
+                    'all',
+                  ] as const
+                ).map((id) => (
+                  <option key={id} value={id}>
+                    {t(`studio.hub.group.${id}`)}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="search"
+                value={selectorSearch}
+                placeholder={t('studio.hub.filterPlaceholder')}
+                className="h-[22px] min-w-[4.5rem] flex-1 rounded border border-[#d0d7de] bg-white px-1.5 text-[10px]"
+                onChange={(e) => setSelectorSearch(e.target.value)}
+              />
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
               <label className="flex cursor-pointer items-center gap-1.5">
                 <span className="font-medium text-[#24292f]">{t('studio.hub.axes')}</span>
                 <HubToggle
@@ -524,21 +529,21 @@ export function SelectorStudioHubShell({
               <button type="button" className="transition hover:text-[var(--sh-orange)]" title={t('studio.hub.export')} onClick={exportResults}>
                 <FileTextIcon className="size-2.5" />
               </button>
+              <label className="flex cursor-pointer items-center gap-1">
+                <span className="text-[10px]">{t('studio.hub.autoSuggest')}</span>
+                <HubToggle
+                  id="autosuggest-switch"
+                  checked={settings.livePageSync}
+                  onToggle={() => {
+                    void model.patchSettings({ livePageSync: !settings.livePageSync })
+                  }}
+                />
+              </label>
             </div>
-            <label className="flex cursor-pointer items-center gap-1.5">
-              <span className="text-[10px]">{t('studio.hub.autoSuggest')}</span>
-              <HubToggle
-                id="autosuggest-switch"
-                checked={settings.livePageSync}
-                onToggle={() => {
-                  void model.patchSettings({ livePageSync: !settings.livePageSync })
-                }}
-              />
-            </label>
           </div>
 
           {(model.picking || model.error || model.stale) && (
-            <div className="shrink-0 border-b border-[#e1e4e8] px-2 py-1 text-[11px]">
+            <div className="shrink-0 border-b border-[#e1e4e8] px-1.5 py-0.5 text-[10px]">
               {model.picking && <p className="text-[#1a73e8]">{t('studio.pickProgress')}</p>}
               {model.stale && !model.picking && <p className="text-[#57606a]">{t('studio.stale')}</p>}
               {model.error && <p className="text-red-600">{model.error}</p>}
@@ -555,16 +560,18 @@ export function SelectorStudioHubShell({
             </div>
           )}
 
-          <div className={cn('flex min-h-[200px] flex-1', disabled && 'pointer-events-none opacity-45')}>
-            <div className="min-h-0 flex-1 overflow-y-auto border-r border-[#e1e4e8]">
+          <div className={cn('flex min-h-0 flex-1', disabled && 'pointer-events-none opacity-45')}>
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-r border-[#e1e4e8]">
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                <SelectorsHubTable
+                  model={model}
+                  items={tableItems}
+                  fontScale={fontScale}
+                  selectedId={selectedRowId}
+                  onSelectId={setSelectedRowId}
+                />
+              </div>
               {snapshot && <RelationshipExplorer snapshot={snapshot} />}
-              <SelectorsHubTable
-                model={model}
-                items={tableItems}
-                fontScale={fontScale}
-                selectedId={selectedRowId}
-                onSelectId={setSelectedRowId}
-              />
             </div>
             <HubSideRail
               model={model}
@@ -580,7 +587,7 @@ export function SelectorStudioHubShell({
             />
           </div>
 
-          <div className="flex shrink-0 items-center justify-between gap-1 overflow-x-auto border-t border-[#dadce0] bg-[#f1f3f4] px-2 py-1 text-[10px] text-[#5f6368]">
+          <div className="flex shrink-0 items-center justify-between gap-1 overflow-x-auto border-t border-[#dadce0] bg-[#f1f3f4] px-1.5 py-0.5 text-[10px] text-[#5f6368]">
             <div className="flex min-w-0 items-center gap-1.5">
               <span className="truncate font-mono text-[#3c4043]">
                 {snapshot ? elementChip(snapshot) : t('studio.noElement')}
@@ -616,7 +623,7 @@ export function SelectorStudioHubShell({
             onClick={() => setSettingsOpen(false)}
           />
           <aside
-            className="absolute top-0 right-[34px] z-40 flex h-full max-h-full w-[min(calc(100%-2.5rem),16.5rem)] flex-col border border-[#e1e4e8] bg-white shadow-xl"
+            className="absolute top-0 right-8 z-40 flex h-full max-h-full w-[min(calc(100%-2.25rem),16.5rem)] flex-col border border-[#e1e4e8] bg-white shadow-xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="studio-settings-title"

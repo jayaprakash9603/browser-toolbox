@@ -46,9 +46,11 @@ export function RelationshipExplorer({ snapshot }: { snapshot: SelectorSnapshot 
   if (!rows.length) return null
 
   return (
-    <details className="shrink-0 border-t border-[#e1e4e8] bg-[#fafbfc] px-2 py-1.5 text-[10px]">
-      <summary className="cursor-pointer font-medium text-[#24292f]">{t('studio.hub.relationships')}</summary>
-      <ul className="mt-1.5 space-y-0.5 text-[#57606a]">
+    <details className="shrink-0 border-t border-[#e1e4e8] bg-[#fafbfc] px-1.5 py-1 text-[10px]">
+      <summary className="cursor-pointer list-none font-medium text-[#24292f] [&::-webkit-details-marker]:hidden">
+        {t('studio.hub.relationships')}
+      </summary>
+      <ul className="mt-1 space-y-0.5 pb-0.5 text-[#57606a]">
         {rows.map((row) => (
           <li key={row.id} className="flex gap-2">
             <span className="w-24 shrink-0 font-medium text-[#24292f]">{row.label}</span>
