@@ -195,6 +195,14 @@ describe('Selector Studio UI', () => {
     expect(screen.queryByText('Rel XPath')).not.toBeInTheDocument()
   })
 
+  it('re-runs batch verification from the toolbar play control', async () => {
+    const user = userEvent.setup()
+    const verifyAllCandidates = vi.fn()
+    renderStudio(<SelectorStudioView model={model({ verifyAllCandidates })} />)
+    await user.click(screen.getByRole('button', { name: /run verification/i }))
+    expect(verifyAllCandidates).toHaveBeenCalled()
+  })
+
   it('shows One Panel branding on the selectors footer', () => {
     renderStudio(<SelectorStudioView model={model()} />)
     expect(screen.getByText('One Panel · Selector Studio')).toBeInTheDocument()
