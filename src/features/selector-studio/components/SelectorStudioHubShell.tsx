@@ -135,6 +135,9 @@ export function SelectorStudioHubShell({
     } else if (event.code === 'Backspace') {
       event.preventDefault()
       void model.clearSelection()
+    } else if (event.code === 'Escape' && settingsOpen) {
+      event.preventDefault()
+      setSettingsOpen(false)
     }
   }
 
@@ -523,9 +526,37 @@ export function SelectorStudioHubShell({
       )}
 
       {settingsOpen && !hideSettingsGear && !panel && (
-        <aside className="absolute right-0 top-0 z-40 h-full w-52 overflow-y-auto border-l border-[#e1e4e8] bg-white p-3 shadow-lg">
-          <HubSettingsPanel model={model} />
-        </aside>
+        <>
+          <button
+            type="button"
+            className="absolute inset-0 z-30 bg-[#202124]/25"
+            aria-label={t('studio.hub.dismissSettingsOverlay')}
+            onClick={() => setSettingsOpen(false)}
+          />
+          <aside
+            className="absolute top-0 right-[34px] z-40 flex h-full max-h-full w-[min(calc(100%-2.5rem),16.5rem)] flex-col border border-[#e1e4e8] bg-white shadow-xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="studio-settings-title"
+          >
+            <header className="flex shrink-0 items-center justify-between gap-2 border-b border-[#e1e4e8] bg-[#f6f8fa] px-2.5 py-2">
+              <h2 id="studio-settings-title" className="text-[12px] font-semibold text-[#24292f]">
+                {t('studio.settings')}
+              </h2>
+              <button
+                type="button"
+                className="flex size-6 items-center justify-center rounded text-[#5f6368] hover:bg-[#e8eaed] hover:text-[#202124]"
+                aria-label={t('studio.hub.closeSettings')}
+                onClick={() => setSettingsOpen(false)}
+              >
+                <XIcon className="size-3.5" aria-hidden />
+              </button>
+            </header>
+            <div className="min-h-0 flex-1 overflow-y-auto p-3">
+              <HubSettingsPanel model={model} showHeading={false} />
+            </div>
+          </aside>
+        </>
       )}
 
       <p className="sr-only" role="status">

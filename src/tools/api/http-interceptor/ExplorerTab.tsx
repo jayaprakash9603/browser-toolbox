@@ -106,7 +106,9 @@ export function ExplorerTab() {
         undefined,
         includeSecrets,
       )
-      if (!result.ok) show(result.error ?? t('interceptor.explorer.failed'), { variant: 'error' })
+      if (!result.ok && /not granted|Allow it/i.test(result.error ?? '')) {
+        show(result.error ?? t('interceptor.explorer.failed'), { variant: 'error' })
+      }
     } finally {
       setSending(false)
     }
@@ -163,7 +165,7 @@ export function ExplorerTab() {
 
   if (!draft) {
     return (
-      <div className="flex h-full min-h-[28rem] flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
+      <div className="flex min-h-[28rem] flex-1 flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
         <ExplorerEmptyState />
       </div>
     )
@@ -176,7 +178,7 @@ export function ExplorerTab() {
   const failed = Boolean(response && !sending && (response.error || (response.status != null && response.status >= 400)))
 
   return (
-    <div className="flex h-full min-h-[32rem] min-w-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
+    <div className="flex min-h-[36rem] min-w-0 flex-1 flex-col rounded-xl border bg-card shadow-sm">
       <section className="space-y-2 border-b p-3 sm:p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <div className="flex min-w-0 flex-1 items-stretch overflow-hidden rounded-xl border bg-muted/30 shadow-xs focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/25">
@@ -272,7 +274,7 @@ export function ExplorerTab() {
         </div>
       </section>
 
-      <section className="flex min-h-[11rem] shrink-0 flex-col border-b">
+      <section className="flex max-h-[min(22rem,46vh)] min-h-[11rem] shrink-0 flex-col overflow-hidden border-b">
         <div className="flex items-center justify-between gap-3 overflow-x-auto border-b px-2 sm:px-4">
           <div className="flex items-center">
             {REQ_TABS.map((id) => {
@@ -312,7 +314,7 @@ export function ExplorerTab() {
           </p>
         </div>
 
-        <div className="min-h-[8.5rem] p-4">
+        <div className="min-h-[8.5rem] overflow-y-auto p-4">
           {reqTab === 'params' && (
             <KvEditor
               rows={draft.params}
@@ -356,7 +358,7 @@ export function ExplorerTab() {
         <div className="h-1 w-8 rounded-full bg-border" />
       </div>
 
-      <section className="flex min-h-0 flex-1 flex-col">
+      <section className="flex min-h-[20rem] flex-1 flex-col">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-muted/30 px-4 py-3">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-xs font-bold tracking-wider uppercase sm:text-sm">{t('interceptor.explorer.response')}</h3>
@@ -415,7 +417,7 @@ export function ExplorerTab() {
           </div>
         </div>
 
-        <div className="relative flex min-h-[16rem] flex-1 flex-col overflow-hidden bg-muted/20 p-4">
+        <div className="relative flex min-h-[16rem] flex-1 flex-col overflow-y-auto bg-muted/20 p-4">
           {sending ? <ExplorerSendingState host={hostFromUrl(draft.url)} /> : null}
           {!sending && !response ? <ExplorerIdleState /> : null}
           {!sending && response ? (
@@ -429,7 +431,7 @@ export function ExplorerTab() {
                         ? `${response.status} ${response.statusText || t('interceptor.explorer.failed')}`
                         : t('interceptor.explorer.failed')}
                     </h4>
-                    <p className="mt-0.5 text-xs text-red-700 dark:text-red-400">
+                    <p className="mt-0.5 break-words text-xs text-red-700 dark:text-red-400">
                       {response.error || t('interceptor.explorer.replayHint')}
                     </p>
                   </div>

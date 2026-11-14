@@ -18,6 +18,7 @@ import {
   registerApiClientHeaderCapture,
   takeApiClientCapturedHeaders,
 } from './api-client-response-headers'
+import { classifyWorkerFetchError, sanitizeWorkerFetchInit } from './worker-fetch-init'
 
 const logger = createLogger('api-client-send')
 
@@ -56,18 +57,19 @@ function createPermissionAwareFetch(): FetchFn {
     const url = requestUrl(input)
     await assertHostAccessForUrl(url)
     try {
-      return await fetch(input, init)
+      return await fetch(input, sanitizeWorkerFetchInit(init))
     } catch (error) {
       if (error instanceof TypeError && /failed to fetch/i.test(error.message)) {
         const denied = permissionDeniedMessage(url)
         if (denied && !(await hasHostAccess(url))) {
-          throw new TypeError(denied)
+          throw new TypeError(denied, { cause: error })
         }
         throw new TypeError(
           'Network request failed. Confirm host access, TLS, and that blockers are not stopping this URL.',
+          { cause: error },
         )
       }
-      throw error
+      throw classifyWorkerFetchError(error, url)
     }
   }
 }

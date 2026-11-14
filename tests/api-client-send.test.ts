@@ -184,6 +184,21 @@ describe('API_CLIENT_SEND handler', () => {
     expect(abortSignal?.aborted).toBe(true)
   })
 
+  it('does not pass redirect: manual to fetch in the service worker', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('ok', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await dispatchMessage({
+      type: 'API_CLIENT_SEND',
+      requestId: 'req-redirect',
+      payload: basePayload,
+    })
+
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit
+    expect(init.redirect).not.toBe('manual')
+    expect(init.redirect).toBe('follow')
+  })
+
   it('maps fetch rejections to a classified message without HTTP status', async () => {
     vi.mocked(chrome.permissions.contains).mockResolvedValue(false as never)
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))

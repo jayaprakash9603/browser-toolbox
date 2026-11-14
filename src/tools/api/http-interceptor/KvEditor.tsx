@@ -38,7 +38,7 @@ export function KvEditor({
         <div>{valueLabel ?? t('interceptor.explorer.col.value')}</div>
         <div className="text-right">{t('interceptor.explorer.col.action')}</div>
       </div>
-      <div className="divide-y">
+      <div className="max-h-48 divide-y overflow-y-auto">
         {rows.map((row) => (
           <div
             key={row.id}

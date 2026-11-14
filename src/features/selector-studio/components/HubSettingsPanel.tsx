@@ -6,12 +6,18 @@ import { Button } from '@/shared/components/ui/button'
 
 import type { SelectorStudioModel } from '../useSelectorStudio'
 
-export function HubSettingsPanel({ model }: { model: SelectorStudioModel }) {
+export function HubSettingsPanel({
+  model,
+  showHeading = true,
+}: {
+  model: SelectorStudioModel
+  showHeading?: boolean
+}) {
   const { t } = useTranslation()
 
   return (
     <div className="flex flex-col gap-3 text-[11px]">
-      <p className="text-[12px] font-semibold">{t('studio.settings')}</p>
+      {showHeading && <p className="text-[12px] font-semibold">{t('studio.settings')}</p>}
       <label className="flex flex-col gap-1">
         <span className="text-muted-foreground">{t('studio.rank')}</span>
         <select

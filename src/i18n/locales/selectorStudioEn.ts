@@ -41,6 +41,8 @@ export const selectorStudioStrings = {
   'studio.hub.copiedAll': 'Copied {{count}} selectors to clipboard',
   'studio.hub.rerunAll': 'Re-evaluating all page selectors…',
   'studio.hub.brandMark': 'Studio',
+  'studio.hub.closeSettings': 'Close settings',
+  'studio.hub.dismissSettingsOverlay': 'Dismiss settings overlay',
   'studio.subtitle': 'Inspect. Generate. Validate. Automate.',
   'studio.pick': 'Pick element',
   'studio.picking': 'Picking…',

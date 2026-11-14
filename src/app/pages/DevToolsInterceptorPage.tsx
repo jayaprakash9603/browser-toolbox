@@ -182,8 +182,8 @@ export default function DevToolsInterceptorPage() {
             </div>
           )}
           {view === 'explorer' && (
-            <div className="flex h-full min-h-0 flex-col p-3">
-              <div className="mx-auto flex h-full min-h-0 w-full max-w-[1240px] flex-col">
+            <div className="h-full min-h-0 overflow-y-auto p-3">
+              <div className="mx-auto flex min-h-full w-full max-w-[1240px] flex-col">
                 <ExplorerTab />
               </div>
             </div>

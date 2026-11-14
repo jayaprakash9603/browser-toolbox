@@ -195,6 +195,8 @@ describe('Selector Studio UI', () => {
     renderStudio(<SelectorStudioView model={model()} />)
     await user.click(screen.getByRole('button', { name: /^settings$/i }))
     expect(screen.getByText(/^Rank by$/i)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /close settings/i }))
+    expect(screen.queryByText(/^Rank by$/i)).not.toBeInTheDocument()
   })
 
   it('saves history and restores a named locator', async () => {
