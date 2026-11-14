@@ -12,6 +12,13 @@ import {
   openSimulatorForTab,
 } from '@/chrome/background/responsiveViewer/menus'
 import {
+  overlayFitScale,
+  overlayOuterSize,
+  overlayPickerWidth,
+  overlayStageBox,
+} from '@/chrome/background/responsiveViewer/overlayFit'
+import { overlayIframeLayoutSize, overlayPreviewChrome } from '@/chrome/background/responsiveViewer/overlayViewport'
+import {
   canOverlaySimulatorOnTab,
   handleOverlayAction,
   mountSimulatorOverlay,
@@ -70,6 +77,39 @@ describe('responsive viewer model', () => {
     expect(viewportScale('fit', { width: 300, height: 300 }, { width: 900, maxHeight: 900 })).toBe(1)
     expect(viewportScale('fit', { width: 1000, height: 500 }, { width: null, maxHeight: 250 })).toBe(0.5)
     expect(viewportScale('0.75', { width: 1920, height: 1080 }, { width: 100, maxHeight: 100 })).toBe(0.75)
+  })
+
+  it('upsizes the on-page phone to fill the stage instead of capping at 1x', () => {
+    const outer = overlayOuterSize({ width: 402, height: 874 }, null)
+    const desktop = overlayStageBox({ width: 1920, height: 1080 })
+    expect(overlayFitScale(outer, desktop)).toBeGreaterThan(1)
+    const laptop = overlayStageBox({ width: 1366, height: 768 })
+    const fitted = overlayFitScale(outer, laptop)
+    expect(fitted * outer.height).toBeGreaterThan(laptop.maxH - 1)
+    expect(fitted * outer.height).toBeLessThanOrEqual(laptop.maxH)
+    expect(overlayPickerWidth(1920)).toBeGreaterThanOrEqual(400)
+    expect(overlayStageBox({ width: 1920, height: 1080 }).maxW).toBe(desktop.maxW)
+  })
+
+  it('keeps full device viewport and paints the status strip on mockups when enabled', () => {
+    const mockupChrome = overlayPreviewChrome({
+      hasMockup: true,
+      rotated: false,
+      showStatusBar: true,
+      statusBar: 'ios',
+      showSafari: true,
+    })
+    expect(mockupChrome.decorStatus).toBe(true)
+    expect(mockupChrome.showSafari).toBe(true)
+    expect(overlayIframeLayoutSize({ width: 402, height: 874 })).toEqual({ width: 402, height: 874 })
+    const cssChrome = overlayPreviewChrome({
+      hasMockup: false,
+      rotated: false,
+      showStatusBar: true,
+      statusBar: 'ios',
+      showSafari: false,
+    })
+    expect(cssChrome.decorStatus).toBe(true)
   })
 
   it('swaps dimensions when rotated and reports breakpoints', () => {
@@ -256,14 +296,21 @@ describe('mobile simulator studio helpers', () => {
     expect(mockup?.hidden).toBe(false)
     expect(mockup?.getAttribute('src')).toContain('iphone-16-pro.webp')
     expect(root.classList.contains('has-mockup')).toBe(true)
-    const status = host?.shadowRoot?.querySelector('.status') as HTMLElement
-    expect(status?.dataset.bar).toBe('ios')
-    expect(getComputedStyle(status).mixBlendMode).toBe('normal')
     const acts = [...(host?.shadowRoot?.querySelectorAll('.actions [data-act]') ?? [])].map((el) =>
       el.getAttribute('data-act'),
     )
     expect(acts).toEqual(
-      expect.arrayContaining(['devices', 'rotate', 'reload', 'screenshot', 'record', 'compare', 'settings', 'expand']),
+      expect.arrayContaining([
+        'devices',
+        'rotate',
+        'reload',
+        'screenshot',
+        'record',
+        'compare',
+        'settings',
+        'help',
+        'expand',
+      ]),
     )
     expect(acts.indexOf('settings')).toBeGreaterThan(acts.indexOf('devices'))
     expect(acts.indexOf('settings')).toBeLessThan(acts.indexOf('rotate'))
@@ -278,12 +325,56 @@ describe('mobile simulator studio helpers', () => {
     expect(host?.shadowRoot?.querySelector('[data-panel="shot-menu"] .menu-option')).toBeTruthy()
     expect(host?.shadowRoot?.querySelector('[data-panel="settings"]')).toBeTruthy()
     expect(host?.shadowRoot?.querySelector('[data-set="mobile-ua"]')).toBeTruthy()
-    const settingsIcon = host?.shadowRoot?.querySelector('[data-act="settings"] svg path')?.getAttribute('d') ?? ''
-    expect(settingsIcon).toContain('12.22 2')
-    expect(settingsIcon).not.toContain('M12 1v2')
+    const settingsBtn = host?.shadowRoot?.querySelector('[data-act="settings"]') as HTMLElement
+    expect(settingsBtn?.querySelector('.mdi')).toBeTruthy()
     expect(root.classList.contains('theme-classic')).toBe(true)
+    const inner = host?.shadowRoot?.querySelector('.phone-inner') as HTMLElement
+    expect(inner.style.transform).toMatch(/scale\(/)
+    const wrap = host?.shadowRoot?.querySelector('.phone-wrap') as HTMLElement
+    expect(Number.parseInt(wrap.style.height, 10)).toBeGreaterThan(500)
+    const screen = host?.shadowRoot?.querySelector('.screen') as HTMLElement
+    expect(screen.style.height).toMatch(/%/)
+    expect(host?.shadowRoot?.querySelector('.viewport')).toBeTruthy()
+    const status = host?.shadowRoot?.querySelector('.status') as HTMLElement
+    expect(getComputedStyle(status).display).not.toBe('none')
+    expect(root.classList.contains('has-mockup')).toBe(true)
+    const iframe = host?.shadowRoot?.querySelector('iframe') as HTMLIFrameElement
+    expect(Number(iframe.getAttribute('height'))).toBe(874)
     mountSimulatorOverlay(config)
     expect(document.getElementById(SIMULATOR_OVERLAY_ID)).toBeNull()
+  })
+
+  it('keeps the live iframe at the device viewport and scales the frame to the stage', () => {
+    const widthDesc = Object.getOwnPropertyDescriptor(window, 'innerWidth')
+    const heightDesc = Object.getOwnPropertyDescriptor(window, 'innerHeight')
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1920 })
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 1080 })
+    const config = overlayFixture()
+    try {
+      expect(mountSimulatorOverlay(config)).toBe(true)
+      const shadow = document.getElementById(SIMULATOR_OVERLAY_ID)?.shadowRoot
+      const inner = shadow?.querySelector('.phone-inner') as HTMLElement
+      const scale = Number(/scale\(([^)]+)\)/.exec(inner.style.transform)?.[1])
+      expect(scale).toBeGreaterThan(0.5)
+      expect(scale).toBeLessThan(2.5)
+      const wrap = shadow?.querySelector('.phone-wrap') as HTMLElement
+      const wrapH = wrap.style.height
+      const innerTransform = inner.style.transform
+      expect(Number.parseInt(wrapH, 10)).toBeGreaterThan(900)
+      const devicesBtn = shadow?.querySelector('[data-act="devices"]') as HTMLButtonElement
+      devicesBtn.click()
+      const panel = shadow?.querySelector('[data-panel="devices"]') as HTMLElement
+      expect(panel.classList.contains('open')).toBe(true)
+      expect(wrap.style.height).toBe(wrapH)
+      expect(inner.style.transform).toBe(innerTransform)
+      expect(getComputedStyle(panel).zIndex).toBe('12')
+      expect(Number.parseInt(panel.style.height, 10)).toBeGreaterThan(700)
+      expect(Number.parseInt(panel.style.width, 10)).toBeGreaterThan(300)
+    } finally {
+      if (widthDesc) Object.defineProperty(window, 'innerWidth', widthDesc)
+      if (heightDesc) Object.defineProperty(window, 'innerHeight', heightDesc)
+      mountSimulatorOverlay(config)
+    }
   })
 
   it('reloads only the device iframe from the rail control', () => {
@@ -359,13 +450,13 @@ describe('mobile simulator studio helpers', () => {
     )
   })
 
-  it('maps catalog phones onto MIT mockup frames and leaves Galaxy on the CSS chassis', () => {
+  it('maps catalog phones onto bundled photoreal frames', () => {
     const pro = mockupFor('iphone-16-pro')
     expect(pro?.file).toBe('iphone-16-pro.webp')
     expect(mockupFor('iphone-17-pro')?.file).toBe('iphone-16-pro.webp')
     expect(mockupFor('pixel')?.file).toBe('pixel-8.webp')
-    expect(mockupFor('galaxy')).toBeNull()
-    expect(mockupFor('iphone-se')).toBeNull()
+    expect(mockupFor('galaxy')?.file).toBeUndefined()
+    expect(mockupFor('iphone-se')?.file).toBeUndefined()
     const rotated = orientedMockupInsets(pro!, true)
     expect(rotated.left).toBe(pro!.bottom)
     expect(rotated.top).toBe(pro!.left)
