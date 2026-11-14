@@ -4,6 +4,7 @@ import {
   CHROME_STORE_LISTING_URL,
   EDGE_STORE_LISTING_URL,
   FEEDBACK_SUBJECT,
+  FIREFOX_STORE_LISTING_URL,
   SUPPORT_EMAIL,
   buildIssueUrl,
   buildMailtoUrl,
@@ -34,7 +35,7 @@ describe('support config', () => {
     expect(body).toContain('Extension version: 1.2.0')
   })
 
-  it('uses the Edge add-ons listing in Microsoft Edge and the Chrome listing otherwise', () => {
+  it('uses the matching store listing for Chrome, Edge, and Firefox', () => {
     const userAgent = navigator.userAgent
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
@@ -47,6 +48,12 @@ describe('support config', () => {
       value: `${navigator.userAgent} Edg/130.0.0.0`,
     })
     expect(storeListingUrl()).toBe(EDGE_STORE_LISTING_URL)
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value:
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0',
+    })
+    expect(storeListingUrl()).toBe(FIREFOX_STORE_LISTING_URL)
     Object.defineProperty(navigator, 'userAgent', { configurable: true, value: userAgent })
   })
 

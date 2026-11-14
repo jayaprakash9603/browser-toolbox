@@ -1,4 +1,4 @@
-import { isEdgeRuntime } from '@/platform/browser'
+import { isEdgeRuntime, isFirefoxRuntime } from '@/platform/browser'
 
 export const SUPPORT_EMAIL = 'contact@quickcalci.com'
 
@@ -9,11 +9,16 @@ export const CHROME_STORE_LISTING_URL =
 export const EDGE_STORE_LISTING_URL =
   'https://microsoftedge.microsoft.com/addons/detail/one-panel/plochclbdimjmjmfpaeofdinikpjpefp'
 
+/** Firefox Add-ons listing. The Firefox build chooses this at runtime. */
+export const FIREFOX_STORE_LISTING_URL = 'https://addons.mozilla.org/en-US/firefox/addon/one-panel/'
+
 /** Chrome Web Store listing, kept for callers that want the Chromium default. */
 export const STORE_LISTING_URL = CHROME_STORE_LISTING_URL
 
 export function storeListingUrl(): string {
-  return isEdgeRuntime() ? EDGE_STORE_LISTING_URL : CHROME_STORE_LISTING_URL
+  if (isFirefoxRuntime()) return FIREFOX_STORE_LISTING_URL
+  if (isEdgeRuntime()) return EDGE_STORE_LISTING_URL
+  return CHROME_STORE_LISTING_URL
 }
 
 export const ISSUE_TRACKER_URL = 'https://github.com/jayaprakash9603/browser-toolbox/issues/new'
