@@ -12,7 +12,7 @@ import {
   overlayIframeLayoutSize,
   overlayPreviewChrome,
 } from './overlayViewport'
-import { OVERLAY_MDI, overlayMdi, overlaySimFontUrl } from './overlayRail'
+import { OVERLAY_ICONS, overlayIcon, overlayKindIcon } from './overlayIcons'
 import type { SimulatorOverlayConfig, SimulatorOverlayUiSettings, SimulatorOverlayUiTheme } from './overlayTypes'
 
 /** Injected in the page only — bundled to public/inject/simulator-overlay.js. */
@@ -25,17 +25,16 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
 
   const escapeHtml = (value: string) =>
     value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char] ?? char)
-  const fontUrl = overlaySimFontUrl()
-  const railClose = overlayMdi(OVERLAY_MDI.close)
-  const railDevices = overlayMdi(OVERLAY_MDI.devices)
-  const railSettings = overlayMdi(OVERLAY_MDI.settings)
-  const railRotate = overlayMdi(OVERLAY_MDI.rotate)
-  const railReload = overlayMdi(OVERLAY_MDI.reload)
-  const railScreenshot = overlayMdi(OVERLAY_MDI.screenshot)
-  const railVideo = overlayMdi(OVERLAY_MDI.video)
-  const railCompare = overlayMdi(OVERLAY_MDI.compare)
-  const railLaunch = overlayMdi(OVERLAY_MDI.launch)
-  const railHelp = overlayMdi(OVERLAY_MDI.help)
+  const railClose = overlayIcon(OVERLAY_ICONS.close)
+  const railDevices = overlayIcon(OVERLAY_ICONS.devices)
+  const railSettings = overlayIcon(OVERLAY_ICONS.settings)
+  const railRotate = overlayIcon(OVERLAY_ICONS.rotate)
+  const railReload = overlayIcon(OVERLAY_ICONS.reload)
+  const railScreenshot = overlayIcon(OVERLAY_ICONS.screenshot)
+  const railVideo = overlayIcon(OVERLAY_ICONS.video)
+  const railCompare = overlayIcon(OVERLAY_ICONS.compare)
+  const railLaunch = overlayIcon(OVERLAY_ICONS.launch)
+  const railHelp = overlayIcon(OVERLAY_ICONS.help)
   const iconSignal =
     '<svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="7" width="2" height="3" rx="0.5"/><rect x="4" y="5" width="2" height="5" rx="0.5"/><rect x="8" y="3" width="2" height="7" rx="0.5"/><rect x="12" y="1" width="2" height="9" rx="0.5" opacity="0.45"/></svg>'
   const iconWifi =
@@ -54,22 +53,10 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>'
   const iconTabs =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="7" width="14" height="14" rx="2"/><path d="M3 17V5a2 2 0 0 1 2-2h12"/></svg>'
-  const iconPhone =
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>'
   const iconCamera = railScreenshot
   const iconVideo = railVideo
   const iconSettings = railSettings
-  const kindIcons: Record<string, string> = {
-    all: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>',
-    favorites: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.3 6.2 21l1.6-6.6L2 9.3l6.8-.5L12 2l3.2 6.8 6.8.5-5.8 5.1 1.6 6.6z"/></svg>',
-    recents: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
-    phone: iconPhone.replace('width="16" height="16"', ''),
-    tablet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M11 18h2"/></svg>',
-    laptop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="12" rx="1"/><path d="M2 19h20"/></svg>',
-    desktop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="14" rx="1"/><path d="M8 22h8M12 18v4"/></svg>',
-    watch: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 2h6M9 22h6"/></svg>',
-    special: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>',
-  }
+  const kindGlyph = (id: string) => overlayKindIcon(id)
   const iconShotDevice =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>'
   const iconShotTab =
@@ -118,13 +105,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
 
   const style = document.createElement('style')
   style.textContent = `
-    @font-face {
-      font-family: 'tbx-sim-icomoon';
-      src: url('${fontUrl}') format('truetype');
-      font-weight: normal;
-      font-style: normal;
-      font-display: block;
-    }
     :host {
       all: initial;
       display: block;
@@ -137,17 +117,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     * { box-sizing: border-box; }
     button { font: inherit; }
-    .mdi, [class*='mdi-'] {
-      font-family: 'tbx-sim-icomoon' !important;
-      speak: never;
-      font-style: normal;
-      font-weight: normal;
-      font-variant: normal;
-      text-transform: none;
-      line-height: 1;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
+    .rail-btn svg, .kind-tab svg, .popover-head svg { display: block; flex-shrink: 0; }
     .root {
       pointer-events: auto;
       position: fixed;
@@ -157,29 +127,48 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #eceff3;
+      background: #ffffff;
       color: #1e293b;
-      --tbx-rail-icon: #b6b6b6;
-      --tbx-rail-icon-hover: #539fff;
-      --tbx-accent: #539fff;
-      --tbx-accent-hover: #3a8ef0;
-      --tbx-accent-pressed: #2f7ed6;
-      --tbx-panel-bg: #fff;
-      --tbx-panel-border: #e8e8e8;
-      --tbx-panel-muted: #7a7a7a;
-      --tbx-row-hover: #f5f5f6;
-      --tbx-input-bg: #fafafa;
-      --tbx-input-border: #dbdbdb;
-      --tbx-hint: #7a7a7a;
-      --tbx-menu-bg: #fafafa;
-      --tbx-menu-border: #e0e0e0;
+      --tbx-rail-icon: #64748b;
+      --tbx-rail-icon-hover: #7c3aed;
+      --tbx-kind-icon: #334155;
+      --tbx-kind-plate: #f1f5f9;
+      --tbx-kind-plate-hover: #e2e8f0;
+      --tbx-accent: #7c3aed;
+      --tbx-accent-hover: #6d28d9;
+      --tbx-accent-pressed: #5b21b6;
+      --tbx-panel-bg: #ffffff;
+      --tbx-panel-border: #e2e8f0;
+      --tbx-panel-muted: #64748b;
+      --tbx-row-hover: #f8fafc;
+      --tbx-input-bg: #f8fafc;
+      --tbx-input-border: #cbd5e1;
+      --tbx-hint: #64748b;
+      --tbx-menu-bg: #ffffff;
+      --tbx-menu-border: #e2e8f0;
     }
     .root.theme-classic {
-      background: #eceff3;
+      background: #ffffff;
     }
+    .panel.device-picker,
+    .panel.device-picker .device-main,
+    .panel.device-picker .device-sidebar {
+      color: #0f172a;
+    }
+    .panel.device-picker .device-search-wrap input {
+      color: #0f172a;
+    }
+    .panel.device-picker .device-search-wrap input::placeholder {
+      color: #94a3b8;
+    }
+    .panel.device-picker .kind-tab { color: #334155; }
+    .panel.device-picker .kind-tab[aria-pressed="true"] { color: #fff; }
     .root.theme-dark {
       background: #0b0f14;
       color: #e2e8f0;
+      --tbx-kind-icon: #cbd5e1;
+      --tbx-kind-plate: #1e2733;
+      --tbx-kind-plate-hover: #283545;
       --tbx-panel-bg: #151b24;
       --tbx-panel-border: #2a3544;
       --tbx-panel-muted: #94a3b8;
@@ -191,6 +180,20 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       --tbx-menu-border: #3d4f63;
     }
     .root.theme-dark .panel { box-shadow: 0 16px 48px rgba(0,0,0,0.5); }
+    .root.theme-dark .panel.device-picker,
+    .root.theme-dark .panel.device-picker .device-main,
+    .root.theme-dark .panel.device-picker .device-sidebar {
+      color: #e2e8f0;
+    }
+    .root.theme-dark .panel.device-picker .device-panel-head h2,
+    .root.theme-dark .panel.device-picker .device-current-name,
+    .root.theme-dark .panel.device-picker .device-name {
+      color: #f1f5f9;
+    }
+    .root.theme-dark .panel.device-picker .device-search-wrap input {
+      color: #f1f5f9;
+    }
+    .root.theme-dark .panel.device-picker .kind-tab { color: #cbd5e1; }
     .stage {
       position: relative;
       z-index: 1;
@@ -374,7 +377,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       z-index: 9;
       max-height: min(92vh, 620px);
       overflow: visible;
-      width: 36px;
+      width: 42px;
     }
     .actions-primary {
       flex-shrink: 0;
@@ -409,7 +412,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .root.theme-dark {
       --tbx-rail-icon: #9aa0a6;
-      --tbx-rail-icon-hover: #539fff;
+      --tbx-rail-icon-hover: #a78bfa;
     }
     .rail-btn, .round {
       position: relative;
@@ -423,7 +426,6 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       text-decoration: none;
       flex-shrink: 0;
     }
-    .rail-btn .mdi, .round .mdi { font-size: 17px; line-height: 1; }
     .rail-btn:hover, .round:hover,
     .rail-btn:focus-visible, .round:focus-visible {
       color: var(--tbx-rail-icon-hover);
@@ -529,7 +531,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       margin-bottom: 2px;
     }
     .popover-head h2 { margin: 0; font-size: 15px; font-weight: 700; flex: 1; }
-    .popover-head svg, .popover-head .mdi { flex-shrink: 0; opacity: 0.95; color: var(--tbx-rail-icon); font-size: 18px; }
+    .popover-head svg { flex-shrink: 0; opacity: 0.95; color: var(--tbx-rail-icon); }
     .panel.rail-popover .setting-card {
       border: 1px solid var(--tbx-panel-border);
       border-radius: 12px;
@@ -673,7 +675,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     .panel.device-picker .kind-tab[aria-pressed="true"] {
       background: var(--tbx-accent);
       border-color: var(--tbx-accent);
-      box-shadow: 0 2px 10px rgba(83,159,255,0.35);
+      box-shadow: 0 2px 10px rgba(124,58,237,0.35);
     }
     .device-sidebar {
       flex-shrink: 0;
@@ -716,10 +718,34 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       background: var(--tbx-accent);
       border-color: var(--tbx-accent);
       color: #fff;
-      box-shadow: 0 2px 8px rgba(13,148,136,0.35);
+      box-shadow: 0 2px 8px rgba(124,58,237,0.35);
     }
-    .kind-tab svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .kind-tab .kind-icon-plate {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--tbx-kind-plate);
+      transition: background 0.12s ease;
+    }
+    .kind-tab:hover .kind-icon-plate { background: var(--tbx-kind-plate-hover); }
+    .kind-tab svg { color: var(--tbx-kind-icon); }
+    .kind-tab[aria-pressed="true"] svg { color: #fff; }
+    .kind-tab[aria-pressed="true"] .kind-icon-plate { background: transparent; }
     .kind-tab .kind-count { font-size: 8px; font-weight: 700; opacity: 0.85; tabular-nums; }
+    .device-thumb-img {
+      display: block;
+      width: 42px;
+      height: auto;
+      max-height: 56px;
+      object-fit: contain;
+      flex-shrink: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
     .device-main {
       flex: 1;
       min-width: 0;
@@ -1232,17 +1258,16 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
         ${railHelp}
         <h2>Help center</h2>
       </div>
-      <p class="capture-hint">Quick answers and support for the mobile simulator.</p>
-      <p class="help-section-title">Frequently asked questions</p>
+      <p class="capture-hint">One Panel Mobile Simulator — tips for this page.</p>
+      <p class="help-section-title">Tips</p>
       <ul class="help-list">
-        <li><a href="https://www.webmobilefirst.com/en/faq/" target="_blank" rel="noopener">All FAQs</a></li>
-        <li><a href="https://www.webmobilefirst.com/en/faq/#scroll" target="_blank" rel="noopener">Scroll inside the device</a></li>
-        <li><a href="https://www.webmobilefirst.com/en/faq/#media-queries" target="_blank" rel="noopener">Media queries &amp; responsive</a></li>
-        <li><a href="https://www.webmobilefirst.com/en/faq/#shortcuts" target="_blank" rel="noopener">Keyboard shortcuts</a></li>
+        <li>Scroll inside the device preview with your mouse wheel or trackpad.</li>
+        <li>Use <strong>Rotate</strong> to check landscape layouts and safe areas.</li>
+        <li>Sites that block embedding show a blank screen — use <strong>Open full simulator</strong> or live tab emulation in Studio.</li>
+        <li>Screenshots capture the device frame; tab capture includes the whole page behind the overlay.</li>
       </ul>
       <p class="help-section-title">Support</p>
       <ul class="help-list">
-        <li><a href="https://www.webmobilefirst.com/en/contact/" target="_blank" rel="noopener">Contact &amp; help center</a></li>
         <li><button type="button" class="help-link" data-act="report-bug">Report a bug</button></li>
         <li><a class="studio-link help-link" href="#">Open full responsive studio</a></li>
       </ul>
@@ -1315,7 +1340,15 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   tick()
   const clockId = window.setInterval(tick, 30_000)
 
-  type DeviceRow = { id: string; label: string; kind: string; manufacturer: string; width: number; height: number }
+  type DeviceRow = {
+    id: string
+    label: string
+    kind: string
+    manufacturer: string
+    width: number
+    height: number
+    thumbUrl?: string
+  }
   type DeviceList = { devices: DeviceRow[]; favorites: string[]; recents: string[]; current: string }
   let catalog: DeviceList = { devices: [], favorites: [], recents: [], current: config.deviceId }
   let kindFilter = 'phone'
@@ -1394,7 +1427,23 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const syncCurrentDevice = () => {
     currentDeviceName.textContent = state.live.label
     const fromCatalog = catalog.devices.find((d) => d.id === state.live.deviceId)
-    currentDeviceThumb.dataset.kind = fromCatalog?.kind ?? 'phone'
+    const thumbEl =
+      (shadow.querySelector('[data-current-device-thumb]') as HTMLElement | null) ?? currentDeviceThumb
+    if (fromCatalog?.thumbUrl && thumbEl) {
+      if (thumbEl.tagName === 'IMG') {
+        ;(thumbEl as HTMLImageElement).src = fromCatalog.thumbUrl
+      } else {
+        const img = document.createElement('img')
+        img.className = 'device-thumb-img'
+        img.dataset.currentDeviceThumb = ''
+        img.alt = ''
+        img.setAttribute('aria-hidden', 'true')
+        img.src = fromCatalog.thumbUrl
+        thumbEl.replaceWith(img)
+      }
+    } else if (thumbEl) {
+      thumbEl.dataset.kind = fromCatalog?.kind ?? 'phone'
+    }
   }
 
   const ask = <T,>(payload: Record<string, unknown>) =>
@@ -1477,7 +1526,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const devicesPanel = shadow.querySelector('[data-panel="devices"]') as HTMLElement
   const actionsScroll = shadow.querySelector('.actions-scroll') as HTMLElement
 
-  /** Vertically centered beside the rail; arrow still points at the triggering control (Mobile Simulator style). */
+  /** Vertically centered beside the rail; arrow still points at the triggering control. */
   const positionCenteredRailPopover = (
     panel: HTMLElement,
     btn: HTMLElement,
@@ -1647,8 +1696,11 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     button.className = 'device-row'
     button.dataset.device = device.id
     if (device.id === state.live.deviceId) button.setAttribute('aria-current', 'true')
+    const thumb = device.thumbUrl
+      ? `<img class="device-thumb-img" src="${escapeHtml(device.thumbUrl)}" alt="" aria-hidden="true" loading="lazy" />`
+      : `<span class="device-thumb" data-kind="${escapeHtml(device.kind)}" aria-hidden="true"></span>`
     button.innerHTML = `
-      <span class="device-thumb" data-kind="${escapeHtml(device.kind)}" aria-hidden="true"></span>
+      ${thumb}
       <span class="device-copy">
         <span class="device-name">${escapeHtml(device.label)}</span>
         <span class="device-meta">${device.width}×${device.height}</span>
@@ -1685,7 +1737,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
         button.setAttribute('aria-pressed', String(kindFilter === tab.id))
         button.setAttribute('aria-selected', String(kindFilter === tab.id))
         const count = countForKind(tab.id, fav, recent)
-        button.innerHTML = `${kindIcons[tab.id] ?? kindIcons.all}<span>${tab.label}</span><span class="kind-count">${count}</span>`
+        button.innerHTML = `<span class="kind-icon-plate">${kindGlyph(tab.id)}</span><span>${tab.label}</span><span class="kind-count">${count}</span>`
         return button
       }),
     )
@@ -1931,7 +1983,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       const supportUrl = chrome.runtime.getURL('options.html#/support')
       window.open(supportUrl, '_blank', 'noopener')
     } catch {
-      window.open('https://www.webmobilefirst.com/en/contact/', '_blank', 'noopener')
+      /* extension page unavailable */
     }
     setPanel('')
   })

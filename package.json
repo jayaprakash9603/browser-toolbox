@@ -14,6 +14,8 @@
     "react-devtools:vendor": "node scripts/react-devtools/vendor.mjs",
     "react-devtools:ensure": "node scripts/react-devtools/ensure-vendored.mjs",
     "build:world-map": "node scripts/build-world-map.mjs",
+    "simulator:frames": "node scripts/build-simulator-frames.mjs",
+    "simulator:vendor-frames": "python scripts/vendor-device-mockups.py",
     "sync:demos": "node scripts/sync-website-demos.mjs",
     "build": "node scripts/build.mjs",
     "build:chromium": "node scripts/build-target.mjs chromium",

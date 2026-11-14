@@ -50,7 +50,7 @@ import {
   studioParamsFromSearch,
 } from '@/tools/design/responsive-viewer/studioUrl'
 import { isSyncMessage } from '@/tools/design/responsive-viewer/sync'
-import { mockupFor, mockupOuterSize, mockupSrc, orientedMockupInsets } from '@/tools/design/responsive-viewer/mockups'
+import { mockupFor, mockupOuterSize, mockupSrc, mockupThumbUrl, orientedMockupInsets } from '@/tools/design/responsive-viewer/mockups'
 
 describe('responsive viewer model', () => {
   it('strips frame-blocking response headers in preview session rules', () => {
@@ -326,7 +326,7 @@ describe('mobile simulator studio helpers', () => {
     expect(host?.shadowRoot?.querySelector('[data-panel="settings"]')).toBeTruthy()
     expect(host?.shadowRoot?.querySelector('[data-set="mobile-ua"]')).toBeTruthy()
     const settingsBtn = host?.shadowRoot?.querySelector('[data-act="settings"]') as HTMLElement
-    expect(settingsBtn?.querySelector('.mdi')).toBeTruthy()
+    expect(settingsBtn?.querySelector('svg')).toBeTruthy()
     expect(root.classList.contains('theme-classic')).toBe(true)
     const inner = host?.shadowRoot?.querySelector('.phone-inner') as HTMLElement
     expect(inner.style.transform).toMatch(/scale\(/)
@@ -436,7 +436,7 @@ describe('mobile simulator studio helpers', () => {
         replace: true,
         deviceId: 'pixel',
         label: 'Pixel 8',
-        mockupUrl: mockupSrc(pixel!.file),
+        mockupUrl: mockupSrc(pixel!),
         mockupInsets: pixel ?? undefined,
         width: 412,
         height: 915,
@@ -452,11 +452,13 @@ describe('mobile simulator studio helpers', () => {
 
   it('maps catalog phones onto bundled photoreal frames', () => {
     const pro = mockupFor('iphone-16-pro')
+    expect(pro?.source).toBe('mit')
     expect(pro?.file).toBe('iphone-16-pro.webp')
     expect(mockupFor('iphone-17-pro')?.file).toBe('iphone-16-pro.webp')
     expect(mockupFor('pixel')?.file).toBe('pixel-8.webp')
     expect(mockupFor('galaxy')?.file).toBeUndefined()
     expect(mockupFor('iphone-se')?.file).toBeUndefined()
+    expect(mockupThumbUrl('iphone-16-pro')).toContain('simulator/frames/iphone-16-pro.webp')
     const rotated = orientedMockupInsets(pro!, true)
     expect(rotated.left).toBe(pro!.bottom)
     expect(rotated.top).toBe(pro!.left)
@@ -497,7 +499,7 @@ describe('mobile simulator studio helpers', () => {
       return Boolean(run.func && run.args && typeof run.args[0] === 'string')
     })?.[0] as { args?: [string, SimulatorOverlayConfig] }
     expect(mountCall?.args?.[1].deviceId).toBe('iphone-16-pro')
-    expect(mountCall?.args?.[1].mockupUrl).toContain('iphone-16-pro.webp')
+    expect(mountCall?.args?.[1].mockupUrl).toContain('simulator/frames/iphone-16-pro.webp')
   })
 
   it('falls back to a studio tab on restricted pages', async () => {
@@ -643,7 +645,7 @@ function overlayFixture(): SimulatorOverlayConfig {
     },
     hostname: 'example.com',
     studioUrl: 'index.html#/tools/design/responsive-viewer?studio=1',
-    mockupUrl: mockupSrc('iphone-16-pro.webp'),
+    mockupUrl: mockupSrc(mockupFor('iphone-16-pro')!),
     mockupInsets: mockupFor('iphone-16-pro') ?? undefined,
   }
 }

@@ -28,6 +28,7 @@ scripts/protection/.cache
 scripts/react-devtools/.cache
 scripts/react-devtools/build-log.txt
 
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -10,7 +10,7 @@ import {
   rememberDevice,
   STORAGE_KEY,
 } from '@/tools/design/responsive-viewer/devices'
-import { mockupFor, mockupSrc } from '@/tools/design/responsive-viewer/mockups'
+import { mockupFor, mockupSrc, mockupThumbUrl } from '@/tools/design/responsive-viewer/mockups'
 import { simulatorStudioUrl } from '@/tools/design/responsive-viewer/studioUrl'
 
 import { setOverlayTabFraming } from '../responsiveViewerFraming'
@@ -72,7 +72,7 @@ async function overlayConfigFor(
     ui: overlayUiFromSettings(settings),
     hostname,
     studioUrl: simulatorStudioUrl({ url, device: device.id }),
-    mockupUrl: mockup ? mockupSrc(mockup.file) : undefined,
+    mockupUrl: mockup ? mockupSrc(mockup) : undefined,
     mockupInsets: mockup
       ? { left: mockup.left, top: mockup.top, right: mockup.right, bottom: mockup.bottom }
       : undefined,
@@ -216,6 +216,7 @@ async function listOverlayDevices() {
       manufacturer: device.manufacturer ?? 'Other',
       width: device.width,
       height: device.height,
+      thumbUrl: mockupThumbUrl(device.id),
     })),
     favorites: settings.favorites,
     recents: settings.recents,

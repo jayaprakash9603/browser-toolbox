@@ -1,5 +1,7 @@
 /** Photoreal bezels from open-device-frame (MIT). Insets are fractions of the image. */
 
+import { CATALOG_MOCKUPS } from './catalog-mockups.generated'
+
 export interface MockupInsets {
   left: number
   top: number
@@ -7,11 +9,14 @@ export interface MockupInsets {
   bottom: number
 }
 
+export type MockupSource = 'mit'
+
 export interface DeviceMockup extends MockupInsets {
   file: string
+  source: MockupSource
 }
 
-const FRAMES: Record<string, MockupInsets> = {
+const MIT_FRAMES: Record<string, MockupInsets> = {
   'iphone-14.webp': { left: 0.07362, top: 0.030534, right: 0.079755, bottom: 0.041221 },
   'iphone-15.webp': { left: 0.072727, top: 0.029895, right: 0.078788, bottom: 0.037369 },
   'iphone-15-plus.webp': { left: 0.066116, top: 0.027027, right: 0.085399, bottom: 0.048649 },
@@ -30,7 +35,7 @@ const FRAMES: Record<string, MockupInsets> = {
 }
 
 /** Catalog id → closest published MIT frame. Galaxy S / SE / tablets keep the CSS chassis. */
-const DEVICE_FILE: Record<string, keyof typeof FRAMES> = {
+export const DEVICE_FILE: Record<string, keyof typeof MIT_FRAMES> = {
   'iphone-16-pro': 'iphone-16-pro.webp',
   'iphone-16-pro-max': 'iphone-16-pro-max.webp',
   'iphone-16': 'iphone-16.webp',
@@ -57,12 +62,40 @@ const DEVICE_FILE: Record<string, keyof typeof FRAMES> = {
 
 export const MOCKUP_PUBLIC_DIR = 'simulator/frames'
 
+function publicAssetUrl(file: string): string {
+  const path = `${MOCKUP_PUBLIC_DIR}/${file}`
+  try {
+    if (typeof chrome !== 'undefined' && chrome.runtime?.getURL) return chrome.runtime.getURL(path)
+  } catch {
+    /* tests / non-extension */
+  }
+  return `/${path}`
+}
+
 export function mockupFor(deviceId: string): DeviceMockup | null {
+  const row = CATALOG_MOCKUPS[deviceId]
+  if (row) {
+    const [file, left, top, right, bottom] = row
+    return { file, left, top, right, bottom, source: 'mit' }
+  }
   const file = DEVICE_FILE[deviceId]
   if (!file) return null
-  const insets = FRAMES[file]
+  const insets = MIT_FRAMES[file]
   if (!insets) return null
-  return { file, ...insets }
+  return { file, ...insets, source: 'mit' }
+}
+
+export function mockupSrc(mockup: DeviceMockup): string
+export function mockupSrc(file: string): string
+export function mockupSrc(mockupOrFile: DeviceMockup | string): string {
+  const file = typeof mockupOrFile === 'string' ? mockupOrFile : mockupOrFile.file
+  return publicAssetUrl(file)
+}
+
+/** Small preview in the device picker (same MIT frame, scaled in CSS). */
+export function mockupThumbUrl(deviceId: string): string | undefined {
+  const mockup = mockupFor(deviceId)
+  return mockup ? publicAssetUrl(mockup.file) : undefined
 }
 
 /** 90° clockwise: portrait image laid on a landscape outer box. */
@@ -78,14 +111,4 @@ export function mockupOuterSize(screen: { width: number; height: number }, inset
     width: screen.width / holeW,
     height: screen.height / holeH,
   }
-}
-
-export function mockupSrc(file: string): string {
-  const path = `${MOCKUP_PUBLIC_DIR}/${file}`
-  try {
-    if (typeof chrome !== 'undefined' && chrome.runtime?.getURL) return chrome.runtime.getURL(path)
-  } catch {
-    /* tests / non-extension */
-  }
-  return `/${path}`
 }

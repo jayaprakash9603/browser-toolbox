@@ -449,6 +449,10 @@ export function DeviceFrame({
   )
 }
 
+/** Shared frame + screen hole used by Studio, side panel, and overlay config. */
+export const DeviceFrameRenderer = DeviceFrame
+export type DeviceFrameRendererProps = DeviceFrameProps
+
 function MockupBezel({
   src,
   insets,

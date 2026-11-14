@@ -1,3 +1,0 @@
-icomoon.ttf is vendored from the Mobile Simulator Chrome extension (webmobilefirst.com)
-for visual parity with its action rail icons. Source on this machine:
-Google Chrome User Data → Extensions → ckejmhbmlajgoklhgbapkiccekfoccmk → fonts/icomoon.ttf

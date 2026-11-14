@@ -56,10 +56,12 @@ async function main() {
     run('world map', 'node scripts/build-world-map.mjs'),
     run('page scripts', 'node scripts/build-adblock-scripts.mjs'),
     run('script studio runtime', 'node scripts/build-script-studio-runtime.mjs'),
+    run('simulator catalog frames', 'node scripts/build-simulator-frames.mjs'),
     run('simulator overlay inject', 'node scripts/build-simulator-overlay.mjs'),
   ])
   await run('bundle', 'vite build')
   await typecheck
+  await run('simulator fingerprints', 'node scripts/check-simulator-fingerprints.mjs')
   await run('startup budget', 'node scripts/check-startup-budget.mjs')
   console.log(`[build] finished in ${((performance.now() - started) / 1000).toFixed(1)}s`)
 }
