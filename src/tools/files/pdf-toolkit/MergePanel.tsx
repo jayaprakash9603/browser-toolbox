@@ -1,3 +1,4 @@
+import './i18n'
 import { useEffect, useId, useRef, useState, type DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
@@ -102,6 +103,7 @@ export function MergePanel() {
   const [items, setItems] = useState<MergeItem[]>([])
   const [name, setName] = useState('')
   const outputNameId = useId()
+  const outputNameHintId = useId()
   const [dragId, setDragId] = useState<string | null>(null)
   const [overId, setOverId] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
@@ -410,22 +412,33 @@ export function MergePanel() {
       </PanelSection>
 
       <PanelSection title={t('pdf.merge.output')} icon={<FilePlus2Icon />}>
-        <div className="flex max-w-sm flex-col gap-1">
-          <label htmlFor={outputNameId} className="text-[11px] font-medium text-muted-foreground">
-            {t('pdf.merge.outputName')}
-          </label>
-          <p className="text-[10px] leading-snug text-muted-foreground">{t('pdf.merge.outputNameHint')}</p>
-          <div className="flex items-center gap-1">
-            <Input
+        <div className="flex w-full max-w-md flex-col gap-2.5 pt-0.5">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor={outputNameId} className="text-[11px] font-medium text-muted-foreground">
+              {t('pdf.merge.outputName')}
+            </label>
+            <p id={outputNameHintId} className="text-[11px] leading-relaxed text-muted-foreground">
+              {t('pdf.merge.outputNameHint')}
+            </p>
+          </div>
+          <div
+            className={cn(
+              'flex w-full overflow-hidden rounded-md border border-input bg-background shadow-xs transition-[border-color,box-shadow] duration-150',
+              'focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/30',
+            )}
+          >
+            <input
               id={outputNameId}
+              type="text"
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder={t('pdf.merge.outputNamePlaceholder')}
               autoComplete="off"
               spellCheck={false}
-              className="h-8"
+              aria-describedby={outputNameHintId}
+              className="min-w-0 flex-1 border-0 bg-transparent px-3 py-2.5 text-[13px] outline-none placeholder:text-muted-foreground/80"
             />
-            <span className="shrink-0 text-xs text-muted-foreground" aria-hidden>
+            <span className="flex items-center border-l border-input bg-muted/30 px-3 py-2.5 text-xs font-medium tabular-nums text-muted-foreground">
               {t('pdf.merge.outputNameSuffix')}
             </span>
           </div>

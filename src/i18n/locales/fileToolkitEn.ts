@@ -5,6 +5,7 @@ export const fileToolkitStrings = {
   'fileui.formatsLabel': 'Supported formats',
   'fileui.previewTitle': 'Preview of {{name}}',
   'fileui.fileName': 'File name',
+  'fileui.fileNameHint': 'Edit the name before download. Clear the field to keep the original file name.',
   'fileui.navigate': 'Switch between files',
   'fileui.previous': 'Previous file',
   'fileui.next': 'Next file',

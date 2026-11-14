@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
@@ -69,6 +69,7 @@ export function PreviewDialog({ artifacts, index, onIndexChange, zipName = 'file
   const [zipping, setZipping] = useState(false)
   const [direction, setDirection] = useState(1)
   const savedTimer = useRef<number | undefined>(undefined)
+  const renameHintId = useId()
 
   useEffect(() => () => window.clearTimeout(savedTimer.current), [])
 
@@ -163,16 +164,24 @@ export function PreviewDialog({ artifacts, index, onIndexChange, zipName = 'file
                   </motion.div>
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <DialogPrimitive.Title className="sr-only">{t('fileui.previewTitle', { name })}</DialogPrimitive.Title>
-                    <label className="group flex min-w-0 items-center rounded-md border border-transparent px-1 transition-colors focus-within:border-ring hover:border-input">
+                    <label className="group flex min-w-0 items-stretch overflow-hidden rounded-md border border-input bg-background shadow-xs transition-[border-color,box-shadow] duration-150 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/30 hover:border-foreground/20">
                       <input
                         aria-label={t('fileui.fileName')}
+                        aria-describedby={renameHintId}
                         value={stem}
                         onChange={(event) => rename(event.target.value)}
                         spellCheck={false}
-                        className="min-w-0 flex-1 bg-transparent py-0.5 text-sm font-semibold outline-none"
+                        className="min-w-0 flex-1 bg-transparent px-2.5 py-2 text-sm font-semibold outline-none"
                       />
-                      {ext && <span className="shrink-0 text-sm text-muted-foreground">.{ext}</span>}
+                      {ext && (
+                        <span className="flex items-center border-l border-input bg-muted/30 px-2.5 py-2 text-sm font-medium tabular-nums text-muted-foreground">
+                          .{ext}
+                        </span>
+                      )}
                     </label>
+                    <p id={renameHintId} className="sr-only">
+                      {t('fileui.fileNameHint')}
+                    </p>
                     <div className="flex flex-wrap items-center gap-1.5 px-1 text-[11px] text-muted-foreground">
                       <span className="rounded bg-primary/10 px-1.5 py-px font-semibold tracking-wide text-primary">{artifact.format}</span>
                       {artifact.source ? (
