@@ -1,6 +1,6 @@
 /** Stage math for the on-page simulator overlay. Injected with overlayMount. */
 
-export const SIM_RAIL_PX = 76
+export const SIM_RAIL_PX = 58
 export const SIM_RAIL_GAP = 16
 export const SIM_STAGE_PAD_Y = 24
 export const SIM_STAGE_PAD_LEFT = 24

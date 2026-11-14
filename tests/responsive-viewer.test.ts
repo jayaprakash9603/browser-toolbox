@@ -300,7 +300,17 @@ describe('mobile simulator studio helpers', () => {
       el.getAttribute('data-act'),
     )
     expect(acts).toEqual(
-      expect.arrayContaining(['devices', 'rotate', 'reload', 'screenshot', 'record', 'compare', 'settings', 'expand']),
+      expect.arrayContaining([
+        'devices',
+        'rotate',
+        'reload',
+        'screenshot',
+        'record',
+        'compare',
+        'settings',
+        'help',
+        'expand',
+      ]),
     )
     expect(acts.indexOf('settings')).toBeGreaterThan(acts.indexOf('devices'))
     expect(acts.indexOf('settings')).toBeLessThan(acts.indexOf('rotate'))
@@ -315,9 +325,8 @@ describe('mobile simulator studio helpers', () => {
     expect(host?.shadowRoot?.querySelector('[data-panel="shot-menu"] .menu-option')).toBeTruthy()
     expect(host?.shadowRoot?.querySelector('[data-panel="settings"]')).toBeTruthy()
     expect(host?.shadowRoot?.querySelector('[data-set="mobile-ua"]')).toBeTruthy()
-    const settingsIcon = host?.shadowRoot?.querySelector('[data-act="settings"] svg path')?.getAttribute('d') ?? ''
-    expect(settingsIcon).toContain('12.22 2')
-    expect(settingsIcon).not.toContain('M12 1v2')
+    const settingsBtn = host?.shadowRoot?.querySelector('[data-act="settings"]') as HTMLElement
+    expect(settingsBtn?.querySelector('.mdi')).toBeTruthy()
     expect(root.classList.contains('theme-classic')).toBe(true)
     const inner = host?.shadowRoot?.querySelector('.phone-inner') as HTMLElement
     expect(inner.style.transform).toMatch(/scale\(/)

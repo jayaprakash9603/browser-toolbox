@@ -12,6 +12,7 @@ import {
   overlayIframeLayoutSize,
   overlayPreviewChrome,
 } from './overlayViewport'
+import { OVERLAY_MDI, overlayMdi, overlaySimFontUrl } from './overlayRail'
 import type { SimulatorOverlayConfig, SimulatorOverlayUiSettings, SimulatorOverlayUiTheme } from './overlayTypes'
 
 /** Injected in the page only — bundled to public/inject/simulator-overlay.js. */
@@ -24,20 +25,25 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
 
   const escapeHtml = (value: string) =>
     value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char] ?? char)
-  const iconClose =
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>'
-  const iconRotate =
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>'
-  const iconRefresh =
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3.2-6.9"/><path d="M21 3v6h-6"/></svg>'
-  const iconExpand =
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>'
+  const fontUrl = overlaySimFontUrl()
+  const railClose = overlayMdi(OVERLAY_MDI.close)
+  const railDevices = overlayMdi(OVERLAY_MDI.devices)
+  const railSettings = overlayMdi(OVERLAY_MDI.settings)
+  const railRotate = overlayMdi(OVERLAY_MDI.rotate)
+  const railReload = overlayMdi(OVERLAY_MDI.reload)
+  const railScreenshot = overlayMdi(OVERLAY_MDI.screenshot)
+  const railVideo = overlayMdi(OVERLAY_MDI.video)
+  const railCompare = overlayMdi(OVERLAY_MDI.compare)
+  const railLaunch = overlayMdi(OVERLAY_MDI.launch)
+  const railHelp = overlayMdi(OVERLAY_MDI.help)
   const iconSignal =
     '<svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="7" width="2" height="3" rx="0.5"/><rect x="4" y="5" width="2" height="5" rx="0.5"/><rect x="8" y="3" width="2" height="7" rx="0.5"/><rect x="12" y="1" width="2" height="9" rx="0.5" opacity="0.45"/></svg>'
   const iconWifi =
     '<svg width="13" height="10" viewBox="0 0 13 10" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.4 4.2a7 7 0 0 1 10.2 0"/><path d="M3.2 6a4.4 4.4 0 0 1 6.6 0"/><circle cx="6.5" cy="8.4" r="0.9" fill="currentColor" stroke="none"/></svg>'
   const iconBattery =
     '<svg width="22" height="10" viewBox="0 0 22 10" fill="none"><rect x="0.6" y="1.2" width="18" height="7.6" rx="1.6" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="2.6" width="13" height="4.8" rx="0.6" fill="currentColor"/><rect x="19.2" y="3.2" width="1.8" height="3.6" rx="0.6" fill="currentColor"/></svg>'
+  const iconRefresh =
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3.2-6.9"/><path d="M21 3v6h-6"/></svg>'
   const iconBack =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>'
   const iconForward =
@@ -50,12 +56,9 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="7" width="14" height="14" rx="2"/><path d="M3 17V5a2 2 0 0 1 2-2h12"/></svg>'
   const iconPhone =
     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>'
-  const iconCamera =
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>'
-  const iconVideo =
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>'
-  const iconSettings =
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>'
+  const iconCamera = railScreenshot
+  const iconVideo = railVideo
+  const iconSettings = railSettings
   const kindIcons: Record<string, string> = {
     all: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>',
     favorites: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17.3 6.2 21l1.6-6.6L2 9.3l6.8-.5L12 2l3.2 6.8 6.8.5-5.8 5.1 1.6 6.6z"/></svg>',
@@ -106,7 +109,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     rotated: false,
     live: config,
     ui: config.ui,
-    panel: '' as '' | 'devices' | 'settings' | 'shot-menu' | 'record-menu' | 'capture-result' | 'compare-menu',
+    panel: '' as '' | 'devices' | 'settings' | 'help' | 'shot-menu' | 'record-menu' | 'capture-result' | 'compare-menu',
     lastCaptureUrl: '',
     lastCaptureName: '',
     previewReload: 0,
@@ -115,6 +118,13 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
 
   const style = document.createElement('style')
   style.textContent = `
+    @font-face {
+      font-family: 'tbx-sim-icomoon';
+      src: url('${fontUrl}') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: block;
+    }
     :host {
       all: initial;
       display: block;
@@ -127,6 +137,17 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     * { box-sizing: border-box; }
     button { font: inherit; }
+    .mdi, [class*='mdi-'] {
+      font-family: 'tbx-sim-icomoon' !important;
+      speak: never;
+      font-style: normal;
+      font-weight: normal;
+      font-variant: normal;
+      text-transform: none;
+      line-height: 1;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
     .root {
       pointer-events: auto;
       position: fixed;
@@ -136,20 +157,25 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #eceff3;
-      color: #1e293b;
-      --tbx-accent: #0d9488;
-      --tbx-accent-hover: #0f766e;
-      --tbx-accent-pressed: #115e59;
+      background: #ffffff;
+      color: #484848;
+      --tbx-rail-icon: #b6b6b6;
+      --tbx-rail-icon-hover: #539fff;
+      --tbx-accent: #539fff;
+      --tbx-accent-hover: #3a8ef0;
+      --tbx-accent-pressed: #2f7ed6;
       --tbx-panel-bg: #fff;
-      --tbx-panel-border: #dde3ea;
-      --tbx-panel-muted: #64748b;
-      --tbx-row-hover: #f1f5f9;
-      --tbx-input-bg: #f8fafc;
-      --tbx-input-border: #cbd5e1;
-      --tbx-hint: #64748b;
-      --tbx-menu-bg: #f8fafc;
-      --tbx-menu-border: #cbd5e1;
+      --tbx-panel-border: #e8e8e8;
+      --tbx-panel-muted: #7a7a7a;
+      --tbx-row-hover: #f5f5f6;
+      --tbx-input-bg: #fafafa;
+      --tbx-input-border: #dbdbdb;
+      --tbx-hint: #7a7a7a;
+      --tbx-menu-bg: #fafafa;
+      --tbx-menu-border: #e0e0e0;
+    }
+    .root.theme-classic {
+      background: #ffffff;
     }
     .root.theme-dark {
       background: #0b0f14;
@@ -327,38 +353,37 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     .safari-tools svg { width: 22px; height: 22px; }
     .actions {
       position: absolute;
-      right: 14px; top: 50%; transform: translateY(-50%);
+      right: 12px; top: 50%; transform: translateY(-50%);
       display: flex; flex-direction: column; align-items: center;
-      padding: 10px 8px;
-      border-radius: 24px;
-      background: rgba(255,255,255,0.9);
+      padding: 6px 4px;
+      border-radius: 4px;
+      background: #ffffff;
       border: 0;
-      box-shadow: 0 10px 32px rgba(15,23,42,0.14);
-      backdrop-filter: blur(14px);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
       z-index: 9;
       max-height: min(92vh, 620px);
-      overflow: hidden;
-      width: 60px;
+      overflow: visible;
+      width: 36px;
     }
     .actions-primary {
       flex-shrink: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 2px;
       width: 100%;
     }
     .actions-scroll {
       flex: 1;
       min-height: 0;
       width: 100%;
-      margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px solid rgba(15,23,42,0.1);
+      margin-top: 4px;
+      padding-top: 4px;
+      border-top: 1px solid #ececec;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 2px;
       overflow-x: hidden;
       overflow-y: auto;
       overscroll-behavior: contain;
@@ -368,22 +393,99 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .root.theme-dark .actions-scroll { border-top-color: #2a3544; }
     .root.theme-dark .actions {
-      background: rgba(21,27,36,0.92);
-      box-shadow: 0 10px 36px rgba(0,0,0,0.45);
+      background: rgba(21,27,36,0.96);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.45);
     }
-    .round {
+    .root.theme-dark {
+      --tbx-rail-icon: #9aa0a6;
+      --tbx-rail-icon-hover: #539fff;
+    }
+    .rail-btn, .round {
+      position: relative;
       display: flex; align-items: center; justify-content: center;
-      width: 44px; height: 44px; border-radius: 999px;
-      border: 0; background: var(--tbx-accent); color: #fff;
-      box-shadow: 0 2px 10px rgba(13,148,136,0.35);
+      width: 32px; height: 32px; min-width: 32px; min-height: 32px;
+      border-radius: 4px;
+      border: 0;
+      background: transparent;
+      color: var(--tbx-rail-icon);
+      cursor: pointer;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+    .rail-btn .mdi, .round .mdi { font-size: 17px; line-height: 1; }
+    .rail-btn:hover, .round:hover,
+    .rail-btn:focus-visible, .round:focus-visible {
+      color: var(--tbx-rail-icon-hover);
+      background: rgba(83,159,255,0.08);
+    }
+    .rail-btn:focus-visible, .round:focus-visible { outline: 2px solid rgba(83,159,255,0.45); outline-offset: 1px; }
+    .rail-btn[aria-pressed="true"], .round[aria-pressed="true"] {
+      color: var(--tbx-rail-icon-hover);
+      background: rgba(83,159,255,0.12);
+    }
+  .rail-tip {
+      position: absolute;
+      right: calc(100% + 10px);
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: var(--tbx-rail-icon-hover);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 1.25;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 20;
+    }
+    .rail-tip::after {
+      content: '';
+      position: absolute;
+      left: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 5px solid transparent;
+      border-left-color: var(--tbx-rail-icon-hover);
+    }
+    .rail-btn:hover .rail-tip, .rail-btn:focus-visible .rail-tip { opacity: 1; }
+    .help-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .help-list a, .help-list button.help-link {
+      display: block;
+      width: 100%;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: inherit;
+      text-align: left;
+      font-size: 13px;
+      line-height: 1.35;
+      padding: 9px 10px;
       cursor: pointer;
       text-decoration: none;
     }
-    .round:hover { background: var(--tbx-accent-hover); }
-    .round:focus-visible { outline: 2px solid #5eead4; outline-offset: 2px; }
-    .round[aria-pressed="true"] { background: var(--tbx-accent-pressed); box-shadow: inset 0 0 0 2px #99f6e4; }
-    .round[data-act="close"] { background: #64748b; box-shadow: 0 2px 8px rgba(71,85,105,0.35); }
-    .round[data-act="close"]:hover { background: #475569; }
+    .help-list a:hover, .help-list button.help-link:hover {
+      background: var(--tbx-row-hover);
+      color: var(--tbx-rail-icon-hover);
+    }
+    .help-section-title {
+      margin: 10px 6px 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--tbx-panel-muted);
+    }
+    .panel.help-center { gap: 4px; }
     .panel {
       display: none; flex-direction: column; gap: 10px;
       position: absolute; z-index: 8;
@@ -416,7 +518,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       margin-bottom: 2px;
     }
     .popover-head h2 { margin: 0; font-size: 15px; font-weight: 700; flex: 1; }
-    .popover-head svg { flex-shrink: 0; opacity: 0.95; color: var(--tbx-panel-muted); }
+    .popover-head svg, .popover-head .mdi { flex-shrink: 0; opacity: 0.95; color: var(--tbx-rail-icon); font-size: 18px; }
     .panel.rail-popover .setting-card {
       border: 1px solid var(--tbx-panel-border);
       border-radius: 12px;
@@ -558,9 +660,9 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .device-search-wrap input:focus { outline: none; }
     .panel.device-picker .kind-tab[aria-pressed="true"] {
-      background: #2563eb;
-      border-color: #2563eb;
-      box-shadow: 0 2px 10px rgba(37,99,235,0.35);
+      background: var(--tbx-accent);
+      border-color: var(--tbx-accent);
+      box-shadow: 0 2px 10px rgba(83,159,255,0.35);
     }
     .device-sidebar {
       flex-shrink: 0;
@@ -685,10 +787,10 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       border: 1px solid transparent;
     }
     .device-row[aria-current="true"] {
-      background: #eff6ff;
-      border-color: #2563eb;
-      color: #1e3a8a;
-      box-shadow: 0 0 0 1px #2563eb;
+      background: #f0f7ff;
+      border-color: var(--tbx-accent);
+      color: #1a4d8c;
+      box-shadow: 0 0 0 1px var(--tbx-accent);
     }
     .root.theme-dark .device-row[aria-current="true"] {
       background: #163056;
@@ -696,8 +798,9 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       color: #dbeafe;
       box-shadow: 0 0 0 1px #60a5fa;
     }
-    .panel[data-panel="settings"] {
-      right: 76px;
+    .panel[data-panel="settings"],
+    .panel[data-panel="help"] {
+      right: ${SIM_RAIL_PX}px;
       width: min(318px, calc(100vw - 120px));
       max-width: 318px;
       min-height: 0;
@@ -711,6 +814,19 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       position: absolute;
       right: -6px;
       top: var(--tbx-settings-arrow-y, 50%);
+      z-index: 1;
+      width: 10px;
+      height: 10px;
+      transform: translateY(-50%) rotate(45deg);
+      background: var(--tbx-panel-bg);
+      border-right: 1px solid var(--tbx-panel-border);
+      border-top: 1px solid var(--tbx-panel-border);
+    }
+    .panel[data-panel="help"]::after {
+      content: '';
+      position: absolute;
+      right: -6px;
+      top: var(--tbx-help-arrow-y, 50%);
       z-index: 1;
       width: 10px;
       height: 10px;
@@ -1107,19 +1223,40 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
         </div>
       </div>
     </div>
+    <div class="panel rail-popover help-center" data-panel="help">
+      <div class="popover-head">
+        ${railHelp}
+        <h2>Help center</h2>
+      </div>
+      <p class="capture-hint">Quick answers and support for the mobile simulator.</p>
+      <p class="help-section-title">Frequently asked questions</p>
+      <ul class="help-list">
+        <li><a href="https://www.webmobilefirst.com/en/faq/" target="_blank" rel="noopener">All FAQs</a></li>
+        <li><a href="https://www.webmobilefirst.com/en/faq/#scroll" target="_blank" rel="noopener">Scroll inside the device</a></li>
+        <li><a href="https://www.webmobilefirst.com/en/faq/#media-queries" target="_blank" rel="noopener">Media queries &amp; responsive</a></li>
+        <li><a href="https://www.webmobilefirst.com/en/faq/#shortcuts" target="_blank" rel="noopener">Keyboard shortcuts</a></li>
+      </ul>
+      <p class="help-section-title">Support</p>
+      <ul class="help-list">
+        <li><a href="https://www.webmobilefirst.com/en/contact/" target="_blank" rel="noopener">Contact &amp; help center</a></li>
+        <li><button type="button" class="help-link" data-act="report-bug">Report a bug</button></li>
+        <li><a class="studio-link help-link" href="#">Open full responsive studio</a></li>
+      </ul>
+    </div>
     <div class="actions">
       <div class="actions-primary">
-        <button type="button" class="round" data-act="close" aria-label="Close simulator">${iconClose}</button>
-        <button type="button" class="round" data-act="devices" aria-label="Change device">${iconPhone}</button>
-        <button type="button" class="round" data-act="settings" aria-label="Settings">${iconSettings}</button>
+        <button type="button" class="rail-btn" data-act="close" aria-label="Close simulator"><span class="rail-tip">Close simulator</span>${railClose}</button>
+        <button type="button" class="rail-btn" data-act="devices" aria-label="Change device"><span class="rail-tip">Change device</span>${railDevices}</button>
+        <button type="button" class="rail-btn" data-act="settings" aria-label="Settings"><span class="rail-tip">Configuration</span>${railSettings}</button>
       </div>
       <div class="actions-scroll">
-        <button type="button" class="round" data-act="rotate" aria-label="Rotate">${iconRotate}</button>
-        <button type="button" class="round" data-act="reload" aria-label="Reload">${iconRefresh}</button>
-        <button type="button" class="round" data-act="screenshot" aria-label="Screenshot">${iconCamera}</button>
-        <button type="button" class="round" data-act="record" aria-label="Start recording">${iconVideo}</button>
-        <button type="button" class="round" data-act="compare" aria-label="Compare devices">${iconTabs}</button>
-        <button type="button" class="round" data-act="expand" aria-label="Open full simulator">${iconExpand}</button>
+        <button type="button" class="rail-btn" data-act="rotate" aria-label="Rotate"><span class="rail-tip">Change orientation</span>${railRotate}</button>
+        <button type="button" class="rail-btn" data-act="reload" aria-label="Reload"><span class="rail-tip">Reload page</span>${railReload}</button>
+        <button type="button" class="rail-btn" data-act="screenshot" aria-label="Screenshot"><span class="rail-tip">Take a screenshot</span>${railScreenshot}</button>
+        <button type="button" class="rail-btn" data-act="record" aria-label="Start recording"><span class="rail-tip">Record video</span>${railVideo}</button>
+        <button type="button" class="rail-btn" data-act="compare" aria-label="Compare devices"><span class="rail-tip">Compare devices</span>${railCompare}</button>
+        <button type="button" class="rail-btn" data-act="help" aria-label="Help center"><span class="rail-tip">Help center</span>${railHelp}</button>
+        <button type="button" class="rail-btn" data-act="expand" aria-label="Open full simulator"><span class="rail-tip">Open full simulator</span>${railLaunch}</button>
       </div>
     </div>
   `
@@ -1185,12 +1322,14 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   const screenshotBtn = shadow.querySelector('[data-act="screenshot"]') as HTMLButtonElement
   const settingsBtn = shadow.querySelector('[data-act="settings"]') as HTMLButtonElement
   const compareBtn = shadow.querySelector('[data-act="compare"]') as HTMLButtonElement
+  const helpBtn = shadow.querySelector('[data-act="help"]') as HTMLButtonElement
   const recordBtn = shadow.querySelector('[data-act="record"]') as HTMLButtonElement
   const shotPanel = shadow.querySelector('[data-panel="shot-menu"]') as HTMLElement
   const recordPanel = shadow.querySelector('[data-panel="record-menu"]') as HTMLElement
   const capturePanel = shadow.querySelector('[data-panel="capture-result"]') as HTMLElement
   const settingsPanel = shadow.querySelector('[data-panel="settings"]') as HTMLElement
   const comparePanel = shadow.querySelector('[data-panel="compare-menu"]') as HTMLElement
+  const helpPanel = shadow.querySelector('[data-panel="help"]') as HTMLElement
   const recordIdle = recordPanel.querySelector('[data-record-idle]') as HTMLElement
   const recordActive = recordPanel.querySelector('[data-record-active]') as HTMLElement
   const recordStatus = recordPanel.querySelector('[data-record-status]') as HTMLElement
@@ -1406,6 +1545,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     if (state.panel === 'record-menu') positionCenteredRailPopover(recordPanel, recordBtn, '--tbx-rail-arrow-y', capMax)
     if (state.panel === 'capture-result') positionCenteredRailPopover(capturePanel, screenshotBtn, '--tbx-rail-arrow-y', capMax)
     if (state.panel === 'compare-menu') positionCenteredRailPopover(comparePanel, compareBtn, '--tbx-rail-arrow-y', capMax)
+    if (state.panel === 'help') positionCenteredRailPopover(helpPanel, helpBtn, '--tbx-help-arrow-y', capMax)
   }
 
   const positionSettingsPanel = () => {
@@ -1618,6 +1758,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     deviceBtn.setAttribute('aria-pressed', String(state.panel === 'devices'))
     settingsBtn.setAttribute('aria-pressed', String(state.panel === 'settings'))
     compareBtn.setAttribute('aria-pressed', String(state.panel === 'compare-menu'))
+    helpBtn.setAttribute('aria-pressed', String(state.panel === 'help'))
     layout()
     if (state.panel === 'devices') {
       void loadDevices()
@@ -1630,6 +1771,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
         positionSettingsPanel()
         requestAnimationFrame(() => positionSettingsPanel())
       })
+    } else if (state.panel === 'help') {
+      requestAnimationFrame(() => positionCapturePanels())
     } else if (state.panel === 'record-menu') {
       startRecordSync()
       requestAnimationFrame(() => positionCapturePanels())
@@ -1780,6 +1923,16 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   })
   deviceBtn.addEventListener('click', () => setPanel('devices'))
   settingsBtn.addEventListener('click', () => setPanel('settings'))
+  helpBtn.addEventListener('click', () => setPanel('help'))
+  shadow.querySelector('[data-act="report-bug"]')?.addEventListener('click', () => {
+    try {
+      const supportUrl = chrome.runtime.getURL('options.html#/support')
+      window.open(supportUrl, '_blank', 'noopener')
+    } catch {
+      window.open('https://www.webmobilefirst.com/en/contact/', '_blank', 'noopener')
+    }
+    setPanel('')
+  })
   const settingsScroll = settingsPanel.querySelector('.setting-list') as HTMLElement
   bindOverlayWheelScroll(deviceList)
   bindOverlayWheelScroll(kindTabs)
