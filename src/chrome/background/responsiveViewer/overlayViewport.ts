@@ -1,13 +1,10 @@
 import type { NavBarStyle, StatusBarStyle } from '@/tools/design/responsive-viewer/devices'
 
-/** Safari URL bar + tab tools docked under the page preview (CSS px at 1x device scale). */
-export const OVERLAY_SAFARI_CHROME_PX = 88
-
 export interface OverlayPreviewChrome {
-  /** Decorative iOS/Android status row over the page (hidden on photoreal mockups). */
+  /** Decorative iOS/Android status row (hidden on photoreal mockups — bezel already has status/island). */
   decorStatus: boolean
-  /** Safari chrome reserves space below the page instead of covering it. */
-  safariChrome: boolean
+  /** Safari bar overlaid on the page at the bottom; does not shrink the layout viewport. */
+  showSafari: boolean
 }
 
 export function overlayPreviewChrome(opts: {
@@ -19,18 +16,16 @@ export function overlayPreviewChrome(opts: {
 }): OverlayPreviewChrome {
   const decorStatus =
     !opts.hasMockup && !opts.rotated && opts.showStatusBar && opts.statusBar !== 'none'
-  const safariChrome = !opts.rotated && opts.showSafari
-  return { decorStatus, safariChrome }
+  const showSafari = !opts.rotated && opts.showSafari
+  return { decorStatus, showSafari }
 }
 
-/** Iframe layout height: full device height minus Safari when it is docked. */
-export function overlayIframeLayoutSize(
-  screen: { width: number; height: number },
-  chrome: OverlayPreviewChrome,
-): { width: number; height: number } {
-  let height = screen.height
-  if (chrome.safariChrome) height = Math.max(240, height - OVERLAY_SAFARI_CHROME_PX)
-  return { width: screen.width, height }
+/** Full device layout viewport — content runs edge-to-edge under notch frame and Safari chrome. */
+export function overlayIframeLayoutSize(screen: { width: number; height: number }): {
+  width: number
+  height: number
+} {
+  return { width: screen.width, height: screen.height }
 }
 
 export function overlayHomeIndicatorVisible(

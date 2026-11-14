@@ -232,18 +232,14 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .screen {
       position: relative;
-      display: flex;
-      flex-direction: column;
       overflow: hidden;
       background: #fff;
       border-radius: 40px;
       box-shadow: inset 0 0 0 1px rgba(15,23,42,0.06);
     }
     .viewport {
-      position: relative;
-      flex: 1 1 auto;
-      min-height: 0;
-      width: 100%;
+      position: absolute;
+      inset: 0;
       overflow: hidden;
       background: #fff;
     }
@@ -293,7 +289,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       bottom: 7px; left: 50%; transform: translateX(-50%);
       width: 34%; max-width: 134px; height: 5px; border-radius: 999px; background: rgba(255,255,255,0.92);
     }
-    .screen.safari-chrome .home {
+    .screen.safari-visible .home {
       background: #3a3a3c;
     }
     .android-nav {
@@ -303,10 +299,11 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .safari {
       pointer-events: none;
-      position: relative;
-      flex-shrink: 0;
-      z-index: 3;
-      width: 100%;
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 5;
       padding: 6px 12px 18px;
       background: linear-gradient(180deg, rgba(247,247,248,0.92) 0%, #f4f4f5 40%, #f4f4f5 100%);
       color: #111827;
@@ -1467,11 +1464,11 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       statusBar: live.statusBar,
       showSafari: live.showSafari,
     })
-    const layoutSize = overlayIframeLayoutSize({ width, height }, chrome)
+    const layoutSize = overlayIframeLayoutSize({ width, height })
     const notchClass = live.notch === 'punch-hole' ? 'punch' : live.notch
     cutout.className = !mockup && live.notch !== 'none' ? `cutout ${notchClass}` : 'cutout'
-    safari.hidden = !chrome.safariChrome
-    screen.classList.toggle('safari-chrome', chrome.safariChrome)
+    safari.hidden = !chrome.showSafari
+    screen.classList.toggle('safari-visible', chrome.showSafari)
     home.hidden = !overlayHomeIndicatorVisible(state.ui.showNavBar, live.navBar, state.rotated)
     androidNav.hidden = !state.ui.showNavBar || live.navBar !== 'android' || state.rotated
     status.style.display = chrome.decorStatus ? '' : 'none'
