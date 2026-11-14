@@ -231,7 +231,9 @@ async function readSimulatorCaptureRect(tabId: number): Promise<CaptureRect | nu
     target: { tabId },
     func: () => {
       const host = document.getElementById('tbx-simulator-overlay')
-      const wrap = host?.shadowRoot?.querySelector('.phone-wrap')
+      const wrap =
+        host?.shadowRoot?.querySelector('.sim-pane.is-focus .phone-wrap') ??
+        host?.shadowRoot?.querySelector('.phone-wrap')
       if (!wrap) return null
       const rect = wrap.getBoundingClientRect()
       return {

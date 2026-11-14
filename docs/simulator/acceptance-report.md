@@ -5,7 +5,7 @@
 - Removed WebMobileFirst import pipeline, proprietary font, and MF frame metadata from the service worker bundle.
 - Overlay uses One Panel navy/purple styling and inline SVG rail/category icons.
 - MIT `open-device-frame` WebPs + CSS chassis remain the legal photoreal path; `catalog-mockups.generated.ts` maps catalog phones to frames.
-- Studio continues to host multi-device compare; overlay defers compare/expand to Studio.
+- Overlay compare splits this tab into two matching simulators with the same rail options; Studio still hosts the multi-device grid.
 
 ## Code replacement
 

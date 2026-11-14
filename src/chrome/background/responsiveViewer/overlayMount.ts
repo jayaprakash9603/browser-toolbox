@@ -97,6 +97,10 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     live: config,
     ui: config.ui,
     panel: '' as '' | 'devices' | 'settings' | 'help' | 'shot-menu' | 'record-menu' | 'capture-result' | 'compare-menu',
+    split: false,
+    focusPane: 0 as 0 | 1,
+    compare: null as SimulatorOverlayConfig | null,
+    rotatedCompare: false,
     lastCaptureUrl: '',
     lastCaptureName: '',
     previewReload: 0,
@@ -201,6 +205,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       flex-direction: row;
       align-items: center;
       justify-content: center;
+      gap: 20px;
       width: 100%;
       height: 100%;
       min-width: 0;
@@ -208,6 +213,42 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       padding: ${SIM_STAGE_PAD_Y}px 92px ${SIM_STAGE_PAD_Y}px 24px;
       background: inherit;
     }
+    .sim-pane {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-width: 0;
+      min-height: 0;
+      height: 100%;
+      flex: 1 1 0;
+      border-radius: 16px;
+      outline: none;
+      --tbx-fill: inherit;
+      --tbx-ring: inherit;
+      --tbx-button: inherit;
+    }
+    .root.is-split .sim-pane {
+      max-width: calc(50% - 10px);
+    }
+    .root.is-split .sim-pane.is-focus .phone-wrap {
+      outline: 2px solid color-mix(in srgb, var(--tbx-accent) 55%, transparent);
+      outline-offset: 10px;
+      border-radius: 28px;
+    }
+    .pane-caption {
+      display: none;
+      margin: 0;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--tbx-panel-muted);
+    }
+    .root.is-split .pane-caption { display: block; }
+    .sim-pane.is-focus .pane-caption { color: var(--tbx-accent); }
     .phone-wrap {
       position: relative;
       flex-shrink: 0;
@@ -228,7 +269,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       height: 100%;
       z-index: 6;
     }
-    .has-mockup.landscape .mockup-img {
+    .sim-pane.has-mockup.landscape .mockup-img {
       inset: auto;
       left: 50%;
       top: 50%;
@@ -243,7 +284,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       background: var(--tbx-fill);
       box-shadow: 0 1px 0 var(--tbx-ring);
     }
-    .has-mockup .chassis {
+    .sim-pane.has-mockup .chassis {
       position: absolute;
       inset: 0;
       padding: 0;
@@ -251,8 +292,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       background: transparent;
       box-shadow: none;
     }
-    .has-mockup .side { display: none; }
-    .has-mockup .screen {
+    .sim-pane.has-mockup .side { display: none; }
+    .sim-pane.has-mockup .screen {
       position: absolute;
       border-radius: 11%;
     }
@@ -340,7 +381,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       background: linear-gradient(180deg, rgba(247,247,248,0.92) 0%, #f4f4f5 40%, #f4f4f5 100%);
       color: #111827;
     }
-    .has-mockup .status {
+    .sim-pane.has-mockup .status {
       mix-blend-mode: normal;
       color: #fff;
       background: var(--tbx-accent);
@@ -349,10 +390,10 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       box-shadow: none;
       z-index: 7;
     }
-    .has-mockup .status[data-bar="ios"] { height: 11.5%; min-height: 38px; padding-top: 0; }
-    .has-mockup .status[data-bar="android"] { height: 9.5%; min-height: 32px; }
-    .has-mockup .status .status-icons svg { color: #fff; opacity: 0.92; }
-    .has-mockup .status .clock { color: #fff; font-weight: 600; }
+    .sim-pane.has-mockup .status[data-bar="ios"] { height: 11.5%; min-height: 38px; padding-top: 0; }
+    .sim-pane.has-mockup .status[data-bar="android"] { height: 9.5%; min-height: 32px; }
+    .sim-pane.has-mockup .status .status-icons svg { color: #fff; opacity: 0.92; }
+    .sim-pane.has-mockup .status .clock { color: #fff; font-weight: 600; }
     .url-pill {
       display: flex; align-items: center; gap: 8px;
       height: 36px; padding: 0 10px; border-radius: 12px; background: #fff;
@@ -786,55 +827,96 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .device-section:first-child { margin-top: 2px; }
     .device-thumb {
+      position: relative;
       flex-shrink: 0;
-      border: 2px solid #94a3b8;
-      border-radius: 6px;
-      background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.6);
+      border: 2px solid #0f172a;
+      border-radius: 9px;
+      background: #ffffff;
+      box-shadow: none;
+    }
+    .device-thumb::after {
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 50%;
+      width: 10px;
+      height: 3px;
+      border-radius: 999px;
+      background: #0f172a;
+      transform: translateX(-50%);
     }
     .root.theme-dark .device-thumb {
-      border-color: #475569;
-      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      border-color: #e2e8f0;
+      background: #0f172a;
     }
+    .root.theme-dark .device-thumb::after { background: #e2e8f0; }
     .device-thumb[data-kind="phone"] { width: 28px; height: 50px; border-radius: 9px; }
     .device-thumb[data-kind="tablet"] { width: 36px; height: 48px; border-radius: 7px; }
-    .device-thumb[data-kind="laptop"] { width: 42px; height: 28px; border-radius: 4px 4px 2px 2px; }
+    .device-thumb[data-kind="tablet"]::after { width: 8px; }
+    .device-thumb[data-kind="laptop"] {
+      width: 42px; height: 28px; border-radius: 4px 4px 2px 2px;
+    }
+    .device-thumb[data-kind="laptop"]::after { display: none; }
     .device-thumb[data-kind="desktop"] { width: 42px; height: 30px; border-radius: 4px; }
+    .device-thumb[data-kind="desktop"]::after { display: none; }
     .device-thumb[data-kind="watch"] { width: 26px; height: 32px; border-radius: 9px; }
+    .device-thumb[data-kind="watch"]::after { width: 8px; top: 5px; }
     .device-thumb[data-kind="special"] { width: 32px; height: 32px; border-radius: 7px; }
+    .device-thumb[data-kind="special"]::after { display: none; }
     .device-copy { min-width: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 2px; }
     .device-name {
       font-size: 11px;
       font-weight: 600;
       line-height: 1.25;
       text-align: center;
+      color: #94a3b8;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
-    .device-meta { font-size: 9px; color: var(--tbx-panel-muted); text-align: center; }
+    .root.theme-dark .device-name { color: #94a3b8; }
+    .device-meta { font-size: 9px; color: #cbd5e1; text-align: center; }
+    .root.theme-dark .device-meta { color: #64748b; }
     .device-row {
+      display: flex;
       flex-direction: column;
       justify-content: flex-start;
       align-items: center;
       gap: 8px;
+      width: 100%;
       min-height: 96px;
       padding: 10px 6px 8px;
-      border: 1px solid transparent;
+      border: 2px solid transparent;
+      border-radius: 14px;
+      background: transparent;
+      box-shadow: none;
+      text-align: center;
+      cursor: pointer;
+      color: inherit;
     }
+    .device-row:hover { background: #f1f5f9; }
     .device-row[aria-current="true"] {
-      background: #f0f7ff;
+      background: #f5f3ff;
       border-color: var(--tbx-accent);
-      color: #1a4d8c;
-      box-shadow: 0 0 0 1px var(--tbx-accent);
+      color: #0f172a;
+      box-shadow: none;
     }
+    .device-row[aria-current="true"]:hover { background: #ede9fe; }
+    .device-row[aria-current="true"] .device-name {
+      color: var(--tbx-accent);
+      font-weight: 700;
+    }
+    .device-row[aria-current="true"] .device-meta { color: #94a3b8; }
+    .root.theme-dark .device-row:hover { background: #1e293b; }
     .root.theme-dark .device-row[aria-current="true"] {
-      background: #163056;
-      border-color: #60a5fa;
-      color: #dbeafe;
-      box-shadow: 0 0 0 1px #60a5fa;
+      background: #2e1065;
+      border-color: #c4b5fd;
+      color: #f8fafc;
+      box-shadow: none;
     }
+    .root.theme-dark .device-row[aria-current="true"]:hover { background: #3b0764; }
+    .root.theme-dark .device-row[aria-current="true"] .device-name { color: #c4b5fd; }
     .panel[data-panel="settings"],
     .panel[data-panel="help"] {
       right: ${SIM_RAIL_PX}px;
@@ -987,14 +1069,12 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     .panel input:focus { outline: 2px solid #99f6e4; border-color: var(--tbx-accent); }
     .panel-list { overflow: auto; flex: 1; display: flex; flex-direction: column; gap: 2px; min-height: 0; }
-    .device-row, .setting-row {
+    .setting-row {
       display: flex; align-items: center;
       width: 100%; border: 0; border-radius: 10px;
       background: transparent; text-align: left; cursor: pointer; color: inherit;
     }
-    .device-row:hover, .setting-row:hover { background: var(--tbx-row-hover); }
-    .device-row[aria-current="true"]:hover { background: #dbeafe; }
-    .root.theme-dark .device-row[aria-current="true"]:hover { background: #1e3a5f; }
+    .setting-row:hover { background: var(--tbx-row-hover); }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .chip {
       border: 1px solid var(--tbx-input-border); background: var(--tbx-input-bg); border-radius: 999px;
@@ -1034,12 +1114,12 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       background: #f4f4f5; color: #52525b; font-size: 12px;
     }
     .blocked a { color: #4f46e5; }
-    .landscape .island { top: 50%; left: 12px; transform: translateY(-50%); width: 14px; height: 32%; }
-    .landscape .notch { top: 50%; left: 0; transform: translateY(-50%); width: 16px; height: 22%; border-radius: 0 16px 16px 0; }
-    .landscape .punch { top: 50%; left: 10px; transform: translateY(-50%); }
-    .landscape .home { bottom: auto; left: auto; right: 8px; top: 50%; transform: translateY(-50%); width: 5px; height: 22%; }
-    .landscape .safari { display: none; }
-    .landscape .status { padding: 0 16px; height: 28px; }
+    .sim-pane.landscape .island { top: 50%; left: 12px; transform: translateY(-50%); width: 14px; height: 32%; }
+    .sim-pane.landscape .notch { top: 50%; left: 0; transform: translateY(-50%); width: 16px; height: 22%; border-radius: 0 16px 16px 0; }
+    .sim-pane.landscape .punch { top: 50%; left: 10px; transform: translateY(-50%); }
+    .sim-pane.landscape .home { bottom: auto; left: auto; right: 8px; top: 50%; transform: translateY(-50%); width: 5px; height: 22%; }
+    .sim-pane.landscape .safari { display: none; }
+    .sim-pane.landscape .status { padding: 0 16px; height: 28px; }
   `
   shadow.append(style)
 
@@ -1054,60 +1134,67 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   root.classList.toggle('theme-dark', config.ui.theme === 'dark')
   root.classList.toggle('theme-classic', config.ui.theme !== 'dark')
 
-  root.innerHTML = `
-    <div class="stage">
-      <div class="phone-wrap">
-        <div class="phone-inner">
-        <img class="mockup-img" alt="" hidden />
-        <span class="side" style="top:16%;left:-3px;height:7%;border-radius:1px 0 0 1px;"></span>
-        <span class="side" style="top:26%;left:-3px;height:11%;border-radius:1px 0 0 1px;"></span>
-        <span class="side" style="top:39%;left:-3px;height:11%;border-radius:1px 0 0 1px;"></span>
-        <span class="side" style="top:22%;right:-3px;height:14%;border-radius:0 1px 1px 0;"></span>
-        <div class="chassis">
-          <div class="screen">
-            <div class="viewport">
-              <iframe title="${escapeHtml(config.label)}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals" referrerpolicy="no-referrer-when-downgrade"></iframe>
-              <div class="preview-loading" data-preview-loading aria-hidden="true">
-                <span class="preview-loading-spin" aria-hidden="true"></span>
-                <span>Loading…</span>
+  const deviceStageHtml = (pane: '0' | '1', caption: string, hidden: boolean) => `
+      <section class="sim-pane${pane === '0' ? ' is-focus' : ''}" data-pane="${pane}" ${hidden ? 'hidden' : ''}>
+        <p class="pane-caption">${caption}</p>
+        <div class="phone-wrap">
+          <div class="phone-inner">
+          <img class="mockup-img" alt="" hidden />
+          <span class="side" style="top:16%;left:-3px;height:7%;border-radius:1px 0 0 1px;"></span>
+          <span class="side" style="top:26%;left:-3px;height:11%;border-radius:1px 0 0 1px;"></span>
+          <span class="side" style="top:39%;left:-3px;height:11%;border-radius:1px 0 0 1px;"></span>
+          <span class="side" style="top:22%;right:-3px;height:14%;border-radius:0 1px 1px 0;"></span>
+          <div class="chassis">
+            <div class="screen">
+              <div class="viewport">
+                <iframe title="${escapeHtml(config.label)}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                <div class="preview-loading" data-preview-loading aria-hidden="true">
+                  <span class="preview-loading-spin" aria-hidden="true"></span>
+                  <span>Loading…</span>
+                </div>
+                <div class="status" aria-hidden="true">
+                  <span class="clock"></span>
+                  <span class="status-icons">${iconSignal}${iconWifi}${iconBattery}</span>
+                </div>
+                <div class="cutout"></div>
+                <div class="home" hidden></div>
+                <div class="android-nav" hidden>
+                  <span style="width:10px;height:10px;border:1px solid currentColor;border-radius:2px;"></span>
+                  <span style="width:10px;height:10px;border:1px solid currentColor;border-radius:999px;"></span>
+                  <span style="width:10px;height:2px;background:currentColor;border-radius:999px;"></span>
+                </div>
+                <div class="blocked">This site blocked the in-page preview.<br/><a class="studio-link" target="_blank" rel="noopener noreferrer">Open full simulator</a></div>
               </div>
-              <div class="status" aria-hidden="true">
-                <span class="clock"></span>
-                <span class="status-icons">${iconSignal}${iconWifi}${iconBattery}</span>
-              </div>
-              <div class="cutout"></div>
-              <div class="home" hidden></div>
-              <div class="android-nav" hidden>
-                <span style="width:10px;height:10px;border:1px solid currentColor;border-radius:2px;"></span>
-                <span style="width:10px;height:10px;border:1px solid currentColor;border-radius:999px;"></span>
-                <span style="width:10px;height:2px;background:currentColor;border-radius:999px;"></span>
-              </div>
-              <div class="blocked">This site blocked the in-page preview.<br/><a class="studio-link" target="_blank" rel="noopener noreferrer">Open full simulator</a></div>
-            </div>
-            <div class="safari" hidden>
-              <div class="url-pill">
-                <span aria-hidden="true">AA</span>
-                <span class="host"></span>
-                ${iconRefresh}
-              </div>
-              <div class="safari-tools" aria-hidden="true">
-                ${iconBack}${iconForward}${iconShare}${iconBook}${iconTabs}
+              <div class="safari" hidden>
+                <div class="url-pill">
+                  <span aria-hidden="true">AA</span>
+                  <span class="host"></span>
+                  ${iconRefresh}
+                </div>
+                <div class="safari-tools" aria-hidden="true">
+                  ${iconBack}${iconForward}${iconShare}${iconBook}${iconTabs}
+                </div>
               </div>
             </div>
           </div>
+          </div>
         </div>
-        </div>
-      </div>
+      </section>`
+
+  root.innerHTML = `
+    <div class="stage">
+      ${deviceStageHtml('0', 'Left', false)}
+      ${deviceStageHtml('1', 'Right', true)}
     </div>
     <div class="panel device-picker" data-panel="devices" role="dialog" aria-label="Choose device">
       <div class="device-sidebar" data-kind-tabs role="tablist" aria-label="Device categories"></div>
       <div class="device-main">
         <div class="device-panel-head">
-          <h2>Change device or compare</h2>
+          <h2 data-device-panel-title>Change device or compare</h2>
           <div class="device-current">
             <span class="device-current-thumb device-thumb" data-current-device-thumb data-kind="phone" aria-hidden="true"></span>
             <div>
-              <p class="device-current-label">Current device</p>
+              <p class="device-current-label" data-current-device-side>Current device</p>
               <p class="device-current-name" data-current-device-name>${escapeHtml(config.label)}</p>
             </div>
           </div>
@@ -1217,20 +1304,20 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
         ${iconTabs}
         <h2>Compare devices</h2>
       </div>
-      <p class="capture-hint">Open comparison tools in the full simulator studio.</p>
+      <p class="capture-hint">Split this tab into two matching simulators, or open the full studio grid.</p>
       <div class="menu-options">
-        <button type="button" class="menu-option" data-compare="grid">
+        <button type="button" class="menu-option" data-compare="split">
           <span class="menu-option-icon">${iconCompareGrid}</span>
           <span class="menu-option-copy">
-            <span class="menu-option-title">Compare devices</span>
-            <span class="menu-option-desc">Side-by-side device grid in studio</span>
+            <span class="menu-option-title">Split this tab</span>
+            <span class="menu-option-desc">Same UI left and right — pick a second device</span>
           </span>
         </button>
-        <button type="button" class="menu-option" data-compare="visible">
+        <button type="button" class="menu-option" data-compare="studio">
           <span class="menu-option-icon">${iconCompareGrid}</span>
           <span class="menu-option-copy">
-            <span class="menu-option-title">Visible devices in the tab</span>
-            <span class="menu-option-desc">Multi-device layout for this preview</span>
+            <span class="menu-option-title">Open studio comparison</span>
+            <span class="menu-option-desc">Multi-device grid in the full simulator</span>
           </span>
         </button>
       </div>
@@ -1263,6 +1350,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       <ul class="help-list">
         <li>Scroll inside the device preview with your mouse wheel or trackpad.</li>
         <li>Use <strong>Rotate</strong> to check landscape layouts and safe areas.</li>
+        <li>Use <strong>Compare devices</strong> to split this tab — same simulator left and right, then pick a second phone.</li>
         <li>Sites that block embedding show a blank screen — use <strong>Open full simulator</strong> or live tab emulation in Studio.</li>
         <li>Screenshots capture the device frame; tab capture includes the whole page behind the overlay.</li>
       </ul>
@@ -1291,51 +1379,87 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   `
   shadow.append(root)
 
-  const screen = shadow.querySelector('.screen') as HTMLElement
-  const iframe = shadow.querySelector('iframe') as HTMLIFrameElement
-  const clock = shadow.querySelector('.clock') as HTMLElement
-  const cutout = shadow.querySelector('.cutout') as HTMLElement
-  const safari = shadow.querySelector('.safari') as HTMLElement
-  const home = shadow.querySelector('.home') as HTMLElement
-  const androidNav = shadow.querySelector('.android-nav') as HTMLElement
-  const blocked = shadow.querySelector('.blocked') as HTMLElement
-  const previewLoading = shadow.querySelector('[data-preview-loading]') as HTMLElement
-  const hostLabel = shadow.querySelector('.host') as HTMLElement
-  const chassis = shadow.querySelector('.chassis') as HTMLElement
-  const status = shadow.querySelector('.status') as HTMLElement
-  const wrap = shadow.querySelector('.phone-wrap') as HTMLElement
-  const inner = shadow.querySelector('.phone-inner') as HTMLElement
-  const stage = shadow.querySelector('.stage') as HTMLElement
-  const mockupImg = shadow.querySelector('.mockup-img') as HTMLImageElement
+  type PaneEls = {
+    pane: HTMLElement
+    wrap: HTMLElement
+    inner: HTMLElement
+    chassis: HTMLElement
+    screen: HTMLElement
+    iframe: HTMLIFrameElement
+    mockupImg: HTMLImageElement
+    cutout: HTMLElement
+    safari: HTMLElement
+    home: HTMLElement
+    androidNav: HTMLElement
+    status: HTMLElement
+    hostLabel: HTMLElement
+    blocked: HTMLElement
+    previewLoading: HTMLElement
+  }
 
-  hostLabel.textContent = config.hostname
+  const paneEls = (index: 0 | 1): PaneEls => {
+    const pane = shadow.querySelector(`[data-pane="${index}"]`) as HTMLElement
+    return {
+      pane,
+      wrap: pane.querySelector('.phone-wrap') as HTMLElement,
+      inner: pane.querySelector('.phone-inner') as HTMLElement,
+      chassis: pane.querySelector('.chassis') as HTMLElement,
+      screen: pane.querySelector('.screen') as HTMLElement,
+      iframe: pane.querySelector('iframe') as HTMLIFrameElement,
+      mockupImg: pane.querySelector('.mockup-img') as HTMLImageElement,
+      cutout: pane.querySelector('.cutout') as HTMLElement,
+      safari: pane.querySelector('.safari') as HTMLElement,
+      home: pane.querySelector('.home') as HTMLElement,
+      androidNav: pane.querySelector('.android-nav') as HTMLElement,
+      status: pane.querySelector('.status') as HTMLElement,
+      hostLabel: pane.querySelector('.host') as HTMLElement,
+      blocked: pane.querySelector('.blocked') as HTMLElement,
+      previewLoading: pane.querySelector('[data-preview-loading]') as HTMLElement,
+    }
+  }
+
+  const left = paneEls(0)
+  const right = paneEls(1)
+  const iframe = left.iframe
+  const stage = shadow.querySelector('.stage') as HTMLElement
+
+  left.hostLabel.textContent = config.hostname
   let previewLoads = 0
-  const setPreviewLoading = (active: boolean) => {
-    previewLoading.dataset.active = active ? 'true' : 'false'
-    previewLoading.setAttribute('aria-hidden', active ? 'false' : 'true')
+  const setPreviewLoading = (els: PaneEls, active: boolean) => {
+    els.previewLoading.dataset.active = active ? 'true' : 'false'
+    els.previewLoading.setAttribute('aria-hidden', active ? 'false' : 'true')
   }
-  const beginPreviewLoad = () => {
+  const beginPreviewLoad = (els: PaneEls) => {
     previewLoads += 1
-    setPreviewLoading(true)
+    setPreviewLoading(els, true)
   }
-  const endPreviewLoad = () => {
+  const endPreviewLoad = (els: PaneEls) => {
     previewLoads = Math.max(0, previewLoads - 1)
-    if (previewLoads === 0) setPreviewLoading(false)
+    setPreviewLoading(els, previewLoads === 0 ? false : els.previewLoading.dataset.active === 'true')
+    if (previewLoads === 0) {
+      setPreviewLoading(left, false)
+      setPreviewLoading(right, false)
+    }
+  }
+  const setPanePreviewUrl = (els: PaneEls, url: string) => {
+    if (els.iframe.getAttribute('src') === url) return
+    beginPreviewLoad(els)
+    els.blocked.style.display = 'none'
+    els.iframe.src = url
   }
   const setPreviewUrl = (url: string) => {
-    if (iframe.getAttribute('src') === url) return
-    beginPreviewLoad()
-    blocked.style.display = 'none'
-    iframe.src = url
+    setPanePreviewUrl(left, url)
+    if (state.split) setPanePreviewUrl(right, url)
   }
-  beginPreviewLoad()
+  beginPreviewLoad(left)
   iframe.src = config.url
   for (const link of shadow.querySelectorAll<HTMLAnchorElement>('.studio-link')) {
     link.href = config.studioUrl
   }
 
   const tick = () => {
-    clock.textContent = new Date().toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+    const label = new Date().toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+    for (const el of shadow.querySelectorAll('.clock')) el.textContent = label
   }
   tick()
   const clockId = window.setInterval(tick, 30_000)
@@ -1423,27 +1547,37 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   }
   const currentDeviceName = shadow.querySelector('[data-current-device-name]') as HTMLElement
   const currentDeviceThumb = shadow.querySelector('[data-current-device-thumb]') as HTMLElement
+  const currentDeviceSide = shadow.querySelector('[data-current-device-side]') as HTMLElement
+  const devicePanelTitle = shadow.querySelector('[data-device-panel-title]') as HTMLElement
+
+  const focusedLive = () =>
+    state.split && state.focusPane === 1 && state.compare ? state.compare : state.live
+
+  const setFocusPane = (index: 0 | 1) => {
+    state.focusPane = index
+    left.pane.classList.toggle('is-focus', index === 0)
+    right.pane.classList.toggle('is-focus', index === 1)
+    syncCurrentDevice()
+    if (state.panel === 'devices') renderDevices()
+  }
+
+  let renderDevices: () => void = () => {}
 
   const syncCurrentDevice = () => {
-    currentDeviceName.textContent = state.live.label
-    const fromCatalog = catalog.devices.find((d) => d.id === state.live.deviceId)
-    const thumbEl =
-      (shadow.querySelector('[data-current-device-thumb]') as HTMLElement | null) ?? currentDeviceThumb
-    if (fromCatalog?.thumbUrl && thumbEl) {
-      if (thumbEl.tagName === 'IMG') {
-        ;(thumbEl as HTMLImageElement).src = fromCatalog.thumbUrl
-      } else {
-        const img = document.createElement('img')
-        img.className = 'device-thumb-img'
-        img.dataset.currentDeviceThumb = ''
-        img.alt = ''
-        img.setAttribute('aria-hidden', 'true')
-        img.src = fromCatalog.thumbUrl
-        thumbEl.replaceWith(img)
-      }
-    } else if (thumbEl) {
-      thumbEl.dataset.kind = fromCatalog?.kind ?? 'phone'
+    const live = focusedLive()
+    currentDeviceName.textContent = live.label
+    if (currentDeviceSide) {
+      currentDeviceSide.textContent = state.split
+        ? state.focusPane === 1
+          ? 'Right device'
+          : 'Left device'
+        : 'Current device'
     }
+    if (devicePanelTitle) {
+      devicePanelTitle.textContent = state.split ? 'Choose device for this side' : 'Change device or compare'
+    }
+    const fromCatalog = catalog.devices.find((d) => d.id === live.deviceId)
+    currentDeviceThumb.dataset.kind = fromCatalog?.kind ?? 'phone'
   }
 
   const ask = <T,>(payload: Record<string, unknown>) =>
@@ -1462,13 +1596,21 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     root.classList.toggle('theme-classic', theme !== 'dark')
   }
 
+  const paintPaneFinish = (els: PaneEls, next: SimulatorOverlayConfig) => {
+    els.pane.style.setProperty('--tbx-fill', next.finish.fill)
+    els.pane.style.setProperty('--tbx-ring', next.finish.ring)
+    els.pane.style.setProperty('--tbx-button', next.finish.button)
+    els.iframe.title = next.label
+    els.hostLabel.textContent = next.hostname
+  }
+
   const paintFinish = (next: SimulatorOverlayConfig) => {
     root.style.setProperty('--tbx-fill', next.finish.fill)
     root.style.setProperty('--tbx-ring', next.finish.ring)
     root.style.setProperty('--tbx-button', next.finish.button)
     root.setAttribute('aria-label', `${next.label} mobile simulator`)
-    iframe.title = next.label
-    hostLabel.textContent = next.hostname
+    paintPaneFinish(left, next)
+    if (state.compare) paintPaneFinish(right, state.compare)
     for (const link of shadow.querySelectorAll<HTMLAnchorElement>('.studio-link')) {
       link.href = next.studioUrl
     }
@@ -1607,65 +1749,88 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     )
   }
 
-  const layout = () => {
-    const live = state.live
-    const width = state.rotated ? live.height : live.width
-    const height = state.rotated ? live.width : live.height
-    const box = overlayStageBox({ width: window.innerWidth, height: window.innerHeight })
+  const layoutPane = (
+    els: PaneEls,
+    live: SimulatorOverlayConfig,
+    rotated: boolean,
+    box: ReturnType<typeof overlayStageBox>,
+  ) => {
+    const width = rotated ? live.height : live.width
+    const height = rotated ? live.width : live.height
     const mockup = live.mockupUrl && live.mockupInsets ? live.mockupInsets : null
     const insets: OverlayInsets | null = mockup
-      ? state.rotated
+      ? rotated
         ? { left: mockup.bottom, top: mockup.left, right: mockup.top, bottom: mockup.right }
         : mockup
       : null
     const outer = overlayOuterSize({ width, height }, insets)
     const scale = overlayFitScale(outer, box)
-    root.classList.toggle('has-mockup', Boolean(mockup))
-    chassis.classList.toggle('landscape', state.rotated)
-    root.classList.toggle('landscape', state.rotated)
-    stage.style.paddingRight = `${box.paddingRight}px`
-    inner.style.width = `${outer.width}px`
-    inner.style.height = `${outer.height}px`
-    inner.style.transform = `scale(${scale})`
-    wrap.style.width = `${Math.round(outer.width * scale)}px`
-    wrap.style.height = `${Math.round(outer.height * scale)}px`
+    els.pane.classList.toggle('has-mockup', Boolean(mockup))
+    els.chassis.classList.toggle('landscape', rotated)
+    els.pane.classList.toggle('landscape', rotated)
+    els.pane.style.setProperty('--tbx-fill', live.finish.fill)
+    els.pane.style.setProperty('--tbx-ring', live.finish.ring)
+    els.pane.style.setProperty('--tbx-button', live.finish.button)
+    els.inner.style.width = `${outer.width}px`
+    els.inner.style.height = `${outer.height}px`
+    els.inner.style.transform = `scale(${scale})`
+    els.wrap.style.width = `${Math.round(outer.width * scale)}px`
+    els.wrap.style.height = `${Math.round(outer.height * scale)}px`
     if (insets) {
       const holeW = 1 - insets.left - insets.right
       const holeH = 1 - insets.top - insets.bottom
-      screen.style.width = `${holeW * 100}%`
-      screen.style.height = `${holeH * 100}%`
-      screen.style.left = `${insets.left * 100}%`
-      screen.style.top = `${insets.top * 100}%`
-      mockupImg.hidden = false
-      mockupImg.src = live.mockupUrl ?? ''
-      root.style.setProperty('--tbx-mockup-w', `${outer.width}px`)
-      root.style.setProperty('--tbx-mockup-h', `${outer.height}px`)
+      els.screen.style.width = `${holeW * 100}%`
+      els.screen.style.height = `${holeH * 100}%`
+      els.screen.style.left = `${insets.left * 100}%`
+      els.screen.style.top = `${insets.top * 100}%`
+      els.mockupImg.hidden = false
+      els.mockupImg.src = live.mockupUrl ?? ''
+      els.pane.style.setProperty('--tbx-mockup-w', `${outer.width}px`)
+      els.pane.style.setProperty('--tbx-mockup-h', `${outer.height}px`)
     } else {
-      screen.style.left = ''
-      screen.style.top = ''
-      screen.style.width = `${width}px`
-      screen.style.height = `${height}px`
-      mockupImg.hidden = true
-      mockupImg.removeAttribute('src')
+      els.screen.style.left = ''
+      els.screen.style.top = ''
+      els.screen.style.width = `${width}px`
+      els.screen.style.height = `${height}px`
+      els.mockupImg.hidden = true
+      els.mockupImg.removeAttribute('src')
     }
     const chrome = overlayPreviewChrome({
       hasMockup: Boolean(mockup),
-      rotated: state.rotated,
+      rotated,
       showStatusBar: state.ui.showStatusBar,
       statusBar: live.statusBar,
       showSafari: live.showSafari,
     })
     const layoutSize = overlayIframeLayoutSize({ width, height })
     const notchClass = live.notch === 'punch-hole' ? 'punch' : live.notch
-    cutout.className = !mockup && live.notch !== 'none' ? `cutout ${notchClass}` : 'cutout'
-    safari.hidden = !chrome.showSafari
-    screen.classList.toggle('safari-visible', chrome.showSafari)
-    home.hidden = !overlayHomeIndicatorVisible(state.ui.showNavBar, live.navBar, state.rotated)
-    androidNav.hidden = !state.ui.showNavBar || live.navBar !== 'android' || state.rotated
-    status.style.display = chrome.decorStatus ? '' : 'none'
-    status.dataset.bar = live.statusBar === 'android' ? 'android' : 'ios'
-    iframe.setAttribute('width', String(layoutSize.width))
-    iframe.setAttribute('height', String(layoutSize.height))
+    els.cutout.className = !mockup && live.notch !== 'none' ? `cutout ${notchClass}` : 'cutout'
+    els.safari.hidden = !chrome.showSafari
+    els.screen.classList.toggle('safari-visible', chrome.showSafari)
+    els.home.hidden = !overlayHomeIndicatorVisible(state.ui.showNavBar, live.navBar, rotated)
+    els.androidNav.hidden = !state.ui.showNavBar || live.navBar !== 'android' || rotated
+    els.status.style.display = chrome.decorStatus ? '' : 'none'
+    els.status.dataset.bar = live.statusBar === 'android' ? 'android' : 'ios'
+    els.iframe.setAttribute('width', String(layoutSize.width))
+    els.iframe.setAttribute('height', String(layoutSize.height))
+    els.iframe.title = live.label
+    els.hostLabel.textContent = live.hostname
+  }
+
+  const layout = () => {
+    const panes = state.split && state.compare ? 2 : 1
+    const box = overlayStageBox({ width: window.innerWidth, height: window.innerHeight }, { panes })
+    root.classList.toggle('is-split', panes === 2)
+    root.classList.toggle('has-mockup', Boolean(state.live.mockupUrl && state.live.mockupInsets))
+    root.classList.toggle('landscape', state.rotated)
+    stage.style.paddingRight = `${box.paddingRight}px`
+    layoutPane(left, state.live, state.rotated, box)
+    if (panes === 2 && state.compare) {
+      right.pane.hidden = false
+      layoutPane(right, state.compare, state.rotatedCompare, box)
+    } else {
+      right.pane.hidden = true
+    }
     syncSettingsUi()
     positionDevicesPanel()
     requestAnimationFrame(() => {
@@ -1695,10 +1860,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     button.type = 'button'
     button.className = 'device-row'
     button.dataset.device = device.id
-    if (device.id === state.live.deviceId) button.setAttribute('aria-current', 'true')
-    const thumb = device.thumbUrl
-      ? `<img class="device-thumb-img" src="${escapeHtml(device.thumbUrl)}" alt="" aria-hidden="true" loading="lazy" />`
-      : `<span class="device-thumb" data-kind="${escapeHtml(device.kind)}" aria-hidden="true"></span>`
+    if (device.id === focusedLive().deviceId) button.setAttribute('aria-current', 'true')
+    const thumb = `<span class="device-thumb" data-kind="${escapeHtml(device.kind)}" aria-hidden="true"></span>`
     button.innerHTML = `
       ${thumb}
       <span class="device-copy">
@@ -1754,7 +1917,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b))
   }
 
-  const renderDevices = () => {
+  renderDevices = () => {
     const query = searchInput.value.trim().toLowerCase()
     const fav = new Set(catalog.favorites)
     const recent = new Set(catalog.recents)
@@ -1811,7 +1974,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     }
     deviceBtn.setAttribute('aria-pressed', String(state.panel === 'devices'))
     settingsBtn.setAttribute('aria-pressed', String(state.panel === 'settings'))
-    compareBtn.setAttribute('aria-pressed', String(state.panel === 'compare-menu'))
+    compareBtn.setAttribute('aria-pressed', String(state.split || state.panel === 'compare-menu'))
     helpBtn.setAttribute('aria-pressed', String(state.panel === 'help'))
     layout()
     if (state.panel === 'devices') {
@@ -1875,12 +2038,20 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   }
 
   const apply = (next: SimulatorOverlayConfig) => {
-    state.live = next
-    state.ui = next.ui
-    state.rotated = false
-    applyTheme(next.ui.theme)
-    paintFinish(next)
-    if (iframe.getAttribute('src') !== next.url) setPreviewUrl(next.url)
+    const targetRight = state.split && state.focusPane === 1
+    if (targetRight) {
+      state.compare = next
+      state.rotatedCompare = false
+      paintPaneFinish(right, next)
+      if (right.iframe.getAttribute('src') !== next.url) setPanePreviewUrl(right, next.url)
+    } else {
+      state.live = next
+      state.ui = next.ui
+      state.rotated = false
+      applyTheme(next.ui.theme)
+      paintFinish(next)
+      if (iframe.getAttribute('src') !== next.url) setPanePreviewUrl(left, next.url)
+    }
     layout()
     if (state.panel === 'devices') renderDevices()
     syncCurrentDevice()
@@ -1891,17 +2062,21 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
   syncCurrentDevice()
   layout()
 
-  iframe.addEventListener('load', () => {
-    endPreviewLoad()
-    try {
-      const href = iframe.contentWindow?.location.href ?? ''
-      if (href.startsWith('chrome-error:') || href.includes('chromewebdata')) {
-        blocked.style.display = 'flex'
+  const bindPreviewLoad = (els: PaneEls) => {
+    els.iframe.addEventListener('load', () => {
+      endPreviewLoad(els)
+      try {
+        const href = els.iframe.contentWindow?.location.href ?? ''
+        if (href.startsWith('chrome-error:') || href.includes('chromewebdata')) {
+          els.blocked.style.display = 'flex'
+        }
+      } catch {
+        /* cross-origin success */
       }
-    } catch {
-      /* cross-origin success */
-    }
-  })
+    })
+  }
+  bindPreviewLoad(left)
+  bindPreviewLoad(right)
 
   const onResize = () => layout()
   window.addEventListener('resize', onResize)
@@ -1916,11 +2091,11 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     return iframe.src || state.live.url
   }
 
-  const reloadPreview = () => {
-    blocked.style.display = 'none'
-    beginPreviewLoad()
+  const reloadPane = (els: PaneEls) => {
+    els.blocked.style.display = 'none'
+    beginPreviewLoad(els)
     try {
-      iframe.contentWindow?.location.reload()
+      els.iframe.contentWindow?.location.reload()
       return
     } catch {
       /* fall back below */
@@ -1928,12 +2103,42 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     try {
       const url = new URL(currentPreviewUrl())
       url.hash = `tbx-sim-reload=${++state.previewReload}`
-      iframe.src = url.href
+      els.iframe.src = url.href
     } catch {
       state.previewReload += 1
       const base = state.live.url.split('#')[0]
-      iframe.src = `${base}#tbx-sim-reload=${state.previewReload}`
+      els.iframe.src = `${base}#tbx-sim-reload=${state.previewReload}`
     }
+  }
+
+  const reloadPreview = () => {
+    reloadPane(left)
+    if (state.split) reloadPane(right)
+  }
+
+  const enterSplit = () => {
+    state.split = true
+    state.compare = { ...state.live }
+    state.rotatedCompare = state.rotated
+    right.pane.hidden = false
+    setPanePreviewUrl(right, state.live.url)
+    setFocusPane(1)
+    compareBtn.setAttribute('aria-pressed', 'true')
+    layout()
+    setPanel('devices', true)
+  }
+
+  const exitSplit = () => {
+    state.split = false
+    state.compare = null
+    state.rotatedCompare = false
+    state.focusPane = 0
+    right.pane.hidden = true
+    left.pane.classList.add('is-focus')
+    right.pane.classList.remove('is-focus')
+    compareBtn.setAttribute('aria-pressed', 'false')
+    layout()
+    syncCurrentDevice()
   }
 
   const onKey = (event: KeyboardEvent) => {
@@ -1967,7 +2172,8 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
 
   shadow.querySelector('[data-act="close"]')?.addEventListener('click', () => dispose())
   shadow.querySelector('[data-act="rotate"]')?.addEventListener('click', () => {
-    state.rotated = !state.rotated
+    if (state.split && state.focusPane === 1) state.rotatedCompare = !state.rotatedCompare
+    else state.rotated = !state.rotated
     layout()
   })
   shadow.querySelector('[data-act="reload"]')?.addEventListener('click', (event) => {
@@ -2009,7 +2215,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       deviceId: id,
       url: state.live.url,
     })
-    setPanel('')
+    if (!state.split) setPanel('')
   })
   shadow.querySelector('[data-panel="settings"]')?.addEventListener('change', (event) => {
     const input = event.target as HTMLInputElement
@@ -2017,6 +2223,7 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
     const key = input.dataset.set
     if (key === 'safari') {
       state.live = { ...state.live, showSafari: input.checked }
+      if (state.compare) state.compare = { ...state.compare, showSafari: input.checked }
       layout()
       return
     }
@@ -2084,11 +2291,29 @@ export function mountSimulatorOverlay(config: SimulatorOverlayConfig): boolean {
       deviceId: state.live.deviceId,
     })
   })
-  shadow.querySelector('[data-act="compare"]')?.addEventListener('click', () => setPanel('compare-menu', true))
+  left.pane.addEventListener('click', () => {
+    if (state.split) setFocusPane(0)
+  })
+  right.pane.addEventListener('click', () => {
+    if (state.split) setFocusPane(1)
+  })
+  shadow.querySelector('[data-act="compare"]')?.addEventListener('click', () => {
+    if (state.split) {
+      exitSplit()
+      setPanel('')
+      return
+    }
+    setPanel('compare-menu', true)
+  })
   shadow.querySelector('[data-panel="compare-menu"]')?.addEventListener('click', (event) => {
     const picked = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-compare]')
     if (!picked) return
+    const mode = picked.dataset.compare
     setPanel('')
+    if (mode === 'split') {
+      enterSplit()
+      return
+    }
     void ask({
       type: 'SIMULATOR_OVERLAY_ACTION',
       action: 'compare',

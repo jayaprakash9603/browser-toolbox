@@ -89,6 +89,9 @@ describe('responsive viewer model', () => {
     expect(fitted * outer.height).toBeLessThanOrEqual(laptop.maxH)
     expect(overlayPickerWidth(1920)).toBeGreaterThanOrEqual(400)
     expect(overlayStageBox({ width: 1920, height: 1080 }).maxW).toBe(desktop.maxW)
+    const split = overlayStageBox({ width: 1920, height: 1080 }, { panes: 2 })
+    expect(split.maxW).toBeLessThan(desktop.maxW)
+    expect(split.maxW * 2).toBeLessThanOrEqual(desktop.maxW + 24)
   })
 
   it('keeps full device viewport and paints the status strip on mockups when enabled', () => {
@@ -448,6 +451,25 @@ describe('mobile simulator studio helpers', () => {
     expect((host?.shadowRoot?.querySelector('.mockup-img') as HTMLImageElement | null)?.getAttribute('src')).toContain(
       'pixel-8.webp',
     )
+  })
+
+  it('splits the overlay into two matching device panes for compare', () => {
+    const config = overlayFixture()
+    expect(mountSimulatorOverlay(config)).toBe(true)
+    const shadow = document.getElementById(SIMULATOR_OVERLAY_ID)?.shadowRoot
+    expect(shadow?.querySelectorAll('.sim-pane')).toHaveLength(2)
+    expect((shadow?.querySelector('[data-pane="1"]') as HTMLElement).hidden).toBe(true)
+    ;(shadow?.querySelector('[data-act="compare"]') as HTMLButtonElement).click()
+    expect(shadow?.querySelector('[data-panel="compare-menu"]')?.classList.contains('open')).toBe(true)
+    ;(shadow?.querySelector('[data-compare="split"]') as HTMLButtonElement).click()
+    const root = shadow?.querySelector('.root') as HTMLElement
+    expect(root.classList.contains('is-split')).toBe(true)
+    expect((shadow?.querySelector('[data-pane="1"]') as HTMLElement).hidden).toBe(false)
+    expect(shadow?.querySelectorAll('iframe')).toHaveLength(2)
+    expect(shadow?.querySelector('[data-current-device-side]')?.textContent).toBe('Right device')
+    expect(shadow?.querySelector('[data-act="compare"]')?.getAttribute('aria-pressed')).toBe('true')
+    expect(shadow?.querySelector('[data-panel="devices"]')?.classList.contains('open')).toBe(true)
+    expect(shadow?.querySelector('[data-device-panel-title]')?.textContent).toBe('Choose device for this side')
   })
 
   it('maps catalog phones onto bundled photoreal frames', () => {

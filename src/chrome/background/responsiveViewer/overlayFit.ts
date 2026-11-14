@@ -4,6 +4,7 @@ export const SIM_RAIL_PX = 58
 export const SIM_RAIL_GAP = 16
 export const SIM_STAGE_PAD_Y = 24
 export const SIM_STAGE_PAD_LEFT = 24
+export const SIM_SPLIT_GAP = 20
 export const SIM_PICKER_MAX = 440
 export const SIM_PICKER_MIN = 300
 export const SIM_CHASSIS_PAD = 20
@@ -22,10 +23,16 @@ export function overlayPickerWidth(viewportWidth: number): number {
 }
 
 /** Available stage for the phone — stable whether the device picker is open (picker floats above). */
-export function overlayStageBox(viewport: { width: number; height: number }) {
+export function overlayStageBox(
+  viewport: { width: number; height: number },
+  opts?: { panes?: number },
+) {
+  const panes = Math.max(1, opts?.panes ?? 1)
   const rail = SIM_RAIL_PX + SIM_RAIL_GAP
   const maxH = Math.max(180, viewport.height - SIM_STAGE_PAD_Y * 2)
-  const maxW = Math.max(180, viewport.width - SIM_STAGE_PAD_LEFT - rail)
+  const gap = panes > 1 ? SIM_SPLIT_GAP * (panes - 1) : 0
+  const usable = Math.max(180, viewport.width - SIM_STAGE_PAD_LEFT - rail - gap)
+  const maxW = Math.max(140, Math.floor(usable / panes))
   return { maxW, maxH, paddingRight: rail }
 }
 
