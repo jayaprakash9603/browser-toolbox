@@ -1,7 +1,7 @@
 import type { RecorderSession } from '@/core/recorder/types'
 import { isRestrictedCaptureUrl } from '@/core/screenshot/restricted'
 
-import { mountRecorderPill, unmountRecorderPill } from './controls'
+import { injectRecorderPill, unmountRecorderPageUi } from './injectPage'
 
 let roamingPillTabId: number | undefined
 
@@ -10,7 +10,7 @@ export function roamingPillHostTabId(): number | undefined {
 }
 
 export function usesRoamingPill(session: RecorderSession): boolean {
-  return session.host === 'page'
+  return session.phase !== 'stopping'
 }
 
 async function tabCanHostPill(tabId: number): Promise<boolean> {
@@ -22,25 +22,25 @@ async function tabCanHostPill(tabId: number): Promise<boolean> {
   }
 }
 
+async function unmountPillOnTab(tabId: number): Promise<void> {
+  await unmountRecorderPageUi(tabId).catch(() => undefined)
+}
+
 export async function clearRoamingPill(): Promise<void> {
   if (roamingPillTabId == null) return
   const tabId = roamingPillTabId
   roamingPillTabId = undefined
-  await chrome.scripting.executeScript({ target: { tabId }, func: unmountRecorderPill }).catch(() => undefined)
+  await unmountPillOnTab(tabId)
 }
 
 export async function syncRoamingPill(session: RecorderSession, tabId: number): Promise<void> {
   if (!usesRoamingPill(session) || session.pageTabId === tabId) return
   if (!(await tabCanHostPill(tabId))) return
   if (roamingPillTabId != null && roamingPillTabId !== tabId) {
-    void chrome.scripting
-      .executeScript({ target: { tabId: roamingPillTabId }, func: unmountRecorderPill })
-      .catch(() => undefined)
+    void unmountPillOnTab(roamingPillTabId)
   }
   roamingPillTabId = tabId
-  await chrome.scripting
-    .executeScript({ target: { tabId }, func: mountRecorderPill, args: [session] })
-    .catch(() => undefined)
+  await injectRecorderPill(tabId, session).catch(() => undefined)
 }
 
 export async function syncRoamingPillToFocused(session: RecorderSession): Promise<void> {
@@ -50,17 +50,13 @@ export async function syncRoamingPillToFocused(session: RecorderSession): Promis
 
 export async function syncRecorderPill(session: RecorderSession): Promise<void> {
   if (session.host === 'offscreen' && session.tabId != null) {
-    await chrome.scripting
-      .executeScript({ target: { tabId: session.tabId }, func: mountRecorderPill, args: [session] })
-      .catch(() => undefined)
+    await injectRecorderPill(session.tabId, session).catch(() => undefined)
     return
   }
   if (usesRoamingPill(session)) {
     const host = roamingPillTabId
     if (host != null && (await tabCanHostPill(host))) {
-      await chrome.scripting
-        .executeScript({ target: { tabId: host }, func: mountRecorderPill, args: [session] })
-        .catch(() => undefined)
+      await injectRecorderPill(host, session).catch(() => undefined)
       return
     }
     if (session.returnTabId != null) await syncRoamingPill(session, session.returnTabId)
@@ -70,9 +66,7 @@ export async function syncRecorderPill(session: RecorderSession): Promise<void> 
 
 export async function clearRecorderPillForSession(session: RecorderSession): Promise<void> {
   if (session.host === 'offscreen' && session.tabId != null) {
-    await chrome.scripting
-      .executeScript({ target: { tabId: session.tabId }, func: unmountRecorderPill })
-      .catch(() => undefined)
+    await unmountPillOnTab(session.tabId)
   }
   await clearRoamingPill()
 }

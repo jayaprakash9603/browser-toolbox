@@ -3,11 +3,16 @@ import { useTranslation } from 'react-i18next'
 import { MicIcon } from 'lucide-react'
 
 import { isExtensionMessage } from '@/core/messaging/types'
+import {
+  RECORDER_COUNTDOWN_MS,
+  RECORDER_COUNTDOWN_SECONDS,
+  RECORDER_COUNTDOWN_SETTLE_MS,
+} from '@/core/recorder/countdown'
 import { loadRecorderSettings, videoConstraints } from '@/core/recorder/settings'
 import type { RecorderQuality, RecordingSource } from '@/core/recorder/types'
 import { Button } from '@/shared/components/ui/button'
 
-import { showRecorderCountdown } from '@/chrome/background/recorder/controls'
+import { showRecorderCountdown, unmountRecorderCountdown } from '@/chrome/background/recorder/controls'
 
 import { chooseDesktopSource } from './desktopPicker'
 import { startRecording, type ActiveRecording } from './engine'
@@ -61,8 +66,11 @@ function MicPermission() {
   )
 }
 
-const COUNTDOWN_SECONDS = 3
 const HEARTBEAT_MS = 1000
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
 
 type Stage = 'picking' | 'recording' | 'saving' | 'error'
 
@@ -150,11 +158,29 @@ function PageRecorder({ id, source, returnTabId }: { id: string; source: Recordi
         await chrome.tabs.update(returnTabId, { active: true }).catch(() => undefined)
       }
       if (settings.countdown) {
-        await chrome.runtime
-          .sendMessage({ type: 'RECORDER_COUNTDOWN_BEGIN', id, tabId: returnTabId })
-          .catch(() => undefined)
-        if (returnTabId == null) showRecorderCountdown(COUNTDOWN_SECONDS)
-        await new Promise((resolve) => setTimeout(resolve, COUNTDOWN_SECONDS * 1000 + 150))
+        if (returnTabId == null) {
+          showRecorderCountdown(RECORDER_COUNTDOWN_SECONDS)
+          await sleep(RECORDER_COUNTDOWN_MS)
+          unmountRecorderCountdown()
+          await sleep(RECORDER_COUNTDOWN_SETTLE_MS)
+        } else {
+          const response = (await chrome.runtime
+            .sendMessage({ type: 'RECORDER_COUNTDOWN_BEGIN', id, tabId: returnTabId })
+            .catch(() => undefined)) as { ok?: boolean; error?: string } | undefined
+          if (!response?.ok) {
+            setError(response?.error ?? 'Could not show the countdown on this page.')
+            setStage('error')
+            send({ type: 'RECORDER_STOP' })
+            return
+          }
+          const waited = (await chrome.runtime
+            .sendMessage({ type: 'RECORDER_COUNTDOWN_WAIT', id })
+            .catch(() => undefined)) as { ok?: boolean } | undefined
+          if (!waited?.ok) {
+            unmountRecorderCountdown()
+            await sleep(RECORDER_COUNTDOWN_SETTLE_MS)
+          }
+        }
       }
       recordingRef.current = startRecording({
         id,

@@ -10,12 +10,16 @@ import {
   VideoIcon,
 } from 'lucide-react'
 
+import { getActiveBrowserTab } from '@/chrome/contentScriptClient'
 import { sendMessage } from '@/core/messaging/messageService'
 import type { ExtensionMessage, ExtensionResponse } from '@/core/messaging/types'
+import { requestSiteAccess } from '@/core/permissions/siteAccess'
 import { formatBytes, formatDuration } from '@/core/recorder/format'
 import { DEFAULT_RECORDER_SETTINGS, loadRecorderSettings, saveRecorderSettings } from '@/core/recorder/settings'
 import type { RecorderQuality, RecorderSession, RecorderSettings, RecordingSource } from '@/core/recorder/types'
+import { isRestrictedCaptureUrl } from '@/core/screenshot/restricted'
 import { microphonePermission, useRecorderSession, useRecordings } from '@/features/recorder/useRecorder'
+import { useActiveTabAccess } from '@/features/site-access/useActiveTabAccess'
 import { ToolPage } from '@/shared/components/ToolPage'
 import { Button } from '@/shared/components/ui/button'
 import { Segmented } from '@/shared/components/ui/segmented'
@@ -64,6 +68,7 @@ export default function ScreenRecorderTool() {
   const { t } = useTranslation()
   const tool = useCaptureTool('screenshots.recorder')
   useFocusTarget()
+  const tabAccess = useActiveTabAccess()
   const { session, elapsed, countdown } = useRecorderSession()
   const { recordings } = useRecordings()
   const [source, setSource] = useState<RecordingSource>('tab')
@@ -84,6 +89,29 @@ export default function ScreenRecorderTool() {
     setError('')
     setBusy(true)
     try {
+      if (settings.countdown) {
+        const url = tabAccess?.url
+        if (tabAccess?.granted) {
+          /* already allowed to inject into this tab */
+        } else if (url) {
+          const granted = await requestSiteAccess(url)
+          if (!granted) {
+            setError(t('recorder.needPageAccess'))
+            return
+          }
+        } else {
+          const tab = await getActiveBrowserTab()
+          if (!tab?.url || isRestrictedCaptureUrl(tab.url)) {
+            setError(t(tab?.url ? 'recorder.restrictedPage' : 'recorder.noTargetTab'))
+            return
+          }
+          const granted = await requestSiteAccess(tab.url)
+          if (!granted) {
+            setError(t('recorder.needPageAccess'))
+            return
+          }
+        }
+      }
       if (settings.mic && (await microphonePermission()) !== 'granted') {
         const mic = await request<{ granted: boolean; fallback?: boolean }>({ type: 'RECORDER_REQUEST_MIC' })
         if (!mic.ok || !mic.data.granted) {

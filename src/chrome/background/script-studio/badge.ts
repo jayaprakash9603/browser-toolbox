@@ -15,6 +15,8 @@ export function noteScriptRan(tabId: number, scriptId: string): void {
 }
 
 export async function updateBadgeForTab(tabId: number): Promise<void> {
+  const { recorderOwnsActionBadge } = await import('../recorder/badge')
+  if (recorderOwnsActionBadge()) return
   const settings = await getScriptStudioSettings()
   const tab = await chrome.tabs.get(tabId).catch(() => null)
   if (!tab?.url) {
@@ -54,5 +56,8 @@ export async function updateBadgeForTab(tabId: number): Promise<void> {
 
 export function clearTabBadge(tabId: number): void {
   tabRunningCounts.delete(tabId)
-  void chrome.action.setBadgeText({ tabId, text: '' })
+  void import('../recorder/badge').then(({ recorderOwnsActionBadge }) => {
+    if (recorderOwnsActionBadge()) return
+    void chrome.action.setBadgeText({ tabId, text: '' })
+  })
 }

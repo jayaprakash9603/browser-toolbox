@@ -1,25 +1,36 @@
 /**
- * Pre-roll 3-2-1 overlay on the recorded page (isolated world).
- * Must stay plain JS — loaded via chrome.scripting.executeScript `files`.
+ * Pre-roll 3-2-1 overlay. Must stay fully synchronous — executeScript `files`
+ * does not wait for an async IIFE, so awaiting storage looked like success with no UI.
  */
-;(async function () {
+;(function () {
   const HOST_ID = 'toolbox-recorder-countdown'
-  const SEC_KEY = 'tbxCountdownSeconds'
-  const CAPTION_KEY = 'tbxCountdownCaption'
-
-  const stored = await chrome.storage.session.get([SEC_KEY, CAPTION_KEY])
-  const seconds = Number(stored[SEC_KEY]) || 3
-  const caption = stored[CAPTION_KEY] || 'Recording starts…'
-  await chrome.storage.session.remove([SEC_KEY, CAPTION_KEY])
+  const g = globalThis
+  let remaining =
+    typeof g.__tbxCountdownSeconds === 'number' && g.__tbxCountdownSeconds > 0
+      ? Math.max(1, Math.min(9, Math.floor(g.__tbxCountdownSeconds)))
+      : 3
+  let caption =
+    typeof g.__tbxCountdownCaption === 'string' && g.__tbxCountdownCaption
+      ? g.__tbxCountdownCaption
+      : 'Recording starts…'
+  try {
+    g.__tbxCountdownSeconds = undefined
+    g.__tbxCountdownCaption = undefined
+  } catch (e) {}
 
   document.getElementById(HOST_ID)?.remove()
 
   const host = document.createElement('div')
   host.id = HOST_ID
+  host.setAttribute('data-tbx-recorder-countdown', '1')
   host.style.cssText =
-    'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:2147483647;margin:0;padding:0;border:none;' +
+    'position:fixed;inset:0;width:100vw;height:100vh;z-index:2147483647;margin:0;padding:0;border:none;' +
     'box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;' +
     'background:rgba(0,0,0,.62);color:#fff;font-family:system-ui,sans-serif;pointer-events:none;opacity:1;visibility:visible'
+  host.style.setProperty('z-index', '2147483647', 'important')
+  host.style.setProperty('display', 'flex', 'important')
+  host.style.setProperty('opacity', '1', 'important')
+  host.style.setProperty('visibility', 'visible', 'important')
 
   const ring = document.createElement('div')
   ring.style.cssText =
@@ -31,8 +42,7 @@
   number.setAttribute('aria-live', 'assertive')
   number.style.cssText =
     'font-size:72px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.5)'
-  number.textContent = String(seconds)
-
+  number.textContent = String(remaining)
   ring.appendChild(number)
 
   const captionEl = document.createElement('p')
@@ -41,32 +51,52 @@
 
   const hint = document.createElement('p')
   hint.textContent = 'Screen recording'
-  hint.style.cssText = 'margin:0;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.75)'
+  hint.style.cssText =
+    'margin:0;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.75)'
 
   host.append(hint, ring, captionEl)
-  ;(document.body || document.documentElement).appendChild(host)
+  const full = document.fullscreenElement
+  const root = full && full.nodeType === 1 && full.nodeName !== 'VIDEO' && full.nodeName !== 'IFRAME' ? full : document.documentElement
+  try {
+    root.appendChild(host)
+  } catch (e) {
+    document.documentElement.appendChild(host)
+  }
 
-  let left = seconds
-  const pulse = () => {
+  const pulse = function () {
     ring.style.transform = 'scale(1.08)'
-    window.setTimeout(() => {
+    window.setTimeout(function () {
       ring.style.transform = 'scale(1)'
     }, 180)
   }
   pulse()
 
+  const applyRemaining = function (n) {
+    if (typeof n !== 'number' || n <= 0) return
+    remaining = Math.max(1, Math.min(9, Math.floor(n)))
+    number.textContent = String(remaining)
+    pulse()
+  }
+
+  if (chrome.storage && chrome.storage.session) {
+    chrome.storage.session.get(['tbxCountdownSeconds', 'tbxCountdownCaption'], function (got) {
+      if (!host.isConnected) return
+      if (got && typeof got.tbxCountdownSeconds === 'number') applyRemaining(got.tbxCountdownSeconds)
+      if (got && typeof got.tbxCountdownCaption === 'string' && got.tbxCountdownCaption) {
+        captionEl.textContent = got.tbxCountdownCaption
+      }
+    })
+  }
+
   const tick = function () {
-    if (left <= 0) {
-      number.textContent = '●'
-      number.style.fontSize = '48px'
-      number.style.color = '#ef4444'
-      captionEl.textContent = 'Recording'
-      window.setTimeout(() => host.remove(), 380)
+    if (!host.isConnected) return
+    remaining -= 1
+    if (remaining <= 0) {
+      host.remove()
       return
     }
-    number.textContent = String(left)
+    number.textContent = String(remaining)
     pulse()
-    left -= 1
     window.setTimeout(tick, 1000)
   }
   window.setTimeout(tick, 1000)

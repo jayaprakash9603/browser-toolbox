@@ -227,6 +227,8 @@ export async function getTabEntry(tabId: number): Promise<AdblockTabEntry> {
 export async function configureBadge(enabled: boolean): Promise<void> {
   if (!getAdblockRuntimeProfile().supportsActionBadge) return
   try {
+    const { recorderOwnsActionBadge } = await import('../recorder/badge')
+    if (recorderOwnsActionBadge()) return
     await chrome.action.setBadgeBackgroundColor({ color: '#dc2626' })
     await chrome.declarativeNetRequest.setExtensionActionOptions({
       displayActionCountAsBadgeText: enabled,

@@ -133,6 +133,8 @@ const chromeMock = {
     onClicked: makeEvent(),
     setBadgeText: vi.fn(async () => undefined),
     setBadgeBackgroundColor: vi.fn(async () => undefined),
+    setBadgeTextColor: vi.fn(async () => undefined),
+    setTitle: vi.fn(async () => undefined),
   },
   permissions: {
     contains: vi.fn(async () => false),

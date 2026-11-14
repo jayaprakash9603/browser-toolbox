@@ -310,7 +310,9 @@ export type ExtensionMessage =
   | { type: 'RECORDER_RESUME' }
   | { type: 'RECORDER_STOP' }
   | { type: 'RECORDER_STATUS' }
+  | { type: 'RECORDER_ENSURE_ACCESS' }
   | { type: 'RECORDER_COUNTDOWN_BEGIN'; id: string; tabId?: number }
+  | { type: 'RECORDER_COUNTDOWN_WAIT'; id: string }
   | { type: 'RECORDER_STARTED'; id: string }
   | { type: 'RECORDER_HEARTBEAT'; id: string }
   | { type: 'RECORDER_FINISHED'; id: string; error?: string }
@@ -577,7 +579,9 @@ const MESSAGE_TYPES = new Set<ExtensionMessageType>([
   'RECORDER_RESUME',
   'RECORDER_STOP',
   'RECORDER_STATUS',
+  'RECORDER_ENSURE_ACCESS',
   'RECORDER_COUNTDOWN_BEGIN',
+  'RECORDER_COUNTDOWN_WAIT',
   'RECORDER_STARTED',
   'RECORDER_HEARTBEAT',
   'RECORDER_FINISHED',

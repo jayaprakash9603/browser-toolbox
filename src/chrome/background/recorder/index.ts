@@ -1,5 +1,11 @@
 import { createLogger } from '@/core/logging'
 import { registerMessageHandler } from '@/core/messaging'
+import {
+  RECORDER_COUNTDOWN_MS,
+  RECORDER_COUNTDOWN_SECONDS,
+  RECORDER_COUNTDOWN_SETTLE_MS,
+  recorderPreRollDelayMs,
+} from '@/core/recorder/countdown'
 import { badgeTime } from '@/core/recorder/format'
 import {
   RECORDER_SESSION_KEY,
@@ -18,20 +24,23 @@ import { isRestrictedCaptureUrl } from '@/core/screenshot/restricted'
 import { hasCapability } from '@/platform/capabilities'
 
 import { acquireOffscreen, releaseOffscreen } from '../offscreen'
+import { applyRecorderToolbarBadge, stampRecorderBadgeOnTab } from './badge'
 import {
   isRecorderMenuAction,
   recorderSourceFromMenuAction,
   RECORDER_STOP_MENU_ID,
   syncRecorderContextMenu,
 } from './contextMenus'
-import { COUNTDOWN_CAPTION_KEY, COUNTDOWN_SEC_KEY, RECORDER_COUNTDOWN_JS } from './countdownInject'
+import { mountMicPermissionFrame, removeMicPermissionFrame } from './controls'
 import {
-  mountMicPermissionFrame,
-  mountRecorderPill,
-  removeMicPermissionFrame,
-  unmountRecorderCountdown,
-  unmountRecorderPill,
-} from './controls'
+  COUNTDOWN_SEC_KEY,
+  clearRecorderPageOverlays,
+  injectRecorderCountdown,
+  injectRecorderPill,
+  probeRecorderTabAccess,
+  unmountCountdownOnAllTabs,
+  unmountRecorderPageUi,
+} from './injectPage'
 import { resolveRecorderTargetTab } from './resolveTargetTab'
 import {
   clearRecorderPillForSession,
@@ -42,12 +51,12 @@ import {
 
 const logger = createLogger('recorder')
 const OFFSCREEN_OWNER = 'recorder'
-const COUNTDOWN_SECONDS = 3
 const BADGE_TICK_MS = 1000
 const DEFAULT_ACTION_TITLE = 'Open One Panel'
 
 let current: RecorderSession | null = null
 let badgeTicker: ReturnType<typeof setInterval> | undefined
+let countdownUnmountTimer: ReturnType<typeof setTimeout> | undefined
 
 async function getSession(): Promise<RecorderSession | null> {
   const stored = await chrome.storage.session.get(RECORDER_SESSION_KEY)
@@ -57,32 +66,24 @@ async function getSession(): Promise<RecorderSession | null> {
 
 async function updateBadge(session: RecorderSession | null): Promise<void> {
   try {
+    await applyRecorderToolbarBadge(session)
     if (!session) {
-      await chrome.action.setBadgeText({ text: '' })
       await chrome.action.setTitle({ title: DEFAULT_ACTION_TITLE })
       return
     }
     const now = Date.now()
     const countdown = countdownSecondsLeft(session, now)
-    const paused = session.phase === 'paused'
-    await chrome.action.setBadgeBackgroundColor({ color: paused ? '#f59e0b' : '#dc2626' })
-    if (session.phase === 'stopping') {
-      await chrome.action.setBadgeText({ text: '…' })
-      await chrome.action.setTitle({ title: 'Saving recording…' })
-      return
-    }
-    const text =
-      countdown > 0 ? String(countdown) : session.phase === 'pending' ? 'REC' : badgeTime(elapsedMs(session, now))
-    await chrome.action.setBadgeText({ text })
-    const source =
-      session.source === 'tab' ? 'tab' : session.source === 'window' ? 'window' : 'screen'
+    const source = session.source === 'tab' ? 'tab' : session.source === 'window' ? 'window' : 'screen'
     const timerLabel =
       countdown > 0 ? `${countdown}s` : session.phase === 'pending' ? 'starting' : badgeTime(elapsedMs(session, now))
+    if (countdown > 0) void chrome.storage.session.set({ [COUNTDOWN_SEC_KEY]: countdown })
     await chrome.action.setTitle({
       title:
-        countdown > 0
-          ? `Recording starts in ${countdown}s (${source}). Right-click → Stop recording.`
-          : `Recording ${source} (${timerLabel}). Right-click → Stop recording.`,
+        session.phase === 'stopping'
+          ? 'Saving recording…'
+          : countdown > 0
+            ? `Recording starts in ${countdown}s (${source}). Right-click → Stop recording.`
+            : `Recording ${source} (${timerLabel}). Right-click → Stop recording.`,
     })
   } catch (error) {
     logger.debug('badge update failed', error)
@@ -106,15 +107,41 @@ function syncBadgeTicker(session: RecorderSession | null): void {
   }
 }
 
+function clearCountdownUnmountTimer(): void {
+  if (countdownUnmountTimer == null) return
+  clearTimeout(countdownUnmountTimer)
+  countdownUnmountTimer = undefined
+}
+
+function scheduleCountdownUnmount(until: number): void {
+  clearCountdownUnmountTimer()
+  const wait = Math.max(0, until - Date.now())
+  countdownUnmountTimer = setTimeout(() => {
+    countdownUnmountTimer = undefined
+    void unmountCountdownOnAllTabs()
+  }, wait)
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function waitOutCountdownAndUnmount(): Promise<void> {
+  const session = await getSession()
+  const until = session?.countdownUntil ?? Date.now()
+  const wait = Math.max(0, until - Date.now())
+  if (wait) await sleep(wait)
+  clearCountdownUnmountTimer()
+  await unmountCountdownOnAllTabs()
+  await sleep(RECORDER_COUNTDOWN_SETTLE_MS)
+}
+
 function clearInPageRecorderUi(session: RecorderSession): void {
+  clearCountdownUnmountTimer()
   const tabIds = new Set<number>()
   if (session.tabId != null) tabIds.add(session.tabId)
   if (session.returnTabId != null) tabIds.add(session.returnTabId)
-  for (const tabId of tabIds) {
-    void chrome.scripting
-      .executeScript({ target: { tabId }, func: unmountRecorderCountdown })
-      .catch(() => undefined)
-  }
+  for (const tabId of tabIds) void clearRecorderPageOverlays(tabId)
   void clearRecorderPillForSession(session)
 }
 
@@ -130,6 +157,22 @@ async function setSession(next: RecorderSession | null): Promise<void> {
   syncRecorderContextMenu(next)
 }
 
+function restoreRecorderIndication(
+  session: RecorderSession,
+  tabId: number,
+  active: boolean,
+  remountOverlay: boolean,
+): void {
+  void stampRecorderBadgeOnTab(tabId, session)
+  if (!active) return
+  if (usesRoamingPill(session)) void syncRoamingPill(session, tabId)
+  if (!remountOverlay) return
+  const left = countdownSecondsLeft(session, Date.now())
+  if (left <= 0) return
+  const caption = chrome.i18n.getMessage('recorderCountdownCaption') || 'Recording starts…'
+  void injectRecorderCountdown(tabId, left, caption).catch(() => undefined)
+}
+
 function broadcastControl(id: string, action: 'pause' | 'resume' | 'stop'): void {
   void chrome.runtime.sendMessage({ type: 'RECORDER_CONTROL', id, action }).catch(() => undefined)
 }
@@ -142,35 +185,28 @@ function isNotInvokedError(error: unknown): boolean {
 
 async function beginCountdown(session: RecorderSession, tabId?: number): Promise<void> {
   const caption = chrome.i18n.getMessage('recorderCountdownCaption') || 'Recording starts…'
-  const until = Date.now() + COUNTDOWN_SECONDS * 1000
+  const until = Date.now() + RECORDER_COUNTDOWN_MS
   const next = markCountdown(session, until)
   await setSession(next)
-  const targetTabId = tabId ?? next.tabId ?? next.returnTabId
-  if (targetTabId == null) return
-  try {
-    await chrome.tabs.update(targetTabId, { active: true }).catch(() => undefined)
-    await chrome.storage.session.set({
-      [COUNTDOWN_SEC_KEY]: COUNTDOWN_SECONDS,
-      [COUNTDOWN_CAPTION_KEY]: caption,
-    })
-    await chrome.scripting.executeScript({
-      target: { tabId: targetTabId },
-      files: [RECORDER_COUNTDOWN_JS],
-    })
-    await chrome.scripting
-      .executeScript({ target: { tabId: targetTabId }, func: mountRecorderPill, args: [next] })
-      .catch(() => undefined)
-  } catch (error) {
-    logger.debug('countdown overlay inject failed', error)
+  let targetTabId = tabId ?? next.tabId ?? next.returnTabId
+  if (targetTabId == null) {
+    const resolved = await resolveRecorderTargetTab()
+    targetTabId = resolved?.id
   }
+  if (targetTabId == null) {
+    throw new Error('Open the website tab you want to record, then start again.')
+  }
+  await chrome.tabs.update(targetTabId, { active: true }).catch(() => undefined)
+  await injectRecorderCountdown(targetTabId, RECORDER_COUNTDOWN_SECONDS, caption)
+  await injectRecorderPill(targetTabId, next).catch(() => undefined)
+  scheduleCountdownUnmount(until)
 }
 
 async function startTabCapture(id: string, settings: RecorderSettings, tab: chrome.tabs.Tab, streamId: string) {
   const tabId = tab.id!
   await setSession(createSession(id, 'tab', 'offscreen', Date.now(), { tabId, windowId: tab.windowId }))
   try {
-    const countdownMs = settings.countdown ? COUNTDOWN_SECONDS * 1000 : 0
-    if (countdownMs) {
+    if (settings.countdown) {
       await beginCountdown(current!, tabId)
     }
     await acquireOffscreen(OFFSCREEN_OWNER)
@@ -179,7 +215,7 @@ async function startTabCapture(id: string, settings: RecorderSettings, tab: chro
       id,
       streamId,
       settings,
-      delayMs: countdownMs ? countdownMs + 150 : 0,
+      delayMs: recorderPreRollDelayMs(current?.countdownUntil, Date.now()),
     })) as { ok: boolean; error?: string } | undefined
     if (!response?.ok) throw new Error(response?.error ?? 'Could not start tab recording.')
   } catch (error) {
@@ -362,8 +398,21 @@ async function onFinished(id: string, error?: string): Promise<void> {
 }
 
 export function registerRecorder(): void {
+  registerMessageHandler('RECORDER_ENSURE_ACCESS', async (_message, sender) => {
+    const tab = await resolveRecorderTargetTab(sender.tab)
+    if (!tab) return { ok: false, reason: 'no-tab' as const }
+    return probeRecorderTabAccess(tab)
+  })
+
   registerMessageHandler('RECORDER_START', async (message, sender) => {
     if (message.type !== 'RECORDER_START') return null
+    const target = await resolveRecorderTargetTab(sender.tab)
+    if (message.settings.countdown && target) {
+      const access = await probeRecorderTabAccess(target)
+      if (!access.ok && access.reason === 'restricted') {
+        throw new Error('Chrome cannot show the countdown on this page. Open a normal website tab first.')
+      }
+    }
     return { session: await startRecorder(message.source, message.settings, sender.tab) }
   })
 
@@ -401,8 +450,20 @@ export function registerRecorder(): void {
   registerMessageHandler('RECORDER_COUNTDOWN_BEGIN', async (message) => {
     if (message.type !== 'RECORDER_COUNTDOWN_BEGIN') return null
     const session = await getSession()
-    if (!session || session.id !== message.id) return { ok: false }
+    if (!session || session.id !== message.id) {
+      throw new Error('Recording session is not active.')
+    }
     await beginCountdown(session, message.tabId)
+    return { ok: true }
+  })
+
+  registerMessageHandler('RECORDER_COUNTDOWN_WAIT', async (message) => {
+    if (message.type !== 'RECORDER_COUNTDOWN_WAIT') return null
+    const session = await getSession()
+    if (!session || session.id !== message.id) {
+      throw new Error('Recording session is not active.')
+    }
+    await waitOutCountdownAndUnmount()
     return { ok: true }
   })
 
@@ -435,16 +496,23 @@ export function registerRecorder(): void {
     })
   })
 
+  chrome.tabs.onCreated.addListener((tab) => {
+    if (tab.id == null) return
+    void getSession().then((session) => {
+      if (session) restoreRecorderIndication(session, tab.id!, Boolean(tab.active), true)
+    })
+  })
+
   chrome.tabs.onActivated.addListener(({ tabId }) => {
     void getSession().then((session) => {
-      if (session && usesRoamingPill(session)) void syncRoamingPill(session, tabId)
+      if (session) restoreRecorderIndication(session, tabId, true, false)
     })
   })
 
   chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (!tab.active || changeInfo.status !== 'complete') return
+    if (changeInfo.status !== 'complete') return
     void getSession().then((session) => {
-      if (session && usesRoamingPill(session)) void syncRoamingPill(session, tabId)
+      if (session) restoreRecorderIndication(session, tabId, Boolean(tab.active), true)
     })
   })
 
@@ -454,6 +522,8 @@ export function registerRecorder(): void {
     if (session) {
       await updateBadge(session)
       await syncRecorderPill(session)
+      const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true })
+      if (tab?.id != null) restoreRecorderIndication(session, tab.id, true, true)
     }
   })
 
@@ -462,9 +532,7 @@ export function registerRecorder(): void {
     void chrome.tabs.query({ url: ['http://*/*', 'https://*/*'] }).then((tabs) => {
       for (const tab of tabs) {
         if (tab.id == null) continue
-        void chrome.scripting
-          .executeScript({ target: { tabId: tab.id }, func: unmountRecorderPill })
-          .catch(() => undefined)
+        void unmountRecorderPageUi(tab.id).catch(() => undefined)
       }
     })
   })

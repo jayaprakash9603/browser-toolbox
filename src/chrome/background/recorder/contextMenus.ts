@@ -48,7 +48,7 @@ export function recorderSourceFromMenuAction(actionId: string): RecordingSource 
 export function syncRecorderContextMenu(session: RecorderSession | null): void {
   if (!chrome.contextMenus.update) return
   const active = !!session && session.phase !== 'stopping'
-  void chrome.contextMenus.update(RECORDER_STOP_MENU_ID, { visible: active })
+  void chrome.contextMenus.update(RECORDER_STOP_MENU_ID, { visible: active }).catch(() => undefined)
 }
 
 export async function refreshRecorderMenuVisibility(): Promise<void> {

@@ -1,6 +1,5 @@
 import type { RecorderSession } from '@/core/recorder/types'
 
-const COUNTDOWN_HOST_ID = 'toolbox-recorder-countdown'
 const PILL_HOST_ID = 'toolbox-recorder-pill'
 
 type PillWindow = Window & { __tbxRecorderPill?: (s: RecorderSession | null) => void }
@@ -146,10 +145,7 @@ export function mountRecorderPill(initial: RecorderSession): void {
   w.__tbxRecorderPill = update
 }
 
-export function unmountRecorderCountdown(): void {
-  document.getElementById(COUNTDOWN_HOST_ID)?.remove()
-}
-
+export { unmountRecorderCountdownOverlay as unmountRecorderCountdown } from './countdownOverlay'
 export { showRecorderCountdown } from './countdownInject'
 
 /** Invisible extension frame whose getUserMedia call raises Chrome's own microphone prompt. */
