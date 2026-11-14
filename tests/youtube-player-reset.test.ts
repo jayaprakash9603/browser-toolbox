@@ -73,4 +73,19 @@ describe('YouTube page player', () => {
     send('applyPlayer', { alwaysTheater: false })
     expect(flexy.hasAttribute('theater')).toBe(false)
   })
+
+  it('adds a loop control and toggles video.loop on the current video', () => {
+    const controls = document.createElement('div')
+    controls.className = 'ytp-right-controls'
+    player.append(controls)
+    send('applyPlayer', { loopButton: true })
+    const loopBtn = document.getElementById('tbx-yt-loop-btn')
+    expect(loopBtn).toBeTruthy()
+    loopBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(video.loop).toBe(true)
+    loopBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(video.loop).toBe(false)
+    send('applyPlayer', null)
+    expect(document.getElementById('tbx-yt-loop-btn')).toBeNull()
+  })
 })

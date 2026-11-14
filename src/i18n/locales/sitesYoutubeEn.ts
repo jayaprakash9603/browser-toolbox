@@ -101,6 +101,9 @@ for (const f of YOUTUBE_FEATURES) {
 
 // Progress bar section (overrides auto-generated feature titles)
 Object.assign(base, {
+  'sites.youtube.features.loopButton.label': 'Loop button',
+  'sites.youtube.features.loopButton.description':
+    'Adds a loop control to the player. When loop is on, the current video repeats until you turn it off.',
   'sites.youtube.features.blockAds.label': 'Block ads on YouTube',
   'sites.youtube.features.blockAds.description':
     'Uses the extension Ad blocker (YouTube filter list and player scripts). Off = allow ads on YouTube only; other sites unchanged.',

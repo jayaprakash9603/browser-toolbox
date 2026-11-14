@@ -215,6 +215,7 @@ reg('player', {
       disableAutoplay: isFeatureOn(v, 'disableAutoplay'),
       rememberVolume: isFeatureOn(v, 'rememberVolume'),
       alwaysTheater: isFeatureOn(v, 'alwaysTheater'),
+      loopButton: isFeatureOn(v, 'loopButton'),
     })
     if (isFeatureOn(v, 'wheelVolume') || isFeatureOn(v, 'wheelSpeed')) {
       wheelOptions = { volume: isFeatureOn(v, 'wheelVolume'), speed: isFeatureOn(v, 'wheelSpeed') }

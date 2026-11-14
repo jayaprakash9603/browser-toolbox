@@ -1,5 +1,10 @@
 /* Browser Toolbox YouTube enhancements — toggled via html[data-tbx-yt-*] from yt-isolated.js */
 
+#tbx-yt-loop-btn.tbx-ytp-loop-active svg {
+  color: #f03;
+  fill: #f03;
+}
+
 html[data-tbx-yt-hide-sponsored] ytd-ad-slot-renderer,
 html[data-tbx-yt-hide-sponsored] ytd-in-feed-ad-layout-renderer,
 html[data-tbx-yt-hide-sponsored] ytd-banner-promo-renderer {

@@ -58,7 +58,10 @@ function currentRate(player: ReturnType<typeof getPlayer>): number {
 const APPLIED_SPEED_KEY = 'tbx-yt-applied-speed'
 const APPLIED_THEATER_KEY = 'tbx-yt-applied-theater'
 const APPLIED_QUALITY_KEY = 'tbx-yt-applied-quality'
+const LOOP_ACTIVE_KEY = 'tbx-yt-loop-active'
+const LOOP_BTN_ID = 'tbx-yt-loop-btn'
 let autoplayChanged = false
+let loopDomObserver: MutationObserver | null = null
 
 function sessionFlag(key: string): string | null {
   try {
@@ -144,6 +147,88 @@ function applyTheater(on: boolean): void {
   }
 }
 
+function updateLoopButtonUi(active: boolean): void {
+  const btn = document.getElementById(LOOP_BTN_ID)
+  if (!btn) return
+  btn.setAttribute('aria-pressed', active ? 'true' : 'false')
+  btn.classList.toggle('tbx-ytp-loop-active', active)
+  btn.title = active ? 'Loop video (on)' : 'Loop video'
+}
+
+function applyVideoLoop(on: boolean): void {
+  const video = getVideo()
+  if (!video) return
+  video.loop = on
+  if (on) bindVideoLoopSync(video)
+}
+
+function bindVideoLoopSync(video: HTMLVideoElement): void {
+  if (video.dataset.tbxYtLoopBound === '1') return
+  video.dataset.tbxYtLoopBound = '1'
+  const sync = () => {
+    if (sessionFlag(LOOP_ACTIVE_KEY) === '1') video.loop = true
+  }
+  video.addEventListener('loadeddata', sync)
+  video.addEventListener('emptied', sync)
+}
+
+function toggleLoopPlayback(): void {
+  const active = sessionFlag(LOOP_ACTIVE_KEY) === '1'
+  const next = !active
+  setSessionFlag(LOOP_ACTIVE_KEY, next ? '1' : null)
+  applyVideoLoop(next)
+  updateLoopButtonUi(next)
+}
+
+function ensureLoopButton(show: boolean): void {
+  if (!show) {
+    document.getElementById(LOOP_BTN_ID)?.remove()
+    if (sessionFlag(LOOP_ACTIVE_KEY)) {
+      applyVideoLoop(false)
+      setSessionFlag(LOOP_ACTIVE_KEY, null)
+    }
+    return
+  }
+  if (document.getElementById(LOOP_BTN_ID)) {
+    updateLoopButtonUi(sessionFlag(LOOP_ACTIVE_KEY) === '1')
+    if (sessionFlag(LOOP_ACTIVE_KEY) === '1') applyVideoLoop(true)
+    return
+  }
+  const controls = document.querySelector('.ytp-right-controls')
+  if (!controls) return
+  const btn = document.createElement('button')
+  btn.id = LOOP_BTN_ID
+  btn.className = 'ytp-button'
+  btn.type = 'button'
+  btn.title = 'Loop video'
+  btn.setAttribute('aria-label', 'Loop video')
+  btn.innerHTML =
+    '<svg height="100%" viewBox="0 0 24 24" width="100%" aria-hidden="true"><path fill="currentColor" d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>'
+  btn.addEventListener('click', (event) => {
+    event.stopPropagation()
+    toggleLoopPlayback()
+  })
+  controls.insertBefore(btn, controls.firstChild)
+  if (sessionFlag(LOOP_ACTIVE_KEY) === '1') applyVideoLoop(true)
+  updateLoopButtonUi(sessionFlag(LOOP_ACTIVE_KEY) === '1')
+}
+
+function setLoopButtonFeature(on: boolean): void {
+  if (!on) {
+    loopDomObserver?.disconnect()
+    loopDomObserver = null
+    ensureLoopButton(false)
+    return
+  }
+  ensureLoopButton(true)
+  if (!document.getElementById(LOOP_BTN_ID)) {
+    const root = document.querySelector('#movie_player') ?? document.body
+    loopDomObserver?.disconnect()
+    loopDomObserver = new MutationObserver(() => ensureLoopButton(true))
+    loopDomObserver.observe(root, { childList: true, subtree: true })
+  }
+}
+
 /** Applies the panel's player values. Values at their default undo only what this script set. */
 function applyPlayerSettings(payload: Record<string, unknown> | null): void {
   const values = payload ?? {}
@@ -156,6 +241,9 @@ function applyPlayerSettings(payload: Record<string, unknown> | null): void {
     const saved = localStorage.getItem('tbx-yt-volume')
     if (saved && player?.setVolume) player.setVolume(Number(saved))
   }
+  const loopOn =
+    payload != null && (values.loopButton === true || values.loopButton === 'true' || values.loopButton === 1)
+  setLoopButtonFeature(loopOn)
 }
 
 function clearSponsor(): void {
