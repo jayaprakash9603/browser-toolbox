@@ -75,6 +75,7 @@ Official guidance: <https://extensionworkshop.com/documentation/publish/submitti
 - Set `FIREFOX_EXTENSION_ID` to the permanent AMO ID before the first public submission. The default ID is only a stable repository fallback.
 - Upload `one-panel-v<version>-firefox.zip` to AMO or sign it with `web-ext`.
 - Keep the Firefox MV3 manifest's `browser_specific_settings.gecko.id`, `strict_min_version`, `sidebar_action`, and non-persistent background scripts.
+- Upload `store/firefox-icon-128.png` as the AMO listing icon at <https://addons.mozilla.org/en-US/developers/addon/one-panel/edit>. AMO does not replace the default puzzle piece from the XPI after the first listing is created.
 - Address AMO warnings about dynamic code, permissions, data handling, and unsupported APIs before submitting.
 - Keep AMO JWT credentials out of Git and use CI secrets only if automated signing is enabled later.
 

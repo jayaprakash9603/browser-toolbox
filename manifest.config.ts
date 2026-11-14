@@ -76,19 +76,25 @@ const firefoxOptionalPermissions = [
   'sessions',
 ]
 
+const extensionIcons = {
+  16: 'public/icons/icon16.png',
+  32: 'public/icons/icon32.png',
+  48: 'public/icons/icon48.png',
+  64: 'public/icons/icon64.png',
+  96: 'public/icons/icon96.png',
+  128: 'public/icons/icon128.png',
+}
+
 export default defineManifest({
   manifest_version: 3,
   default_locale: 'en',
   name: '__MSG_extName__',
   version,
   description: '__MSG_extDescription__',
-  icons: {
-    16: 'public/icons/icon16.png',
-    48: 'public/icons/icon48.png',
-    128: 'public/icons/icon128.png',
-  },
+  icons: extensionIcons,
   action: {
     default_title: '__MSG_actionTitle__',
+    default_icon: extensionIcons,
   },
   ...(isFirefox ? {} : { side_panel: { default_path: 'index.html' } }),
   background: {
@@ -119,6 +125,7 @@ export default defineManifest({
         sidebar_action: {
           default_panel: 'index.html',
           default_title: '__MSG_actionTitle__',
+          default_icon: extensionIcons,
         },
         browser_specific_settings: {
           gecko: {
