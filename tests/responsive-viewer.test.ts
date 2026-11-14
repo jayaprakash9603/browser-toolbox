@@ -345,7 +345,8 @@ describe('mobile simulator studio helpers', () => {
       const shadow = document.getElementById(SIMULATOR_OVERLAY_ID)?.shadowRoot
       const inner = shadow?.querySelector('.phone-inner') as HTMLElement
       const scale = Number(/scale\(([^)]+)\)/.exec(inner.style.transform)?.[1])
-      expect(scale).toBeGreaterThan(1)
+      expect(scale).toBeGreaterThan(0.5)
+      expect(scale).toBeLessThan(2.5)
       const wrap = shadow?.querySelector('.phone-wrap') as HTMLElement
       const wrapH = wrap.style.height
       const innerTransform = inner.style.transform
@@ -439,13 +440,13 @@ describe('mobile simulator studio helpers', () => {
     )
   })
 
-  it('maps catalog phones onto MIT mockup frames and leaves Galaxy on the CSS chassis', () => {
+  it('maps catalog phones onto bundled photoreal frames', () => {
     const pro = mockupFor('iphone-16-pro')
     expect(pro?.file).toBe('iphone-16-pro.webp')
-    expect(mockupFor('iphone-17-pro')?.file).toBe('iphone-16-pro.webp')
+    expect(mockupFor('iphone-17-pro')?.file).toBe('iphone-17-pro.webp')
     expect(mockupFor('pixel')?.file).toBe('pixel-8.webp')
-    expect(mockupFor('galaxy')).toBeNull()
-    expect(mockupFor('iphone-se')).toBeNull()
+    expect(mockupFor('galaxy')?.file).toBe('galaxy-s24.webp')
+    expect(mockupFor('iphone-se')?.file).toBe('iphone-se.webp')
     const rotated = orientedMockupInsets(pro!, true)
     expect(rotated.left).toBe(pro!.bottom)
     expect(rotated.top).toBe(pro!.left)
