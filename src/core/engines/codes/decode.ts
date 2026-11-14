@@ -1,6 +1,8 @@
 import { normalizeDetectedFormat, type DetectedBarcodeFormat } from '@/core/engines/barcode/parse'
 import { decodeQrWithLocation, type QrPoint } from '@/core/engines/qrcode'
 
+import { detectBarcodesWithZxing } from './decodeZxing'
+
 export type CodeFamily = 'qr' | 'barcode'
 
 export interface DecodedCode {
@@ -108,6 +110,12 @@ export async function decodeCodesFromImage(image: {
   const scale = image.scale && image.scale > 0 ? image.scale : 1
   const nativeSource = image.canvas ?? ({ data: image.data, width: image.width, height: image.height } as ImageData)
   const codes = await detectNative(nativeSource)
+  if (!codes.some((code) => code.family === 'barcode')) {
+    const zxingBarcodes = await detectBarcodesWithZxing(image)
+    for (const code of zxingBarcodes) {
+      if (!codes.some((item) => samePayload(item, code))) codes.push(code)
+    }
+  }
   const hasQr = codes.some((code) => code.family === 'qr')
   if (!hasQr) {
     const qr = await decodeQrWithLocation({ data: image.data, width: image.width, height: image.height })
