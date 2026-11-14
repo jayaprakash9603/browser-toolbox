@@ -43,6 +43,8 @@ scripts/react-devtools/build-log.txt
 # Local scratch files
 .tmp/
 .reference-repos/
+**/__pycache__/
+*.py[cod]
 
 # Proprietary WebMobileFirst import scratch — never commit
 /public/simulator/mf/
